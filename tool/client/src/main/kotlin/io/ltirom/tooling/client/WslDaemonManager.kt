@@ -134,6 +134,20 @@ public class WslDaemonManager(
         home: String? = null,
         javaHome: String? = null,
     ): ServerConnectionDescriptor = mutex.withLock {
+        val before = connectionInfo
+        val info = resolveConnection(distro, activeVersion, home, javaHome)
+        // A newly adopted or launched service: any other LtiRom service in the distro is a leftover (every
+        // earlier launch kept running) and a request that lands on one fails with "run not found".
+        if (info != before) retireStrayServices(info)
+        info
+    }
+
+    private suspend fun resolveConnection(
+        distro: String,
+        activeVersion: String?,
+        home: String?,
+        javaHome: String?,
+    ): ServerConnectionDescriptor {
         if (distro != boundDistro) {
             boundHome = null
             boundJavaHome = null
@@ -150,7 +164,7 @@ public class WslDaemonManager(
             if (sInfo != null && (wanted == null || sInfo.serverVersion == wanted)) {
                 lastStartAdopted = true
                 isUpdateWaiting = false
-                return@withLock current
+                return current
             }
         }
 
@@ -162,19 +176,19 @@ public class WslDaemonManager(
                     connectionInfo = existing
                     lastStartAdopted = true
                     isUpdateWaiting = false
-                    return@withLock existing
+                    return existing
                 } else if (sInfo.activeRuns > 0 || !retireForUpdate(existing)) {
                     // Busy, or it would not stop cleanly: keep using it rather than kill work or run two.
                     connectionInfo = existing
                     lastStartAdopted = true
                     isUpdateWaiting = true
-                    return@withLock existing
+                    return existing
                 }
             } else {
                 connectionInfo = existing
                 lastStartAdopted = true
                 isUpdateWaiting = false
-                return@withLock existing
+                return existing
             }
         }
 
@@ -182,7 +196,28 @@ public class WslDaemonManager(
         isUpdateWaiting = false
         val info = launchDaemon(distro, boundHome, boundJavaHome)
         connectionInfo = info
-        info
+        return info
+    }
+
+    /**
+     * Asks every LtiRom service in [keep]'s distro other than [keep] to shut down. Non-forced: a service with
+     * active runs refuses and keeps running. A build too old to have the shutdown endpoint gets SIGTERM, but
+     * only when its health report shows no active runs; one that doesn't answer at all is left alone.
+     */
+    private suspend fun retireStrayServices(keep: ServerConnectionDescriptor) {
+        val strays = withContext(Dispatchers.IO) {
+            val ps = cli.execute(keep.distro, listOf("ps", "-eo", "pid=,args="), timeoutSeconds = 5).output
+            val ss = cli.execute(keep.distro, listOf("ss", "-ltnpH"), timeoutSeconds = 5).output
+            parseLtiRomServices(ps, ss, keep.host, keep.distro).filter { it.pid != keep.pid }
+        }
+        for (stray in strays) {
+            if (prober.requestShutdown(stray, force = false)) continue
+            if (prober.getServerInfo(stray)?.activeRuns == 0) {
+                withContext(Dispatchers.IO) {
+                    cli.execute(keep.distro, listOf("kill", "-TERM", stray.pid.toString()), timeoutSeconds = 5)
+                }
+            }
+        }
     }
 
     override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = mutex.withLock { connectionInfo }
@@ -337,7 +372,30 @@ public class WslDaemonManager(
         runCatching { httpClient.close() }
     }
 
-    private companion object {
+    internal companion object {
+        private val TOKEN_ARG = Regex("""--token\s+(\S+)""")
+        private val LISTENER = Regex(""":(\d+)\s.*\bpid=(\d+),""")
+
+        /**
+         * LtiRom services in `ps -eo pid=,args=` output, with their port from `ss -ltnpH` and the token from
+         * their own command line (same user, so readable).
+         */
+        internal fun parseLtiRomServices(
+            ps: String,
+            ss: String,
+            host: String,
+            distro: String,
+        ): List<ServerConnectionDescriptor> {
+            val portByPid = ss.lines().mapNotNull { LISTENER.find(it) }
+                .associate { it.groupValues[2].toLong() to it.groupValues[1].toInt() }
+            return ps.lines().map { it.trim() }.filter { "ltirom-server" in it }.mapNotNull { line ->
+                val pid = line.substringBefore(' ').toLongOrNull() ?: return@mapNotNull null
+                val token = TOKEN_ARG.find(line)?.groupValues?.get(1) ?: return@mapNotNull null
+                val port = portByPid[pid] ?: return@mapNotNull null
+                ServerConnectionDescriptor(host = host, port = port, token = token, pid = pid, distro = distro)
+            }
+        }
+
         /** How long a retired service gets to exit before the update is treated as refused (10 s). */
         const val RETIRE_POLLS = 20
         const val RETIRE_POLL_MS = 500L

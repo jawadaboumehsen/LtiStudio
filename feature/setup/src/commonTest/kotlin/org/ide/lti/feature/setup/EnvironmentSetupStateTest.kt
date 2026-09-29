@@ -1310,4 +1310,26 @@ class EnvironmentSetupStateTest {
                 "Handoff sheet must NOT automatically open after restart reconciliation",
             )
         }
+
+    @Test
+    fun testCheckAgainRetriesARecoveryThatFailedBeforeTheServiceWasUp() = runEnvironmentTest { envScope ->
+        val spyService =
+            SpyToolchainProvisioningService(
+                initialState = ToolchainSetupState(pendingAttemptId = "attempt-journaled-9"),
+            )
+        // At startup nothing is connected yet: the first reconciliation fails.
+        spyService.recoverOutcome = SetupOutcome.Failed(stage = null, reason = "Build service has not been started yet")
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, spyService.recoverCount)
+
+        // "Check again" connects; the still-journaled attempt is reconciled again right after.
+        spyService.recoverOutcome = SetupOutcome.Succeeded()
+        stateHolder.checkEnvironmentStatus()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(2, spyService.recoverCount, "the pending attempt must be retried after the check")
+        assertEquals("attempt-journaled-9", spyService.lastRecoverAttemptId)
+        assertNull(stateHolder.environmentNotice.value, "the stale 'Recovery failed' banner must be gone")
+    }
 }

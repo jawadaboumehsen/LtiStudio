@@ -185,6 +185,12 @@ class EnvironmentSetupState(
 
     private var currentExecutionJob: Job? = null
 
+    /** The last reconciliation of the journaled attempt failed; the next completed check retries it. */
+    private var lastRecoveryFailed = false
+
+    /** The notice the last reconciliation left, cleared once the journal no longer needs recovery. */
+    private var lastRecoveryNotice: String? = null
+
     init {
         val initial = toolchainSetupState.value
         when {
@@ -263,6 +269,14 @@ class EnvironmentSetupState(
                     _environmentNotice.value = "Environment verification notice: ${e.message}"
                 } finally {
                     currentExecutionJob = null
+                }
+                // A reconciliation that failed earlier (e.g. at startup, before any service was up) is retried
+                // once the check has connected, instead of leaving "Recovery failed" up next to a green check.
+                if (lastRecoveryFailed && toolchainSetupState.value.pendingAttemptId != null) {
+                    reconcilePendingAttempt()
+                } else if (!journalNeedsRecovery && _environmentNotice.value == lastRecoveryNotice) {
+                    // Nothing is left to recover: a recovery notice from earlier is stale, not a warning.
+                    _environmentNotice.value = null
                 }
             }
     }
@@ -563,7 +577,13 @@ class EnvironmentSetupState(
         currentExecutionJob =
             scope.launch {
                 try {
-                    applyTerminalOutcome(service.recover(attemptId), "Recovery")
+                    val outcome = service.recover(attemptId)
+                    lastRecoveryFailed = outcome is SetupOutcome.Failed
+                    if (outcome is SetupOutcome.Succeeded && _environmentNotice.value == lastRecoveryNotice) {
+                        _environmentNotice.value = null
+                    }
+                    applyTerminalOutcome(outcome, "Recovery")
+                    lastRecoveryNotice = _environmentNotice.value
                 } catch (e: CancellationException) {
                     _activeOperation.value =
                         _activeOperation.value?.copy(
@@ -579,7 +599,9 @@ class EnvironmentSetupState(
                             executionState = SetupOperationState.INTERRUPTED,
                             failure = e.message,
                         )
+                    lastRecoveryFailed = true
                     _environmentNotice.value = "Recovery failed: ${e.message}"
+                    lastRecoveryNotice = _environmentNotice.value
                 } finally {
                     currentExecutionJob = null
                 }

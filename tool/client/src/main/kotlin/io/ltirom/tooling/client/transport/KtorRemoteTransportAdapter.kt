@@ -11,6 +11,7 @@ import io.ltirom.tooling.core.ToolingException
 import io.ltirom.tooling.core.TraceContext
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
 import io.ltirom.tooling.core.remote.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
@@ -36,7 +37,22 @@ public class KtorRemoteTransportAdapter(
         public const val PROTOCOL_VERSION: String = "1.2.0"
         public const val HEADER_PROTOCOL_VERSION: String = "X-LtiRom-Protocol-Version"
         public const val DEFAULT_HEARTBEAT_TIMEOUT_MS: Long = 45_000L
+        private const val MAX_RECONNECTS_WITHOUT_PROGRESS = 10
+
+        /** Close reason the service sends when a run's stream has ended. */
+        private const val STREAM_COMPLETED = "Completed"
     }
+
+    /**
+     * The service that accepted each run. A run lives only in that service's memory, so its attach, status
+     * and cancel go there, never to whatever [DaemonSupervisorPort.ensureStarted] resolves to at that moment
+     * (which may be another service after a restart or update). Runs this session didn't start (recovery
+     * after an app restart) fall back to the current service.
+     */
+    private val runOwners = java.util.concurrent.ConcurrentHashMap<String, ServerConnectionDescriptor>()
+
+    private suspend fun connectionFor(runId: String): ServerConnectionDescriptor =
+        runOwners[runId] ?: supervisor.ensureStarted()
 
     override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
         return circuitBreaker.execute {
@@ -313,7 +329,7 @@ public class KtorRemoteTransportAdapter(
                 setBody(request)
             }
             when (response.status) {
-                HttpStatusCode.Created, HttpStatusCode.OK -> response.body<RunHandle>()
+                HttpStatusCode.Created, HttpStatusCode.OK -> response.body<RunHandle>().also { runOwners[it.runId] = conn }
                 HttpStatusCode.Conflict -> {
                     val conflict = runCatching { response.body<RunConflict>() }.getOrNull()
                     throw ToolingException("Run conflict: workspace locked by active run ${conflict?.existingRunId}")
@@ -329,7 +345,7 @@ public class KtorRemoteTransportAdapter(
 
     override suspend fun getRun(runId: String): RunStatus? {
         return circuitBreaker.execute {
-            val conn = supervisor.ensureStarted()
+            val conn = connectionFor(runId)
             val trace = TraceContext.create()
             val response = httpClient.get("${conn.httpBaseUrl}/api/v1/runs/$runId") {
                 header(HttpHeaders.Authorization, "Bearer ${conn.token}")
@@ -367,7 +383,7 @@ public class KtorRemoteTransportAdapter(
 
     override suspend fun cancelRun(runId: String, signal: String): RunCancelResponse? {
         return circuitBreaker.execute {
-            val conn = supervisor.ensureStarted()
+            val conn = connectionFor(runId)
             val trace = TraceContext.create()
             val response = httpClient.post("${conn.httpBaseUrl}/api/v1/runs/$runId/cancel?signal=$signal") {
                 header(HttpHeaders.Authorization, "Bearer ${conn.token}")
@@ -386,6 +402,12 @@ public class KtorRemoteTransportAdapter(
     override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> =
         attachRun(runId, fromSeq, DEFAULT_HEARTBEAT_TIMEOUT_MS)
 
+    /**
+     * Streams run [runId] from [fromSeq], reconnecting from the last delivered event after a dropped
+     * connection. Only transport failures reconnect: a failure in the collector (e.g. a journal commit)
+     * is rethrown to it, and the cursor advances only after an event was delivered, so nothing is skipped.
+     * A normal "Completed" close ends the stream; persistent failures stop after [MAX_RECONNECTS_WITHOUT_PROGRESS].
+     */
     public fun attachRun(
         runId: String,
         fromSeq: Long = 1L,
@@ -393,9 +415,19 @@ public class KtorRemoteTransportAdapter(
     ): Flow<SequencedStreamEvent> = flow {
         var lastSeq = fromSeq - 1
         var finished = false
+        var failuresWithoutProgress = 0
+        val deliver: suspend (SequencedStreamEvent) -> Unit = { event ->
+            try {
+                emit(event)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+                throw CollectorFailure(e)
+            }
+        }
 
         while (!finished) {
-            val conn = supervisor.ensureStarted()
+            val conn = connectionFor(runId)
             val currentFromSeq = lastSeq + 1
             val socketUrl = "${conn.wsBaseUrl}/api/v1/runs/$runId/attach?fromSeq=$currentFromSeq&token=${conn.token}"
             var shouldReconnect = false
@@ -419,7 +451,8 @@ public class KtorRemoteTransportAdapter(
                             if (reason?.message?.contains("not found", ignoreCase = true) == true) {
                                 throw ToolingException("Run '$runId' not found on remote server")
                             }
-                            shouldReconnect = !finished
+                            // The service ended the stream itself: the caller reads the run's final state.
+                            shouldReconnect = !finished && reason?.message != STREAM_COMPLETED
                             break
                         }
 
@@ -431,10 +464,11 @@ public class KtorRemoteTransportAdapter(
 
                             if (seqEvent != null) {
                                 if (seqEvent.seq == 0L || seqEvent.event is StreamEvent.Heartbeat) {
-                                    emit(seqEvent)
+                                    deliver(seqEvent)
                                 } else if (seqEvent.seq > lastSeq) {
+                                    deliver(seqEvent)
                                     lastSeq = seqEvent.seq
-                                    emit(seqEvent)
+                                    failuresWithoutProgress = 0
                                     if (seqEvent.event is StreamEvent.ExecutionFinished) {
                                         finished = true
                                         break
@@ -444,14 +478,27 @@ public class KtorRemoteTransportAdapter(
                         }
                     }
                 }
+            } catch (e: CollectorFailure) {
+                throw e.cause ?: e
             } catch (_: TimeoutCancellationException) {
                 shouldReconnect = true
             } catch (e: CancellationException) {
                 throw e
             } catch (e: ToolingException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 if (finished) break
+                // Reconnecting only makes sense while the service that owns the run is still there.
+                if (runOwners.containsKey(runId) && !supervisor.isHealthy(conn)) {
+                    throw ToolingException(
+                        "The build service that was running '$runId' (pid ${conn.pid}) is no longer reachable",
+                    )
+                }
+                if (++failuresWithoutProgress >= MAX_RECONNECTS_WITHOUT_PROGRESS) {
+                    throw ToolingException(
+                        "Lost the output of run '$runId' after $failuresWithoutProgress reconnect attempts: ${e.message}",
+                    )
+                }
                 shouldReconnect = true
                 delay(100)
             }
@@ -461,6 +508,9 @@ public class KtorRemoteTransportAdapter(
             }
         }
     }
+
+    /** Wraps a failure thrown by the flow's collector so the reconnect logic never mistakes it for the network. */
+    private class CollectorFailure(cause: Throwable) : RuntimeException(cause)
 
     override suspend fun shutdownDaemon(force: Boolean): Boolean {
         return supervisor.shutdownDaemon(force)

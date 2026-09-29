@@ -20,11 +20,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -33,13 +35,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import kotlinx.coroutines.delay
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -51,6 +56,7 @@ import org.ide.lti.core.designsystem.icon.ideStatusError
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
 import org.ide.lti.core.designsystem.icon.ideStatusWarning
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -480,27 +486,7 @@ private fun VerticalStageRow(
 
                 val errorText = toolchainPres?.errorText ?: if (!hasMappedRow) step.error else null
                 if (!errorText.isNullOrBlank()) {
-                    Box(
-                        modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(GlassShapes.ExtraSmall)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .border(
-                                width = StrokeWidth.Hairline,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = GlassShapes.ExtraSmall,
-                            ).padding(Spacing.Small),
-                    ) {
-                        Text(
-                            text = errorText,
-                            style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = codeFontFamily(),
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    CopyableErrorText(errorText)
                 }
 
                 wslPres?.instruction?.let { instruction ->
@@ -687,3 +673,54 @@ private fun VerticalStageRow(
         }
     }
 }
+
+/** A step's technical error: selectable, with a button that copies the whole text for a bug report. */
+@Composable
+internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier) {
+    val clipboardManager = LocalClipboardManager.current
+    val diagnostics = GlassTheme.diagnosticColors
+    var copied by remember(errorText) { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) {
+            delay(COPIED_FEEDBACK_MS)
+            copied = false
+        }
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ExtraSmall)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(
+                width = StrokeWidth.Hairline,
+                color = MaterialTheme.colorScheme.outline,
+                shape = GlassShapes.ExtraSmall,
+            ).padding(Spacing.Small),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        SelectionContainer(modifier = Modifier.weight(1f)) {
+            Text(
+                text = errorText,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        GlassIconButton(
+            onClick = {
+                clipboardManager.setText(AnnotatedString(errorText))
+                copied = true
+            },
+            size = ComponentSize.PanelHeaderAction,
+        ) {
+            Icon(
+                painter = if (copied) AppIcons.CheckPainterResource() else AppIcons.CopyPainterResource(),
+                contentDescription = if (copied) "Copied" else "Copy error",
+                tint = if (copied) diagnostics.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(IconSize.Small),
+            )
+        }
+    }
+}
+
+private const val COPIED_FEEDBACK_MS = 2_000L

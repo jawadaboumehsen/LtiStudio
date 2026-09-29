@@ -392,4 +392,35 @@ class RunAttachClientTest {
             assertTrue(shutdownCalls.isEmpty(), "WslDaemonManager.close() must not issue POST /shutdown: $shutdownCalls")
         }
     }
+
+    @Test
+    fun testCollectorFailureIsRethrownNotTreatedAsADroppedConnection() = runBlocking {
+        SimpleMockServer().use { server ->
+            server.handler = { socket, requestLine, input, output ->
+                server.connectionPaths.add(requestLine.split(" ")[1])
+                val headers = server.readHeaders(input)
+                server.performWsHandshake(output, headers["sec-websocket-key"]!!)
+                server.sendWsText(output, json.encodeToString(SequencedStreamEvent(1L, StreamEvent.OutputChunk("line", false))))
+                server.sendWsText(output, json.encodeToString(SequencedStreamEvent(2L, StreamEvent.ExecutionFinished(0, 1L, ""))))
+                server.readIncomingFrames(socket, input, output)
+            }
+            val httpClient = createHttpClient()
+            try {
+                val descriptor = ServerConnectionDescriptor("127.0.0.1", server.port, "tok", 1L, "Ubuntu")
+                val adapter = KtorRemoteTransportAdapter(TestSupervisor(descriptor), httpClient, json)
+
+                // Before: the failure looked like a dropped socket; the client reconnected past the event
+                // (cursor advanced first) and at the end waited forever for events after the last one.
+                val error = assertFailsWith<IllegalStateException> {
+                    withTimeout(10_000) {
+                        adapter.attachRun("run-x", fromSeq = 1L).collect { error("journal commit failed") }
+                    }
+                }
+                assertEquals("journal commit failed", error.message)
+                assertEquals(1, server.connectionPaths.size, "no reconnect for a collector failure")
+            } finally {
+                httpClient.close()
+            }
+        }
+    }
 }
