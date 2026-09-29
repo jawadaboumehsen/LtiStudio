@@ -11,7 +11,6 @@ package org.ide.lti.feature.workspace.creation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,6 +54,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.component.progress.GlassStepInfo
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
@@ -100,6 +100,31 @@ fun CreateWorkspaceScreen(
         }
     }
 
+    CreateWorkspaceContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onNavigateToSetup = onNavigateToSetup,
+        onSelectTarget = viewModel::selectTarget,
+        onNameChange = viewModel::setName,
+        onKeySourceChange = viewModel::setKeySource,
+        onCancel = { if (uiState.isProvisioning) viewModel.cancel() else onBackClick() },
+        onCreate = { viewModel.startCreation() },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun CreateWorkspaceContent(
+    uiState: CreateWorkspaceUiState,
+    onBackClick: () -> Unit,
+    onNavigateToSetup: (() -> Unit)? = null,
+    onSelectTarget: (TargetDevice) -> Unit,
+    onNameChange: (String) -> Unit,
+    onKeySourceChange: (KeySource) -> Unit,
+    onCancel: () -> Unit,
+    onCreate: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
 
     Column(
@@ -143,9 +168,9 @@ fun CreateWorkspaceScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
         ) {
-            TargetPickerSection(uiState, viewModel::selectTarget)
-            WorkspaceNameSection(uiState, viewModel::setName)
-            KeySourceSection(uiState, viewModel::setKeySource)
+            TargetPickerSection(uiState, onSelectTarget)
+            WorkspaceNameSection(uiState, onNameChange)
+            KeySourceSection(uiState, onKeySourceChange)
             AnimatedVisibility(visible = uiState.isProvisioning || uiState.logs.isNotEmpty()) {
                 ProvisioningProgressCard(uiState)
             }
@@ -159,7 +184,7 @@ fun CreateWorkspaceScreen(
         }
 
         GlassHorizontalDivider()
-        CreateWorkspaceActions(uiState, viewModel, onBackClick)
+        CreateWorkspaceActions(uiState, onCancel, onCreate)
     }
 }
 
@@ -222,7 +247,7 @@ private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget:
                     .fillMaxWidth()
                     .clip(GlassShapes.Small)
                     .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle))
-                    .border(
+                    .glassOutlineBorder(
                         width = StrokeWidth.Hairline,
                         color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
                         shape = GlassShapes.Small,
@@ -376,18 +401,14 @@ private fun CreationStage.status(uiState: CreateWorkspaceUiState): GlassStepStat
 }
 
 @Composable
-private fun CreateWorkspaceActions(
-    uiState: CreateWorkspaceUiState,
-    viewModel: CreateWorkspaceViewModel,
-    onBackClick: () -> Unit,
-) {
+private fun CreateWorkspaceActions(uiState: CreateWorkspaceUiState, onCancel: () -> Unit, onCreate: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         GlassButton(
-            onClick = { if (uiState.isProvisioning) viewModel.cancel() else onBackClick() },
+            onClick = onCancel,
             variant = GlassButtonVariant.Secondary,
         ) {
             Text(if (uiState.isProvisioning) "Cancel Provisioning" else "Cancel")
@@ -396,7 +417,7 @@ private fun CreateWorkspaceActions(
         Spacer(modifier = Modifier.width(Spacing.SmallMedium))
 
         GlassButton(
-            onClick = { viewModel.startCreation() },
+            onClick = onCreate,
             variant = GlassButtonVariant.Primary,
             enabled =
             !uiState.isProvisioning &&

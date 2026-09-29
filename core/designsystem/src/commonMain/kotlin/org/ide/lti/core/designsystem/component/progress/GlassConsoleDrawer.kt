@@ -15,7 +15,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +54,7 @@ import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -254,7 +254,7 @@ private fun ConsoleDrawerLogs(logs: List<String>, listState: LazyListState, modi
             .heightIn(max = ComponentSize.DialogDefaultHeight)
             .clip(GlassShapes.Small)
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(
+            .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = MaterialTheme.colorScheme.outline,
                 shape = GlassShapes.Small,

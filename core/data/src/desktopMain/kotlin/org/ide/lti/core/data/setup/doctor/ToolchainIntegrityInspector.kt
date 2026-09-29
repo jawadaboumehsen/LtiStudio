@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -13,14 +22,14 @@ import org.ide.lti.core.domain.setup.StepStatus
  */
 public class ToolchainIntegrityInspector(
     private val cli: WslCliExecutor = WslCliExecutor(),
-    private val coreTools: List<String> = DEFAULT_CORE_TOOLS
+    private val coreTools: List<String> = DEFAULT_CORE_TOOLS,
 ) : SystemDiagnosticInspector {
 
     public companion object {
         public val DEFAULT_CORE_TOOLS: List<String> = listOf(
             "adb", "fastboot", "avbtool", "apktool.jar", "signapk.jar", "zipalign",
             "lpunpack", "lpmake", "lpdump", "mkfs.erofs", "dump.erofs", "erofsfuse",
-            "img2sdat", "payload-dumper-go"
+            "img2sdat", "payload-dumper-go",
         )
     }
 
@@ -51,7 +60,7 @@ public class ToolchainIntegrityInspector(
                 "${coreTools.size - missingCoreTools.size}/${coreTools.size} tools active. Missing: ${missingCoreTools.joinToString(", ")}."
             },
             remediation = if (allToolsOk) null else "Run Toolchain Setup in app to compile/download missing binaries.",
-            isOptionalForRuntime = !context.binariesPresent
+            isOptionalForRuntime = !context.binariesPresent,
         )
     }
 }

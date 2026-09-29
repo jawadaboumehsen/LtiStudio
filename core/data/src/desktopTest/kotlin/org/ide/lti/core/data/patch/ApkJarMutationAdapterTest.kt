@@ -557,7 +557,7 @@ class ApkJarMutationAdapterTest {
             methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
             anchor = AnchorPattern(
                 opcodeSequence = listOf("const-string", "move-result-object"),
-                stringConstants = emptyList(), // matches twice in fixture
+                stringConstants = emptyList(),
             ),
             expectedPreimageSha256 = preimage,
         )

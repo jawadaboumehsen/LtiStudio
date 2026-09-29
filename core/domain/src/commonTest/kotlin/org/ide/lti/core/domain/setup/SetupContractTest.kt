@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:Suppress("MaxLineLength")
 
 package org.ide.lti.core.domain.setup
@@ -26,7 +35,7 @@ class SetupContractTest {
                         recipeGroup = "android-tools",
                         isInstalled = true,
                         isVerified = true,
-                    )
+                    ),
                 ),
                 publicationEvidence = setOf("adb"),
             )
@@ -45,8 +54,8 @@ class SetupContractTest {
                         toolId = "adb",
                         recipeGroup = "android-tools",
                         isInstalled = true,
-                        isVerified = false, // Not verified!
-                    )
+                        isVerified = false,
+                    ),
                 ),
                 publicationEvidence = setOf("adb"),
             )
@@ -68,7 +77,7 @@ class SetupContractTest {
                     recipeGroup = "android-tools",
                     isInstalled = true,
                     isVerified = true,
-                )
+                ),
             ),
             publicationEvidence = setOf("adb"),
         )
@@ -101,7 +110,7 @@ class SetupContractTest {
                     isInstalled = true,
                     isVerified = false,
                     isFailedExecution = true,
-                )
+                ),
             ),
         )
 
@@ -111,7 +120,7 @@ class SetupContractTest {
             recipeGroup = "android-tools",
             isInstalled = true,
             isVerified = false,
-            isFailedExecution = false, // File scan did not run execution probe
+            isFailedExecution = false,
         )
         val updatedWithScan = initial.withUpdatedToolEvidence(fileOnlyScan)
         assertTrue(updatedWithScan.requiredToolEvidence["adb"]!!.isFailedExecution)
@@ -142,7 +151,7 @@ class SetupContractTest {
                 SetupPlanAction.SyncSources(listOf("android-tools")),
                 SetupPlanAction.BuildRecipes(listOf("android-tools")),
                 SetupPlanAction.PublishTools(listOf("adb")),
-            )
+            ),
         )
 
         // Matching plan ID and hash succeeds
@@ -239,7 +248,7 @@ class SetupContractTest {
         val invalidated = invalidateForRepair(
             targetToolId = "lpunpack",
             allTools = initialTools,
-            recipes = recipes
+            recipes = recipes,
         )
 
         assertFalse(invalidated["adb"]!!.isVerified)
@@ -253,7 +262,7 @@ class SetupContractTest {
             recipeGroup = "unknown-recipe",
             toolIds = setOf("fake-tool"),
             isSupported = false,
-            unavailableReason = "Recipe unknown-recipe is not present in domain capabilities"
+            unavailableReason = "Recipe unknown-recipe is not present in domain capabilities",
         )
         assertFalse(unsupported.isSupported)
     }

@@ -164,7 +164,7 @@ fun GlassSlider(
         Box(
             modifier = Modifier
                 .offset { IntOffset((fraction * (width - thumbDiameter)).roundToInt(), 0) }
-                .size(ComponentSize.SliderThumbWidth)
+                .size(width = ComponentSize.SliderThumbWidth, height = ComponentSize.SliderThumbHeight)
                 .then(thumbModifier)
                 .clip(GlassShapes.HazeCapsule),
         )

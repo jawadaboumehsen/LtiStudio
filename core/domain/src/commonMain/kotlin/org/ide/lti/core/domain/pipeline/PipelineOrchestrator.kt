@@ -61,6 +61,7 @@ public sealed interface PipelineEvent {
  * (sizes, digests, probe results). Cache keys skip a stage only when the recorded input digest
  * matches **and** the recorded output digest still matches the current outputs.
  */
+@Suppress("LargeClass")
 public class PipelineOrchestrator(
     private val executionPort: PipelineExecutionPort,
     private val runRepository: RunRepository,
@@ -243,7 +244,9 @@ public class PipelineOrchestrator(
 
         var previousKey = if (startStageIndex > 0) {
             driver.run.stages.getOrNull(startStageIndex - 1)?.cacheKey.orEmpty()
-        } else ""
+        } else {
+            ""
+        }
 
         try {
             for (index in startStageIndex until stages.size) {
@@ -424,7 +427,9 @@ public class PipelineOrchestrator(
             val step = steps[index]
             val recorded = if (isResumeStage) {
                 driver.run.steps.firstOrNull { it.stageId == stage.id && it.index == index }
-            } else null
+            } else {
+                null
+            }
 
             val captured = if (recorded != null && recorded.serverRunId != null && step is PipelineStep.Tool) {
                 reconcileRecordedToolStep(driver, stage, index, step, recorded)
@@ -501,7 +506,9 @@ public class PipelineOrchestrator(
                             exitCode = exitCode,
                             lastSeq = currentSeq,
                         )
-                    } else it
+                    } else {
+                        it
+                    }
                 }
                 val updatedSeqMap = r.lastSeqByStep + (serverRunId to currentSeq)
                 r.copy(steps = updatedSteps, lastSeqByStep = updatedSeqMap)
@@ -526,7 +533,9 @@ public class PipelineOrchestrator(
                 val updatedSteps = r.steps.map {
                     if (it.stageId == stage.id && it.index == index) {
                         it.copy(state = StepState.COMPLETED, exitCode = status.exitCode ?: 0, lastSeq = status.lastSeq)
-                    } else it
+                    } else {
+                        it
+                    }
                 }
                 r.copy(steps = updatedSteps)
             }
@@ -596,7 +605,9 @@ public class PipelineOrchestrator(
                         exitCode = exitCode,
                         lastSeq = lastSeq,
                     )
-                } else it
+                } else {
+                    it
+                }
             }
             val updatedSeqMap = r.lastSeqByStep + (handle.runId to lastSeq)
             r.copy(steps = updated, lastSeqByStep = updatedSeqMap)
@@ -623,11 +634,13 @@ public class PipelineOrchestrator(
     }
 
     private suspend fun writeFile(driver: Driver, index: Int, relPath: String, content: ByteArray) {
-        if (!executionPort.uploadFile(driver.ws, relPath, content)) throw StageFailure(
-            index,
-            -1,
-            "Failed to upload $relPath",
-        )
+        if (!executionPort.uploadFile(driver.ws, relPath, content)) {
+            throw StageFailure(
+                index,
+                -1,
+                "Failed to upload $relPath",
+            )
+        }
     }
 
     private suspend fun writeVendored(driver: Driver, index: Int, step: PipelineStep.WriteVendoredFile) {
@@ -660,11 +673,13 @@ public class PipelineOrchestrator(
                     workingDir = driver.ws.linuxPath,
                 ),
             )
-            if (result.exitCode != 0) throw StageFailure(
-                index,
-                result.exitCode,
-                "${step.label}: avbtool probe failed: ${result.stderr.trim()}",
-            )
+            if (result.exitCode != 0) {
+                throw StageFailure(
+                    index,
+                    result.exitCode,
+                    "${step.label}: avbtool probe failed: ${result.stderr.trim()}",
+                )
+            }
             result.stdout.trim().lines().last().trim().toLongOrNull()
                 ?: throw StageFailure(
                     index,

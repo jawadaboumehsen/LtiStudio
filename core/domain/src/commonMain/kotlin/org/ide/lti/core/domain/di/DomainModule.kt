@@ -218,4 +218,3 @@ val DomainModule = module {
     singleOf(::ObservePublishConfigUseCase)
     singleOf(::UpdatePublishConfigUseCase)
 }
-

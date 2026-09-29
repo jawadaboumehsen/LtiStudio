@@ -85,7 +85,7 @@ public class RunRepositoryImpl(
         emitAll(
             runs.map { byId ->
                 byId.values.filter { it.workspaceId == workspaceId }
-            }
+            },
         )
     }
 

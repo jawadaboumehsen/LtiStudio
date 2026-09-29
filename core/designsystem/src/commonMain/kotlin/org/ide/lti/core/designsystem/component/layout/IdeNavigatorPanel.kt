@@ -12,7 +12,6 @@
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -75,6 +74,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -137,7 +137,7 @@ fun IdeNavigatorPanel(
                         modifier = Modifier
                             .clip(GlassShapes.ShellBadge)
                             .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .border(
+                            .glassOutlineBorder(
                                 width = GlassDimens.HairlineBorder,
                                 color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.ShellBadge,

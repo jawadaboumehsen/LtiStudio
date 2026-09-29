@@ -101,7 +101,8 @@ class GlassTogglePrototypeTest {
         val thumbHeight: Dp,
         val thumbIsCircle: Boolean,
         val padding: Dp,
-        val minTouchTarget: Dp = 48.dp, // Decoupled interactive hit area
+        // Decoupled interactive hit area
+        val minTouchTarget: Dp = 48.dp,
     ) {
         PairACurrent(
             label = "PairA_64x28_Thumb40x24",

@@ -54,6 +54,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetValidationError
 import org.ide.lti.feature.configuration.components.ConfigurationSidebar
 import org.ide.lti.feature.configuration.components.ConfigurationTabHeader
@@ -77,7 +78,6 @@ fun ConfigurationScreen(
     }
 
     val state by viewModel.uiState.collectAsState()
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
 
     state.pendingTargetId?.let { pendingTargetId ->
         PendingTargetDecisionDialog(
@@ -85,6 +85,39 @@ fun ConfigurationScreen(
             onDecision = viewModel::resolvePendingTargetSelection,
         )
     }
+
+    ConfigurationScreenContent(
+        state = state,
+        onBackClick = onBackClick,
+        onSearchChange = viewModel::onSearchQueryChange,
+        onSelectTarget = viewModel::onSelectTarget,
+        onAddTarget = viewModel::onAddNewTarget,
+        onDuplicateTarget = viewModel::onDuplicateTarget,
+        onDeleteTarget = viewModel::onDeleteTarget,
+        onSelectTab = viewModel::onSelectTab,
+        onUpdateEditingTarget = viewModel::onUpdateEditingTarget,
+        onRevert = viewModel::onRevertChanges,
+        onApply = { viewModel.onApplyChanges(onSuccess = onBackClick) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ConfigurationScreenContent(
+    state: ConfigurationUiState,
+    onBackClick: () -> Unit,
+    onSearchChange: (String) -> Unit,
+    onSelectTarget: (String) -> Unit,
+    onAddTarget: () -> Unit,
+    onDuplicateTarget: (TargetDevice) -> Unit,
+    onDeleteTarget: (String) -> Unit,
+    onSelectTab: (ConfigurationTab) -> Unit,
+    onUpdateEditingTarget: (TargetDevice) -> Unit,
+    onRevert: () -> Unit,
+    onApply: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
 
     Column(
         modifier = modifier
@@ -115,11 +148,11 @@ fun ConfigurationScreen(
                 targets = state.availableTargets,
                 selectedTargetId = state.selectedTargetId,
                 searchQuery = state.searchQuery,
-                onSearchChange = viewModel::onSearchQueryChange,
-                onSelectTarget = viewModel::onSelectTarget,
-                onAddTarget = viewModel::onAddNewTarget,
-                onDuplicateTarget = viewModel::onDuplicateTarget,
-                onDeleteTarget = viewModel::onDeleteTarget,
+                onSearchChange = onSearchChange,
+                onSelectTarget = onSelectTarget,
+                onAddTarget = onAddTarget,
+                onDuplicateTarget = onDuplicateTarget,
+                onDeleteTarget = onDeleteTarget,
                 modifier = Modifier.width(ComponentSize.ConfigurationSidebarWidth),
             )
 
@@ -133,7 +166,7 @@ fun ConfigurationScreen(
             ) {
                 ConfigurationTabHeader(
                     activeTab = state.activeTab,
-                    onTabSelect = viewModel::onSelectTab,
+                    onTabSelect = onSelectTab,
                 )
 
                 GlassHorizontalDivider(specular = true)
@@ -156,19 +189,19 @@ fun ConfigurationScreen(
                     when (state.activeTab) {
                         ConfigurationTab.GENERAL -> GeneralConfigTab(
                             target = state.editingTarget,
-                            onTargetChange = viewModel::onUpdateEditingTarget,
+                            onTargetChange = onUpdateEditingTarget,
                         )
                         ConfigurationTab.OS_STREAMS -> OsStreamsConfigTab(
                             target = state.editingTarget,
-                            onTargetChange = viewModel::onUpdateEditingTarget,
+                            onTargetChange = onUpdateEditingTarget,
                         )
                         ConfigurationTab.HARDWARE -> HardwareConfigTab(
                             target = state.editingTarget,
-                            onTargetChange = viewModel::onUpdateEditingTarget,
+                            onTargetChange = onUpdateEditingTarget,
                         )
                         ConfigurationTab.PARTITIONS -> PartitionsConfigTab(
                             target = state.editingTarget,
-                            onTargetChange = viewModel::onUpdateEditingTarget,
+                            onTargetChange = onUpdateEditingTarget,
                         )
                     }
                 }
@@ -180,9 +213,9 @@ fun ConfigurationScreen(
                     isDirty = state.isDirty,
                     isSyncing = state.isSyncing,
                     hasValidationErrors = state.validationErrors.isNotEmpty(),
-                    onRevert = viewModel::onRevertChanges,
+                    onRevert = onRevert,
                     onCancel = onBackClick,
-                    onApply = { viewModel.onApplyChanges(onSuccess = onBackClick) },
+                    onApply = onApply,
                 )
             }
         }

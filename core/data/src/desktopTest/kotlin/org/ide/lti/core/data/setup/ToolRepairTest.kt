@@ -163,7 +163,7 @@ class ToolRepairTest {
     fun testVerificationRequiresExitCodeZeroAndDoesNotInfersSuccessFromStdoutAlone() = runTest {
         val transport = SpyRemoteTransport(
             testXExitCode = 0,
-            helpExitCode = 1, // Non-zero exit code, but non-empty stdout!
+            helpExitCode = 1,
             helpOutput = "Syntax error or usage text on failure",
         )
         val provisioner = WslToolchainProvisioner(
@@ -189,7 +189,7 @@ class ToolRepairTest {
     @Test
     fun testVerificationFailsWhenBinaryDoesNotExist() = runTest {
         val transport = SpyRemoteTransport(
-            testXExitCode = 1, // Binary does not exist
+            testXExitCode = 1,
         )
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
@@ -476,7 +476,7 @@ class ToolRepairTest {
     @Test
     fun testFailureReleasesBusyStateInFinally() = runTest {
         val transport = SpyRemoteTransport(
-            buildExitCode = 1, // Build fails
+            buildExitCode = 1,
         )
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),

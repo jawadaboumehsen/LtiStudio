@@ -14,7 +14,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
+import org.ide.lti.core.common.notification.NotificationLevel
+import org.ide.lti.core.common.notification.SystemNotification
+import org.ide.lti.core.common.notification.SystemNotifier
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
+import org.ide.lti.core.model.setup.WorkspaceReadiness
+import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -22,11 +27,6 @@ import org.ide.lti.core.model.workspace.WorkspaceType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.ide.lti.core.common.notification.NotificationLevel
-import org.ide.lti.core.common.notification.SystemNotification
-import org.ide.lti.core.common.notification.SystemNotifier
-import org.ide.lti.core.model.setup.WorkspaceReadiness
-import org.ide.lti.core.model.target.TargetBinding
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 

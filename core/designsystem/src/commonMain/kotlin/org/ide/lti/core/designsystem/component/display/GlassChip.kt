@@ -167,7 +167,7 @@ private fun chipBorderColor(selected: Boolean, isHovered: Boolean, colors: Color
  * Resolves the label text color for a glass chip.
  */
 private fun chipTextColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
-    selected -> colors.primary
+    selected -> colors.onPrimaryContainer
     isHovered -> colors.onSurface
     else -> colors.onSurfaceVariant
 }

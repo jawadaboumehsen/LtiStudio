@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -13,7 +22,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * - Single Responsibility Principle (SRP): Dedicated exclusively to validating archive tools.
  */
 public class ArchiveToolsInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
+    private val cli: WslCliExecutor = WslCliExecutor(),
 ) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
@@ -52,7 +61,7 @@ public class ArchiveToolsInspector(
                 "Missing: ${missing.joinToString(", ")}."
             },
             remediation = if (archiveOk) null else "Run '$archiveCmd' in WSL.",
-            copyableCommand = archiveCmd
+            copyableCommand = archiveCmd,
         )
     }
 }

@@ -34,6 +34,7 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     val exitCodes = mutableMapOf<String, Int>()
     val stdoutOverrides = mutableMapOf<String, String>()
     var freeBytes: Long? = 200L * 1024 * 1024 * 1024
+
     /** Digest reported for the firmware archive so checksum verification can be exercised. */
     var archiveSha256: String? = null
     private var handleCounter = 0
@@ -44,7 +45,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         put("work/system/system/build.prop", STOCK_BUILD_PROP)
     }
 
-    fun put(rel: String, text: String) { files["$wsRoot/$rel"] = text.encodeToByteArray() }
+    fun put(rel: String, text: String) {
+        files["$wsRoot/$rel"] = text.encodeToByteArray()
+    }
     fun text(rel: String): String? = files["$wsRoot/$rel"]?.decodeToString()
     fun has(rel: String): Boolean = files.containsKey("$wsRoot/$rel")
 
@@ -104,7 +107,8 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
             "mv" -> "".also { files.remove(args[0])?.let { files[args[1]] = it } }
             "cp" -> "".also { copy(args) }
             "mkdir", "rm", "rsync", "find", "unzip", "payload-dumper-go", "lpunpack", "erofsfuse", "fusermount3",
-            "truncate", "simg2img", "lpmake", "brotli", "zip", "unpack_bootimg", "chmod" -> defaultProduce(cmd)
+            "truncate", "simg2img", "lpmake", "brotli", "zip", "unpack_bootimg", "chmod",
+            -> defaultProduce(cmd)
             "file" -> "application/zip"
             "sha256sum" -> {
                 val path = args.last()
@@ -214,7 +218,12 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         fun fakeDigest(seed: String, length: Int): String {
             val hex = "0123456789abcdef"
             var h = seed.hashCode().toLong() and 0xffffffffL
-            return buildString { repeat(length) { h = (h * 1103515245 + 12345) and 0x7fffffff; append(hex[(h shr 8).toInt() and 15]) } }
+            return buildString {
+                repeat(length) {
+                    h = (h * 1103515245 + 12345) and 0x7fffffff
+                    append(hex[(h shr 8).toInt() and 15])
+                }
+            }
         }
     }
 }

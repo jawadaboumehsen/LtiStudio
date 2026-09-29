@@ -12,7 +12,6 @@
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -57,6 +56,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -116,7 +116,7 @@ private fun PipelineRailItem(stage: IdePipelineStageItem, isSelected: Boolean, o
     val visuals = resolveRailItemVisuals(stage, isSelected, isPressed, isHovered)
 
     val borderModifier = if (visuals.borderColor != null) {
-        Modifier.border(
+        Modifier.glassOutlineBorder(
             width = GlassDimens.HairlineBorder,
             color = visuals.borderColor,
             shape = GlassShapes.ShellPill,

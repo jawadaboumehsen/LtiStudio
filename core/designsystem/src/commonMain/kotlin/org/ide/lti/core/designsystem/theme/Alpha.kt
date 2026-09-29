@@ -7,7 +7,6 @@
  *
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
-// Named Alpha.kt (not AlphaTokens.kt): verifyDesignSystemGuardrails and the design docs locate the token files by name.
 @file:Suppress("ktlint:standard:filename", "Filename", "MatchingDeclarationName", "PropertyName")
 
 package org.ide.lti.core.designsystem.theme

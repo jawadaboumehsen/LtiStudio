@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -73,7 +73,7 @@ fun GlassFilterChipRow(
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
                             },
                         )
-                        .border(
+                        .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
                             color = if (isSelected) {
                                 MaterialTheme.colorScheme.primary
@@ -91,7 +91,7 @@ fun GlassFilterChipRow(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         ),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },

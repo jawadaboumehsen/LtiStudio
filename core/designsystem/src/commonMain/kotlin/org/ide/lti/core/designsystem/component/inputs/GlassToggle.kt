@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.inputs
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -64,6 +63,7 @@ import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ControlSourceKey
@@ -317,7 +317,7 @@ internal fun GlassToggleImpl(
     }
 
     val focusBorderModifier = if (isFocused) {
-        Modifier.border(
+        Modifier.glassOutlineBorder(
             width = GlassDimens.HairlineBorder * 2,
             color = colors.primary,
             shape = GlassShapes.HazeCapsule,
@@ -492,7 +492,7 @@ internal fun GlassToggleImpl(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .border(
+                            .glassOutlineBorder(
                                 width = GlassDimens.HairlineBorder,
                                 color = InteractionColors.PressHighlight.copy(alpha = rimHighlightAlpha),
                                 shape = thumbShape,

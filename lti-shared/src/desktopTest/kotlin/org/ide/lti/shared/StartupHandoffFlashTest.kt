@@ -66,14 +66,14 @@ class StartupHandoffFlashTest {
         val pixels = image.toPixelMap()
 
         val samplePoints = listOf(
-            Pair(60, 28), // TopBar brand/title area
-            Pair(560, 28), // TopBar center area
-            Pair(1050, 28), // TopBar action area
-            Pair(100, 350), // Content mid-left
-            Pair(560, 350), // Content center
-            Pair(560, 550), // Content lower
-            Pair(560, 680), // Bottom bar area
-            Pair(1090, 680), // Bottom-right corner
+            Pair(60, 28),
+            Pair(560, 28),
+            Pair(1050, 28),
+            Pair(100, 350),
+            Pair(560, 350),
+            Pair(560, 550),
+            Pair(560, 680),
+            Pair(1090, 680),
         )
 
         for (pt in samplePoints) {

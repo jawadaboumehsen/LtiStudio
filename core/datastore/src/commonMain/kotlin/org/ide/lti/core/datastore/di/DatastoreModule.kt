@@ -41,4 +41,3 @@ val DatastoreModule = module {
     single { StudioPresentationStore(settings = get(), json = get()) } bind org.ide.lti.core.domain.ports.StudioPresentationStorePort::class
     single { RunRecordDataSource(settings = get(), json = get(), fileStorage = get()) }
 }
-

@@ -113,7 +113,7 @@ public class WorkspaceKeyProvisioner(
                 toolId = toolId,
                 arguments = arguments.toList(),
                 workingDirectory = workingDirectory,
-            )
+            ),
         )
 
     private companion object {

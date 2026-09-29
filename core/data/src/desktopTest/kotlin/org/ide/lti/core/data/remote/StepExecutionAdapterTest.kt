@@ -1,8 +1,16 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.remote
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.*
-import io.ltirom.tooling.core.remote.StreamEvent as CoreStreamEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.toList
@@ -13,6 +21,7 @@ import org.ide.lti.core.model.workspace.Workspace
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import io.ltirom.tooling.core.remote.StreamEvent as CoreStreamEvent
 
 class StepExecutionAdapterTest {
 
@@ -29,7 +38,7 @@ class StepExecutionAdapterTest {
                     exitCode = 0,
                     stdout = "Avail\n60000000000\n",
                     stderr = "",
-                    durationMs = 10L
+                    durationMs = 10L,
                 )
             }
             if (request.toolId == "stat") {
@@ -37,14 +46,14 @@ class StepExecutionAdapterTest {
                     exitCode = 0,
                     stdout = "123456\n",
                     stderr = "",
-                    durationMs = 10L
+                    durationMs = 10L,
                 )
             }
             return ToolExecutionResponse(
                 exitCode = 0,
                 stdout = "",
                 stderr = "",
-                durationMs = 10L
+                durationMs = 10L,
             )
         }
 
@@ -89,7 +98,7 @@ class StepExecutionAdapterTest {
         id = "ws_test",
         name = "test-ws",
         path = "/home/lti/LtiRomWorkDir/workspaces/test-ws",
-        linuxPath = "/home/lti/LtiRomWorkDir/workspaces/test-ws"
+        linuxPath = "/home/lti/LtiRomWorkDir/workspaces/test-ws",
     )
 
     @Test
@@ -101,7 +110,7 @@ class StepExecutionAdapterTest {
                 status = RunStatusValue.COMPLETED,
                 exitCode = 0,
                 startedAtEpochMs = 1000L,
-                lastSeq = 0L
+                lastSeq = 0L,
             )
         }
         val adapter = StepExecutionAdapter(transport)
@@ -119,10 +128,16 @@ class StepExecutionAdapterTest {
     fun testObserveWaitsAndEmitsEventsUntilRunCompletes() = runTest {
         val transport = FakeRemoteTransport().apply {
             statusTransitions.add(
-                RunStatus(runId = "run_123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L, lastSeq = 0L)
+                RunStatus(runId = "run_123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L, lastSeq = 0L),
             )
             statusTransitions.add(
-                RunStatus(runId = "run_123", status = RunStatusValue.COMPLETED, exitCode = 0, startedAtEpochMs = 1000L, lastSeq = 1L)
+                RunStatus(
+                    runId = "run_123",
+                    status = RunStatusValue.COMPLETED,
+                    exitCode = 0,
+                    startedAtEpochMs = 1000L,
+                    lastSeq = 1L,
+                ),
             )
             sessionEvents.add(SequencedStreamEvent(0L, CoreStreamEvent.OutputChunk("processing...\n", isError = false)))
             sessionEvents.add(SequencedStreamEvent(1L, CoreStreamEvent.OutputChunk("done\n", isError = false)))
@@ -142,10 +157,16 @@ class StepExecutionAdapterTest {
     fun testObserveEmitsFailedWhenRunFails() = runTest {
         val transport = FakeRemoteTransport().apply {
             statusTransitions.add(
-                RunStatus(runId = "run_123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L, lastSeq = 0L)
+                RunStatus(runId = "run_123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L, lastSeq = 0L),
             )
             statusTransitions.add(
-                RunStatus(runId = "run_123", status = RunStatusValue.FAILED, exitCode = 2, startedAtEpochMs = 1000L, lastSeq = 0L)
+                RunStatus(
+                    runId = "run_123",
+                    status = RunStatusValue.FAILED,
+                    exitCode = 2,
+                    startedAtEpochMs = 1000L,
+                    lastSeq = 0L,
+                ),
             )
         }
         val adapter = StepExecutionAdapter(transport)

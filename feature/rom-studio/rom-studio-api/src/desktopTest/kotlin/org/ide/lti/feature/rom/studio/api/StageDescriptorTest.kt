@@ -9,10 +9,10 @@
  */
 package org.ide.lti.feature.rom.studio.api
 
+import org.ide.lti.core.model.run.StageId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import org.ide.lti.core.model.run.StageId
 
 class StageDescriptorTest {
 

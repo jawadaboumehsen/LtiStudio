@@ -89,4 +89,3 @@ internal actual val platformRepositoryModule = module {
         SnapshotMaterializer(storageDir = resolveAppDataDir("snapshot-intents"))
     }
 }
-

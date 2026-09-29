@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -128,7 +128,7 @@ fun GlassDiagnosticTile(item: GlassDiagnosticItem, modifier: Modifier = Modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
-                .border(
+                .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.outline,
                     shape = GlassShapes.Small,
@@ -192,7 +192,7 @@ fun GlassDiagnosticTile(item: GlassDiagnosticItem, modifier: Modifier = Modifier
                             .fillMaxWidth()
                             .clip(GlassShapes.Small)
                             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint))
-                            .border(
+                            .glassOutlineBorder(
                                 width = StrokeWidth.Hairline,
                                 color = MaterialTheme.colorScheme.outline,
                                 shape = GlassShapes.Small,

@@ -249,6 +249,27 @@ private fun ActiveRunContent(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    ActiveRunContent(
+        uiState = uiState,
+        onCancel = { viewModel.cancelBuild() },
+        onStart = { viewModel.startBuild() },
+        onClearError = { viewModel.clearError() },
+        onReattach = { viewModel.reattachBuild() },
+        onNavigateToSetup = onNavigateToSetup,
+        modifier = modifier,
+    )
+}
+
+@Composable
+public fun ActiveRunContent(
+    uiState: BuildRunUiState,
+    onCancel: () -> Unit = {},
+    onStart: () -> Unit = {},
+    onClearError: () -> Unit = {},
+    onReattach: () -> Unit = {},
+    onNavigateToSetup: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     val typography = GlassTheme.typography
 
     Column(
@@ -257,14 +278,14 @@ private fun ActiveRunContent(
     ) {
         RunTopActionBar(
             uiState = uiState,
-            onCancel = { viewModel.cancelBuild() },
-            onStart = { viewModel.startBuild() },
+            onCancel = onCancel,
+            onStart = onStart,
         )
 
         RunStateBanners(
             uiState = uiState,
             onNavigateToSetup = onNavigateToSetup,
-            onReattach = { viewModel.reattachBuild() },
+            onReattach = onReattach,
         )
 
         // Error message banner
@@ -284,7 +305,7 @@ private fun ActiveRunContent(
                     )
                     GlassChip(
                         label = "Dismiss",
-                        onClick = { viewModel.clearError() },
+                        onClick = onClearError,
                     )
                 }
             }

@@ -12,7 +12,6 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -33,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -98,7 +98,11 @@ fun IdeStatusBadge(
     Row(
         modifier = modifier
             .background(style.bgColor, GlassShapes.ShellBadge)
-            .border(GlassDimens.HairlineBorder, style.borderColor, GlassShapes.ShellBadge)
+            .glassOutlineBorder(
+                color = style.borderColor,
+                width = GlassDimens.HairlineBorder,
+                shape = GlassShapes.ShellBadge,
+            )
             .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),

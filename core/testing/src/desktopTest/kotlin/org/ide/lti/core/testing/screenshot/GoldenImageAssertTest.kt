@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.testing.screenshot
 
 import androidx.compose.ui.geometry.Rect
@@ -63,7 +72,7 @@ class GoldenImageAssertTest {
             "PipelineRail" to Rect(0f, 50f, 70f, 1250f),
         )
         val expected = mapOf(
-            "TopAppBar" to Rect(0f, 0f, 1584f, 51f), // 1px difference within tolerance
+            "TopAppBar" to Rect(0f, 0f, 1584f, 51f),
             "PipelineRail" to Rect(0f, 50f, 71f, 1250f),
         )
         GoldenImageAssert.assertAnchors(actual, expected, tolerancePx = 2)

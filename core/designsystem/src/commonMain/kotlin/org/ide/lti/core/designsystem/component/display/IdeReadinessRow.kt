@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -47,6 +46,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -75,7 +75,11 @@ fun IdeReadinessRow(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainerHigh, GlassShapes.ShellControl)
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl)
+            .glassOutlineBorder(
+                color = MaterialTheme.colorScheme.outline,
+                width = GlassDimens.HairlineBorder,
+                shape = GlassShapes.ShellControl,
+            )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -156,7 +160,7 @@ fun IdeReadinessRow(
                         color = btnBg,
                         shape = GlassShapes.ShellControl,
                     )
-                    .border(
+                    .glassOutlineBorder(
                         width = GlassDimens.HairlineBorder,
                         color = if (actionEnabled) {
                             MaterialTheme.colorScheme.primary

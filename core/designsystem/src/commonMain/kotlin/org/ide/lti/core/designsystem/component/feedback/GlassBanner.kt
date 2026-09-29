@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.feedback
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusError
 import org.ide.lti.core.designsystem.icon.ideStatusInfo
@@ -104,7 +104,7 @@ fun GlassBanner(
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
                 .background(severityColor.copy(alpha = AlphaTokens.UltraFaint))
-                .border(
+                .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
                     color = severityColor.copy(alpha = AlphaTokens.Border),
                     shape = GlassShapes.Small,

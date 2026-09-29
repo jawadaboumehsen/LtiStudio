@@ -1,10 +1,19 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.pipeline.text
 
 public object SidecarNormalizer {
 
     public data class NormalizedSidecars(
         val fsConfigContent: String,
-        val fileContextContent: String
+        val fileContextContent: String,
     )
 
     private val REGEX_METACHARS = Regex("""([.+\[\]*])""")
@@ -16,7 +25,7 @@ public object SidecarNormalizer {
         partition: String,
         mountPrefix: String,
         rawStatLines: List<String>,
-        rawSelinuxLines: List<String>
+        rawSelinuxLines: List<String>,
     ): NormalizedSidecars {
         val cleanStats = rawStatLines.filter { it.isNotBlank() }
         val cleanSelinux = rawSelinuxLines.filter { it.isNotBlank() }
@@ -74,7 +83,7 @@ public object SidecarNormalizer {
 
         return NormalizedSidecars(
             fsConfigContent = fsConfigLines.sorted().joinToString("\n") + "\n",
-            fileContextContent = fileContextLines.sorted().joinToString("\n") + "\n"
+            fileContextContent = fileContextLines.sorted().joinToString("\n") + "\n",
         )
     }
 

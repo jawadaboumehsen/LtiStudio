@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.pipeline.text
 
 import org.ide.lti.core.model.target.PackagePolicy
@@ -8,7 +17,7 @@ public object UpdaterScriptWriter {
     public fun generate(
         target: TargetDevice,
         policy: PackagePolicy,
-        romVersion: String = "1.0.0"
+        romVersion: String = "1.0.0",
     ): String {
         val sb = StringBuilder()
 
@@ -18,7 +27,7 @@ public object UpdaterScriptWriter {
                 listOf(
                     "getprop(\"ro.product.device\") == \"$model\"",
                     "getprop(\"ro.build.product\") == \"$model\"",
-                    "getprop(\"ro.boot.em.model\") == \"$model\""
+                    "getprop(\"ro.boot.em.model\") == \"$model\"",
                 )
             }.joinToString(" ||\n    ")
             sb.append("assert(\n    $assertions ||\n    abort(\"E3004: This package is for \\\"${target.assertModels.joinToString(",")}\\\" devices; this is a \\\"\" + getprop(\"ro.product.device\") + \"\\\".\");\n);\n\n")

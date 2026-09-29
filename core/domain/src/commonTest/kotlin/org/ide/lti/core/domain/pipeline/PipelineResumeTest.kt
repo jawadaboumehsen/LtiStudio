@@ -24,10 +24,7 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.model.run.*
-import org.ide.lti.core.model.target.FirmwareAcquisitionMode
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.target.TargetFirmware
-import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -49,8 +46,12 @@ class PipelineResumeTest {
         val workspaces = initial.associateBy { it.id }.toMutableMap()
         override fun getWorkspaces(): Flow<List<Workspace>> = flowOf(workspaces.values.toList())
         override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
-        override suspend fun saveWorkspace(workspace: Workspace) { workspaces[workspace.id] = workspace }
-        override suspend fun deleteWorkspace(id: String) { workspaces.remove(id) }
+        override suspend fun saveWorkspace(workspace: Workspace) {
+            workspaces[workspace.id] = workspace
+        }
+        override suspend fun deleteWorkspace(id: String) {
+            workspaces.remove(id)
+        }
         override fun getRecentProjects(): Flow<List<RecentProject>> = flowOf(emptyList())
         override suspend fun addRecentProject(project: RecentProject) {}
         override suspend fun removeRecentProject(workspaceId: String) {}
@@ -93,7 +94,7 @@ class PipelineResumeTest {
                     command = StepCommand("mkdir", listOf("-p", "$ws/firmware/downloaded")),
                     state = StepState.RUNNING,
                     lastSeq = 5L,
-                )
+                ),
             ),
             lastSeqByStep = mapOf("srv-inflight-1" to 5L),
             driverInstanceId = "driver-1",
@@ -253,7 +254,7 @@ class PipelineResumeTest {
                     command = StepCommand("curl", listOf("-o", "$ws/firmware/downloaded", "https://url")),
                     state = StepState.RUNNING,
                     lastSeq = 2L,
-                )
+                ),
             ),
             lastSeqByStep = mapOf("srv-dead-0" to 2L),
             driverInstanceId = "driver-1",
@@ -339,7 +340,7 @@ class PipelineResumeTest {
                     idempotencyKey = "key-cancel",
                     command = StepCommand("zip", listOf("rom.zip")),
                     state = StepState.RUNNING,
-                )
+                ),
             ),
             driverInstanceId = "driver-1",
             driverHeartbeatEpochMs = System.currentTimeMillis(),

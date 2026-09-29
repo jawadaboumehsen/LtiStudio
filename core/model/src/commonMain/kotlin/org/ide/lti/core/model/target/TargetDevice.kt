@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 enum class TargetStatus(val displayName: String) {
     QUALIFIED("Qualified"),
     EXPERIMENTAL("Experimental"),
-    UNVERIFIED("Unverified")
+    UNVERIFIED("Unverified"),
 }
 
 /**
@@ -30,7 +30,8 @@ enum class TargetRegion(
     val code: String,
 ) {
     GLOBAL("global", "Global OS", "Global", "GL"),
-    CHINA("china", "CN OS", "CN", "CN");
+    CHINA("china", "CN OS", "CN", "CN"),
+    ;
 
     companion object {
         fun fromId(id: String): TargetRegion? = entries.find { it.id.equals(id, ignoreCase = true) }
@@ -54,7 +55,8 @@ enum class FirmwareAcquisitionMode(
         id = "zip_image",
         displayName = "Raw Image Dump Archive",
         description = "Unpacked raw partition images from cloud storage or local dump",
-    );
+    ),
+    ;
 
     companion object {
         fun fromId(id: String): FirmwareAcquisitionMode =

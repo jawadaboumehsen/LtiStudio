@@ -11,7 +11,6 @@ package org.ide.lti.core.data.repository.workspace
 
 import kotlinx.datetime.Clock
 import okio.FileSystem
-import okio.Path.Companion.toPath
 import org.ide.lti.core.model.workspace.EnvironmentId
 import org.ide.lti.core.model.workspace.WorkspaceType
 import kotlin.test.Test
@@ -48,7 +47,8 @@ class WorkDirDiscoveryServiceTest {
                     },
                     "createdAt": "2026-09-12T00:00:00Z",
                     "appVersion": "1.0.0"
-                }""".trimIndent()
+                }
+                """.trimIndent(),
             )
         }
 
@@ -69,7 +69,8 @@ class WorkDirDiscoveryServiceTest {
                     },
                     "createdAt": "2026-09-12T00:00:00Z",
                     "appVersion": "1.0.0"
-                }""".trimIndent()
+                }
+                """.trimIndent(),
             )
         }
 
@@ -113,7 +114,8 @@ class WorkDirDiscoveryServiceTest {
                     },
                     "createdAt": "2026-09-12T12:00:00Z",
                     "appVersion": "1.0.0"
-                }""".trimIndent()
+                }
+                """.trimIndent(),
             )
         }
 

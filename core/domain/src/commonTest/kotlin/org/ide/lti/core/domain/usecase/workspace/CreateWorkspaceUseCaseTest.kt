@@ -44,7 +44,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class CreateWorkspaceUseCaseTest {
 
@@ -62,8 +61,8 @@ class CreateWorkspaceUseCaseTest {
                     androidVersion = "15",
                     securityPatch = "2026-02-01",
                     isRecommended = true,
-                )
-            )
+                ),
+            ),
         ),
         packagePolicy = PackagePolicy(
             flashablePartitions = listOf("system", "vendor"),
@@ -82,7 +81,7 @@ class CreateWorkspaceUseCaseTest {
         var readiness: EnvironmentReadiness = EnvironmentReadiness(
             state = EnvironmentReadinessState.READY,
             workDirLinuxPath = "/home/lti/LtiRomWorkDir",
-        )
+        ),
     ) : EnvironmentReadinessPort {
         override fun observe(): Flow<EnvironmentReadiness> = flowOf(readiness)
         override suspend fun refresh(): EnvironmentReadiness = readiness
@@ -117,9 +116,9 @@ class CreateWorkspaceUseCaseTest {
                 ProvisioningEvent.Completed(
                     WorkspaceKeys(
                         avbPublicKeySha1 = "sha1:avb123",
-                        platformCertSha1 = "sha1:cert123"
-                    )
-                )
+                        platformCertSha1 = "sha1:cert123",
+                    ),
+                ),
             )
         }
 
@@ -162,7 +161,9 @@ class CreateWorkspaceUseCaseTest {
         override suspend fun removeRecentProject(workspaceId: String) {
             savedRecents.removeAll { it.workspaceId == workspaceId }
         }
-        override suspend fun clearRecentProjects() { savedRecents.clear() }
+        override suspend fun clearRecentProjects() {
+            savedRecents.clear()
+        }
         override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = emptyList()
         override fun readinessOf(workspace: Workspace): WorkspaceReadiness = WorkspaceReadiness.READY
         override fun observeDecodeWarnings(): Flow<DecodeWarning> = flowOf()
@@ -268,8 +269,8 @@ class CreateWorkspaceUseCaseTest {
         val readiness = FakeReadinessPort(
             readiness = EnvironmentReadiness(
                 state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                failingCheck = "LtiRomServer ping failed"
-            )
+                failingCheck = "LtiRomServer ping failed",
+            ),
         )
         val provisioning = FakeProvisioningPort()
         val repo = FakeWorkspaceRepo()

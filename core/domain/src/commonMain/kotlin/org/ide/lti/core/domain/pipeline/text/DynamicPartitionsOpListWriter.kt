@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.pipeline.text
 
 public object DynamicPartitionsOpListWriter {
@@ -6,13 +15,13 @@ public object DynamicPartitionsOpListWriter {
         val partitionName: String,
         val sizeBytes: Long,
         val sha256: String = "",
-        val pubkeySha1: String = ""
+        val pubkeySha1: String = "",
     )
 
     public fun generateOpList(
         groupName: String,
         groupSizeBytes: Long,
-        partitions: List<PartitionImageInfo>
+        partitions: List<PartitionImageInfo>,
     ): String {
         return buildString {
             appendLine("remove_all_groups")
@@ -27,7 +36,7 @@ public object DynamicPartitionsOpListWriter {
     }
 
     public fun generateAvbImages(
-        partitions: List<PartitionImageInfo>
+        partitions: List<PartitionImageInfo>,
     ): String {
         return buildString {
             for (p in partitions) {

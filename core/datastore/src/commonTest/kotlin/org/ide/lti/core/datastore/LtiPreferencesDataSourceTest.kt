@@ -80,13 +80,13 @@ class LtiPreferencesDataSourceTest {
                 bracketMatching = false,
                 fontSize = 16,
                 tabSize = 2,
-            )
+            ),
         )
         dataSource.setNotificationSettings(
             NotificationSettings(
                 pushEnabled = false,
                 soundEnabled = true,
-            )
+            ),
         )
 
         val userData = dataSource.userData.first()

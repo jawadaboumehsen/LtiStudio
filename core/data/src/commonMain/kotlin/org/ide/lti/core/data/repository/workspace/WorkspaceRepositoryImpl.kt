@@ -119,15 +119,13 @@ public class WorkspaceRepositoryImpl(
         }
     }
 
-    override fun observeDecodeWarnings(): Flow<DecodeWarning> {
-        return preferencesDataSource.decodeWarnings.onEach { warning ->
-            notifier?.notify(
-                SystemNotification(
-                    title = "Data Store Warning",
-                    message = warning.message,
-                    level = NotificationLevel.Warning,
-                )
-            )
-        }
+    override fun observeDecodeWarnings(): Flow<DecodeWarning> = preferencesDataSource.decodeWarnings.onEach { warning ->
+        notifier?.notify(
+            SystemNotification(
+                title = "Data Store Warning",
+                message = warning.message,
+                level = NotificationLevel.Warning,
+            ),
+        )
     }
 }

@@ -23,7 +23,8 @@ enum class SetupTab(val id: String) {
     PROJECTS("projects"),
     ENVIRONMENT("environment"),
     TOOLS("tools"),
-    RECOVERY("recovery");
+    RECOVERY("recovery"),
+    ;
 
     companion object {
         fun find(id: String): SetupTab? = entries.firstOrNull { it.id == id }
@@ -38,7 +39,8 @@ enum class SetupDestination(val id: String) {
     WORKSPACES("workspaces"),
     ENVIRONMENT("environment"),
     TOOLS("tools"),
-    RECOVERY("recovery");
+    RECOVERY("recovery"),
+    ;
 
     companion object {
         fun fromId(id: String): SetupDestination = when (id) {

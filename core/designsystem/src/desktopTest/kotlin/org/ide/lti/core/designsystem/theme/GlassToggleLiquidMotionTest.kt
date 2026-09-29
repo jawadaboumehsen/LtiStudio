@@ -63,10 +63,6 @@ import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.GlassToggleImpl
 import org.ide.lti.core.designsystem.component.inputs.LocalToggleTimeSource
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
-import org.ide.lti.core.designsystem.theme.GlassControlColors
-import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
-import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image

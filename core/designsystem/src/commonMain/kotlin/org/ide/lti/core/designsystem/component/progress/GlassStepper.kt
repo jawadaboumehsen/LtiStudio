@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.progress
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusWarning
@@ -233,7 +233,7 @@ private fun GlassStepNode(
         modifier = modifier
             .clip(GlassShapes.Small)
             .background(stepBackgroundColor(step.status, diagnostics, colors))
-            .border(
+            .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
                 color = stepBorderColor(step.status, diagnostics, colors),
                 shape = GlassShapes.Small,

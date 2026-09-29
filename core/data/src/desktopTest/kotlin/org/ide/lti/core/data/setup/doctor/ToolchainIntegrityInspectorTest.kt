@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.CliExecutionResult
@@ -64,7 +73,7 @@ class ToolchainIntegrityInspectorTest {
             home = "/home/lti",
             binDir = "/home/lti/LtiRomTools/bin",
             projectBinaries = emptySet(),
-            availableCommands = ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS.toSet(), // system PATH has tools!
+            availableCommands = ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS.toSet(),
             binariesPresent = false,
         )
 

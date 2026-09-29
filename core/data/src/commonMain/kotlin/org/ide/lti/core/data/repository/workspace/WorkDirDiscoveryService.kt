@@ -69,7 +69,7 @@ public class WorkDirDiscoveryService(
                                     type = WorkspaceType.REMOTE_WSL,
                                     targetBinding = manifest.targetBinding,
                                     targetDisplayName = manifest.targetBinding.profileId,
-                                )
+                                ),
                             )
                         } catch (_: Exception) {
                             // Skip invalid or unparseable workspace

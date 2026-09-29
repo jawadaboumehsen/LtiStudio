@@ -15,8 +15,6 @@ import com.russhwolf.settings.set
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -152,8 +150,8 @@ class ToolchainSetupRepositoryTest {
                     workspaceLock = "lock-1",
                     lastSeq = 10L,
                     replayLogs = listOf("line 10"),
-                )
-            )
+                ),
+            ),
         )
         repository.recordAttemptAuthorized(attempt)
         assertEquals(10L, repository.currentState.activeAttempt?.orderedIntents?.first()?.lastSeq)
@@ -309,7 +307,7 @@ class ToolchainSetupRepositoryTest {
                     workspaceLock = "lock-1",
                     submissionTimestampEpochMs = 1000L,
                     runId = "server-run-1",
-                )
+                ),
             ),
             recoveryBlocked = true,
         )
@@ -344,7 +342,7 @@ class ToolchainSetupRepositoryTest {
                 planId = "plan-1",
                 planRevisionHash = "rev-1",
                 planKind = "FULL_SETUP",
-            )
+            ),
         )
         val intent = ChildIntentRecord(
             childIndex = -1,
@@ -390,7 +388,7 @@ class ToolchainSetupRepositoryTest {
                 planId = "plan-1",
                 planRevisionHash = "rev-1",
                 planKind = "FULL_SETUP",
-            )
+            ),
         )
         val index = repository.appendChildIntent(
             "attempt-ns-1",
@@ -447,7 +445,7 @@ class ToolchainSetupRepositoryTest {
                 planId = "plan-1",
                 planRevisionHash = "rev-1",
                 planKind = "FULL_SETUP",
-            )
+            ),
         )
         repository.setRecoveryBlocked(true, "lost connection")
         assertEquals(AttemptStatus.INTERRUPTED, repository.currentState.activeAttempt?.status)

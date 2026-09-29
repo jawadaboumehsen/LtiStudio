@@ -12,7 +12,6 @@
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -41,6 +40,7 @@ import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.actions.windowDragGesture
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
@@ -205,10 +205,10 @@ private fun DestinationTab(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val border = if (selected) {
-        Modifier.border(
-            GlassDimens.HairlineBorder,
-            if (isBlue) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
-            GlassShapes.ShellPill,
+        Modifier.glassOutlineBorder(
+            color = if (isBlue) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+            width = GlassDimens.HairlineBorder,
+            shape = GlassShapes.ShellPill,
         )
     } else {
         Modifier

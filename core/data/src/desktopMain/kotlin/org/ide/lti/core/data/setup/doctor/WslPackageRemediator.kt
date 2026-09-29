@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -15,7 +24,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * - No Shell Chains: All commands execute as discrete arguments without `bash -c` or `&&`.
  */
 public class WslPackageRemediator(
-    private val cli: WslCliExecutor = WslCliExecutor()
+    private val cli: WslCliExecutor = WslCliExecutor(),
 ) {
     /**
      * Concrete remediation derived from diagnostic results. This is the single source that both the
@@ -79,7 +88,7 @@ public class WslPackageRemediator(
     public suspend fun remediate(
         context: DiagnosticContext,
         diagnosticItems: List<DiagnosticCheckItem>,
-        onProgress: (String) -> Unit = {}
+        onProgress: (String) -> Unit = {},
     ): Boolean = remediate(context, resolve(diagnosticItems), onProgress)
 
     /**
@@ -89,7 +98,7 @@ public class WslPackageRemediator(
     public suspend fun remediate(
         context: DiagnosticContext,
         plan: RemediationPlan,
-        onProgress: (String) -> Unit = {}
+        onProgress: (String) -> Unit = {},
     ): Boolean = when {
         plan.isEmpty -> {
             onProgress("All diagnostic checks are already satisfied. No remediation needed.")

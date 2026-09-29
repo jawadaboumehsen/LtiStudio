@@ -111,7 +111,7 @@ class GlassOpticalVerifierTest {
         val error = assertFailsWith<AssertionError> {
             GlassOpticalVerifier.assertOpticalDiffusion(
                 rawPattern = raw,
-                glassRender = raw, // Unblurred negative control
+                glassRender = raw,
                 maxGradientRetentionRatio = 0.40,
             )
         }

@@ -9,9 +9,6 @@
  */
 package org.ide.lti.core.data.di
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
 import org.ide.lti.core.data.repository.snapshot.SnapshotRepositoryImpl
 import org.ide.lti.core.data.repository.target.TargetRepositoryImpl
@@ -21,7 +18,6 @@ import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.datastore.di.DatastoreModule
-import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -53,6 +49,5 @@ val DataModule = module {
     singleOf(::ToolchainSetupRepositoryImpl) { bind<ToolchainSetupRepository>() }
     single<SnapshotRepository> { SnapshotRepositoryImpl(dataSource = get()) }
 }
-
 
 internal expect val platformRepositoryModule: org.koin.core.module.Module

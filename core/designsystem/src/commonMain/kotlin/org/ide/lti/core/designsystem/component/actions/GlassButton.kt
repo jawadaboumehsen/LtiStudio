@@ -124,9 +124,10 @@ fun GlassButton(
             .then(
                 if (variant != GlassButtonVariant.Text) {
                     val theme = GlassTheme.appTheme
+                    val effectsEnabled = GlassTheme.effectsEnabled
                     val surfaceColor = backgroundColor(variant, colors)
                     val buttonTint = tint(variant, colors, enabled)
-                    if (GlassTheme.effectsEnabled) {
+                    if (effectsEnabled) {
                         Modifier.hazeGlass(
                             input = sceneHazeInput(GlassTheme.hazeState),
                             style = remember(theme, shape, variant, enabled, colors) {

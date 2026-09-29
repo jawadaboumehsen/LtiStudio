@@ -9,8 +9,8 @@
  */
 package org.ide.lti.feature.rom.studio.api
 
-import kotlin.jvm.JvmInline
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
 
 /**
  * Strongly-typed value class representing a subobject identifier within a pipeline stage editor.

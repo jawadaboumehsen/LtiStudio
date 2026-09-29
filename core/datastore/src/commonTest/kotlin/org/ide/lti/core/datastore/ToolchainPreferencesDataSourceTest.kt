@@ -55,16 +55,16 @@ class ToolchainPreferencesDataSourceTest {
                     isCompiled = true,
                     isVerified = true,
                     version = "34.0.5",
-                    binaryPath = "/home/user/LtiRomTools/bin/adb"
-                )
+                    binaryPath = "/home/user/LtiRomTools/bin/adb",
+                ),
             ),
             submodules = mapOf(
                 "android-tools" to PersistedSubmoduleState(
                     name = "android-tools",
                     isSynced = true,
-                    commit = "2c5e1b7c"
-                )
-            )
+                    commit = "2c5e1b7c",
+                ),
+            ),
         )
 
         dataSource.saveToolchainState(targetState)
@@ -88,7 +88,7 @@ class ToolchainPreferencesDataSourceTest {
             tool.copy(
                 isCompiled = true,
                 binaryPath = "/home/user/LtiRomTools/bin/mkfs.erofs",
-                version = "1.7.1"
+                version = "1.7.1",
             )
         }
 

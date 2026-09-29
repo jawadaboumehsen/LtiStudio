@@ -10,7 +10,6 @@
 package org.ide.lti.core.designsystem.component.display
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -37,6 +36,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -162,7 +162,7 @@ public fun IdeTableRadioIndicator(isSelected: Boolean, modifier: Modifier = Modi
     Box(
         modifier = modifier
             .size(GlassDimens.TableSelectionIndicatorSize)
-            .border(
+            .glassOutlineBorder(
                 width = GlassDimens.HairlineBorder,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 shape = GlassShapes.Circle,

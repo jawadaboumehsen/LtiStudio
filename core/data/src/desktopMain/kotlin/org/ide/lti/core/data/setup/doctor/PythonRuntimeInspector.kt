@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -14,7 +23,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * - Security: Uses strictly native apt packages (python3-cryptography, python3-pyasn1); never pip3.
  */
 public class PythonRuntimeInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
+    private val cli: WslCliExecutor = WslCliExecutor(),
 ) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
@@ -27,7 +36,9 @@ public class PythonRuntimeInspector(
         val pyVersion = if (hasPython3) {
             val vOut = cli.execute(distro, listOf("python3", "--version")).output.trim()
             if (vOut.isNotBlank()) vOut else "Python 3"
-        } else ""
+        } else {
+            ""
+        }
 
         val pyCryptoOk = hasPython3 && cli.execute(distro, listOf("python3", "-c", "import cryptography, pyasn1")).exitCode == 0
 
@@ -66,7 +77,7 @@ public class PythonRuntimeInspector(
             status = pyStatus,
             detail = pyDetail,
             remediation = pyRemediation,
-            copyableCommand = pyCopyCmd
+            copyableCommand = pyCopyCmd,
         )
     }
 }

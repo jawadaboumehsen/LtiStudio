@@ -11,7 +11,6 @@ package org.ide.lti.core.model.workspace
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-
 import org.ide.lti.core.model.target.TargetBinding
 
 /**

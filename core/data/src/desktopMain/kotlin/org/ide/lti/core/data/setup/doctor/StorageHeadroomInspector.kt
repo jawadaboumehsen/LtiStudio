@@ -1,3 +1,12 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.data.setup.doctor
 
 import io.ltirom.tooling.client.wsl.WslCliExecutor
@@ -12,7 +21,7 @@ import org.ide.lti.core.domain.setup.StepStatus
  * - Single Responsibility Principle (SRP): Dedicated exclusively to storage capacity evaluation.
  */
 public class StorageHeadroomInspector(
-    private val cli: WslCliExecutor = WslCliExecutor()
+    private val cli: WslCliExecutor = WslCliExecutor(),
 ) : SystemDiagnosticInspector {
 
     override suspend fun inspect(context: DiagnosticContext): DiagnosticCheckItem {
@@ -25,7 +34,9 @@ public class StorageHeadroomInspector(
             if (lines.size >= 2) {
                 val tokens = lines[1].trim().split("\\s+".toRegex())
                 tokens.getOrNull(3)?.removeSuffix("G")?.toLongOrNull()
-            } else null
+            } else {
+                null
+            }
         }.getOrNull()
 
         if (freeGb == null) {
@@ -35,7 +46,7 @@ public class StorageHeadroomInspector(
                 category = DiagnosticCategory.STORAGE,
                 status = StepStatus.FAILED,
                 detail = "Unable to measure available disk space in $home: ${dfRes.error.ifBlank { "df command failed" }}",
-                remediation = "Verify WSL filesystem permissions and available mount storage."
+                remediation = "Verify WSL filesystem permissions and available mount storage.",
             )
         }
 
@@ -51,7 +62,7 @@ public class StorageHeadroomInspector(
             category = DiagnosticCategory.STORAGE,
             status = diskStatus,
             detail = "$freeGb GB free in $home (minimum 45 GB recommended).",
-            remediation = if (diskStatus == StepStatus.SUCCESS) null else "Free disk space in WSL rootfs to ensure safe ROM packaging."
+            remediation = if (diskStatus == StepStatus.SUCCESS) null else "Free disk space in WSL rootfs to ensure safe ROM packaging.",
         )
     }
 }

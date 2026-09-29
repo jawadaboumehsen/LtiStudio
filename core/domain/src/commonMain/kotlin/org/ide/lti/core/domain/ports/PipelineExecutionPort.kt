@@ -1,14 +1,23 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.ports
 
 import kotlinx.coroutines.flow.Flow
-import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.domain.pipeline.ToolResult
+import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 
 public data class RunHandle(
     val runId: String,
     val status: String,
-    val startedAtEpochMs: Long
+    val startedAtEpochMs: Long,
 )
 
 public data class StepStatus(
@@ -18,14 +27,14 @@ public data class StepStatus(
     val pid: Long? = null,
     val startedAtEpochMs: Long = 0L,
     val endedAtEpochMs: Long? = null,
-    val lastSeq: Long = 0L
+    val lastSeq: Long = 0L,
 )
 
 public data class FileStat(
     val path: String,
     val exists: Boolean,
     val sizeBytes: Long = 0L,
-    val isDirectory: Boolean = false
+    val isDirectory: Boolean = false,
 )
 
 public sealed interface StepEvent {
@@ -38,7 +47,7 @@ public interface PipelineExecutionPort {
     public suspend fun startStep(
         ws: Workspace,
         step: StepCommand,
-        idempotencyKey: String
+        idempotencyKey: String,
     ): RunHandle
 
     public fun observe(serverRunId: String, fromSeq: Long = 0L): Flow<StepEvent>
