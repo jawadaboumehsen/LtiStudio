@@ -189,7 +189,7 @@ public class ToolchainBuildEngine(
     private suspend fun recordInstalledBinaries(distro: String, binDir: String, recipeGroup: String) {
         for (toolId in ToolCapabilities.toolsForRecipeGroup(recipeGroup)) {
             val path = "$binDir/${installedName(toolId)}"
-            if (commands.exists(distro, path, "-e")) {
+            if (isUsable(distro, binDir, toolId)) {
                 repository?.updateTool(toolId) { tool -> tool.copy(isCompiled = true, binaryPath = path) }
             }
         }
@@ -614,11 +614,13 @@ public class ToolchainBuildEngine(
 
     private fun isRecorded(toolId: String): Boolean = repository?.currentState?.tools?.get(toolId)?.isCompiled == true
 
-    /** Every tool of [group] is present in [binDir] under its installed name (JARs as `<id>.jar`). */
+    /** Every tool of [group] is usable in [binDir]: present is not enough (a file can lose its +x). */
     private suspend fun groupComplete(distro: String, binDir: String, group: String): Boolean =
-        ToolCapabilities.toolsForRecipeGroup(group).all {
-            commands.exists(distro, "$binDir/${installedName(it)}", "-e")
-        }
+        ToolCapabilities.toolsForRecipeGroup(group).all { isUsable(distro, binDir, it) }
+
+    /** The probe's own check: a native tool executable, a JAR readable. */
+    private suspend fun isUsable(distro: String, binDir: String, toolId: String): Boolean =
+        commands.run(distro, ToolCatalog.probePlan(toolId, binDir, installedName(toolId)).existsCheck).exitCode == 0
 }
 
 /** Discrete, cancellable distro commands with checked results, shared by the build engine's steps. */

@@ -301,87 +301,63 @@ class SetupPresentationMapperTest {
         assertFalse(presentation.primaryAction == PrimaryAction.OPEN_WORKSPACES)
     }
 
-    @Test
-    fun testMissingPublicationPreventsReady() {
-        val checkTime = 1700000300000L
-        val tools =
-            listOf(
-                coreTool("lpunpack", "LP Unpack"),
-                coreTool("mkfs.erofs", "Make EROFS", ToolCategory.FILESYSTEM_AND_IMAGES),
-            )
-        // Only lpunpack is published; mkfs.erofs publication is missing!
-        val stateMissingPub =
-            ToolchainSetupState(
-                checkedAt = checkTime,
-                steps =
-                listOf(
-                    step(SetupStepStage.WSL_DETECTION),
-                    step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION),
-                    step(SetupStepStage.TOOLCHAIN_COMPILATION),
-                ),
-                toolsMatrix = tools,
-                // mkfs.erofs missing!
-                publishedToolIds = setOf("lpunpack"),
-            )
-        val presentation = SetupPresentationMapper.mapEnvironment(stateMissingPub)
-        assertFalse(
-            presentation.environmentState is EnvironmentState.Ready,
-            "Missing publication must prevent Ready state",
+    /** The live stages exactly as the check reports them, with the Toolchain stage as given. */
+    private fun checkedState(toolchain: SetupStepDetail, tools: List<ToolComponentItem>, published: Set<String>) =
+        ToolchainSetupState(
+            checkedAt = 1700000300000L,
+            steps = listOf(
+                step(SetupStepStage.WSL_DETECTION),
+                step(SetupStepStage.SERVER_CONNECTIVITY),
+                step(SetupStepStage.SYSTEM_DIAGNOSTICS),
+                step(SetupStepStage.REPO_SYNCHRONIZATION),
+                toolchain,
+            ),
+            toolsMatrix = tools,
+            publishedToolIds = published,
         )
-        assertTrue(presentation.environmentState is EnvironmentState.CheckedNeedsSetup)
-        assertEquals(PrimaryAction.SET_UP, presentation.primaryAction)
+
+    @Test
+    fun testToolchainProblemReportedByTheCheckPreventsReady() {
+        // Missing publication, a failed required-tool test and an empty inventory all fail the Toolchain stage in
+        // the check; that stage is what both this screen and Projects read.
+        val reported = listOf(
+            "Missing published tools: mkfs.erofs",
+            "Tool lpunpack verification probe failed with exit code 1",
+            "adb not built",
+        )
+        for (problem in reported) {
+            val state = checkedState(
+                toolchain = step(
+                    SetupStepStage.TOOLCHAIN_COMPILATION,
+                    status = StepStatus.FAILED,
+                    description = problem,
+                ),
+                tools = listOf(coreTool("lpunpack", "LP Unpack")),
+                published = setOf("lpunpack"),
+            )
+
+            val presentation = SetupPresentationMapper.mapEnvironment(state)
+
+            assertFalse(presentation.environmentState is EnvironmentState.Ready, problem)
+            assertFalse(state.canLaunchWorkspace, "Projects must agree: $problem")
+        }
     }
 
     @Test
-    fun testFailedProbePreventsReady() {
-        val checkTime = 1700000400000L
-        val tools = listOf(coreTool("lpunpack", "LP Unpack", status = StepStatus.FAILED))
-        val stateFailedProbe =
-            ToolchainSetupState(
-                checkedAt = checkTime,
-                steps =
-                listOf(
-                    step(SetupStepStage.WSL_DETECTION),
-                    step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION),
-                    step(SetupStepStage.TOOLCHAIN_COMPILATION),
-                ),
-                toolsMatrix = tools,
-                publishedToolIds = setOf("lpunpack"),
-            )
-        val presentation = SetupPresentationMapper.mapEnvironment(stateFailedProbe)
-        assertFalse(
-            presentation.environmentState is EnvironmentState.Ready,
-            "Failed execution probe must prevent Ready state",
+    fun testEnvironmentAndProjectsShareOneReadyUntestedToolsIncluded() {
+        // All stages green but no tool individually tested yet (a full setup does not probe each one): Projects
+        // admits the workspace, so this screen must not keep offering Set up.
+        val state = checkedState(
+            toolchain = step(SetupStepStage.TOOLCHAIN_COMPILATION),
+            tools = listOf(coreTool("lpunpack", "LP Unpack", lastTested = null)),
+            published = setOf("lpunpack"),
         )
-    }
 
-    @Test
-    fun testEmptyInventoryPreventsReady() {
-        val checkTime = 1700000500000L
-        val stateEmptyTools =
-            ToolchainSetupState(
-                checkedAt = checkTime,
-                steps =
-                listOf(
-                    step(SetupStepStage.WSL_DETECTION),
-                    step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION),
-                    step(SetupStepStage.TOOLCHAIN_COMPILATION),
-                ),
-                // Empty inventory!
-                toolsMatrix = emptyList(),
-                publishedToolIds = emptySet(),
-            )
-        val presentation = SetupPresentationMapper.mapEnvironment(stateEmptyTools)
-        assertFalse(
-            presentation.environmentState is EnvironmentState.Ready,
-            "Empty tool inventory must never become Ready",
-        )
+        val presentation = SetupPresentationMapper.mapEnvironment(state)
+
+        assertTrue(state.canLaunchWorkspace)
+        assertTrue(presentation.environmentState is EnvironmentState.Ready, "${presentation.environmentState}")
+        assertEquals(PrimaryAction.OPEN_WORKSPACES, presentation.primaryAction)
     }
 
     @Test

@@ -70,6 +70,7 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.feature.setup.MachineRowMapper
 import org.ide.lti.feature.setup.SetupOperation
+import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.SetupRowAction
 import org.ide.lti.feature.setup.TerminalHandoffState
 import org.ide.lti.feature.setup.WslRowPresentation
@@ -350,7 +351,11 @@ private fun VerticalStageRow(
 
     val toolchainPres =
         if (stage == SetupStepStage.TOOLCHAIN_COMPILATION) {
-            MachineRowMapper.mapToolchainRow(step, currentEpochMs)
+            MachineRowMapper.mapToolchainRow(
+                step,
+                currentEpochMs,
+                canCancel = activeOperation?.executionState == SetupOperationState.RUNNING,
+            )
         } else {
             null
         }

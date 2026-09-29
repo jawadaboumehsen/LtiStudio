@@ -223,6 +223,8 @@ public class WslToolchainProvisioner(
         private const val STATE_LOG_TAIL_LINES: Int = 100
         private const val LOCAL_ATTEMPT_ID: String = "local"
         private const val PROVISIONER_CHILD_ID: String = "provisioner"
+        private const val OWNER_READ: Int = 0x100 // 0400
+        private const val OWNER_EXECUTE: Int = 0x40 // 0100
 
         public data class PinnedSubmodule(val name: String, val url: String, val commit: String)
 
@@ -263,18 +265,28 @@ public class WslToolchainProvisioner(
         public val SUPPORTED_RECIPES: Set<String> get() = ToolCapabilities.SUPPORTED_TOOL_IDS
 
         public fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
+
+        /** Names from `find -printf "%m %f\n"` lines that are usable tools: a JAR readable, the rest executable. */
+        internal fun usableToolFiles(listing: String): Set<String> = listing.lineSequence().mapNotNull { line ->
+            val mode = line.substringBefore(' ').toIntOrNull(radix = 8) ?: return@mapNotNull null
+            val name = line.substringAfter(' ').trim()
+            val usable = if (name.endsWith(".jar")) mode and OWNER_READ != 0 else mode and OWNER_EXECUTE != 0
+            name.takeIf { usable && it.isNotEmpty() }
+        }.toSet()
     }
 
-    /** Names of the executable files in [binDir] (symlinks followed) via a single `find` call. */
+    /**
+     * Names of the usable tool files in [binDir] (symlinks followed) via a single `find` call, by the same
+     * rule as the probe: a JAR must be readable (it runs as `java -jar`), anything else executable.
+     */
     private suspend fun listExecutables(distro: String, binDir: String, executor: WslCliExecutor): Set<String> {
         val result = runInterruptible(dispatcher) {
             executor.execute(
                 distro,
-                listOf("find", "-L", binDir, "-maxdepth", "1", "-type", "f", "-perm", "-u+x", "-printf", "%f\n"),
+                listOf("find", "-L", binDir, "-maxdepth", "1", "-type", "f", "-printf", "%m %f\n"),
             )
         }
-        if (result.exitCode != 0) return emptySet()
-        return result.output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        return if (result.exitCode == 0) usableToolFiles(result.output) else emptySet()
     }
 
     override suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
@@ -407,8 +419,11 @@ public class WslToolchainProvisioner(
         } else {
             val statuses = hostPrerequisitePort.detect()
             _state.update { it.copy(distroStatuses = statuses) }
+            // After a restart the session choice is gone; a pending attempt still belongs to the distro it
+            // was journaled with, so that one is targeted, not the current WSL default.
+            val wanted = preferredDistro ?: repository?.currentState?.activeAttempt?.environment?.distro
             val picked = statuses.filterIsInstance<DistroStatus.Usable>()
-                .firstOrNull { it.environment.distro == preferredDistro }?.environment
+                .firstOrNull { it.environment.distro == wanted }?.environment
             (picked ?: hostPrerequisitePort.selectEnvironment(statuses)) to statuses
         }
 
@@ -615,20 +630,8 @@ public class WslToolchainProvisioner(
         val avbKeyFile = "$workDir/security/avb/lti_rsa4096.pem"
         val transportCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
 
-        val findBin = transport.execute(
-            ToolExecutionRequest(
-                toolId = "find",
-                arguments = listOf(
-                    "-L", binDir, "-maxdepth", "1", "-type", "f", "-perm", "-u+x", "-printf", "%f\n",
-                ),
-                workingDirectory = "/",
-            ),
-        )
-        val executables = if (findBin.exitCode == 0) {
-            findBin.stdout.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-        } else {
-            emptySet()
-        }
+        // One inventory rule everywhere (JARs readable, the rest executable): see listExecutables.
+        val executables = listExecutables(distro, binDir, transportCli)
         val missingBins = CORE_BINARIES.filterNot { it in executables }
         val binariesPresent = missingBins.isEmpty()
 
@@ -654,8 +657,8 @@ public class WslToolchainProvisioner(
 
         val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
         val updatedTools = currentTools.map { tool ->
-            val toolPath = "$binDir/${tool.binaryName}"
-            val exists = tool.binaryName in executables
+            val toolPath = ToolCatalog.expectedPath(binDir, tool.id) ?: "$binDir/${tool.binaryName}"
+            val exists = toolPath.substringAfterLast('/') in executables
             val newStatus = when {
                 !exists -> StepStatus.PENDING
                 tool.status == StepStatus.FAILED -> StepStatus.FAILED
@@ -855,6 +858,8 @@ public class WslToolchainProvisioner(
                 ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - publishedTools
             }
 
+        val outdated = if (isServiceError) emptyList() else markOutdatedPinnedReleases(executables, binDir)
+
         // Check EROFS compatibility only when binaries and published tools are present
         val erofsCompatible = if (!isServiceError && missingBins.isEmpty() && missingPublished.isEmpty()) {
             val erofsCheck = transport.execute(
@@ -894,6 +899,13 @@ public class WslToolchainProvisioner(
                 "Required tools not published on daemon: ${missingPublished.joinToString()}",
                 ToolchainFailureCategory.MISSING_PUBLISHED_TOOLS,
             )
+            outdated.isNotEmpty() -> ToolchainOutcome(
+                StepStatus.FAILED,
+                "${outdated.first().toolId} outdated",
+                "Not the pinned download: " + outdated.joinToString { "${it.toolId} (expected ${it.version})" } +
+                    ". Retry installs the pinned versions.",
+                ToolchainFailureCategory.MISSING_BINARIES,
+            )
             !erofsCompatible -> ToolchainOutcome(
                 StepStatus.FAILED,
                 "mkfs.erofs incompatible",
@@ -917,6 +929,33 @@ public class WslToolchainProvisioner(
             toolchainFailureCategory = outcome.category,
         )
         return publishedTools
+    }
+
+    /**
+     * Pinned downloads in [binDir] whose checksum is not their pin's (e.g. an app update moved the pin). A tool
+     * that is not installed is reported as missing elsewhere, not here.
+     */
+    private suspend fun markOutdatedPinnedReleases(executables: Set<String>, binDir: String): List<PinnedRelease> {
+        val outdated = PinnedReleases.ALL.filter { it.toolId in executables }.filter { release ->
+            val res = transport.execute(
+                ToolExecutionRequest(
+                    toolId = "sha256sum",
+                    arguments = listOf("$binDir/${release.toolId}"),
+                    workingDirectory = "/",
+                ),
+            )
+            res.stdout.trim().substringBefore(' ') != release.sha256
+        }
+        // Marked failed so the Toolchain retry reinstalls them (it installs whatever differs from the pin).
+        val ids = outdated.map { it.toolId }.toSet()
+        if (ids.isNotEmpty()) {
+            _state.update { s ->
+                s.copy(
+                    toolsMatrix = s.toolsMatrix.map { if (it.id in ids) it.copy(status = StepStatus.FAILED) else it },
+                )
+            }
+        }
+        return outdated
     }
 
     /** Free bytes under [home] from `df`, with when they were measured; nulls when `df` fails. */
@@ -1188,14 +1227,18 @@ public class WslToolchainProvisioner(
                 } else {
                     // Persisted verification evidence is withdrawn so a restart cannot restore it.
                     repository?.updateTool(toolId) { tool -> tool.copy(isVerified = false) }
-                    SetupOutcome.Failed(
-                        stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
-                        reason = if (!exists) {
-                            "Tool $toolId binary not found or not executable"
-                        } else {
-                            "Tool $toolId verification probe failed with exit code $exitCode"
-                        },
-                    )
+                    val reason = if (!exists) {
+                        "Tool $toolId binary not found or not executable"
+                    } else {
+                        "Tool $toolId verification probe failed with exit code $exitCode"
+                    }
+                    appendLog("[Test] ERROR: $reason")
+                    if (toolId in ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS) {
+                        // A broken required tool revokes readiness now: admission reads the stage, not the row.
+                        setStepStatus(SetupStepStage.TOOLCHAIN_COMPILATION, StepStatus.FAILED, reason, error = reason)
+                        repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, false)
+                    }
+                    SetupOutcome.Failed(stage = SetupStepStage.TOOLCHAIN_COMPILATION.name, reason = reason)
                 }
             } finally {
                 _state.update { s ->
@@ -2216,8 +2259,9 @@ public class WslToolchainProvisioner(
         val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
         val now = System.currentTimeMillis()
         val updatedTools = currentTools.map { tool ->
-            val toolPath = "$binDir/${tool.binaryName}"
-            val exists = tool.binaryName in builtExecutables
+            // The same file the probe and the publisher use (a JAR is <id>.jar).
+            val toolPath = ToolCatalog.expectedPath(binDir, tool.id) ?: "$binDir/${tool.binaryName}"
+            val exists = toolPath.substringAfterLast('/') in builtExecutables
             if (exists) {
                 repository?.updateTool(tool.id) { t ->
                     t.copy(isCompiled = true, binaryPath = toolPath)

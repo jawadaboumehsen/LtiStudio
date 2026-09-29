@@ -28,7 +28,6 @@ import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
@@ -287,7 +286,7 @@ class SetupViewModel(
             environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
-        toolBrowserState.launchTestTool(toolId)
+        viewModelScope.launch { reportToolOutcome("Test", toolId, toolBrowserState.testTool(toolId)) }
     }
 
     fun recompileTool(toolId: String) {
@@ -295,14 +294,20 @@ class SetupViewModel(
             environmentSetupState.setEnvironmentNotice("Toolchain service is not available in this session.")
             return
         }
-        viewModelScope.launch {
-            val outcome = toolBrowserState.repairTool(toolId)
-            if (outcome is SetupOutcome.Failed && !ToolCapabilities.isRecipeSupported(toolId)) {
-                environmentSetupState.setEnvironmentNotice(
-                    ToolCapabilities.unavailableReasonFor(toolId) ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON,
-                )
-            }
+        viewModelScope.launch { reportToolOutcome("Rebuild", toolId, toolBrowserState.repairTool(toolId)) }
+    }
+
+    /** Every outcome but success says why, so a busy, interrupted or refused action never ends silently. */
+    private fun reportToolOutcome(action: String, toolId: String, outcome: SetupOutcome) {
+        val notice = when (outcome) {
+            is SetupOutcome.Succeeded -> return
+            is SetupOutcome.Failed -> "$action $toolId failed: ${outcome.reason}"
+            is SetupOutcome.Busy -> "$action $toolId did not start: another operation is running (${outcome.ownerId})."
+            is SetupOutcome.Interrupted -> "$action $toolId was interrupted: ${outcome.reason}"
+            SetupOutcome.Cancelled -> "$action $toolId was cancelled."
+            else -> "$action $toolId did not finish: ${outcome::class.simpleName}."
         }
+        environmentSetupState.setEnvironmentNotice(notice)
     }
 
     fun removeRecentProject(workspaceId: String) {

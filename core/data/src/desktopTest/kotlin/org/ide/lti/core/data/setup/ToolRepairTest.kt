@@ -87,7 +87,7 @@ class ToolRepairTest {
             val basename = request.toolId.substringAfterLast('/')
             return when {
                 request.toolId == "printenv" -> ToolExecutionResponse(0, "/home/lti\n", "", 1L)
-                request.toolId == "find" -> ToolExecutionResponse(0, installedBinaries.joinToString("\n"), "", 1L)
+                request.toolId == "find" -> ToolExecutionResponse(0, fakeBinListing(installedBinaries), "", 1L)
                 basename in probeExitCodes -> ToolExecutionResponse(probeExitCodes.getValue(basename), "", "", 1L)
                 request.toolId == "test" && request.arguments.contains("-x") -> {
                     ToolExecutionResponse(testXExitCode, "", "", 1L)
@@ -184,6 +184,31 @@ class ToolRepairTest {
         transport.helpExitCode = 0
         val successStatus = provisioner.testTool("lpmake")
         assertTrue(successStatus is SetupOutcome.Succeeded)
+    }
+
+    @Test
+    fun `a required tool failing its test revokes workspace readiness at once`() = runTest {
+        val repository = inMemoryToolchainRepository()
+        repository.markStageCompleted(org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
+        val provisioner = WslToolchainProvisioner(
+            supervisor = SpyDaemonSupervisor(),
+            transport = SpyRemoteTransport(testXExitCode = 1), // lpmake deleted or no longer executable
+            repository = repository,
+            cli = StubCliExecutor(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
+
+        provisioner.testTool("lpmake")
+
+        val toolchain = provisioner.state.value.steps
+            .first { it.stage == org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION }
+        assertEquals(StepStatus.FAILED, toolchain.status, "admission reads the stage, so the stage must fail")
+        assertFalse(provisioner.state.value.canLaunchWorkspace)
+        assertFalse(
+            org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION.name in
+                repository.currentState.completedStages,
+            "a restart must not restore readiness",
+        )
     }
 
     @Test

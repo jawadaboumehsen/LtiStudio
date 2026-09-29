@@ -898,6 +898,9 @@ class EnvironmentSetupState(
         _handoffSheetState.value = TerminalHandoffState.Verifying
         val currentHandoff = currentOp.awaitingHandoff
         _activeOperation.value = currentOp.copy(executionState = SetupOperationState.RUNNING, failure = null)
+        // A resumed plan verifies the machine itself; only a resume that ran no check (the package handoff)
+        // needs one to continue to the build service. Measured, since the kind is lost across a restart.
+        val checkedBefore = toolchainSetupState.value.checkedAt
         currentExecutionJob =
             scope.launch {
                 var continueSetup = false
@@ -920,7 +923,7 @@ class EnvironmentSetupState(
                         _activeOperation.value = null
                     }
                 }
-                if (continueSetup) checkEnvironmentStatus()
+                if (continueSetup && toolchainSetupState.value.checkedAt == checkedBefore) checkEnvironmentStatus()
             }
     }
 

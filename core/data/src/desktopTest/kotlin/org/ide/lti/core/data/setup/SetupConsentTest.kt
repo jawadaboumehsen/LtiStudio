@@ -125,7 +125,7 @@ class SetupConsentTest {
                 request.toolId == "find" && request.arguments.any { it.contains("/dev") } -> {
                     ToolExecutionResponse(0, "fuse\nloop-control\nnull\nzero", "", 2L)
                 }
-                request.toolId == "find" && request.arguments.contains("-L") -> {
+                request.toolId == "find" && "%m %f\n" in request.arguments -> {
                     val baseBins = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs",
                         "avbtool", "unpack_bootimg", "img2sdat", "signapk", "adb", "fastboot",
@@ -133,7 +133,7 @@ class SetupConsentTest {
                     val allBins = (baseBins + ToolCatalog.CORE_BINARIES).distinct()
                     ToolExecutionResponse(
                         0,
-                        allBins.joinToString("\n"),
+                        fakeBinListing(allBins),
                         "",
                         2L,
                     )
@@ -395,11 +395,14 @@ class SetupConsentTest {
             dispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
+        // Sources measured at their pins first: only then is a compilation retry compilation alone (a clean
+        // machine's retry syncs first, see SetupPlanFactoryTest).
+        provisioner.verifyEnvironment()
         // Retry compilation stage only: the retry is previewed as a STAGE_RETRY plan and confirmed.
         val plan = provisioner.prepare(SetupPlanKind.STAGE_RETRY, SetupStepStage.TOOLCHAIN_COMPILATION.name)
         assertTrue(
             plan.orderedActions.none { it is SetupPlanAction.SyncSources || it is SetupPlanAction.InstallPackages },
-            "A compilation retry plan must not expand into sync or remediation: ${plan.orderedActions}",
+            "With synced sources a compilation retry must not expand into sync or remediation: ${plan.orderedActions}",
         )
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
         assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")

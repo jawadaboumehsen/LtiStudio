@@ -217,19 +217,12 @@ private fun checkFailures(state: ToolchainSetupState): EnvironmentState? {
     }
 }
 
-private fun isLiveReady(state: ToolchainSetupState): Boolean {
-    if (!state.isAllReady || state.toolsMatrix.isEmpty() || state.checkedAt == null) {
-        return false
-    }
-    val coreTools = state.toolsMatrix.filter { it.isCore }
-    val allVerified =
-        coreTools.isNotEmpty() &&
-            coreTools.all {
-                it.status == StepStatus.SUCCESS && it.lastTested != null
-            }
-    val allPublished = state.publishedToolIds.containsAll(coreTools.map { it.id })
-    return allVerified && allPublished
-}
+/**
+ * The one readiness verdict, the same one Projects admits a workspace on: a completed live check with every
+ * stage green (the Toolchain stage already requires the core binaries present and published). Whether a tool
+ * was also individually tested is shown on its row, never a second, stricter definition of "ready".
+ */
+private fun isLiveReady(state: ToolchainSetupState): Boolean = state.checkedAt != null && state.canLaunchWorkspace
 
 private fun checkRestored(state: ToolchainSetupState): EnvironmentState? {
     val hasRestoredStep = state.steps.any { it.provenance == StepProvenance.RESTORED }

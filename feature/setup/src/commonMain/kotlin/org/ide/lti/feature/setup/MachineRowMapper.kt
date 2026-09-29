@@ -229,7 +229,15 @@ object MachineRowMapper {
         systemPackagesStep = systemPackagesStep,
     )
 
-    fun mapToolchainRow(step: SetupStepDetail?, nowEpochMs: Long? = null): ToolchainRowPresentation? {
+    /**
+     * [canCancel]: an owned, cancellable operation (a build) is running. A check also shows the step RUNNING but
+     * has no operation to cancel, so it gets no Cancel button.
+     */
+    fun mapToolchainRow(
+        step: SetupStepDetail?,
+        nowEpochMs: Long? = null,
+        canCancel: Boolean = false,
+    ): ToolchainRowPresentation? {
         if (step == null) return null
         return when (step.status) {
             StepStatus.SUCCESS -> ToolchainRowPresentation(
@@ -247,7 +255,7 @@ object MachineRowMapper {
                 ToolchainRowPresentation(
                     detailText = detail,
                     severity = IdeStatusSeverity.Running,
-                    primaryAction = SetupRowAction.CANCEL,
+                    primaryAction = if (canCancel) SetupRowAction.CANCEL else null,
                     primaryActionLabel = "Cancel",
                     isRunning = true,
                 )

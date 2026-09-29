@@ -10,7 +10,9 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -134,6 +136,8 @@ class SetupActionsTest {
                         onRetryStep = {},
                         onCancel = { cancelDispatched = true },
                         isBusy = true,
+                        // A build is an owned operation: that is what makes it cancellable.
+                        activeOperation = SetupOperation(executionState = SetupOperationState.RUNNING),
                     )
                 }
             }
@@ -149,6 +153,29 @@ class SetupActionsTest {
             // Confirm cancellation inside dialog
             onNodeWithText("Cancel operation").performClick()
             assertTrue(cancelDispatched, "Confirming cancel dialog must dispatch onCancel")
+        }
+    }
+
+    @Test
+    fun testCheckingToolchainRowOffersNoCancelItCannotHonour() {
+        runDesktopComposeUiTest(width = 1120, height = 1200) {
+            val checkingStep = SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain Binaries",
+                status = StepStatus.RUNNING,
+                description = "Checking tools…",
+            )
+
+            setContent {
+                LtiTheme {
+                    // A check marks the step RUNNING but owns no operation: cancel() would find nothing to stop.
+                    ToolchainPipelineTracker(steps = listOf(checkingStep), onRetryStep = {
+                    }, onCancel = {}, isBusy = true)
+                }
+            }
+
+            onNodeWithText("Checking tools…", substring = true).assertIsDisplayed()
+            onAllNodesWithText("Cancel").assertCountEquals(0)
         }
     }
 

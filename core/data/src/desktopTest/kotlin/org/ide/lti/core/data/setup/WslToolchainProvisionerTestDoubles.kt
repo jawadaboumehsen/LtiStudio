@@ -112,12 +112,12 @@ internal class FakeRemoteTransport(
                 val devNodes = listOf("fuse", "loop-control", "null", "zero", "random", "urandom")
                 ToolExecutionResponse(0, devNodes.joinToString("\n"), "", 10L)
             }
-            request.toolId == "find" && request.arguments.contains("-L") -> {
+            request.toolId == "find" && "%m %f\n" in request.arguments -> {
                 val output = listOf(
                     "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
                     "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
                     "img2sdat", "signapk", "adb", "fastboot",
-                ).joinToString("\n")
+                ).let(::fakeBinListing)
                 ToolExecutionResponse(0, output, "", 10L)
             }
             request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
@@ -222,6 +222,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     var wslInstalled: Boolean = true
     val existingPaths: MutableSet<String> = mutableSetOf()
     val commandLog = mutableListOf<String>()
+
+    /** Pinned tools whose installed file hashes to something other than its pin (an older download). */
+    val staleDigests: MutableSet<String> = mutableSetOf()
 
     override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
         val cmdStr = command.joinToString(" ")
@@ -345,7 +348,8 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                     ?: ""
             val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
                 .map { it.removePrefix("$dir/") }
-            return CliExecutionResult(0, names.joinToString("\n"), "")
+            val listing = if (command.contains("%m %f\n")) fakeBinListing(names) else names.joinToString("\n")
+            return CliExecutionResult(0, listing, "")
         }
         if (cmdStr.contains("test -e") ||
             cmdStr.contains("test -d") ||
@@ -369,7 +373,11 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 CliExecutionResult(1, "", "Path does not exist: $targetPath")
             }
         }
-        if (command.firstOrNull() == "sha256sum") return fakeSha256(command.getOrNull(1).orEmpty())
+        if (command.firstOrNull() == "sha256sum") {
+            val path = command.getOrNull(1).orEmpty()
+            if (staleDigests.any { path.endsWith("/$it") }) return CliExecutionResult(0, "${"0".repeat(64)}  $path", "")
+            return fakeSha256(path)
+        }
         fakeGitRevParse(command)?.let { return it }
         if (cmdStr.contains("mkfs.erofs")) {
             return CliExecutionResult(0, "mkfs.erofs 1.7.1\noptions: --fs-config-file -C -T", "")
@@ -377,6 +385,12 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
         return CliExecutionResult(0, "ok", "")
     }
 }
+
+/**
+ * What `find <bin> -printf "%m %f\n"` prints for [names]: JARs readable (644), everything else executable (755).
+ */
+internal fun fakeBinListing(names: Collection<String>): String =
+    names.joinToString("\n") { if (it.endsWith(".jar")) "644 $it" else "755 $it" }
 
 /** The fake distro's project tool directory. */
 internal const val FAKE_BIN_DIR: String = "/home/lti/LtiRomTools/bin"

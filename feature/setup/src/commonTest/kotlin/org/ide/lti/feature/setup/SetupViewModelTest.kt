@@ -146,7 +146,9 @@ class SetupViewModelTest {
 
         fun markAllReady() {
             _state.value = _state.value.copy(
-                steps = _state.value.steps.map { it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE) },
+                steps = _state.value.steps.map {
+                    it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                },
                 lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
             )
         }
@@ -260,10 +262,38 @@ class SetupViewModelTest {
             return resumeOutcome
         }
 
+        var testToolOutcome: SetupOutcome = SetupOutcome.Succeeded()
+
         override suspend fun testTool(toolId: String): SetupOutcome {
             testToolCount++
             lastTestedToolId = toolId
-            return SetupOutcome.Succeeded()
+            return testToolOutcome
+        }
+    }
+
+    @Test
+    fun testToolActionThatDoesNotSucceedAlwaysSaysWhy() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val toolchainService = FakeToolchainProvisioningService()
+            val viewModel = SetupViewModel(WorkspaceManager(FakeWorkspaceRepository(), this), toolchainService)
+            testScheduler.advanceUntilIdle()
+
+            // A test refused because a check is running used to end with no word at all.
+            toolchainService.testToolOutcome = SetupOutcome.Busy("environment-check")
+            viewModel.testTool("lpmake")
+            testScheduler.advanceUntilIdle()
+            assertEquals(
+                "Test lpmake did not start: another operation is running (environment-check).",
+                viewModel.environmentNotice.value,
+            )
+
+            toolchainService.testToolOutcome = SetupOutcome.Interrupted("connection lost")
+            viewModel.testTool("lpmake")
+            testScheduler.advanceUntilIdle()
+            assertEquals("Test lpmake was interrupted: connection lost", viewModel.environmentNotice.value)
+        } finally {
+            Dispatchers.resetMain()
         }
     }
 

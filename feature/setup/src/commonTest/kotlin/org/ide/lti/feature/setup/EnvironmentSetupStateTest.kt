@@ -892,6 +892,37 @@ class EnvironmentSetupStateTest {
     }
 
     @Test
+    fun testSuccessfulResumeChecksAgainOnlyWhenItDidNotCheckItself() = runEnvironmentTest { envScope ->
+        val handoff = UserRepairHandoff(
+            actionId = "packages",
+            description = "Install dev packages",
+            terminalCommand = "sudo apt-get install pkg-config",
+            packages = listOf("pkg-config"),
+            distro = "Ubuntu",
+        )
+        val spyService = SpyToolchainProvisioningService(ToolchainSetupState(pendingAttemptId = "attempt-1"))
+        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
+            pendingPlanId = "plan-1",
+            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+            reason = "Awaiting user terminal authorization",
+            handoff = handoff,
+        )
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+        testScheduler.advanceUntilIdle()
+        val checksBefore = spyService.verifyEnvironmentCount
+
+        // A resumed plan verifies the machine itself (new check evidence): no second check after it.
+        spyService.onResume = {
+            spyService._state.value = spyService._state.value.copy(checkedAt = 1_700_000_000_000L)
+            SetupOutcome.Succeeded()
+        }
+        stateHolder.resumeAwaitingOperation()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(checksBefore, spyService.verifyEnvironmentCount, "the user waited through the same check twice")
+    }
+
+    @Test
     fun testResumeKeepsHandoffRetryableWhenUnrelatedDiagnosticFailsAndSucceedsOnFix() = runEnvironmentTest { envScope ->
         val spyService =
             SpyToolchainProvisioningService(

@@ -127,14 +127,21 @@ class EnvironmentVerificationTest {
                     val devNodes = listOf("fuse", "loop-control", "null", "zero", "random", "urandom")
                     ToolExecutionResponse(0, devNodes.joinToString("\n"), "", 2L)
                 }
-                request.toolId == "find" && request.arguments.contains("-L") -> {
-                    // binDir executables
+                request.toolId == "find" && request.arguments.any { it.endsWith("/LtiRomTools/bin") } -> {
+                    // binDir: with modes for the inventory, bare names for the Doctor's listing.
                     val tools = listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
                         "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
                         "img2sdat", "signapk", "adb", "fastboot", "mke2fs", "dump.erofs",
                     )
-                    ToolExecutionResponse(0, tools.joinToString("\n"), "", 5L)
+                    val listing = if ("%m %f\n" in
+                        request.arguments
+                    ) {
+                        fakeBinListing(tools)
+                    } else {
+                        tools.joinToString("\n")
+                    }
+                    ToolExecutionResponse(0, listing, "", 5L)
                 }
                 request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
                     // submodules

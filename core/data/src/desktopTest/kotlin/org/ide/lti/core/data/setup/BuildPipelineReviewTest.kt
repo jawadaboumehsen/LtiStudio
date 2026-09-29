@@ -102,6 +102,35 @@ class BuildPipelineReviewTest {
         )
     }
 
+    @Test
+    fun `a tool that lost its executable bit is rebuilt, not skipped as present`() = runTest {
+        val repository = inMemoryToolchainRepository()
+        repository.updateTool("adb") { it.copy(isCompiled = true) }
+        val cli = object : Distro() {
+            override fun execute(
+                distro: String,
+                command: List<String>,
+                timeoutSeconds: Long,
+                charset: Charset,
+                user: String?,
+            ): CliExecutionResult = if (command == listOf("test", "-x", "$bin/lpunpack")) {
+                commands += command
+                CliExecutionResult(1, "", "") // present, but chmod -x
+            } else {
+                super.execute(distro, command, timeoutSeconds, charset, user)
+            }
+        }
+
+        ToolchainBuildEngine(cli = cli, repository = repository).buildAndDistributeAll(
+            "Ubuntu",
+            ext,
+            bin,
+            targetRecipeGroups = setOf(ToolCapabilities.GROUP_ANDROID_TOOLS),
+        )
+
+        assertTrue(cli.ran("env").any { "cmake" in it }, "a present but unusable tool must not count as built")
+    }
+
     // 3. Repairing one auxiliary tool touches nothing else.
     @Test
     fun `repairing gh copies nothing for other tools`() = runTest {

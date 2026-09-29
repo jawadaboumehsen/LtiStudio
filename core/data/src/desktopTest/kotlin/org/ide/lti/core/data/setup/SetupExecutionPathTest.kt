@@ -173,7 +173,14 @@ class SetupExecutionPathTest {
                         "fuse", "fusermount3", "openssl", "sudo", "loop-control", "ccache",
                         "apktool.jar", "signapk.jar", "zipalign", "lpunpack", "lpmake", "lpdump", "payload-dumper-go",
                     )
-                    ToolExecutionResponse(0, sample.joinToString("\n"), "", 5L)
+                    val listing = if ("%m %f\n" in
+                        request.arguments
+                    ) {
+                        fakeBinListing(sample)
+                    } else {
+                        sample.joinToString("\n")
+                    }
+                    ToolExecutionResponse(0, listing, "", 5L)
                 }
                 request.toolId == "dpkg-query" -> {
                     val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES

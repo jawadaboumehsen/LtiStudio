@@ -143,7 +143,9 @@ public object SetupPlanFactory {
             remediationAction(snapshot, autoDoctorEnabled)?.let(::add)
         }
         if (snapshot.stageNeedsWork(SetupStepStage.REPO_SYNCHRONIZATION)) {
-            add(SetupPlanAction.SyncSources(WslToolchainProvisioner.SUBMODULES.map { it.name }))
+            // A sync can change sources, so the build follows it whatever the Toolchain looked like before.
+            addAll(syncBuildPublish())
+            return@buildList
         }
         if (snapshot.stageNeedsWork(SetupStepStage.TOOLCHAIN_COMPILATION)) {
             val unbuilt = snapshot.toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }
@@ -154,6 +156,16 @@ public object SetupPlanFactory {
         add(SetupPlanAction.PublishTools(ToolCatalog.ALL_TOOL_IDS.toList()))
     }
 
+    /**
+     * Sources, then their build, then registration. Synced sources are only useful built and registered, and
+     * a sync invalidates the groups it changed; unchanged groups are skipped by the build.
+     */
+    private fun syncBuildPublish(): List<SetupPlanAction> = listOf(
+        SetupPlanAction.SyncSources(WslToolchainProvisioner.SUBMODULES.map { it.name }),
+        SetupPlanAction.BuildRecipes(WslToolchainProvisioner.SUBMODULES.map { it.name }),
+        SetupPlanAction.PublishTools(ToolCatalog.ALL_TOOL_IDS.toList()),
+    )
+
     private fun deriveStageRetryActions(
         targetId: String?,
         snapshot: ToolchainSetupState,
@@ -163,18 +175,17 @@ public object SetupPlanFactory {
         val stage = SetupStepStage.entries.firstOrNull { it.name == targetId } ?: return emptyList()
         return when (stage) {
             SetupStepStage.SYSTEM_DIAGNOSTICS -> listOfNotNull(remediationAction(snapshot, autoDoctorEnabled))
-            // Synced sources are only useful built and registered: tools compiled from other sources are
-            // stale, so a source retry rebuilds (changed groups only; the rest are skipped) and publishes.
-            SetupStepStage.REPO_SYNCHRONIZATION -> listOf(
-                SetupPlanAction.SyncSources(WslToolchainProvisioner.SUBMODULES.map { it.name }),
-                SetupPlanAction.BuildRecipes(WslToolchainProvisioner.SUBMODULES.map { it.name }),
-                SetupPlanAction.PublishTools(ToolCatalog.ALL_TOOL_IDS.toList()),
-            )
-            SetupStepStage.TOOLCHAIN_COMPILATION -> buildList {
-                val unbuilt = snapshot.toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }
-                if (unbuilt.isNotEmpty()) add(SetupPlanAction.BuildRecipes(unbuilt))
-                val unpublished = ToolCatalog.ALL_TOOL_IDS.filter { it !in snapshot.publishedToolIds }
-                if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
+            SetupStepStage.REPO_SYNCHRONIZATION -> syncBuildPublish()
+            // Nothing can be built from sources that are not there: a clean machine gets the whole chain.
+            SetupStepStage.TOOLCHAIN_COMPILATION -> if (snapshot.stageNeedsWork(SetupStepStage.REPO_SYNCHRONIZATION)) {
+                syncBuildPublish()
+            } else {
+                buildList {
+                    val unbuilt = snapshot.toolsMatrix.filter { it.status != StepStatus.SUCCESS }.map { it.id }
+                    if (unbuilt.isNotEmpty()) add(SetupPlanAction.BuildRecipes(unbuilt))
+                    val unpublished = ToolCatalog.ALL_TOOL_IDS.filter { it !in snapshot.publishedToolIds }
+                    if (unpublished.isNotEmpty()) add(SetupPlanAction.PublishTools(unpublished))
+                }
             }
             SetupStepStage.SERVER_CONNECTIVITY -> listOf(
                 SetupPlanAction.PublishTools(emptyList()),

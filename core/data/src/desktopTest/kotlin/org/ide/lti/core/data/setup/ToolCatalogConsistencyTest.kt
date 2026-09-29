@@ -106,6 +106,7 @@ class ToolCatalogConsistencyTest {
     fun testSetupPlanFactoryPublishesUnpublishedCatalogIdsOnStageRetry() {
         val published = setOf("lpmake", "unpack_bootimg")
         val snapshot = ToolchainSetupState(publishedToolIds = published)
+            .withStagesPassed(SetupStepStage.REPO_SYNCHRONIZATION)
 
         val plan = SetupPlanFactory.createPlan(
             kind = SetupPlanKind.STAGE_RETRY,
