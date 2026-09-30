@@ -175,7 +175,11 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("NavigatorItem_RunHistory").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_Artifacts").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertExists()
-        composeTestRule.onNodeWithTag("WorkspaceNavigatorFooter").assertExists()
+
+        // Workspace Right Rail & items
+        composeTestRule.onNodeWithTag("WorkspaceRightRail").assertExists()
+        composeTestRule.onNodeWithTag("RightRailItem_ai").assertExists()
+        composeTestRule.onNodeWithTag("RightRailItem_terminal").assertExists()
 
         // Content, Status Bar (no separate breadcrumb region - each destination's own header
         // owns its breadcrumb; see StudioScreen.kt's isStageEditor-gated ContentHeader)
@@ -220,18 +224,21 @@ class StudioShellLayoutTest {
         val navBounds = composeTestRule.onNodeWithTag("WorkspaceNavigator").fetchSemanticsNode().boundsInRoot
         val contentBounds = composeTestRule.onNodeWithTag("MainContent").fetchSemanticsNode().boundsInRoot
         val statusBarBounds = composeTestRule.onNodeWithTag("StudioStatusBar").fetchSemanticsNode().boundsInRoot
+        val rightRailBounds = composeTestRule.onNodeWithTag("WorkspaceRightRail").fetchSemanticsNode().boundsInRoot
 
         // Vertical relationships
         assertTrue(topBarBounds.bottom <= railBounds.top, "Rail must be below Top Bar")
         assertTrue(topBarBounds.bottom <= navBounds.top, "Navigator must be below Top Bar")
-        assertTrue(topBarBounds.bottom <= contentBounds.top, "Content must be below Top Bar")
+        assertTrue(topBarBounds.bottom <= rightRailBounds.top, "Right Rail must be below Top Bar")
+        assertTrue(navBounds.bottom <= contentBounds.top, "Content must be below Navigator")
         assertTrue(railBounds.bottom <= statusBarBounds.top, "Rail must end above Status Bar")
-        assertTrue(navBounds.bottom <= statusBarBounds.top, "Navigator must end above Status Bar")
         assertTrue(contentBounds.bottom <= statusBarBounds.top, "Content must end above Status Bar")
+        assertTrue(rightRailBounds.bottom <= statusBarBounds.top, "Right Rail must end above Status Bar")
 
         // Horizontal relationships
         assertTrue(railBounds.right <= navBounds.left, "Navigator must be to the right of Rail")
-        assertTrue(navBounds.right <= contentBounds.left, "Content must be to the right of Navigator")
+        assertTrue(railBounds.right <= contentBounds.left, "Content must be to the right of Rail")
+        assertTrue(contentBounds.right <= rightRailBounds.left, "Content must be to the left of Right Rail")
     }
 
     @Test
@@ -344,6 +351,52 @@ class StudioShellLayoutTest {
         assertEquals(nav1.height, nav2.height, "Navigator height must remain stable")
         assertEquals(status1.width, status2.width, "Status Bar width must remain stable")
         assertEquals(status1.height, status2.height, "Status Bar height must remain stable")
+    }
+
+    @Test
+    fun testStudioShellIconsOnlyMode() {
+        val uiState = WorkspaceShellUiState(
+            globalDestination = GlobalDestination.Workspace,
+            pipelineItems = createDefaultPipelineRailItems(StageId.FIRMWARE_ACQUISITION),
+            selectedWorkspaceSection = WorkspaceSection.Overview,
+        )
+
+        composeTestRule.setContent {
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = uiState,
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = {},
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        iconsOnly = true,
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
+            }
+        }
+
+        val railBounds = composeTestRule.onNodeWithTag("IdePipelineRail").fetchSemanticsNode().boundsInRoot
+        val navBounds = composeTestRule.onNodeWithTag("WorkspaceNavigator").fetchSemanticsNode().boundsInRoot
+        val rightRailBounds = composeTestRule.onNodeWithTag("WorkspaceRightRail").fetchSemanticsNode().boundsInRoot
+
+        assertEquals(GlassDimens.CompactRailWidth.value, railBounds.width, 0.5f, "Rail width must be 44 dp")
+        assertEquals(GlassDimens.CompactRailWidth.value, rightRailBounds.width, 0.5f, "Right rail width must be 44 dp")
+        assertTrue(navBounds.width > GlassDimens.CompactRailWidth.value, "Navigator tab bar is horizontal")
+
+        for (stage in org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors.ALL) {
+            composeTestRule.onNodeWithTag("RailItem_${stage.stageId.name}").assertExists()
+        }
+
+        composeTestRule.onNodeWithTag("NavigatorItem_Overview").assertExists()
+        composeTestRule.onNodeWithTag("NavigatorItem_RomConfig").assertExists()
+        composeTestRule.onNodeWithTag("NavigatorItem_RunHistory").assertExists()
+        composeTestRule.onNodeWithTag("NavigatorItem_Artifacts").assertExists()
+        composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertExists()
+
+        composeTestRule.onNodeWithTag("WorkspaceNavigatorFooter").assertDoesNotExist()
     }
 
     private fun pixelDifferencePercent(first: ImageBitmap, second: ImageBitmap): Double {

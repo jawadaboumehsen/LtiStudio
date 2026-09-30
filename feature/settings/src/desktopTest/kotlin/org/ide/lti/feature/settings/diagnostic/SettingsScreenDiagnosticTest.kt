@@ -25,6 +25,7 @@ import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ColorContrast
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.ide.lti.core.ui.settings.AppSettingsState
@@ -192,5 +193,40 @@ class SettingsScreenDiagnosticTest {
         onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
         onNodeWithText("Glass & motion").assertIsDisplayed()
         onNodeWithText("Glass effects").assertIsDisplayed()
+    }
+
+    @Test
+    fun testSettingsRightRailPresenceAndGeometryAtWideViewport() = runDesktopComposeUiTest(
+        width = 1120,
+        height = 700,
+    ) {
+        val settingsState = AppSettingsState(
+            initialTheme = AppSettingsState.THEME_BLUE,
+            initialEffectsEnabled = true,
+        )
+
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop()
+                    SettingsScreenContent(
+                        onBackClick = {},
+                        appSettingsState = settingsState,
+                        initialCategory = SettingsCategory.Appearance,
+                    )
+                }
+            }
+        }
+
+        waitForIdle()
+        onNodeWithTag("SettingsRightRail").assertExists()
+        val bounds = onNodeWithTag("SettingsRightRail").getBoundsInRoot()
+        val railWidth = (bounds.right - bounds.left).value
+        kotlin.test.assertEquals(
+            expected = GlassDimens.CompactRailWidth.value,
+            actual = railWidth,
+            absoluteTolerance = 0.5f,
+            message = "Settings right rail must be 44 dp wide",
+        )
     }
 }

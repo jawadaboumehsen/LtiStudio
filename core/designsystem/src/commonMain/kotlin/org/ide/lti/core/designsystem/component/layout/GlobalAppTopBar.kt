@@ -12,6 +12,10 @@
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -24,9 +28,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -193,20 +200,31 @@ private fun DestinationTab(
     tag: String = "GlobalTopBar_${destination.name}",
     onClick: () -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    val colors = MaterialTheme.colorScheme
     val isBlue = GlassTheme.appTheme == AppTheme.Blue
-    val background = when {
-        selected && isBlue -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-        selected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-        else -> Color.Transparent
-    }
-    val contentColor = when {
-        selected && isBlue -> BrandColors.OnLogoBadge
-        selected -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val background = destinationTabBackground(
+        selected = selected,
+        isHoveredOrFocused = isHovered || isFocused,
+        isPressed = isPressed,
+        effectsEnabled = effectsEnabled,
+        colors = colors,
+    )
+    val contentColor = destinationTabContentColor(
+        selected = selected,
+        isHoveredOrFocused = isHovered || isFocused,
+        isBlue = isBlue,
+        effectsEnabled = effectsEnabled,
+        colors = colors,
+    )
     val border = if (selected) {
         Modifier.glassOutlineBorder(
-            color = if (isBlue) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+            color = if (isBlue) colors.outline else colors.primary,
             width = GlassDimens.HairlineBorder,
             shape = GlassShapes.ShellPill,
         )
@@ -217,11 +235,13 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
+            .background(background, shape = GlassShapes.ShellPill)
             .clip(GlassShapes.ShellPill)
             .then(border)
-            .background(background)
             .selectable(
                 selected = selected,
+                interactionSource = interactionSource,
+                indication = null,
                 enabled = !selected,
                 role = Role.Tab,
                 onClick = onClick,
@@ -243,6 +263,35 @@ private fun DestinationTab(
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
+}
+
+private fun destinationTabBackground(
+    selected: Boolean,
+    isHoveredOrFocused: Boolean,
+    isPressed: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Faded)
+    isPressed -> colors.surfaceContainerHigh
+    isHoveredOrFocused -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
+    else -> Color.Transparent
+}
+
+private fun destinationTabContentColor(
+    selected: Boolean,
+    isHoveredOrFocused: Boolean,
+    isBlue: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    selected -> when {
+        !effectsEnabled -> colors.onPrimaryContainer
+        isBlue -> BrandColors.OnLogoBadge
+        else -> colors.onSurface
+    }
+    isHoveredOrFocused -> colors.onSurface
+    else -> colors.onSurfaceVariant
 }
 
 private fun destinationIcon(destination: GlobalAppDestination): AppIcon = when (destination) {

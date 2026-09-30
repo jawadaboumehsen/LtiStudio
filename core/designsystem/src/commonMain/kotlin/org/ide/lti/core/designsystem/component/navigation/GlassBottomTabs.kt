@@ -212,12 +212,18 @@ private fun GlassBottomTabBarBackground(containerColor: Color, interactiveHighli
         Modifier.background(containerColor, GlassShapes.HazeCapsule)
     }
 
+    val borderColor = if (GlassTheme.effectsEnabled) {
+        MaterialTheme.colorScheme.outline
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
+
     Row(
         Modifier
             .then(surfaceModifier)
             .clip(GlassShapes.HazeCapsule)
             .glassOutlineBorder(
-                color = MaterialTheme.colorScheme.outline,
+                color = borderColor,
                 width = StrokeWidth.Hairline,
                 shape = GlassShapes.HazeCapsule,
             )
@@ -239,6 +245,12 @@ private fun GlassBottomTabSpotlight(
     drag: DampedDragAnimation,
     interactiveHighlight: InteractiveHighlight,
 ) {
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val spotlightBackground = if (effectsEnabled) {
+        accentColor.copy(alpha = AlphaTokens.Faded)
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
     Box(
         Modifier
             .padding(horizontal = Spacing.ExtraSmall)
@@ -254,7 +266,7 @@ private fun GlassBottomTabSpotlight(
             .then(interactiveHighlight.gestureModifier)
             .then(drag.modifier)
             .clip(GlassShapes.Capsule)
-            .background(accentColor.copy(alpha = AlphaTokens.Faded))
+            .background(spotlightBackground)
             .height(ComponentSize.BottomTabItemHeight)
             .fillMaxWidth(1f / tabsCount),
     )

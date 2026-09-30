@@ -13,6 +13,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -25,18 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,6 +40,7 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -63,7 +60,6 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * @param modifier Optional modifier.
  * @param badge Optional trailing badge or counter string.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassSidebarItem(
     label: String,
@@ -73,18 +69,22 @@ fun GlassSidebarItem(
     modifier: Modifier = Modifier,
     badge: String? = null,
 ) {
-    var isHovered by remember { mutableStateOf(false) }
-    var isFocused by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
 
     val colors = MaterialTheme.colorScheme
-    val targetBackground = sidebarBackground(selected, isHovered, colors)
-    val targetBorderColor = sidebarBorderColor(selected, isFocused, isHovered, colors)
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val targetBackground = sidebarBackground(selected, isHovered, colors, effectsEnabled)
+    val targetBorderColor = sidebarBorderColor(selected, isFocused, isHovered, colors, effectsEnabled)
 
     val backgroundColor by animateColorAsState(
         targetValue = targetBackground,
+        label = "GlassSidebarItem_Background",
     )
     val borderColor by animateColorAsState(
         targetValue = targetBorderColor,
+        label = "GlassSidebarItem_Border",
     )
 
     Box(
@@ -97,11 +97,8 @@ fun GlassSidebarItem(
                 color = borderColor,
                 shape = GlassShapes.Medium,
             )
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
-            .onFocusChanged { isFocused = it.isFocused }
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
                 role = Role.Tab,
                 onClick = onClick,
@@ -115,6 +112,7 @@ fun GlassSidebarItem(
         ) {
             val iconTint by animateColorAsState(
                 targetValue = sidebarIconTint(selected, isHovered, colors),
+                label = "GlassSidebarItem_IconTint",
             )
             when (icon) {
                 is AppIcon.Vector -> Icon(
@@ -164,7 +162,13 @@ fun GlassSidebarItem(
 /**
  * Resolves the background color for a sidebar item.
  */
-private fun sidebarBackground(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+private fun sidebarBackground(
+    selected: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    selected && !effectsEnabled -> colors.primaryContainer
     selected -> colors.primary.copy(alpha = AlphaTokens.Glow)
     isHovered -> colors.onSurface.copy(alpha = AlphaTokens.UltraFaint)
     else -> Color.Transparent
@@ -173,13 +177,19 @@ private fun sidebarBackground(selected: Boolean, isHovered: Boolean, colors: Col
 /**
  * Resolves the outline border color for a sidebar item.
  */
-private fun sidebarBorderColor(selected: Boolean, isFocused: Boolean, isHovered: Boolean, colors: ColorScheme): Color =
-    when {
-        selected -> colors.primary.copy(alpha = AlphaTokens.Faded)
-        isFocused -> colors.primary
-        isHovered -> colors.outline.copy(alpha = AlphaTokens.Glow)
-        else -> Color.Transparent
-    }
+private fun sidebarBorderColor(
+    selected: Boolean,
+    isFocused: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    selected && !effectsEnabled -> colors.primary
+    selected -> colors.primary.copy(alpha = AlphaTokens.Faded)
+    isFocused -> colors.primary
+    isHovered -> colors.outline.copy(alpha = AlphaTokens.Glow)
+    else -> Color.Transparent
+}
 
 /**
  * Resolves the icon tint color for a sidebar item.

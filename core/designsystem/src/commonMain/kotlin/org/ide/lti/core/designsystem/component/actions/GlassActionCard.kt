@@ -49,6 +49,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -79,11 +80,12 @@ fun GlassActionCard(
     var isHovered by remember { mutableStateOf(false) }
 
     val colors = MaterialTheme.colorScheme
-    val targetBorder = actionCardBorderColor(isPrimary, isHovered, colors)
-    val targetSurface = actionCardSurfaceColor(isPrimary, isHovered, colors)
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val targetBorder = actionCardBorderColor(isPrimary, isHovered, colors, effectsEnabled)
+    val targetSurface = actionCardSurfaceColor(isPrimary, isHovered, colors, effectsEnabled)
 
-    val borderColor by animateColorAsState(targetBorder)
-    val surfaceColor by animateColorAsState(targetSurface)
+    val borderColor by animateColorAsState(targetBorder, label = "GlassActionCard_Border")
+    val surfaceColor by animateColorAsState(targetSurface, label = "GlassActionCard_Surface")
 
     GlassCard(
         modifier = modifier
@@ -188,11 +190,12 @@ fun GlassItemCard(
     var isHovered by remember { mutableStateOf(false) }
 
     val colors = MaterialTheme.colorScheme
-    val targetBorder = itemCardBorderColor(isHighlighted, isHovered, colors)
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val targetBorder = itemCardBorderColor(isHighlighted, isHovered, colors, effectsEnabled)
     val targetSurface = if (isHovered) colors.surfaceContainerHigh else colors.surfaceContainer
 
-    val borderColor by animateColorAsState(targetBorder)
-    val surfaceColor by animateColorAsState(targetSurface)
+    val borderColor by animateColorAsState(targetBorder, label = "GlassItemCard_Border")
+    val surfaceColor by animateColorAsState(targetSurface, label = "GlassItemCard_Surface")
 
     val clickableModifier = if (onClick != null) {
         Modifier.clickable(
@@ -271,17 +274,30 @@ fun GlassItemCard(
 /**
  * Resolves the target border color for an action card.
  */
-private fun actionCardBorderColor(isPrimary: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+private fun actionCardBorderColor(
+    isPrimary: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> if (isPrimary || isHovered) colors.primary else colors.outlineVariant
     isPrimary && isHovered -> colors.primary.copy(alpha = AlphaTokens.Prominent)
     isPrimary -> colors.primary.copy(alpha = AlphaTokens.Border)
     isHovered -> colors.primary
     else -> colors.outline
 }
 
-/**
- * Resolves the target surface color for an action card.
- */
-private fun actionCardSurfaceColor(isPrimary: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+private fun actionCardSurfaceColor(
+    isPrimary: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when {
+        isPrimary -> colors.primaryContainer
+        isHovered -> colors.surfaceContainerHigh
+        else -> colors.surfaceContainer
+    }
     isHovered -> colors.surfaceContainerHigh
     isPrimary -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Subtle)
     else -> colors.surfaceContainer
@@ -293,14 +309,24 @@ private fun actionCardSurfaceColor(isPrimary: Boolean, isHovered: Boolean, color
 @Composable
 private fun ActionCardIcon(icon: AppIcon, title: String, isActive: Boolean, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
-    val borderColor = if (isActive) colors.primary else colors.outline
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val borderColor = when {
+        isActive -> colors.primary
+        effectsEnabled -> colors.outline
+        else -> colors.outlineVariant
+    }
     val tintColor = if (isActive) colors.primary else colors.onSurfaceVariant
+    val backgroundColor = if (effectsEnabled) {
+        colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Faint)
+    } else {
+        colors.surfaceContainerHigh
+    }
 
     Box(
         modifier = modifier
             .size(IconSize.ActionCard)
             .clip(GlassShapes.Capsule)
-            .background(colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Faint))
+            .background(backgroundColor)
             .glassOutlineBorder(
                 color = borderColor,
                 width = StrokeWidth.Hairline,
@@ -328,7 +354,13 @@ private fun ActionCardIcon(icon: AppIcon, title: String, isActive: Boolean, modi
 /**
  * Resolves the target border color for an item card.
  */
-private fun itemCardBorderColor(isHighlighted: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+private fun itemCardBorderColor(
+    isHighlighted: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> if (isHighlighted || isHovered) colors.primary else colors.outlineVariant
     isHighlighted && isHovered -> colors.primary.copy(alpha = AlphaTokens.Prominent)
     isHighlighted || isHovered -> colors.primary
     else -> colors.outline
@@ -340,14 +372,20 @@ private fun itemCardBorderColor(isHighlighted: Boolean, isHovered: Boolean, colo
 @Composable
 private fun ItemCardIcon(icon: AppIcon, isHighlighted: Boolean, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
+    val effectsEnabled = GlassTheme.effectsEnabled
     val tint = if (isHighlighted) colors.primary else colors.onSurfaceVariant
+    val borderColor = when {
+        isHighlighted -> colors.primary
+        effectsEnabled -> colors.outline
+        else -> colors.outlineVariant
+    }
     Box(
         modifier = modifier
             .size(ComponentSize.TopBarButtonSize)
             .clip(GlassShapes.Capsule)
             .background(colors.surfaceContainerHigh)
             .glassOutlineBorder(
-                color = if (isHighlighted) colors.primary else colors.outline,
+                color = borderColor,
                 width = StrokeWidth.Hairline,
                 shape = GlassShapes.Capsule,
             ),

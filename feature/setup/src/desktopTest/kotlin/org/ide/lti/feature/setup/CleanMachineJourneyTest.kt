@@ -13,6 +13,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -557,7 +558,7 @@ class CleanMachineJourneyTest {
         // =========================================================================
         // Step 10: Returning to Projects tab shows header status "Machine ready"
         // =========================================================================
-        onNodeWithText("Projects").performClick()
+        onNodeWithTag("RailItem_projects").performClick()
         waitForIdle()
 
         onNodeWithText("Workspaces").assertIsDisplayed()

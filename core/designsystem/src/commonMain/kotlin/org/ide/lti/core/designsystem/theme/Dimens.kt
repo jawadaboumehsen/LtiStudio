@@ -201,11 +201,13 @@ object Elevation {
  * these are single-purpose shell measurements, not duplicates of the generic Spacing/CornerRadius tokens.)
  */
 object GlassDimens {
-    val TopBarHeight: Dp = 56.dp
+    val TopBarHeight: Dp = 44.dp
     val PipelineRailWidth: Dp = 150.dp
+    val CompactRailWidth: Dp = 44.dp
     val WorkspaceNavigatorWidth: Dp = 215.dp
+    val CompactNavigatorWidth: Dp = 44.dp
     val BreadcrumbHeight: Dp = 32.dp
-    val StatusBarHeight: Dp = 32.dp
+    val StatusBarHeight: Dp = 24.dp
 
     val ContentInset: Dp = 8.dp
     val ContentRadius: Dp = 8.dp
@@ -220,7 +222,7 @@ object GlassDimens {
     val ControlCornerRadius: Dp = 4.dp
     val BadgeCornerRadius: Dp = 3.dp
 
-    val PipelineStageItemHeight: Dp = 52.dp
+    val PipelineStageItemHeight: Dp = 36.dp
     val NavigatorItemHeight: Dp = 40.dp
     val ReadinessStageColumnWidth: Dp = 100.dp
     val ReadinessLabelColumnWidth: Dp = 140.dp

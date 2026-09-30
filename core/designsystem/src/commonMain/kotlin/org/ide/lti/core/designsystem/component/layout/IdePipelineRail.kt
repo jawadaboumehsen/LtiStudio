@@ -14,6 +14,7 @@ package org.ide.lti.core.designsystem.component.layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -28,12 +29,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Construction
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Healing
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.ViewInAr
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,12 +58,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipPlacement
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -76,7 +82,9 @@ data class IdePipelineStageItem(
 )
 
 /**
- * 150 dp wide persistent pipeline rail exposing exactly eight ordered ROM workflow stages.
+ * Persistent pipeline rail exposing ROM workflow stages.
+ *
+ * Supports standard 150 dp layout and compact 44 dp [iconsOnly] rail with hover tooltips.
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
@@ -85,17 +93,33 @@ fun IdePipelineRail(
     selectedStageId: String?,
     onSelectStage: (String) -> Unit,
     modifier: Modifier = Modifier,
+    applySurface: Boolean? = null,
     header: (@Composable () -> Unit)? = null,
+    iconsOnly: Boolean = false,
 ) {
+    val inFrame = LocalInIdeAppFrame.current
+    val shouldApplySurface = applySurface ?: !inFrame
+    val surfaceModifier = if (shouldApplySurface) {
+        Modifier.ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+    } else {
+        Modifier
+    }
+
+    val railWidth = if (iconsOnly) {
+        GlassDimens.CompactRailWidth
+    } else {
+        GlassDimens.PipelineRailWidth
+    }
+
     Column(
         modifier = modifier
-            .width(GlassDimens.PipelineRailWidth)
+            .width(railWidth)
             .fillMaxHeight()
-            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false),
+            .then(surfaceModifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
-        if (header != null) {
+        if (header != null && !iconsOnly) {
             header()
         }
         stages.forEach { stage ->
@@ -103,18 +127,67 @@ fun IdePipelineRail(
                 stage = stage,
                 isSelected = stage.id == selectedStageId,
                 onSelectStage = onSelectStage,
+                iconsOnly = iconsOnly,
             )
         }
     }
 }
 
 @Composable
-private fun PipelineRailItem(stage: IdePipelineStageItem, isSelected: Boolean, onSelectStage: (String) -> Unit) {
+private fun PipelineRailItem(
+    stage: IdePipelineStageItem,
+    isSelected: Boolean,
+    onSelectStage: (String) -> Unit,
+    iconsOnly: Boolean = false,
+) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val visuals = resolveRailItemVisuals(stage, isSelected, isPressed, isHovered)
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val visuals = resolveRailItemVisuals(
+        stage = stage,
+        isSelected = isSelected,
+        isPressed = isPressed,
+        isHoveredOrFocused = isHovered || isFocused,
+    )
 
+    if (iconsOnly) {
+        val tooltip = stage.label + (stage.disabledReason?.let { " ($it)" } ?: "")
+        GlassTooltipArea(
+            tooltipText = tooltip,
+            tooltipPlacement = GlassTooltipPlacement.End,
+        ) {
+            PipelineRailItemBox(
+                stage = stage,
+                isSelected = isSelected,
+                onSelectStage = onSelectStage,
+                iconsOnly = true,
+                visuals = visuals,
+                interactionSource = interactionSource,
+            )
+        }
+    } else {
+        PipelineRailItemBox(
+            stage = stage,
+            isSelected = isSelected,
+            onSelectStage = onSelectStage,
+            iconsOnly = false,
+            visuals = visuals,
+            interactionSource = interactionSource,
+        )
+    }
+}
+
+@Composable
+private fun PipelineRailItemBox(
+    stage: IdePipelineStageItem,
+    isSelected: Boolean,
+    onSelectStage: (String) -> Unit,
+    iconsOnly: Boolean,
+    visuals: RailItemVisuals,
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier = Modifier,
+) {
     val borderModifier = if (visuals.borderColor != null) {
         Modifier.glassOutlineBorder(
             width = GlassDimens.HairlineBorder,
@@ -126,13 +199,16 @@ private fun PipelineRailItem(stage: IdePipelineStageItem, isSelected: Boolean, o
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(GlassDimens.PipelineStageItemHeight)
-            .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
+            .padding(
+                horizontal = if (iconsOnly) Spacing.ExtraSmall else Spacing.Small,
+                vertical = Spacing.Hairline,
+            )
+            .background(visuals.bg, shape = GlassShapes.ShellPill)
             .clip(GlassShapes.ShellPill)
             .then(borderModifier)
-            .background(visuals.bg)
             .testTag("RailItem_${stage.id}")
             .semantics {
                 role = Role.Tab
@@ -148,24 +224,28 @@ private fun PipelineRailItem(stage: IdePipelineStageItem, isSelected: Boolean, o
                 enabled = stage.enabled,
                 onClick = { onSelectStage(stage.id) },
             ),
-        contentAlignment = Alignment.CenterStart,
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = Spacing.Small),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-        ) {
+        if (iconsOnly) {
             RenderRailIcon(stageId = stage.id, contentColor = visuals.contentColor)
-            Text(
-                text = stage.label,
-                color = visuals.contentColor,
-                fontSize = FontSize.BodySmall,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                fontFamily = GlassFontFamily.ide(),
-                maxLines = 1,
-            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+            ) {
+                RenderRailIcon(stageId = stage.id, contentColor = visuals.contentColor)
+                Text(
+                    text = stage.label,
+                    color = visuals.contentColor,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    fontFamily = GlassFontFamily.ide(),
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -177,27 +257,57 @@ private fun resolveRailItemVisuals(
     stage: IdePipelineStageItem,
     isSelected: Boolean,
     isPressed: Boolean,
-    isHovered: Boolean,
+    isHoveredOrFocused: Boolean,
 ): RailItemVisuals {
-    val bg = when {
-        !stage.enabled -> Color.Transparent
-        isSelected -> MaterialTheme.colorScheme.primary
-        isPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
-        else -> Color.Transparent
+    val colors = MaterialTheme.colorScheme
+    val isBlue = GlassTheme.appTheme == AppTheme.Blue
+    val effectsEnabled = GlassTheme.effectsEnabled
+
+    return RailItemVisuals(
+        bg = railItemBackground(stage.enabled, isSelected, isPressed, isHoveredOrFocused, effectsEnabled, colors),
+        contentColor = railItemContentColor(
+            stage.enabled,
+            isSelected,
+            isHoveredOrFocused,
+            isBlue,
+            effectsEnabled,
+            colors,
+        ),
+        borderColor = if (isSelected) (if (isBlue) colors.outline else colors.primary) else null,
+    )
+}
+
+private fun railItemBackground(
+    enabled: Boolean,
+    selected: Boolean,
+    pressed: Boolean,
+    hoveredOrFocused: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    !enabled -> Color.Transparent
+    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Faded)
+    pressed -> colors.surfaceContainerHigh
+    hoveredOrFocused -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
+    else -> Color.Transparent
+}
+
+private fun railItemContentColor(
+    enabled: Boolean,
+    selected: Boolean,
+    hoveredOrFocused: Boolean,
+    isBlue: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    !enabled -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
+    selected -> when {
+        !effectsEnabled -> colors.onPrimaryContainer
+        isBlue -> BrandColors.OnLogoBadge
+        else -> colors.onSurface
     }
-    val contentColor = when {
-        !stage.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
-        isSelected -> MaterialTheme.colorScheme.onPrimary
-        isHovered -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val borderColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        null
-    }
-    return RailItemVisuals(bg, contentColor, borderColor)
+    hoveredOrFocused -> colors.onSurface
+    else -> colors.onSurfaceVariant
 }
 
 @Composable
@@ -237,9 +347,8 @@ private fun resolveRailPainter(stageId: String): Painter? = when (stageId.lowerc
 private fun resolveRailIcon(stageId: String): ImageVector = when (stageId.lowercase()) {
     "machine_setup" -> Icons.Default.Construction
     "environment_overview", "environment" -> Icons.Default.ViewInAr
-    "wsl_runtime", "projects" -> Icons.Default.Folder
-    "build_service" -> Icons.Default.Download
-    "tool_packages", "tools" -> Icons.AutoMirrored.Filled.ListAlt
-    "diagnostics_recovery", "recovery" -> Icons.Default.Healing
-    else -> Icons.Default.Folder
+    "wsl_runtime", "projects", "workspaces" -> Icons.Default.Folder
+    "build_service", "tools" -> Icons.Default.Build
+    "recovery" -> Icons.Default.Restore
+    else -> Icons.Default.Construction
 }

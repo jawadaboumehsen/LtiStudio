@@ -32,6 +32,18 @@ object SetupTokens {
     const val DurationFeedbackMs: Int = 120
     const val DurationFadeMs: Int = 180
 
+    /** iOS critically-damped spring ratio for fluid navigation transitions (0.85f). */
+    const val MotionDampingRatio: Float = MotionSpring.DampingRatioNavigation
+
+    /** Smooth iOS navigation transition stiffness (380f). */
+    const val MotionStiffness: Float = MotionSpring.StiffnessNavigation
+
+    /** Subtle scale factor applied to exiting/entering tabs for iOS depth parallax. */
+    const val MotionScaleInitial: Float = 0.98f
+
+    /** Fractional horizontal offset (15%) for fluid tab slide transitions. */
+    const val MotionSlideFraction: Float = 0.15f
+
     /** Opaque wizard background per theme, since the wizard renders outside any glass surface. */
     private fun opaqueSurfaceColor(theme: AppTheme): Color = when (theme) {
         AppTheme.Light -> Color(0xFFFFFFFF)

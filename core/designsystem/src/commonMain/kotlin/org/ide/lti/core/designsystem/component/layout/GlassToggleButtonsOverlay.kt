@@ -25,7 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
@@ -119,11 +119,15 @@ private fun AnimatedToggleButton(onClick: () -> Unit, selected: Boolean, content
     val scale by animateFloatAsState(
         targetValue = if (isHovered) 1.08f else 1f,
         animationSpec = LtiLayoutAnimations.ButtonHoverScale,
+        label = "AnimatedToggleButton_Scale",
     )
 
     Box(
         modifier = Modifier
-            .scale(scale)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false },
     ) {

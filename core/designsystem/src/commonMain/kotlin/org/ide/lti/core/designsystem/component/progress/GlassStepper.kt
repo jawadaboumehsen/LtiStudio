@@ -229,13 +229,15 @@ private fun GlassStepNode(
     val isRunningOrSuccess = step.status == GlassStepStatus.RUNNING || step.status == GlassStepStatus.SUCCESS
     val clickModifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
 
+    val effectsEnabled = GlassTheme.effectsEnabled
+
     Box(
         modifier = modifier
             .clip(GlassShapes.Small)
-            .background(stepBackgroundColor(step.status, diagnostics, colors))
+            .background(stepBackgroundColor(step.status, diagnostics, colors, effectsEnabled))
             .glassOutlineBorder(
                 width = StrokeWidth.Hairline,
-                color = stepBorderColor(step.status, diagnostics, colors),
+                color = stepBorderColor(step.status, diagnostics, colors, effectsEnabled),
                 shape = GlassShapes.Small,
             )
             .then(clickModifier)
@@ -251,7 +253,7 @@ private fun GlassStepNode(
                         .align(Alignment.CenterStart)
                         .size(IconSize.Medium)
                         .clip(GlassShapes.Capsule)
-                        .background(stepIconBgColor(step.status, diagnostics, colors)),
+                        .background(stepIconBgColor(step.status, diagnostics, colors, effectsEnabled)),
                     contentAlignment = Alignment.Center,
                 ) {
                     StepStatusIndicator(
@@ -284,38 +286,71 @@ private fun GlassStepNode(
 /**
  * Resolves the background surface color for a step node based on its status.
  */
-private fun stepBackgroundColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
-    when (status) {
-        GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
-        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
-        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
+private fun stepBackgroundColor(
+    status: GlassStepStatus,
+    diagnostics: DiagnosticColors,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when (status) {
+        GlassStepStatus.RUNNING -> colors.primaryContainer
+        GlassStepStatus.SUCCESS -> colors.surfaceContainerHigh
+        GlassStepStatus.FAILED -> colors.surfaceContainerHigh
+        GlassStepStatus.WARNING -> colors.surfaceContainerHigh
         else -> colors.surfaceContainer
     }
+    status == GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
+    status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
+    status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
+    else -> colors.surfaceContainer
+}
 
 /**
  * Resolves the border color for a step node based on its status.
  */
-private fun stepBorderColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
-    when (status) {
+private fun stepBorderColor(
+    status: GlassStepStatus,
+    diagnostics: DiagnosticColors,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when (status) {
         GlassStepStatus.RUNNING -> colors.primary
-        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Border)
-        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Border)
-        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
-        else -> colors.outline
+        GlassStepStatus.SUCCESS -> diagnostics.success
+        GlassStepStatus.FAILED -> diagnostics.error
+        GlassStepStatus.WARNING -> diagnostics.warning
+        else -> colors.outlineVariant
     }
+    status == GlassStepStatus.RUNNING -> colors.primary
+    status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Border)
+    status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Border)
+    status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
+    else -> colors.outline
+}
 
 /**
  * Resolves the icon background color for a step node based on its status.
  */
-private fun stepIconBgColor(status: GlassStepStatus, diagnostics: DiagnosticColors, colors: ColorScheme): Color =
-    when (status) {
-        GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
-        else -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
+private fun stepIconBgColor(
+    status: GlassStepStatus,
+    diagnostics: DiagnosticColors,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when (status) {
+        GlassStepStatus.RUNNING -> colors.primaryContainer
+        GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Hover)
+        GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Hover)
+        GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Hover)
+        else -> colors.surfaceContainerHighest
     }
+    status == GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
+    else -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
+}
 
 /**
  * Resolves the primary semantic color for a step status.

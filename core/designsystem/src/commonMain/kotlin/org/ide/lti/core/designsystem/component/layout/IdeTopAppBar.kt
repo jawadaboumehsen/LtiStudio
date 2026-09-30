@@ -25,22 +25,31 @@ import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Top application bar matching the approved Stitch Studio design.
- * Height is strictly 40 dp.
+ * Height is strictly 44 dp.
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdeTopAppBar(
     modifier: Modifier = Modifier,
+    applySurface: Boolean? = null,
     leadingContent: @Composable RowScope.() -> Unit = {},
     centerContent: @Composable RowScope.() -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
     windowControls: @Composable (() -> Unit)? = null,
 ) {
+    val inFrame = LocalInIdeAppFrame.current
+    val shouldApplySurface = applySurface ?: !inFrame
+    val surfaceModifier = if (shouldApplySurface) {
+        Modifier.ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+    } else {
+        Modifier
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(GlassDimens.TopBarHeight)
-            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+            .then(surfaceModifier)
             .padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

@@ -47,6 +47,7 @@ public fun WorkspaceNavigator(
     uiState: WorkspaceShellUiState,
     onSelectSection: (WorkspaceSection) -> Unit,
     modifier: Modifier = Modifier,
+    iconsOnly: Boolean = false,
 ) {
     val items = listOf(
         IdeNavigatorItem(
@@ -103,6 +104,7 @@ public fun WorkspaceNavigator(
                 targetContext = uiState.targetContext,
             )
         },
+        iconsOnly = iconsOnly,
     )
 }
 

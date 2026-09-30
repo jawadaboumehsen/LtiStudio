@@ -99,14 +99,27 @@ fun GlassBanner(
     val hasActions = secondaryAction != null || primaryAction != null || onDismiss != null
 
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+        val backgroundModifier = if (GlassTheme.effectsEnabled) {
+            Modifier.background(severityColor.copy(alpha = AlphaTokens.UltraFaint))
+        } else {
+            Modifier
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(severityColor.copy(alpha = AlphaTokens.Subtle))
+        }
+        val borderColor = if (GlassTheme.effectsEnabled) {
+            severityColor.copy(alpha = AlphaTokens.Border)
+        } else {
+            severityColor
+        }
+
         Box(
             modifier = modifier
                 .fillMaxWidth()
                 .clip(GlassShapes.Small)
-                .background(severityColor.copy(alpha = AlphaTokens.UltraFaint))
+                .then(backgroundModifier)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = severityColor.copy(alpha = AlphaTokens.Border),
+                    color = borderColor,
                     shape = GlassShapes.Small,
                 )
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),

@@ -35,9 +35,18 @@ import org.ide.lti.core.designsystem.theme.ideFontFamily
 @Composable
 fun IdeStatusBar(
     modifier: Modifier = Modifier,
+    applySurface: Boolean? = null,
     leadingContent: @Composable RowScope.() -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
+    val inFrame = LocalInIdeAppFrame.current
+    val shouldApplySurface = applySurface ?: !inFrame
+    val surfaceModifier = if (shouldApplySurface) {
+        Modifier.ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+    } else {
+        Modifier
+    }
+
     ProvideTextStyle(
         MaterialTheme.typography.labelSmall.copy(
             fontSize = FontSize.Micro,
@@ -49,7 +58,7 @@ fun IdeStatusBar(
             modifier = modifier
                 .fillMaxWidth()
                 .height(GlassDimens.StatusBarHeight)
-                .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+                .then(surfaceModifier)
                 .padding(horizontal = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,

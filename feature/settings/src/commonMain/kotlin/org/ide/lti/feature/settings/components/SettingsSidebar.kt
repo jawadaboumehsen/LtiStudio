@@ -14,6 +14,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,15 +59,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -279,7 +279,6 @@ private fun SettingsSearchBar(query: String, onQueryChange: (String) -> Unit, mo
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SettingsCategoryRow(
     category: SettingsCategory,
@@ -287,17 +286,25 @@ private fun SettingsCategoryRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isHovered by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
 
     val activeBg = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-    val hoverBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val pressedBg = MaterialTheme.colorScheme.surfaceContainerHigh
+    val hoverBg = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
     val targetBg = when {
         isSelected -> activeBg
-        isHovered -> hoverBg
+        isPressed -> pressedBg
+        isHovered || isFocused -> hoverBg
         else -> Color.Transparent
     }
 
-    val animatedBg by animateColorAsState(targetValue = targetBg)
+    val animatedBg by animateColorAsState(
+        targetValue = targetBg,
+        label = "SettingsCategoryRow_Background",
+    )
     val activeBorder = MaterialTheme.colorScheme.outline
 
     val borderModifier = if (isSelected) {
@@ -310,15 +317,15 @@ private fun SettingsCategoryRow(
         Modifier
     }
 
+    val isInteractive = isHovered || isFocused
     val iconColor = when {
         isSelected -> MaterialTheme.colorScheme.primary
-        isHovered -> MaterialTheme.colorScheme.onSurface
+        isInteractive -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     val labelColor = when {
-        isSelected -> MaterialTheme.colorScheme.onSurface
-        isHovered -> MaterialTheme.colorScheme.onSurface
+        isSelected || isInteractive -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -331,10 +338,8 @@ private fun SettingsCategoryRow(
             .clip(GlassShapes.MediumSmall)
             .then(borderModifier)
             .background(animatedBg)
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
                 role = Role.Tab,
                 onClick = onClick,

@@ -52,7 +52,7 @@ import org.ide.lti.core.designsystem.theme.sceneHazeInput
 fun Modifier.glassSurface(
     role: GlassRole = GlassRole.Shell,
     shape: HazeShape = GlassShapes.HazeFlat,
-    hazeState: HazeState = GlassTheme.hazeState,
+    hazeState: HazeState? = null,
     surfaceColor: Color = Color.Unspecified,
     tint: Color = Color.Unspecified,
     captureBacking: Color = Color.Unspecified,
@@ -64,6 +64,7 @@ fun Modifier.glassSurface(
     val theme = GlassTheme.appTheme
     val effectsEnabled = GlassTheme.effectsEnabled
     val colors = MaterialTheme.colorScheme
+    val resolvedHazeState = hazeState ?: GlassTheme.hazeStateOrNull
 
     val resolvedSurface = when {
         surfaceColor.isSpecified -> surfaceColor
@@ -73,7 +74,7 @@ fun Modifier.glassSurface(
         else -> colors.surfaceContainer
     }
 
-    val glassModifier = if (effectsEnabled) {
+    val glassModifier = if (effectsEnabled && resolvedHazeState != null) {
         val baseStyle = when (role) {
             GlassRole.FloatingControl -> GlassMaterialStyles.clearStyle(
                 theme = theme,
@@ -88,7 +89,7 @@ fun Modifier.glassSurface(
         }
 
         Modifier.hazeGlass(
-            input = sceneHazeInput(hazeState),
+            input = sceneHazeInput(resolvedHazeState),
             style = remember(theme, shape, tint, captureBacking, role, styleOverride) {
                 baseStyle.then {
                     this.shape(shape)
@@ -108,8 +109,8 @@ fun Modifier.glassSurface(
 
     return this
         .then(glassModifier)
-        .then(borderModifier)
         .clip(shape)
+        .then(borderModifier)
 }
 
 /**
@@ -127,10 +128,12 @@ fun Modifier.ideShellSurface(
     drawBorder: Boolean = false,
     borderColor: Color = MaterialTheme.colorScheme.outline,
     borderWidth: Dp = GlassDimens.HairlineBorder,
+    hazeState: HazeState? = null,
     styleOverride: (GlassStyleScope.() -> Unit)? = null,
 ): Modifier = glassSurface(
     role = GlassRole.Shell,
     shape = shape,
+    hazeState = hazeState,
     surfaceColor = surfaceColor,
     tint = tint,
     captureBacking = captureBacking,

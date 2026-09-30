@@ -87,7 +87,7 @@ fun ThemePreviewCard(
         else -> MaterialTheme.colorScheme.outline
     }
 
-    val borderColor by animateColorAsState(targetValue = targetBorder)
+    val borderColor by animateColorAsState(targetValue = targetBorder, label = "ThemePreviewCard_Border")
 
     val targetSurface = when {
         isSelected -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
@@ -95,7 +95,7 @@ fun ThemePreviewCard(
         else -> MaterialTheme.colorScheme.surfaceContainer
     }
 
-    val surfaceColor by animateColorAsState(targetValue = targetSurface)
+    val surfaceColor by animateColorAsState(targetValue = targetSurface, label = "ThemePreviewCard_Surface")
 
     val defaultSubtitle = when (theme) {
         AppTheme.Blue -> "Signature AMOLED"

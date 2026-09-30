@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
@@ -25,7 +26,9 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
  * Glass-styled dropdown menu, wrapping Material3's [DropdownMenu] with token-based surface
@@ -42,6 +45,11 @@ public fun GlassDropdownMenu(
 ) {
     val density = LocalDensity.current
     val dpOffset = with(density) { DpOffset(offset.x.toDp(), offset.y.toDp()) }
+    val borderColor = if (GlassTheme.effectsEnabled) {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = AlphaTokens.Border)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
@@ -49,6 +57,7 @@ public fun GlassDropdownMenu(
         offset = dpOffset,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = GlassShapes.Medium,
+        border = BorderStroke(StrokeWidth.Hairline, borderColor),
     ) {
         Column(
             modifier = Modifier.padding(vertical = Spacing.ExtraSmall),

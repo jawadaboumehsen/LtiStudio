@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Code
@@ -39,7 +40,6 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -75,11 +76,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipPlacement
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -94,7 +100,9 @@ data class IdeNavigatorItem(
 )
 
 /**
- * 230 dp wide workspace navigator with section items and a contextual footer.
+ * Workspace navigator with section items and a contextual footer.
+ *
+ * Supports standard 215 dp layout and compact 44 dp [iconsOnly] rail with hover tooltips.
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
@@ -105,56 +113,41 @@ fun IdeNavigatorPanel(
     selectedItemId: String?,
     onSelectItem: (String) -> Unit,
     modifier: Modifier = Modifier,
+    applySurface: Boolean? = null,
     footerContent: (@Composable () -> Unit)? = null,
+    iconsOnly: Boolean = false,
 ) {
+    val inFrame = LocalInIdeAppFrame.current
+    val shouldApplySurface = applySurface ?: !inFrame
+    val surfaceModifier = if (shouldApplySurface) {
+        Modifier.ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+    } else {
+        Modifier
+    }
+
+    val panelWidth = if (iconsOnly) {
+        GlassDimens.CompactNavigatorWidth
+    } else {
+        GlassDimens.WorkspaceNavigatorWidth
+    }
+
     Column(
         modifier = modifier
-            .width(GlassDimens.WorkspaceNavigatorWidth)
+            .width(panelWidth)
             .fillMaxHeight()
-            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
+            .then(surfaceModifier)
             .padding(vertical = Spacing.Small),
         verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = headerTitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.Micro,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.code(),
-                    letterSpacing = LetterSpacing.TrackingHeader,
+            if (!iconsOnly) {
+                NavigatorHeader(
+                    headerTitle = headerTitle,
+                    headerSubtitle = headerSubtitle,
                 )
-                if (headerSubtitle != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(GlassShapes.ShellBadge)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .glassOutlineBorder(
-                                width = GlassDimens.HairlineBorder,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = GlassShapes.ShellBadge,
-                            )
-                            .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
-                    ) {
-                        Text(
-                            text = headerSubtitle,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = FontSize.Micro,
-                            fontFamily = GlassFontFamily.code(),
-                        )
-                    }
-                }
+                Spacer(Modifier.height(Spacing.ExtraSmall))
             }
-
-            Spacer(Modifier.height(Spacing.ExtraSmall))
 
             // Navigation Items
             items.forEach { item ->
@@ -162,12 +155,13 @@ fun IdeNavigatorPanel(
                     item = item,
                     isSelected = item.id == selectedItemId,
                     onSelectItem = onSelectItem,
+                    iconsOnly = iconsOnly,
                 )
             }
         }
 
         // Contextual Footer
-        if (footerContent != null) {
+        if (footerContent != null && !iconsOnly) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider(
                     thickness = GlassDimens.HairlineBorder,
@@ -182,33 +176,83 @@ fun IdeNavigatorPanel(
 }
 
 @Composable
-private fun NavigatorItemRow(item: IdeNavigatorItem, isSelected: Boolean, onSelectItem: (String) -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val bg = when {
-        !item.enabled -> Color.Transparent
-        isSelected -> MaterialTheme.colorScheme.primary
-        isPressed -> MaterialTheme.colorScheme.surfaceContainerHigh
-        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Prominent)
-        else -> Color.Transparent
-    }
-
-    val contentColor = when {
-        !item.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
-        isSelected -> MaterialTheme.colorScheme.onPrimary
-        isHovered -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
+private fun NavigatorHeader(headerTitle: String, headerSubtitle: String?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline)
-            .height(GlassDimens.NavigatorItemHeight)
-            .clip(GlassShapes.ShellControl)
-            .background(bg)
+            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = headerTitle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = GlassFontFamily.code(),
+            letterSpacing = LetterSpacing.TrackingHeader,
+        )
+        if (headerSubtitle != null) {
+            NavigatorHeaderBadge(headerSubtitle)
+        }
+    }
+}
+
+@Composable
+private fun NavigatorHeaderBadge(subtitle: String) {
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.ShellBadge)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .glassOutlineBorder(
+                width = GlassDimens.HairlineBorder,
+                color = MaterialTheme.colorScheme.outline,
+                shape = GlassShapes.ShellBadge,
+            )
+            .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.Hairline),
+    ) {
+        Text(
+            text = subtitle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontFamily = GlassFontFamily.code(),
+        )
+    }
+}
+
+@Composable
+private fun NavigatorItemRow(
+    item: IdeNavigatorItem,
+    isSelected: Boolean,
+    onSelectItem: (String) -> Unit,
+    iconsOnly: Boolean = false,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val visuals = resolveNavVisuals(item = item, isSelected = isSelected, isPressed = isPressed, isHovered = isHovered)
+
+    val borderModifier = if (visuals.borderColor != null) {
+        Modifier.glassOutlineBorder(
+            width = GlassDimens.HairlineBorder,
+            color = visuals.borderColor,
+            shape = GlassShapes.ShellPill,
+        )
+    } else {
+        Modifier
+    }
+
+    val itemContent = @Composable {
+        val clickModifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = if (iconsOnly) Spacing.ExtraSmall else Spacing.Small,
+                vertical = Spacing.Hairline,
+            )
+            .height(if (iconsOnly) GlassDimens.PipelineStageItemHeight else GlassDimens.NavigatorItemHeight)
+            .background(visuals.bg, shape = GlassShapes.ShellPill)
+            .clip(GlassShapes.ShellPill)
+            .then(borderModifier)
             .testTag("NavigatorItem_${item.id}")
             .semantics {
                 role = Role.Tab
@@ -222,7 +266,104 @@ private fun NavigatorItemRow(item: IdeNavigatorItem, isSelected: Boolean, onSele
                 enabled = item.enabled,
                 onClick = { onSelectItem(item.id) },
             )
-            .padding(horizontal = Spacing.Small),
+
+        if (iconsOnly) {
+            Box(
+                modifier = clickModifier,
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = resolveNavIcon(item.id),
+                    contentDescription = null,
+                    tint = visuals.contentColor,
+                    modifier = Modifier.size(IconSize.SidePanelRail),
+                )
+            }
+        } else {
+            NavigatorFullItemRow(
+                item = item,
+                contentColor = visuals.contentColor,
+                isSelected = isSelected,
+                modifier = clickModifier,
+            )
+        }
+    }
+
+    if (iconsOnly) {
+        val tooltip = item.label + (item.badge?.let { " ($it)" } ?: "")
+        GlassTooltipArea(
+            tooltipText = tooltip,
+            tooltipPlacement = GlassTooltipPlacement.End,
+        ) {
+            itemContent()
+        }
+    } else {
+        itemContent()
+    }
+}
+
+private data class NavItemVisuals(val bg: Color, val contentColor: Color, val borderColor: Color?)
+
+@Composable
+private fun resolveNavVisuals(
+    item: IdeNavigatorItem,
+    isSelected: Boolean,
+    isPressed: Boolean,
+    isHovered: Boolean,
+): NavItemVisuals {
+    val colors = MaterialTheme.colorScheme
+    val isBlue = GlassTheme.appTheme == AppTheme.Blue
+    val effectsEnabled = GlassTheme.effectsEnabled
+
+    return NavItemVisuals(
+        bg = navItemBackground(item.enabled, isSelected, isPressed, isHovered, effectsEnabled, colors),
+        contentColor = navItemContentColor(item.enabled, isSelected, isHovered, isBlue, effectsEnabled, colors),
+        borderColor = if (isSelected) (if (isBlue) colors.outline else colors.primary) else null,
+    )
+}
+
+private fun navItemBackground(
+    enabled: Boolean,
+    selected: Boolean,
+    pressed: Boolean,
+    hovered: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    !enabled -> Color.Transparent
+    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Faded)
+    pressed -> colors.surfaceContainerHigh
+    hovered -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
+    else -> Color.Transparent
+}
+
+private fun navItemContentColor(
+    enabled: Boolean,
+    selected: Boolean,
+    hovered: Boolean,
+    isBlue: Boolean,
+    effectsEnabled: Boolean,
+    colors: ColorScheme,
+): Color = when {
+    !enabled -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Disabled)
+    selected -> when {
+        !effectsEnabled -> colors.onPrimaryContainer
+        isBlue -> BrandColors.OnLogoBadge
+        else -> colors.onSurface
+    }
+    hovered -> colors.onSurface
+    else -> colors.onSurfaceVariant
+}
+
+@Composable
+private fun NavigatorFullItemRow(
+    item: IdeNavigatorItem,
+    contentColor: Color,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(horizontal = Spacing.Small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -247,10 +388,11 @@ private fun NavigatorItemRow(item: IdeNavigatorItem, isSelected: Boolean, onSele
         }
 
         if (item.badge != null) {
+            val isBlue = GlassTheme.appTheme == AppTheme.Blue
             Text(
                 text = item.badge,
                 color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSurface
+                    if (isBlue) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
@@ -305,9 +447,9 @@ private val NAV_ICONS: Map<String, ImageVector> = mapOf(
     "partition-layout" to Icons.Default.GridView,
     "partition_layout" to Icons.Default.GridView,
     "partition layout" to Icons.Default.GridView,
-    "flashable-members" to Icons.Default.ListAlt,
-    "flashable_members" to Icons.Default.ListAlt,
-    "flashable members" to Icons.Default.ListAlt,
+    "flashable-members" to Icons.AutoMirrored.Filled.ListAlt,
+    "flashable_members" to Icons.AutoMirrored.Filled.ListAlt,
+    "flashable members" to Icons.AutoMirrored.Filled.ListAlt,
     "avb-keys" to Icons.Default.VpnKey,
     "avb_keys" to Icons.Default.VpnKey,
     "avb keys" to Icons.Default.VpnKey,
@@ -336,4 +478,4 @@ private val NAV_ICONS: Map<String, ImageVector> = mapOf(
     "about" to Icons.Default.Info,
 )
 
-private fun resolveNavIcon(id: String): ImageVector = NAV_ICONS[id.lowercase()] ?: Icons.Default.Dashboard
+fun resolveNavIcon(id: String): ImageVector = NAV_ICONS[id.lowercase()] ?: Icons.Default.Dashboard

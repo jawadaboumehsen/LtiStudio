@@ -131,8 +131,8 @@ fun WindowControlButton(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val backgroundColor by animateColorAsState(targetBackgroundColor)
-    val iconTint by animateColorAsState(targetIconTint)
+    val backgroundColor by animateColorAsState(targetBackgroundColor, label = "WindowControlButton_Background")
+    val iconTint by animateColorAsState(targetIconTint, label = "WindowControlButton_IconTint")
 
     val borderModifier = if (isHovered && !isCloseButton) {
         Modifier.glassOutlineBorder(

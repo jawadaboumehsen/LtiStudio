@@ -13,11 +13,13 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupLogKind
@@ -327,5 +329,40 @@ class SetupActionsTest {
             assertTrue(activityState.followingLatest.value)
             onNodeWithText("Pause follow").assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun testSetupScreenIconsOnlyMode() = runDesktopComposeUiTest(width = 1200, height = 800) {
+        var selectedTab: SetupTab? = null
+
+        setContent {
+            LtiTheme {
+                SetupScreenContent(
+                    state = SetupUiState(
+                        selectedTab = SetupTab.TOOLS,
+                    ),
+                    actions = SetupUiActions(
+                        onSelectTab = { selectedTab = it },
+                    ),
+                    iconsOnly = true,
+                )
+            }
+        }
+
+        val railBounds = onNodeWithTag("IdePipelineRail").fetchSemanticsNode().boundsInRoot
+        assertEquals(GlassDimens.CompactRailWidth.value, railBounds.width, 0.5f)
+
+        onNodeWithTag("RailItem_projects").assertExists()
+        onNodeWithTag("RailItem_environment").assertExists()
+        onNodeWithTag("RailItem_tools").assertExists()
+        onNodeWithTag("RailItem_recovery").assertExists()
+
+        onNodeWithTag("NavigatorItem_all_tools").assertExists()
+        onNodeWithTag("NavigatorItem_firmware").assertExists()
+        onNodeWithTag("NavigatorItem_filesystems").assertExists()
+        onNodeWithTag("NavigatorItem_signing").assertExists()
+
+        onNodeWithTag("RailItem_environment").performClick()
+        assertEquals(SetupTab.ENVIRONMENT, selectedTab)
     }
 }

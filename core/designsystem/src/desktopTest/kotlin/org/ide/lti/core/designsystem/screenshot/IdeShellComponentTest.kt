@@ -11,6 +11,9 @@ package org.ide.lti.core.designsystem.screenshot
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -29,6 +32,9 @@ import org.ide.lti.core.designsystem.component.display.IdeSummaryItem
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
+import org.ide.lti.core.designsystem.component.layout.IdeRightRail
+import org.ide.lti.core.designsystem.component.layout.IdeRightRailItem
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Rule
@@ -192,5 +198,40 @@ class IdeShellComponentTest {
         composeTestRule.onNodeWithTag("SummaryItem_1").assertExists()
         composeTestRule.onNodeWithTag("SummaryItem_2").assertExists()
         composeTestRule.onNodeWithTag("SummaryItem_3").assertExists()
+    }
+
+    @Test
+    fun testIdeRightRailRendersItemsAndGeometry() {
+        var clickedItem: String? = null
+        composeTestRule.setContent {
+            LtiTheme {
+                IdeRightRail(
+                    items = listOf(
+                        IdeRightRailItem(
+                            id = "ai",
+                            label = "AI Assistant",
+                            icon = Icons.Default.AutoAwesome,
+                            onClick = { clickedItem = "ai" },
+                        ),
+                        IdeRightRailItem(
+                            id = "terminal",
+                            label = "Terminal",
+                            icon = Icons.Default.Terminal,
+                            onClick = { clickedItem = "terminal" },
+                        ),
+                    ),
+                    modifier = Modifier.testTag("RightRail"),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("RightRail").assertExists()
+        val bounds = composeTestRule.onNodeWithTag("RightRail").fetchSemanticsNode().boundsInRoot
+        assertEquals(GlassDimens.CompactRailWidth.value, bounds.width, 0.5f, "Right rail must be 44 dp")
+
+        composeTestRule.onNodeWithTag("RightRailItem_ai").assertExists().performClick()
+        assertEquals("ai", clickedItem)
+
+        composeTestRule.onNodeWithTag("RightRailItem_terminal").assertExists()
     }
 }

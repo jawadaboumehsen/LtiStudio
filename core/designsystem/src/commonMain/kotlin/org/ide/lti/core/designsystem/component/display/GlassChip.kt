@@ -75,18 +75,19 @@ fun GlassChip(
     var isHovered by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
 
-    val targetBackground = chipBackgroundColor(selected, isHovered, colors)
-    val targetBorder = chipBorderColor(selected, isHovered, colors)
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val targetBackground = chipBackgroundColor(selected, isHovered, colors, effectsEnabled)
+    val targetBorder = chipBorderColor(selected, isHovered, colors, effectsEnabled)
     val targetText = chipTextColor(selected, isHovered, colors)
 
-    val backgroundColor by animateColorAsState(targetBackground)
-    val borderColor by animateColorAsState(targetBorder)
-    val textColor by animateColorAsState(targetText)
+    val backgroundColor by animateColorAsState(targetBackground, label = "GlassChip_Background")
+    val borderColor by animateColorAsState(targetBorder, label = "GlassChip_Border")
+    val textColor by animateColorAsState(targetText, label = "GlassChip_Text")
 
     val effectiveClick = resolveChipClick(enabled, selected, onClick, onSelectedChange)
 
     val theme = GlassTheme.appTheme
-    val chipModifier = if (GlassTheme.effectsEnabled) {
+    val chipModifier = if (effectsEnabled) {
         Modifier.hazeGlass(
             input = sceneHazeInput(GlassTheme.hazeState),
             style = remember(theme, shape) {
@@ -146,7 +147,18 @@ fun GlassChip(
 /**
  * Resolves the background color for a glass chip.
  */
-private fun chipBackgroundColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color = when {
+private fun chipBackgroundColor(
+    selected: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when {
+        selected && isHovered -> colors.primaryContainer
+        selected -> colors.primaryContainer
+        isHovered -> colors.surfaceContainerHigh
+        else -> colors.surfaceContainer
+    }
     selected && isHovered -> colors.primary.copy(alpha = AlphaTokens.Elevated)
     selected -> colors.primary.copy(alpha = AlphaTokens.Hover)
     isHovered -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
@@ -156,12 +168,19 @@ private fun chipBackgroundColor(selected: Boolean, isHovered: Boolean, colors: C
 /**
  * Resolves the border outline color for a glass chip.
  */
-private fun chipBorderColor(selected: Boolean, isHovered: Boolean, colors: ColorScheme): Color =
-    if (selected || isHovered) {
-        colors.primary.copy(alpha = AlphaTokens.Prominent)
-    } else {
-        colors.primary.copy(alpha = AlphaTokens.Hover)
+private fun chipBorderColor(
+    selected: Boolean,
+    isHovered: Boolean,
+    colors: ColorScheme,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled -> when {
+        selected || isHovered -> colors.primary
+        else -> colors.outlineVariant
     }
+    selected || isHovered -> colors.primary.copy(alpha = AlphaTokens.Prominent)
+    else -> colors.primary.copy(alpha = AlphaTokens.Hover)
+}
 
 /**
  * Resolves the label text color for a glass chip.

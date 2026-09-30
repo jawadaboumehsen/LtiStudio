@@ -44,10 +44,12 @@ import androidx.compose.ui.util.fastCoerceIn
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import kotlin.math.roundToInt
 
@@ -161,12 +163,23 @@ fun GlassSlider(
             Modifier.background(colors.surfaceContainerHighest, GlassShapes.HazeCapsule)
         }
 
+        val thumbBorderModifier = if (GlassTheme.effectsEnabled) {
+            Modifier
+        } else {
+            Modifier.glassOutlineBorder(
+                color = colors.outlineVariant,
+                width = StrokeWidth.Hairline,
+                shape = GlassShapes.HazeCapsule,
+            )
+        }
+
         Box(
             modifier = Modifier
                 .offset { IntOffset((fraction * (width - thumbDiameter)).roundToInt(), 0) }
                 .size(width = ComponentSize.SliderThumbWidth, height = ComponentSize.SliderThumbHeight)
                 .then(thumbModifier)
-                .clip(GlassShapes.HazeCapsule),
+                .clip(GlassShapes.HazeCapsule)
+                .then(thumbBorderModifier),
         )
     }
 }

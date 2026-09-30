@@ -167,6 +167,7 @@ fun GlassTextField(
             isHovered -> colors.outline.copy(alpha = AlphaTokens.Prominent)
             else -> colors.outline
         },
+        label = "GlassTextField_Border",
     )
     val focusGradientColor = colors.primary
 

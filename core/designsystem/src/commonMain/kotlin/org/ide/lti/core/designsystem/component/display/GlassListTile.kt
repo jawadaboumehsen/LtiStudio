@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -156,14 +157,25 @@ fun GlassListTile(
                 .padding(end = Spacing.Medium),
         ) {
             if (leadingIcon != null) {
+                val effectsEnabled = GlassTheme.effectsEnabled
+                val badgeBg = if (effectsEnabled) {
+                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                }
+                val badgeBorder = if (effectsEnabled) {
+                    MaterialTheme.colorScheme.outline
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant
+                }
                 Box(
                     modifier = Modifier
                         .size(ComponentSize.ListTileBadgeSize)
                         .clip(GlassShapes.Small)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
+                        .background(badgeBg)
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = badgeBorder,
                             shape = GlassShapes.Small,
                         ),
                     contentAlignment = Alignment.Center,

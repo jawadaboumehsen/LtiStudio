@@ -68,29 +68,44 @@ fun GlassTab(
 ) {
     var isHovered by remember { mutableStateOf(false) }
     val tabShape = GlassShapes.HazeCapsule
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val colors = MaterialTheme.colorScheme
 
-    val surfaceColor = when {
-        selected -> selectedColor
-        isHovered -> MaterialTheme.colorScheme.surfaceContainerHigh
-        else -> unselectedColor
-    }
-    val tintColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Hover)
+    val surfaceColor = tabSurfaceColor(
+        selected = selected,
+        isHovered = isHovered,
+        selectedColor = selectedColor,
+        unselectedColor = unselectedColor,
+        solidContainer = colors.primaryContainer,
+        hoverContainer = colors.surfaceContainerHighest,
+        effectsEnabled = effectsEnabled,
+    )
+    val tintColor = if (selected && effectsEnabled) {
+        colors.primary.copy(alpha = AlphaTokens.Hover)
     } else {
         Color.Transparent
     }
-    val contentColor = when {
-        selected -> MaterialTheme.colorScheme.onSurface
-        isHovered -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor = tabTextColor(
+        selected = selected,
+        onSurface = colors.onSurface,
+        onSurfaceVariant = colors.onSurfaceVariant,
+        onPrimaryContainer = colors.onPrimaryContainer,
+        effectsEnabled = effectsEnabled,
+    )
+    val defaultBorder = if (effectsEnabled) {
+        colors.outline.copy(alpha = AlphaTokens.Disabled)
+    } else {
+        colors.outlineVariant
     }
-
-    val borderColor = when {
-        selected && isHovered -> MaterialTheme.colorScheme.primary
-        selected -> MaterialTheme.colorScheme.outline
-        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Border)
-        else -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Disabled)
-    }
+    val borderColor = tabBorderColor(
+        selected = selected,
+        isHovered = isHovered,
+        primaryColor = colors.primary,
+        outlineColor = colors.outline,
+        hoverOutline = colors.outline.copy(alpha = AlphaTokens.Border),
+        defaultBorder = defaultBorder,
+        effectsEnabled = effectsEnabled,
+    )
 
     Tab(
         text = {
@@ -217,26 +232,86 @@ private class TabItemColors(
 
 @Composable
 private fun resolveTabItemColors(selected: Boolean, isHovered: Boolean): TabItemColors {
-    val surfaceColor = if (selected || isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent
-    val tintColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(
-            alpha = AlphaTokens.Hover,
-        )
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val colors = MaterialTheme.colorScheme
+
+    val surfaceColor = tabSurfaceColor(
+        selected = selected,
+        isHovered = isHovered,
+        selectedColor = colors.surfaceContainerHigh,
+        unselectedColor = Color.Transparent,
+        solidContainer = colors.primaryContainer,
+        hoverContainer = colors.surfaceContainerHigh,
+        effectsEnabled = effectsEnabled,
+    )
+    val tintColor = if (selected && effectsEnabled) {
+        colors.primary.copy(alpha = AlphaTokens.Hover)
     } else {
         Color.Transparent
     }
-    val textColor = when {
-        selected -> MaterialTheme.colorScheme.onSurface
-        isHovered -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val borderColor = when {
-        selected && isHovered -> MaterialTheme.colorScheme.primary
-        selected -> MaterialTheme.colorScheme.outline
-        isHovered -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Border)
-        else -> Color.Transparent
-    }
+    val textColor = tabTextColor(
+        selected = selected,
+        onSurface = colors.onSurface,
+        onSurfaceVariant = colors.onSurfaceVariant,
+        onPrimaryContainer = colors.onPrimaryContainer,
+        effectsEnabled = effectsEnabled,
+    )
+    val borderColor = tabBorderColor(
+        selected = selected,
+        isHovered = isHovered,
+        primaryColor = colors.primary,
+        outlineColor = colors.outline,
+        hoverOutline = colors.outline.copy(alpha = AlphaTokens.Border),
+        defaultBorder = Color.Transparent,
+        effectsEnabled = effectsEnabled,
+    )
     return TabItemColors(surfaceColor, tintColor, textColor, borderColor)
+}
+
+private fun tabSurfaceColor(
+    selected: Boolean,
+    isHovered: Boolean,
+    selectedColor: Color,
+    unselectedColor: Color,
+    solidContainer: Color,
+    hoverContainer: Color,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled && selected -> solidContainer
+    !effectsEnabled && isHovered -> hoverContainer
+    !effectsEnabled -> unselectedColor
+    selected -> selectedColor
+    isHovered -> hoverContainer
+    else -> unselectedColor
+}
+
+private fun tabBorderColor(
+    selected: Boolean,
+    isHovered: Boolean,
+    primaryColor: Color,
+    outlineColor: Color,
+    hoverOutline: Color,
+    defaultBorder: Color,
+    effectsEnabled: Boolean,
+): Color = when {
+    !effectsEnabled && (selected || isHovered) -> primaryColor
+    !effectsEnabled -> defaultBorder
+    selected && isHovered -> primaryColor
+    selected -> outlineColor
+    isHovered -> hoverOutline
+    else -> defaultBorder
+}
+
+private fun tabTextColor(
+    selected: Boolean,
+    onSurface: Color,
+    onSurfaceVariant: Color,
+    onPrimaryContainer: Color,
+    effectsEnabled: Boolean,
+): Color = when {
+    selected && !effectsEnabled -> onPrimaryContainer
+    selected -> onSurface
+    else -> onSurfaceVariant
 }
 
 /**

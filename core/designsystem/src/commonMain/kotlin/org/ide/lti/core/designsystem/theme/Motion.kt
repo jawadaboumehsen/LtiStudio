@@ -74,6 +74,12 @@ object MotionSpring {
 
     /** Fluid scale-Y swelling damping ratio (0.7f). */
     const val DampingRatioScaleY: Float = 0.7f
+
+    /** Smooth iOS navigation transition stiffness (380f). */
+    const val StiffnessNavigation: Float = 380f
+
+    /** iOS critically-damped spring ratio for fluid navigation transitions (0.85f). */
+    const val DampingRatioNavigation: Float = 0.85f
 }
 
 /**

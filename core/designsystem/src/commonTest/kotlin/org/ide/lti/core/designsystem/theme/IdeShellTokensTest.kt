@@ -19,15 +19,17 @@ class IdeShellTokensTest {
 
     @Test
     fun testLogicalFrameDimensions() {
-        assertEquals(56.dp, GlassDimens.TopBarHeight, "Top bar height must be 56 dp")
+        assertEquals(44.dp, GlassDimens.TopBarHeight, "Top bar height must be 44 dp")
         assertEquals(150.dp, GlassDimens.PipelineRailWidth, "Pipeline rail width must be 150 dp")
+        assertEquals(44.dp, GlassDimens.CompactRailWidth, "Compact rail width must be 44 dp")
         assertEquals(215.dp, GlassDimens.WorkspaceNavigatorWidth, "Workspace navigator width must be 215 dp")
+        assertEquals(44.dp, GlassDimens.CompactNavigatorWidth, "Compact navigator width must be 44 dp")
         assertEquals(32.dp, GlassDimens.BreadcrumbHeight, "Breadcrumb bar height must be 32 dp")
-        assertEquals(32.dp, GlassDimens.StatusBarHeight, "Bottom status bar height must be 32 dp")
+        assertEquals(24.dp, GlassDimens.StatusBarHeight, "Bottom status bar height must be 24 dp")
 
         assertEquals(8.dp, GlassDimens.ContentInset, "Content inset must be 8 dp")
         assertEquals(8.dp, GlassDimens.ContentRadius, "Content radius must be 8 dp")
-        assertEquals(52.dp, GlassDimens.PipelineStageItemHeight, "Pipeline stage item height must be 52 dp")
+        assertEquals(36.dp, GlassDimens.PipelineStageItemHeight, "Pipeline stage item height must be 36 dp")
         assertEquals(40.dp, GlassDimens.NavigatorItemHeight, "Navigator item height must be 40 dp")
 
         assertEquals(1024.dp, GlassDimens.CompactBreakpoint)
@@ -92,6 +94,12 @@ class IdeShellTokensTest {
             minRatio = 2.9,
             "Dark primary on surfaceContainerHigh",
         )
+        assertContrast(
+            scheme.onPrimaryContainer,
+            scheme.primaryContainer,
+            minRatio = 4.5,
+            "Dark onPrimaryContainer on primaryContainer",
+        )
     }
 
     @Test
@@ -122,6 +130,12 @@ class IdeShellTokensTest {
         assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Light outline on background")
         assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Light primary on surfaceContainer")
         assertContrast(scheme.primary, scheme.background, minRatio = 3.0, "Light primary on background")
+        assertContrast(
+            scheme.onPrimaryContainer,
+            scheme.primaryContainer,
+            minRatio = 4.5,
+            "Light onPrimaryContainer on primaryContainer",
+        )
     }
 
     @Test
@@ -151,6 +165,12 @@ class IdeShellTokensTest {
 
         assertContrast(scheme.outline, scheme.background, minRatio = 1.3, "Blue outline on background")
         assertContrast(scheme.primary, scheme.surfaceContainer, minRatio = 3.0, "Blue primary on surfaceContainer")
+        assertContrast(
+            scheme.onPrimaryContainer,
+            scheme.primaryContainer,
+            minRatio = 4.5,
+            "Blue onPrimaryContainer on primaryContainer",
+        )
     }
 
     private fun assertContrast(fg: Color, bg: Color, minRatio: Double, label: String) {

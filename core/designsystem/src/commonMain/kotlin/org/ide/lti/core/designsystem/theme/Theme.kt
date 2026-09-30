@@ -151,6 +151,12 @@ object GlassTheme {
             "GlassTheme.hazeState read outside LtiTheme - wrap the composition in LtiTheme { }"
         }
 
+    /** The single shared [HazeState], or null if read outside [LtiTheme]. */
+    val hazeStateOrNull: HazeState?
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalHazeState.current
+
     /**
      * The [GlassReducedMotionPolicy] that all interactive glass surfaces should pass to
      * `hazeGlass(interactionReducedMotionPolicy = …)`.  Driven by the user's "Reduce motion"

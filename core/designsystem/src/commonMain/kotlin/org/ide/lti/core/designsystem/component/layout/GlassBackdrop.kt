@@ -61,7 +61,7 @@ private fun DrawScope.drawBlueBackdrop() {
     // 1. Deep Midnight Space Base
     drawRect(StudioBackdropColors.Base)
 
-    // 2. Royal Sapphire Radiant Hub (Behind TopAppBar)
+    // 2. Royal Sapphire Radiant Hub (Behind TopAppBar & Upper Frame)
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(
@@ -70,20 +70,20 @@ private fun DrawScope.drawBlueBackdrop() {
                 Color.Transparent,
             ),
             center = Offset(size.width * 0.50f, size.height * 0.04f),
-            radius = size.width * 0.65f,
+            radius = size.width * 0.70f,
         ),
     )
 
-    // 3. Luminous Cyan / Teal Field (Behind Rail / Navigator)
+    // 3. Luminous Cyan / Teal Field (Smooth Continuous Left Frame & Navigator)
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(
-                StudioBackdropColors.SidebarAura.copy(alpha = AlphaTokens.Prominent),
-                StudioBackdropColors.CyanAuraSubtle.copy(alpha = AlphaTokens.Muted),
+                StudioBackdropColors.SidebarAura.copy(alpha = AlphaTokens.Strong),
+                StudioBackdropColors.CyanAuraSubtle.copy(alpha = AlphaTokens.Ambient),
                 Color.Transparent,
             ),
-            center = Offset(size.width * 0.05f, size.height * 0.50f),
-            radius = size.width * 0.38f,
+            center = Offset(size.width * 0.04f, size.height * 0.45f),
+            radius = size.width * 0.25f,
         ),
     )
 
@@ -124,13 +124,13 @@ private fun DrawScope.drawBlueBackdrop() {
         ),
     )
 
-    // 7. Deep Obsidian Vignette
+    // 7. Ambient Obsidian Vignette (soft baseline grounding, keeping status bar luminous)
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(
                 Color.Transparent,
                 Color.Transparent,
-                StudioBackdropColors.Vignette.copy(alpha = AlphaTokens.Intense),
+                StudioBackdropColors.Vignette.copy(alpha = AlphaTokens.Muted),
             ),
         ),
     )
@@ -143,7 +143,7 @@ private fun DrawScope.drawDarkBackdrop() {
     // 1. Deep Obsidian Space Base
     drawRect(DarkBackdropColors.Base)
 
-    // 2. Cosmic Indigo Radiant Hub (Behind TopAppBar)
+    // 2. Cosmic Indigo Radiant Hub (Behind TopAppBar & Upper Frame)
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(
@@ -152,20 +152,20 @@ private fun DrawScope.drawDarkBackdrop() {
                 Color.Transparent,
             ),
             center = Offset(size.width * 0.50f, size.height * 0.04f),
-            radius = size.width * 0.65f,
+            radius = size.width * 0.70f,
         ),
     )
 
-    // 3. Deep Celestial Cyan/Teal (Behind Rail/Navigator)
+    // 3. Deep Celestial Cyan/Teal (Smooth Continuous Left Frame & Navigator)
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(
-                DarkBackdropColors.CyanAura.copy(alpha = AlphaTokens.Prominent),
-                DarkBackdropColors.CyanAuraSubtle.copy(alpha = AlphaTokens.Muted),
+                DarkBackdropColors.CyanAura.copy(alpha = AlphaTokens.Strong),
+                DarkBackdropColors.CyanAuraSubtle.copy(alpha = AlphaTokens.Ambient),
                 Color.Transparent,
             ),
-            center = Offset(size.width * 0.05f, size.height * 0.50f),
-            radius = size.width * 0.38f,
+            center = Offset(size.width * 0.04f, size.height * 0.45f),
+            radius = size.width * 0.25f,
         ),
     )
 
@@ -206,13 +206,13 @@ private fun DrawScope.drawDarkBackdrop() {
         ),
     )
 
-    // 7. Vignette
+    // 7. Ambient Vignette
     drawRect(
         brush = Brush.verticalGradient(
             colors = listOf(
                 Color.Transparent,
                 Color.Transparent,
-                DarkBackdropColors.Vignette.copy(alpha = AlphaTokens.Intense),
+                DarkBackdropColors.Vignette.copy(alpha = AlphaTokens.Muted),
             ),
         ),
     )

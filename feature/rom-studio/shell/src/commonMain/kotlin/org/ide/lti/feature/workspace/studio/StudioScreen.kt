@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,10 +41,13 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.layout.ContentHeader
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
-import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
-import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
+import org.ide.lti.core.designsystem.component.layout.IdeRightRail
+import org.ide.lti.core.designsystem.component.layout.IdeRightRailItem
+import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
+import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
+import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -67,7 +73,6 @@ import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
 import org.ide.lti.feature.workspace.studio.components.TopBarTargetSpecifier
-import org.ide.lti.feature.workspace.studio.components.WorkspaceNavigator
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -149,6 +154,7 @@ public fun StudioScreen(
         onValidate = { viewModel.validateWorkspace() },
         onSave = { viewModel.saveWorkspace() },
         modifier = modifier,
+        iconsOnly = true,
         onOpenProblems = { viewModel.selectWorkspaceSection(WorkspaceSection.Overview) },
         onOpenActivity = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         content = {
@@ -280,6 +286,7 @@ public fun StudioShellContent(
     onOpenActivity: (() -> Unit)? = null,
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
+    iconsOnly: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val breadcrumbItems: List<String> = remember(
@@ -381,36 +388,16 @@ public fun StudioShellContent(
                     }
                 },
                 modifier = Modifier.testTag("IdePipelineRail"),
+                iconsOnly = iconsOnly,
             )
         },
-        navigator = {
-            if (isStageEditor) {
-                val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
-                val descriptor = selectedStage?.let { stage ->
-                    stageEditorRegistry?.descriptorFor(stage.stageId)
-                        ?: CanonicalStageDescriptors.descriptorFor(stage.stageId)
-                }
-                if (descriptor != null) {
-                    StageNavigator(
-                        stage = descriptor,
-                        selectedObjectId = selectedObjectId,
-                        onSelectStageObject = onSelectStageObject,
-                    )
-                }
-            } else {
-                WorkspaceNavigator(
-                    uiState = uiState,
-                    onSelectSection = onSelectWorkspaceSection,
-                )
-            }
+        navigator = null,
+        rightPanel = {
+            WorkspaceRightRail()
         },
         content = {
-            // Stage-editor pages have no header of their own, so ContentHeader supplies the
-            // breadcrumb/title/actions here. Every other destination (Overview today; future
-            // workspace sections) renders its own header - stacking ContentHeader on top of it
-            // would duplicate the breadcrumb and title, so it is skipped entirely in that case.
-            if (isStageEditor) {
-                Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (isStageEditor) {
                     ContentHeader(
                         title = headerTitle,
                         breadcrumbs = breadcrumbItems,
@@ -443,12 +430,35 @@ public fun StudioShellContent(
                             )
                         },
                     )
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                        content()
+
+                    val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
+                    val descriptor = selectedStage?.let { stage ->
+                        stageEditorRegistry?.descriptorFor(stage.stageId)
+                            ?: CanonicalStageDescriptors.descriptorFor(stage.stageId)
                     }
+                    if (descriptor != null && descriptor.subobjects.isNotEmpty()) {
+                        StageSubMenuTabBar(
+                            stage = descriptor,
+                            selectedObjectId = selectedObjectId,
+                            onSelectStageObject = onSelectStageObject,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                        )
+                    }
+                } else {
+                    WorkspaceSubMenuTabBar(
+                        selectedSection = uiState.selectedWorkspaceSection,
+                        onSelectSection = onSelectWorkspaceSection,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                    )
                 }
-            } else {
-                content()
+
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    content()
+                }
             }
         },
         statusBar = {
@@ -462,33 +472,101 @@ public fun StudioShellContent(
 }
 
 @Composable
-private fun StageNavigator(
+private fun WorkspaceRightRail(modifier: Modifier = Modifier) {
+    val items = remember {
+        listOf(
+            IdeRightRailItem(
+                id = "ai",
+                label = "AI Assistant (Demo)",
+                icon = Icons.Default.AutoAwesome,
+            ),
+            IdeRightRailItem(
+                id = "terminal",
+                label = "Terminal (Demo)",
+                icon = Icons.Default.Terminal,
+            ),
+        )
+    }
+    IdeRightRail(
+        items = items,
+        modifier = modifier.testTag("WorkspaceRightRail"),
+    )
+}
+
+@Composable
+private fun StageSubMenuTabBar(
     stage: StageDescriptor,
     selectedObjectId: String?,
     onSelectStageObject: ((StageId, String) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val navItems = remember(stage) {
+    val items = remember(stage) {
         stage.subobjects.map { sub ->
-            IdeNavigatorItem(
+            IdeSubMenuItem(
                 id = sub.id.value,
                 label = sub.title,
-                icon = sub.id.value,
+                icon = resolveNavIcon(sub.id.value),
             )
         }
     }
     val activeObjectId = selectedObjectId ?: stage.subobjects.firstOrNull()?.id?.value
 
-    IdeNavigatorPanel(
-        headerTitle = stage.title,
-        headerSubtitle = null,
-        items = navItems,
+    IdeSubMenuTabBar(
+        items = items,
         selectedItemId = activeObjectId,
         onSelectItem = { objectId ->
             onSelectStageObject?.invoke(stage.stageId, objectId)
         },
         modifier = modifier.testTag("StageNavigator"),
-        footerContent = null,
+    )
+}
+
+@Composable
+private fun WorkspaceSubMenuTabBar(
+    selectedSection: WorkspaceSection?,
+    onSelectSection: (WorkspaceSection) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val items = remember {
+        listOf(
+            IdeSubMenuItem(
+                id = WorkspaceSection.Overview.name,
+                label = "Overview",
+                icon = resolveNavIcon("dashboard"),
+            ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.RomConfig.name,
+                label = "ROM configuration",
+                icon = resolveNavIcon("settings"),
+            ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.RunHistory.name,
+                label = "Run history",
+                icon = resolveNavIcon("history"),
+            ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.Artifacts.name,
+                label = "Artifacts",
+                icon = resolveNavIcon("archive"),
+            ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.TargetProfile.name,
+                label = "Target profile",
+                icon = resolveNavIcon("phone"),
+            ),
+        )
+    }
+
+    IdeSubMenuTabBar(
+        items = items,
+        selectedItemId = selectedSection?.name,
+        onSelectItem = { itemId ->
+            val section = WorkspaceSection.entries.firstOrNull { it.name == itemId }
+            if (section != null) {
+                onSelectSection(section)
+            }
+        },
+        modifier = modifier.testTag("WorkspaceNavigator"),
     )
 }
 

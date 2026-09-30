@@ -10,10 +10,23 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -53,9 +66,11 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
@@ -68,10 +83,9 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetScaffold
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
-import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
-import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
+import org.ide.lti.core.designsystem.component.layout.IdeRightRail
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -80,7 +94,6 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.MotionEasing
 import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.workspace.Workspace
@@ -256,6 +269,7 @@ fun SetupScreen(
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
             activityState = viewModel.setupActivityState,
+            iconsOnly = true,
         )
     }
 }
@@ -280,6 +294,7 @@ fun SetupScreenContent(
     workspacesListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    iconsOnly: Boolean = false,
 ) {
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
     val effectiveTab = initialTab?.let { localSelectedTab } ?: state.selectedTab
@@ -356,17 +371,8 @@ fun SetupScreenContent(
         )
     }
 
-    val isToolsActive = effectiveTab == SetupTab.TOOLS
     val density = LocalDensity.current
     var isCompact by remember { mutableStateOf(false) }
-
-    val toolPackagesNavItems = remember {
-        ToolNavPackage.entries.map { pkg ->
-            IdeNavigatorItem(id = pkg.id, label = pkg.label, icon = pkg.icon)
-        }
-    }
-
-    val selectedNavToolId = state.toolSelection.navPackage.id
 
     IdeAppFrame(
         modifier = modifier
@@ -467,71 +473,24 @@ fun SetupScreenContent(
                         modifier = Modifier.padding(horizontal = Spacing.Small, vertical = Spacing.Small),
                     )
                 },
+                modifier = Modifier.testTag("IdePipelineRail"),
+                iconsOnly = iconsOnly,
             )
         },
-        navigator = if (isToolsActive) {
-            {
-                IdeNavigatorPanel(
-                    headerTitle = "TOOL PACKAGES",
-                    headerSubtitle = null,
-                    items = toolPackagesNavItems,
-                    selectedItemId = selectedNavToolId,
-                    onSelectItem = { navId ->
-                        ToolNavPackage.find(navId)?.let(actions.onSelectToolPackage)
-                    },
-                )
-            }
-        } else {
-            null
+        navigator = null,
+        rightPanel = {
+            IdeRightRail(
+                items = emptyList(),
+                modifier = Modifier.testTag("SetupRightRail"),
+            )
         },
         statusBar = {
             val statusBarPresentation = state.statusBarPresentation
-            IdeStatusBar(
-                modifier = Modifier.fillMaxWidth(),
-                leadingContent = {
-                    val leadingText = statusBarPresentation.leadingStatusText
-                    if (leadingText != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = leadingText,
-                                fontSize = FontSize.Micro,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
-                    }
-                },
-                trailingContent = {
-                    val failure = statusBarPresentation.failureText
-                    if (failure != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(IconSize.Indicator)
-                                    .clip(GlassShapes.Capsule)
-                                    .background(GlassTheme.diagnosticColors.error),
-                            )
-                            Text(
-                                text = failure,
-                                fontSize = FontSize.Micro,
-                                color = MaterialTheme.colorScheme.error,
-                                fontFamily = GlassFontFamily.ide(),
-                            )
-                        }
-                    }
-                },
+            val leadingText = statusBarPresentation.leadingStatusText ?: "Setup • ${setupTabDisplayTitle(effectiveTab)}"
+            val failure = statusBarPresentation.failureText
+            SetupStatusBar(
+                leadingText = leadingText,
+                failureText = failure,
             )
         },
         content = {
@@ -576,93 +535,103 @@ fun SetupScreenContent(
 
                 Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
-                    val fadeDuration = SetupTokens.DurationFadeMs
-                    val feedbackDuration = SetupTokens.DurationFeedbackMs
 
                     AnimatedContent(
                         targetState = effectiveTab,
-                        transitionSpec = {
-                            if (isReducedMotion) {
-                                fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
-                            } else {
-                                fadeIn(
-                                    animationSpec = tween(
-                                        durationMillis = fadeDuration,
-                                        easing = MotionEasing.Standard,
-                                    ),
-                                ).togetherWith(
-                                    fadeOut(
-                                        animationSpec = tween(
-                                            durationMillis = feedbackDuration,
-                                            easing = MotionEasing.Standard,
-                                        ),
-                                    ),
-                                )
-                            }
-                        },
+                        transitionSpec = setupTabTransitionSpec(isReducedMotion),
                         label = "SetupDestinationTransition",
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight()
-                            .then(
-                                if (effectiveTab == SetupTab.RECOVERY) {
-                                    Modifier
-                                } else {
-                                    Modifier.widthIn(max = SetupTokens.ContentMaxWidth)
-                                },
-                            ),
+                            .fillMaxHeight(),
                         contentAlignment = Alignment.TopCenter,
                     ) { currentTab ->
-                        when (currentTab) {
-                            SetupTab.ENVIRONMENT -> {
-                                EnvironmentStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
-                                    activityState = activityState,
-                                    activityListState = activityListState,
-                                    previewInvokerFocusRequester = previewInvokerFocusRequester,
-                                )
-                            }
-                            SetupTab.PROJECTS -> {
-                                ProjectsStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
-                                    searchFocusRequester = searchFocusRequester,
-                                    focusSearchOnMount = pendingSearchFocus,
-                                    lazyListState = workspacesListState,
-                                )
-                            }
-                            SetupTab.TOOLS -> {
-                                ToolsStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    activityState = activityState,
-                                    searchFocusRequester = toolSearchFocusRequester,
-                                    focusSearchOnMount = pendingSearchFocus,
-                                    scrollState = toolsScrollState,
-                                )
-                            }
-                            SetupTab.RECOVERY -> {
-                                RecoveryStepContent(
-                                    state = state,
-                                    actions = actions,
-                                    activityState = activityState,
-                                    onOpenHelp = actions.onOpenHelp,
-                                )
+                        val contentModifier = if (currentTab == SetupTab.RECOVERY) {
+                            Modifier.fillMaxSize()
+                        } else {
+                            Modifier.fillMaxHeight().widthIn(max = SetupTokens.ContentMaxWidth)
+                        }
+                        Box(
+                            modifier = contentModifier,
+                            contentAlignment = Alignment.TopCenter,
+                        ) {
+                            when (currentTab) {
+                                SetupTab.ENVIRONMENT -> {
+                                    EnvironmentStepContent(
+                                        state = state,
+                                        actions = actions,
+                                        onNavigateToProjects = { onTabChange(SetupTab.PROJECTS) },
+                                        activityState = activityState,
+                                        activityListState = activityListState,
+                                        previewInvokerFocusRequester = previewInvokerFocusRequester,
+                                    )
+                                }
+                                SetupTab.PROJECTS -> {
+                                    ProjectsStepContent(
+                                        state = state,
+                                        actions = actions,
+                                        onNavigateToEnvironment = { onTabChange(SetupTab.ENVIRONMENT) },
+                                        searchFocusRequester = searchFocusRequester,
+                                        focusSearchOnMount = pendingSearchFocus,
+                                        lazyListState = workspacesListState,
+                                    )
+                                }
+                                SetupTab.TOOLS -> {
+                                    ToolsStepContent(
+                                        state = state,
+                                        actions = actions,
+                                        activityState = activityState,
+                                        searchFocusRequester = toolSearchFocusRequester,
+                                        focusSearchOnMount = pendingSearchFocus,
+                                        scrollState = toolsScrollState,
+                                    )
+                                }
+                                SetupTab.RECOVERY -> {
+                                    RecoveryStepContent(
+                                        state = state,
+                                        actions = actions,
+                                        activityState = activityState,
+                                        onOpenHelp = actions.onOpenHelp,
+                                    )
+                                }
                             }
                         }
                     }
 
-                    if (!isCompact && effectiveTab == SetupTab.ENVIRONMENT) {
-                        GlassVerticalDivider(specular = true)
-                        SetupEnvironmentSummary(
-                            state = state,
-                            modifier = Modifier
-                                .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
-                                .padding(Spacing.Medium),
-                        )
+                    AnimatedVisibility(
+                        visible = !isCompact && effectiveTab == SetupTab.ENVIRONMENT,
+                        enter = if (isReducedMotion) {
+                            fadeIn(animationSpec = snap())
+                        } else {
+                            expandHorizontally(
+                                animationSpec = spring(
+                                    dampingRatio = SetupTokens.MotionDampingRatio,
+                                    stiffness = SetupTokens.MotionStiffness,
+                                ),
+                                expandFrom = Alignment.End,
+                            ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        },
+                        exit = if (isReducedMotion) {
+                            fadeOut(animationSpec = snap())
+                        } else {
+                            shrinkHorizontally(
+                                animationSpec = spring(
+                                    dampingRatio = SetupTokens.MotionDampingRatio,
+                                    stiffness = SetupTokens.MotionStiffness,
+                                ),
+                                shrinkTowards = Alignment.End,
+                            ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        },
+                        label = "SetupEnvironmentSummaryVisibility",
+                    ) {
+                        Row(modifier = Modifier.fillMaxHeight()) {
+                            GlassVerticalDivider(specular = true)
+                            SetupEnvironmentSummary(
+                                state = state,
+                                modifier = Modifier
+                                    .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
+                                    .padding(Spacing.Medium),
+                            )
+                        }
                     }
                 }
             }
@@ -804,5 +773,127 @@ private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Mo
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SetupStatusBar(leadingText: String, failureText: String?, modifier: Modifier = Modifier) {
+    IdeStatusBar(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("SetupStatusBar"),
+        leadingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(
+                    text = leadingText,
+                    fontSize = FontSize.Micro,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        },
+        trailingContent = {
+            if (failureText != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(IconSize.Indicator)
+                            .clip(GlassShapes.Capsule)
+                            .background(GlassTheme.diagnosticColors.error),
+                    )
+                    Text(
+                        text = failureText,
+                        fontSize = FontSize.Micro,
+                        color = MaterialTheme.colorScheme.error,
+                        fontFamily = GlassFontFamily.ide(),
+                    )
+                }
+            } else {
+                Text(
+                    text = "LtiRom Studio v0.9.0 • Ready",
+                    fontSize = FontSize.Micro,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = GlassFontFamily.ide(),
+                )
+            }
+        },
+    )
+}
+
+private fun setupTabDisplayTitle(tab: SetupTab): String = when (tab) {
+    SetupTab.PROJECTS -> "Workspaces"
+    SetupTab.ENVIRONMENT -> "Environment"
+    SetupTab.TOOLS -> "Tools"
+    SetupTab.RECOVERY -> "Recovery"
+}
+
+/**
+ * Unified iOS-styled transition specification for navigating between wizard steps in the setup screen.
+ *
+ * Implements fluid directional spring physics:
+ * - Forward navigation (target.ordinal > initial.ordinal) slides in from the trailing edge (+15%)
+ *   and slides out to the leading edge (-15%) with subtle depth scale (0.98f -> 1.0f).
+ * - Backward navigation (target.ordinal < initial.ordinal) slides in from the leading edge (-15%)
+ *   and slides out to the trailing edge (+15%) with subtle depth scale (0.98f -> 1.0f).
+ * - Bypasses sliding/scaling when [isReducedMotion] is active, falling back to instant crossfade.
+ */
+internal fun setupTabTransitionSpec(
+    isReducedMotion: Boolean,
+): AnimatedContentTransitionScope<SetupTab>.() -> ContentTransform = {
+    if (isReducedMotion) {
+        fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
+    } else if (targetState == initialState) {
+        EnterTransition.None.togetherWith(ExitTransition.None)
+    } else {
+        val isForward = targetState.ordinal > initialState.ordinal
+        val springSpec = spring<Float>(
+            dampingRatio = SetupTokens.MotionDampingRatio,
+            stiffness = SetupTokens.MotionStiffness,
+        )
+        val offsetSpringSpec = spring<IntOffset>(
+            dampingRatio = SetupTokens.MotionDampingRatio,
+            stiffness = SetupTokens.MotionStiffness,
+        )
+        val fraction = SetupTokens.MotionSlideFraction
+
+        val enter = slideInHorizontally(
+            animationSpec = offsetSpringSpec,
+            initialOffsetX = { width ->
+                val offset = (width * fraction).toInt()
+                if (isForward) offset else -offset
+            },
+        ) + fadeIn(
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        ) + scaleIn(
+            animationSpec = springSpec,
+            initialScale = SetupTokens.MotionScaleInitial,
+        )
+
+        val exit = slideOutHorizontally(
+            animationSpec = offsetSpringSpec,
+            targetOffsetX = { width ->
+                val offset = (width * fraction).toInt()
+                if (isForward) -offset else offset
+            },
+        ) + fadeOut(
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        ) + scaleOut(
+            animationSpec = springSpec,
+            targetScale = SetupTokens.MotionScaleInitial,
+        )
+
+        (enter togetherWith exit).using(SizeTransform(clip = false))
     }
 }

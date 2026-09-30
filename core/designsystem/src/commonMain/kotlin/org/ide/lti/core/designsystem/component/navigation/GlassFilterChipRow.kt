@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
@@ -63,23 +64,40 @@ fun GlassFilterChipRow(
                 val countText = if (item.count >= 0) " (${item.count})" else ""
                 val chipText = "${item.label}$countText"
 
+                val background = if (GlassTheme.effectsEnabled) {
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
+                    }
+                } else {
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                }
+                val borderColor = if (GlassTheme.effectsEnabled) {
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
+                } else {
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Capsule)
-                        .background(
-                            if (isSelected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = AlphaTokens.UltraFaint)
-                            },
-                        )
+                        .background(background)
                         .glassOutlineBorder(
                             width = StrokeWidth.Hairline,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.outline
-                            },
+                            color = borderColor,
                             shape = GlassShapes.Capsule,
                         )
                         .clickable { onSelect(item.value) }

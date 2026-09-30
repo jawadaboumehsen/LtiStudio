@@ -192,7 +192,8 @@ class ToolRepairTest {
         repository.markStageCompleted(org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
         val provisioner = WslToolchainProvisioner(
             supervisor = SpyDaemonSupervisor(),
-            transport = SpyRemoteTransport(testXExitCode = 1), // lpmake deleted or no longer executable
+            // lpmake deleted or no longer executable
+            transport = SpyRemoteTransport(testXExitCode = 1),
             repository = repository,
             cli = StubCliExecutor(),
             dispatcher = UnconfinedTestDispatcher(testScheduler),

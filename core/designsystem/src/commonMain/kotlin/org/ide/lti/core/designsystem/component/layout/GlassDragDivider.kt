@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import java.awt.Cursor
@@ -79,12 +80,15 @@ internal fun GlassDragDivider(
     val alpha by animateFloatAsState(
         targetValue = if (isHovered || isDragging) 1f else 0f,
         animationSpec = if (isDragging) snap() else spring(),
+        label = "GlassDragDivider_Alpha",
     )
 
     val normalColor = if (appearance.dividerColor.isSpecified) {
         appearance.dividerColor
-    } else {
+    } else if (GlassTheme.effectsEnabled) {
         MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Hover)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
     }
     val activeColor = if (appearance.dividerActiveColor.isSpecified) {
         appearance.dividerActiveColor

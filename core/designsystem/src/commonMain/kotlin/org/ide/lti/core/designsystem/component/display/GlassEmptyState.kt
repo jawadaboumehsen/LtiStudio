@@ -42,6 +42,7 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
@@ -243,27 +244,43 @@ fun GlassEmptyStateBadge(
             }
         }
     } else {
+        val effectsEnabled = GlassTheme.effectsEnabled
         val glowColor = MaterialTheme.colorScheme.primary
+        val badgeBg = if (effectsEnabled) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        }
+        val badgeBorder = if (effectsEnabled) {
+            MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border)
+        } else {
+            MaterialTheme.colorScheme.primary
+        }
+        val glowModifier = if (effectsEnabled) {
+            Modifier.drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            glowColor.copy(alpha = AlphaTokens.Glow),
+                            Color.Transparent,
+                        ),
+                        center = center,
+                        radius = size.minDimension * 0.85f,
+                    ),
+                )
+            }
+        } else {
+            Modifier
+        }
         Box(
             modifier = modifier
                 .size(badgeSize)
-                .drawBehind {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                glowColor.copy(alpha = AlphaTokens.Glow),
-                                Color.Transparent,
-                            ),
-                            center = center,
-                            radius = size.minDimension * 0.85f,
-                        ),
-                    )
-                }
+                .then(glowModifier)
                 .clip(GlassShapes.Capsule)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = AlphaTokens.Elevated))
+                .background(badgeBg)
                 .glassOutlineBorder(
                     width = StrokeWidth.Hairline,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Border),
+                    color = badgeBorder,
                     shape = GlassShapes.Capsule,
                 ),
             contentAlignment = Alignment.Center,

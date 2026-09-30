@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 
 /**
@@ -39,7 +40,8 @@ fun GlassHorizontalDivider(
     specular: Boolean = false,
     color: Color = Color.Unspecified,
 ) {
-    val dividerModifier = if (specular) {
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val dividerModifier = if (specular && effectsEnabled) {
         modifier
             .fillMaxWidth()
             .height(thickness)
@@ -53,12 +55,10 @@ fun GlassHorizontalDivider(
                 ),
             )
     } else {
-        val finalColor = if (color !=
-            Color.Unspecified
-        ) {
-            color
-        } else {
-            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        val finalColor = when {
+            color != Color.Unspecified -> color
+            effectsEnabled -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+            else -> MaterialTheme.colorScheme.outlineVariant
         }
         modifier
             .fillMaxWidth()
@@ -84,7 +84,8 @@ fun GlassVerticalDivider(
     specular: Boolean = false,
     color: Color = Color.Unspecified,
 ) {
-    val dividerModifier = if (specular) {
+    val effectsEnabled = GlassTheme.effectsEnabled
+    val dividerModifier = if (specular && effectsEnabled) {
         modifier
             .fillMaxHeight()
             .width(thickness)
@@ -98,12 +99,10 @@ fun GlassVerticalDivider(
                 ),
             )
     } else {
-        val finalColor = if (color !=
-            Color.Unspecified
-        ) {
-            color
-        } else {
-            MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+        val finalColor = when {
+            color != Color.Unspecified -> color
+            effectsEnabled -> MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint)
+            else -> MaterialTheme.colorScheme.outlineVariant
         }
         modifier
             .fillMaxHeight()

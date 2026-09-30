@@ -9,17 +9,13 @@
  */
 package org.ide.lti.feature.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,18 +27,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorItem
 import org.ide.lti.core.designsystem.component.layout.IdeNavigatorPanel
+import org.ide.lti.core.designsystem.component.layout.IdeRightRail
 import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
-import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.ui.settings.AppSettingsState
@@ -140,6 +134,7 @@ fun SettingsScreenContent(
                     items = settingsNavItems,
                     selectedItemId = selectedNavId,
                     onSelectItem = { id -> selectedCategory = navIdToCategory(id) },
+                    iconsOnly = true,
                 )
             },
             statusBar = {
@@ -162,7 +157,10 @@ fun SettingsScreenContent(
                 )
             },
             rightPanel = {
-                SettingsHelpColumn(category = selectedCategory)
+                IdeRightRail(
+                    items = emptyList(),
+                    modifier = Modifier.testTag("SettingsRightRail"),
+                )
             },
             content = {
                 Box(
@@ -204,68 +202,6 @@ fun SettingsScreenContent(
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun SettingsHelpColumn(category: SettingsCategory, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .ideShellSurface(shape = GlassShapes.HazeFlat, drawBorder = false)
-            .verticalScroll(rememberScrollState())
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "About these settings",
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-
-        Text(
-            text = category.subtitle,
-            fontSize = FontSize.BodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        HorizontalDivider(
-            thickness = GlassDimens.HairlineBorder,
-            color = MaterialTheme.colorScheme.outline,
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Text(
-                text = "Preferences storage",
-                fontSize = FontSize.LabelSmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Studio settings are synchronized across workspaces and persisted locally.",
-                fontSize = FontSize.LabelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Text(
-                text = "Quick navigation",
-                fontSize = FontSize.LabelSmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Use Ctrl+, to open settings or Ctrl+K to search files and studio actions.",
-                fontSize = FontSize.LabelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 

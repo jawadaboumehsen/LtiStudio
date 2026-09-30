@@ -25,12 +25,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
+import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
+import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
+import org.ide.lti.feature.setup.ToolNavPackage
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolMatrixTable
 
@@ -105,6 +110,24 @@ fun ToolsStepContent(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            val toolNavItems = remember {
+                ToolNavPackage.entries.map { pkg ->
+                    IdeSubMenuItem(
+                        id = pkg.id,
+                        label = pkg.label,
+                        icon = resolveNavIcon(pkg.id),
+                    )
+                }
+            }
+            IdeSubMenuTabBar(
+                items = toolNavItems,
+                selectedItemId = state.toolSelection.navPackage.id,
+                onSelectItem = { navId ->
+                    ToolNavPackage.find(navId)?.let(actions.onSelectToolPackage)
+                },
+                modifier = Modifier.testTag("ToolsSubMenu"),
+            )
 
             // 35-Tool Interactive Matrix Table
             ToolMatrixTable(

@@ -43,6 +43,14 @@ kotlin {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    val updateScreenshots = (project.findProperty("updateScreenshots") as String?)
+        ?: System.getProperty("updateScreenshots")
+    if (updateScreenshots != null) {
+        systemProperty("updateScreenshots", updateScreenshots)
+    }
+}
+
 tasks.register("test") {
     dependsOn("desktopTest")
 }
