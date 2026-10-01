@@ -7,6 +7,7 @@ import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.websocket.*
 import io.ltirom.tooling.client.resilience.CircuitBreaker
@@ -529,4 +530,88 @@ public class KtorRemoteTransportAdapter(
     private class CollectorFailure(cause: Throwable) : RuntimeException(cause)
 
     override suspend fun shutdownDaemon(force: Boolean): Boolean = supervisor.shutdownDaemon(force)
+
+    override suspend fun activateToolchain(
+        request: io.ltirom.tooling.core.remote.ActivateToolchainRequest
+    ): io.ltirom.tooling.core.remote.ActivateToolchainResponse {
+        val conn = try {
+            supervisor.ensureStarted()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return io.ltirom.tooling.core.remote.ActivateToolchainResponse(
+                code = "SERVICE_UNAVAILABLE",
+                reason = "Build service daemon is not running: ${e.message}"
+            )
+        }
+        return circuitBreaker.execute {
+            val trace = TraceContext.create()
+            val response = httpClient.post("${conn.httpBaseUrl}/api/v1/toolchain/activate") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            val text = response.bodyAsText()
+            runCatching {
+                json.decodeFromString<io.ltirom.tooling.core.remote.ActivateToolchainResponse>(text)
+            }.getOrElse {
+                io.ltirom.tooling.core.remote.ActivateToolchainResponse(
+                    code = "UNKNOWN",
+                    reason = "HTTP ${response.status.value}: $text"
+                )
+            }
+        }
+    }
+
+    override suspend fun getToolchainState(): io.ltirom.tooling.core.remote.ToolchainStateResponse? {
+        val conn = try {
+            supervisor.ensureStarted()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return null
+        }
+        return circuitBreaker.execute {
+            val trace = TraceContext.create()
+            val response = httpClient.get("${conn.httpBaseUrl}/api/v1/toolchain/state") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            }
+            if (response.status == HttpStatusCode.OK) {
+                val text = response.bodyAsText()
+                json.decodeFromString<io.ltirom.tooling.core.remote.ToolchainStateResponse>(text)
+            } else {
+                null
+            }
+        }
+    }
+
+    override suspend fun getActivation(requestId: String): String? {
+        val conn = try {
+            supervisor.ensureStarted()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return null
+        }
+        return circuitBreaker.execute {
+            val trace = TraceContext.create()
+            val response = httpClient.get("${conn.httpBaseUrl}/api/v1/toolchain/activations/$requestId") {
+                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            }
+            if (response.status == HttpStatusCode.OK) {
+                response.bodyAsText()
+            } else {
+                null
+            }
+        }
+    }
 }

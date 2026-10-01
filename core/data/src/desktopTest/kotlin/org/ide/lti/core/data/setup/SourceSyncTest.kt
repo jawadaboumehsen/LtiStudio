@@ -104,12 +104,4 @@ class SourceSyncTest {
             plan.orderedActions.map { it::class.simpleName },
         )
     }
-
-    @Test
-    fun `the sync engine and the provisioner pin the same sources`() {
-        assertEquals(
-            WslToolchainProvisioner.SUBMODULES.map { Triple(it.name, it.url, it.commit) },
-            SubmoduleSyncEngine.DEFAULT_SUBMODULES.map { Triple(it.name, it.url, it.commit) },
-        )
-    }
 }

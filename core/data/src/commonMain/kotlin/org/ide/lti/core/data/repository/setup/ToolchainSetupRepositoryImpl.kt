@@ -11,6 +11,7 @@ package org.ide.lti.core.data.repository.setup
 
 import kotlinx.coroutines.flow.Flow
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
+import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.model.setup.AttemptStatus
@@ -26,8 +27,12 @@ import org.ide.lti.core.model.setup.ToolchainPersistenceState
 /**
  * Thin [ToolchainSetupRepository] wrapper over [ToolchainPreferencesDataSource].
  */
-public class ToolchainSetupRepositoryImpl(private val preferencesDataSource: ToolchainPreferencesDataSource) :
-    ToolchainSetupRepository {
+public class ToolchainSetupRepositoryImpl(
+    private val preferencesDataSource: ToolchainPreferencesDataSource,
+    private val selectionRepository: ToolchainSelectionRepository =
+        ToolchainSelectionRepositoryImpl(preferencesDataSource),
+) : ToolchainSetupRepository,
+    ToolchainSelectionRepository by selectionRepository {
     override val toolchainState: Flow<ToolchainPersistenceState> = preferencesDataSource.toolchainState
 
     override val currentState: ToolchainPersistenceState get() = preferencesDataSource.currentToolchainState

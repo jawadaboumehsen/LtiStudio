@@ -221,6 +221,7 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     var pythonMissing: Boolean = false
     var wslInstalled: Boolean = true
     val existingPaths: MutableSet<String> = mutableSetOf()
+    val fileContents: MutableMap<String, String> = mutableMapOf()
     val commandLog = mutableListOf<String>()
 
     /** Pinned tools whose installed file hashes to something other than its pin (an older download). */
@@ -342,14 +343,63 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 existingPaths.add(command[outIdx + 1])
             }
         }
-        if (command.firstOrNull() == "find" && command.contains("-printf")) {
+        if (command.firstOrNull() == "find") {
             val dir =
                 (if (command.getOrNull(1) == "-L") command.getOrNull(2) else command.getOrNull(1))?.trimEnd('/')
                     ?: ""
+            val matches = existingPaths.filter { it.startsWith("$dir/") }
+            if (command.contains("-printf")) {
+                val direct = matches.filter { !it.removePrefix("$dir/").contains('/') }
+                    .map { it.removePrefix("$dir/") }
+                val listing = if (command.contains("%m %f\n")) fakeBinListing(direct) else direct.joinToString("\n")
+                return CliExecutionResult(0, listing, "")
+            }
+            return if (matches.isNotEmpty()) {
+                CliExecutionResult(0, matches.joinToString("\n"), "")
+            } else {
+                CliExecutionResult(0, "", "")
+            }
+        }
+        if (command.firstOrNull() == "cat") {
+            val target = command.lastOrNull()?.trim() ?: ""
+            val content = fileContents[target]
+            if (content != null) {
+                return CliExecutionResult(0, content, "")
+            }
+            val parentDir = target.substringBeforeLast('/', "")
+            val isKnown = existingPaths.contains(target) ||
+                (parentDir.isNotBlank() && existingPaths.contains(parentDir))
+            if (isKnown) {
+                if (target.endsWith("install.json")) {
+                    val installId = target.substringBeforeLast("/install.json").substringAfterLast('/')
+                    return CliExecutionResult(
+                        0,
+                        """{"schema":1,"installId":"$installId","distro":"Ubuntu","arch":"x86_64","groups":{}}""",
+                        "",
+                    )
+                }
+                if (target.endsWith("manifest.json")) {
+                    val artifactId = target.substringBeforeLast("/manifest.json").substringAfterLast('/')
+                    val mf = """{"schema":1,"group":"test","artifactId":"$artifactId","fingerprint":"fp",""" +
+                        """"source":{"kind":"git"},"recipe":{"type":"git","revision":1}}"""
+                    return CliExecutionResult(0, mf, "")
+                }
+                return CliExecutionResult(0, "", "")
+            }
+            return CliExecutionResult(1, "", "cat: $target: No such file or directory")
+        }
+        if (command.firstOrNull() == "ls") {
+            val dir = command.lastOrNull()?.trimEnd('/') ?: ""
             val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
                 .map { it.removePrefix("$dir/") }
-            val listing = if (command.contains("%m %f\n")) fakeBinListing(names) else names.joinToString("\n")
-            return CliExecutionResult(0, listing, "")
+            return CliExecutionResult(0, names.joinToString("\n"), "")
+        }
+        if (command.firstOrNull() == "rm") {
+            val target = command.lastOrNull()?.trimEnd('/') ?: ""
+            if (target.isNotBlank()) {
+                existingPaths.removeIf { it == target || it.startsWith("$target/") }
+            }
+            return CliExecutionResult(0, "", "")
         }
         if (cmdStr.contains("test -e") ||
             cmdStr.contains("test -d") ||

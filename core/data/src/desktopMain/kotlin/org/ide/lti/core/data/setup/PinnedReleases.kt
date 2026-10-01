@@ -9,6 +9,9 @@
  */
 package org.ide.lti.core.data.setup
 
+import org.ide.lti.core.domain.setup.RecipeConfig
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
+
 /**
  * A prebuilt tool installed from an upstream release archive, pinned by version and by the sha256 of the
  * extracted binary (the same digest `ToolMetadataRegistry` expects). A download that doesn't match is
@@ -24,21 +27,17 @@ internal data class PinnedRelease(
 )
 
 internal object PinnedReleases {
-    val ALL: List<PinnedRelease> = listOf(
-        PinnedRelease(
-            toolId = "gh",
-            version = "2.97.0",
-            url = "https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_linux_amd64.tar.gz",
-            archiveMember = "gh_2.97.0_linux_amd64/bin/gh",
-            sha256 = "141507c337e8b202ad398550c3b73d72f5af92e86f71665214538a81efd4c409",
-        ),
-        PinnedRelease(
-            toolId = "payload-dumper-go",
-            version = "1.3.0",
-            url = "https://github.com/ssut/payload-dumper-go/releases/download/1.3.0/" +
-                "payload-dumper-go_1.3.0_linux_amd64.tar.gz",
-            archiveMember = "payload-dumper-go",
-            sha256 = "4abca6f57158f510d15b940e0ac3ead59c9897c7f304bb22c310ad0283d00efd",
-        ),
-    )
+    val ALL: List<PinnedRelease>
+        get() = ToolGroupCatalog.allGroups.mapNotNull { group ->
+            val releaseRecipe = group.recipe as? RecipeConfig.Release ?: return@mapNotNull null
+            val version = releaseRecipe.versions.firstOrNull() ?: return@mapNotNull null
+            val output = group.outputs.firstOrNull() ?: return@mapNotNull null
+            PinnedRelease(
+                toolId = output.toolId,
+                version = version.version,
+                url = version.url,
+                archiveMember = version.archiveMember,
+                sha256 = version.sha256,
+            )
+        }
 }

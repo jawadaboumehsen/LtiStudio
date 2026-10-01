@@ -127,8 +127,18 @@ public class JournaledRunLauncher(
             )
         }
 
+        val setupRequest = if (request.purpose != io.ltirom.tooling.core.remote.RunPurpose.SETUP) {
+            request.copy(purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP)
+        } else {
+            request
+        }
         val handle = transport.startRun(
-            StartRunRequest(request = request, idempotencyKey = idempotencyKey, workspaceLock = workspaceLock),
+            StartRunRequest(
+                request = setupRequest,
+                idempotencyKey = idempotencyKey,
+                workspaceLock = workspaceLock,
+                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+            ),
         )
 
         repository.recordChildRunId(context.attemptId, childIndex, handle.runId).onFailure { failure ->

@@ -12,6 +12,7 @@ package org.ide.lti.feature.setup.steps
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -38,6 +40,9 @@ import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.ToolNavPackage
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolMatrixTable
+import org.ide.lti.feature.setup.versions.ToolVersionsState
+import org.ide.lti.feature.setup.versions.components.ToolVersionsInspector
+import org.ide.lti.feature.setup.versions.components.ToolVersionsSection
 
 /**
  * Tools destination content for Setup (US3 — Tools and activity, P2).
@@ -55,6 +60,7 @@ fun ToolsStepContent(
     actions: SetupUiActions,
     modifier: Modifier = Modifier,
     activityState: SetupActivityState? = null,
+    toolVersionsState: ToolVersionsState? = null,
     searchFocusRequester: FocusRequester = remember { FocusRequester() },
     focusSearchOnMount: Boolean = false,
     scrollState: ScrollState = rememberScrollState(),
@@ -70,14 +76,19 @@ fun ToolsStepContent(
     val fallbackActivityState = remember { SetupActivityState(scope = coroutineScope) }
     val resolvedActivityState = activityState ?: fallbackActivityState
 
-    Column(
-        modifier = modifier
+    val editDraft = toolVersionsState?.draft?.collectAsState()?.value
+
+    // The page and the version inspector are siblings: each gets a bounded height and scrolls on its own.
+    Row(
+        modifier =
+        modifier
             .fillMaxWidth()
             .fillMaxHeight(),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier =
+            Modifier
+                .weight(1f)
                 .fillMaxHeight()
                 .verticalScroll(scrollState)
                 .padding(
@@ -111,15 +122,16 @@ fun ToolsStepContent(
                 )
             }
 
-            val toolNavItems = remember {
-                ToolNavPackage.entries.map { pkg ->
-                    IdeSubMenuItem(
-                        id = pkg.id,
-                        label = pkg.label,
-                        icon = resolveNavIcon(pkg.id),
-                    )
+            val toolNavItems =
+                remember {
+                    ToolNavPackage.entries.map { pkg ->
+                        IdeSubMenuItem(
+                            id = pkg.id,
+                            label = pkg.label,
+                            icon = resolveNavIcon(pkg.id),
+                        )
+                    }
                 }
-            }
             IdeSubMenuTabBar(
                 items = toolNavItems,
                 selectedItemId = state.toolSelection.navPackage.id,
@@ -143,12 +155,28 @@ fun ToolsStepContent(
                 publishedToolIds = state.toolchainSetupState.publishedToolIds,
             )
 
+            if (toolVersionsState != null) {
+                ToolVersionsSection(state = toolVersionsState)
+            }
+
             // Bounded Activity & Execution Terminal Output
             SetupActivityPanel(
                 activityState = resolvedActivityState,
                 title = "Tool Execution & Activity",
                 isRunning = state.toolchainSetupState.isRunning,
                 defaultExpanded = true,
+            )
+        }
+
+        if (toolVersionsState != null && editDraft != null) {
+            ToolVersionsInspector(
+                state = toolVersionsState,
+                modifier =
+                Modifier.padding(
+                    end = Spacing.ScreenHorizontal,
+                    top = Spacing.Medium,
+                    bottom = Spacing.ScreenVertical,
+                ),
             )
         }
     }

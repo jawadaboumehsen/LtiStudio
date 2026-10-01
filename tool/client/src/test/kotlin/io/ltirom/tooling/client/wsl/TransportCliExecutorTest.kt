@@ -67,6 +67,7 @@ class TransportCliExecutorTest {
         assertEquals(listOf("/bin", "-type", "f"), request.arguments)
         assertEquals("/home/lti", request.workingDirectory)
         assertEquals(15_000L, request.timeoutMs)
+        assertEquals(io.ltirom.tooling.core.remote.RunPurpose.SETUP, request.purpose)
         assertEquals(0, result.exitCode)
         assertEquals("success", result.output)
         assertEquals("", result.error)

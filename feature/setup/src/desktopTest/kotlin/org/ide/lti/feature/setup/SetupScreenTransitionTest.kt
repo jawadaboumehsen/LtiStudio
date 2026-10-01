@@ -10,10 +10,15 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
@@ -129,5 +134,37 @@ class SetupScreenTransitionTest {
         onNodeWithTag("RailItem_projects").performClick()
         waitForIdle()
         assertEquals(SetupTab.PROJECTS, selectedTab)
+    }
+
+    @Test
+    fun testSetupTabTransitionWithScrollableContentDoesNotThrowInfiniteConstraints() = runDesktopComposeUiTest {
+        var currentTab by mutableStateOf(SetupTab.PROJECTS)
+        setContent {
+            LtiTheme {
+                AnimatedContent(
+                    targetState = currentTab,
+                    transitionSpec = setupTabTransitionSpec(isReducedMotion = false),
+                    label = "TestScrollableTransition",
+                ) { tab ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(text = "Scrollable Content for ${tab.id}")
+                    }
+                }
+            }
+        }
+
+        onNodeWithText("Scrollable Content for projects").assertIsDisplayed()
+
+        currentTab = SetupTab.ENVIRONMENT
+        waitForIdle()
+        onNodeWithText("Scrollable Content for environment").assertIsDisplayed()
+
+        currentTab = SetupTab.TOOLS
+        waitForIdle()
+        onNodeWithText("Scrollable Content for tools").assertIsDisplayed()
     }
 }

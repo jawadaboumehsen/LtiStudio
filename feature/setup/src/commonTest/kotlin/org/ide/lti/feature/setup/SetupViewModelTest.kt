@@ -1119,4 +1119,31 @@ class SetupViewModelTest {
             Dispatchers.resetMain()
         }
     }
+
+    @Test
+    fun testToolVersionsStateDelegation() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val repo = FakeWorkspaceRepository()
+            val manager = WorkspaceManager(repo, this)
+            val viewModel = SetupViewModel(workspaceManager = manager)
+            testScheduler.advanceUntilIdle()
+
+            val versionsState = viewModel.toolVersionsState
+            assertFalse(versionsState.rows.value.isEmpty(), "toolVersionsState rows should be populated")
+            assertNull(versionsState.selectedGroupId.value)
+
+            versionsState.startEdit(org.ide.lti.core.domain.setup.ToolGroupId("erofs-utils"))
+            assertEquals(
+                org.ide.lti.core.domain.setup.ToolGroupId("erofs-utils"),
+                versionsState.selectedGroupId.value,
+                "startEdit must update selectedGroupId",
+            )
+            versionsState.cancelEdit()
+            assertNull(versionsState.selectedGroupId.value, "cancelEdit must reset selectedGroupId")
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
 }

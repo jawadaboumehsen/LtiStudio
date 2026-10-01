@@ -14,10 +14,17 @@ public enum class RunStatusValue {
 }
 
 @Serializable
+public enum class RunPurpose {
+    SETUP,
+    WORKSPACE
+}
+
+@Serializable
 public data class StartRunRequest(
     val request: ToolExecutionRequest,
     val idempotencyKey: String,
-    val workspaceLock: String? = null
+    val workspaceLock: String? = null,
+    val purpose: RunPurpose = RunPurpose.WORKSPACE
 )
 
 @Serializable

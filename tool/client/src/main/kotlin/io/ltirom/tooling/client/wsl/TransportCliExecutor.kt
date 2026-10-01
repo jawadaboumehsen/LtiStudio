@@ -1,6 +1,7 @@
 package io.ltirom.tooling.client.wsl
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import io.ltirom.tooling.core.remote.RunPurpose
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
@@ -17,6 +18,8 @@ import java.nio.charset.Charset
 public class TransportCliExecutor(
     private val transport: RemoteTransportPort,
     private val defaultWorkingDirectory: String = "/home/lti",
+    private val purpose: RunPurpose = RunPurpose.SETUP,
+    private val commandValidator: ((List<String>) -> Unit)? = null,
 ) : WslCliExecutor() {
 
     override fun execute(
@@ -25,8 +28,9 @@ public class TransportCliExecutor(
         timeoutSeconds: Long,
         charset: Charset,
         user: String?,
+        stdin: String?,
     ): CliExecutionResult {
-        val request = toRequest(command, timeoutSeconds, user)
+        val request = toRequest(command, timeoutSeconds, user, stdin)
         return try {
             toResult(runBlocking { transport.execute(request) })
         } catch (e: CancellationException) {
@@ -45,8 +49,9 @@ public class TransportCliExecutor(
         command: List<String>,
         timeoutSeconds: Long,
         user: String?,
+        stdin: String?,
     ): CliExecutionResult {
-        val request = toRequest(command, timeoutSeconds, user)
+        val request = toRequest(command, timeoutSeconds, user, stdin)
         return try {
             toResult(transport.execute(request))
         } catch (e: CancellationException) {
@@ -56,8 +61,14 @@ public class TransportCliExecutor(
         }
     }
 
-    private fun toRequest(command: List<String>, timeoutSeconds: Long, user: String?): ToolExecutionRequest {
+    private fun toRequest(
+        command: List<String>,
+        timeoutSeconds: Long,
+        user: String?,
+        stdin: String? = null,
+    ): ToolExecutionRequest {
         require(command.isNotEmpty()) { "Command cannot be empty" }
+        commandValidator?.invoke(command)
         val first = command.first()
         require(!((first == "bash" || first == "sh") && command.contains("-c"))) {
             "bash/sh -c commands are forbidden in TransportCliExecutor: $command"
@@ -73,6 +84,8 @@ public class TransportCliExecutor(
             arguments = effectiveCommand.drop(1),
             workingDirectory = defaultWorkingDirectory,
             timeoutMs = timeoutSeconds * 1000L,
+            purpose = purpose,
+            stdinText = stdin,
         )
     }
 

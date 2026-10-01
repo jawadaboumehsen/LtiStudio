@@ -12,7 +12,8 @@ public data class ToolExecutionRequest(
     val stdinText: String? = null,
     val timeoutMs: Long = 900_000L,
     val acceptedExitCodes: Set<Int> = setOf(0),
-    val streamOutput: Boolean = false
+    val streamOutput: Boolean = false,
+    val purpose: RunPurpose = RunPurpose.WORKSPACE
 )
 
 @Serializable
@@ -132,4 +133,44 @@ public data class SessionSummary(
 public data class SequencedStreamEvent(
     val seq: Long,
     val event: StreamEvent
+)
+
+@Serializable
+public data class ActivateToolchainRequest(
+    val activationRequestId: String,
+    val expectedActiveInstallId: String? = null,
+    val targetInstallId: String? = null
+)
+
+@Serializable
+public data class ActivateToolchainResponse(
+    val state: String? = null,
+    val activeInstallId: String? = null,
+    val code: String? = null,
+    val reason: String? = null,
+    val actual: String? = null,
+    val activeWork: Int? = null,
+    val toolIds: List<String>? = null
+)
+
+@Serializable
+public data class ToolchainStateResponse(
+    val state: String,
+    val activeInstallId: String? = null,
+    val previousInstallId: String? = null,
+    val holds: List<String> = emptyList(),
+    val lastActivation: LastActivationSummary? = null,
+    val health: ToolchainHealthSummary? = null
+)
+
+@Serializable
+public data class LastActivationSummary(
+    val requestId: String,
+    val state: String
+)
+
+@Serializable
+public data class ToolchainHealthSummary(
+    val intact: Boolean,
+    val resolves: Boolean
 )

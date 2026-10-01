@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.setup
 
+import com.russhwolf.settings.MapSettings
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
@@ -30,12 +31,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.encodeToString
 import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
 import org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector
+import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.domain.ports.PublicationReport
 import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
@@ -47,12 +49,6 @@ import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.model.setup.AttemptStatus
-import org.ide.lti.core.model.setup.ChildIntentRecord
-import org.ide.lti.core.model.setup.ChildTerminalProof
-import org.ide.lti.core.model.setup.PersistedSubmoduleState
-import org.ide.lti.core.model.setup.PersistedToolState
-import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -285,70 +281,17 @@ class EnvironmentVerificationTest {
         )
     }
 
-    private class FakeToolchainRepo(initialState: ToolchainPersistenceState = ToolchainPersistenceState()) :
-        ToolchainSetupRepository {
-        var state = initialState
-
-        override val toolchainState: Flow<ToolchainPersistenceState> get() = flowOf(state)
-        override val currentState: ToolchainPersistenceState get() = state
-        override suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit> {
-            this.state = state
-            return Result.success(Unit)
-        }
-        override suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> = ok()
-        override suspend fun markSetupCompleted(completed: Boolean, timestamp: Long?): Result<Unit> = ok()
-        override suspend fun updateTool(
-            toolId: String,
-            transform: (PersistedToolState) -> PersistedToolState,
-        ): Result<Unit> = ok()
-        override suspend fun updateSubmodule(
-            name: String,
-            transform: (PersistedSubmoduleState) -> PersistedSubmoduleState,
-        ): Result<Unit> = ok()
-        override suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit> = ok()
-        override suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> = ok()
-        override suspend fun clearToolchainState(force: Boolean): Result<Unit> = ok()
-        override suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> {
-            state = state.copy(activeAttempt = attempt)
-            return ok()
-        }
-        override suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit> = ok()
-        override suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> =
-            Result.success(0)
-        override suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> = ok()
-        override suspend fun commitChildCursorAndEvidence(
-            attemptId: String,
-            childIndex: Int,
-            lastSeq: Long,
-            evidenceLine: String?,
-        ): Result<Unit> = ok()
-        override suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit> = ok()
-        override suspend fun recordChildNotSubmitted(
-            attemptId: String,
-            childIndex: Int,
-            terminalStatus: String,
-        ): Result<Unit> = ok()
-        override suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> = ok()
-        override suspend fun recordAttemptTerminal(
-            attemptId: String,
-            status: AttemptStatus,
-            outcome: SetupOutcome,
-        ): Result<Unit> {
-            state = state.copy(activeAttempt = null)
-            return ok()
-        }
-        override suspend fun recordAttemptAwaitingUserAction(
-            attemptId: String,
-            handoff: org.ide.lti.core.model.setup.PersistedUserHandoff,
-            plan: org.ide.lti.core.model.setup.PersistedSetupPlan,
-        ): Result<Unit> = ok()
-        override suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> {
-            state = state.copy(recoveryBlocked = blocked, recoveryBlockReason = reason)
-            return ok()
-        }
-
-        private fun ok(): Result<Unit> = Result.success(Unit)
-    }
+    private class FakeToolchainRepo(
+        initialState: ToolchainPersistenceState = ToolchainPersistenceState(),
+        delegate: ToolchainSetupRepository = inMemoryToolchainRepository(
+            MapSettings().apply {
+                if (initialState != ToolchainPersistenceState()) {
+                    val encoded = ToolchainPreferencesDataSource.defaultJson().encodeToString(initialState)
+                    putString(ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE, encoded)
+                }
+            },
+        ),
+    ) : ToolchainSetupRepository by delegate
 
     @Test
     fun `restored steps are PENDING and RESTORED with verifiedAt timestamp and not SUCCESS`() = runTest {

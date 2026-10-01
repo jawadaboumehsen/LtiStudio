@@ -70,8 +70,22 @@ public open class WslCliExecutor {
         command: List<String>,
         timeoutSeconds: Long = 10,
         user: String? = null,
+        stdin: String? = null,
+    ): CliExecutionResult = if (stdin == null) {
+        run(distro, command, timeoutSeconds, user)
+    } else {
+        kotlinx.coroutines.runInterruptible(kotlinx.coroutines.Dispatchers.IO) {
+            execute(distro, command, timeoutSeconds, Charsets.UTF_8, user, stdin)
+        }
+    }
+
+    public open suspend fun run(
+        distro: String,
+        command: List<String>,
+        timeoutSeconds: Long,
+        user: String?,
     ): CliExecutionResult = kotlinx.coroutines.runInterruptible(kotlinx.coroutines.Dispatchers.IO) {
-        execute(distro, command, timeoutSeconds, Charsets.UTF_8, user)
+        execute(distro, command, timeoutSeconds, Charsets.UTF_8, user, null)
     }
 
     public open fun execute(
@@ -80,7 +94,31 @@ public open class WslCliExecutor {
         timeoutSeconds: Long = 10,
         charset: Charset = Charsets.UTF_8,
         user: String? = null,
-    ): CliExecutionResult = runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset)
+        stdin: String? = null,
+    ): CliExecutionResult {
+        val method5 = runCatching {
+            this.javaClass.getMethod(
+                "execute",
+                String::class.java,
+                List::class.java,
+                Long::class.javaPrimitiveType,
+                Charset::class.java,
+                String::class.java,
+            )
+        }.getOrNull()
+        if (method5 != null && method5.declaringClass != WslCliExecutor::class.java) {
+            return execute(distro, command, timeoutSeconds, charset, user)
+        }
+        return runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset, stdin)
+    }
+
+    public open fun execute(
+        distro: String,
+        command: List<String>,
+        timeoutSeconds: Long,
+        charset: Charset,
+        user: String?,
+    ): CliExecutionResult = runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset, null)
 
     /**
      * The `wsl.exe` argv for [command]. Windows passes argv as one command line that `wsl.exe` splits
@@ -173,7 +211,12 @@ public open class WslCliExecutor {
         )
     }
 
-    private fun runProcess(pb: ProcessBuilder, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
+    private fun runProcess(
+        pb: ProcessBuilder,
+        timeoutSeconds: Long,
+        charset: Charset,
+        stdin: String? = null,
+    ): CliExecutionResult {
         var process: Process? = null
         var outDrainer: BoundedStreamDrainer? = null
         var outThread: Thread? = null
@@ -182,6 +225,11 @@ public open class WslCliExecutor {
             val p = pb.start()
             process = p
             onProcessStarted?.invoke(p)
+            if (!stdin.isNullOrEmpty()) {
+                p.outputStream.bufferedWriter(charset).use { it.write(stdin) }
+            } else {
+                p.outputStream.close()
+            }
             val od = BoundedStreamDrainer(p.inputStream, charset)
             val ed = BoundedStreamDrainer(p.errorStream, charset)
             outDrainer = od

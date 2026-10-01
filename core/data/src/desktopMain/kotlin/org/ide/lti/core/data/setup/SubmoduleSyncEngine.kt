@@ -12,9 +12,12 @@ package org.ide.lti.core.data.setup
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import org.ide.lti.core.data.setup.install.GitCache
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
+import org.ide.lti.core.domain.setup.ToolSource
 
 /**
  * Dedicated engine for synchronizing external git submodules.
@@ -42,40 +45,22 @@ public class SubmoduleSyncEngine(
          * was restructured and no longer builds a fuse binary). Kept identical to
          * WslToolchainProvisioner.SUBMODULES (tested).
          */
-        public val DEFAULT_SUBMODULES: List<PinnedSubmodule> = listOf(
-            PinnedSubmodule(
-                "android-tools",
-                "https://github.com/UN1CA/external_android-tools.git",
-                "f9bef94306f93be88b0cf98f9eeb0e24fc7b6aa8",
-            ),
-            PinnedSubmodule(
-                "apktool",
-                "https://github.com/iBotPeaches/Apktool.git",
-                "1c1d15b070c2138d958fa8b685d430c49c4bb117",
-            ),
-            PinnedSubmodule(
-                "erofs-utils",
-                "https://github.com/sekaiacg/erofs-tools.git",
-                "7274417816e3adfe0cd6d4a8ff194ec5f41268f4",
-            ),
-            PinnedSubmodule(
-                "img2sdat",
-                "https://github.com/UN1CA/external_img2sdat.git",
-                "601317ed0bf502eb8facdd048f2d75dc75ffcd53",
-            ),
-            PinnedSubmodule(
-                "signapk",
-                "https://github.com/UN1CA/external_signapk.git",
-                "cb88f4b27d8a07ca101eade5d40a6893920cb55e",
-            ),
-        )
+        public val DEFAULT_SUBMODULES: List<PinnedSubmodule>
+            get() = ToolGroupCatalog.allGroups.mapNotNull { group ->
+                val git = group.source as? ToolSource.Git ?: return@mapNotNull null
+                PinnedSubmodule(
+                    name = group.id.value,
+                    url = git.recommendedUrl,
+                    commit = git.recommendedCommit,
+                )
+            }
 
         /** A recursive clone of android-tools (with its vendor submodules) takes minutes. */
         private const val CLONE_TIMEOUT_SECONDS: Long = 1_200
     }
 
     /** What is on disk where a source repository should be. */
-    private enum class CloneState { MISSING, AT_PIN, OTHER_COMMIT, NOT_A_CLONE }
+    private enum class CloneState { MISSING, AT_PIN, OTHER_COMMIT, NOT_A_CLONE, ORIGIN_MISMATCH }
 
     /**
      * Synchronizes all required source repositories into [extDir], each its own clone at its pinned commit
@@ -100,11 +85,17 @@ public class SubmoduleSyncEngine(
         for ((index, sub) in submodules.withIndex()) {
             onProgress(sub.name, index + 1, submodules.size)
             val subDir = "$extDir/${sub.name}"
-            var state = cloneState(distro, subDir, sub.commit)
+            var state = cloneState(distro, subDir, sub.url, sub.commit)
 
-            if (state == CloneState.NOT_A_CLONE) {
-                val aside = "$subDir.not-a-clone-${System.currentTimeMillis()}"
-                log("[Step 4/5] '$subDir' is not its own git clone; moving it to $aside and cloning fresh.")
+            if (state == CloneState.NOT_A_CLONE || state == CloneState.ORIGIN_MISMATCH) {
+                val reasonTag = if (state == CloneState.ORIGIN_MISMATCH) "origin-mismatch" else "not-a-clone"
+                val aside = "$subDir.$reasonTag-${System.currentTimeMillis()}"
+                val logMsg = if (state == CloneState.ORIGIN_MISMATCH) {
+                    "'$subDir' origin does not match ${sub.url}"
+                } else {
+                    "'$subDir' is not its own git clone"
+                }
+                log("[Step 4/5] $logMsg; moving it to $aside and cloning fresh.")
                 val moved = cli.execute(distro, listOf("mv", subDir, aside))
                 if (moved.exitCode != 0) {
                     return Result.failure(
@@ -194,6 +185,7 @@ public class SubmoduleSyncEngine(
                 arguments = args,
                 workingDirectory = workingDir,
                 timeoutMs = CLONE_TIMEOUT_SECONDS * 1000L,
+                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
             ),
             recipeRevision = ctx.sub.commit,
             onRunStarted = { stage, runId ->
@@ -211,11 +203,19 @@ public class SubmoduleSyncEngine(
 
     /** Measures [subDir]: absent, its own clone at [pin], its own clone elsewhere, or not its own clone. */
     @Suppress("ReturnCount") // one exit per measured state
-    private fun cloneState(distro: String, subDir: String, pin: String): CloneState {
+    private fun cloneState(distro: String, subDir: String, url: String, pin: String): CloneState {
         if (cli.execute(distro, listOf("test", "-d", subDir)).exitCode != 0) return CloneState.MISSING
         val topLevel = cli.execute(distro, listOf("git", "-C", subDir, "rev-parse", "--show-toplevel"))
         if (topLevel.exitCode != 0 || topLevel.output.trim().trimEnd('/') != subDir.trimEnd('/')) {
             return CloneState.NOT_A_CLONE
+        }
+        val originRes = cli.execute(distro, listOf("git", "-C", subDir, "remote", "get-url", "origin"))
+        if (originRes.exitCode == 0) {
+            val origin = GitCache.normalizeRepoUrl(originRes.output.trim())
+            val expected = GitCache.normalizeRepoUrl(url)
+            if (origin.isNotBlank() && expected.isNotBlank() && origin != expected) {
+                return CloneState.ORIGIN_MISMATCH
+            }
         }
         val head = cli.execute(distro, listOf("git", "-C", subDir, "rev-parse", "HEAD")).output.trim()
         return if (head == pin) CloneState.AT_PIN else CloneState.OTHER_COMMIT

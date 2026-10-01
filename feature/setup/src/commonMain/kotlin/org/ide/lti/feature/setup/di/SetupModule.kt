@@ -27,6 +27,10 @@ val setupModule = module {
             getSelectedTargetUseCase = getOrNull(),
             selectTargetUseCase = getOrNull(),
             terminalLauncher = getOrNull(),
+            toolchainSelectionRepository = getOrNull(),
+            sourceResolver = getOrNull(),
+            toolchainInstallationPort = getOrNull(),
+            restoreCoordinator = getOrNull(),
         )
     }
 }

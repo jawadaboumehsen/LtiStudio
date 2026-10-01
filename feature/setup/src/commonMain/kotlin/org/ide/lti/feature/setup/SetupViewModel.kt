@@ -24,14 +24,20 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.TerminalLauncherPort
+import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
+import org.ide.lti.core.domain.setup.RestoreCoordinatorPort
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCategory
 import org.ide.lti.core.domain.setup.ToolComponentItem
+import org.ide.lti.core.domain.setup.ToolGroupId
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.domain.setup.ports.SourceResolverPort
+import org.ide.lti.core.domain.setup.ports.ToolchainInstallationPort
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
 import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
@@ -42,11 +48,14 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.model.setup.DistroToolSelections
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
+import org.ide.lti.feature.setup.versions.ToolVersionsState
+import org.ide.lti.core.model.setup.ToolSelection as VersionToolSelection
 
 /**
  * Presentation ViewModel for the Setup / Welcome Screen.
@@ -69,6 +78,10 @@ class SetupViewModel(
     private val selectTargetUseCase: SelectTargetUseCase? = null,
     private val environmentReadinessPort: EnvironmentReadinessPort? = null,
     private val terminalLauncher: TerminalLauncherPort? = null,
+    private val toolchainSelectionRepository: ToolchainSelectionRepository? = null,
+    private val sourceResolver: SourceResolverPort? = null,
+    private val toolchainInstallationPort: ToolchainInstallationPort? = null,
+    private val restoreCoordinator: RestoreCoordinatorPort? = null,
 ) : ViewModel() {
 
     /**
@@ -89,6 +102,10 @@ class SetupViewModel(
             OpenWorkspaceByPathUseCase(workspaceManager.repository, workspaceManager),
         environmentReadinessPort: EnvironmentReadinessPort? = null,
         terminalLauncher: TerminalLauncherPort? = null,
+        toolchainSelectionRepository: ToolchainSelectionRepository? = null,
+        sourceResolver: SourceResolverPort? = null,
+        toolchainInstallationPort: ToolchainInstallationPort? = null,
+        restoreCoordinator: RestoreCoordinatorPort? = null,
     ) : this(
         getRecentWorkspacesUseCase = getRecentWorkspacesUseCase
             ?: GetRecentWorkspacesUseCase(workspaceManager.repository),
@@ -105,6 +122,10 @@ class SetupViewModel(
         selectTargetUseCase = selectTargetUseCase,
         environmentReadinessPort = environmentReadinessPort,
         terminalLauncher = terminalLauncher,
+        toolchainSelectionRepository = toolchainSelectionRepository,
+        sourceResolver = sourceResolver,
+        toolchainInstallationPort = toolchainInstallationPort,
+        restoreCoordinator = restoreCoordinator,
     )
 
     companion object {
@@ -174,12 +195,34 @@ class SetupViewModel(
         scope = viewModelScope,
     )
 
+    val toolVersionsState = ToolVersionsState(
+        scope = viewModelScope,
+        repository = toolchainSelectionRepository ?: InMemoryToolchainSelectionRepository(),
+        sourceResolver = sourceResolver,
+        installationPort = toolchainInstallationPort,
+        restoreCoordinator = restoreCoordinator,
+        isBuildingProvider = {
+            val step = toolchainSetupState.value.steps
+                .firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
+            step?.status == StepStatus.RUNNING
+        },
+    )
+
     val isAutoDoctorEnabled: StateFlow<Boolean> = environmentSetupState.isAutoDoctorEnabled
     val activeOperation: StateFlow<SetupOperation?> = environmentSetupState.activeOperation
     val isToolchainBound: Boolean get() = environmentSetupState.isToolchainBound
 
     init {
+        toolVersionsState.onBuildAndSwitch = { executeBuildAndSwitch() }
         environmentSetupState.checkEnvironmentStatus()
+        viewModelScope.launch {
+            toolchainSetupState.collect { state ->
+                val compilationStep = state.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
+                if (compilationStep?.status == StepStatus.RUNNING || compilationStep?.status == StepStatus.SUCCESS) {
+                    toolVersionsState.refresh()
+                }
+            }
+        }
         viewModelScope.launch {
             // The single activity subscription (FR-012). Events already queued are drained into one
             // batch so a burst costs one snapshot publish, not one per line.
@@ -191,6 +234,44 @@ class SetupViewModel(
                 }
                 setupActivityState.appendEvents(batch)
             }
+        }
+    }
+
+    suspend fun executeBuildAndSwitch(): SetupOutcome {
+        val service = toolchainService
+            ?: return SetupOutcome.Failed(null, "Toolchain service is not available in this session.")
+        return try {
+            val plan = service.prepare(
+                kind = SetupPlanKind.FULL_SETUP,
+                targetId = null,
+                autoDoctorEnabled = isAutoDoctorEnabled.value,
+            )
+            val outcome = service.confirm(plan.planId, plan.revisionHash)
+            when (outcome) {
+                is SetupOutcome.Succeeded -> {
+                    environmentSetupState.checkEnvironmentStatus()
+                }
+                is SetupOutcome.Failed -> {
+                    environmentSetupState.setEnvironmentNotice("Build & switch failed: ${outcome.reason}")
+                }
+                is SetupOutcome.Interrupted -> {
+                    environmentSetupState.setEnvironmentNotice("Build & switch was interrupted: ${outcome.reason}")
+                }
+                is SetupOutcome.Busy -> {
+                    environmentSetupState.setEnvironmentNotice("Another operation is running (${outcome.ownerId}).")
+                }
+                SetupOutcome.Cancelled -> {
+                    environmentSetupState.setEnvironmentNotice("Build & switch was cancelled.")
+                }
+                else -> {}
+            }
+            outcome
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (e: Exception) {
+            val failed = SetupOutcome.Failed(null, e.message ?: "Build & switch failed")
+            environmentSetupState.setEnvironmentNotice("Build & switch error: ${e.message}")
+            failed
         }
     }
 
@@ -497,4 +578,33 @@ class SetupViewModel(
             }
         }
     }
+}
+
+private class InMemoryToolchainSelectionRepository : ToolchainSelectionRepository {
+    private var selections = DistroToolSelections()
+
+    override suspend fun desiredSelections(distro: String): DistroToolSelections = selections
+
+    override suspend fun saveSelections(
+        distro: String,
+        expectedRevision: Long,
+        desired: Map<ToolGroupId, VersionToolSelection>,
+    ): Result<Long> {
+        if (expectedRevision != selections.revision) {
+            return Result.failure(IllegalStateException("Revision mismatch"))
+        }
+        val next = selections.revision + 1
+        selections = DistroToolSelections(desired = desired.mapKeys { it.key.value }, revision = next)
+        return Result.success(next)
+    }
+
+    private val trustedRepos = mutableSetOf<String>()
+
+    override suspend fun recordTrust(repoUrl: String): Result<Unit> {
+        trustedRepos.add(VersionToolSelection.normalizeRepoUrl(repoUrl))
+        return Result.success(Unit)
+    }
+
+    override suspend fun isTrusted(repoUrl: String): Boolean =
+        VersionToolSelection.normalizeRepoUrl(repoUrl) in trustedRepos
 }

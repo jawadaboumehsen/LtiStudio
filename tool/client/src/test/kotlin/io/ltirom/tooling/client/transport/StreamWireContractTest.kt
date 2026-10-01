@@ -26,4 +26,17 @@ class StreamWireContractTest {
         assertEquals(StreamEvent.ExecutionFinished(2, 4832, ""), json.decodeFromString<SequencedStreamEvent>(finished).event)
         assertEquals(StreamEvent.Heartbeat(1), json.decodeFromString<SequencedStreamEvent>(heartbeat).event)
     }
+
+    @Test
+    fun `decodes start run request with run purpose default and explicit`() {
+        val withoutPurpose = """{"request":{"toolId":"ls","arguments":[]},"idempotencyKey":"k1"}"""
+        val decodedDefault = json.decodeFromString<io.ltirom.tooling.core.remote.StartRunRequest>(withoutPurpose)
+        assertEquals(io.ltirom.tooling.core.remote.RunPurpose.WORKSPACE, decodedDefault.purpose)
+        assertEquals(io.ltirom.tooling.core.remote.RunPurpose.WORKSPACE, decodedDefault.request.purpose)
+
+        val withPurpose = """{"request":{"toolId":"ls","arguments":[],"purpose":"SETUP"},"idempotencyKey":"k2","purpose":"SETUP"}"""
+        val decodedSetup = json.decodeFromString<io.ltirom.tooling.core.remote.StartRunRequest>(withPurpose)
+        assertEquals(io.ltirom.tooling.core.remote.RunPurpose.SETUP, decodedSetup.purpose)
+        assertEquals(io.ltirom.tooling.core.remote.RunPurpose.SETUP, decodedSetup.request.purpose)
+    }
 }

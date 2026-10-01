@@ -729,6 +729,56 @@ per stage; a failed stage marks every later stage pending and stops.
 - The Recovery tab shows only journal data (`ToolchainSetupState.pendingAttempt`) and real step state;
   with nothing to recover it says so.
 
+### 6. Tool Group Catalog & Recipes (008 Tool Version Editing)
+- `ToolGroupCatalog` (`core:domain`) defines 7 authoritative tool build groups:
+  - `ANDROID_TOOLS` (`android-tools`): `ToolSource.Git`, `RecipeConfig.AndroidTools`. Native outputs: `adb`, `fastboot`, `mke2fs`, `e2fsdroid`, `lpmake`, `lpunpack`, `simg2img`, `avbtool`, etc.
+  - `EROFS_UTILS` (`erofs-utils`): `ToolSource.Git`, `RecipeConfig.CMake`. Native outputs: `mkfs.erofs`, `dump.erofs`, `fsck.erofs`, `erofsfuse`.
+  - `IMG2SDAT` (`img2sdat`): `ToolSource.Git`, `RecipeConfig.ScriptCopy`. Script output: `img2sdat`.
+  - `APKTOOL` (`apktool`): `ToolSource.Git`, `RecipeConfig.GradleJar`. Jar output: `apktool.jar`.
+  - `SIGNAPK` (`signapk`): `ToolSource.Git`, `RecipeConfig.GradleJar`. Jar output: `signapk.jar`.
+  - `GH` (`gh`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `gh`.
+  - `PAYLOAD_DUMPER_GO` (`payload-dumper-go`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `payload-dumper-go`.
+- Sealed `RecipeConfig` types (`core:domain`):
+  - `RecipeConfig.AndroidTools(cmakeArgs, gitIdentity, patchVendor, revision)`: native build via `AndroidToolsRecipe`.
+  - `RecipeConfig.CMake(sourceSubdir, buildSubdir, cmakeArgs, revision)`: CMake-based build via `CMakeRecipe`.
+  - `RecipeConfig.GradleJar(task, outputPath, revision)`: shadow JAR build via `GradleJarRecipe`.
+  - `RecipeConfig.ScriptCopy(files, revision)`: script stage copy via `ScriptCopyRecipe`.
+  - `RecipeConfig.Release(versions, revision)`: checksum-verified release tarball download via `ReleaseDownloadRecipe`.
+- Layout verification: `SourceResolverPort.checkLayout` / `GitSourceResolver.checkLayout` validates expected repository layout before offering a build.
+- Build dependencies: missing `buildPackages` transition to `TerminalHandoffSheet`.
+
+### 7. Content-Addressable Artifacts & Toolchain Installations (`toolchainLayoutV2`)
+- Multi-version directory layout under `~/LtiRomTools/`:
+  - `~/LtiRomTools/artifacts/<groupId>/<artifactId>/`: Immutable artifact stores for built or downloaded binaries, containing `manifest.json` (`ArtifactManifest`) and tool outputs.
+  - `~/LtiRomTools/installs/<installId>/`: Assembled installations containing `install.json` (`InstallManifest`) and `bin/` directory with relative symlinks to artifact binaries (`../../artifacts/<groupId>/<artifactId>/bin/<file>`).
+  - `~/LtiRomTools/bin`: Active installation symlink pointing directly to `installs/<installId>/bin` (swapped atomically via `bin.tmp-<nano>`).
+- Direct writes into `~/LtiRomTools/bin` or candidate directories are prohibited outside `ArtifactStore` and `InstallationManager`.
+
+### 8. Atomic Activation, Health Verification & Safe Switching
+- `SwitchToolchainHandler` (`core:data`) coordinates toolchain switching:
+  1. Freezes selections into `ResolvedInput` and checks `ArtifactStore` cache; reuses matching artifacts by input fingerprint.
+  2. Compiles or downloads changed tool groups into isolated staging directories before publishing to `ArtifactStore`.
+  3. Assembles candidate installation directory via `InstallationManager` at `~/LtiRomTools/installs/<installId>`.
+  4. Runs verification suite (`ToolVerifier`) on required candidate binaries.
+  5. Records checkpoint in `ActivationReconciler` (`SwitchCheckpoint.CANDIDATE_VERIFIED`).
+  6. Dispatches activation to `ToolchainActivator` on the build service via `ToolchainInstallationPort.activate`.
+- Build service activation safety (`ToolchainActivator`):
+  - Engine hold check: if active work exists, rejects activation with `ActivationOutcome.Blocked`.
+  - Atomic link swap: swaps `~/LtiRomTools/bin` to point to `installs/<targetInstallId>/bin` using atomic filesystem rename.
+  - Self-healing rollback: if post-switch verification fails, restores previous active install and returns `ActivationOutcome.VerifyFailedRestored`.
+  - Audit logging: records transitions to `ToolchainJournal`.
+
+### 9. Toolchain Health & Recovery
+- Clean layout policy:
+  - No legacy migration: all operations strictly target `~/LtiRomTools/{artifacts,installs,bin}`.
+  - Uninitialized state: if no active install exists, toolchain remains uninitialized until the first activation commits.
+- Health tracking:
+  - `ToolchainHealth` (`core:domain`) evaluates four operational facts: `selectedInstallId != null`, `intact` (artifact files exist and match sha256), `serviceResolves` (build service resolves binaries), and `journalCommitted` (active install recorded in journal).
+  - Overall health: `isHealthy = selectedInstallId != null && intact && serviceResolves && journalCommitted`.
+- Recovery and repair:
+  - Unhealthy installations transition group row status to `ToolGroupStatus.NEEDS_RECOVERY` ("Needs recovery") in `ToolVersionsState` / `ToolVersionsPresentationMapper`.
+  - Repair operations rebuild damaged artifacts via `SwitchToolchainHandler` or roll back via `ToolchainRestoreCoordinator`.
+
 ## Build Layout & Multi-Repo Requirements
 
 ```text

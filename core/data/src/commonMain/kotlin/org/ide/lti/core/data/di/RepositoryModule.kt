@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.di
 
+import org.ide.lti.core.data.repository.setup.ToolchainSelectionRepositoryImpl
 import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
 import org.ide.lti.core.data.repository.snapshot.SnapshotRepositoryImpl
 import org.ide.lti.core.data.repository.target.TargetRepositoryImpl
@@ -18,6 +19,7 @@ import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
 import org.ide.lti.core.data.utils.NetworkMonitor
 import org.ide.lti.core.data.utils.TimeZoneMonitor
 import org.ide.lti.core.datastore.di.DatastoreModule
+import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
@@ -46,7 +48,13 @@ val DataModule = module {
         )
     }
     singleOf(::TargetRepositoryImpl) { bind<TargetRepository>() }
-    singleOf(::ToolchainSetupRepositoryImpl) { bind<ToolchainSetupRepository>() }
+    single<ToolchainSelectionRepository> { ToolchainSelectionRepositoryImpl(preferencesDataSource = get()) }
+    single<ToolchainSetupRepository> {
+        ToolchainSetupRepositoryImpl(
+            preferencesDataSource = get(),
+            selectionRepository = get(),
+        )
+    }
     single<SnapshotRepository> { SnapshotRepositoryImpl(dataSource = get()) }
 }
 

@@ -73,6 +73,32 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<PluginCatalogPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.WorkspaceAdmissionPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.SnapshotMaterializerPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.setup.ports.ToolchainInstallationPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.setup.ports.SourceResolverPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.setup.RestoreCoordinatorPort>())
+        assertNotNull(koin.get<org.ide.lti.core.data.setup.install.ArtifactStore>())
+        assertNotNull(koin.get<org.ide.lti.core.data.setup.install.GitCache>())
+        assertNotNull(koin.get<org.ide.lti.core.data.setup.execute.handlers.SwitchToolchainHandler>())
+        val planExecutor = koin.get<org.ide.lti.core.data.setup.execute.PlanExecutor>()
+        assertNotNull(planExecutor.switchToolchainHandler, "PlanExecutor must have SwitchToolchainHandler registered in DI")
+
+        listOf(
+            "org.ide.lti.core.data.setup.recipe.BuildRecipeDispatcher",
+            "org.ide.lti.core.data.setup.check.EnvironmentCheck",
+            "org.ide.lti.core.data.setup.check.ServicePreparation",
+            "org.ide.lti.core.data.setup.execute.PlanExecutor",
+            "org.ide.lti.core.data.setup.RecoveryCoordinator",
+            "org.ide.lti.core.data.setup.ToolVerifier",
+            "org.ide.lti.core.data.setup.install.InstallationManager",
+            "org.ide.lti.core.data.setup.install.ArtifactStore",
+            "org.ide.lti.core.data.setup.install.GitCache",
+            "org.ide.lti.core.data.setup.source.GitSourceResolver",
+            "org.ide.lti.core.data.setup.execute.ToolchainRestoreCoordinator",
+            "org.ide.lti.core.data.setup.execute.handlers.SwitchToolchainHandler",
+        ).forEach { className ->
+            val clazz = Class.forName(className).kotlin
+            assertNotNull(koin.get<Any>(clazz, qualifier = null, parameters = null), className)
+        }
     }
 
     @Test
@@ -96,6 +122,13 @@ class KoinGraphResolutionTest {
             val clazz = Class.forName(className).kotlin
             assertNotNull(koin.get<Any>(clazz, qualifier = null, parameters = null), className)
         }
+    }
+
+    @Test
+    fun setupViewModelWiredWithRestoreAndSourceResolver() {
+        val vmClazz = Class.forName("org.ide.lti.feature.setup.SetupViewModel").kotlin
+        val vm = koin.get<Any>(vmClazz, qualifier = null, parameters = null)
+        assertNotNull(vm, "SetupViewModel must resolve from DI")
     }
 
     private companion object {

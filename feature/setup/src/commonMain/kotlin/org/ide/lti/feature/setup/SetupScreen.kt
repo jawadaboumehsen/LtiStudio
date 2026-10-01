@@ -15,7 +15,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -104,6 +103,7 @@ import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
 import org.ide.lti.feature.setup.steps.RecoveryStepContent
 import org.ide.lti.feature.setup.steps.ToolsStepContent
+import org.ide.lti.feature.setup.versions.ToolVersionsState
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -269,6 +269,7 @@ fun SetupScreen(
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
             activityState = viewModel.setupActivityState,
+            toolVersionsState = viewModel.toolVersionsState,
             iconsOnly = true,
         )
     }
@@ -294,6 +295,7 @@ fun SetupScreenContent(
     workspacesListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    toolVersionsState: ToolVersionsState? = null,
     iconsOnly: Boolean = false,
 ) {
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
@@ -580,6 +582,7 @@ fun SetupScreenContent(
                                         state = state,
                                         actions = actions,
                                         activityState = activityState,
+                                        toolVersionsState = toolVersionsState,
                                         searchFocusRequester = toolSearchFocusRequester,
                                         focusSearchOnMount = pendingSearchFocus,
                                         scrollState = toolsScrollState,
@@ -853,9 +856,9 @@ internal fun setupTabTransitionSpec(
     isReducedMotion: Boolean,
 ): AnimatedContentTransitionScope<SetupTab>.() -> ContentTransform = {
     if (isReducedMotion) {
-        fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
+        (fadeIn(animationSpec = snap()) togetherWith fadeOut(animationSpec = snap())).using(null)
     } else if (targetState == initialState) {
-        EnterTransition.None.togetherWith(ExitTransition.None)
+        (EnterTransition.None togetherWith ExitTransition.None).using(null)
     } else {
         val isForward = targetState.ordinal > initialState.ordinal
         val springSpec = spring<Float>(
@@ -894,6 +897,6 @@ internal fun setupTabTransitionSpec(
             targetScale = SetupTokens.MotionScaleInitial,
         )
 
-        (enter togetherWith exit).using(SizeTransform(clip = false))
+        (enter togetherWith exit).using(null)
     }
 }

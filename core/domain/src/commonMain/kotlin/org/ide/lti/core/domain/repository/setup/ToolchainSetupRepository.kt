@@ -32,7 +32,7 @@ import org.ide.lti.core.model.setup.ToolchainPersistenceState
  * - "Persisted lastSeq never advances beyond durably stored replay evidence."
  * - "Reset protection: reset cannot erase an active attempt without explicit authorization."
  */
-public interface ToolchainSetupRepository {
+public interface ToolchainSetupRepository : ToolchainSelectionRepository {
     public val toolchainState: Flow<ToolchainPersistenceState>
 
     public val currentState: ToolchainPersistenceState

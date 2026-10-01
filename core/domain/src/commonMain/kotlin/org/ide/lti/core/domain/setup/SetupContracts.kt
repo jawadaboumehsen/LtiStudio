@@ -216,6 +216,14 @@ public sealed interface SetupPlanAction {
     public data class PublishTools(val toolIds: List<String>) : SetupPlanAction {
         override val description: String = "Publish tools: ${toolIds.joinToString()}"
     }
+
+    public data class SwitchToolchain(
+        val inputs: Map<ToolGroupId, ResolvedInput>,
+        val selectionRevision: Long,
+        val forceRebuildGroups: Set<ToolGroupId> = emptySet(),
+    ) : SetupPlanAction {
+        override val description: String = "Switch toolchain to revision $selectionRevision"
+    }
 }
 
 /**

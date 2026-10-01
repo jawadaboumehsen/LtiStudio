@@ -30,18 +30,7 @@ public data class ToolCapability(
 /**
  * Authoritative capability and recipe inventory for native toolchain binaries (US4, FR-009, FR-010).
  *
- * Consumed by UI availability (ToolBrowserState), adapter execution (ToolchainBuildEngine,
- * WslToolchainProvisioner) and readiness probing (EnvironmentReadinessAdapter) — one source, no
- * duplicated tables.
- *
- * Enforces:
- * - "Repair invalidates the owning recipe group only and verifies all affected required tools."
- * - "Repair requires a supported recipe; otherwise the action is unavailable with a reason and performs no mutation."
- * - "Domain tool capabilities define probes and acceptable exit codes; a file existence scan never
- *    overwrites a failed execution test or labels it Just tested."
- *
- * Probe defaults are the conservative `--help` / exit 0 contract the adapters already used; tools
- * whose CLI is known to behave differently carry an explicit override below.
+ * Rewritten as a derived view of [ToolGroupCatalog] (FR-001, US7).
  */
 public object ToolCapabilities {
 
@@ -62,135 +51,66 @@ public object ToolCapabilities {
     public val DEFAULT_PROBE_ARGUMENTS: List<String> = listOf("--help")
     public val DEFAULT_ACCEPTED_EXIT_CODES: Set<Int> = setOf(0)
 
-    /** Exit status a C program produces from `exit(-1)` on Linux. */
-    private const val EXIT_MINUS_ONE: Int = 255
-
-    /** sysexits.h EX_USAGE: what the liblp tools exit with after printing usage. */
-    private const val EXIT_USAGE: Int = 64
-
-    private fun group(recipeGroup: String, vararg tools: ToolCapability): List<ToolCapability> =
-        tools.map { it.copy(recipeGroup = recipeGroup) }
-
-    private fun tool(
-        toolId: String,
-        probeArguments: List<String> = DEFAULT_PROBE_ARGUMENTS,
-        acceptedExitCodes: Set<Int> = DEFAULT_ACCEPTED_EXIT_CODES,
-    ): ToolCapability = ToolCapability(
-        toolId = toolId,
-        recipeGroup = "",
-        probeArguments = probeArguments,
-        acceptedExitCodes = acceptedExitCodes,
-    )
-
     /**
-     * The inventory. Order within a group is the verification order after a repair.
+     * The inventory derived from [ToolGroupCatalog]. Order within a group is the verification order after a repair.
      */
-    private val INVENTORY: List<ToolCapability> =
-        group(
-            GROUP_ANDROID_TOOLS,
-            tool("adb", probeArguments = listOf("version")),
-            tool("fastboot", probeArguments = listOf("--version")),
-            // e2fsprogs: `--help` is an unknown option (usage, exit 1); `-V` prints the version.
-            tool("mke2fs", probeArguments = listOf("-V")),
-            // Exit codes below were measured on the built binaries: printing usage is how these tools
-            // answer `--help` or no arguments, and it proves the binary runs.
-            tool("e2fsdroid", acceptedExitCodes = setOf(0, 1)),
-            // liblp tools exit 64 (EX_USAGE) after usage; lpdump answers --help with 0.
-            tool("lpmake", acceptedExitCodes = setOf(0, EXIT_USAGE)),
-            tool("lpunpack", acceptedExitCodes = setOf(0, EXIT_USAGE)),
-            tool("lpdump"),
-            tool("lpadd", acceptedExitCodes = setOf(0, EXIT_USAGE)),
-            tool("lpflash", acceptedExitCodes = setOf(0, EXIT_USAGE)),
-            // libsparse tools have no help flag: without arguments they print usage and exit 1 (older
-            // builds exit(-1), i.e. 255).
-            tool("simg2img", probeArguments = emptyList(), acceptedExitCodes = setOf(1, EXIT_MINUS_ONE)),
-            tool("img2simg", probeArguments = emptyList(), acceptedExitCodes = setOf(1, EXIT_MINUS_ONE)),
-            tool("ext2simg", acceptedExitCodes = setOf(0, 1)),
-            tool("append2simg", acceptedExitCodes = setOf(0, 1)),
-            tool("mkbootimg"),
-            tool("unpack_bootimg"),
-            tool("repack_bootimg"),
-            tool("mkbootfs"),
-            tool("mkdtboimg"),
-            tool("avbtool"),
-            tool("fec", acceptedExitCodes = setOf(0, 1)),
-            tool("mkuserimg_mke2fs"),
-            // f2fs-tools and the SDK build tools come out of the same android-tools build (vendor/).
-            // f2fs-tools: `--help` is an unknown option (exit 1); `-V` prints the version.
-            tool("make_f2fs", probeArguments = listOf("-V")),
-            tool("sload_f2fs", probeArguments = listOf("-V")),
-            // A shell script with no help flag: `--help` prints its usage and exits 1.
-            tool("mkf2fsuserimg", acceptedExitCodes = setOf(1)),
-            tool("aapt2", probeArguments = listOf("version")),
-            // No help flag: any argument it doesn't know prints usage and exits 2.
-            tool("zipalign", acceptedExitCodes = setOf(2)),
-        ) + group(
-            GROUP_EROFS_UTILS,
-            tool("mkfs.erofs"),
-            tool("dump.erofs"),
-            tool("fsck.erofs"),
-            // FUSE prints its option help and exits 1.
-            tool("erofsfuse", acceptedExitCodes = setOf(0, 1)),
-        ) + group(
-            GROUP_IMG2SDAT,
-            tool("img2sdat"),
-        ) + group(
-            GROUP_APKTOOL,
-            tool("apktool", probeArguments = listOf("--version")),
-        ) + group(
-            GROUP_SIGNAPK,
-            // signapk-all.jar prints usage for --help and exits 2.
-            tool("signapk", acceptedExitCodes = setOf(0, 2)),
-        ) + group(
-            GROUP_PAYLOAD_DUMPER_GO,
-            tool("payload-dumper-go"),
-        ) + group(
-            GROUP_GH,
-            tool("gh", probeArguments = listOf("version")),
-        )
-
-    private val BY_TOOL_ID: Map<String, ToolCapability> = INVENTORY.associateBy { it.toolId }
-
-    private val BY_GROUP: Map<String, Set<String>> =
-        INVENTORY.groupBy { it.recipeGroup }.mapValues { (_, tools) -> tools.map { it.toolId }.toSet() }
+    public val INVENTORY: List<ToolCapability>
+        get() = ToolGroupCatalog.allGroups.flatMap { group ->
+            group.outputs.map { output ->
+                ToolCapability(
+                    toolId = output.toolId,
+                    recipeGroup = group.id.value,
+                    probeArguments = output.probe.args,
+                    acceptedExitCodes = output.probe.acceptedExitCodes,
+                )
+            }
+        }
 
     /**
      * Set of tool IDs with an automated, supported rebuild/acquisition recipe.
      */
-    public val SUPPORTED_TOOL_IDS: Set<String> = BY_TOOL_ID.keys
+    public val SUPPORTED_TOOL_IDS: Set<String> get() = ToolGroupCatalog.allToolIds
 
-    public fun capabilityFor(toolId: String): ToolCapability? = BY_TOOL_ID[toolId]
+    public fun capabilityFor(toolId: String): ToolCapability? = ToolGroupCatalog.outputFor(toolId)?.let { output ->
+        val group = ToolGroupCatalog.groupByToolId(toolId)
+        ToolCapability(
+            toolId = output.toolId,
+            recipeGroup = group?.id?.value ?: "",
+            probeArguments = output.probe.args,
+            acceptedExitCodes = output.probe.acceptedExitCodes,
+        )
+    }
 
-    public fun isRecipeSupported(toolId: String): Boolean = toolId in BY_TOOL_ID
+    public fun isRecipeSupported(toolId: String): Boolean = ToolGroupCatalog.outputFor(toolId) != null
 
     public fun unavailableReasonFor(toolId: String): String? =
         if (isRecipeSupported(toolId)) null else REPAIR_UNAVAILABLE_REASON
 
-    public fun recipeGroupFor(toolId: String): String? = BY_TOOL_ID[toolId]?.recipeGroup
+    public fun recipeGroupFor(toolId: String): String? = ToolGroupCatalog.groupByToolId(toolId)?.id?.value
 
     public fun toolsForRecipeGroup(recipeGroup: String): Set<String> =
-        BY_GROUP[recipeGroup] ?: emptySet()
+        ToolGroupCatalog.group(ToolGroupId(recipeGroup))?.outputs?.map { it.toolId }?.toSet() ?: emptySet()
 
-    public fun allRecipeGroups(): Set<String> = BY_GROUP.keys
+    public fun allRecipeGroups(): Set<String> = ToolGroupCatalog.allGroups.map { it.id.value }.toSet()
 
-    public fun allRecipes(): List<RecipeCapability> = BY_GROUP.map { (group, tools) ->
+    public fun allRecipes(): List<RecipeCapability> = ToolGroupCatalog.allGroups.map { group ->
         RecipeCapability(
-            recipeGroup = group,
-            toolIds = tools,
+            recipeGroup = group.id.value,
+            toolIds = group.outputs.map { it.toolId }.toSet(),
             isSupported = true,
         )
     }
 
     /** Probe arguments (without the binary) for [toolId]; the conservative default for unknown tools. */
     public fun probeArgumentsFor(toolId: String): List<String> =
-        BY_TOOL_ID[toolId]?.probeArguments ?: DEFAULT_PROBE_ARGUMENTS
+        ToolGroupCatalog.outputFor(toolId)?.probe?.args ?: DEFAULT_PROBE_ARGUMENTS
 
     /** Full probe argv for a resolved binary path. */
     public fun probeArgumentsFor(toolId: String, binaryPath: String): List<String> =
         listOf(binaryPath) + probeArgumentsFor(toolId)
 
     public fun acceptedExitCodesFor(toolId: String): Set<Int> =
-        BY_TOOL_ID[toolId]?.acceptedExitCodes ?: DEFAULT_ACCEPTED_EXIT_CODES
+        ToolGroupCatalog.outputFor(toolId)?.probe?.acceptedExitCodes ?: DEFAULT_ACCEPTED_EXIT_CODES
 
     /** True when [exitCode] proves that [toolId] executed. */
     public fun isAcceptedExitCode(toolId: String, exitCode: Int): Boolean =

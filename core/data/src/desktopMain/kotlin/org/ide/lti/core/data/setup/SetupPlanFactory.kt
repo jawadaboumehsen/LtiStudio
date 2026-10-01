@@ -10,13 +10,20 @@
 package org.ide.lti.core.data.setup
 
 import org.ide.lti.core.data.setup.doctor.WslPackageRemediator
+import org.ide.lti.core.data.setup.install.detectHostArch
+import org.ide.lti.core.domain.setup.RecipeConfig
+import org.ide.lti.core.domain.setup.ResolvedInput
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
+import org.ide.lti.core.domain.setup.ToolGroupId
+import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.ToolRef
 
 /**
  * Factory creating authoritative [SetupPlan]s from actual recipe and diagnostic data.
@@ -41,9 +48,27 @@ public object SetupPlanFactory {
         snapshot: ToolchainSetupState,
         environmentKey: String,
         bootstrapPackages: List<String> = emptyList(),
+        toolchainLayoutV2: Boolean = false,
+        switchInputs: Map<ToolGroupId, ResolvedInput>? = null,
+        selectionRevision: Long? = null,
     ): SetupPlan {
-        val actions = deriveActions(kind, targetId, autoDoctorEnabled, snapshot, bootstrapPackages)
-        val revisionHash = computeRevisionHash(snapshot, autoDoctorEnabled)
+        val actions = deriveActions(
+            kind = kind,
+            targetId = targetId,
+            autoDoctorEnabled = autoDoctorEnabled,
+            snapshot = snapshot,
+            bootstrapPackages = bootstrapPackages,
+            toolchainLayoutV2 = toolchainLayoutV2,
+            switchInputs = switchInputs,
+            selectionRevision = selectionRevision,
+        )
+        val switchAction = actions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        val revisionHash = computeRevisionHash(
+            snapshot = snapshot,
+            autoDoctorEnabled = autoDoctorEnabled,
+            switchInputs = switchAction?.inputs,
+            selectionRevision = switchAction?.selectionRevision,
+        )
         return SetupPlan(
             planId = "plan-${kind.name.lowercase()}-${System.currentTimeMillis()}",
             revisionHash = revisionHash,
@@ -59,13 +84,34 @@ public object SetupPlanFactory {
     /**
      * Hash of the evidence a plan was derived from: stage statuses, tool statuses, diagnostic
      * statuses and the Auto Doctor policy. Any change means the previewed plan is stale.
+     * When [switchInputs] and [selectionRevision] are present, every frozen input and the revision
+     * are included in the hash.
      */
-    public fun computeRevisionHash(snapshot: ToolchainSetupState, autoDoctorEnabled: Boolean): String {
-        val basis = snapshot.steps.joinToString("|") { "${it.stage}=${it.status}" }
-            .plus("|tools=" + snapshot.toolsMatrix.joinToString(",") { "${it.id}:${it.status}" })
-            .plus("|diag=" + snapshot.diagnostics.joinToString(",") { "${it.id}:${it.status}" })
-            .plus("|published=" + snapshot.publishedToolIds.sorted().joinToString(","))
-            .plus("|doctor=$autoDoctorEnabled")
+    public fun computeRevisionHash(
+        snapshot: ToolchainSetupState,
+        autoDoctorEnabled: Boolean,
+        switchInputs: Map<ToolGroupId, ResolvedInput>? = null,
+        selectionRevision: Long? = null,
+    ): String {
+        val basis = buildString {
+            append(snapshot.steps.joinToString("|") { "${it.stage}=${it.status}" })
+            append("|tools=").append(snapshot.toolsMatrix.joinToString(",") { "${it.id}:${it.status}" })
+            append("|diag=").append(snapshot.diagnostics.joinToString(",") { "${it.id}:${it.status}" })
+            append("|published=").append(snapshot.publishedToolIds.sorted().joinToString(","))
+            append("|doctor=").append(autoDoctorEnabled)
+            if (switchInputs != null && selectionRevision != null) {
+                val sortedEntries = switchInputs.entries.sortedBy { it.key.value }
+                val inputsPart = sortedEntries.joinToString(",") { (groupId, input) ->
+                    val resolvedStr = when (input) {
+                        is ResolvedInput.Git -> "${input.repoUrl ?: "default"}@${input.commit}"
+                        is ResolvedInput.Release -> "${input.version}:${input.sha256}"
+                    }
+                    "${groupId.value}=$resolvedStr"
+                }
+                append("|switch=").append(inputsPart)
+                append("|selectionRevision=").append(selectionRevision)
+            }
+        }
         return "rev-" + basis.hashCode().toUInt().toString(16)
     }
 
@@ -75,37 +121,127 @@ public object SetupPlanFactory {
         autoDoctorEnabled: Boolean,
         snapshot: ToolchainSetupState,
         bootstrapPackages: List<String> = emptyList(),
+        toolchainLayoutV2: Boolean = false,
+        switchInputs: Map<ToolGroupId, ResolvedInput>? = null,
+        selectionRevision: Long? = null,
     ): List<SetupPlanAction> = when (kind) {
-        SetupPlanKind.FULL_SETUP -> deriveFullSetupActions(snapshot, autoDoctorEnabled)
-        SetupPlanKind.STAGE_RETRY -> deriveStageRetryActions(targetId, snapshot, autoDoctorEnabled, bootstrapPackages)
-        SetupPlanKind.REPAIR_TOOL -> {
-            val group = targetId?.let { ToolCapabilities.recipeGroupFor(it) }
-            if (group != null && ToolCapabilities.isRecipeSupported(targetId)) {
-                val affectedTools = ToolCapabilities.toolsForRecipeGroup(group).toList()
-                listOf(
-                    SetupPlanAction.BuildRecipes(listOf(group)),
-                    SetupPlanAction.PublishTools(affectedTools),
-                )
-            } else {
-                emptyList()
-            }
-        }
-        // A cache reset clears persisted evidence; it installs, syncs, builds and publishes nothing.
+        SetupPlanKind.FULL_SETUP ->
+            deriveFullSetup(snapshot, autoDoctorEnabled, toolchainLayoutV2, switchInputs, selectionRevision)
+        SetupPlanKind.STAGE_RETRY ->
+            deriveStageRetry(
+                targetId,
+                snapshot,
+                autoDoctorEnabled,
+                bootstrapPackages,
+                toolchainLayoutV2,
+                switchInputs,
+                selectionRevision,
+            )
+        SetupPlanKind.REPAIR_TOOL ->
+            deriveRepairTool(targetId, toolchainLayoutV2, switchInputs, selectionRevision)
         SetupPlanKind.CACHE_RESET -> emptyList()
-        SetupPlanKind.BOOTSTRAP_PACKAGES -> {
-            if (bootstrapPackages.isNotEmpty()) {
-                listOf(
-                    SetupPlanAction.InstallPackages(
-                        packages = bootstrapPackages,
-                        pipPackages = emptyList(),
-                        configureLoopMountElevation = false,
-                    ),
-                )
-            } else {
-                emptyList()
-            }
+        SetupPlanKind.BOOTSTRAP_PACKAGES -> deriveBootstrap(bootstrapPackages)
+    }
+
+    private fun deriveFullSetup(
+        snapshot: ToolchainSetupState,
+        autoDoctorEnabled: Boolean,
+        toolchainLayoutV2: Boolean,
+        switchInputs: Map<ToolGroupId, ResolvedInput>?,
+        selectionRevision: Long?,
+    ): List<SetupPlanAction> {
+        if (!toolchainLayoutV2) return deriveFullSetupActions(snapshot, autoDoctorEnabled)
+        val remediation = remediationAction(snapshot, autoDoctorEnabled)
+        val inputs = switchInputs ?: defaultCatalogInputs()
+        val switch = SetupPlanAction.SwitchToolchain(inputs, selectionRevision ?: 0L)
+        return listOfNotNull(remediation, switch)
+    }
+
+    private fun deriveStageRetry(
+        targetId: String?,
+        snapshot: ToolchainSetupState,
+        autoDoctorEnabled: Boolean,
+        bootstrapPackages: List<String>,
+        toolchainLayoutV2: Boolean,
+        switchInputs: Map<ToolGroupId, ResolvedInput>?,
+        selectionRevision: Long?,
+    ): List<SetupPlanAction> {
+        val isCompilationRetry = targetId == SetupStepStage.TOOLCHAIN_COMPILATION.name ||
+            targetId == SetupStepStage.REPO_SYNCHRONIZATION.name
+        if (!toolchainLayoutV2 || !isCompilationRetry) {
+            return deriveStageRetryActions(targetId, snapshot, autoDoctorEnabled, bootstrapPackages)
+        }
+        val remediation = remediationAction(snapshot, autoDoctorEnabled)
+        val inputs = switchInputs ?: defaultCatalogInputs()
+        val switch = SetupPlanAction.SwitchToolchain(inputs, selectionRevision ?: 0L)
+        return listOfNotNull(remediation, switch)
+    }
+
+    private fun deriveRepairTool(
+        targetId: String?,
+        toolchainLayoutV2: Boolean,
+        switchInputs: Map<ToolGroupId, ResolvedInput>?,
+        selectionRevision: Long?,
+    ): List<SetupPlanAction> {
+        val group = targetId?.let { ToolCapabilities.recipeGroupFor(it) } ?: targetId
+        val isSupported = targetId == null || ToolCapabilities.isRecipeSupported(targetId)
+        if (group == null || !isSupported) return emptyList()
+        return if (toolchainLayoutV2) {
+            val inputs = switchInputs ?: defaultCatalogInputs()
+            listOf(
+                SetupPlanAction.SwitchToolchain(
+                    inputs = inputs,
+                    selectionRevision = selectionRevision ?: 0L,
+                    forceRebuildGroups = setOf(ToolGroupId(group)),
+                ),
+            )
+        } else {
+            val affectedTools = ToolCapabilities.toolsForRecipeGroup(group).toList()
+            listOf(
+                SetupPlanAction.BuildRecipes(listOf(group)),
+                SetupPlanAction.PublishTools(affectedTools),
+            )
         }
     }
+
+    private fun deriveBootstrap(bootstrapPackages: List<String>): List<SetupPlanAction> =
+        if (bootstrapPackages.isNotEmpty()) {
+            listOf(
+                SetupPlanAction.InstallPackages(
+                    packages = bootstrapPackages,
+                    pipPackages = emptyList(),
+                    configureLoopMountElevation = false,
+                ),
+            )
+        } else {
+            emptyList()
+        }
+
+    public fun defaultCatalogInputs(): Map<ToolGroupId, ResolvedInput> =
+        ToolGroupCatalog.DEFAULT_GROUPS.associate { group ->
+            val input: ResolvedInput = when (val source = group.source) {
+                is ToolSource.Git -> ResolvedInput.Git(
+                    group = group.id,
+                    repoUrl = null,
+                    ref = ToolRef.Tag(source.recommendedLabel),
+                    commit = source.recommendedCommit,
+                    resolvedAt = System.currentTimeMillis(),
+                )
+                is ToolSource.Release -> {
+                    val releaseConfig = group.recipe as? RecipeConfig.Release
+                    val version = releaseConfig?.versions?.firstOrNull()
+                    ResolvedInput.Release(
+                        group = group.id,
+                        version = version?.version ?: "default",
+                        url = version?.url ?: "",
+                        archiveMember = version?.archiveMember ?: "",
+                        sha256 = version?.sha256 ?: "",
+                        platform = detectHostArch(),
+                    )
+                }
+            }
+            group.id to input
+        }
 
     private fun ToolchainSetupState.stageNeedsWork(stage: SetupStepStage): Boolean =
         steps.firstOrNull { it.stage == stage }?.status != StepStatus.SUCCESS

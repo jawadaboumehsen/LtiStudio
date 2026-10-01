@@ -132,6 +132,16 @@ public interface RemoteTransportPort {
 
     /** Requests graceful shutdown of the remote server, optionally forcing even with active runs. */
     public suspend fun shutdownDaemon(force: Boolean = false): Boolean = shutdown()
+
+    /** Sends an activation request to activate a target toolchain install. */
+    public suspend fun activateToolchain(request: io.ltirom.tooling.core.remote.ActivateToolchainRequest): io.ltirom.tooling.core.remote.ActivateToolchainResponse =
+        error("activateToolchain not implemented")
+
+    /** Retrieves the current toolchain state from the remote server. */
+    public suspend fun getToolchainState(): io.ltirom.tooling.core.remote.ToolchainStateResponse? = null
+
+    /** Retrieves the stored activation record for an activation request id. */
+    public suspend fun getActivation(requestId: String): String? = null
 }
 
 /**

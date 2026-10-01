@@ -23,12 +23,14 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
+import org.ide.lti.core.model.setup.DistroToolSelections
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.SetupLogBounds
+import org.ide.lti.core.model.setup.ToolSelection
 import org.ide.lti.core.model.setup.ToolchainPersistenceState
 
 /**
@@ -427,6 +429,54 @@ public class ToolchainPreferencesDataSource(
                 },
             ),
         )
+    }
+
+    public suspend fun desiredSelections(distro: String): DistroToolSelections =
+        _toolchainState.value.toolSelections[distro] ?: DistroToolSelections()
+
+    public suspend fun saveSelections(
+        distro: String,
+        expectedRevision: Long,
+        desired: Map<String, ToolSelection>,
+    ): Result<Long> = withContext(ioDispatcher) {
+        mutex.withLock {
+            val current = _toolchainState.value
+            val currentDistroSelections = current.toolSelections[distro] ?: DistroToolSelections()
+            if (currentDistroSelections.revision != expectedRevision) {
+                return@withLock Result.failure(
+                    IllegalStateException(
+                        "Stale selection revision for distro $distro: expected $expectedRevision, " +
+                            "current ${currentDistroSelections.revision}",
+                    ),
+                )
+            }
+            val nextRevision = expectedRevision + 1L
+            val updatedSelections = current.toolSelections + (distro to DistroToolSelections(desired, nextRevision))
+            val updated = current.copy(toolSelections = updatedSelections)
+            val persistResult = persistStateInternal(updated)
+            if (persistResult.isSuccess) {
+                _toolchainState.value = updated
+                Result.success(nextRevision)
+            } else {
+                val error = persistResult.exceptionOrNull() ?: IllegalStateException("Failed to persist state")
+                Result.failure(error)
+            }
+        }
+    }
+
+    public suspend fun recordTrust(repoUrl: String): Result<Unit> = mutate { current ->
+        val normalized = ToolSelection.normalizeRepoUrl(repoUrl)
+        val updated = if (normalized in current.trustedRepositories) {
+            current
+        } else {
+            current.copy(trustedRepositories = current.trustedRepositories + normalized)
+        }
+        Result.success(updated)
+    }
+
+    public suspend fun isTrusted(repoUrl: String): Boolean {
+        val normalized = ToolSelection.normalizeRepoUrl(repoUrl)
+        return normalized in _toolchainState.value.trustedRepositories
     }
 
     /**
