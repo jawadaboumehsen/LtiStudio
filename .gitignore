@@ -85,3 +85,21 @@ graphify-out/
 # Gradle's own build/ output is never nested inside a src/ tree, so un-ignore anything under one.
 !**/src/**/build/
 !**/src/**/build/**
+
+# --- Local tooling, agent state and generated artifacts (never commit) ---
+.kotlin/
+.claude/
+.delegate/
+.codex/
+.gemini/
+.agents/
+graphify-out/
+local.properties
+*.log
+hs_err_pid*
+*.backup
+*.orig
+*.rej
+Thumbs.db
+# Generated screenshot candidates (goldens under src/**/screenshots are tracked)
+**/build/reports/
