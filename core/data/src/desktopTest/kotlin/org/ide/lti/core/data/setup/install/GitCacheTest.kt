@@ -57,8 +57,8 @@ class GitCacheTest {
         assertTrue(flockCmd != null, "Must execute with flock")
         assertEquals("-x", flockCmd[1])
         assertEquals("/cache/${GitCache.cacheKey(url)}.lock", flockCmd[2])
-        assertEquals("-c", flockCmd[3])
-        assertTrue(flockCmd[4].contains("git clone --mirror"))
+        assertEquals("git", flockCmd[3])
+        assertEquals(listOf("clone", "--mirror", url, "/cache/${GitCache.cacheKey(url)}"), flockCmd.drop(4))
     }
 
     @Test
@@ -74,8 +74,10 @@ class GitCacheTest {
         assertTrue(flockCmd != null, "Must execute with flock")
         assertEquals("-x", flockCmd[1])
         assertEquals("/cache/${GitCache.cacheKey(url)}.lock", flockCmd[2])
-        assertEquals("-c", flockCmd[3])
-        assertTrue(flockCmd[4].contains("git -C") && flockCmd[4].contains("fetch --all"))
+        assertEquals(
+            listOf("git", "-C", "/cache/${GitCache.cacheKey(url)}", "fetch", "--all", "--prune", "--tags"),
+            flockCmd.drop(3),
+        )
     }
 
     @Test

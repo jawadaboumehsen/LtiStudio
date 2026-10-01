@@ -210,4 +210,125 @@ class GitSourceResolverTest {
             )
         }
     }
+
+    @Test
+    fun `resolve unsupported release version returns NotFound`() = runTest {
+        val selection = ToolSelection(
+            group = "gh",
+            repoUrl = null,
+            ref = ToolRef.ReleaseVersion("999.999.999-unsupported"),
+        )
+        val outcome = resolver.resolve(selection)
+        assertTrue(outcome is ResolveOutcome.NotFound, "Unsupported release version must return NotFound")
+    }
+
+    @Test
+    fun `resolve branch freezes immutable commit and updateAvailability detects moved branch`() = runTest {
+        val branchSha = "1234567890123456789012345678901234567890"
+        val movedSha = "abcdefabcdefabcdefabcdefabcdefabcdefabcd"
+
+        fakeCli.responseProvider = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            if (cmdStr.contains("ls-remote") && cmdStr.contains("refs/heads/main")) {
+                CliExecutionResult(0, "$branchSha\trefs/heads/main\n", "")
+            } else {
+                CliExecutionResult(0, "", "")
+            }
+        }
+
+        val selection = ToolSelection(
+            group = "android-tools",
+            repoUrl = "https://github.com/example/repo.git",
+            ref = ToolRef.Branch("main"),
+        )
+
+        val outcome = resolver.resolve(selection)
+        assertTrue(outcome is ResolveOutcome.Resolved)
+        val gitInput = outcome.input as ResolvedInput.Git
+        assertEquals(branchSha, gitInput.commit)
+
+        // Same branch commit -> UpToDate
+        val initialStatus = resolver.updateAvailability(gitInput)
+        assertEquals(org.ide.lti.core.domain.setup.UpdateAvailability.UpToDate, initialStatus)
+
+        // Remote branch moves -> UpdateAvailable with new sha
+        fakeCli.responseProvider = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            if (cmdStr.contains("ls-remote") && cmdStr.contains("refs/heads/main")) {
+                CliExecutionResult(0, "$movedSha\trefs/heads/main\n", "")
+            } else {
+                CliExecutionResult(0, "", "")
+            }
+        }
+        val updatedStatus = resolver.updateAvailability(gitInput)
+        assertTrue(updatedStatus is org.ide.lti.core.domain.setup.UpdateAvailability.UpdateAvailable)
+        val update = updatedStatus as org.ide.lti.core.domain.setup.UpdateAvailability.UpdateAvailable
+        assertEquals(movedSha, update.newCommit)
+    }
+
+    @Test
+    fun `resolve commit extracts submodules when present in git tree`() = runTest {
+        val commitSha = "abcdef1234567890abcdef1234567890abcdef12"
+        val subSha = "4444555566667777888899990000111122223333"
+
+        fakeCli.responseProvider = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("cat-file") -> CliExecutionResult(0, "", "")
+                cmdStr.contains("ls-tree") -> CliExecutionResult(
+                    0,
+                    "100644 blob 1111111111111111111111111111111111111111\tREADME.md\n" +
+                        "160000 commit $subSha\texternal/boringssl\n",
+                    "",
+                )
+                else -> CliExecutionResult(0, "", "")
+            }
+        }
+
+        val selection = ToolSelection(
+            group = "android-tools",
+            repoUrl = "https://github.com/example/repo.git",
+            ref = ToolRef.Commit(commitSha),
+        )
+
+        val outcome = resolver.resolve(selection)
+        assertTrue(outcome is ResolveOutcome.Resolved)
+        val gitInput = outcome.input as ResolvedInput.Git
+        assertEquals(commitSha, gitInput.commit)
+        assertEquals(mapOf("external/boringssl" to subSha), gitInput.submoduleCommits)
+    }
+
+    @Test
+    fun `resolve commit returns NotFound when commit cannot be fetched`() = runTest {
+        val nonExistentSha = "0000000000000000000000000000000000000000"
+
+        fakeCli.responseProvider = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("cat-file") -> CliExecutionResult(1, "", "fatal: Not a valid object name")
+                cmdStr.contains("fetch") -> CliExecutionResult(1, "", "fatal: couldn't find remote ref")
+                else -> CliExecutionResult(0, "", "")
+            }
+        }
+
+        val selection = ToolSelection(
+            group = "android-tools",
+            repoUrl = "https://github.com/example/repo.git",
+            ref = ToolRef.Commit(nonExistentSha),
+        )
+
+        val outcome = resolver.resolve(selection)
+        assertTrue(outcome is ResolveOutcome.NotFound, "Failed fetch must return NotFound")
+    }
+
+    @Test
+    fun `ToolSelection rejects malformed non-40-hex commit SHA`() {
+        assertFailsWith<IllegalArgumentException> {
+            ToolSelection(
+                group = "android-tools",
+                repoUrl = "https://github.com/example/repo.git",
+                ref = ToolRef.Commit("invalid-short-sha"),
+            )
+        }
+    }
 }

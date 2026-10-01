@@ -372,21 +372,18 @@ class EnvironmentSetupState(
             }
         return PlannedSetupChanges(
             packagesToInstall = aptPackages + pipPackages.map { "$it (pip)" },
-            submodulesToSync =
-            orderedActions
-                .filterIsInstance<SetupPlanAction.SyncSources>()
-                .flatMap { it.submodules }
+            // SyncSources/BuildRecipes/PublishTools no longer exist in the 008 plan.
+            // A SwitchToolchain action encompasses all of fetch, build, and publish.
+            // Surface the groups being switched for the preview instead.
+            submodulesToSync = orderedActions
+                .filterIsInstance<SetupPlanAction.SwitchToolchain>()
+                .flatMap { it.inputs.keys.map { id -> id.value } }
                 .distinct(),
-            toolsToCompile =
-            orderedActions
-                .filterIsInstance<SetupPlanAction.BuildRecipes>()
-                .flatMap { it.recipeGroups }
+            toolsToCompile = orderedActions
+                .filterIsInstance<SetupPlanAction.SwitchToolchain>()
+                .flatMap { it.inputs.keys.map { id -> id.value } }
                 .distinct(),
-            toolsToPublish =
-            orderedActions
-                .filterIsInstance<SetupPlanAction.PublishTools>()
-                .flatMap { it.toolIds }
-                .distinct(),
+            toolsToPublish = emptyList(),
             requiresElevation = requiresElevation,
             elevationReason = elevationReason,
             targetDistro = environmentKey,

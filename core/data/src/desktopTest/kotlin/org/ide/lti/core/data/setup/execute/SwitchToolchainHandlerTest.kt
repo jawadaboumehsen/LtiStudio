@@ -132,6 +132,317 @@ class SwitchToolchainHandlerTest {
         assertTrue(items.isEmpty(), "Nothing should be created on Windows filesystem")
     }
 
+    private fun createAllInputs(
+        overrideGroup: ToolGroupId,
+        overrideInput: ResolvedInput,
+    ): Map<ToolGroupId, ResolvedInput> {
+        val inputs = org.ide.lti.core.data.setup.SetupPlanFactory.defaultCatalogInputs().toMutableMap()
+        inputs[overrideGroup] = overrideInput
+        return inputs
+    }
+
+    @Test
+    fun `failed git clone stops execution and returns failure before recipe runs`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+        val context = createTestExecutionContext(action)
+
+        cli.commandInterceptor = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            if (cmdStr.contains("git clone") && cmdStr.contains("fork/android-tools.git")) {
+                io.ltirom.tooling.client.wsl.CliExecutionResult(128, "", "fatal: repository not found")
+            } else {
+                null
+            }
+        }
+
+        val outcome = handler.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Failed, "Clone failure must yield SetupOutcome.Failed, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("Failed to clone"), "Reason must mention clone failure: $reason")
+    }
+
+    @Test
+    fun `failed git checkout stops execution and returns failure before recipe runs`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+        val context = createTestExecutionContext(action)
+
+        cli.commandInterceptor = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("git clone") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("cat-file") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("git -C") && cmdStr.contains("checkout") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(1, "", "fatal: reference is not a tree")
+                else -> null
+            }
+        }
+
+        val outcome = handler.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Failed, "Checkout failure must yield SetupOutcome.Failed, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("Failed to checkout"), "Reason must mention checkout failure: $reason")
+    }
+
+    @Test
+    fun `HEAD mismatch stops execution and returns failure before recipe runs`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+        val context = createTestExecutionContext(action)
+
+        cli.commandInterceptor = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("git clone") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("cat-file") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("checkout") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("rev-parse HEAD") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(0, "2222222222222222222222222222222222222222\n", "")
+                else -> null
+            }
+        }
+
+        val outcome = handler.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Failed, "HEAD mismatch must yield SetupOutcome.Failed, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("HEAD verification failed"), "Reason must mention HEAD verification: $reason")
+    }
+
+    @Test
+    fun `submodule verification failure stops execution and returns failure before recipe runs`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val subSha = "3333333333333333333333333333333333333333"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                submoduleCommits = mapOf("external/boringssl" to subSha),
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+        val context = createTestExecutionContext(action)
+
+        cli.commandInterceptor = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("git clone") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("cat-file") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("rev-parse HEAD") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(0, "$testSha\n", "")
+                cmdStr.contains("submodule update") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(1, "", "fatal: Server does not allow request")
+                else -> null
+            }
+        }
+
+        val outcome = handler.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Failed, "Submodule failure must yield SetupOutcome.Failed, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("Failed to initialize submodules"), "Reason must mention submodule: $reason")
+        assertTrue(
+            cli.commandLog.any { it.startsWith("WSL: rm -rf /home/lti/LtiRomTools/artifacts/.tmp-build-android-tools-") },
+            "A failed source preparation must remove its isolated temporary workspace",
+        )
+    }
+
+    @Test
+    fun `missing packages with journal write failure returns Interrupted and does not present handoff`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+
+        val inMemRepo = org.ide.lti.core.data.setup.inMemoryToolchainRepository()
+        val failingRepo = object : org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository by inMemRepo {
+            override suspend fun recordAttemptAwaitingUserAction(
+                attemptId: String,
+                handoff: org.ide.lti.core.model.setup.PersistedUserHandoff,
+                plan: org.ide.lti.core.model.setup.PersistedSetupPlan,
+            ): Result<Unit> = Result.failure(java.io.IOException("Disk full: cannot write journal"))
+        }
+
+        val handlerWithMissingPackages = SwitchToolchainHandler(
+            artifactStore = artifactStore,
+            installationManager = installationManager,
+            installationPort = fakeInstallationPort,
+            recipeDispatcher = BuildRecipeDispatcher(),
+            toolVerifier = ToolVerifier(cli),
+            missingPackageProber = { _, _, _ -> listOf("cmake", "ninja-build") },
+        )
+
+        val baseContext = createTestExecutionContext(action)
+        val context = baseContext.copy(repository = failingRepo)
+
+        val outcome = handlerWithMissingPackages.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Interrupted, "Must return Interrupted, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("Journal write failed"), "Reason must mention journal write failure: $reason")
+    }
+
+    @Test
+    fun `when commit installed persistence fails, pendingSwitch is retained and recovery required is reported`() = runTest {
+        val testSha = "1111111111111111111111111111111111111111"
+        val inputs = createAllInputs(
+            ToolGroupCatalog.ANDROID_TOOLS.id,
+            ResolvedInput.Git(
+                group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                repoUrl = "https://github.com/fork/android-tools.git",
+                ref = ToolRef.Commit(testSha),
+                commit = testSha,
+                resolvedAt = 100L,
+            ),
+        )
+        val action = SetupPlanAction.SwitchToolchain(inputs = inputs, selectionRevision = 1L)
+
+        val inMemRepo = org.ide.lti.core.data.setup.inMemoryToolchainRepository()
+        val failingRepo = object : org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository by inMemRepo {
+            override suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> =
+                Result.failure(java.io.IOException("Disk error while saving stage completion"))
+        }
+
+        cli.commandInterceptor = { cmd ->
+            val cmdStr = cmd.joinToString(" ")
+            when {
+                cmdStr.contains("git clone") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("cat") && cmdStr.contains("install.json") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(
+                        0,
+                        """{"schema":1,"installId":"fake-id","distro":"Ubuntu","arch":"x86_64","groups":{"android-tools":"art-1"},"outputs":[]}""",
+                        "",
+                    )
+                cmdStr.contains("cat-file") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "", "")
+                cmdStr.contains("rev-parse HEAD") -> {
+                    val groupName = cmd.getOrNull(cmd.indexOf("-C") + 1)?.substringAfterLast('/')
+                    val expectedCommit = inputs.entries.firstOrNull { it.key.value == groupName }?.value?.let { inp ->
+                        (inp as? ResolvedInput.Git)?.commit
+                    } ?: testSha
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(0, "$expectedCommit\n", "")
+                }
+                cmdStr.contains("find") -> io.ltirom.tooling.client.wsl.CliExecutionResult(0, "bin/adb\n", "")
+                cmdStr.contains("sha256sum") ->
+                    io.ltirom.tooling.client.wsl.CliExecutionResult(0, "${"0".repeat(64)}  bin/adb\n", "")
+                else -> null
+            }
+        }
+
+        val mockRecipe = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig> {
+            override suspend fun build(
+                ctx: org.ide.lti.core.data.setup.recipe.RecipeContext,
+                config: org.ide.lti.core.domain.setup.RecipeConfig,
+            ): org.ide.lti.core.data.setup.recipe.RecipeResult =
+                org.ide.lti.core.data.setup.recipe.RecipeResult.Built(listOf("bin/adb"))
+        }
+        val mockDispatcher = BuildRecipeDispatcher(
+            androidTools = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig.AndroidTools> {
+                override suspend fun build(ctx: org.ide.lti.core.data.setup.recipe.RecipeContext, config: org.ide.lti.core.domain.setup.RecipeConfig.AndroidTools) =
+                    mockRecipe.build(ctx, config)
+            },
+            cmake = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig.CMake> {
+                override suspend fun build(ctx: org.ide.lti.core.data.setup.recipe.RecipeContext, config: org.ide.lti.core.domain.setup.RecipeConfig.CMake) =
+                    mockRecipe.build(ctx, config)
+            },
+            gradleJar = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig.GradleJar> {
+                override suspend fun build(ctx: org.ide.lti.core.data.setup.recipe.RecipeContext, config: org.ide.lti.core.domain.setup.RecipeConfig.GradleJar) =
+                    mockRecipe.build(ctx, config)
+            },
+            scriptCopy = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig.ScriptCopy> {
+                override suspend fun build(ctx: org.ide.lti.core.data.setup.recipe.RecipeContext, config: org.ide.lti.core.domain.setup.RecipeConfig.ScriptCopy) =
+                    mockRecipe.build(ctx, config)
+            },
+            releaseDownload = object : org.ide.lti.core.data.setup.recipe.BuildRecipe<org.ide.lti.core.domain.setup.RecipeConfig.Release> {
+                override suspend fun build(ctx: org.ide.lti.core.data.setup.recipe.RecipeContext, config: org.ide.lti.core.domain.setup.RecipeConfig.Release) =
+                    mockRecipe.build(ctx, config)
+            },
+        )
+
+        val customHandler = SwitchToolchainHandler(
+            artifactStore = artifactStore,
+            installationManager = installationManager,
+            installationPort = fakeInstallationPort,
+            recipeDispatcher = mockDispatcher,
+            toolVerifier = ToolVerifier(cli),
+            missingPackageProber = { _, _, _ -> emptyList() },
+        )
+
+        val baseContext = createTestExecutionContext(action)
+        val context = baseContext.copy(repository = failingRepo)
+
+        val outcome = customHandler.execute(action, context)
+        assertTrue(outcome is SetupOutcome.Failed, "Must return Failed on commitInstalled error, got: $outcome")
+        val reason = outcome.reason
+        assertTrue(reason.contains("Recovery required"), "Must report Recovery required: $reason")
+        kotlin.test.assertNotNull(
+            failingRepo.currentState.pendingSwitch,
+            "pendingSwitch must be retained on persistence failure",
+        )
+    }
+
+    @Test
+    fun `commit without a journal repository cannot report activation as success`() = runTest {
+        val action = SetupPlanAction.SwitchToolchain(
+            inputs = createAllInputs(
+                ToolGroupCatalog.ANDROID_TOOLS.id,
+                ResolvedInput.Git(
+                    group = ToolGroupCatalog.ANDROID_TOOLS.id,
+                    repoUrl = "https://github.com/fork/android-tools.git",
+                    ref = ToolRef.Commit("1111111111111111111111111111111111111111"),
+                    commit = "1111111111111111111111111111111111111111",
+                    resolvedAt = 100L,
+                ),
+            ),
+            selectionRevision = 1L,
+        )
+        val context = createTestExecutionContext(action)
+
+        val outcome = handler.commitInstalled(InstallId("candidate-install"), context)
+
+        assertTrue(outcome is SetupOutcome.Interrupted, "Missing durable repository must require recovery: $outcome")
+        assertTrue(outcome.reason.contains("cannot be committed without the setup journal"))
+    }
+
     private fun createTestExecutionContext(action: SetupPlanAction.SwitchToolchain): ExecutionContext {
         val plan = SetupPlan(
             planId = "test-plan",

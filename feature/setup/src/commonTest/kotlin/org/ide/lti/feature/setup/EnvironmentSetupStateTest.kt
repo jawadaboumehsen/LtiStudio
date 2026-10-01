@@ -32,13 +32,18 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
+import org.ide.lti.core.domain.setup.RecipeConfig
+import org.ide.lti.core.domain.setup.ResolvedInput
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
+import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.setup.UserRepairHandoff
+import org.ide.lti.core.model.setup.ToolRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -140,7 +145,10 @@ class EnvironmentSetupStateTest {
                         snapshot.steps.any {
                             it.stage == SetupStepStage.REPO_SYNCHRONIZATION && it.status != StepStatus.SUCCESS
                         }
-                    if (repoPending) add(SetupPlanAction.SyncSources(listOf("android-tools")))
+                    // 008: REPO_SYNCHRONIZATION pending → produce SwitchToolchain (includes fetch+build)
+                    if (repoPending) {
+                        add(SetupPlanAction.SwitchToolchain(inputs = frozenCatalogInputs(), selectionRevision = 0L))
+                    }
                 }
             return SetupPlan(
                 planId = "fake-plan-$prepareCount",
@@ -152,6 +160,31 @@ class EnvironmentSetupStateTest {
                 orderedActions = if (kind == SetupPlanKind.CACHE_RESET) emptyList() else actions,
             ).also { preparedPlans[it.planId] = it }
         }
+
+        private fun frozenCatalogInputs(): Map<org.ide.lti.core.domain.setup.ToolGroupId, ResolvedInput> =
+            ToolGroupCatalog.allGroups.associate { group ->
+                val input = when (val source = group.source) {
+                    is ToolSource.Git -> ResolvedInput.Git(
+                        group = group.id,
+                        repoUrl = source.recommendedUrl,
+                        ref = ToolRef.Commit(source.recommendedCommit),
+                        commit = source.recommendedCommit,
+                        resolvedAt = 1L,
+                    )
+                    ToolSource.Release -> {
+                        val release = (group.recipe as RecipeConfig.Release).versions.first()
+                        ResolvedInput.Release(
+                            group = group.id,
+                            version = release.version,
+                            url = release.url,
+                            archiveMember = release.archiveMember,
+                            sha256 = release.sha256,
+                            platform = "linux-x86_64",
+                        )
+                    }
+                }
+                group.id to input
+            }
 
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome {
             confirmCount++

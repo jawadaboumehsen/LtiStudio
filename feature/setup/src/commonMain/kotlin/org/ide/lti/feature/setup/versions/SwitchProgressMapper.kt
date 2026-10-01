@@ -79,5 +79,12 @@ public object SwitchProgressMapper {
             message = "Invalid activation target: ${outcome.reason}",
             canRetry = false,
         )
+        is ActivationOutcome.Rejected -> {
+            val detail = outcome.reason ?: "Conflicting tools: ${outcome.conflictingToolIds.joinToString()}"
+            SwitchProgressUiState(
+                message = "Activation rejected (${outcome.code}): $detail",
+                canRetry = outcome.code == "BLOCKED" || outcome.code == "CONFLICT",
+            )
+        }
     }
 }

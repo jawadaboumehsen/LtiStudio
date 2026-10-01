@@ -16,14 +16,18 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
 import org.ide.lti.core.domain.setup.CompatibilityResult
+import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ResolvedInput
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolGroupId
+import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.setup.UpdateAvailability
 import org.ide.lti.core.domain.setup.ports.ActivationOutcome
 import org.ide.lti.core.domain.setup.ports.ActivationRequest
 import org.ide.lti.core.domain.setup.ports.ArtifactId
 import org.ide.lti.core.domain.setup.ports.CleanupReport
 import org.ide.lti.core.domain.setup.ports.InstallId
+import org.ide.lti.core.domain.setup.ports.InstalledGroupArtifact
 import org.ide.lti.core.domain.setup.ports.InstalledToolchain
 import org.ide.lti.core.domain.setup.ports.RefListing
 import org.ide.lti.core.domain.setup.ports.ResolveOutcome
@@ -120,10 +124,38 @@ class ToolVersionsStateTest {
     }
 
     private class FakeInstallationPort(var activeId: String? = "install-initial") : ToolchainInstallationPort {
-        override suspend fun state(): InstalledToolchain = InstalledToolchain(
-            activeInstallId = activeId?.let { InstallId(it) },
-            previousInstallId = null,
-        )
+        var simulateUnavailable: Boolean = false
+        var activeGroupsOverride: Map<String, InstalledGroupArtifact>? = null
+
+        override suspend fun state(): InstalledToolchain {
+            return if (simulateUnavailable) {
+                error("Build service unavailable")
+            } else {
+                InstalledToolchain(
+                    activeInstallId = activeId?.let { InstallId(it) },
+                    previousInstallId = null,
+                    activeGroups = activeGroupsOverride ?: if (activeId != null) {
+                        ToolGroupCatalog.DEFAULT_GROUPS.associate { group ->
+                            val defaultVer = when (val src = group.source) {
+                                is ToolSource.Git -> src.recommendedLabel
+                                is ToolSource.Release -> {
+                                    val r = group.recipe as? RecipeConfig.Release
+                                    r?.versions?.firstOrNull()?.version ?: "v1.0"
+                                }
+                            }
+                            group.id.value to InstalledGroupArtifact(
+                                artifactId = "art-${group.id.value}",
+                                version = defaultVer,
+                                commit = "1111111111111111111111111111111111111111",
+                                isHealthy = true,
+                            )
+                        }
+                    } else {
+                        emptyMap()
+                    },
+                )
+            }
+        }
 
         override suspend fun assembleCandidate(artifacts: Map<ToolGroupId, ArtifactId>): InstallId = InstallId("cand-1")
 
@@ -325,5 +357,92 @@ class ToolVersionsStateTest {
         val resState = state.resolutionState.value
         assertTrue(resState is ResolutionState.Resolved)
         assertEquals(ToolRef.Tag("v2.0"), (resState.input as ResolvedInput.Git).ref)
+    }
+
+    @Test
+    fun `clean machine shows Not installed and never invents recommended version`() =
+        runTest {
+        val repo = FakeSelectionRepository()
+        val resolver = FakeSourceResolver()
+        val installPort = FakeInstallationPort(activeId = null)
+        val state = ToolVersionsState(
+            scope = this,
+            repository = repo,
+            sourceResolver = resolver,
+            installationPort = installPort,
+            activeDistroProvider = { "Ubuntu" },
+        )
+
+        state.refresh("Ubuntu")
+        advanceUntilIdle()
+
+        val rows = state.rows.value
+        assertTrue(rows.isNotEmpty())
+        for (row in rows) {
+            assertEquals("Not installed", row.installedLabel, "Clean machine must show 'Not installed'")
+            assertEquals(ToolGroupStatus.NOT_INSTALLED, row.status, "Clean machine must have NOT_INSTALLED status")
+        }
+    }
+
+    @Test
+    fun `when build service is unavailable all rows show Service unavailable`() = runTest {
+        val repo = FakeSelectionRepository()
+        val resolver = FakeSourceResolver()
+        val installPort = FakeInstallationPort()
+        installPort.simulateUnavailable = true
+        val state = ToolVersionsState(
+            scope = this,
+            repository = repo,
+            sourceResolver = resolver,
+            installationPort = installPort,
+            activeDistroProvider = { "Ubuntu" },
+        )
+
+        state.refresh("Ubuntu")
+        advanceUntilIdle()
+
+        val rows = state.rows.value
+        assertTrue(rows.isNotEmpty())
+        for (row in rows) {
+            assertEquals(ToolGroupStatus.SERVICE_UNAVAILABLE, row.status)
+        }
+    }
+
+    @Test
+    fun `active install with missing group manifests is shown as recovery not clean install`() = runTest {
+        val installation = FakeInstallationPort(activeId = "install-with-missing-manifest").apply {
+            activeGroupsOverride = emptyMap()
+        }
+        val state = ToolVersionsState(
+            scope = this,
+            repository = FakeSelectionRepository(),
+            sourceResolver = FakeSourceResolver(),
+            installationPort = installation,
+            activeDistroProvider = { "Ubuntu" },
+        )
+
+        state.refresh("Ubuntu")
+        advanceUntilIdle()
+
+        assertTrue(state.rows.value.isNotEmpty())
+        assertTrue(state.rows.value.all { it.status == ToolGroupStatus.NEEDS_RECOVERY })
+        assertTrue(state.rows.value.all { it.installedLabel == "Installation data unavailable" })
+    }
+
+    @Test
+    fun `when installation port is not wired rows do not claim tools are missing`() = runTest {
+        val state = ToolVersionsState(
+            scope = this,
+            repository = FakeSelectionRepository(),
+            sourceResolver = FakeSourceResolver(),
+            installationPort = null,
+            activeDistroProvider = { "Ubuntu" },
+        )
+
+        state.refresh("Ubuntu")
+        advanceUntilIdle()
+
+        assertTrue(state.rows.value.isNotEmpty())
+        assertTrue(state.rows.value.all { it.status == ToolGroupStatus.SERVICE_UNAVAILABLE })
     }
 }

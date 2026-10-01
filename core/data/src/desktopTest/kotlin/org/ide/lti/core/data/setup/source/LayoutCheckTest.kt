@@ -124,4 +124,79 @@ class LayoutCheckTest {
             assertEquals(listOf("vendor/CMakeLists.txt"), result.missingPaths)
         }
     }
+
+    @Test
+    fun `checkLayout satisfies directory requirement when recursive files exist under directory`() = runTest {
+        val testGroup = ToolGroup(
+            id = ToolGroupId("test-group"),
+            source = ToolSource.Release,
+            recipe = RecipeConfig.Release(emptyList()),
+            layout = listOf("CMakeLists.txt", "vendor"),
+            outputs = emptyList(),
+            buildPackages = emptyList(),
+        )
+
+        ToolGroupCatalog.withTestGroup(testGroup) {
+            fakeCli.responseProvider = { cmd ->
+                if (cmd.any { it.contains("ls-tree") }) {
+                    CliExecutionResult(0, "CMakeLists.txt\nvendor/libziparchive/zip_archive.cc", "")
+                } else {
+                    CliExecutionResult(0, "", "")
+                }
+            }
+
+            val input = ResolvedInput.Git(
+                group = ToolGroupId("test-group"),
+                repoUrl = "https://github.com/example/test.git",
+                ref = ToolRef.Branch("main"),
+                commit = "0123456789abcdef0123456789abcdef01234567",
+                resolvedAt = System.currentTimeMillis(),
+            )
+
+            val result = resolver.checkLayout(input)
+            assertEquals(CompatibilityResult.LayoutCompatible, result)
+        }
+    }
+
+    @Test
+    fun `checkLayout syncs mirror when commit not present before running ls-tree`() = runTest {
+        val testGroup = ToolGroup(
+            id = ToolGroupId("test-group"),
+            source = ToolSource.Release,
+            recipe = RecipeConfig.Release(emptyList()),
+            layout = listOf("CMakeLists.txt"),
+            outputs = emptyList(),
+            buildPackages = emptyList(),
+        )
+
+        var syncMirrorCalled = false
+        ToolGroupCatalog.withTestGroup(testGroup) {
+            fakeCli.responseProvider = { cmd ->
+                val cmdStr = cmd.joinToString(" ")
+                when {
+                    cmdStr.contains("cat-file") -> {
+                        if (syncMirrorCalled) CliExecutionResult(0, "", "") else CliExecutionResult(1, "", "not found")
+                    }
+                    cmdStr.contains("clone") || cmdStr.contains("fetch") -> {
+                        syncMirrorCalled = true
+                        CliExecutionResult(0, "", "")
+                    }
+                    cmdStr.contains("ls-tree") -> CliExecutionResult(0, "CMakeLists.txt", "")
+                    else -> CliExecutionResult(0, "", "")
+                }
+            }
+
+            val input = ResolvedInput.Git(
+                group = ToolGroupId("test-group"),
+                repoUrl = "https://github.com/example/test.git",
+                ref = ToolRef.Branch("main"),
+                commit = "0123456789abcdef0123456789abcdef01234567",
+                resolvedAt = System.currentTimeMillis(),
+            )
+
+            val result = resolver.checkLayout(input)
+            assertEquals(CompatibilityResult.LayoutCompatible, result)
+            assertTrue(syncMirrorCalled, "Mirror must be synchronized on first-use layout check")
+        }
+    }
 }

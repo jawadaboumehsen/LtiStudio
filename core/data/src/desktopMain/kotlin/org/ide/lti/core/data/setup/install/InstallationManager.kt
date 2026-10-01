@@ -43,10 +43,13 @@ public data class CleanupResult(val deletedInstalls: List<String>, val deletedAr
 public class InstallationManager(
     public val toolsDir: File? = null,
     private val cli: WslCliExecutor = WslCliExecutor(),
-    private val distro: String = "Ubuntu",
+    private val distroProvider: () -> String = { "Ubuntu" },
 ) {
-    public constructor(cli: WslCliExecutor, distro: String = "Ubuntu") : this(null, cli, distro)
-    public constructor(toolsDir: File) : this(toolsDir, WslCliExecutor(), "Ubuntu")
+    public constructor(cli: WslCliExecutor, distro: String = "Ubuntu") : this(null, cli, { distro })
+    public constructor(toolsDir: File) : this(toolsDir, WslCliExecutor(), { "Ubuntu" })
+    public constructor(cli: WslCliExecutor, distroProvider: () -> String) : this(null, cli, distroProvider)
+
+    private val distro: String get() = distroProvider()
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -214,11 +217,28 @@ public class InstallationManager(
         verifier: org.ide.lti.core.data.setup.ToolVerifier,
         outputs: List<InstallOutputDescriptor>? = null,
     ): List<org.ide.lti.core.data.setup.ToolVerifier.Result> {
-        val resolvedOutputs = outputs ?: getManifest(installId)?.outputs.orEmpty()
         val binDir = if (toolsDir != null) {
             "${toolsDir.absolutePath.replace('\\', '/')}/installs/$installId/bin"
         } else {
-            "~/LtiRomTools/installs/$installId/bin"
+            val home = getHome() ?: error("Could not resolve WSL HOME directory for $distro")
+            "$home/LtiRomTools/installs/$installId/bin"
+        }
+        val resolvedOutputs = if (outputs != null) {
+            outputs
+        } else {
+            val manifest = getManifest(installId)
+            if (manifest == null) {
+                return listOf(
+                    org.ide.lti.core.data.setup.ToolVerifier.Result.Failure(
+                        toolId = "manifest",
+                        binaryPath = "$binDir/../install.json",
+                        reason = "Manifest missing or malformed for candidate install $installId",
+                        exitCode = null,
+                        isInstalled = false,
+                    ),
+                )
+            }
+            manifest.outputs
         }
         return resolvedOutputs.filter { it.requiredForProduct }.map { out ->
             verifier.verify(
@@ -226,6 +246,7 @@ public class InstallationManager(
                 toolId = out.toolId,
                 binDir = binDir,
                 binaryName = out.file,
+                updateRepository = false,
             )
         }
     }
@@ -287,11 +308,21 @@ public class InstallationManager(
         pinnedArtifactIds: Set<String> = emptySet(),
     ): CleanupResult {
         if (toolsDir != null) {
-            val installsBase = File(toolsDir, "installs")
+            val installsPath = File(toolsDir, "installs")
+            check(!java.nio.file.Files.isSymbolicLink(installsPath.toPath())) {
+                "Security violation: installs root '$installsPath' is a symlink"
+            }
+            val installsBase = installsPath.canonicalFile
             val keptInstallIds = setOfNotNull(activeInstallId, previousInstallId) + protectedInstallIds
             val allInstalls = installsBase.listFiles { f -> f.isDirectory } ?: emptyArray()
             val deletedInstalls = mutableListOf<String>()
             for (dir in allInstalls) {
+                val canonicalDir = dir.canonicalFile
+                if (java.nio.file.Files.isSymbolicLink(dir.toPath()) ||
+                    !canonicalDir.toPath().startsWith(installsBase.toPath())
+                ) {
+                    throw IllegalStateException("Security violation: directory '$dir' is a symlink or escapes root")
+                }
                 if (dir.name !in keptInstallIds) {
                     dir.deleteRecursively()
                     deletedInstalls.add(dir.name)
@@ -300,10 +331,18 @@ public class InstallationManager(
             return CleanupResult(deletedInstalls, emptyList())
         }
         val home = getHome() ?: return CleanupResult(emptyList(), emptyList())
+        val toolsRoot = "$home/LtiRomTools"
         val installsDir = "$home/LtiRomTools/installs"
         val artifactsDir = "$home/LtiRomTools/artifacts"
         val keptInstallIds = setOfNotNull(activeInstallId, previousInstallId) + protectedInstallIds
+        ensureRemoteRootIsSafe(toolsRoot, installsDir)
+        ensureRemoteRootIsSafe(toolsRoot, artifactsDir)
+        val hasInstallsDir = cli.execute(distro, listOf("test", "-d", installsDir)).exitCode == 0
         val lsInstalls = cli.execute(distro, listOf("ls", "-1", installsDir))
+        if (hasInstallsDir && lsInstalls.exitCode != 0) {
+            val msg = "Cannot clean up: failed to list installs directory '$installsDir': ${lsInstalls.error}"
+            throw IllegalStateException(msg)
+        }
         val allInstalls = if (lsInstalls.exitCode == 0) {
             lsInstalls.output.lines().map { it.trim() }.filter { it.isNotBlank() }
         } else {
@@ -350,10 +389,21 @@ public class InstallationManager(
         installsDir: String,
     ): List<String> {
         val deleted = mutableListOf<String>()
+        val safeIdPattern = Regex("^[a-zA-Z0-9._-]+$")
+        val canonicalInstalls = requiredRealPath(installsDir)
         for (id in allInstalls) {
             if (id !in keptInstallIds) {
-                cli.execute(distro, listOf("rm", "-rf", "$installsDir/$id"))
-                deleted.add(id)
+                check(id.matches(safeIdPattern)) { "Invalid install id '$id' rejected by cleanup" }
+                val targetDir = "$installsDir/$id"
+                ensureNotRemoteSymlink(targetDir)
+                val canonicalTarget = requiredRealPath(targetDir)
+                if (!canonicalTarget.startsWith("$canonicalInstalls/")) {
+                    throw IllegalStateException("Security violation: install directory '$targetDir' escapes root")
+                }
+                val delRes = cli.execute(distro, listOf("rm", "-rf", targetDir))
+                if (delRes.exitCode == 0) {
+                    deleted.add(id)
+                }
             }
         }
         return deleted
@@ -365,7 +415,12 @@ public class InstallationManager(
         pinnedArtifactIds: Set<String>,
     ): List<String> {
         val deleted = mutableListOf<String>()
+        val hasArtifactsDir = cli.execute(distro, listOf("test", "-d", artifactsDir)).exitCode == 0
         val lsGroups = cli.execute(distro, listOf("ls", "-1", artifactsDir))
+        if (hasArtifactsDir && lsGroups.exitCode != 0) {
+            val msg = "Cannot clean up: failed to list artifacts directory '$artifactsDir': ${lsGroups.error}"
+            throw IllegalStateException(msg)
+        }
         if (lsGroups.exitCode == 0) {
             val groups = lsGroups.output.lines().map { it.trim() }.filter { it.isNotBlank() }
             for (group in groups) {
@@ -375,6 +430,7 @@ public class InstallationManager(
         return deleted
     }
 
+    @Suppress("ThrowsCount")
     private fun deleteUnrefInGroup(
         artifactsDir: String,
         group: String,
@@ -382,16 +438,63 @@ public class InstallationManager(
         pinnedArtifactIds: Set<String>,
         deleted: MutableList<String>,
     ) {
+        val safeIdPattern = Regex("^[a-zA-Z0-9._-]+$")
+        check(group.matches(safeIdPattern)) { "Invalid group name '$group' rejected by cleanup" }
         val groupDir = "$artifactsDir/$group"
+
+        ensureNotRemoteSymlink(groupDir, subject = "intermediate directory")
+        val canonicalGroup = requiredRealPath(groupDir)
+        val canonicalArtifacts = requiredRealPath(artifactsDir)
+        if (!canonicalGroup.startsWith("$canonicalArtifacts/")) {
+            throw IllegalStateException("Security violation: intermediate directory '$groupDir' escapes root")
+        }
+
         val lsArts = cli.execute(distro, listOf("ls", "-1", groupDir))
         if (lsArts.exitCode == 0) {
             val arts = lsArts.output.lines().map { it.trim() }.filter { it.isNotBlank() }
             for (artId in arts) {
                 if (artId !in referencedArtifacts && artId !in pinnedArtifactIds) {
-                    cli.execute(distro, listOf("rm", "-rf", "$groupDir/$artId"))
-                    deleted.add("$group/$artId")
+                    check(artId.matches(safeIdPattern)) { "Invalid artifact id '$artId' rejected by cleanup" }
+                    val targetArt = "$groupDir/$artId"
+                    ensureNotRemoteSymlink(targetArt)
+                    val canonicalArt = requiredRealPath(targetArt)
+                    if (!canonicalArt.startsWith("$canonicalGroup/")) {
+                        throw IllegalStateException("Security violation: artifact '$targetArt' escapes group root")
+                    }
+                    val delRes = cli.execute(distro, listOf("rm", "-rf", targetArt))
+                    if (delRes.exitCode == 0) {
+                        deleted.add("$group/$artId")
+                    }
                 }
             }
         }
+    }
+
+    private fun ensureRemoteRootIsSafe(toolsRoot: String, managedRoot: String) {
+        ensureNotRemoteSymlink(toolsRoot)
+        ensureNotRemoteSymlink(managedRoot)
+        val canonicalToolsRoot = requiredRealPath(toolsRoot)
+        val canonicalManagedRoot = requiredRealPath(managedRoot)
+        val expectedName = managedRoot.substringAfterLast('/')
+        check(canonicalManagedRoot == "$canonicalToolsRoot/$expectedName") {
+            "Security violation: managed root '$managedRoot' resolves outside '$toolsRoot'"
+        }
+    }
+
+    private fun ensureNotRemoteSymlink(path: String, subject: String = "path") {
+        val result = cli.execute(distro, listOf("test", "-L", path))
+        when (result.exitCode) {
+            1 -> Unit
+            0 -> throw IllegalStateException("Security violation: $subject '$path' is a symlink")
+            else -> throw IllegalStateException("Cannot verify path '$path' is not a symlink: ${result.error}")
+        }
+    }
+
+    private fun requiredRealPath(path: String): String {
+        val result = cli.execute(distro, listOf("realpath", "-m", path))
+        check(result.exitCode == 0 && result.output.trim().startsWith('/')) {
+            "Cannot verify canonical path for '$path': ${result.error.ifBlank { result.output }}"
+        }
+        return result.output.trim()
     }
 }

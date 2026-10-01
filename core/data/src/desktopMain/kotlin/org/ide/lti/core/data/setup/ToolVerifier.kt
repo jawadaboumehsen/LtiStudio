@@ -43,14 +43,22 @@ public class ToolVerifier(public val cli: WslCliExecutor, private val repository
         }
     }
 
-    public suspend fun verify(distro: String, toolId: String, binDir: String, binaryName: String): Result {
+    public suspend fun verify(
+        distro: String,
+        toolId: String,
+        binDir: String,
+        binaryName: String,
+        updateRepository: Boolean = true,
+    ): Result {
         val probe = ToolCatalog.probePlan(toolId, binDir, binaryName)
         val binaryPath = probe.path
         val exists = cli.execute(distro, probe.existsCheck).exitCode == 0
         val acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(toolId)
 
         if (!exists) {
-            repository?.updateTool(toolId) { it.copy(isVerified = false) }
+            if (updateRepository) {
+                repository?.updateTool(toolId) { it.copy(isVerified = false) }
+            }
             return Result.Failure(
                 toolId = toolId,
                 binaryPath = binaryPath,
@@ -66,13 +74,15 @@ public class ToolVerifier(public val cli: WslCliExecutor, private val repository
         val now = System.currentTimeMillis()
 
         return if (isOk) {
-            repository?.updateTool(toolId) { tool ->
-                tool.copy(
-                    isVerified = true,
-                    isCompiled = true,
-                    binaryPath = binaryPath,
-                    lastVerifiedTimestamp = now,
-                )
+            if (updateRepository) {
+                repository?.updateTool(toolId) { tool ->
+                    tool.copy(
+                        isVerified = true,
+                        isCompiled = true,
+                        binaryPath = binaryPath,
+                        lastVerifiedTimestamp = now,
+                    )
+                }
             }
             Result.Success(
                 toolId = toolId,
@@ -90,7 +100,9 @@ public class ToolVerifier(public val cli: WslCliExecutor, private val repository
                 ),
             )
         } else {
-            repository?.updateTool(toolId) { it.copy(isVerified = false) }
+            if (updateRepository) {
+                repository?.updateTool(toolId) { it.copy(isVerified = false) }
+            }
             val detail = execRes.error.ifBlank { execRes.output }.takeLast(200).trim()
             val detailSuffix = if (detail.isNotBlank()) " $detail" else ""
             val reason = "Tool $toolId verification probe failed: `${probe.argv.joinToString(" ")}` " +

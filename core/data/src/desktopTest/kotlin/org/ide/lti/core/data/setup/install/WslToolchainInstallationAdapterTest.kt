@@ -92,6 +92,25 @@ class WslToolchainInstallationAdapterTest {
         assertEquals(ActivationOutcome.Conflict(InstallId("i-actual-active-999")), outcome)
     }
 
+    @Test
+    fun `lost activation response resolves committed install from journal to field`() = runTest {
+        fakeTransport.throwOnActivate = java.io.IOException("response lost after server commit")
+        val request = ActivationRequest(
+            requestId = "req-lost-response",
+            expectedActiveInstallId = InstallId("i-before"),
+            targetInstallId = InstallId("i-target-after-commit"),
+        )
+
+        assertEquals(ActivationOutcome.Unknown, adapter.activate(request))
+        fakeTransport.activationRecords[request.requestId] =
+            """{"requestId":"req-lost-response","requestHash":"hash","from":"i-before","to":"i-target-after-commit","state":"COMMITTED","activeInstallId":"i-target-after-commit"}"""
+
+        assertEquals(
+            ActivationOutcome.Committed(InstallId("i-target-after-commit")),
+            adapter.activationOutcome(request.requestId),
+        )
+    }
+
     private class FakeRemoteTransportPort : RemoteTransportPort {
         var toolchainStateResponse: ToolchainStateResponse? = null
         var activateResponse: ActivateToolchainResponse? = null

@@ -21,9 +21,13 @@ import java.io.File
 public class GitSourceResolver(
     private val cli: WslCliExecutor,
     private val gitCache: GitCache,
-    private val distro: String = "Ubuntu",
+    private val distroProvider: () -> String = { "Ubuntu" },
     private val catalog: ToolGroupCatalog = ToolGroupCatalog,
 ) : SourceResolverPort {
+    public constructor(cli: WslCliExecutor, gitCache: GitCache, distro: String) :
+        this(cli, gitCache, { distro }, ToolGroupCatalog)
+
+    private val distro: String get() = distroProvider()
 
     override suspend fun listRefs(group: ToolGroupId, repoUrl: String?): RefListing {
         val releaseRecipe = catalog.group(group)?.recipe as? RecipeConfig.Release
@@ -102,18 +106,26 @@ public class GitSourceResolver(
         commit: String,
         expectedLayout: List<String>,
     ): CompatibilityResult {
-        val mirrorPath = gitCache.getMirrorPath(url)
-        val res = cli.run(distro, listOf("git", "-C", mirrorPath, "ls-tree", "-r", "--name-only", commit))
-        if (res.exitCode != 0) {
-            return when (val err = categorizeGitError(res)) {
-                is ResolveOutcome.AccessDenied -> CompatibilityResult.AccessDenied
-                is ResolveOutcome.Unreachable -> CompatibilityResult.Unreachable(err.reason)
-                else -> CompatibilityResult.Unsupported(expectedLayout)
+        val mirrorPath = gitCache.getMirrorPath(distro, url)
+        if (!isCommitPresent(mirrorPath, commit)) {
+            val syncResult = gitCache.syncMirror(distro, url)
+            val syncError = categorizeGitError(syncResult)
+            if (syncError != null) return compatibilityFor(syncError, expectedLayout)
+            if (!isCommitPresent(mirrorPath, commit)) {
+                val lockPath = gitCache.getLockPath(distro, url)
+                fetchCommit(lockPath, mirrorPath, listOf("--depth", "1", "origin", commit), commit)
+                fetchCommit(lockPath, mirrorPath, listOf("origin", commit), commit)
             }
+        }
+        val res = cli.run(distro, listOf("git", "-C", mirrorPath, "ls-tree", "-r", "-t", "--name-only", commit))
+        if (res.exitCode != 0) {
+            return compatibilityFor(categorizeGitError(res), expectedLayout)
         }
 
         val treeFiles = res.output.lines().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-        val missing = expectedLayout.filter { it !in treeFiles }
+        val missing = expectedLayout.filter { req ->
+            req !in treeFiles && treeFiles.none { it == req || it.startsWith("$req/") }
+        }
         return if (missing.isEmpty()) {
             CompatibilityResult.LayoutCompatible
         } else {
@@ -174,16 +186,19 @@ public class GitSourceResolver(
         val lines = result.output.lines().map { it.trim() }.filter { it.isNotBlank() }
         val peeledSha = lines.firstOrNull { it.endsWith(peeledRef) }?.substringBefore('\t')?.substringBefore(' ')
         val tagSha = lines.firstOrNull { it.endsWith(tagRef) }?.substringBefore('\t')?.substringBefore(' ')
-        val resolvedSha = peeledSha ?: tagSha
+        val resolvedSha = (peeledSha ?: tagSha)?.takeIf { it.matches(HEX_40_REGEX) }
 
         return if (resolvedSha != null) {
+            val cacheSync = gitCache.syncMirror(distro, url)
+            categorizeGitError(cacheSync)?.let { return it }
+            val submodules = extractSubmodules(url, resolvedSha)
             ResolveOutcome.Resolved(
                 ResolvedInput.Git(
                     group = group,
                     repoUrl = url,
                     ref = tag,
                     commit = resolvedSha,
-                    submoduleCommits = emptyMap(),
+                    submoduleCommits = submodules,
                     resolvedAt = System.currentTimeMillis(),
                 ),
             )
@@ -205,13 +220,16 @@ public class GitSourceResolver(
             ?.takeIf { it.matches(HEX_40_REGEX) }
 
         return if (sha != null) {
+            val cacheSync = gitCache.syncMirror(distro, url)
+            categorizeGitError(cacheSync)?.let { return it }
+            val submodules = extractSubmodules(url, sha)
             ResolveOutcome.Resolved(
                 ResolvedInput.Git(
                     group = group,
                     repoUrl = url,
                     ref = branch,
                     commit = sha,
-                    submoduleCommits = emptyMap(),
+                    submoduleCommits = submodules,
                     resolvedAt = System.currentTimeMillis(),
                 ),
             )
@@ -221,30 +239,74 @@ public class GitSourceResolver(
     }
 
     private suspend fun resolveCommit(group: ToolGroupId, url: String, commitRef: ToolRef.Commit): ResolveOutcome {
-        val sha = commitRef.sha
-        val mirrorPath = gitCache.getMirrorPath(url)
-        val lockPath = gitCache.getLockPath(url)
+        val sha = commitRef.sha.trim().lowercase()
+        if (!sha.matches(HEX_40_REGEX)) return ResolveOutcome.NotFound
+        val mirrorPath = gitCache.getMirrorPath(distro, url)
+        val lockPath = gitCache.getLockPath(distro, url)
 
         val parentDir = File(mirrorPath).parent?.replace('\\', '/') ?: "."
-        cli.run(distro, listOf("mkdir", "-p", parentDir))
+        val mkdir = cli.run(distro, listOf("mkdir", "-p", parentDir))
+        if (mkdir.exitCode != 0) return ResolveOutcome.Unreachable(mkdir.error.ifBlank { mkdir.output })
+
+        val sync = gitCache.syncMirror(distro, url)
+        categorizeGitError(sync)?.let { return it }
 
         val confirmed = isCommitPresent(mirrorPath, sha) ||
-            fetchCommit(lockPath, mirrorPath, "--depth 1 origin $sha", sha) ||
-            fetchCommit(lockPath, mirrorPath, "origin", sha)
+            fetchCommit(lockPath, mirrorPath, listOf("--depth", "1", "origin", sha), sha) ||
+            fetchCommit(lockPath, mirrorPath, listOf("origin", sha), sha)
 
         return if (confirmed) {
-            makeResolvedGitCommit(group, url, commitRef, sha)
+            val submodules = extractSubmodules(url, sha)
+            makeResolvedGitCommit(group, url, commitRef, sha, submodules)
         } else {
             ResolveOutcome.NotFound
+        }
+    }
+
+    @Suppress("ReturnCount")
+    private suspend fun extractSubmodules(url: String, sha: String): Map<String, String> {
+        val mirrorPath = gitCache.getMirrorPath(distro, url)
+        if (!isCommitPresent(mirrorPath, sha)) return emptyMap()
+        val treeRes = cli.run(distro, listOf("git", "-C", mirrorPath, "ls-tree", "-r", sha))
+        if (treeRes.exitCode != 0) return emptyMap()
+
+        return treeRes.output.lines()
+            .mapNotNull { parseSubmoduleGitlink(it.trim()) }
+            .toMap()
+    }
+
+    private fun parseSubmoduleGitlink(trimmed: String): Pair<String, String>? {
+        if (!trimmed.startsWith("160000 commit ")) return null
+        val parts = trimmed.split(Regex("\\s+"), limit = 4)
+        val subSha = parts.getOrNull(2)?.lowercase()
+        val subPath = parts.getOrNull(3)
+        return if (subSha != null && subSha.matches(HEX_40_REGEX) && !subPath.isNullOrBlank()) {
+            subPath to subSha
+        } else {
+            null
         }
     }
 
     private suspend fun isCommitPresent(mirrorPath: String, sha: String): Boolean =
         cli.run(distro, listOf("git", "-C", mirrorPath, "cat-file", "-e", "$sha^{commit}")).exitCode == 0
 
-    private suspend fun fetchCommit(lockPath: String, mirrorPath: String, fetchArgs: String, sha: String): Boolean {
-        cli.run(distro, listOf("flock", "-x", lockPath, "-c", "git -C \"$mirrorPath\" fetch $fetchArgs"))
-        return isCommitPresent(mirrorPath, sha)
+    private suspend fun fetchCommit(
+        lockPath: String,
+        mirrorPath: String,
+        fetchArgs: List<String>,
+        sha: String,
+    ): Boolean {
+        val result = cli.run(distro, listOf("flock", "-x", lockPath, "git", "-C", mirrorPath, "fetch") + fetchArgs)
+        return result.exitCode == 0 && isCommitPresent(mirrorPath, sha)
+    }
+
+    private fun compatibilityFor(
+        error: ResolveOutcome?,
+        expectedLayout: List<String>,
+    ): CompatibilityResult = when (error) {
+        is ResolveOutcome.AccessDenied -> CompatibilityResult.AccessDenied
+        is ResolveOutcome.Unreachable -> CompatibilityResult.Unreachable(error.reason)
+        else -> CompatibilityResult.Unsupported(expectedLayout)
     }
 
     private fun makeResolvedGitCommit(
@@ -252,13 +314,14 @@ public class GitSourceResolver(
         url: String,
         ref: ToolRef.Commit,
         sha: String,
+        submodules: Map<String, String> = emptyMap(),
     ): ResolveOutcome.Resolved = ResolveOutcome.Resolved(
         ResolvedInput.Git(
             group = group,
             repoUrl = url,
             ref = ref,
             commit = sha,
-            submoduleCommits = emptyMap(),
+            submoduleCommits = submodules,
             resolvedAt = System.currentTimeMillis(),
         ),
     )

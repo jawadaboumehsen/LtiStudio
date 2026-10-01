@@ -51,10 +51,13 @@ public data class UnusableMarker(val reason: String, val detectedAt: Long = Syst
 public class ArtifactStore(
     public val rootDir: File? = null,
     private val cli: WslCliExecutor = WslCliExecutor(),
-    private val distro: String = "Ubuntu",
+    private val distroProvider: () -> String = { "Ubuntu" },
 ) {
-    public constructor(cli: WslCliExecutor, distro: String = "Ubuntu") : this(null, cli, distro)
-    public constructor(rootDir: File) : this(rootDir, WslCliExecutor(), "Ubuntu")
+    public constructor(cli: WslCliExecutor, distro: String = "Ubuntu") : this(null, cli, { distro })
+    public constructor(rootDir: File) : this(rootDir, WslCliExecutor(), { "Ubuntu" })
+    public constructor(cli: WslCliExecutor, distroProvider: () -> String) : this(null, cli, distroProvider)
+
+    private val distro: String get() = distroProvider()
 
     private val json = Json {
         ignoreUnknownKeys = true

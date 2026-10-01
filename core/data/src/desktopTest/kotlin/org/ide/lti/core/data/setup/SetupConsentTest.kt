@@ -401,8 +401,8 @@ class SetupConsentTest {
         // Retry compilation stage only: the retry is previewed as a STAGE_RETRY plan and confirmed.
         val plan = provisioner.prepare(SetupPlanKind.STAGE_RETRY, SetupStepStage.TOOLCHAIN_COMPILATION.name)
         assertTrue(
-            plan.orderedActions.none { it is SetupPlanAction.SyncSources || it is SetupPlanAction.InstallPackages },
-            "With synced sources a compilation retry must not expand into sync or remediation: ${plan.orderedActions}",
+            plan.orderedActions.none { it is SetupPlanAction.InstallPackages },
+            "With synced sources a compilation retry must not include package remediation: ${plan.orderedActions}",
         )
         val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
         assertTrue(outcome is SetupOutcome.Succeeded, "$outcome")

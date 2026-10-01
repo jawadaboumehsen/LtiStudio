@@ -148,9 +148,6 @@ class SetupContractTest {
             autoDoctorEnabled = true,
             orderedActions = listOf(
                 SetupPlanAction.InstallPackages(listOf("build-essential")),
-                SetupPlanAction.SyncSources(listOf("android-tools")),
-                SetupPlanAction.BuildRecipes(listOf("android-tools")),
-                SetupPlanAction.PublishTools(listOf("adb")),
             ),
         )
 

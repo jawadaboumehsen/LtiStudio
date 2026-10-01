@@ -747,7 +747,7 @@ per stage; a failed stage marks every later stage pending and stops.
 - Layout verification: `SourceResolverPort.checkLayout` / `GitSourceResolver.checkLayout` validates expected repository layout before offering a build.
 - Build dependencies: missing `buildPackages` transition to `TerminalHandoffSheet`.
 
-### 7. Content-Addressable Artifacts & Toolchain Installations (`toolchainLayoutV2`)
+### 7. Content-Addressable Artifacts & Toolchain Installations (008)
 - Multi-version directory layout under `~/LtiRomTools/`:
   - `~/LtiRomTools/artifacts/<groupId>/<artifactId>/`: Immutable artifact stores for built or downloaded binaries, containing `manifest.json` (`ArtifactManifest`) and tool outputs.
   - `~/LtiRomTools/installs/<installId>/`: Assembled installations containing `install.json` (`InstallManifest`) and `bin/` directory with relative symlinks to artifact binaries (`../../artifacts/<groupId>/<artifactId>/bin/<file>`).

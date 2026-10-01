@@ -171,16 +171,18 @@ public fun EditVersionPanel(
                 GlassSecondaryButton(onClick = onCancel) {
                     Text("Cancel")
                 }
+                val canSave = resolutionState is ResolutionState.Resolved
+                val canBuild =
+                    resolutionState is ResolutionState.Resolved &&
+                        resolutionState.compatibility is CompatibilityResult.LayoutCompatible
                 GlassSecondaryButton(
                     onClick = {
                         if (draft.repoUrl != null) showForkTrustDialog = true else onSave()
                     },
+                    enabled = canSave,
                 ) {
                     Text("Save")
                 }
-                val canBuild =
-                    resolutionState is ResolutionState.Resolved &&
-                        resolutionState.compatibility is CompatibilityResult.LayoutCompatible
                 GlassPrimaryButton(
                     onClick = {
                         if (draft.repoUrl != null) showForkTrustDialog = true else onReviewAndBuild()
@@ -393,7 +395,7 @@ private fun ResolvedStatusSection(resolutionState: ResolutionState) {
             val isRelease = resolutionState.input is ResolvedInput.Release
             val commitText =
                 when (val input = resolutionState.input) {
-                    is ResolvedInput.Git -> "Resolved commit: ${input.commit.take(7)}"
+                    is ResolvedInput.Git -> "Resolved commit: ${input.commit}"
                     is ResolvedInput.Release -> "Resolved release: ${input.version}"
                 }
             Text(
@@ -408,7 +410,7 @@ private fun ResolvedStatusSection(resolutionState: ResolutionState) {
                         if (isRelease) {
                             "Checksum-verified release binary"
                         } else {
-                            "Compatible with toolchain build system"
+                            "Layout compatible; build not yet verified."
                         }
                     is CompatibilityResult.Unsupported -> "Unsupported layout: missing required files"
                     is CompatibilityResult.NotFound -> "Reference not found on remote"

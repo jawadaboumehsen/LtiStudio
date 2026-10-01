@@ -9,6 +9,7 @@ import org.ide.lti.core.data.setup.ToolVerifier
 import org.ide.lti.core.data.setup.execute.ExecutionContext
 import org.ide.lti.core.data.setup.execute.PlanActionHandler
 import org.ide.lti.core.data.setup.execute.actionId
+import org.ide.lti.core.data.setup.execute.toPersistedSetupPlan
 import org.ide.lti.core.data.setup.install.ActivationReconciler
 import org.ide.lti.core.data.setup.install.ArtifactFileEntry
 import org.ide.lti.core.data.setup.install.ArtifactManifest
@@ -29,14 +30,13 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolGroup
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolGroupId
+import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.setup.UserRepairHandoff
 import org.ide.lti.core.domain.setup.ports.ActivationOutcome
 import org.ide.lti.core.domain.setup.ports.ActivationRequest
 import org.ide.lti.core.domain.setup.ports.ArtifactId
 import org.ide.lti.core.domain.setup.ports.InstallId
 import org.ide.lti.core.domain.setup.ports.ToolchainInstallationPort
-import org.ide.lti.core.model.setup.PersistedPlanAction
-import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.SwitchCheckpoint
 import java.io.File
@@ -44,7 +44,7 @@ import java.util.UUID
 
 private val json = Json { ignoreUnknownKeys = true }
 
-@Suppress("ReturnCount", "LoopWithTooManyJumpStatements")
+@Suppress("ReturnCount", "LoopWithTooManyJumpStatements", "LargeClass")
 public class SwitchToolchainHandler(
     private val artifactStore: ArtifactStore,
     private val installationManager: InstallationManager,
@@ -114,7 +114,14 @@ public class SwitchToolchainHandler(
                 return@run
             }
             outcome = commitInstalled(candidateInstallId, context)
-            rec.clearPendingSwitch()
+            if (outcome == null) {
+                val clearRes = rec.clearPendingSwitch()
+                if (clearRes.isFailure) {
+                    val msg = "Recovery required: failed to clear pending switch record: " +
+                        clearRes.exceptionOrNull()?.message
+                    outcome = SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, msg)
+                }
+            }
         }
         return outcome
     }
@@ -140,7 +147,10 @@ public class SwitchToolchainHandler(
                 context.serviceCli,
             )
             context.serviceCli != null -> probePackagesViaDpkg(context.distro, neededPackages, context.serviceCli)
-            else -> emptyList()
+            else -> return SetupOutcome.Failed(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                reason = "Cannot verify build prerequisites because no package probe or service connection is available.",
+            )
         }
         return if (missing.isNotEmpty()) createPackageHandoffOutcome(action, context, missing) else null
     }
@@ -152,14 +162,37 @@ public class SwitchToolchainHandler(
     ): SetupOutcome {
         val handoffPackages = missing.filter { RequirementCatalog.isPackageApproved(it) }
         val terminalCommand = AptCommandBuilder.install(handoffPackages)
+        val prereqActionId = "prereq-packages-${action.actionId()}"
         val handoff = UserRepairHandoff(
-            actionId = action.actionId(),
+            actionId = prereqActionId,
             description = "Install missing packages required to build toolchain: ${handoffPackages.joinToString(" ")}",
             terminalCommand = terminalCommand,
             packages = handoffPackages,
             distro = context.distro,
         )
-        persistHandoffState(action, context, handoffPackages, terminalCommand)
+        if (context.repository == null || context.journal == null) {
+            context.appendLog("[Plan] ERROR: Cannot pause for user authorization without a configured repository.")
+            context.setStepStatus(
+                SetupStepStage.TOOLCHAIN_COMPILATION,
+                StepStatus.FAILED,
+                "No repository configured to persist handoff",
+                "No repository configured to persist handoff",
+                null,
+                null,
+            )
+            return SetupOutcome.Failed(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                reason = "User authorization handoff requires a configured repository to survive and resume.",
+            )
+        }
+
+        val persistResult = persistHandoffState(action, context, handoffPackages, terminalCommand)
+        if (persistResult.isFailure) {
+            val err = persistResult.exceptionOrNull()?.message ?: "Unknown journal error"
+            context.appendLog("[Plan] Journal write failed while recording pending handoff: $err")
+            return SetupOutcome.Interrupted("Journal write failed while recording pending handoff: $err")
+        }
+
         context.setStepStatus(
             SetupStepStage.TOOLCHAIN_COMPILATION,
             StepStatus.WARNING,
@@ -181,26 +214,18 @@ public class SwitchToolchainHandler(
         context: ExecutionContext,
         packages: List<String>,
         command: String,
-    ) {
+    ): Result<Unit> {
+        val repo = context.repository
+            ?: return Result.failure(IllegalStateException("No repository configured to persist handoff"))
         val persistedHandoff = PersistedUserHandoff(
-            actionId = action.actionId(),
+            actionId = "prereq-packages-${action.actionId()}",
             distro = context.distro,
             command = command,
             packages = packages,
             timestampEpochMs = System.currentTimeMillis(),
         )
-        val persistedPlan = PersistedSetupPlan(
-            planId = context.plan.planId,
-            revisionHash = context.plan.revisionHash,
-            environmentKey = context.plan.environmentKey,
-            kind = context.plan.kind.name,
-            targetStageOrToolId = context.plan.targetStageOrToolId,
-            autoDoctorEnabled = context.plan.autoDoctorEnabled,
-            actions = context.plan.orderedActions.map { act ->
-                PersistedPlanAction(act.actionId(), "SWITCH_TOOLCHAIN", action.inputs.keys.map { it.value })
-            },
-        )
-        context.repository?.recordAttemptAwaitingUserAction(
+        val persistedPlan = context.plan.toPersistedSetupPlan()
+        return repo.recordAttemptAwaitingUserAction(
             context.journal?.attemptId ?: "attempt",
             persistedHandoff,
             persistedPlan,
@@ -430,7 +455,14 @@ public class SwitchToolchainHandler(
         }
 
         val effectiveExtDir = if (input is ResolvedInput.Git) {
-            prepareWslSourceWorkspace(cli, context.distro, context.extDir, wslTmpSrc, group, input)
+            val prepResult = prepareWslSourceWorkspace(cli, context.distro, wslTmpSrc, group, input)
+            if (prepResult.isFailure) {
+                val err = prepResult.exceptionOrNull()
+                    ?: IllegalStateException("Failed to prepare source workspace")
+                cli.execute(context.distro, listOf("rm", "-rf", wslTmpBuild))
+                return Result.failure(err)
+            }
+            prepResult.getOrThrow()
         } else {
             context.extDir
         }
@@ -460,43 +492,99 @@ public class SwitchToolchainHandler(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun prepareWslSourceWorkspace(
         cli: WslCliExecutor,
         distro: String,
-        extDir: String,
         wslTmpSrc: String,
         group: ToolGroup,
         input: ResolvedInput.Git,
-    ): String {
-        cli.execute(distro, listOf("mkdir", "-p", wslTmpSrc))
-        val localSource = "$extDir/${group.id.value}"
+    ): Result<String> {
+        val mkRes = cli.execute(distro, listOf("mkdir", "-p", wslTmpSrc))
+        if (mkRes.exitCode != 0) {
+            val msg = "Failed to create temporary source directory $wslTmpSrc: ${mkRes.error}"
+            return Result.failure(IllegalStateException(msg))
+        }
+
         val wslGroupSrc = "$wslTmpSrc/${group.id.value}"
-        val repoUrl = input.repoUrl
-        if (repoUrl != null) {
-            val r = cli.execute(distro, listOf("git", "clone", repoUrl, wslGroupSrc))
-            if (r.exitCode != 0 && cli.execute(distro, listOf("test", "-d", localSource)).exitCode == 0) {
-                cli.execute(distro, listOf("git", "clone", localSource, wslGroupSrc))
-            }
-        } else {
-            if (cli.execute(distro, listOf("test", "-d", localSource)).exitCode == 0) {
-                cli.execute(distro, listOf("git", "clone", localSource, wslGroupSrc))
+        val repoUrl = input.repoUrl ?: (group.source as? ToolSource.Git)?.recommendedUrl
+            ?: return Result.failure(IllegalStateException("No repo URL for group ${group.id.value}"))
+
+        // Clone repository into isolated attempt workspace.
+        // Never fall back to another repository or an existing dirty checkout.
+        val cloneRes = cli.execute(distro, listOf("git", "clone", repoUrl, wslGroupSrc))
+        if (cloneRes.exitCode != 0) {
+            val err = cloneRes.error.ifBlank { cloneRes.output }
+            return Result.failure(IllegalStateException("Failed to clone $repoUrl for group ${group.id.value}: $err"))
+        }
+
+        // Fetch the frozen commit if not present in the default clone
+        val hasCommit = cli.execute(
+            distro,
+            listOf("git", "-C", wslGroupSrc, "cat-file", "-e", "${input.commit}^{commit}"),
+        ).exitCode == 0
+        if (!hasCommit) {
+            val fetchRes = cli.execute(distro, listOf("git", "-C", wslGroupSrc, "fetch", "origin", input.commit))
+            if (fetchRes.exitCode != 0) {
+                val fullFetch = cli.execute(distro, listOf("git", "-C", wslGroupSrc, "fetch", "--all", "--tags"))
+                if (fullFetch.exitCode != 0) {
+                    val msg = "Failed to fetch commit ${input.commit} for group ${group.id.value}: ${fetchRes.error}"
+                    return Result.failure(IllegalStateException(msg))
+                }
             }
         }
 
-        if (cli.execute(distro, listOf("test", "-d", wslGroupSrc)).exitCode == 0) {
-            cli.execute(distro, listOf("git", "-C", wslGroupSrc, "checkout", input.commit))
-            if (input.submoduleCommits.isNotEmpty()) {
-                cli.execute(
-                    distro,
-                    listOf("git", "-C", wslGroupSrc, "submodule", "update", "--init", "--recursive"),
-                )
-                for ((subPath, subCommit) in input.submoduleCommits) {
-                    cli.execute(distro, listOf("git", "-C", "$wslGroupSrc/$subPath", "checkout", subCommit))
+        // Checkout the exact frozen commit
+        val checkoutRes = cli.execute(distro, listOf("git", "-C", wslGroupSrc, "checkout", input.commit))
+        if (checkoutRes.exitCode != 0) {
+            val msg = "Failed to checkout frozen commit ${input.commit} for group ${group.id.value}: " +
+                checkoutRes.error
+            return Result.failure(IllegalStateException(msg))
+        }
+
+        // Verify HEAD equals the frozen SHA before building
+        val headRes = cli.execute(distro, listOf("git", "-C", wslGroupSrc, "rev-parse", "HEAD"))
+        if (headRes.exitCode != 0) {
+            return Result.failure(
+                IllegalStateException("Failed to verify HEAD for group ${group.id.value}: ${headRes.error}"),
+            )
+        }
+        val actualHeadSha = headRes.output.trim().lowercase()
+        if (actualHeadSha != input.commit.lowercase()) {
+            val msg = "HEAD verification failed for group ${group.id.value}: " +
+                "HEAD ($actualHeadSha) does not match frozen commit (${input.commit})"
+            return Result.failure(IllegalStateException(msg))
+        }
+
+        // Initialize recursive submodules and verify every recorded commit
+        if (input.submoduleCommits.isNotEmpty()) {
+            val subUpdateRes = cli.execute(
+                distro,
+                listOf("git", "-C", wslGroupSrc, "submodule", "update", "--init", "--recursive"),
+            )
+            if (subUpdateRes.exitCode != 0) {
+                val msg = "Failed to initialize submodules for group ${group.id.value}: ${subUpdateRes.error}"
+                return Result.failure(IllegalStateException(msg))
+            }
+            for ((subPath, expectedSubCommit) in input.submoduleCommits) {
+                val subDir = "$wslGroupSrc/$subPath"
+                val subCheckoutRes = cli.execute(distro, listOf("git", "-C", subDir, "checkout", expectedSubCommit))
+                if (subCheckoutRes.exitCode != 0) {
+                    val msg = "Failed to checkout submodule '$subPath' at $expectedSubCommit " +
+                        "for group ${group.id.value}: ${subCheckoutRes.error}"
+                    return Result.failure(IllegalStateException(msg))
+                }
+                val subHeadRes = cli.execute(distro, listOf("git", "-C", subDir, "rev-parse", "HEAD"))
+                val actualSubHead = subHeadRes.output.trim().lowercase()
+                if (subHeadRes.exitCode != 0 || actualSubHead != expectedSubCommit.lowercase()) {
+                    val msg = "Submodule '$subPath' HEAD verification failed: " +
+                        "expected $expectedSubCommit, got $actualSubHead"
+                    return Result.failure(IllegalStateException(msg))
                 }
             }
-            return wslTmpSrc
         }
-        return extDir
+
+        return Result.success(wslTmpSrc)
     }
 
     private suspend fun assembleCandidate(artifacts: Map<ToolGroupId, ArtifactId>): Result<InstallId> = try {
@@ -552,12 +640,10 @@ public class SwitchToolchainHandler(
                     checkpoint = SwitchCheckpoint.ACTIVATION_COMMITTED,
                 )
                 if (cp2.isFailure) {
-                    return SetupOutcome.Failed(
-                        SetupStepStage.TOOLCHAIN_COMPILATION.name,
-                        "Failed to record checkpoint: ${cp2.exceptionOrNull()?.message}",
-                    )
+                    val msg = "Recovery required: failed to record commit checkpoint: " +
+                        cp2.exceptionOrNull()?.message
+                    return SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, msg)
                 }
-                rec.clearPendingSwitch()
                 null
             }
             is ActivationOutcome.Blocked -> SetupOutcome.Failed(
@@ -568,6 +654,13 @@ public class SwitchToolchainHandler(
                 SetupStepStage.TOOLCHAIN_COMPILATION.name,
                 "Activation conflict with active install",
             )
+            is ActivationOutcome.Rejected -> {
+                val detail = outcome.reason ?: "Conflicting tools: ${outcome.conflictingToolIds}"
+                SetupOutcome.Failed(
+                    SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                    "Activation rejected (${outcome.code}): $detail",
+                )
+            }
             is ActivationOutcome.VerifyFailedRestored -> SetupOutcome.Failed(
                 SetupStepStage.TOOLCHAIN_COMPILATION.name,
                 "Verification failed on server: ${outcome.reason}",
@@ -576,11 +669,45 @@ public class SwitchToolchainHandler(
                 SetupStepStage.TOOLCHAIN_COMPILATION.name,
                 "Maintenance failed during restore",
             )
+            is ActivationOutcome.Unknown -> SetupOutcome.Interrupted(
+                "Activation response was lost; recovery and reconciliation required.",
+            )
             else -> SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, "Activation failed: $outcome")
         }
     }
 
-    private fun commitInstalled(installId: InstallId, context: ExecutionContext): SetupOutcome? {
+    internal suspend fun commitInstalled(
+        installId: InstallId,
+        context: ExecutionContext,
+    ): SetupOutcome? {
+        val repo = context.repository ?: repository
+            ?: return SetupOutcome.Interrupted(
+                "Activation succeeded, but installed identity cannot be committed without the setup journal. " +
+                    "Recovery and reconciliation are required.",
+            )
+        val now = System.currentTimeMillis()
+        val allTools = ToolGroupCatalog.DEFAULT_GROUPS.flatMap { it.outputs }.map { it.toolId }
+        for (toolId in allTools) {
+            val updateRes = repo.updateTool(toolId) { tool ->
+                tool.copy(
+                    isCompiled = true,
+                    isVerified = true,
+                    binaryPath = "${context.binDir}/$toolId",
+                    lastVerifiedTimestamp = now,
+                )
+            }
+            if (updateRes.isFailure) {
+                val msg = "Recovery required: failed to persist installed tool '$toolId': " +
+                    updateRes.exceptionOrNull()?.message
+                return SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, msg)
+            }
+        }
+        val markRes = repo.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
+        if (markRes.isFailure) {
+            val msg = "Recovery required: failed to persist stage completion: " +
+                markRes.exceptionOrNull()?.message
+            return SetupOutcome.Failed(SetupStepStage.TOOLCHAIN_COMPILATION.name, msg)
+        }
         context.setStepStatus(
             SetupStepStage.TOOLCHAIN_COMPILATION,
             StepStatus.SUCCESS,
@@ -641,7 +768,27 @@ internal fun computeInputFingerprint(
                 append("toolchain:").append(tool).append("=").append(ver).append("\n")
             }
             append("recipe:").append(group.recipe::class.simpleName ?: "Recipe").append("\n")
-            append("recipeRevision:1")
+            append("recipeRevision:").append(group.recipe.revision).append("\n")
+            when (val r = group.recipe) {
+                is org.ide.lti.core.domain.setup.RecipeConfig.AndroidTools -> {
+                    append("cmakeArgs:").append(r.cmakeArgs.joinToString(",")).append("\n")
+                    append("gitIdentity:").append(r.gitIdentity).append("\n")
+                    append("patchVendor:").append(r.patchVendor).append("\n")
+                }
+                is org.ide.lti.core.domain.setup.RecipeConfig.CMake -> {
+                    append("sourceSubdir:").append(r.sourceSubdir.orEmpty()).append("\n")
+                    append("buildSubdir:").append(r.buildSubdir).append("\n")
+                    append("cmakeArgs:").append(r.cmakeArgs.joinToString(",")).append("\n")
+                }
+                is org.ide.lti.core.domain.setup.RecipeConfig.GradleJar -> {
+                    append("task:").append(r.task).append("\n")
+                    append("outputPath:").append(r.outputPath).append("\n")
+                }
+                is org.ide.lti.core.domain.setup.RecipeConfig.ScriptCopy -> {
+                    append("files:").append(r.files.joinToString(",")).append("\n")
+                }
+                is org.ide.lti.core.domain.setup.RecipeConfig.Release -> Unit
+            }
         }
         is ResolvedInput.Release -> buildString {
             append("group:").append(group.id.value).append("\n")
@@ -653,7 +800,7 @@ internal fun computeInputFingerprint(
             append("archiveMember:").append(input.archiveMember).append("\n")
             append("arch:").append(arch).append("\n")
             append("recipe:").append(group.recipe::class.simpleName ?: "Recipe").append("\n")
-            append("recipeRevision:1")
+            append("recipeRevision:").append(group.recipe.revision).append("\n")
         }
     }
     return ArtifactStore.sha256(canonical)
@@ -675,4 +822,4 @@ private fun probeToolchainVersions(distro: String, cli: WslCliExecutor): Map<Str
         if (cmake.isNotBlank()) put("cmake", cmake)
         if (java.isNotBlank()) put("java", java)
     }
-}
+}

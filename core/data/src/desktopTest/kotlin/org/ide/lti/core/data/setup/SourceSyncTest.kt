@@ -90,7 +90,7 @@ class SourceSyncTest {
     }
 
     @Test
-    fun `retrying source repositories syncs, rebuilds and publishes`() {
+    fun `retrying source repositories produces a SwitchToolchain in the 008 layout`() {
         val plan = SetupPlanFactory.createPlan(
             kind = org.ide.lti.core.domain.setup.SetupPlanKind.STAGE_RETRY,
             targetId = org.ide.lti.core.domain.setup.SetupStepStage.REPO_SYNCHRONIZATION.name,
@@ -99,9 +99,12 @@ class SourceSyncTest {
             environmentKey = "Ubuntu",
         )
 
+        // In the 008 layout REPO_SYNCHRONIZATION retry produces a SwitchToolchain, which
+        // internally fetches sources, builds, and activates without separate legacy actions.
         assertEquals(
-            listOf("SyncSources", "BuildRecipes", "PublishTools"),
+            listOf("SwitchToolchain"),
             plan.orderedActions.map { it::class.simpleName },
+            "REPO_SYNCHRONIZATION retry must produce exactly SwitchToolchain in the 008 layout",
         )
     }
 }

@@ -54,6 +54,7 @@ import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
+import org.ide.lti.core.domain.setup.CompatibilityResult
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ResolvedInput
@@ -75,8 +76,12 @@ import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.setup.UserRepairHandoff
+import org.ide.lti.core.domain.setup.ports.ResolveOutcome
+import org.ide.lti.core.domain.setup.ports.SourceResolverPort
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.PersistedPlanAction
+import org.ide.lti.core.model.setup.PersistedResolvedInput
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import org.ide.lti.core.model.setup.RequirementStatus
@@ -120,8 +125,10 @@ public class WslToolchainProvisioner(
     servicePreparation: ServicePreparation? = null,
     planExecutor: PlanExecutor? = null,
     recoveryCoordinator: RecoveryCoordinator? = null,
-    private val toolchainLayoutV2: Boolean = false,
+    sourceResolver: SourceResolverPort? = null,
 ) : ToolchainProvisioningService {
+
+    private val sourceResolver: SourceResolverPort? = sourceResolver
 
     private val servicePreparation: ServicePreparation = servicePreparation ?: ServicePreparation(
         hostPrerequisitePort = hostPrerequisitePort,
@@ -1182,7 +1189,6 @@ public class WslToolchainProvisioner(
                 snapshot = snapshot,
                 environmentKey = distro,
                 bootstrapPackages = bootstrapPkgs,
-                toolchainLayoutV2 = toolchainLayoutV2,
                 switchInputs = switchInputs,
                 selectionRevision = selectionRevision,
             )
@@ -1192,7 +1198,7 @@ public class WslToolchainProvisioner(
 
     private suspend fun resolveDesiredSwitchInputs(distro: String): Pair<Map<ToolGroupId, ResolvedInput>?, Long?> {
         val repo = repository
-        val selections = if (toolchainLayoutV2 && repo != null) repo.desiredSelections(distro) else null
+        val selections = repo?.desiredSelections(distro)
         return if (selections != null && selections.desired.isNotEmpty()) {
             val mappedInputs = SetupPlanFactory.defaultCatalogInputs().toMutableMap()
             for ((groupStr, sel) in selections.desired) {
@@ -1206,55 +1212,78 @@ public class WslToolchainProvisioner(
         }
     }
 
-    private fun mapSelectionToResolvedInput(
+    @Suppress("CyclomaticComplexMethod")
+    private suspend fun mapSelectionToResolvedInput(
         groupId: ToolGroupId,
         sel: ToolSelection,
         catGroup: ToolGroup?,
-    ): ResolvedInput = when (val ref = sel.ref) {
-        is ToolRef.Commit -> ResolvedInput.Git(
-            group = groupId,
-            repoUrl = sel.repoUrl,
-            ref = ref,
-            commit = ref.sha,
-            resolvedAt = System.currentTimeMillis(),
-        )
-        is ToolRef.Tag -> {
-            val gitSource = catGroup?.source as? ToolSource.Git
-            val commit = if (sel.repoUrl == null &&
-                gitSource != null &&
-                gitSource.recommendedLabel == ref.name
-            ) {
-                gitSource.recommendedCommit
-            } else {
-                ref.name
+    ): ResolvedInput {
+        val resolver = sourceResolver
+        if (resolver != null) {
+            when (val outcome = resolver.resolve(sel)) {
+                is ResolveOutcome.Resolved -> {
+                    val input = outcome.input
+                    if (input is ResolvedInput.Git) {
+                        val compat = resolver.checkLayout(input)
+                        if (compat is CompatibilityResult.Unsupported) {
+                            error(
+                                "Group '${groupId.value}' is layout-incompatible with repository: " +
+                                    "missing ${compat.missingPaths}",
+                            )
+                        }
+                    }
+                    return input
+                }
+                is ResolveOutcome.NotFound ->
+                    error("Group '${groupId.value}' ref '${sel.ref}' was not found on remote repository.")
+                is ResolveOutcome.Unreachable ->
+                    error("Group '${groupId.value}' repository unreachable: ${outcome.reason}")
+                is ResolveOutcome.AccessDenied ->
+                    error("Group '${groupId.value}' repository access denied.")
             }
-            ResolvedInput.Git(
+        }
+        return when (val ref = sel.ref) {
+            is ToolRef.Commit -> ResolvedInput.Git(
                 group = groupId,
                 repoUrl = sel.repoUrl,
                 ref = ref,
-                commit = commit,
+                commit = ref.sha,
                 resolvedAt = System.currentTimeMillis(),
             )
-        }
-        is ToolRef.Branch -> ResolvedInput.Git(
-            group = groupId,
-            repoUrl = sel.repoUrl,
-            ref = ref,
-            commit = ref.name,
-            resolvedAt = System.currentTimeMillis(),
-        )
-        is ToolRef.ReleaseVersion -> {
-            val relConfig = catGroup?.recipe as? RecipeConfig.Release
-            val ver = relConfig?.versions?.firstOrNull { it.version == ref.version }
-                ?: relConfig?.versions?.firstOrNull()
-            ResolvedInput.Release(
-                group = groupId,
-                version = ref.version,
-                url = ver?.url.orEmpty(),
-                archiveMember = ver?.archiveMember.orEmpty(),
-                sha256 = ver?.sha256.orEmpty(),
-                platform = detectHostArch(),
-            )
+            is ToolRef.Tag -> {
+                val gitSource = catGroup?.source as? ToolSource.Git
+                val commit = if (sel.repoUrl == null &&
+                    gitSource != null &&
+                    gitSource.recommendedLabel == ref.name
+                ) {
+                    gitSource.recommendedCommit
+                } else {
+                    error("Cannot resolve Tag '${ref.name}' without live SourceResolverPort")
+                }
+                ResolvedInput.Git(
+                    group = groupId,
+                    repoUrl = sel.repoUrl,
+                    ref = ref,
+                    commit = commit,
+                    resolvedAt = System.currentTimeMillis(),
+                )
+            }
+            is ToolRef.Branch -> {
+                error("Cannot resolve Branch '${ref.name}' without live SourceResolverPort")
+            }
+            is ToolRef.ReleaseVersion -> {
+                val relConfig = catGroup?.recipe as? RecipeConfig.Release
+                val ver = relConfig?.versions?.firstOrNull { it.version == ref.version }
+                    ?: error("Release version '${ref.version}' not supported for group '${groupId.value}'")
+                ResolvedInput.Release(
+                    group = groupId,
+                    version = ref.version,
+                    url = ver.url,
+                    archiveMember = ver.archiveMember,
+                    sha256 = ver.sha256,
+                    platform = "linux-${detectHostArch()}",
+                )
+            }
         }
     }
 
@@ -1290,6 +1319,18 @@ public class WslToolchainProvisioner(
             val outcome = SetupOutcome.Failed(
                 stage = null,
                 reason = "Environment evidence changed since the plan was previewed; preview again before confirming.",
+            )
+            _operationOutcome.value = outcome
+            return@withContext outcome
+        }
+
+        val liveSelectionRevision = repository?.desiredSelections(currentPlan.environmentKey)?.revision
+        if (switchAction?.selectionRevision != null && liveSelectionRevision != null &&
+            liveSelectionRevision != switchAction.selectionRevision
+        ) {
+            val outcome = SetupOutcome.Failed(
+                stage = null,
+                reason = "Saved selections changed since the plan was previewed; preview again before confirming.",
             )
             _operationOutcome.value = outcome
             return@withContext outcome
@@ -1514,13 +1555,84 @@ public class WslToolchainProvisioner(
         orderedActions = actions.map { act ->
             when (act.type) {
                 "INSTALL_PACKAGES" -> SetupPlanAction.InstallPackages(packages = act.payload)
-                "SYNC_SOURCES" -> SetupPlanAction.SyncSources(submodules = act.payload)
-                "BUILD_RECIPES" -> SetupPlanAction.BuildRecipes(recipeGroups = act.payload)
-                "PUBLISH_TOOLS" -> SetupPlanAction.PublishTools(toolIds = act.payload)
-                else -> error("Unknown action type: ${act.type}")
+                "SWITCH_TOOLCHAIN" -> {
+                    // Frozen inputs are persisted in the full PersistedPlanAction.switchInputs field.
+                    val inputs = (act.switchInputs
+                        ?: throw IllegalStateException("SWITCH_TOOLCHAIN is missing frozen source inputs")).let { persistedInputs ->
+                        persistedInputs.map { (groupId, pinput) ->
+                            val gid = org.ide.lti.core.domain.setup.ToolGroupId(groupId)
+                            gid to pinput.toDomain(gid)
+                        }.toMap()
+                    }
+                    val rev = act.selectionRevision
+                        ?: throw IllegalStateException("SWITCH_TOOLCHAIN is missing its selection revision")
+                    val forceGroups = act.forceRebuildGroups.orEmpty()
+                        .map { org.ide.lti.core.domain.setup.ToolGroupId(it) }.toSet()
+                    SetupPlanAction.SwitchToolchain(
+                        inputs = inputs,
+                        selectionRevision = rev,
+                        forceRebuildGroups = forceGroups,
+                    )
+                }
+                // Legacy types from pre-008 journal entries are silently dropped.
+                // A resumed plan with no SwitchToolchain will produce an empty plan that
+                // immediately succeeds; the caller must re-plan in that case.
+                "SYNC_SOURCES", "BUILD_RECIPES", "PUBLISH_TOOLS" -> {
+                    appendLog(
+                        "[Resume] Dropping legacy action type '${act.type}' from persisted plan — " +
+                            "pre-008 journal entry; re-plan required.",
+                        SetupLogKind.RUN,
+                    )
+                    throw IllegalArgumentException("Unsupported persisted action type '${act.type}'")
+                }
+                else -> {
+                    appendLog(
+                        "[Resume] Unknown action type '${act.type}' in persisted plan — skipping.",
+                        SetupLogKind.RUN,
+                    )
+                    throw IllegalArgumentException("Unknown persisted action type '${act.type}'")
+                }
             }
         },
     )
+
+    @Suppress("CyclomaticComplexMethod")
+    private fun PersistedResolvedInput.toDomain(groupId: ToolGroupId): ResolvedInput = when (kind) {
+        "git" -> {
+            val frozenCommit = commit
+                ?: throw IllegalStateException("Git input '${groupId.value}' has no frozen commit")
+            val frozenRef = ref ?: throw IllegalStateException("Git input '${groupId.value}' has no frozen ref")
+            ResolvedInput.Git(
+                group = groupId,
+                repoUrl = repoUrl,
+                ref = when {
+                    frozenRef.startsWith("tag:") -> ToolRef.Tag(frozenRef.removePrefix("tag:"))
+                    frozenRef.startsWith("branch:") -> ToolRef.Branch(frozenRef.removePrefix("branch:"))
+                    else -> ToolRef.Commit(frozenCommit)
+                },
+                commit = frozenCommit,
+                submoduleCommits = submoduleCommits.orEmpty(),
+                resolvedAt = resolvedAt
+                    ?: throw IllegalStateException("Git input '${groupId.value}' has no resolution timestamp"),
+            )
+        }
+        "release" -> {
+            val v = version ?: throw IllegalStateException("Release input '${groupId.value}' has no version")
+            val u = url ?: throw IllegalStateException("Release input '${groupId.value}' has no URL")
+            val m = archiveMember ?: throw IllegalStateException("Release input '${groupId.value}' has no archive member")
+            val s = sha256 ?: throw IllegalStateException("Release input '${groupId.value}' has no checksum")
+            val p = platform ?: throw IllegalStateException("Release input '${groupId.value}' has no platform")
+            ResolvedInput.Release(
+                group = groupId,
+                version = v,
+                url = u,
+                archiveMember = m,
+                sha256 = s,
+                platform = p,
+            )
+        }
+        else -> throw IllegalArgumentException("Unknown frozen input kind '$kind'")
+    }
 
     @Suppress("CyclomaticComplexMethod")
     override suspend fun resume(planId: String): SetupOutcome = withContext(dispatcher) {
@@ -1560,6 +1672,26 @@ public class WslToolchainProvisioner(
                 stage = null,
                 reason = "Attempt '${active.attemptId}' has no handoff details.",
             )
+            val persistedPlan = active.persistedPlan ?: return@withAdmission SetupOutcome.Interrupted(
+                "Attempt '${active.attemptId}' has no persisted plan; preview and confirm a new plan.",
+            )
+            val domainPlan = try {
+                persistedPlan.toDomainPlan()
+            } catch (e: IllegalArgumentException) {
+                return@withAdmission SetupOutcome.Interrupted(
+                    "Attempt '${active.attemptId}' has an invalid persisted plan: ${e.message}",
+                )
+            } catch (e: IllegalStateException) {
+                return@withAdmission SetupOutcome.Interrupted(
+                    "Attempt '${active.attemptId}' cannot safely reconstruct its plan: ${e.message}",
+                )
+            }
+            if (domainPlan.orderedActions.isEmpty()) {
+                return@withAdmission SetupOutcome.Interrupted(
+                    "Attempt '${active.attemptId}' has no resumable actions in its persisted plan; " +
+                        "the handoff remains pending and must be reviewed.",
+                )
+            }
 
             val isBootstrap = active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
                 active.persistedPlan?.kind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
@@ -1634,16 +1766,9 @@ public class WslToolchainProvisioner(
                 diagnostics.filter { it.status == StepStatus.SUCCESS }.map { it.id }.toSet(),
             )
 
-            val persistedPlan = active.persistedPlan
-            if (persistedPlan == null) {
-                return@withAdmission SetupOutcome.Failed(
-                    stage = null,
-                    reason = "Attempt has no persisted plan to resume.",
-                )
-            }
-            val domainPlan = persistedPlan.toDomainPlan()
-
-            val completedActionIds = (active.completedActionIds + handoff.actionId).toSet()
+            val completedActionIds = (active.completedActionIds + handoff.actionId)
+                .filter { it != "switch-toolchain" && !it.startsWith("prereq-") }
+                .toSet()
             val journal = SetupJournalContext(
                 environmentKey = distro,
                 attemptId = active.attemptId,
@@ -1858,9 +1983,6 @@ public class WslToolchainProvisioner(
 
     private fun SetupPlanAction.actionId(): String = when (this) {
         is SetupPlanAction.InstallPackages -> "packages"
-        is SetupPlanAction.SyncSources -> "sync-sources"
-        is SetupPlanAction.BuildRecipes -> "build-recipes"
-        is SetupPlanAction.PublishTools -> "publish-tools"
         is SetupPlanAction.SwitchToolchain -> "switch-toolchain"
     }
 

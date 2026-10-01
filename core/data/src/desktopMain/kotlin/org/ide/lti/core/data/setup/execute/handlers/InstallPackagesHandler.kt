@@ -14,14 +14,13 @@ import org.ide.lti.core.data.setup.RequirementCatalog
 import org.ide.lti.core.data.setup.execute.ExecutionContext
 import org.ide.lti.core.data.setup.execute.PlanActionHandler
 import org.ide.lti.core.data.setup.execute.actionId
+import org.ide.lti.core.data.setup.execute.toPersistedSetupPlan
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.UserRepairHandoff
-import org.ide.lti.core.model.setup.PersistedPlanAction
-import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 
 public class InstallPackagesHandler(
@@ -64,43 +63,7 @@ public class InstallPackagesHandler(
             packages = handoffPackages,
             timestampEpochMs = System.currentTimeMillis(),
         )
-        val persistedPlan = PersistedSetupPlan(
-            planId = currentPlan.planId,
-            revisionHash = currentPlan.revisionHash,
-            environmentKey = currentPlan.environmentKey,
-            kind = currentPlan.kind.name,
-            targetStageOrToolId = currentPlan.targetStageOrToolId,
-            autoDoctorEnabled = currentPlan.autoDoctorEnabled,
-            actions = currentPlan.orderedActions.map { act ->
-                when (act) {
-                    is SetupPlanAction.InstallPackages -> PersistedPlanAction(
-                        act.actionId(),
-                        "INSTALL_PACKAGES",
-                        act.packages,
-                    )
-                    is SetupPlanAction.SyncSources -> PersistedPlanAction(
-                        act.actionId(),
-                        "SYNC_SOURCES",
-                        act.submodules,
-                    )
-                    is SetupPlanAction.BuildRecipes -> PersistedPlanAction(
-                        act.actionId(),
-                        "BUILD_RECIPES",
-                        act.recipeGroups,
-                    )
-                    is SetupPlanAction.PublishTools -> PersistedPlanAction(
-                        act.actionId(),
-                        "PUBLISH_TOOLS",
-                        act.toolIds,
-                    )
-                    is SetupPlanAction.SwitchToolchain -> PersistedPlanAction(
-                        act.actionId(),
-                        "SWITCH_TOOLCHAIN",
-                        act.inputs.keys.map { it.value },
-                    )
-                }
-            },
-        )
+        val persistedPlan = currentPlan.toPersistedSetupPlan()
 
         val targetStage = if (currentPlan.kind == SetupPlanKind.BOOTSTRAP_PACKAGES) {
             SetupStepStage.SYSTEM_PACKAGES

@@ -9,21 +9,24 @@
  */
 package org.ide.lti.core.data.setup.execute
 
-import org.ide.lti.core.data.setup.execute.handlers.BuildRecipesHandler
 import org.ide.lti.core.data.setup.execute.handlers.InstallPackagesHandler
-import org.ide.lti.core.data.setup.execute.handlers.PublishToolsHandler
-import org.ide.lti.core.data.setup.execute.handlers.SyncSourcesHandler
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanAction
 
 /**
- * Executes a [SetupPlan] by dispatching actions to typed [PlanActionHandler]s (T031).
+ * Executes a [SetupPlan] by dispatching actions to typed [PlanActionHandler]s.
+ *
+ * Only two action kinds are dispatched in the 008 layout:
+ * - [SetupPlanAction.InstallPackages]: privilege-requiring system remediation.
+ * - [SetupPlanAction.SwitchToolchain]: content-addressable build-and-activate step.
+ *
+ * Any plan that contains only [SetupPlanAction.SwitchToolchain] without a registered
+ * [switchToolchainHandler] fails with a typed [SetupOutcome.Failed] — not a crash — so
+ * a missing DI binding is caught at test time by [KoinGraphResolutionTest], which asserts
+ * [switchToolchainHandler] is not null.
  */
 public class PlanExecutor(
     private val installPackagesHandler: PlanActionHandler<SetupPlanAction.InstallPackages> = InstallPackagesHandler(),
-    private val syncSourcesHandler: PlanActionHandler<SetupPlanAction.SyncSources> = SyncSourcesHandler(),
-    private val buildRecipesHandler: PlanActionHandler<SetupPlanAction.BuildRecipes> = BuildRecipesHandler(),
-    private val publishToolsHandler: PlanActionHandler<SetupPlanAction.PublishTools> = PublishToolsHandler(),
     public val switchToolchainHandler: PlanActionHandler<SetupPlanAction.SwitchToolchain>? = null,
 ) {
     public suspend fun execute(context: ExecutionContext): SetupOutcome {
@@ -46,12 +49,9 @@ public class PlanExecutor(
     private suspend fun executeAction(action: SetupPlanAction, context: ExecutionContext): SetupOutcome? {
         val outcome: SetupOutcome? = when (action) {
             is SetupPlanAction.InstallPackages -> installPackagesHandler.execute(action, context)
-            is SetupPlanAction.SyncSources -> syncSourcesHandler.execute(action, context)
-            is SetupPlanAction.BuildRecipes -> buildRecipesHandler.execute(action, context)
-            is SetupPlanAction.PublishTools -> publishToolsHandler.execute(action, context)
             is SetupPlanAction.SwitchToolchain -> {
                 val handler = switchToolchainHandler
-                    ?: return SetupOutcome.Failed(null, "No SwitchToolchainHandler registered")
+                    ?: return SetupOutcome.Failed(null, "No SwitchToolchainHandler registered — DI binding missing")
                 handler.execute(action, context)
             }
         }

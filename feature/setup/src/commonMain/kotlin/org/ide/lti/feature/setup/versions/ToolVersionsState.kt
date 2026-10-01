@@ -118,6 +118,8 @@ public class ToolVersionsState(
 
     private var cachedSelections = DistroToolSelections()
     private var installedGroups: Map<String, InstalledGroupArtifact> = emptyMap()
+    private var isServiceUnavailable: Boolean = false
+    private var isInstallationDataInvalid: Boolean = false
     private val updateAvailabilities = mutableMapOf<ToolGroupId, Boolean>()
     private var refsJob: Job? = null
     private var resolveJob: Job? = null
@@ -129,14 +131,23 @@ public class ToolVersionsState(
     public fun refresh(distro: String = activeDistroProvider()) {
         scope.launch {
             cachedSelections = repository.desiredSelections(distro)
+            var serviceUnavailable = installationPort == null
             val installState = try {
                 installationPort?.state()
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
+                serviceUnavailable = true
                 null
             }
+            if (installState == null) {
+                serviceUnavailable = true
+            }
+            isServiceUnavailable = serviceUnavailable
             installedGroups = installState?.activeGroups.orEmpty()
+            val requiredGroups = ToolGroupCatalog.allGroups.map { it.id.value }
+            isInstallationDataInvalid = installState?.activeInstallId != null &&
+                requiredGroups.any { it !in installedGroups }
             _rows.value = computeRows()
         }
     }
@@ -147,8 +158,8 @@ public class ToolVersionsState(
         val desiredVersion = desired?.ref?.let { refToLabel(it) } ?: defaultLabel
         val hasUpdate = updateAvailabilities[group.id] ?: false
         val installedArt = installedGroups[group.id.value]
-        val installedVersion = installedArt?.version ?: defaultLabel
-        val isHealthy = installedArt?.isHealthy ?: true
+        val installedVersion = installedArt?.version
+        val isHealthy = installedArt?.isHealthy ?: false
 
         ToolVersionsPresentationMapper.mapGroupRow(
             groupId = group.id.value,
@@ -158,6 +169,8 @@ public class ToolVersionsState(
             isBuilding = isBuildingProvider(),
             isUnsupported = false,
             hasUpdateAvailable = hasUpdate,
+            isServiceUnavailable = isServiceUnavailable,
+            isInstallationDataInvalid = isInstallationDataInvalid,
         )
     }
 

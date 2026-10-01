@@ -17,9 +17,6 @@ import org.ide.lti.core.domain.setup.SetupPlanAction
  */
 public fun SetupPlanAction.actionId(): String = when (this) {
     is SetupPlanAction.InstallPackages -> "packages"
-    is SetupPlanAction.SyncSources -> "sync-sources"
-    is SetupPlanAction.BuildRecipes -> "build-recipes"
-    is SetupPlanAction.PublishTools -> "publish-tools"
     is SetupPlanAction.SwitchToolchain -> "switch-toolchain"
 }
 

@@ -10,8 +10,11 @@
 package org.ide.lti.core.data.setup.install
 
 /**
- * Runtime guard enforcing R29: No mutation path may bypass [ArtifactStore] or [InstallationManager]
- * when toolchainLayoutV2 is enabled.
+ * Runtime guard enforcing R29: No mutation path may bypass [ArtifactStore] or [InstallationManager].
+ *
+ * The 008 layout is always active; the legacy `toolchainLayoutV2` flag has been removed.
+ * Any direct mutation of managed paths (artifacts, installs, bin) from untrusted callers
+ * is rejected with a [SecurityException].
  */
 public object MutationGuard {
 
@@ -21,8 +24,12 @@ public object MutationGuard {
 
     private val TRUSTED_CALLERS = setOf("ArtifactStore", "InstallationManager", "SwitchToolchainHandler")
 
-    public fun checkCommand(toolchainLayoutV2: Boolean, command: List<String>, caller: String? = null) {
-        if (!toolchainLayoutV2 || command.isEmpty() || caller in TRUSTED_CALLERS) {
+    /**
+     * Checks that [command] does not directly mutate a managed path unless [caller] is trusted.
+     * Throws [SecurityException] on violation.
+     */
+    public fun checkCommand(command: List<String>, caller: String? = null) {
+        if (command.isEmpty() || caller in TRUSTED_CALLERS) {
             return
         }
 
@@ -44,7 +51,7 @@ public object MutationGuard {
             if (isProtectedTarget(normalized)) {
                 throw SecurityException(
                     "MutationGuard violation: Direct mutation of '$arg' via '$effectiveCmd' " +
-                        "is prohibited when toolchainLayoutV2 is enabled.",
+                        "is prohibited outside ArtifactStore/InstallationManager.",
                 )
             }
         }

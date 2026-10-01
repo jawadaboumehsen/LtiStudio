@@ -13,117 +13,245 @@ import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /** [this] with the listed stages measured green. */
 internal fun ToolchainSetupState.withStagesPassed(vararg stages: SetupStepStage): ToolchainSetupState =
     copy(steps = steps.map { if (it.stage in stages) it.copy(status = StepStatus.SUCCESS) else it })
 
+/**
+ * Regression tests for [SetupPlanFactory].
+ *
+ * Every plan that mutates tools produces a [SetupPlanAction.SwitchToolchain].
+ * There are no SyncSources, BuildRecipes, or PublishTools actions.
+ */
 class SetupPlanFactoryTest {
 
-    private fun actionsOf(kind: SetupPlanKind, snapshot: ToolchainSetupState, target: SetupStepStage? = null) =
-        SetupPlanFactory.createPlan(
-            kind = kind,
-            targetId = target?.name,
-            snapshot = snapshot,
-            environmentKey = "Ubuntu-24.04",
-        ).orderedActions.map { it::class.simpleName }
+    // -----------------------------------------------------------------------
+    // FULL_SETUP
+    // -----------------------------------------------------------------------
 
     @Test
-    fun `a clean machine's toolchain retry syncs sources before building`() {
-        // Packages in, nothing synced or built: the recommended retry must not compile missing sources.
-        val clean = ToolchainSetupState().withStagesPassed(
-            SetupStepStage.WSL_DETECTION,
-            SetupStepStage.SYSTEM_PACKAGES,
-            SetupStepStage.SERVER_CONNECTIVITY,
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-        )
-
-        assertEquals(
-            listOf("SyncSources", "BuildRecipes", "PublishTools"),
-            actionsOf(SetupPlanKind.STAGE_RETRY, clean, SetupStepStage.TOOLCHAIN_COMPILATION),
-        )
-    }
-
-    @Test
-    fun `full setup that syncs sources also builds, even when the toolchain looked ready`() {
-        // New pins with a green toolchain: the sync invalidates the changed groups, so a build must follow.
-        val newPins = ToolchainSetupState().withStagesPassed(
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-            SetupStepStage.TOOLCHAIN_COMPILATION,
-        )
-
-        assertEquals(
-            listOf("SyncSources", "BuildRecipes", "PublishTools"),
-            actionsOf(SetupPlanKind.FULL_SETUP, newPins),
-        )
-    }
-
-    @Test
-    fun testFullSetupPublishesAllCatalogIds() {
+    fun `full setup always produces a SwitchToolchain action`() {
         val snapshot = ToolchainSetupState()
         val plan = SetupPlanFactory.createPlan(
             kind = SetupPlanKind.FULL_SETUP,
             snapshot = snapshot,
             environmentKey = "Ubuntu-24.04",
         )
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "FULL_SETUP must produce a SwitchToolchain action")
+    }
 
-        val publishAction = plan.orderedActions.filterIsInstance<SetupPlanAction.PublishTools>().firstOrNull()
-        assertNotNull(publishAction, "Full setup plan must include PublishTools action")
-
-        val expectedIds = ToolCatalog.ALL_TOOL_IDS.toList().sorted()
+    @Test
+    fun `full setup SwitchToolchain contains all catalog groups`() {
+        val snapshot = ToolchainSetupState()
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.FULL_SETUP,
+            snapshot = snapshot,
+            environmentKey = "Ubuntu-24.04",
+        )
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().first()
+        val catalogGroupIds = ToolGroupCatalog.DEFAULT_GROUPS.map { it.id }.toSet()
         assertEquals(
-            expectedIds,
-            publishAction.toolIds.sorted(),
-            "Full setup must publish all catalog tool IDs",
+            catalogGroupIds,
+            switch.inputs.keys,
+            "SwitchToolchain inputs must contain exactly all catalog groups",
         )
     }
 
     @Test
-    fun testStageRetryOfToolchainCompilationProducesPublishToolsWithUnpublishedCatalogIds() {
-        val published = setOf("lpmake", "unpack_bootimg", "signapk")
-        val snapshot = ToolchainSetupState(publishedToolIds = published)
-            .withStagesPassed(SetupStepStage.REPO_SYNCHRONIZATION)
+    fun `full setup with package remediation needed produces InstallPackages then SwitchToolchain`() {
+        val snapshot = ToolchainSetupState()
+        val bootstrapPackages = listOf("build-essential", "cmake")
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.BOOTSTRAP_PACKAGES,
+            snapshot = snapshot,
+            environmentKey = "Ubuntu-24.04",
+            bootstrapPackages = bootstrapPackages,
+        )
+        val install = plan.orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>().firstOrNull()
+        assertNotNull(install, "BOOTSTRAP_PACKAGES plan must produce InstallPackages")
+        assertEquals(bootstrapPackages, install.packages)
+        // Bootstrap plan must NOT contain a SwitchToolchain — it only installs packages
+        assertTrue(
+            plan.orderedActions.none { it is SetupPlanAction.SwitchToolchain },
+            "BOOTSTRAP_PACKAGES plan must not contain SwitchToolchain",
+        )
+    }
 
+    // -----------------------------------------------------------------------
+    // STAGE_RETRY
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `stage retry of TOOLCHAIN_COMPILATION produces SwitchToolchain`() {
+        val snapshot = ToolchainSetupState().withStagesPassed(
+            SetupStepStage.WSL_DETECTION,
+            SetupStepStage.SYSTEM_PACKAGES,
+            SetupStepStage.SERVER_CONNECTIVITY,
+            SetupStepStage.SYSTEM_DIAGNOSTICS,
+        )
         val plan = SetupPlanFactory.createPlan(
             kind = SetupPlanKind.STAGE_RETRY,
             targetId = SetupStepStage.TOOLCHAIN_COMPILATION.name,
             snapshot = snapshot,
             environmentKey = "Ubuntu-24.04",
         )
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "STAGE_RETRY of TOOLCHAIN_COMPILATION must produce SwitchToolchain")
+    }
 
-        val publishAction = plan.orderedActions.filterIsInstance<SetupPlanAction.PublishTools>().firstOrNull()
-        assertNotNull(publishAction, "Stage retry of TOOLCHAIN_COMPILATION must include PublishTools action")
+    @Test
+    fun `stage retry of REPO_SYNCHRONIZATION produces SwitchToolchain`() {
+        val snapshot = ToolchainSetupState()
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.STAGE_RETRY,
+            targetId = SetupStepStage.REPO_SYNCHRONIZATION.name,
+            snapshot = snapshot,
+            environmentKey = "Ubuntu-24.04",
+        )
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "STAGE_RETRY of REPO_SYNCHRONIZATION must produce SwitchToolchain")
+    }
 
-        val expectedUnpublished = (ToolCatalog.ALL_TOOL_IDS - published).toList().sorted()
+    @Test
+    fun `stage retry of SYSTEM_PACKAGES produces InstallPackages only`() {
+        val snapshot = ToolchainSetupState()
+        val bootstrapPackages = listOf("openjdk-21-jdk")
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.STAGE_RETRY,
+            targetId = SetupStepStage.SYSTEM_PACKAGES.name,
+            snapshot = snapshot,
+            environmentKey = "Ubuntu-24.04",
+            bootstrapPackages = bootstrapPackages,
+        )
+        val install = plan.orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>().firstOrNull()
+        assertNotNull(install, "STAGE_RETRY of SYSTEM_PACKAGES must produce InstallPackages")
+        assertTrue(
+            plan.orderedActions.none { it is SetupPlanAction.SwitchToolchain },
+            "STAGE_RETRY of SYSTEM_PACKAGES must not produce SwitchToolchain",
+        )
+    }
+
+    // -----------------------------------------------------------------------
+    // REPAIR_TOOL
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `repair tool produces SwitchToolchain with forceRebuildGroups set`() {
+        // lpmake belongs to android-tools
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.REPAIR_TOOL,
+            targetId = "lpmake",
+            snapshot = ToolchainSetupState(),
+            environmentKey = "Ubuntu-24.04",
+        )
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "REPAIR_TOOL must produce SwitchToolchain")
+        assertTrue(
+            switch.forceRebuildGroups.isNotEmpty(),
+            "REPAIR_TOOL SwitchToolchain must specify forceRebuildGroups",
+        )
+        val forceGroup = switch.forceRebuildGroups.first()
+        val expectedGroup = ToolGroupCatalog.groupByToolId("lpmake")
         assertEquals(
-            expectedUnpublished,
-            publishAction.toolIds.sorted(),
-            "Stage retry of TOOLCHAIN_COMPILATION must request publish for unpublished catalog IDs",
+            expectedGroup?.id,
+            forceGroup,
+            "forceRebuildGroups must contain the owning group for lpmake",
         )
     }
 
     @Test
-    fun testStageRetryOfToolchainCompilationWhenAllPublishedProducesNoPublishTools() {
-        val allPublished = ToolCatalog.ALL_TOOL_IDS
-        val snapshot = ToolchainSetupState(publishedToolIds = allPublished)
-            .withStagesPassed(SetupStepStage.REPO_SYNCHRONIZATION)
-
+    fun `repair tool with unknown tool id produces empty plan`() {
         val plan = SetupPlanFactory.createPlan(
-            kind = SetupPlanKind.STAGE_RETRY,
-            targetId = SetupStepStage.TOOLCHAIN_COMPILATION.name,
-            snapshot = snapshot,
+            kind = SetupPlanKind.REPAIR_TOOL,
+            targetId = "totally-unknown-binary",
+            snapshot = ToolchainSetupState(),
             environmentKey = "Ubuntu-24.04",
         )
+        assertTrue(plan.orderedActions.isEmpty(), "REPAIR_TOOL with unknown tool must produce empty plan")
+    }
 
-        val publishAction = plan.orderedActions.filterIsInstance<SetupPlanAction.PublishTools>().firstOrNull()
-        assertEquals(
-            null,
-            publishAction,
-            "When all catalog tools are published, no PublishTools action should be produced",
+    // -----------------------------------------------------------------------
+    // CACHE_RESET
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `cache reset produces no actions`() {
+        val plan = SetupPlanFactory.createPlan(
+            kind = SetupPlanKind.CACHE_RESET,
+            snapshot = ToolchainSetupState(),
+            environmentKey = "Ubuntu-24.04",
         )
+        assertTrue(plan.orderedActions.isEmpty(), "CACHE_RESET must produce an empty action list")
+    }
+
+    // -----------------------------------------------------------------------
+    // Revision hash stability and staleness
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `revision hash is stable for the same snapshot and inputs`() {
+        val snapshot = ToolchainSetupState()
+        val h1 = SetupPlanFactory.computeRevisionHash(snapshot, autoDoctorEnabled = true)
+        val h2 = SetupPlanFactory.computeRevisionHash(snapshot, autoDoctorEnabled = true)
+        assertEquals(h1, h2, "Revision hash must be stable for the same inputs")
+    }
+
+    @Test
+    fun `revision hash changes when auto doctor policy changes`() {
+        val snapshot = ToolchainSetupState()
+        val h1 = SetupPlanFactory.computeRevisionHash(snapshot, autoDoctorEnabled = true)
+        val h2 = SetupPlanFactory.computeRevisionHash(snapshot, autoDoctorEnabled = false)
+        assertTrue(h1 != h2, "Revision hash must differ when autoDoctorEnabled changes")
+    }
+
+    @Test
+    fun `revision hash includes switch inputs and selection revision`() {
+        val snapshot = ToolchainSetupState()
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        val h1 = SetupPlanFactory.computeRevisionHash(snapshot, true, inputs, 1L)
+        val h2 = SetupPlanFactory.computeRevisionHash(snapshot, true, inputs, 2L)
+        assertTrue(h1 != h2, "Revision hash must differ when selectionRevision changes")
+    }
+
+    // -----------------------------------------------------------------------
+    // defaultCatalogInputs — no substitution, no null fallback
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `defaultCatalogInputs returns exactly the catalog groups`() {
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        val catalogGroupIds = ToolGroupCatalog.DEFAULT_GROUPS.map { it.id }.toSet()
+        assertEquals(catalogGroupIds, inputs.keys, "defaultCatalogInputs must contain all catalog groups")
+    }
+
+    @Test
+    fun `defaultCatalogInputs Git inputs carry non-blank recommended commit`() {
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        inputs.values.filterIsInstance<org.ide.lti.core.domain.setup.ResolvedInput.Git>().forEach { git ->
+            assertTrue(git.commit.isNotBlank(), "Git input for ${git.group.value} must have non-blank commit")
+            assertEquals(
+                40,
+                git.commit.length,
+                "Git input commit for ${git.group.value} must be a 40-char SHA",
+            )
+        }
+    }
+
+    @Test
+    fun `defaultCatalogInputs Release inputs carry non-blank version and sha256`() {
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        inputs.values.filterIsInstance<org.ide.lti.core.domain.setup.ResolvedInput.Release>().forEach { rel ->
+            assertTrue(rel.version.isNotBlank(), "Release input for ${rel.group.value} must have non-blank version")
+            assertTrue(rel.sha256.isNotBlank(), "Release input for ${rel.group.value} must have non-blank sha256")
+            assertTrue(rel.url.isNotBlank(), "Release input for ${rel.group.value} must have non-blank url")
+        }
     }
 }

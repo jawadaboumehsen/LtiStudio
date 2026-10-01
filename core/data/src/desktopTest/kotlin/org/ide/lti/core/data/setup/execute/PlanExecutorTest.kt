@@ -11,6 +11,7 @@ package org.ide.lti.core.data.setup.execute
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.data.setup.SetupPlanFactory
 import org.ide.lti.core.data.setup.state.OperationScope
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
@@ -20,68 +21,28 @@ import org.ide.lti.core.domain.setup.ToolchainSetupState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PlanExecutorTest {
 
-    private class RecordingActionHandler<A : SetupPlanAction>(
-        var shouldFail: Boolean = false,
-        var pauseUserAction: Boolean = false,
-    ) : PlanActionHandler<A> {
+    private class RecordingActionHandler<A : SetupPlanAction>(var shouldFail: Boolean = false) : PlanActionHandler<A> {
         val executedActions = mutableListOf<A>()
 
         override suspend fun execute(action: A, context: ExecutionContext): SetupOutcome? {
             executedActions.add(action)
-            return when {
-                shouldFail -> SetupOutcome.Failed(stage = "TEST", reason = "Forced failure on ${action.actionId()}")
-                pauseUserAction -> SetupOutcome.AwaitingUserAction(
-                    pendingPlanId = "plan-1",
-                    stage = org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_PACKAGES,
-                    reason = "User action required",
-                    handoff = org.ide.lti.core.domain.setup.UserRepairHandoff(
-                        actionId = action.actionId(),
-                        description = "Test handoff",
-                        terminalCommand = "sudo apt install git",
-                        packages = listOf("git"),
-                        distro = context.distro,
-                    ),
-                )
-                else -> null
+            return if (shouldFail) {
+                SetupOutcome.Failed(stage = "TEST", reason = "Forced failure on ${action.actionId()}")
+            } else {
+                null
             }
         }
     }
 
-    @Test
-    fun planExecutorExecutesActionsInOrder() = runTest {
+    private fun makeContext(plan: SetupPlan): ExecutionContext {
         val stateFlow = MutableStateFlow(ToolchainSetupState())
         val operationScope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
-
-        val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
-        val syncHandler = RecordingActionHandler<SetupPlanAction.SyncSources>()
-        val buildHandler = RecordingActionHandler<SetupPlanAction.BuildRecipes>()
-        val publishHandler = RecordingActionHandler<SetupPlanAction.PublishTools>()
-
-        val executor = PlanExecutor(
-            installPackagesHandler = pkgHandler,
-            syncSourcesHandler = syncHandler,
-            buildRecipesHandler = buildHandler,
-            publishToolsHandler = publishHandler,
-        )
-
-        val plan = SetupPlan(
-            planId = "plan-123",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(
-                SetupPlanAction.InstallPackages(listOf("git")),
-                SetupPlanAction.SyncSources(listOf("android-tools")),
-                SetupPlanAction.BuildRecipes(listOf("android-tools")),
-                SetupPlanAction.PublishTools(listOf("adb")),
-            ),
-        )
-
-        val context = ExecutionContext(
+        return ExecutionContext(
             distro = "Ubuntu",
             home = "/home/test",
             binDir = "/home/test/bin",
@@ -90,43 +51,102 @@ class PlanExecutorTest {
             plan = plan,
             scope = operationScope,
         )
+    }
 
-        val outcome = executor.execute(context)
+    // -----------------------------------------------------------------------
+    // InstallPackages dispatch
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun planExecutorDispatchesInstallPackages() = runTest {
+        val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
+        val executor = PlanExecutor(installPackagesHandler = pkgHandler)
+
+        val plan = SetupPlan(
+            planId = "plan-pkg",
+            revisionHash = "rev-hash",
+            environmentKey = "Ubuntu",
+            kind = SetupPlanKind.BOOTSTRAP_PACKAGES,
+            orderedActions = listOf(SetupPlanAction.InstallPackages(listOf("git", "cmake"))),
+        )
+
+        val outcome = executor.execute(makeContext(plan))
         assertIs<SetupOutcome.Succeeded>(outcome)
         assertEquals(1, pkgHandler.executedActions.size)
-        assertEquals(1, syncHandler.executedActions.size)
-        assertEquals(1, buildHandler.executedActions.size)
-        assertEquals(1, publishHandler.executedActions.size)
+        assertEquals(listOf("git", "cmake"), pkgHandler.executedActions.first().packages)
     }
+
+    // -----------------------------------------------------------------------
+    // SwitchToolchain — no handler registered → typed Failed, not a crash
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun planExecutorWithNoSwitchHandlerProducesTypedFailure() = runTest {
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        val plan = SetupPlan(
+            planId = "plan-switch",
+            revisionHash = "rev-hash",
+            environmentKey = "Ubuntu",
+            kind = SetupPlanKind.FULL_SETUP,
+            orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L)),
+        )
+        val executor = PlanExecutor(switchToolchainHandler = null)
+        val outcome = executor.execute(makeContext(plan))
+        val failure = assertIs<SetupOutcome.Failed>(outcome)
+        assertTrue(failure.reason.contains("SwitchToolchainHandler"), "Failure must mention the missing handler")
+    }
+
+    // -----------------------------------------------------------------------
+    // SwitchToolchain dispatched when handler is registered
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun planExecutorDispatchesSwitchToolchain() = runTest {
+        val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        val executor = PlanExecutor(switchToolchainHandler = switchHandler)
+
+        val plan = SetupPlan(
+            planId = "plan-switch",
+            revisionHash = "rev-hash",
+            environmentKey = "Ubuntu",
+            kind = SetupPlanKind.FULL_SETUP,
+            orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 42L)),
+        )
+
+        val outcome = executor.execute(makeContext(plan))
+        assertIs<SetupOutcome.Succeeded>(outcome)
+        assertEquals(1, switchHandler.executedActions.size)
+        assertEquals(42L, switchHandler.executedActions.first().selectionRevision)
+    }
+
+    // -----------------------------------------------------------------------
+    // Skip-set honours completed actions
+    // -----------------------------------------------------------------------
 
     @Test
     fun planExecutorSkipsActionsInSkipSet() = runTest {
-        val stateFlow = MutableStateFlow(ToolchainSetupState())
-        val operationScope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
-
         val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
-        val syncHandler = RecordingActionHandler<SetupPlanAction.SyncSources>()
-        val buildHandler = RecordingActionHandler<SetupPlanAction.BuildRecipes>()
-        val publishHandler = RecordingActionHandler<SetupPlanAction.PublishTools>()
-
+        val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
         val executor = PlanExecutor(
             installPackagesHandler = pkgHandler,
-            syncSourcesHandler = syncHandler,
-            buildRecipesHandler = buildHandler,
-            publishToolsHandler = publishHandler,
+            switchToolchainHandler = switchHandler,
         )
 
         val pkgAction = SetupPlanAction.InstallPackages(listOf("git"))
-        val syncAction = SetupPlanAction.SyncSources(listOf("android-tools"))
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
+        val switchAction = SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L)
 
         val plan = SetupPlan(
-            planId = "plan-123",
+            planId = "plan-skip",
             revisionHash = "rev-hash",
             environmentKey = "Ubuntu",
             kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(pkgAction, syncAction),
+            orderedActions = listOf(pkgAction, switchAction),
         )
 
+        val stateFlow = MutableStateFlow(ToolchainSetupState())
+        val scope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
         val context = ExecutionContext(
             distro = "Ubuntu",
             home = "/home/test",
@@ -134,58 +154,55 @@ class PlanExecutorTest {
             extDir = "/home/test/ext",
             workDir = "/home/test/work",
             plan = plan,
-            scope = operationScope,
+            scope = scope,
             actionsToSkip = setOf(pkgAction.actionId()),
         )
 
         val outcome = executor.execute(context)
         assertIs<SetupOutcome.Succeeded>(outcome)
         assertTrue(pkgHandler.executedActions.isEmpty(), "Skipped action must not execute")
-        assertEquals(1, syncHandler.executedActions.size)
+        assertEquals(1, switchHandler.executedActions.size)
     }
 
+    // -----------------------------------------------------------------------
+    // Halt immediately on action failure
+    // -----------------------------------------------------------------------
+
     @Test
-    fun planExecutorHaltsImmediatelyOnActionFailure() = runTest {
-        val stateFlow = MutableStateFlow(ToolchainSetupState())
-        val operationScope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
-
-        val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
-        val syncHandler = RecordingActionHandler<SetupPlanAction.SyncSources>(shouldFail = true)
-        val buildHandler = RecordingActionHandler<SetupPlanAction.BuildRecipes>()
-        val publishHandler = RecordingActionHandler<SetupPlanAction.PublishTools>()
-
+    fun planExecutorHaltsImmediatelyOnInstallPackagesFailure() = runTest {
+        val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>(shouldFail = true)
+        val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
+        val inputs = SetupPlanFactory.defaultCatalogInputs()
         val executor = PlanExecutor(
             installPackagesHandler = pkgHandler,
-            syncSourcesHandler = syncHandler,
-            buildRecipesHandler = buildHandler,
-            publishToolsHandler = publishHandler,
+            switchToolchainHandler = switchHandler,
         )
 
         val plan = SetupPlan(
-            planId = "plan-123",
+            planId = "plan-fail",
             revisionHash = "rev-hash",
             environmentKey = "Ubuntu",
             kind = SetupPlanKind.FULL_SETUP,
             orderedActions = listOf(
                 SetupPlanAction.InstallPackages(listOf("git")),
-                SetupPlanAction.SyncSources(listOf("android-tools")),
-                SetupPlanAction.BuildRecipes(listOf("android-tools")),
+                SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L),
             ),
         )
 
-        val context = ExecutionContext(
-            distro = "Ubuntu",
-            home = "/home/test",
-            binDir = "/home/test/bin",
-            extDir = "/home/test/ext",
-            workDir = "/home/test/work",
-            plan = plan,
-            scope = operationScope,
-        )
-
-        val outcome = executor.execute(context)
+        val outcome = executor.execute(makeContext(plan))
         val failure = assertIs<SetupOutcome.Failed>(outcome)
         assertTrue(failure.reason.contains("Forced failure"))
-        assertTrue(buildHandler.executedActions.isEmpty(), "Subsequent actions must not execute after failure")
+        assertTrue(switchHandler.executedActions.isEmpty(), "SwitchToolchain must not execute after failure")
+    }
+
+    // -----------------------------------------------------------------------
+    // PlanExecutor.switchToolchainHandler is accessible for DI assertion
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun planExecutorExposesSwitchToolchainHandler() {
+        val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
+        val executor = PlanExecutor(switchToolchainHandler = switchHandler)
+        assertNotNull(executor.switchToolchainHandler, "switchToolchainHandler must be exposed for DI gate")
     }
 }

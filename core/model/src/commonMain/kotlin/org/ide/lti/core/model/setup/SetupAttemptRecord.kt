@@ -141,9 +141,43 @@ public data class PersistedUserHandoff(
 
 /**
  * Persisted plan action representation for durable storage across restarts.
+ *
+ * [switchInputs] carries the full frozen inputs for [type] == "SWITCH_TOOLCHAIN",
+ * keyed by group ID. Null means the entry pre-dates 008 full serialization; callers
+ * must fall back to [SetupPlanFactory.defaultCatalogInputs] in that case.
+ * [selectionRevision] and [forceRebuildGroups] likewise default to pre-008 values.
  */
 @Serializable
-public data class PersistedPlanAction(val actionId: String, val type: String, val payload: List<String> = emptyList())
+public data class PersistedPlanAction(
+    val actionId: String,
+    val type: String,
+    val payload: List<String> = emptyList(),
+    val switchInputs: Map<String, PersistedResolvedInput>? = null,
+    val selectionRevision: Long? = null,
+    val forceRebuildGroups: List<String>? = null,
+)
+
+/**
+ * Persisted immutable input for a single tool group in a SwitchToolchain action.
+ * Exactly one of [commit] (Git) or [version]+[sha256]+[url]+[archiveMember]+[platform] (Release)
+ * is non-null. The [kind] field discriminates: "git" or "release".
+ */
+@Serializable
+public data class PersistedResolvedInput(
+    val kind: String,
+    // Git fields
+    val repoUrl: String? = null,
+    val ref: String? = null,
+    val commit: String? = null,
+    val submoduleCommits: Map<String, String>? = null,
+    val resolvedAt: Long? = null,
+    // Release fields
+    val version: String? = null,
+    val url: String? = null,
+    val archiveMember: String? = null,
+    val sha256: String? = null,
+    val platform: String? = null,
+)
 
 /**
  * Persisted setup plan enabling durable recovery and continuation across sessions.

@@ -201,6 +201,7 @@ class SetupViewModel(
         sourceResolver = sourceResolver,
         installationPort = toolchainInstallationPort,
         restoreCoordinator = restoreCoordinator,
+        activeDistroProvider = { toolchainSetupState.value.activeDistro ?: "Ubuntu" },
         isBuildingProvider = {
             val step = toolchainSetupState.value.steps
                 .firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
@@ -217,10 +218,8 @@ class SetupViewModel(
         environmentSetupState.checkEnvironmentStatus()
         viewModelScope.launch {
             toolchainSetupState.collect { state ->
-                val compilationStep = state.steps.firstOrNull { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION }
-                if (compilationStep?.status == StepStatus.RUNNING || compilationStep?.status == StepStatus.SUCCESS) {
-                    toolVersionsState.refresh()
-                }
+                val distro = state.activeDistro ?: "Ubuntu"
+                toolVersionsState.refresh(distro)
             }
         }
         viewModelScope.launch {

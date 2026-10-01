@@ -179,7 +179,13 @@ public enum class SetupPlanKind {
 
 /**
  * Concrete action in an immutable setup plan.
- * Actions identify package installs, source sync, recipe builds and publication exactly; no global signing action.
+ *
+ * Only two action kinds exist in the 008 layout:
+ * - [InstallPackages]: privilege-requiring system remediation via apt/pip.
+ * - [SwitchToolchain]: the single content-addressable build-and-activate step.
+ *
+ * Legacy SyncSources/BuildRecipes/PublishTools actions are removed. Any code that
+ * constructs those types from the old layout is a build error.
  */
 public sealed interface SetupPlanAction {
     public val description: String
@@ -205,23 +211,22 @@ public sealed interface SetupPlanAction {
         }
     }
 
-    public data class SyncSources(val submodules: List<String>) : SetupPlanAction {
-        override val description: String = "Sync submodules: ${submodules.joinToString()}"
-    }
-
-    public data class BuildRecipes(val recipeGroups: List<String>) : SetupPlanAction {
-        override val description: String = "Build recipes: ${recipeGroups.joinToString()}"
-    }
-
-    public data class PublishTools(val toolIds: List<String>) : SetupPlanAction {
-        override val description: String = "Publish tools: ${toolIds.joinToString()}"
-    }
-
+    /**
+     * Immutable, content-addressable toolchain switch.
+     *
+     * [inputs] maps every catalog group to its frozen [ResolvedInput]; all groups must be present.
+     * [selectionRevision] is the monotonic revision from the selection repository at the moment
+     * the plan was confirmed; confirmation is rejected if the revision changed.
+     * [forceRebuildGroups] bypasses artifact-cache reuse for the listed groups only.
+     */
     public data class SwitchToolchain(
         val inputs: Map<ToolGroupId, ResolvedInput>,
         val selectionRevision: Long,
         val forceRebuildGroups: Set<ToolGroupId> = emptySet(),
     ) : SetupPlanAction {
+        init {
+            require(inputs.isNotEmpty()) { "SwitchToolchain requires at least one frozen input" }
+        }
         override val description: String = "Switch toolchain to revision $selectionRevision"
     }
 }

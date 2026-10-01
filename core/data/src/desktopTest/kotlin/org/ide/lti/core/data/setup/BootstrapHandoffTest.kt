@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.setup
 
 import com.russhwolf.settings.MapSettings
+import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
@@ -22,11 +23,17 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
+import org.ide.lti.core.data.setup.execute.ExecutionContext
+import org.ide.lti.core.data.setup.execute.PlanActionHandler
+import org.ide.lti.core.data.setup.execute.PlanExecutor
+import org.ide.lti.core.data.setup.execute.toPersistedSetupPlan
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
+import org.ide.lti.core.domain.setup.SetupPlan
+import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
@@ -446,5 +453,82 @@ class BootstrapHandoffTest {
         assertFalse(
             packagesStep.status == StepStatus.SUCCESS && packagesStep.description == "Prerequisite packages installed",
         )
+    }
+
+    @Test
+    fun `resuming package handoff from switch action reruns the frozen switch action`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val sharedSettings = MapSettings()
+        val repo = inMemoryToolchainRepository(sharedSettings)
+
+        val frozenInputs = SetupPlanFactory.defaultCatalogInputs()
+        val plan = SetupPlan(
+            planId = "plan-switch-handoff",
+            revisionHash = "rev-switch-1",
+            environmentKey = "Ubuntu",
+            kind = SetupPlanKind.FULL_SETUP,
+            targetStageOrToolId = null,
+            orderedActions = listOf(
+                SetupPlanAction.SwitchToolchain(
+                    inputs = frozenInputs,
+                    selectionRevision = 0L,
+                ),
+            ),
+        )
+        val handoff = PersistedUserHandoff(
+            actionId = "prereq-packages-switch-toolchain",
+            distro = "Ubuntu",
+            command = "sudo apt-get install -y cmake",
+            packages = listOf("cmake"),
+            timestampEpochMs = System.currentTimeMillis(),
+        )
+        repo.recordAttemptAuthorized(
+            org.ide.lti.core.model.setup.SetupAttemptRecord(
+                attemptId = "attempt-sw",
+                environmentKey = "Ubuntu",
+                planId = plan.planId,
+                planRevisionHash = plan.revisionHash,
+                planKind = plan.kind.name,
+                plannedActionIds = listOf("switch-toolchain"),
+                status = AttemptStatus.AUTHORIZED,
+            ),
+        )
+        repo.recordAttemptAwaitingUserAction(
+            attemptId = "attempt-sw",
+            handoff = handoff,
+            plan = plan.toPersistedSetupPlan(),
+        )
+
+        var switchActionExecuted = false
+        val customHandler = object : PlanActionHandler<SetupPlanAction.SwitchToolchain> {
+            override suspend fun execute(
+                action: SetupPlanAction.SwitchToolchain,
+                context: ExecutionContext,
+            ): SetupOutcome? {
+                switchActionExecuted = true
+                return null
+            }
+        }
+
+        val planExecutor = PlanExecutor(
+            switchToolchainHandler = customHandler,
+        )
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher,
+            planExecutor = planExecutor,
+        )
+
+        val outcome = provisioner.resume("attempt-sw")
+        assertTrue(switchActionExecuted, "Switch action must execute upon resume and not be skipped as completed")
     }
 }

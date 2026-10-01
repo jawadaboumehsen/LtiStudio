@@ -83,6 +83,12 @@ sealed interface ActivationOutcome {
     data class Conflict(val actualActiveInstallId: InstallId?) : ActivationOutcome
     data object RequestMismatch : ActivationOutcome
     data class InvalidTarget(val reason: String) : ActivationOutcome
+    data class Rejected(
+        val code: String,
+        val reason: String? = null,
+        val actualActiveInstallId: InstallId? = null,
+        val conflictingToolIds: List<String> = emptyList(),
+    ) : ActivationOutcome
     data class VerifyFailedRestored(val reason: String, val activeInstallId: InstallId?) : ActivationOutcome
     data object MaintenanceFailed : ActivationOutcome
     data object InProgress : ActivationOutcome

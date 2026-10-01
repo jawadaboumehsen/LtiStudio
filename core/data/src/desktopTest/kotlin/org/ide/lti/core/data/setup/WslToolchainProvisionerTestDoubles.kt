@@ -223,6 +223,7 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     val existingPaths: MutableSet<String> = mutableSetOf()
     val fileContents: MutableMap<String, String> = mutableMapOf()
     val commandLog = mutableListOf<String>()
+    var commandInterceptor: ((List<String>) -> CliExecutionResult?)? = null
 
     /** Pinned tools whose installed file hashes to something other than its pin (an older download). */
     val staleDigests: MutableSet<String> = mutableSetOf()
@@ -261,12 +262,18 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     ): CliExecutionResult {
         val cmdStr = command.joinToString(" ")
         commandLog.add("WSL: $cmdStr")
+        val intercepted = commandInterceptor?.invoke(command)
+        if (intercepted != null) return intercepted
         if (cmdStr.contains("/etc/os-release")) {
             return CliExecutionResult(
                 0,
                 "NAME=\"Ubuntu\"\nVERSION=\"24.04 LTS (Noble Numbat)\"\nID=ubuntu\nVERSION_ID=\"24.04\"\n",
                 "",
             )
+        }
+        if (cmdStr.contains("realpath")) {
+            val path = command.lastOrNull()?.replace("//", "/") ?: ""
+            return CliExecutionResult(0, path, "")
         }
         if (cmdStr.contains("id -un; printf '%s' \"\$HOME\"") || cmdStr.contains("id -un")) {
             val u = userHome.substringAfterLast('/').ifBlank { "lti" }
@@ -400,6 +407,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 existingPaths.removeIf { it == target || it.startsWith("$target/") }
             }
             return CliExecutionResult(0, "", "")
+        }
+        if (command.firstOrNull() == "test" && command.getOrNull(1) == "-L") {
+            return CliExecutionResult(1, "", "")
         }
         if (cmdStr.contains("test -e") ||
             cmdStr.contains("test -d") ||

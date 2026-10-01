@@ -23,9 +23,17 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolGroupId
+import org.ide.lti.core.domain.setup.SetupPlanAction
+import org.ide.lti.core.data.setup.execute.ExecutionContext
+import org.ide.lti.core.data.setup.execute.PlanActionHandler
+import org.ide.lti.core.data.setup.execute.PlanExecutor
+import org.ide.lti.core.data.setup.execute.handlers.InstallPackagesHandler
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
+import org.ide.lti.core.model.setup.ToolRef
+import org.ide.lti.core.model.setup.ToolSelection
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,6 +42,35 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WslToolchainProvisionerTest {
+
+    /**
+     * The v2 setup plan delegates all toolchain mutation to SwitchToolchainHandler.
+     * These provisioner tests exercise orchestration, so this handler simulates a verified
+     * installation while preserving the real package-handoff handler and final live check.
+     */
+    private fun testPlanExecutor(cli: FakeWslCliExecutor): PlanExecutor = PlanExecutor(
+        installPackagesHandler = InstallPackagesHandler(),
+        switchToolchainHandler = object : PlanActionHandler<SetupPlanAction.SwitchToolchain> {
+            override suspend fun execute(
+                action: SetupPlanAction.SwitchToolchain,
+                context: ExecutionContext,
+            ): SetupOutcome? {
+                cli.execute(context.distro, listOf("mkdir", "-p", context.workDir))
+                cli.existingPaths += "/home/lti/LtiRomTools/external"
+                WslToolchainProvisioner.SUBMODULES.forEach { submodule ->
+                    cli.existingPaths += "/home/lti/LtiRomTools/external/${submodule.name}"
+                }
+                WslToolchainProvisioner.CORE_BINARIES.forEach { cli.existingPaths += "/home/lti/LtiRomTools/bin/$it" }
+                WslToolchainProvisioner.ALL_CORE_TOOLS.forEach { cli.existingPaths += "/home/lti/LtiRomTools/bin/$it" }
+                ToolCatalog.entries.forEach { tool ->
+                    cli.existingPaths += "/home/lti/LtiRomTools/bin/${tool.binaryName}"
+                    cli.existingPaths += "/home/lti/LtiRomTools/bin/${tool.id}"
+                }
+                context.toolPublicationPort?.publish(context.binDir, ToolCatalog.ALL_TOOL_IDS)
+                return null
+            }
+        },
+    )
 
     @Test
     fun `checkStatus reports failure when WSL is not installed`() = runTest {
@@ -194,6 +231,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
@@ -255,6 +293,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         assertFalse(fakeCli.existingPaths.contains("/home/lti/LtiRomWorkDir"))
@@ -288,6 +327,7 @@ class WslToolchainProvisionerTest {
             cli = fakeCli,
             dispatcher = testDispatcher,
             toolPublicationPort = fakePublication,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
@@ -305,6 +345,60 @@ class WslToolchainProvisionerTest {
         assertTrue(finalState.unpublishedToolIds.isEmpty())
     }
 
+    @Test
+    fun `confirmation is rejected if saved selections changed during review`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor()
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val supervisor = FakeDaemonSupervisor()
+        val transport = FakeRemoteTransport(fakeCli = fakeCli)
+        val repository = inMemoryToolchainRepository()
+
+        // Seed initial selection
+        repository.saveSelections(
+            distro = "Ubuntu",
+            expectedRevision = 0L,
+            desired = mapOf(
+                ToolGroupId("android-tools") to ToolSelection(
+                    group = "android-tools",
+                    repoUrl = null,
+                    ref = ToolRef.Tag("sixteen"),
+                ),
+            ),
+        )
+
+        val provisioner = WslToolchainProvisioner(
+            supervisor = supervisor,
+            transport = transport,
+            repository = repository,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher,
+        )
+
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+
+        // Mutate saved selection while review/confirmation is pending
+        repository.saveSelections(
+            distro = "Ubuntu",
+            expectedRevision = repository.desiredSelections("Ubuntu").revision,
+            desired = mapOf(
+                ToolGroupId("android-tools") to ToolSelection(
+                    group = "android-tools",
+                    repoUrl = "https://github.com/custom/android-tools.git",
+                    ref = ToolRef.Commit("1111222233334444555566667777888899990000"),
+                ),
+            ),
+        )
+
+        val outcome = provisioner.confirm(plan.planId, plan.revisionHash)
+        assertTrue(outcome is SetupOutcome.Failed, "Confirmation must fail if selections mutated during review")
+        assertTrue(
+            outcome.reason.contains("Saved selections changed"),
+            "Expected 'Saved selections changed' failure reason, got: ${outcome.reason}",
+        )
+    }
+
     private class FailingJournalRepository(private val delegate: ToolchainSetupRepository) :
         ToolchainSetupRepository by delegate {
         override suspend fun recordAttemptAwaitingUserAction(
@@ -312,6 +406,46 @@ class WslToolchainProvisionerTest {
             handoff: PersistedUserHandoff,
             plan: PersistedSetupPlan,
         ): Result<Unit> = Result.failure(IllegalStateException("Simulated journal write failure"))
+    }
+
+    private class EmptyPersistedPlanRepository(private val delegate: ToolchainSetupRepository) :
+        ToolchainSetupRepository by delegate {
+        override suspend fun recordAttemptAwaitingUserAction(
+            attemptId: String,
+            handoff: PersistedUserHandoff,
+            plan: PersistedSetupPlan,
+        ): Result<Unit> = delegate.recordAttemptAwaitingUserAction(
+            attemptId,
+            handoff,
+            plan.copy(actions = emptyList()),
+        )
+    }
+
+    @Test
+    fun `resume refuses an empty persisted plan instead of falsely succeeding`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor().apply { missingDevPackages = true }
+        val detector = WslEnvironmentDetector(cli = fakeCli)
+        val repo = EmptyPersistedPlanRepository(inMemoryToolchainRepository())
+        val provisioner = WslToolchainProvisioner(
+            supervisor = FakeDaemonSupervisor(),
+            transport = FakeRemoteTransport(fakeCli = fakeCli),
+            repository = repo,
+            detector = detector,
+            cli = fakeCli,
+            dispatcher = testDispatcher,
+        )
+
+        provisioner.verifyEnvironment()
+        val plan = provisioner.prepare(SetupPlanKind.FULL_SETUP)
+        val handoff = provisioner.confirm(plan.planId, plan.revisionHash) as SetupOutcome.AwaitingUserAction
+        fakeCli.missingDevPackages = false
+
+        val resumed = provisioner.resume(handoff.pendingPlanId)
+
+        assertTrue(resumed is SetupOutcome.Interrupted, "Empty frozen plan must fail closed: $resumed")
+        assertTrue(resumed.reason.contains("no resumable actions"))
+        assertEquals(AttemptStatus.AWAITING_USER_ACTION, repo.currentState.activeAttempt?.status)
     }
 
     @Test
@@ -333,6 +467,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         provisioner1.verifyEnvironment()
@@ -357,6 +492,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         // Initial restored state detects pending attempt in AWAITING_USER_ACTION
@@ -434,6 +570,7 @@ class WslToolchainProvisionerTest {
             detector = detector,
             cli = fakeCli,
             dispatcher = testDispatcher,
+            planExecutor = testPlanExecutor(fakeCli),
         )
 
         provisioner.verifyEnvironment()

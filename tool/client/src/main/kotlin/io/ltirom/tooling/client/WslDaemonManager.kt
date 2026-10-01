@@ -63,6 +63,8 @@ public class WslDaemonManager(
     private var owned: OwnedProcess? = null
     private var connectionInfo: ServerConnectionDescriptor? = null
 
+    public val activeDistro: String? get() = connectionInfo?.distro ?: boundDistro ?: config.distroName
+
     /**
      * Target of the last admitted start (distro, home, Java). Callers without an operation context
      * (the transport's per-request `ensureStarted()`) reconnect or relaunch against this same target;

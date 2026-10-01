@@ -18,6 +18,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
@@ -43,7 +44,7 @@ public fun detectHostArch(): String = when (System.getProperty("os.arch")?.lower
 public class WslToolchainInstallationAdapter(
     public val installationManager: InstallationManager,
     private val transport: RemoteTransportPort,
-    private val distro: String = "Ubuntu",
+    private val distroProvider: () -> String = { "Ubuntu" },
     private val arch: String = detectHostArch(),
     private val catalogOutputs: List<InstallOutputDescriptor> = ToolGroupCatalog.allOutputs.map { out ->
         InstallOutputDescriptor(
@@ -55,6 +56,13 @@ public class WslToolchainInstallationAdapter(
     },
     private val cli: WslCliExecutor = WslCliExecutor(),
 ) : ToolchainInstallationPort {
+    public constructor(
+        installationManager: InstallationManager,
+        transport: RemoteTransportPort,
+        distro: String,
+    ) : this(installationManager, transport, { distro })
+
+    private val distro: String get() = distroProvider()
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -183,11 +191,16 @@ public class WslToolchainInstallationAdapter(
     }
 
     override suspend fun cleanup(references: Set<InstallId>): CleanupReport {
-        val currentState = state()
+        val remoteState = transport.getToolchainState()
+            ?: throw IllegalStateException(
+                "Cannot clean up: build service is unavailable; cannot safely determine active toolchain state",
+            )
+        val active = remoteState.activeInstallId
+        val prev = remoteState.previousInstallId
         val protectedIds = references.map { it.value }.toSet()
         val res = installationManager.cleanup(
-            activeInstallId = currentState.activeInstallId?.value,
-            previousInstallId = currentState.previousInstallId?.value,
+            activeInstallId = active,
+            previousInstallId = prev,
             protectedInstallIds = protectedIds,
         )
 
@@ -209,17 +222,26 @@ public class WslToolchainInstallationAdapter(
         else -> null
     }
 
-    private fun mapCodeToOutcome(resp: ActivateToolchainResponse): ActivationOutcome = when (resp.code) {
-        "BLOCKED" -> ActivationOutcome.Blocked(resp.activeWork ?: 1)
-        "CONFLICT" -> ActivationOutcome.Conflict(resp.actual?.let { InstallId(it) })
-        "REQUEST_MISMATCH" -> ActivationOutcome.RequestMismatch
-        "INVALID_TARGET" -> ActivationOutcome.InvalidTarget(resp.reason ?: "Invalid target install")
-        "VERIFY_FAILED" -> ActivationOutcome.VerifyFailedRestored(
-            reason = resp.reason ?: "Verification failed",
-            activeInstallId = resp.activeInstallId?.let { InstallId(it) },
-        )
-        "MAINTENANCE_FAILED" -> ActivationOutcome.MaintenanceFailed
-        else -> ActivationOutcome.Unknown
+    @Suppress("CyclomaticComplexMethod")
+    private fun mapCodeToOutcome(resp: ActivateToolchainResponse): ActivationOutcome {
+        val code = resp.code ?: return ActivationOutcome.Unknown
+        return when (code) {
+            "BLOCKED" -> ActivationOutcome.Blocked(resp.activeWork ?: 1)
+            "CONFLICT" -> ActivationOutcome.Conflict(resp.actual?.let { InstallId(it) })
+            "REQUEST_MISMATCH" -> ActivationOutcome.RequestMismatch
+            "INVALID_TARGET" -> ActivationOutcome.InvalidTarget(resp.reason ?: "Invalid target install")
+            "VERIFY_FAILED" -> ActivationOutcome.VerifyFailedRestored(
+                reason = resp.reason ?: "Verification failed",
+                activeInstallId = (resp.activeInstallId ?: resp.actual)?.let { InstallId(it) },
+            )
+            "MAINTENANCE_FAILED" -> ActivationOutcome.MaintenanceFailed
+            else -> ActivationOutcome.Rejected(
+                code = code,
+                reason = resp.reason,
+                actualActiveInstallId = resp.actual?.let { InstallId(it) },
+                conflictingToolIds = resp.toolIds.orEmpty(),
+            )
+        }
     }
 
     private fun parseRecordJson(recordJson: String): ActivationOutcome {
@@ -230,16 +252,19 @@ public class WslToolchainInstallationAdapter(
 
     private fun mapRecordFieldsToOutcome(root: kotlinx.serialization.json.JsonObject): ActivationOutcome {
         val state = root["state"]?.jsonPrimitive?.contentOrNull
-        val target = root["target"]?.jsonPrimitive?.contentOrNull.orEmpty()
-        val activeInstallId = root["activeInstallId"]?.jsonPrimitive?.contentOrNull
+        val target = root["to"]?.jsonPrimitive?.contentOrNull
+            ?: root["target"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        val activeInstallId = root["activeInstallId"]?.jsonPrimitive?.contentOrNull ?: target
         val reason = root["reason"]?.jsonPrimitive?.contentOrNull
 
         return when (state) {
-            "COMMITTED" -> ActivationOutcome.Committed(InstallId(activeInstallId ?: target))
+            "COMMITTED" -> ActivationOutcome.Committed(InstallId(activeInstallId))
             "SWITCHING", "IN_PROGRESS" -> ActivationOutcome.InProgress
             "RESTORED", "VERIFY_FAILED" -> ActivationOutcome.VerifyFailedRestored(
                 reason = reason ?: "Verification failed",
-                activeInstallId = activeInstallId?.let { InstallId(it) },
+                activeInstallId = (root["from"] ?: root["activeInstallId"])?.jsonPrimitive?.contentOrNull?.let {
+                    InstallId(it)
+                },
             )
             "MAINTENANCE_FAILED" -> ActivationOutcome.MaintenanceFailed
             else -> mapRecordRejectionToOutcome(root, reason)
@@ -250,14 +275,29 @@ public class WslToolchainInstallationAdapter(
         root: kotlinx.serialization.json.JsonObject,
         reason: String?,
     ): ActivationOutcome {
-        val actualActive = root["actualActiveInstallId"]?.jsonPrimitive?.contentOrNull
+        val actualActive = (root["from"] ?: root["actualActiveInstallId"])?.jsonPrimitive?.contentOrNull
         val activeWorkCount = root["activeWorkCount"]?.jsonPrimitive?.intOrNull ?: 1
-        return when (root["state"]?.jsonPrimitive?.contentOrNull) {
+        val code = root["rejectionCode"]?.jsonPrimitive?.contentOrNull
+            ?: root["code"]?.jsonPrimitive?.contentOrNull
+            ?: root["state"]?.jsonPrimitive?.contentOrNull
+            ?: "REJECTED"
+        val toolIds = root["toolIds"]?.let { elem ->
+            runCatching {
+                elem.jsonArray.mapNotNull { it.jsonPrimitive.contentOrNull }
+            }.getOrNull()
+        }.orEmpty()
+
+        return when (code) {
             "BLOCKED" -> ActivationOutcome.Blocked(activeWorkCount)
             "CONFLICT" -> ActivationOutcome.Conflict(actualActive?.let { InstallId(it) })
             "REQUEST_MISMATCH" -> ActivationOutcome.RequestMismatch
             "INVALID_TARGET" -> ActivationOutcome.InvalidTarget(reason ?: "Invalid target")
-            else -> ActivationOutcome.Unknown
+            else -> ActivationOutcome.Rejected(
+                code = code,
+                reason = reason,
+                actualActiveInstallId = actualActive?.let { InstallId(it) },
+                conflictingToolIds = toolIds,
+            )
         }
     }
 }

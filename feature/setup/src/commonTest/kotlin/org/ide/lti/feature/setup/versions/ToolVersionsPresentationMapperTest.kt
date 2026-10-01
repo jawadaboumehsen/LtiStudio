@@ -59,4 +59,61 @@ class ToolVersionsPresentationMapperTest {
         assertEquals("Needs recovery", row.status.label)
         assertEquals("Recover", row.status.primaryAction)
     }
+
+    @Test
+    fun `maps to not installed when installedVersion is null`() {
+        val row = ToolVersionsPresentationMapper.mapGroupRow(
+            groupId = "android-tools",
+            installedVersion = null,
+            desiredVersion = "v1.2.3",
+            isHealthy = true,
+        )
+
+        assertEquals("Not installed", row.installedLabel)
+        assertEquals(ToolGroupStatus.NOT_INSTALLED, row.status)
+        assertEquals("Not installed", row.status.label)
+        assertEquals("Install", row.status.primaryAction)
+    }
+
+    @Test
+    fun `maps to checking when isChecking is true`() {
+        val row = ToolVersionsPresentationMapper.mapGroupRow(
+            groupId = "android-tools",
+            installedVersion = "v1.2.3",
+            desiredVersion = "v1.2.3",
+            isChecking = true,
+        )
+
+        assertEquals(ToolGroupStatus.CHECKING, row.status)
+        assertEquals("Checking", row.status.label)
+        assertEquals("Please wait", row.status.primaryAction)
+    }
+
+    @Test
+    fun `maps to waiting for jobs when isWaitingForJobs is true`() {
+        val row = ToolVersionsPresentationMapper.mapGroupRow(
+            groupId = "android-tools",
+            installedVersion = "v1.2.3",
+            desiredVersion = "v1.2.3",
+            isWaitingForJobs = true,
+        )
+
+        assertEquals(ToolGroupStatus.WAITING_FOR_RUNNING_JOBS, row.status)
+        assertEquals("Waiting for running jobs", row.status.label)
+        assertEquals("View jobs", row.status.primaryAction)
+    }
+
+    @Test
+    fun `maps to service unavailable when isServiceUnavailable is true`() {
+        val row = ToolVersionsPresentationMapper.mapGroupRow(
+            groupId = "android-tools",
+            installedVersion = "v1.2.3",
+            desiredVersion = "v1.2.3",
+            isServiceUnavailable = true,
+        )
+
+        assertEquals(ToolGroupStatus.SERVICE_UNAVAILABLE, row.status)
+        assertEquals("Service unavailable", row.status.label)
+        assertEquals("Check service", row.status.primaryAction)
+    }
 }

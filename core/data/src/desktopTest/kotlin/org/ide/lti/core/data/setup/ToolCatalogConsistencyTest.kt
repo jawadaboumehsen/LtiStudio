@@ -13,6 +13,7 @@ import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.ToolCapabilities
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -85,25 +86,25 @@ class ToolCatalogConsistencyTest {
     }
 
     @Test
-    fun testSetupPlanFactoryPublishesAllCatalogIdsOnFullSetup() {
+    fun testSetupPlanFactoryFullSetupProducesSwitchToolchainWithAllGroups() {
         val plan = SetupPlanFactory.createPlan(
             kind = SetupPlanKind.FULL_SETUP,
             snapshot = ToolchainSetupState(),
             environmentKey = "Ubuntu-24.04",
         )
-        val publishAction = plan.orderedActions.filterIsInstance<SetupPlanAction.PublishTools>().firstOrNull()
-        assertNotNull(publishAction, "Full setup plan must include PublishTools action")
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "Full setup plan must include SwitchToolchain action")
 
-        val expectedIds = ToolCatalog.ALL_TOOL_IDS.toList().sorted()
+        val catalogGroupIds = ToolGroupCatalog.DEFAULT_GROUPS.map { it.id }.toSet()
         assertEquals(
-            expectedIds,
-            publishAction.toolIds.sorted(),
-            "Full setup PublishTools must request all catalog tool IDs",
+            catalogGroupIds,
+            switch.inputs.keys,
+            "Full setup SwitchToolchain must contain all catalog group inputs",
         )
     }
 
     @Test
-    fun testSetupPlanFactoryPublishesUnpublishedCatalogIdsOnStageRetry() {
+    fun testSetupPlanFactoryStageRetrySwitchToolchainContainsAllGroups() {
         val published = setOf("lpmake", "unpack_bootimg")
         val snapshot = ToolchainSetupState(publishedToolIds = published)
             .withStagesPassed(SetupStepStage.REPO_SYNCHRONIZATION)
@@ -115,14 +116,14 @@ class ToolCatalogConsistencyTest {
             environmentKey = "Ubuntu-24.04",
         )
 
-        val publishAction = plan.orderedActions.filterIsInstance<SetupPlanAction.PublishTools>().firstOrNull()
-        assertNotNull(publishAction, "TOOLCHAIN_COMPILATION retry plan must include PublishTools action")
+        val switch = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        assertNotNull(switch, "TOOLCHAIN_COMPILATION retry plan must include SwitchToolchain action")
 
-        val expectedUnpublished = (ToolCatalog.ALL_TOOL_IDS - published).toList().sorted()
+        val catalogGroupIds = ToolGroupCatalog.DEFAULT_GROUPS.map { it.id }.toSet()
         assertEquals(
-            expectedUnpublished,
-            publishAction.toolIds.sorted(),
-            "Stage retry PublishTools must request exactly unpublished catalog tool IDs",
+            catalogGroupIds,
+            switch.inputs.keys,
+            "Stage retry SwitchToolchain must contain all catalog group inputs",
         )
     }
 

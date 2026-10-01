@@ -10,11 +10,16 @@
 package org.ide.lti.feature.setup.versions
 
 public enum class ToolGroupStatus(public val label: String, public val primaryAction: String) {
+    NOT_INSTALLED("Not installed", "Install"),
+    CHECKING("Checking", "Please wait"),
     UP_TO_DATE("Up to date", "Edit version"),
     CHANGE_PENDING("Change pending", "Review & build"),
     UPDATE_AVAILABLE("Update available", "Review update"),
     UNSUPPORTED("Unsupported", "Edit version"),
     BUILDING("Building", "View progress"),
+    WAITING_FOR_RUNNING_JOBS("Waiting for running jobs", "View jobs"),
+    RECOVERY_REQUIRED("Recovery required", "Recover"),
+    SERVICE_UNAVAILABLE("Service unavailable", "Check service"),
     NEEDS_RECOVERY("Needs recovery", "Recover"),
 }
 
@@ -35,12 +40,25 @@ public object ToolVersionsPresentationMapper {
         isBuilding: Boolean = false,
         isUnsupported: Boolean = false,
         hasUpdateAvailable: Boolean = false,
+        isChecking: Boolean = false,
+        isWaitingForJobs: Boolean = false,
+        isServiceUnavailable: Boolean = false,
+        isInstallationDataInvalid: Boolean = false,
     ): ToolGroupRowModel {
-        val installedLabel = installedVersion ?: "none"
+        val installedLabel = when {
+            isInstallationDataInvalid -> "Installation data unavailable"
+            installedVersion != null -> installedVersion
+            else -> "Not installed"
+        }
         val selectedLabel = desiredVersion ?: installedLabel
 
         val status = when {
+            isServiceUnavailable -> ToolGroupStatus.SERVICE_UNAVAILABLE
+            isChecking -> ToolGroupStatus.CHECKING
+            isInstallationDataInvalid -> ToolGroupStatus.NEEDS_RECOVERY
+            installedVersion == null -> ToolGroupStatus.NOT_INSTALLED
             !isHealthy -> ToolGroupStatus.NEEDS_RECOVERY
+            isWaitingForJobs -> ToolGroupStatus.WAITING_FOR_RUNNING_JOBS
             isBuilding -> ToolGroupStatus.BUILDING
             isUnsupported -> ToolGroupStatus.UNSUPPORTED
             hasUpdateAvailable -> ToolGroupStatus.UPDATE_AVAILABLE
