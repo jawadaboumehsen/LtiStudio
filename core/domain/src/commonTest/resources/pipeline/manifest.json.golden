@@ -1,0 +1,19 @@
+{
+    "response": [
+        {
+            "datetime": 1726056000,
+            "device": "PQ84P01",
+            "filename": "Lti_1.0.0_20260911_PQ84P01-sign.zip",
+            "id": "2822c43e0c0c6dbdc5babccd1ed6d2511bb52d526ea69719bc2b938207deb490",
+            "patch": "1.0.0",
+            "size": 2500000000,
+            "urls": [
+                "https://ota.ltirom.org/updates/Lti_1.0.0_20260911_PQ84P01-sign.zip"
+            ],
+            "version": "1.0.0",
+            "incremental": "20260911.120000",
+            "sha256": "c2b647f1146f8c79a29e4726bfcf1a58a7da09f193758bdf214ff94e0192e4ab",
+            "changelog": "Initial release"
+        }
+    ]
+}

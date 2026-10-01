@@ -1,0 +1,13 @@
+usage: avbtool make_cert_metadata [-h] [--output OUTPUT]
+                                  --intermediate_key_certificate
+                                  INTERMEDIATE_KEY_CERTIFICATE
+                                  --product_key_certificate
+                                  PRODUCT_KEY_CERTIFICATE
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Write metadata to file
+  --intermediate_key_certificate INTERMEDIATE_KEY_CERTIFICATE
+                        Path to intermediate key certificate file
+  --product_key_certificate PRODUCT_KEY_CERTIFICATE
+                        Path to product key certificate file

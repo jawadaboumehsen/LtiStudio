@@ -1,0 +1,93 @@
+{
+    "schemaVersion": 1,
+    "tool": "unpack_bootimg",
+    "executable": "unpack_bootimg",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "06b54dd9a07c5281778e29e234e76f6e3faee8bf0c904a5ef88fdee30eeed12e",
+    "helpSha256": "d4397b03fba15cc385dc1a32e7394e7fb03b416fc407ba4e8bc447799ce59dd8",
+    "globalOptions": [
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "show this help message and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "bootImg",
+            "spelling": "--boot_img",
+            "description": "path to the boot, recovery or vendor_boot image",
+            "type": "STRING"
+        },
+        {
+            "name": "out",
+            "spelling": "--out",
+            "description": "output directory of the unpacked images",
+            "type": "STRING"
+        },
+        {
+            "name": "format",
+            "spelling": "--format",
+            "description": "{info,mkbootimg}",
+            "type": "CHOICE",
+            "choices": [
+                "info",
+                "mkbootimg"
+            ],
+            "default": "info"
+        },
+        {
+            "name": "nullValue",
+            "spelling": "--null",
+            "aliases": [
+                "-0"
+            ],
+            "description": "output null-terminated argument strings",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "boot-image-metadata",
+            "outputType": "io.ltirom.tooling.core.BootImageMetadata",
+            "artifacts": [
+                {"name": "bootImage", "parameter": "bootImg", "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "outputDirectory", "parameter": "out", "type": "DIRECTORY", "direction": "OUTPUT", "required": false}
+            ]
+        }
+    ]
+}

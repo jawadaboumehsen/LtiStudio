@@ -1,0 +1,6 @@
+usage: avbtool erase_footer [-h] --image IMAGE [--keep_hashtree]
+
+options:
+  -h, --help       show this help message and exit
+  --image IMAGE    Image with a footer
+  --keep_hashtree  Keep the hashtree and FEC in the image

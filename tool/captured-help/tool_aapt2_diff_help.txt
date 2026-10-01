@@ -1,0 +1,6 @@
+aapt2 diff [options] files...
+
+Options:
+ --help                                            Displays this help menu
+ --ignore-id-shift                                 Match the resources when their IDs shift, e.g. because of the added
+                                                   or deleted entries.

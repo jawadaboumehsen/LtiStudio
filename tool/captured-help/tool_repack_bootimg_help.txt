@@ -1,0 +1,46 @@
+usage: repack_bootimg [-h] (--src_bootimg SRC_BOOTIMG | --local) --dst_bootimg
+                      DST_BOOTIMG --ramdisk_add SRC_FILE:DST_FILE
+                      [SRC_FILE:DST_FILE ...]
+
+Repacks boot, recovery or vendor_boot image by importing ramdisk files from --src_bootimg to --dst_bootimg.
+
+options:
+  -h, --help            show this help message and exit
+  --src_bootimg SRC_BOOTIMG
+                        filename to source boot image
+  --local               use local files as repack source
+  --dst_bootimg DST_BOOTIMG
+                        filename to destination boot image
+  --ramdisk_add SRC_FILE:DST_FILE [SRC_FILE:DST_FILE ...]
+                        a copy pair to copy into the ramdisk of --dst_bootimg
+
+Usage examples:
+
+  * --ramdisk_add SRC_FILE:DST_FILE
+
+    If --local is given, copy SRC_FILE from the local filesystem to DST_FILE in
+    the ramdisk of --dst_bootimg.
+    If --src_bootimg is specified, copy SRC_FILE from the ramdisk of
+    --src_bootimg to DST_FILE in the ramdisk of --dst_bootimg.
+
+    Copies a local file 'userdebug_plat_sepolicy.cil' into the ramdisk of
+    --dst_bootimg, and then rebuild --dst_bootimg:
+
+    $ repack_bootimg \
+        --local --dst_bootimg vendor_boot-debug.img \
+        --ramdisk_add userdebug_plat_sepolicy.cil:userdebug_plat_sepolicy.cil
+
+    Copies 'first_stage_ramdisk/userdebug_plat_sepolicy.cil' from the ramdisk
+    of --src_bootimg to 'userdebug_plat_sepolicy.cil' in the ramdisk of
+    --dst_bootimg, and then rebuild --dst_bootimg:
+
+    $ repack_bootimg \
+        --src_bootimg boot-debug-5.4.img --dst_bootimg vendor_boot-debug.img \
+        --ramdisk_add first_stage_ramdisk/userdebug_plat_sepolicy.cil:userdebug_plat_sepolicy.cil
+
+    This option can be specified multiple times to copy multiple files:
+
+    $ repack_bootimg \
+        --local --dst_bootimg vendor_boot-debug.img \
+        --ramdisk_add file1:path/in/dst_bootimg/file1 \
+        --ramdisk_add file2:path/in/dst_bootimg/file2

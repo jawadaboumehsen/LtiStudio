@@ -1,0 +1,8 @@
+usage: avbtool resize_image [-h] --image IMAGE
+                            [--partition_size PARTITION_SIZE]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image with a footer
+  --partition_size PARTITION_SIZE
+                        New partition size

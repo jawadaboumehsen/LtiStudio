@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>FunctionExpressionBody:DialogUtils.kt:DialogUtils${ return try { FileKit.pickDirectory(title = title)?.path } catch (_: Throwable) { null } }</ID>
+    <ID>FunctionExpressionBody:DialogUtils.kt:DialogUtils${ return try { FileKit.pickFile(mode = PickerMode.Single, title = title) } catch (_: Throwable) { null } }</ID>
+    <ID>NoConsecutiveBlankLines:SystemNotifier.kt: </ID>
+    <ID>TrailingCommaOnCallSite:SystemNotifierTest.kt:SystemNotifierTest$( SystemNotification( title = "Another", message = "Should not reach mock", ) )</ID>
+    <ID>TrailingCommaOnCallSite:SystemNotifierTest.kt:SystemNotifierTest$( SystemNotification( title = "Test", message = "Should not crash", level = NotificationLevel.Info, ) )</ID>
+  </CurrentIssues>
+</SmellBaseline>

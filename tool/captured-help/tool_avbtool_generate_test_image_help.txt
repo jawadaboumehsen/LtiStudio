@@ -1,0 +1,10 @@
+usage: avbtool generate_test_image [-h] --image_size IMAGE_SIZE
+                                   [--start_byte START_BYTE] [--output OUTPUT]
+
+options:
+  -h, --help            show this help message and exit
+  --image_size IMAGE_SIZE
+                        Size of image to generate.
+  --start_byte START_BYTE
+                        Integer for the start byte of the pattern.
+  --output OUTPUT       Output file name.

@@ -1,0 +1,103 @@
+{
+    "schemaVersion": 1,
+    "tool": "fec",
+    "executable": "fec",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "0674ba6cba142e20337b8d963d85acb5b2be2248430dd773a3bb28674d0417de",
+    "helpSha256": "462caf0cf9e2feafe5b30417532df488bca85e392dd3efbeb3b93b825ae81037",
+    "globalOptions": [
+        {
+            "name": "H",
+            "spelling": "-h",
+            "description": "show this help",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "V",
+            "spelling": "-v",
+            "description": "enable verbose logging",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "roots",
+            "spelling": "--roots",
+            "aliases": [
+                "-r"
+            ],
+            "description": "number of parity bytes",
+            "type": "STRING"
+        },
+        {
+            "name": "threads",
+            "spelling": "--threads",
+            "aliases": [
+                "-j"
+            ],
+            "description": "number of threads to use",
+            "type": "STRING"
+        },
+        {
+            "name": "S",
+            "spelling": "-S",
+            "description": "treat data as a sparse file",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "padding",
+            "spelling": "--padding",
+            "aliases": [
+                "-p"
+            ],
+            "description": "add padding after ECC data",
+            "type": "STRING"
+        },
+        {
+            "name": "inplace",
+            "spelling": "--inplace",
+            "aliases": [
+                "-i"
+            ],
+            "description": "correct <data> in place",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+#!/system/bin/sh
+# LtiRom prebuilt recovery updater stub
+echo "LtiRom Recovery Updater v1.0"
+exit 0

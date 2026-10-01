@@ -1,0 +1,4 @@
+dump packagename [options] files...
+
+Options:
+ --help                                            Displays this help menu

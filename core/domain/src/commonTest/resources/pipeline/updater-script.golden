@@ -1,0 +1,53 @@
+assert(
+    getprop("ro.product.device") == "PQ84P01" ||
+    getprop("ro.build.product") == "PQ84P01" ||
+    getprop("ro.boot.em.model") == "PQ84P01" ||
+    abort("E3004: This package is for \"PQ84P01\" devices; this is a \"" + getprop("ro.product.device") + "\".");
+);
+
+ui_print("--------------------------------------");
+ui_print(" Installing LtiRom 1.0.0");
+ui_print(" Device: REDMAGIC Astra Gaming Tablet");
+ui_print("--------------------------------------");
+
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /odm; then /system/bin/umount /odm; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /product; then /system/bin/umount /product; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /system_root; then /system/bin/umount /system_root; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /system_dlkm; then /system/bin/umount /system_dlkm; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /system_ext; then /system/bin/umount /system_ext; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /vendor; then /system/bin/umount /vendor; fi");
+run_program("/system/bin/sh", "-c", "if /system/bin/mountpoint -q /vendor_dlkm; then /system/bin/umount /vendor_dlkm; fi");
+
+ui_print("Updating dynamic partitions...");
+update_dynamic_partitions(package_extract_file("dynamic_partitions_op_list"), package_extract_file("unsparse_super_empty.img"));
+
+ui_print("Patching odm image...");
+block_image_update(map_partition("odm"), package_extract_file("odm.transfer.list"), "odm.new.dat.br", "odm.patch.dat");
+ui_print("Patching product image...");
+block_image_update(map_partition("product"), package_extract_file("product.transfer.list"), "product.new.dat.br", "product.patch.dat");
+ui_print("Patching system image...");
+block_image_update(map_partition("system"), package_extract_file("system.transfer.list"), "system.new.dat.br", "system.patch.dat");
+ui_print("Patching system_dlkm image...");
+block_image_update(map_partition("system_dlkm"), package_extract_file("system_dlkm.transfer.list"), "system_dlkm.new.dat.br", "system_dlkm.patch.dat");
+ui_print("Patching system_ext image...");
+block_image_update(map_partition("system_ext"), package_extract_file("system_ext.transfer.list"), "system_ext.new.dat.br", "system_ext.patch.dat");
+ui_print("Patching vendor image...");
+block_image_update(map_partition("vendor"), package_extract_file("vendor.transfer.list"), "vendor.new.dat.br", "vendor.patch.dat");
+ui_print("Patching vendor_dlkm image...");
+block_image_update(map_partition("vendor_dlkm"), package_extract_file("vendor_dlkm.transfer.list"), "vendor_dlkm.new.dat.br", "vendor_dlkm.patch.dat");
+
+ui_print("Flashing boot...");
+package_extract_file("boot.img", "/dev/block/bootdevice/by-name/boot_a");
+package_extract_file("boot.img", "/dev/block/bootdevice/by-name/boot_b");
+ui_print("Flashing init_boot...");
+package_extract_file("init_boot.img", "/dev/block/bootdevice/by-name/init_boot_a");
+package_extract_file("init_boot.img", "/dev/block/bootdevice/by-name/init_boot_b");
+ui_print("Flashing vendor_boot...");
+package_extract_file("vendor_boot.img", "/dev/block/bootdevice/by-name/vendor_boot_a");
+package_extract_file("vendor_boot.img", "/dev/block/bootdevice/by-name/vendor_boot_b");
+ui_print("Flashing dtbo...");
+package_extract_file("dtbo.img", "/dev/block/bootdevice/by-name/dtbo_a");
+package_extract_file("dtbo.img", "/dev/block/bootdevice/by-name/dtbo_b");
+
+set_progress(1.000000);
+ui_print("Install completed successfully.");

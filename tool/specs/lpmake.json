@@ -1,0 +1,195 @@
+{
+    "schemaVersion": 1,
+    "tool": "lpmake",
+    "executable": "lpmake",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "67b64896dd0d28f955c9b59edd1383782ae68dfa2eccc84999861845cb606d1e",
+    "helpSha256": "8fc23b475e22edb5b55b3003fde4b389dc25edef33c29d32fc538de680f15781",
+    "globalOptions": [
+        {
+            "name": "deviceSize",
+            "spelling": "--device-size",
+            "aliases": [
+                "-d"
+            ],
+            "description": "Size of the block device for logical partitions.",
+            "type": "STRING"
+        },
+        {
+            "name": "metadataSize",
+            "spelling": "--metadata-size",
+            "aliases": [
+                "-m"
+            ],
+            "description": "Maximum size to reserve for partition metadata.",
+            "type": "STRING"
+        },
+        {
+            "name": "metadataSlots",
+            "spelling": "--metadata-slots",
+            "aliases": [
+                "-s"
+            ],
+            "description": "Number of slots to store metadata copies.",
+            "type": "STRING"
+        },
+        {
+            "name": "partition",
+            "spelling": "--partition",
+            "aliases": [
+                "-p"
+            ],
+            "description": "Add a partition given the data, see below.",
+            "type": "STRING",
+            "repeatable": true
+        },
+        {
+            "name": "output",
+            "spelling": "--output",
+            "aliases": [
+                "-o"
+            ],
+            "description": "Output file.",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "blockSize",
+            "spelling": "--block-size",
+            "aliases": [
+                "-b"
+            ],
+            "description": "Physical block size, defaults to 4096.",
+            "type": "STRING"
+        },
+        {
+            "name": "alignment",
+            "spelling": "--alignment",
+            "aliases": [
+                "-a"
+            ],
+            "description": "Optimal partition alignment in bytes.",
+            "type": "STRING"
+        },
+        {
+            "name": "alignmentOffset",
+            "spelling": "--alignment-offset",
+            "aliases": [
+                "-O"
+            ],
+            "description": "Alignment offset in bytes to device parent.",
+            "type": "STRING"
+        },
+        {
+            "name": "sparse",
+            "spelling": "--sparse",
+            "aliases": [
+                "-S"
+            ],
+            "description": "Output a sparse image for fastboot.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "image",
+            "spelling": "--image",
+            "aliases": [
+                "-i"
+            ],
+            "description": "If building a sparse image for fastboot, include",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "group",
+            "spelling": "--group",
+            "aliases": [
+                "-g"
+            ],
+            "description": ":SIZE         Define a named partition group with the given",
+            "type": "STRING"
+        },
+        {
+            "name": "device",
+            "spelling": "--device",
+            "aliases": [
+                "-D"
+            ],
+            "description": "Add a block device that the super partition",
+            "type": "STRING"
+        },
+        {
+            "name": "superName",
+            "spelling": "--super-name",
+            "aliases": [
+                "-n"
+            ],
+            "description": "Specify the name of the block device that will",
+            "type": "STRING"
+        },
+        {
+            "name": "autoSlotSuffixing",
+            "spelling": "--auto-slot-suffixing",
+            "aliases": [
+                "-x"
+            ],
+            "description": "Mark the block device and partition names needing",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "forceFullImage",
+            "spelling": "--force-full-image",
+            "aliases": [
+                "-F"
+            ],
+            "description": "Force a full image to be written even if no",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "virtualAb",
+            "spelling": "--virtual-ab",
+            "description": "Add the VIRTUAL_AB_DEVICE flag to the metadata",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "outputImage", "parameter": "output", "type": "FILE", "direction": "OUTPUT", "required": true}
+            ]
+        }
+    ]
+}

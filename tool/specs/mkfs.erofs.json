@@ -1,0 +1,332 @@
+{
+    "schemaVersion": 1,
+    "tool": "mkfs.erofs",
+    "executable": "mkfs.erofs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "e553f48607298a9ac3cf4aea62d69302a6343cd3e6e36a757bbb4dc561010147",
+    "helpSha256": "bb72f5cfe9abea07b00723ba90bed7e63fb3eae3dd69f85f379a9f9b45c3bd4c",
+    "globalOptions": [
+        {
+            "name": "version",
+            "spelling": "--version",
+            "aliases": [
+                "-V"
+            ],
+            "description": "print the version number of mkfs.erofs and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "display this help and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "B",
+            "spelling": "-b",
+            "description": "set block size to # (# = page size by default)",
+            "type": "STRING"
+        },
+        {
+            "name": "D",
+            "spelling": "-d",
+            "description": "set output verbosity; 0=quiet, 9=verbose (default=2)",
+            "type": "STRING"
+        },
+        {
+            "name": "X",
+            "spelling": "-x",
+            "description": "set xattr tolerance to # (< 0, disable xattrs; default 2)",
+            "type": "STRING"
+        },
+        {
+            "name": "Z",
+            "spelling": "-z",
+            "description": "[,level=Y]         X=compressor (Y=compression level, Z=dictionary size, optional)",
+            "type": "STRING"
+        },
+        {
+            "name": "C",
+            "spelling": "-C",
+            "description": "specify the size of compress physical cluster in bytes",
+            "type": "STRING"
+        },
+        {
+            "name": "E",
+            "spelling": "-E",
+            "description": "[,...]             X=extended options",
+            "type": "STRING"
+        },
+        {
+            "name": "L",
+            "spelling": "-L",
+            "description": "set the volume label (maximum 15 bytes)",
+            "type": "STRING"
+        },
+        {
+            "name": "T",
+            "spelling": "-T",
+            "description": "specify a fixed UNIX timestamp # as build time",
+            "type": "STRING"
+        },
+        {
+            "name": "allTime",
+            "spelling": "--all-time",
+            "description": "the timestamp is also applied to all files (default)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "mkfsTime",
+            "spelling": "--mkfs-time",
+            "description": "the timestamp is applied as build time only",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "U",
+            "spelling": "-U",
+            "description": "use a given filesystem UUID",
+            "type": "STRING"
+        },
+        {
+            "name": "allRoot",
+            "spelling": "--all-root",
+            "description": "make all files owned by root",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "blobdev",
+            "spelling": "--blobdev",
+            "description": "specify an extra device X to store chunked data",
+            "type": "STRING"
+        },
+        {
+            "name": "chunksize",
+            "spelling": "--chunksize",
+            "description": "generate chunk-based files with #-byte chunks",
+            "type": "STRING"
+        },
+        {
+            "name": "clean",
+            "spelling": "--clean",
+            "description": "run full clean build (default) or:",
+            "type": "STRING"
+        },
+        {
+            "name": "incremental",
+            "spelling": "--incremental",
+            "description": "run incremental build",
+            "type": "STRING"
+        },
+        {
+            "name": "compressHints",
+            "spelling": "--compress-hints",
+            "description": "specify a file to configure per-file compression strategy",
+            "type": "STRING"
+        },
+        {
+            "name": "excludePath",
+            "spelling": "--exclude-path",
+            "description": "avoid including file X (X = exact literal path)",
+            "type": "STRING"
+        },
+        {
+            "name": "excludeRegex",
+            "spelling": "--exclude-regex",
+            "description": "avoid including files that match X (X = regular expression)",
+            "type": "STRING"
+        },
+        {
+            "name": "fileContexts",
+            "spelling": "--file-contexts",
+            "description": "specify a file contexts file to setup selinux labels",
+            "type": "STRING"
+        },
+        {
+            "name": "forceUid",
+            "spelling": "--force-uid",
+            "description": "set all file uids to # (# = UID)",
+            "type": "STRING"
+        },
+        {
+            "name": "forceGid",
+            "spelling": "--force-gid",
+            "description": "set all file gids to # (# = GID)",
+            "type": "STRING"
+        },
+        {
+            "name": "uidOffset",
+            "spelling": "--uid-offset",
+            "description": "add offset # to all file uids (# = id offset)",
+            "type": "STRING"
+        },
+        {
+            "name": "gidOffset",
+            "spelling": "--gid-offset",
+            "description": "add offset # to all file gids (# = id offset)",
+            "type": "STRING"
+        },
+        {
+            "name": "hardDereference",
+            "spelling": "--hard-dereference",
+            "description": "dereference hardlinks, add links as separate inodes",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "ignoreMtime",
+            "spelling": "--ignore-mtime",
+            "description": "use build time instead of strict per-file modification time",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "maxExtentBytes",
+            "spelling": "--max-extent-bytes",
+            "description": "set maximum decompressed extent size # in bytes",
+            "type": "STRING"
+        },
+        {
+            "name": "mountPoint",
+            "spelling": "--mount-point",
+            "description": "X=prefix of target fs path (default: /)",
+            "type": "STRING"
+        },
+        {
+            "name": "preserveMtime",
+            "spelling": "--preserve-mtime",
+            "description": "keep per-file modification time strictly",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "offset",
+            "spelling": "--offset",
+            "description": "skip # bytes at the beginning of IMAGE.",
+            "type": "STRING"
+        },
+        {
+            "name": "rootXattrIsize",
+            "spelling": "--root-xattr-isize",
+            "description": "ensure the inline xattr size of the root directory is # bytes at least",
+            "type": "STRING"
+        },
+        {
+            "name": "aufs",
+            "spelling": "--aufs",
+            "description": "replace aufs special files with overlayfs metadata",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "sort",
+            "spelling": "--sort",
+            "description": "data sorting order for tarballs as input (default: path)",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "tar",
+            "spelling": "--tar",
+            "description": "generate a full or index-only image from a tarball(-ish) source",
+            "type": "STRING"
+        },
+        {
+            "name": "ovlfsStrip",
+            "spelling": "--ovlfs-strip",
+            "description": "strip overlayfs metadata in the target image (e.g. whiteouts)",
+            "type": "STRING"
+        },
+        {
+            "name": "quiet",
+            "spelling": "--quiet",
+            "description": "quiet execution (do not write anything to standard output.)",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "ungzip",
+            "spelling": "--ungzip",
+            "description": "try to filter the tarball stream through gzip",
+            "type": "STRING"
+        },
+        {
+            "name": "unxz",
+            "spelling": "--unxz",
+            "description": "try to filter the tarball stream through xz/lzma/lzip",
+            "type": "STRING"
+        },
+        {
+            "name": "workers",
+            "spelling": "--workers",
+            "description": "set the number of worker threads to # (default: 16)",
+            "type": "STRING"
+        },
+        {
+            "name": "xattrPrefix",
+            "spelling": "--xattr-prefix",
+            "description": "X=extra xattr name prefix",
+            "type": "STRING"
+        },
+        {
+            "name": "zfeatureBits",
+            "spelling": "--zfeature-bits",
+            "description": "toggle filesystem compression features according to given bits #",
+            "type": "STRING"
+        },
+        {
+            "name": "productOut",
+            "spelling": "--product-out",
+            "description": "X=product_out directory",
+            "type": "STRING"
+        },
+        {
+            "name": "fsConfigFile",
+            "spelling": "--fs-config-file",
+            "description": "X=fs_config file",
+            "type": "STRING"
+        },
+        {
+            "name": "blockListFile",
+            "spelling": "--block-list-file",
+            "description": "X=block_list file",
+            "type": "STRING"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

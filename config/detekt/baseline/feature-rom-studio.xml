@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ImportOrdering:StudioViewModel.kt:import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import org.ide.lti.core.domain.ports.StudioPresentationStorePort import org.ide.lti.core.domain.pipeline.configuration.Severity import org.ide.lti.core.domain.pipeline.configuration.ValidationError import org.ide.lti.core.domain.pipeline.configuration.ValidationReport import org.ide.lti.core.domain.workspace.WorkspaceManager import org.ide.lti.core.model.run.StageId import org.ide.lti.core.model.studio.StudioPresentation import org.ide.lti.core.model.workspace.Workspace</ID>
+  </CurrentIssues>
+</SmellBaseline>

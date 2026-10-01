@@ -1,0 +1,16 @@
+Usage: dump.erofs [OPTIONS] IMAGE
+Dump erofs layout from IMAGE.
+
+General options:
+ -V, --version   print the version number of dump.erofs and exit
+ -h, --help      display this help and exit
+
+ -S              show statistic information of the image
+ -e              show extent info (INODE required)
+ -s              show information about superblock
+ --device=X      specify an extra device to be used together
+ --ls            show directory contents (INODE required)
+ --cat           show file contents (INODE required)
+ --nid=#         show the target inode info of nid #
+ --offset=#      skip # bytes at the beginning of IMAGE
+ --path=X        show the target inode info of path X

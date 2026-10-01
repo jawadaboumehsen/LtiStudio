@@ -1,0 +1,24 @@
+﻿{
+  "name": "clikt",
+  "version": "5.0.1",
+  "description": "Build command line interfaces and terminal dispatchers in Kotlin using the Clikt 5 library with support for commands, subcommands, coroutine-based execution, option delegates, argument transformations, validation, and rich terminal formatting via Mordant.",
+  "author": {
+    "name": "AJ Alt",
+    "url": "https://github.com/ajalt"
+  },
+  "homepage": "https://ajalt.github.io/clikt/",
+  "repository": "https://github.com/ajalt/clikt",
+  "license": "Apache-2.0",
+  "keywords": [
+    "clikt",
+    "cli",
+    "command-line",
+    "terminal",
+    "kotlin",
+    "kotlin-multiplatform",
+    "kmp",
+    "mordant",
+    "coroutines",
+    "subcommands"
+  ]
+}

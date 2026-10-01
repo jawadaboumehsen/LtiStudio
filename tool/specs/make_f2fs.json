@@ -1,0 +1,164 @@
+{
+    "schemaVersion": 1,
+    "tool": "make_f2fs",
+    "executable": "make_f2fs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "566a674c7488850198035447f94ec1de348a4407a5196624ad748660f8214126",
+    "helpSha256": "7c566e2d50bffcaff220d5249158ebb0e20b551810d781bdea311ee25de2f279",
+    "globalOptions": [
+        {
+            "name": "B",
+            "spelling": "-b",
+            "description": "filesystem block size [default:4096]",
+            "type": "STRING"
+        },
+        {
+            "name": "C",
+            "spelling": "-c",
+            "description": "[device_name[@alias_filename]] up to 7 additional devices, except meta device",
+            "type": "STRING",
+            "repeatable": true
+        },
+        {
+            "name": "D",
+            "spelling": "-d",
+            "description": "debug level [default:0]",
+            "type": "STRING"
+        },
+        {
+            "name": "E",
+            "spelling": "-e",
+            "description": "[cold file ext list] e.g. \"mp3,gif,mov\"",
+            "type": "STRING"
+        },
+        {
+            "name": "F",
+            "spelling": "-f",
+            "description": "force overwrite of the existing filesystem",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "G",
+            "spelling": "-g",
+            "description": "add default options",
+            "type": "STRING"
+        },
+        {
+            "name": "H",
+            "spelling": "-H",
+            "description": "support write hint",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "I",
+            "spelling": "-i",
+            "description": "extended node bitmap, node ratio is 20% by default",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "L",
+            "spelling": "-l",
+            "description": "label",
+            "type": "STRING"
+        },
+        {
+            "name": "U",
+            "spelling": "-U",
+            "description": "uuid",
+            "type": "STRING"
+        },
+        {
+            "name": "M",
+            "spelling": "-m",
+            "description": "support zoned block device [default:0]",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "O",
+            "spelling": "-o",
+            "description": "overprovision percentage [default:auto]",
+            "type": "STRING"
+        },
+        {
+            "name": "Q",
+            "spelling": "-q",
+            "description": "quiet mode",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "R",
+            "spelling": "-r",
+            "description": "set checkpointing seed (srand()) to 0",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "S",
+            "spelling": "-s",
+            "description": "# of segments per section [default:1]",
+            "type": "STRING"
+        },
+        {
+            "name": "T",
+            "spelling": "-t",
+            "description": "0: nodiscard, 1: discard [default:1]",
+            "type": "STRING"
+        },
+        {
+            "name": "W",
+            "spelling": "-w",
+            "description": "wanted sector size",
+            "type": "STRING"
+        },
+        {
+            "name": "Z",
+            "spelling": "-z",
+            "description": "# of sections per zone [default:1]",
+            "type": "STRING"
+        },
+        {
+            "name": "V",
+            "spelling": "-V",
+            "description": "print the version number and exit",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

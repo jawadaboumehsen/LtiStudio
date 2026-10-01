@@ -1,0 +1,23 @@
+﻿{
+  "name": "lti-cli-plugins",
+  "owner": {
+    "name": "ajalt",
+    "url": "https://github.com/ajalt"
+  },
+  "metadata": {
+    "description": "Local marketplace for CLI parsing, terminal dispatching, and command architecture plugins bundled with LtiRomGui.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "clikt",
+      "source": "./clikt",
+      "description": "Build modern, multiplatform, intuitive command-line interfaces and terminal dispatchers in Kotlin using Clikt 5. Provides patterns for commands, subcommands, coroutine-based suspending commands, options, arguments, validation, autocompletion, context chaining, and unit testing.",
+      "category": "cli",
+      "tags": ["clikt", "cli", "command-line", "terminal", "kotlin-multiplatform", "kmp"],
+      "homepage": "https://ajalt.github.io/clikt/",
+      "repository": "https://github.com/ajalt/clikt",
+      "license": "Apache-2.0"
+    }
+  ]
+}

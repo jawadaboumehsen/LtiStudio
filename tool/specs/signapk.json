@@ -1,0 +1,47 @@
+{
+    "schemaVersion": 1,
+    "tool": "signapk",
+    "executable": "signapk",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "9f0c419fcd456bbd644db4e4d04dc8e893e21fbfdda195c6cc2391d7d656a3fb",
+    "helpSha256": "cc03e3034b47a1f47845b61468c891df79a404a10ee011e4762302807bbb544a",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

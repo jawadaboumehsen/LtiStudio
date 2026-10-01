@@ -1,0 +1,1782 @@
+{
+    "schemaVersion": 1,
+    "tool": "avbtool",
+    "executable": "avbtool",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "14dc8d6ec533f551ec05ffd9a986ced0fd1290a201f62c91dad329dd51dfe3ed",
+    "helpSha256": "137bd5cb87874716b7fbe66d6a0567fa788d7b38e2922721e03386630e4ceee5",
+    "commands": [
+        {
+            "name": "generateTestImage",
+            "subcommandPath": [
+                "generate_test_image"
+            ],
+            "description": "usage: avbtool generate_test_image [-h] --image_size IMAGE_SIZE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "imageSize",
+                    "spelling": "--image_size",
+                    "description": "Size of image to generate.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "startByte",
+                    "spelling": "--start_byte",
+                    "description": "Integer for the start byte of the pattern.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Output file name.",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "version",
+            "subcommandPath": [
+                "version"
+            ],
+            "description": "usage: avbtool version [-h]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "extractPublicKey",
+            "subcommandPath": [
+                "extract_public_key"
+            ],
+            "description": "usage: avbtool extract_public_key [-h] --key KEY --output OUTPUT",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Output file name",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "extractPublicKeyDigest",
+            "subcommandPath": [
+                "extract_public_key_digest"
+            ],
+            "description": "usage: avbtool extract_public_key_digest [-h] --key KEY --output OUTPUT",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Output file name",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeVbmetaImage",
+            "subcommandPath": [
+                "make_vbmeta_image"
+            ],
+            "description": "usage: avbtool make_vbmeta_image [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Output file name",
+                    "type": "STRING"
+                },
+                {
+                    "name": "paddingSize",
+                    "spelling": "--padding_size",
+                    "description": "If non-zero, pads output with NUL bytes so its size is",
+                    "type": "STRING"
+                },
+                {
+                    "name": "algorithm",
+                    "spelling": "--algorithm",
+                    "description": "Algorithm to use (default: NONE)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                },
+                {
+                    "name": "publicKeyMetadata",
+                    "spelling": "--public_key_metadata",
+                    "description": "Path to public key metadata file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndex",
+                    "spelling": "--rollback_index",
+                    "description": "Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndexLocation",
+                    "spelling": "--rollback_index_location",
+                    "description": "Location of main vbmeta Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "appendToReleaseString",
+                    "spelling": "--append_to_release_string",
+                    "description": "Text to append to release string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "prop",
+                    "spelling": "--prop",
+                    "description": "KEY:VALUE      Add property",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "propFromFile",
+                    "spelling": "--prop_from_file",
+                    "description": "KEY:PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "kernelCmdline",
+                    "spelling": "--kernel_cmdline",
+                    "description": "Add kernel cmdline",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setupRootfsFromKernel",
+                    "spelling": "--setup_rootfs_from_kernel",
+                    "description": "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeDescriptorsFromImage",
+                    "spelling": "--include_descriptors_from_image",
+                    "description": "Include descriptors from image",
+                    "type": "STRING"
+                },
+                {
+                    "name": "printRequiredLibavbVersion",
+                    "spelling": "--print_required_libavb_version",
+                    "description": "Don't store the footer - instead calculate the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartition",
+                    "spelling": "--chain_partition",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartitionDoNotUseAb",
+                    "spelling": "--chain_partition_do_not_use_ab",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "flags",
+                    "spelling": "--flags",
+                    "description": "VBMeta flags",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setHashtreeDisabledFlag",
+                    "spelling": "--set_hashtree_disabled_flag",
+                    "description": "Set the HASHTREE_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "setVerificationDisabledFlag",
+                    "spelling": "--set_verification_disabled_flag",
+                    "description": "Set the VERIFICATION_DISABLED flag",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "addHashFooter",
+            "subcommandPath": [
+                "add_hash_footer"
+            ],
+            "description": "usage: avbtool add_hash_footer [-h] [--image IMAGE]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to add hashes to",
+                    "type": "STRING"
+                },
+                {
+                    "name": "partitionSize",
+                    "spelling": "--partition_size",
+                    "description": "Partition size",
+                    "type": "STRING"
+                },
+                {
+                    "name": "dynamicPartitionSize",
+                    "spelling": "--dynamic_partition_size",
+                    "description": "Calculate partition size based on image size",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "partitionName",
+                    "spelling": "--partition_name",
+                    "description": "Partition name",
+                    "type": "STRING"
+                },
+                {
+                    "name": "hashAlgorithm",
+                    "spelling": "--hash_algorithm",
+                    "description": "Hash algorithm to use (default: sha256)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "salt",
+                    "spelling": "--salt",
+                    "description": "Salt in hex (default: /dev/urandom)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "calcMaxImageSize",
+                    "spelling": "--calc_max_image_size",
+                    "description": "Don't store the footer - instead calculate the maximum",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputVbmetaImage",
+                    "spelling": "--output_vbmeta_image",
+                    "description": "Also write vbmeta struct to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "doNotAppendVbmetaImage",
+                    "spelling": "--do_not_append_vbmeta_image",
+                    "description": "Do not append vbmeta struct or footer to the image",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "algorithm",
+                    "spelling": "--algorithm",
+                    "description": "Algorithm to use (default: NONE)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                },
+                {
+                    "name": "publicKeyMetadata",
+                    "spelling": "--public_key_metadata",
+                    "description": "Path to public key metadata file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndex",
+                    "spelling": "--rollback_index",
+                    "description": "Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndexLocation",
+                    "spelling": "--rollback_index_location",
+                    "description": "Location of main vbmeta Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "appendToReleaseString",
+                    "spelling": "--append_to_release_string",
+                    "description": "Text to append to release string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "prop",
+                    "spelling": "--prop",
+                    "description": "KEY:VALUE      Add property",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "propFromFile",
+                    "spelling": "--prop_from_file",
+                    "description": "KEY:PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "kernelCmdline",
+                    "spelling": "--kernel_cmdline",
+                    "description": "Add kernel cmdline",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setupRootfsFromKernel",
+                    "spelling": "--setup_rootfs_from_kernel",
+                    "description": "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeDescriptorsFromImage",
+                    "spelling": "--include_descriptors_from_image",
+                    "description": "Include descriptors from image",
+                    "type": "STRING"
+                },
+                {
+                    "name": "printRequiredLibavbVersion",
+                    "spelling": "--print_required_libavb_version",
+                    "description": "Don't store the footer - instead calculate the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartition",
+                    "spelling": "--chain_partition",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartitionDoNotUseAb",
+                    "spelling": "--chain_partition_do_not_use_ab",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "flags",
+                    "spelling": "--flags",
+                    "description": "VBMeta flags",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setHashtreeDisabledFlag",
+                    "spelling": "--set_hashtree_disabled_flag",
+                    "description": "Set the HASHTREE_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "setVerificationDisabledFlag",
+                    "spelling": "--set_verification_disabled_flag",
+                    "description": "Set the VERIFICATION_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "usePersistentDigest",
+                    "spelling": "--use_persistent_digest",
+                    "description": "Use a persistent digest on device instead of storing",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "doNotUseAb",
+                    "spelling": "--do_not_use_ab",
+                    "description": "The partition does not use A/B even when an A/B suffix",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "appendVbmetaImage",
+            "subcommandPath": [
+                "append_vbmeta_image"
+            ],
+            "description": "usage: avbtool append_vbmeta_image [-h] [--image IMAGE] --partition_size",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to append vbmeta blob to",
+                    "type": "STRING"
+                },
+                {
+                    "name": "partitionSize",
+                    "spelling": "--partition_size",
+                    "description": "Partition size",
+                    "type": "STRING"
+                },
+                {
+                    "name": "vbmetaImage",
+                    "spelling": "--vbmeta_image",
+                    "description": "Image with vbmeta blob to append",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "addHashtreeFooter",
+            "subcommandPath": [
+                "add_hashtree_footer"
+            ],
+            "description": "usage: avbtool add_hashtree_footer [-h] [--image IMAGE]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to add hashtree to",
+                    "type": "STRING"
+                },
+                {
+                    "name": "partitionSize",
+                    "spelling": "--partition_size",
+                    "description": "Partition size",
+                    "type": "STRING"
+                },
+                {
+                    "name": "partitionName",
+                    "spelling": "--partition_name",
+                    "description": "Partition name",
+                    "type": "STRING"
+                },
+                {
+                    "name": "hashAlgorithm",
+                    "spelling": "--hash_algorithm",
+                    "description": "Hash algorithm to use (default: sha1)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "salt",
+                    "spelling": "--salt",
+                    "description": "Salt in hex (default: /dev/urandom)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "blockSize",
+                    "spelling": "--block_size",
+                    "description": "Block size (default: 4096)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "doNotGenerateFec",
+                    "spelling": "--do_not_generate_fec",
+                    "description": "Do not generate forward-error-correction codes",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "fecNumRoots",
+                    "spelling": "--fec_num_roots",
+                    "description": "Number of roots for FEC (default: 2)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "calcMaxImageSize",
+                    "spelling": "--calc_max_image_size",
+                    "description": "Don't store the hashtree or footer - instead calculate",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputVbmetaImage",
+                    "spelling": "--output_vbmeta_image",
+                    "description": "Also write vbmeta struct to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "doNotAppendVbmetaImage",
+                    "spelling": "--do_not_append_vbmeta_image",
+                    "description": "Do not append vbmeta struct or footer to the image",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "setupAsRootfsFromKernel",
+                    "spelling": "--setup_as_rootfs_from_kernel",
+                    "description": "Adds kernel cmdline for setting up rootfs",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "noHashtree",
+                    "spelling": "--no_hashtree",
+                    "description": "Do not append hashtree",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "checkAtMostOnce",
+                    "spelling": "--check_at_most_once",
+                    "description": "Set to verify data block only once",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "algorithm",
+                    "spelling": "--algorithm",
+                    "description": "Algorithm to use (default: NONE)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                },
+                {
+                    "name": "publicKeyMetadata",
+                    "spelling": "--public_key_metadata",
+                    "description": "Path to public key metadata file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndex",
+                    "spelling": "--rollback_index",
+                    "description": "Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndexLocation",
+                    "spelling": "--rollback_index_location",
+                    "description": "Location of main vbmeta Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "appendToReleaseString",
+                    "spelling": "--append_to_release_string",
+                    "description": "Text to append to release string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "prop",
+                    "spelling": "--prop",
+                    "description": "KEY:VALUE      Add property",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "propFromFile",
+                    "spelling": "--prop_from_file",
+                    "description": "KEY:PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "kernelCmdline",
+                    "spelling": "--kernel_cmdline",
+                    "description": "Add kernel cmdline",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setupRootfsFromKernel",
+                    "spelling": "--setup_rootfs_from_kernel",
+                    "description": "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeDescriptorsFromImage",
+                    "spelling": "--include_descriptors_from_image",
+                    "description": "Include descriptors from image",
+                    "type": "STRING"
+                },
+                {
+                    "name": "printRequiredLibavbVersion",
+                    "spelling": "--print_required_libavb_version",
+                    "description": "Don't store the footer - instead calculate the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartition",
+                    "spelling": "--chain_partition",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartitionDoNotUseAb",
+                    "spelling": "--chain_partition_do_not_use_ab",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "flags",
+                    "spelling": "--flags",
+                    "description": "VBMeta flags",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setHashtreeDisabledFlag",
+                    "spelling": "--set_hashtree_disabled_flag",
+                    "description": "Set the HASHTREE_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "setVerificationDisabledFlag",
+                    "spelling": "--set_verification_disabled_flag",
+                    "description": "Set the VERIFICATION_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "usePersistentDigest",
+                    "spelling": "--use_persistent_digest",
+                    "description": "Use a persistent digest on device instead of storing",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "doNotUseAb",
+                    "spelling": "--do_not_use_ab",
+                    "description": "The partition does not use A/B even when an A/B suffix",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "avb-max-image-size",
+            "outputType": "Long?"
+        },
+        {
+            "name": "eraseFooter",
+            "subcommandPath": [
+                "erase_footer"
+            ],
+            "description": "usage: avbtool erase_footer [-h] --image IMAGE [--keep_hashtree]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image with a footer",
+                    "type": "STRING"
+                },
+                {
+                    "name": "keepHashtree",
+                    "spelling": "--keep_hashtree",
+                    "description": "Keep the hashtree and FEC in the image",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "zeroHashtree",
+            "subcommandPath": [
+                "zero_hashtree"
+            ],
+            "description": "usage: avbtool zero_hashtree [-h] --image IMAGE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image with a footer",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "extractVbmetaImage",
+            "subcommandPath": [
+                "extract_vbmeta_image"
+            ],
+            "description": "usage: avbtool extract_vbmeta_image [-h] --image IMAGE [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image with footer",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Output file name",
+                    "type": "STRING"
+                },
+                {
+                    "name": "paddingSize",
+                    "spelling": "--padding_size",
+                    "description": "If non-zero, pads output with NUL bytes so its size is",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "resizeImage",
+            "subcommandPath": [
+                "resize_image"
+            ],
+            "description": "usage: avbtool resize_image [-h] --image IMAGE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image with a footer",
+                    "type": "STRING"
+                },
+                {
+                    "name": "partitionSize",
+                    "spelling": "--partition_size",
+                    "description": "New partition size",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "infoImage",
+            "subcommandPath": [
+                "info_image"
+            ],
+            "description": "usage: avbtool info_image [-h] --image IMAGE [--output OUTPUT] [--cert]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to show information about",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write info to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "cert",
+                    "spelling": "--cert",
+                    "description": "Show information about the avb_cert extension",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "outputPubkey",
+                    "spelling": "--output_pubkey",
+                    "description": "Write public key to file",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "READ_ONLY",
+            "outputParser": "avb-info",
+            "outputType": "io.ltirom.tooling.core.AvbImageInfo",
+            "artifacts": [
+                {"name": "image", "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "output", "type": "FILE", "direction": "OUTPUT", "required": false},
+                {"name": "outputPubkey", "type": "FILE", "direction": "OUTPUT", "required": false}
+            ]
+        },
+        {
+            "name": "verifyImage",
+            "subcommandPath": [
+                "verify_image"
+            ],
+            "description": "usage: avbtool verify_image [-h] --image IMAGE [--key KEY]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to verify",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Check embedded public key matches KEY",
+                    "type": "STRING"
+                },
+                {
+                    "name": "expectedChainPartition",
+                    "spelling": "--expected_chain_partition",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "followChainPartitions",
+                    "spelling": "--follow_chain_partitions",
+                    "description": "Follows chain partitions even when not specified with",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "acceptZeroedHashtree",
+                    "spelling": "--accept_zeroed_hashtree",
+                    "description": "Accept images where the hashtree or FEC data is zeroed",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "printPartitionDigests",
+            "subcommandPath": [
+                "print_partition_digests"
+            ],
+            "description": "usage: avbtool print_partition_digests [-h] --image IMAGE [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to print partition digests from",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write info to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "json",
+                    "spelling": "--json",
+                    "description": "Print output as JSON",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "calculateVbmetaDigest",
+            "subcommandPath": [
+                "calculate_vbmeta_digest"
+            ],
+            "description": "usage: avbtool calculate_vbmeta_digest [-h] --image IMAGE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to calculate digest for",
+                    "type": "STRING"
+                },
+                {
+                    "name": "hashAlgorithm",
+                    "spelling": "--hash_algorithm",
+                    "description": "Hash algorithm to use (default: sha256)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write digest to file (default: stdout)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "format",
+                    "spelling": "--format",
+                    "description": "{hex,raw}    Output format (default: hex)",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "calculateKernelCmdline",
+            "subcommandPath": [
+                "calculate_kernel_cmdline"
+            ],
+            "description": "usage: avbtool calculate_kernel_cmdline [-h] --image IMAGE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to calculate kernel cmdline for",
+                    "type": "STRING"
+                },
+                {
+                    "name": "hashtreeDisabled",
+                    "spelling": "--hashtree_disabled",
+                    "description": "Return the cmdline for hashtree disabled",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write cmdline to file (default: stdout)",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "READ_ONLY"
+        },
+        {
+            "name": "setAbMetadata",
+            "subcommandPath": [
+                "set_ab_metadata"
+            ],
+            "description": "usage: avbtool set_ab_metadata [-h] --misc_image MISC_IMAGE",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "miscImage",
+                    "spelling": "--misc_image",
+                    "description": "The misc image to modify. If the image does not exist,",
+                    "type": "STRING"
+                },
+                {
+                    "name": "slotData",
+                    "spelling": "--slot_data",
+                    "description": "Slot data of the form \"priority\", \"tries_remaining\",",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeCertificate",
+            "subcommandPath": [
+                "make_certificate"
+            ],
+            "description": "usage: avbtool make_certificate [-h] [--output OUTPUT] --subject SUBJECT",
+            "options": [
+                {
+                    "name": "subjectKey",
+                    "spelling": "--subject_key",
+                    "description": "[--subject_key_version SUBJECT_KEY_VERSION]",
+                    "type": "STRING"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write certificate to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subject",
+                    "spelling": "--subject",
+                    "description": "Path to subject file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subjectKeyVersion",
+                    "spelling": "--subject_key_version",
+                    "description": "Version of the subject key",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subjectIsIntermediateAuthority",
+                    "spelling": "--subject_is_intermediate_authority",
+                    "description": "Override usage with the value used for an intermediate",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "usage",
+                    "spelling": "--usage",
+                    "description": "Override usage with a hash of the provided string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "usageForUnlock",
+                    "spelling": "--usage_for_unlock",
+                    "description": "Override usage with the value used for authenticated",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "authorityKey",
+                    "spelling": "--authority_key",
+                    "description": "Path to authority RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeAtxCertificate",
+            "subcommandPath": [
+                "make_atx_certificate"
+            ],
+            "description": "usage: avbtool make_certificate [-h] [--output OUTPUT] --subject SUBJECT",
+            "options": [
+                {
+                    "name": "subjectKey",
+                    "spelling": "--subject_key",
+                    "description": "[--subject_key_version SUBJECT_KEY_VERSION]",
+                    "type": "STRING"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write certificate to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subject",
+                    "spelling": "--subject",
+                    "description": "Path to subject file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subjectKeyVersion",
+                    "spelling": "--subject_key_version",
+                    "description": "Version of the subject key",
+                    "type": "STRING"
+                },
+                {
+                    "name": "subjectIsIntermediateAuthority",
+                    "spelling": "--subject_is_intermediate_authority",
+                    "description": "Override usage with the value used for an intermediate",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "usage",
+                    "spelling": "--usage",
+                    "description": "Override usage with a hash of the provided string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "usageForUnlock",
+                    "spelling": "--usage_for_unlock",
+                    "description": "Override usage with the value used for authenticated",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "authorityKey",
+                    "spelling": "--authority_key",
+                    "description": "Path to authority RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeCertPermanentAttributes",
+            "subcommandPath": [
+                "make_cert_permanent_attributes"
+            ],
+            "description": "usage: avbtool make_cert_permanent_attributes [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "rootAuthorityKey",
+                    "spelling": "--root_authority_key",
+                    "description": "ROOT_AUTHORITY_KEY --product_id",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write attributes to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "productId",
+                    "spelling": "--product_id",
+                    "description": "Path to Product ID file",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeAtxPermanentAttributes",
+            "subcommandPath": [
+                "make_atx_permanent_attributes"
+            ],
+            "description": "usage: avbtool make_cert_permanent_attributes [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "rootAuthorityKey",
+                    "spelling": "--root_authority_key",
+                    "description": "ROOT_AUTHORITY_KEY --product_id",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write attributes to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "productId",
+                    "spelling": "--product_id",
+                    "description": "Path to Product ID file",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeCertMetadata",
+            "subcommandPath": [
+                "make_cert_metadata"
+            ],
+            "description": "usage: avbtool make_cert_metadata [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "intermediateKeyCertificate",
+                    "spelling": "--intermediate_key_certificate",
+                    "description": "INTERMEDIATE_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "productKeyCertificate",
+                    "spelling": "--product_key_certificate",
+                    "description": "PRODUCT_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write metadata to file",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeAtxMetadata",
+            "subcommandPath": [
+                "make_atx_metadata"
+            ],
+            "description": "usage: avbtool make_cert_metadata [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "intermediateKeyCertificate",
+                    "spelling": "--intermediate_key_certificate",
+                    "description": "INTERMEDIATE_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "productKeyCertificate",
+                    "spelling": "--product_key_certificate",
+                    "description": "PRODUCT_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write metadata to file",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeCertUnlockCredential",
+            "subcommandPath": [
+                "make_cert_unlock_credential"
+            ],
+            "description": "usage: avbtool make_cert_unlock_credential [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "intermediateKeyCertificate",
+                    "spelling": "--intermediate_key_certificate",
+                    "description": "INTERMEDIATE_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "unlockKeyCertificate",
+                    "spelling": "--unlock_key_certificate",
+                    "description": "UNLOCK_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write credential to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "challenge",
+                    "spelling": "--challenge",
+                    "description": "Path to the challenge to sign (optional). If this is",
+                    "type": "STRING"
+                },
+                {
+                    "name": "unlockKey",
+                    "spelling": "--unlock_key",
+                    "description": "Path to unlock key (optional). Must be provided if",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "makeAtxUnlockCredential",
+            "subcommandPath": [
+                "make_atx_unlock_credential"
+            ],
+            "description": "usage: avbtool make_cert_unlock_credential [-h] [--output OUTPUT]",
+            "options": [
+                {
+                    "name": "intermediateKeyCertificate",
+                    "spelling": "--intermediate_key_certificate",
+                    "description": "INTERMEDIATE_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "unlockKeyCertificate",
+                    "spelling": "--unlock_key_certificate",
+                    "description": "UNLOCK_KEY_CERTIFICATE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "Write credential to file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "challenge",
+                    "spelling": "--challenge",
+                    "description": "Path to the challenge to sign (optional). If this is",
+                    "type": "STRING"
+                },
+                {
+                    "name": "unlockKey",
+                    "spelling": "--unlock_key",
+                    "description": "Path to unlock key (optional). Must be provided if",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "updatePartitionDescriptor",
+            "subcommandPath": [
+                "update_partition_descriptor"
+            ],
+            "description": "usage: avbtool update_partition_descriptor [-h] --image IMAGE",
+            "options": [
+                {
+                    "name": "partitionImage",
+                    "spelling": "--partition_image",
+                    "description": "",
+                    "type": "STRING"
+                },
+                {
+                    "name": "output",
+                    "spelling": "--output",
+                    "description": "[--algorithm ALGORITHM] [--key KEY]",
+                    "type": "STRING"
+                },
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "The VBMeta image to update.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "algorithm",
+                    "spelling": "--algorithm",
+                    "description": "Algorithm to use (default: NONE)",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Path to helper used for signing",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Path to helper used for signing using files",
+                    "type": "STRING"
+                },
+                {
+                    "name": "publicKeyMetadata",
+                    "spelling": "--public_key_metadata",
+                    "description": "Path to public key metadata file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndex",
+                    "spelling": "--rollback_index",
+                    "description": "Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "rollbackIndexLocation",
+                    "spelling": "--rollback_index_location",
+                    "description": "Location of main vbmeta Rollback Index",
+                    "type": "STRING"
+                },
+                {
+                    "name": "appendToReleaseString",
+                    "spelling": "--append_to_release_string",
+                    "description": "Text to append to release string",
+                    "type": "STRING"
+                },
+                {
+                    "name": "prop",
+                    "spelling": "--prop",
+                    "description": "KEY:VALUE      Add property",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "propFromFile",
+                    "spelling": "--prop_from_file",
+                    "description": "KEY:PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "kernelCmdline",
+                    "spelling": "--kernel_cmdline",
+                    "description": "Add kernel cmdline",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setupRootfsFromKernel",
+                    "spelling": "--setup_rootfs_from_kernel",
+                    "description": "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "includeDescriptorsFromImage",
+                    "spelling": "--include_descriptors_from_image",
+                    "description": "Include descriptors from image",
+                    "type": "STRING"
+                },
+                {
+                    "name": "printRequiredLibavbVersion",
+                    "spelling": "--print_required_libavb_version",
+                    "description": "Don't store the footer - instead calculate the",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartition",
+                    "spelling": "--chain_partition",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "chainPartitionDoNotUseAb",
+                    "spelling": "--chain_partition_do_not_use_ab",
+                    "description": "PART_NAME:ROLLBACK_SLOT:KEY_PATH",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "flags",
+                    "spelling": "--flags",
+                    "description": "VBMeta flags",
+                    "type": "STRING"
+                },
+                {
+                    "name": "setHashtreeDisabledFlag",
+                    "spelling": "--set_hashtree_disabled_flag",
+                    "description": "Set the HASHTREE_DISABLED flag",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "setVerificationDisabledFlag",
+                    "spelling": "--set_verification_disabled_flag",
+                    "description": "Set the VERIFICATION_DISABLED flag",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "resignImage",
+            "subcommandPath": [
+                "resign_image"
+            ],
+            "description": "usage: avbtool resign_image [-h] --image IMAGE --key KEY --algorithm ALGORITHM",
+            "options": [
+                {
+                    "name": "help",
+                    "spelling": "--help",
+                    "aliases": [
+                        "-h"
+                    ],
+                    "description": "show this help message and exit",
+                    "type": "BOOLEAN"
+                },
+                {
+                    "name": "image",
+                    "spelling": "--image",
+                    "description": "Image to resign",
+                    "type": "STRING"
+                },
+                {
+                    "name": "key",
+                    "spelling": "--key",
+                    "description": "Path to RSA private key file",
+                    "type": "STRING"
+                },
+                {
+                    "name": "algorithm",
+                    "spelling": "--algorithm",
+                    "description": "Algorithm to use",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelper",
+                    "spelling": "--signing_helper",
+                    "description": "Program that signs a hash and returns a signature.",
+                    "type": "STRING"
+                },
+                {
+                    "name": "signingHelperWithFiles",
+                    "spelling": "--signing_helper_with_files",
+                    "description": "Same as signing_helper but uses files for",
+                    "type": "PATH",
+                    "valueType": "path"
+                },
+                {
+                    "name": "autoResize",
+                    "spelling": "--auto_resize",
+                    "description": "Automatically resize the image if the new key is",
+                    "type": "BOOLEAN"
+                }
+            ],
+            "risk": "HOST_WRITE"
+        },
+        {
+            "name": "testing",
+            "subcommandPath": [
+                "testing"
+            ],
+            "description": "usage: avbtool [-h]",
+            "risk": "HOST_WRITE"
+        }
+    ],
+    "globalOptions": [
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "show this help message and exit",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE"
+}

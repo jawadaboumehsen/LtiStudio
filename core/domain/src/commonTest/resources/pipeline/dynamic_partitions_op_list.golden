@@ -1,0 +1,16 @@
+remove_all_groups
+add_group qti_dynamic_partitions 17175674880
+add odm qti_dynamic_partitions
+add product qti_dynamic_partitions
+add system qti_dynamic_partitions
+add system_dlkm qti_dynamic_partitions
+add system_ext qti_dynamic_partitions
+add vendor qti_dynamic_partitions
+add vendor_dlkm qti_dynamic_partitions
+resize odm 100000000
+resize product 200000000
+resize system 300000000
+resize system_dlkm 50000000
+resize system_ext 150000000
+resize vendor 250000000
+resize vendor_dlkm 60000000

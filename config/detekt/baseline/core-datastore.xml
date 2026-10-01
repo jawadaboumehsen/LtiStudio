@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:DatastoreModule.kt:(settings = get(), json = get())</ID>
+    <ID>ArgumentListWrapping:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$(editorSettings = editorSettings)</ID>
+    <ID>ArgumentListWrapping:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$(ioDispatcher)</ID>
+    <ID>ArgumentListWrapping:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$(ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE, "{ corrupt_invalid_json: true ...")</ID>
+    <ID>BinaryExpressionWrapping:DatastoreModule.kt:single { StudioPresentationStore(settings = get(), json = get()) } bind org.ide.lti.core.domain.ports.StudioPresentationStorePort::class</ID>
+    <ID>ClassSignature:FileToolchainJournalStorage.kt:FileToolchainJournalStorage : ToolchainJournalStorage</ID>
+    <ID>ClassSignature:RunFileStorage.desktop.kt:DesktopRunFileStorage : RunFileStorage</ID>
+    <ID>ClassSignature:SnapshotPreferencesDataSource.kt:SnapshotList</ID>
+    <ID>ClassSignature:TargetPreferencesDataSource.kt:TargetList</ID>
+    <ID>ClassSignature:WorkspacePreferencesDataSource.kt:RecentProjectList</ID>
+    <ID>ClassSignature:WorkspacePreferencesDataSource.kt:WorkspaceList</ID>
+    <ID>FunctionExpressionBody:LtiPreferencesDataSource.kt:LtiPreferencesDataSource${ return UserData( theme = settings.getString(KEY_THEME, UserData.DEFAULT_THEME), effectsEnabled = settings.getBoolean(KEY_EFFECTS_ENABLED, true), reducedMotion = settings.getBoolean(KEY_REDUCED_MOTION, false), editorSettings = EditorSettings( autoSave = settings.getBoolean(KEY_EDITOR_AUTO_SAVE, true), lineNumbers = settings.getBoolean(KEY_EDITOR_LINE_NUMBERS, true), bracketMatching = settings.getBoolean(KEY_EDITOR_BRACKET_MATCHING, true), fontSize = settings.getInt(KEY_EDITOR_FONT_SIZE, EditorSettings.DEFAULT_FONT_SIZE), tabSize = settings.getInt(KEY_EDITOR_TAB_SIZE, EditorSettings.DEFAULT_TAB_SIZE), ), notificationSettings = NotificationSettings( pushEnabled = settings.getBoolean(KEY_NOTIF_PUSH_ENABLED, true), soundEnabled = settings.getBoolean(KEY_NOTIF_SOUND_ENABLED, false), ), ) }</ID>
+    <ID>FunctionExpressionBody:RunRecordDataSourceTest.kt:RunRecordDataSourceTest${ return BuildRun( id = id, workspaceId = "ws-test-1", snapshotId = "snap-test-1", state = state, startedAt = Instant.fromEpochSeconds(startedEpochSec), endedAt = Instant.fromEpochSeconds(startedEpochSec + 120), stages = listOf( StageOutcome(stageId = StageId.BUILD_FLASHABLE_ZIP, state = StageState.EXECUTED), ), steps = listOf( StageStep( stageId = StageId.BUILD_FLASHABLE_ZIP, index = 0, idempotencyKey = "key-$id-0", command = StepCommand(toolId = "build", args = listOf("all")), state = StepState.COMPLETED, exitCode = 0, ), ), artifacts = listOf( Artifact( kind = ArtifactKind.FLASHABLE_ZIP, linuxPath = "/tmp/payload.zip", sizeBytes = 1048576L, sha256 = "abc123sha", verification = VerificationState.VERIFIED, presence = Presence.PRESENT, ), ), ) }</ID>
+    <ID>FunctionExpressionBody:SnapshotPreferencesDataSource.kt:SnapshotPreferencesDataSource${ return _snapshots.map { list -&gt; list.filter { it.workspaceId == workspaceId } } }</ID>
+    <ID>FunctionExpressionBody:TargetPreferencesDataSourceTest.kt:TargetPreferencesDataSourceTest${ return TargetDevice( id = id, name = name, codename = id.lowercase(), socPlatform = "Snapdragon 8 Elite", filesystemType = "erofs", dynamicPartitions = listOf("system", "vendor"), bootPartitions = listOf("boot", "vendor_boot"), status = TargetStatus.QUALIFIED, description = "Test device profile", ) }</ID>
+    <ID>FunctionExpressionBody:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource${ return runCatching { val encoded = json.encodeToString(state) storage.write(encoded) } }</ID>
+    <ID>FunctionLiteral:DatastoreModule.kt:&lt;anonymous&gt;</ID>
+    <ID>FunctionLiteral:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$suspend fun setEditorSettings</ID>
+    <ID>FunctionSignature:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend fun markSetupCompleted: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend fun markStageCompleted: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend fun recordChildNotSubmitted: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend fun recordChildRunId: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend fun updateAvbKeyState: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:WorkspacePreferencesDataSource.kt:WorkspacePreferencesDataSource$public suspend fun addRecentProject: Unit</ID>
+    <ID>ImportOrdering:WorkspacePreferencesDataSource.kt:import com.russhwolf.settings.Settings import com.russhwolf.settings.get import com.russhwolf.settings.set import kotlinx.coroutines.CoroutineDispatcher import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.asStateFlow import kotlinx.coroutines.sync.Mutex import kotlinx.coroutines.sync.withLock import kotlinx.coroutines.withContext import kotlinx.serialization.encodeToString import kotlinx.serialization.json.Json import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.asSharedFlow import kotlinx.serialization.Serializable import org.ide.lti.core.model.workspace.DecodeWarning import org.ide.lti.core.model.workspace.RecentProject import org.ide.lti.core.model.workspace.Workspace</ID>
+    <ID>MatchingDeclarationName:RunFileStorage.desktop.kt:DesktopRunFileStorage : RunFileStorage</ID>
+    <ID>MaxLineLength:DatastoreModule.kt:single { StudioPresentationStore(settings = get(), json = get()) } bind org.ide.lti.core.domain.ports.StudioPresentationStorePort::class</ID>
+    <ID>MaxLineLength:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$suspend fun setEditorSettings</ID>
+    <ID>MaxLineLength:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$public suspend</ID>
+    <ID>MaxLineLength:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$settings.putString(ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE, "{ corrupt_invalid_json: true ...")</ID>
+    <ID>MaximumLineLength:DatastoreModule.kt:class</ID>
+    <ID>MaximumLineLength:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$}</ID>
+    <ID>MaximumLineLength:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$=</ID>
+    <ID>MaximumLineLength:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource${</ID>
+    <ID>MaximumLineLength:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$)</ID>
+    <ID>NoConsecutiveBlankLines:DatastoreModule.kt: </ID>
+    <ID>NoUnusedImports:RecoveryDraftStore.kt:org.ide.lti.core.datastore.RecoveryDraftStore.kt</ID>
+    <ID>ParameterListWrapping:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$(attemptId: String, childIndex: Int, terminalStatus: String)</ID>
+    <ID>ParameterListWrapping:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$(completed: Boolean, timestamp: Long? = null)</ID>
+    <ID>ParameterListWrapping:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$(provisioned: Boolean, keyPath: String?)</ID>
+    <ID>ParameterListWrapping:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$(stageName: String, completed: Boolean)</ID>
+    <ID>TrailingCommaOnCallSite:LtiPreferencesDataSourceTest.kt:LtiPreferencesDataSourceTest$( EditorSettings( autoSave = false, lineNumbers = false, bracketMatching = false, fontSize = 16, tabSize = 2, ) )</ID>
+    <ID>TrailingCommaOnCallSite:LtiPreferencesDataSourceTest.kt:LtiPreferencesDataSourceTest$( NotificationSettings( pushEnabled = false, soundEnabled = true, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( "Cannot reset toolchain state while attempt '${active.attemptId}' is active. " + "Explicit authorization required." )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( "Cannot reset toolchain state while recovery is blocked: " + "${current.recoveryBlockReason ?: "unresolved prior attempt"}. Explicit authorization required." )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( IllegalStateException( "Cannot reset toolchain state while attempt '${active.attemptId}' is active. " + "Explicit authorization required." ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( IllegalStateException( "Cannot reset toolchain state while recovery is blocked: " + "${current.recoveryBlockReason ?: "unresolved prior attempt"}. Explicit authorization required." ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( IllegalStateException("Another attempt '${active.attemptId}' is already active.") )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( IllegalStateException("Child index $childIndex not found in attempt") )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}") )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( active.copy( orderedIntents = active.orderedIntents + journaled, activeChildIndex = assignedIndex, status = AttemptStatus.RUNNING, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( current.copy( activeAttempt = attempt.copy( createdAtEpochMs = if (attempt.createdAtEpochMs &gt; 0L) attempt.createdAtEpochMs else now, updatedAtEpochMs = now, ), attemptHistory = history, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( current.copy( activeAttempt = null, attemptHistory = current.attemptHistory + terminal, recoveryBlocked = false, recoveryBlockReason = null, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( current.copy( activeAttempt = updatedActive, recoveryBlocked = if (unblock) false else current.recoveryBlocked, recoveryBlockReason = if (unblock) null else current.recoveryBlockReason, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( current.copy( recoveryBlocked = blocked, recoveryBlockReason = if (blocked) reason else null, activeAttempt = current.activeAttempt?.let { attempt -&gt; attempt.copy( recoveryBlocked = blocked, status = if (blocked) AttemptStatus.INTERRUPTED else attempt.status, updatedAtEpochMs = System.currentTimeMillis(), ) }, ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSource.kt:ToolchainPreferencesDataSource$( recoveryBlocked = true, recoveryBlockReason = "Corrupt toolchain persistence journal: ${e.message}" )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( "adb" to PersistedToolState( id = "adb", binaryName = "adb", isCompiled = true, isVerified = true, version = "34.0.5", binaryPath = "/home/user/LtiRomTools/bin/adb" ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( "android-tools" to PersistedSubmoduleState( name = "android-tools", isSynced = true, commit = "2c5e1b7c" ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( id = "adb", binaryName = "adb", isCompiled = true, isVerified = true, version = "34.0.5", binaryPath = "/home/user/LtiRomTools/bin/adb" )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( isCompiled = true, binaryPath = "/home/user/LtiRomTools/bin/mkfs.erofs", version = "1.7.1" )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( isSetupCompleted = true, lastCompletedTimestamp = 1725800000L, completedStages = setOf("WSL_DETECTION", "SERVER_CONNECTIVITY", "TOOLCHAIN_COMPILATION"), isAvbKeyProvisioned = true, avbKeyPath = "/home/user/LtiRomWorkDir/security/avb/lti_rsa4096.pem", tools = mapOf( "adb" to PersistedToolState( id = "adb", binaryName = "adb", isCompiled = true, isVerified = true, version = "34.0.5", binaryPath = "/home/user/LtiRomTools/bin/adb" ) ), submodules = mapOf( "android-tools" to PersistedSubmoduleState( name = "android-tools", isSynced = true, commit = "2c5e1b7c" ) ) )</ID>
+    <ID>TrailingCommaOnCallSite:ToolchainPreferencesDataSourceTest.kt:ToolchainPreferencesDataSourceTest$( name = "android-tools", isSynced = true, commit = "2c5e1b7c" )</ID>
+    <ID>Wrapping:DatastoreModule.kt:StudioPresentationStore(settings = get(), json = get())</ID>
+    <ID>Wrapping:LtiPreferencesDataSource.kt:LtiPreferencesDataSource$it.copy(editorSettings = editorSettings)</ID>
+  </CurrentIssues>
+</SmellBaseline>

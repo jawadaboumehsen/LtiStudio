@@ -1,0 +1,5 @@
+ext2simg: invalid option -- '-'
+ext2simg [ options ] <image or block device> <output image>
+  -c include CRC block
+  -z gzip output
+  -S don't use sparse output format

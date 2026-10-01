@@ -1,0 +1,48 @@
+usage: avbtool [-h]
+               {generate_test_image,version,extract_public_key,extract_public_key_digest,make_vbmeta_image,add_hash_footer,append_vbmeta_image,add_hashtree_footer,erase_footer,zero_hashtree,extract_vbmeta_image,resize_image,info_image,verify_image,print_partition_digests,calculate_vbmeta_digest,calculate_kernel_cmdline,set_ab_metadata,make_certificate,make_atx_certificate,make_cert_permanent_attributes,make_atx_permanent_attributes,make_cert_metadata,make_atx_metadata,make_cert_unlock_credential,make_atx_unlock_credential,update_partition_descriptor,resign_image}
+               ...
+
+options:
+  -h, --help            show this help message and exit
+
+subcommands:
+  {generate_test_image,version,extract_public_key,extract_public_key_digest,make_vbmeta_image,add_hash_footer,append_vbmeta_image,add_hashtree_footer,erase_footer,zero_hashtree,extract_vbmeta_image,resize_image,info_image,verify_image,print_partition_digests,calculate_vbmeta_digest,calculate_kernel_cmdline,set_ab_metadata,make_certificate,make_atx_certificate,make_cert_permanent_attributes,make_atx_permanent_attributes,make_cert_metadata,make_atx_metadata,make_cert_unlock_credential,make_atx_unlock_credential,update_partition_descriptor,resign_image}
+    generate_test_image
+                        Generates a test image with a known pattern for
+                        testing: 0x00 0x01 0x02 ... 0xff 0x00 0x01 ...
+    version             Prints version of avbtool.
+    extract_public_key  Extract public key.
+    extract_public_key_digest
+                        Extract SHA-256 digest of public key.
+    make_vbmeta_image   Makes a vbmeta image.
+    add_hash_footer     Add hashes and footer to image.
+    append_vbmeta_image
+                        Append vbmeta image to image.
+    add_hashtree_footer
+                        Add hashtree and footer to image.
+    erase_footer        Erase footer from an image.
+    zero_hashtree       Zero out hashtree and FEC data.
+    extract_vbmeta_image
+                        Extracts vbmeta from an image with a footer.
+    resize_image        Resize image with a footer.
+    info_image          Show information about vbmeta or footer.
+    verify_image        Verify an image.
+    print_partition_digests
+                        Prints partition digests.
+    calculate_vbmeta_digest
+                        Calculate vbmeta digest.
+    calculate_kernel_cmdline
+                        Calculate kernel cmdline.
+    set_ab_metadata     Set A/B metadata.
+    make_certificate (make_atx_certificate)
+                        Create an avb_cert extension certificate.
+    make_cert_permanent_attributes (make_atx_permanent_attributes)
+                        Create avb_cert extension permanent attributes.
+    make_cert_metadata (make_atx_metadata)
+                        Create avb_cert extension metadata.
+    make_cert_unlock_credential (make_atx_unlock_credential)
+                        Create an avb_cert extension unlock credential.
+    update_partition_descriptor
+                        Update a partition's hash or hashtree descriptor in a
+                        VBMeta image.
+    resign_image        Resigns an image with a new key and algorithm.

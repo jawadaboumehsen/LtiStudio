@@ -1,0 +1,25 @@
+aapt2 convert [options] -o arg files...
+
+Options:
+ --help                                            Displays this help menu
+ -o arg                                            Output path
+ --output-format arg                               Format of the output. Accepted values are 'proto' and 'binary'. When not set, defaults to 'binary'.
+ --enable-sparse-encoding                          Enables encoding sparse entries using a binary search tree.
+                                                   This decreases APK size at the cost of resource retrieval performance.
+                                                   Only applies sparse encoding if minSdk of the APK is >= 32
+ --force-sparse-encoding                           Enables encoding sparse entries using a binary search tree.
+                                                   This decreases APK size at the cost of resource retrieval performance.
+                                                   Only applies sparse encoding if minSdk of the APK is >= 32 or is not set
+ --enable-compact-entries                          This decreases APK size by using compact resource entries for simple data types.
+ --keep-raw-values                                 Preserve raw attribute values in xml files when using the 'binary' output format
+ --resources-config-path arg                       Path to the resources.cfg file containing the list of resources and
+                                                   directives to each resource.
+                                                   Format: type/resource_name#[directive][,directive]
+ --collapse-resource-names                         Collapses resource names to a single value in the key string pool. Resources can
+                                                   be exempted using the "no_collapse" directive in a file specified by --resources-config-path.
+ --deduplicate-entry-values                        Whether to deduplicate pairs of resource entry and value for simple resources.
+                                                   This is recommended to be used together with '--collapse-resource-names' flag or for
+                                                   APKs where resource names are manually collapsed. For such APKs this flag allows to
+                                                   store the same resource value only once in resource table which decreases APK size.
+                                                   Has no effect on APKs where resource names are kept.
+ -v                                                Enables verbose logging

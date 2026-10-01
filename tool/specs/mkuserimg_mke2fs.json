@@ -1,0 +1,50 @@
+{
+    "schemaVersion": 1,
+    "tool": "mkuserimg_mke2fs",
+    "executable": "mkuserimg_mke2fs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "971ad63e4229d2bd396b444a7a196c62d10eaf08f68ffc28de19e7a63096aac4",
+    "helpSha256": "370886b5fd3c2bd1093b5b42ea049adbd9dfee6a56bd21488dc009f882f3bfcf",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "inputDirectory", "parameter": "positionalArgs", "index": 0, "type": "DIRECTORY", "direction": "INPUT", "required": true},
+                {"name": "outputImage", "parameter": "positionalArgs", "index": 1, "type": "FILE", "direction": "OUTPUT", "required": true}
+            ]
+        }
+    ]
+}

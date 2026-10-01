@@ -1,0 +1,7 @@
+ota-type=BLOCK
+post-build=PQ84P01:15/AQ3A.240812.002/20260311.222527
+post-build-incremental=20260911.120000
+post-sdk-level=35
+post-security-patch-level=2026-02-01
+post-timestamp=1726056000
+pre-device=PQ84P01

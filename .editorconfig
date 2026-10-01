@@ -1,0 +1,12 @@
+# https://editorconfig.org/
+# This configuration is used by ktlint when spotless invokes it
+
+[*.{kt,kts}]
+ij_kotlin_allow_trailing_comma=true
+ij_kotlin_allow_trailing_comma_on_call_site=true
+ktlint_function_naming_ignore_when_annotated_with=Composable, Test, Preview
+# Design-system tokens use PascalCase (AlphaTokens.UltraFaint, Spacing.Medium, IconSize.Large,
+# etc. - see CLAUDE.md's token catalog), not SCREAMING_SNAKE_CASE - disabling this rule instead
+# of renaming hundreds of established call sites across the codebase.
+ktlint_standard_property-naming=disabled
+ktlint_standard_no-wildcard-imports=disabled

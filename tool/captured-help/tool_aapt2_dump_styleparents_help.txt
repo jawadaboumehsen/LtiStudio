@@ -1,0 +1,5 @@
+dump styleparents [options] --style arg files...
+
+Options:
+ --help                                            Displays this help menu
+ --style arg                                       The name of the style to print

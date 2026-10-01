@@ -1,0 +1,8 @@
+usage: avbtool print_partition_digests [-h] --image IMAGE [--output OUTPUT]
+                                       [--json]
+
+options:
+  -h, --help       show this help message and exit
+  --image IMAGE    Image to print partition digests from
+  --output OUTPUT  Write info to file
+  --json           Print output as JSON

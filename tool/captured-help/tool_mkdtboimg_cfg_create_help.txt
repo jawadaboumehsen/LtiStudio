@@ -1,0 +1,8 @@
+usage: cfg_create [-h] [--dtb-dir [DTBDIR]] [conf_file]
+
+positional arguments:
+  conf_file
+
+options:
+  -h, --help            show this help message and exit
+  --dtb-dir [DTBDIR], -d [DTBDIR]

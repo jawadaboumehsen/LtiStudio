@@ -1,0 +1,104 @@
+usage: avbtool add_hashtree_footer [-h] [--image IMAGE]
+                                   [--partition_size PARTITION_SIZE]
+                                   [--partition_name PARTITION_NAME]
+                                   [--hash_algorithm HASH_ALGORITHM]
+                                   [--salt SALT] [--block_size BLOCK_SIZE]
+                                   [--do_not_generate_fec]
+                                   [--fec_num_roots FEC_NUM_ROOTS]
+                                   [--calc_max_image_size]
+                                   [--output_vbmeta_image OUTPUT_VBMETA_IMAGE]
+                                   [--do_not_append_vbmeta_image]
+                                   [--setup_as_rootfs_from_kernel]
+                                   [--no_hashtree] [--check_at_most_once]
+                                   [--algorithm ALGORITHM] [--key KEY]
+                                   [--signing_helper APP]
+                                   [--signing_helper_with_files APP]
+                                   [--public_key_metadata KEY_METADATA]
+                                   [--rollback_index ROLLBACK_INDEX]
+                                   [--rollback_index_location ROLLBACK_INDEX_LOCATION]
+                                   [--append_to_release_string STR]
+                                   [--prop KEY:VALUE]
+                                   [--prop_from_file KEY:PATH]
+                                   [--kernel_cmdline CMDLINE]
+                                   [--setup_rootfs_from_kernel IMAGE]
+                                   [--include_descriptors_from_image IMAGE]
+                                   [--print_required_libavb_version]
+                                   [--chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH]
+                                   [--chain_partition_do_not_use_ab PART_NAME:ROLLBACK_SLOT:KEY_PATH]
+                                   [--flags FLAGS]
+                                   [--set_hashtree_disabled_flag]
+                                   [--set_verification_disabled_flag]
+                                   [--use_persistent_digest] [--do_not_use_ab]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to add hashtree to
+  --partition_size PARTITION_SIZE
+                        Partition size
+  --partition_name PARTITION_NAME
+                        Partition name
+  --hash_algorithm HASH_ALGORITHM
+                        Hash algorithm to use (default: sha1)
+  --salt SALT           Salt in hex (default: /dev/urandom)
+  --block_size BLOCK_SIZE
+                        Block size (default: 4096)
+  --do_not_generate_fec
+                        Do not generate forward-error-correction codes
+  --fec_num_roots FEC_NUM_ROOTS
+                        Number of roots for FEC (default: 2)
+  --calc_max_image_size
+                        Don't store the hashtree or footer - instead calculate
+                        the maximum image size leaving enough room for
+                        hashtree and metadata with the given partition size.
+  --output_vbmeta_image OUTPUT_VBMETA_IMAGE
+                        Also write vbmeta struct to file
+  --do_not_append_vbmeta_image
+                        Do not append vbmeta struct or footer to the image
+  --setup_as_rootfs_from_kernel
+                        Adds kernel cmdline for setting up rootfs
+  --no_hashtree         Do not append hashtree
+  --check_at_most_once  Set to verify data block only once
+  --algorithm ALGORITHM
+                        Algorithm to use (default: NONE)
+  --key KEY             Path to RSA private key file
+  --signing_helper APP  Path to helper used for signing
+  --signing_helper_with_files APP
+                        Path to helper used for signing using files
+  --public_key_metadata KEY_METADATA
+                        Path to public key metadata file
+  --rollback_index ROLLBACK_INDEX
+                        Rollback Index
+  --rollback_index_location ROLLBACK_INDEX_LOCATION
+                        Location of main vbmeta Rollback Index
+  --append_to_release_string STR
+                        Text to append to release string
+  --prop KEY:VALUE      Add property
+  --prop_from_file KEY:PATH
+                        Add property from file
+  --kernel_cmdline CMDLINE
+                        Add kernel cmdline
+  --setup_rootfs_from_kernel IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE
+                        Adds kernel cmdline to set up IMAGE
+  --include_descriptors_from_image IMAGE
+                        Include descriptors from image
+  --print_required_libavb_version
+                        Don't store the footer - instead calculate the
+                        required libavb version for the given options.
+  --chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH
+                        Allow signed integrity-data for partition
+  --chain_partition_do_not_use_ab PART_NAME:ROLLBACK_SLOT:KEY_PATH
+                        Allow signed integrity-data for partition does not use
+                        A/B
+  --flags FLAGS         VBMeta flags
+  --set_hashtree_disabled_flag
+                        Set the HASHTREE_DISABLED flag
+  --set_verification_disabled_flag
+                        Set the VERIFICATION_DISABLED flag
+  --use_persistent_digest
+                        Use a persistent digest on device instead of storing
+                        the digest in the descriptor. This cannot be used with
+                        A/B so must be combined with --do_not_use_ab when an
+                        A/B suffix is expected at runtime.
+  --do_not_use_ab       The partition does not use A/B even when an A/B suffix
+                        is present. This must not be used for vbmeta or
+                        chained partitions.

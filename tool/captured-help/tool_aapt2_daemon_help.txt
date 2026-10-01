@@ -1,0 +1,5 @@
+aapt2 daemon [options] files...
+
+Options:
+ --help                                            Displays this help menu
+ --trace_folder arg                                Generate systrace json trace fragment to specified folder.

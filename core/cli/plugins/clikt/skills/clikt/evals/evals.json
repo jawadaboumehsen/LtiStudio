@@ -1,0 +1,47 @@
+﻿{
+  "skill_name": "clikt",
+  "evals": [
+    {
+      "id": 0,
+      "name": "eval-basic-command",
+      "prompt": "Create a command line tool in Kotlin using Clikt 5 called 'greet' that takes a required '--name' option, an optional '--count' integer option defaulting to 1, and prints the greeting using echo().",
+      "files": [],
+      "expected_output": "A Kotlin class extending CliktCommand with name option().required(), count option().int().default(1), and run() looping count times calling echo(\"Hello, $name!\")."
+    },
+    {
+      "id": 1,
+      "name": "eval-subcommands",
+      "prompt": "Build a Git-like command line structure in Kotlin using Clikt 5 with a root command 'repo' and two subcommands: 'status' and 'commit'. The 'commit' subcommand must accept a required '-m' / '--message' option.",
+      "files": [],
+      "expected_output": "A root CliktCommand registering status and commit subcommands via subcommands(), where CommitCommand defines option(\"-m\", \"--message\").required()."
+    },
+    {
+      "id": 2,
+      "name": "eval-suspending-command",
+      "prompt": "Build an asynchronous CLI command in Kotlin using Clikt 5 that fetches project statistics from a suspending API service and prints a progress message before displaying the result. Use SuspendingCliktCommand.",
+      "files": [],
+      "expected_output": "A Kotlin class extending SuspendingCliktCommand with an overridden suspend fun run() executing coroutine/async work and using echo() for status updates."
+    },
+    {
+      "id": 3,
+      "name": "eval-custom-types-validation",
+      "prompt": "Create a Clikt 5 command that accepts a '--port' option (must be an integer between 1024 and 65535) and an '--env' choice option limited to 'dev', 'staging', 'prod'. Add proper validation error messages.",
+      "files": [],
+      "expected_output": "A CliktCommand using option().int().check(\"Port must be between 1024 and 65535\") { it in 1024..65535 } and option().choice(\"dev\", \"staging\", \"prod\")."
+    },
+    {
+      "id": 4,
+      "name": "eval-terminal-dispatching",
+      "prompt": "How do I embed Clikt 5 into an in-app graphical terminal (like an IDE console) so that commands run in-process without System.exit() and output is captured into a custom Mordant Terminal or stream?",
+      "files": [],
+      "expected_output": "An implementation configuring Clikt context { terminal = customTerminal } and overriding parse() or main() with printHelpOnEmptyArgs or custom exception handling instead of calling System.exit()."
+    },
+    {
+      "id": 5,
+      "name": "eval-unit-testing",
+      "prompt": "Write a unit test for a Clikt 5 command using Clikt's built-in testing utilities to verify that passing '--help' returns exit code 0 and contains 'Usage:' in the output.",
+      "files": [],
+      "expected_output": "A test function using command.test(\"--help\") asserting result.statusCode == 0 and result.output.contains(\"Usage:\")."
+    }
+  ]
+}

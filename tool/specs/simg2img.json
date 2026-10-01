@@ -1,0 +1,50 @@
+{
+    "schemaVersion": 1,
+    "tool": "simg2img",
+    "executable": "simg2img",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "8be1d21acb148192b4094fbaf7dc06ca79ef80690e8543cf4d5142005a15d923",
+    "helpSha256": "9bb1398ea810a40f2f89e0182745bd463bf4d06e2138f4158867c052ebded419",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "sparseImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "rawImage", "parameter": "positionalArgs", "index": 1, "type": "FILE", "direction": "OUTPUT", "required": true}
+            ]
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+mkdtboimg help all
+  mkdtboimg help <command>
+
+    commands:
+      help, dump, create, cfg_create

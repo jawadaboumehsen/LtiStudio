@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:CommandCompleter.kt:DefaultCommandCompleter$(currentNode.subcommands.keys.filter { it.startsWith(currentToken, ignoreCase = true) })</ID>
+    <ID>ArgumentListWrapping:CommandCompleter.kt:DefaultCommandCompleter$(currentToken, ignoreCase = true)</ID>
+    <ID>ClassSignature:CommandCompleter.kt:DefaultCommandCompleter : CommandCompleter</ID>
+    <ID>ClassSignature:DefaultTerminalCommandDispatcherFactory.kt:DefaultTerminalCommandDispatcherFactory : TerminalCommandDispatcherFactory</ID>
+    <ID>ClassSignature:LtiRootCommand.kt:LtiRootCommand : CliktCommand</ID>
+    <ID>CyclomaticComplexMethod:CommandCompleter.kt:DefaultCommandCompleter$override fun complete: List&lt;String&gt;</ID>
+    <ID>FunctionExpressionBody:DefaultTerminalCommandDispatcherFactory.kt:DefaultTerminalCommandDispatcherFactory${ return TerminalCommandDispatcherImpl( initialCwd = initialCwd, shellExecutor = shellExecutor, onToggleTheme = onToggleTheme, onSetTheme = onSetTheme, getSettings = getSettings, onUpdateSetting = onUpdateSetting, ) }</ID>
+    <ID>FunctionExpressionBody:TerminalCommandDispatcherImpl.kt:TerminalCommandDispatcherImpl${ return try { root.parse(parseTokens) null } catch (e: CliktError) { root.echoFormattedHelp(e) e } }</ID>
+    <ID>FunctionLiteral:CommandCompleter.kt:DefaultCommandCompleter$&lt;anonymous&gt;</ID>
+    <ID>FunctionSignature:LtiCliApp.kt:LtiCliApp$fun run</ID>
+    <ID>FunctionSignature:TerminalCommandDispatcherImpl.kt:TerminalCommandDispatcherImpl$private suspend fun FlowCollector&lt;TerminalOutputEvent&gt;.emitLines</ID>
+    <ID>FunctionSignature:TerminalConsole.kt:TerminalConsole$override fun enterRawMode: AutoCloseable</ID>
+    <ID>ImportOrdering:TerminalCommandDispatcherTest.kt:import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.flow import kotlinx.coroutines.flow.toList import kotlinx.coroutines.test.runTest import java.io.File import org.ide.lti.core.domain.terminal.ShellExecutor import org.ide.lti.core.domain.terminal.ShellOutputEvent import org.ide.lti.core.model.terminal.TerminalOutputEvent import kotlin.test.Test import kotlin.test.assertEquals import kotlin.test.assertTrue</ID>
+    <ID>MaxLineLength:CommandCompleter.kt:DefaultCommandCompleter$candidates.addAll(currentNode.subcommands.keys.filter { it.startsWith(currentToken, ignoreCase = true) })</ID>
+    <ID>MaximumLineLength:CommandCompleter.kt:DefaultCommandCompleter$)</ID>
+    <ID>ReturnCount:CommandCompleter.kt:DefaultCommandCompleter$override fun complete: List&lt;String&gt;</ID>
+  </CurrentIssues>
+</SmellBaseline>

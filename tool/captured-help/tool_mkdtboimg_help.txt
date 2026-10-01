@@ -1,0 +1,9 @@
+usage: mkdtboimg [-h] {create,cfg_create,dump,help} ...
+
+options:
+  -h, --help            show this help message and exit
+
+subcommand:
+  Valid subcommands
+
+  {create,cfg_create,dump,help}

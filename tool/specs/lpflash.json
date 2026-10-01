@@ -1,0 +1,47 @@
+{
+    "schemaVersion": 1,
+    "tool": "lpflash",
+    "executable": "lpflash",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "a09c03ac8a2a65d5aeb9e654f566eac12d9ccfe0736e31ff201f1ac2da5220b8",
+    "helpSha256": "852fb18ce0b6bd388e70e1b38979452c8636d4ad1e94a3479074ed34d2dd16de",
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "DEVICE_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": null,
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

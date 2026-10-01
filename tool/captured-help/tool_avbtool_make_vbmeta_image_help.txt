@@ -1,0 +1,63 @@
+usage: avbtool make_vbmeta_image [-h] [--output OUTPUT]
+                                 [--padding_size NUMBER]
+                                 [--algorithm ALGORITHM] [--key KEY]
+                                 [--signing_helper APP]
+                                 [--signing_helper_with_files APP]
+                                 [--public_key_metadata KEY_METADATA]
+                                 [--rollback_index ROLLBACK_INDEX]
+                                 [--rollback_index_location ROLLBACK_INDEX_LOCATION]
+                                 [--append_to_release_string STR]
+                                 [--prop KEY:VALUE]
+                                 [--prop_from_file KEY:PATH]
+                                 [--kernel_cmdline CMDLINE]
+                                 [--setup_rootfs_from_kernel IMAGE]
+                                 [--include_descriptors_from_image IMAGE]
+                                 [--print_required_libavb_version]
+                                 [--chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH]
+                                 [--chain_partition_do_not_use_ab PART_NAME:ROLLBACK_SLOT:KEY_PATH]
+                                 [--flags FLAGS]
+                                 [--set_hashtree_disabled_flag]
+                                 [--set_verification_disabled_flag]
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Output file name
+  --padding_size NUMBER
+                        If non-zero, pads output with NUL bytes so its size is
+                        a multiple of NUMBER (default: 0)
+  --algorithm ALGORITHM
+                        Algorithm to use (default: NONE)
+  --key KEY             Path to RSA private key file
+  --signing_helper APP  Path to helper used for signing
+  --signing_helper_with_files APP
+                        Path to helper used for signing using files
+  --public_key_metadata KEY_METADATA
+                        Path to public key metadata file
+  --rollback_index ROLLBACK_INDEX
+                        Rollback Index
+  --rollback_index_location ROLLBACK_INDEX_LOCATION
+                        Location of main vbmeta Rollback Index
+  --append_to_release_string STR
+                        Text to append to release string
+  --prop KEY:VALUE      Add property
+  --prop_from_file KEY:PATH
+                        Add property from file
+  --kernel_cmdline CMDLINE
+                        Add kernel cmdline
+  --setup_rootfs_from_kernel IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE
+                        Adds kernel cmdline to set up IMAGE
+  --include_descriptors_from_image IMAGE
+                        Include descriptors from image
+  --print_required_libavb_version
+                        Don't store the footer - instead calculate the
+                        required libavb version for the given options.
+  --chain_partition PART_NAME:ROLLBACK_SLOT:KEY_PATH
+                        Allow signed integrity-data for partition
+  --chain_partition_do_not_use_ab PART_NAME:ROLLBACK_SLOT:KEY_PATH
+                        Allow signed integrity-data for partition does not use
+                        A/B
+  --flags FLAGS         VBMeta flags
+  --set_hashtree_disabled_flag
+                        Set the HASHTREE_DISABLED flag
+  --set_verification_disabled_flag
+                        Set the VERIFICATION_DISABLED flag

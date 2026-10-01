@@ -1,0 +1,40 @@
+usage: unpack_bootimg [-h] --boot_img BOOT_IMG [--out OUT]
+                      [--format {info,mkbootimg}] [-0]
+
+Unpacks boot, recovery or vendor_boot image.
+
+options:
+  -h, --help            show this help message and exit
+  --boot_img BOOT_IMG   path to the boot, recovery or vendor_boot image
+  --out OUT             output directory of the unpacked images
+  --format {info,mkbootimg}
+                        text output format (default: info)
+  -0, --null            output null-terminated argument strings
+
+Output format:
+
+  * info
+
+    Pretty-printed info-rich text format suitable for human inspection.
+
+  * mkbootimg
+
+    Output shell-escaped (quoted) argument strings that can be used to
+    reconstruct the boot image. For example:
+
+    $ unpack_bootimg --boot_img vendor_boot.img --out out --format=mkbootimg |
+        tee mkbootimg_args
+    $ sh -c "mkbootimg $(cat mkbootimg_args) --vendor_boot repacked.img"
+
+    vendor_boot.img and repacked.img would be equivalent.
+
+    If the -0 option is specified, output unescaped null-terminated argument
+    strings that are suitable to be parsed by a shell script (xargs -0 format):
+
+    $ unpack_bootimg --boot_img vendor_boot.img --out out --format=mkbootimg \
+        -0 | tee mkbootimg_args
+    $ declare -a MKBOOTIMG_ARGS=()
+    $ while IFS= read -r -d '' ARG; do
+        MKBOOTIMG_ARGS+=("${ARG}")
+      done <mkbootimg_args
+    $ mkbootimg "${MKBOOTIMG_ARGS[@]}" --vendor_boot repacked.img

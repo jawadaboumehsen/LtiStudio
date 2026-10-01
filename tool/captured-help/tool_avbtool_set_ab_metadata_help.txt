@@ -1,0 +1,13 @@
+usage: avbtool set_ab_metadata [-h] --misc_image MISC_IMAGE
+                               [--slot_data SLOT_DATA]
+
+options:
+  -h, --help            show this help message and exit
+  --misc_image MISC_IMAGE
+                        The misc image to modify. If the image does not exist,
+                        it will be created.
+  --slot_data SLOT_DATA
+                        Slot data of the form "priority", "tries_remaining",
+                        "sucessful_boot" for slot A followed by the same for
+                        slot B, separated by colons. The default value is
+                        15:7:0:14:7:0.

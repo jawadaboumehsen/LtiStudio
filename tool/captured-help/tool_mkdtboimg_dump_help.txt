@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "mkdtboimg", line 1078, in <module>
+    main()
+  File "mkdtboimg", line 1075, in main
+    subcmd.func(subcmd.argfile, subcmd_args)
+  File "mkdtboimg", line 894, in dump_dtbo_image
+    dtbo = Dtbo(fin)
+           ^^^^^^^^^
+  File "mkdtboimg", line 427, in __init__
+    self._read_dtbo_image()
+  File "mkdtboimg", line 348, in _read_dtbo_image
+    file_size = os.fstat(self.__file.fileno()).st_size
+                         ^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'fileno'

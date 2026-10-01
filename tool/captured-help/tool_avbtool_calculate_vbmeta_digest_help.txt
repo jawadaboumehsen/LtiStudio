@@ -1,0 +1,11 @@
+usage: avbtool calculate_vbmeta_digest [-h] --image IMAGE
+                                       [--hash_algorithm HASH_ALGORITHM]
+                                       [--output OUTPUT] [--format {hex,raw}]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to calculate digest for
+  --hash_algorithm HASH_ALGORITHM
+                        Hash algorithm to use (default: sha256)
+  --output OUTPUT       Write digest to file (default: stdout)
+  --format {hex,raw}    Output format (default: hex)

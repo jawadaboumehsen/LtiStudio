@@ -1,0 +1,4 @@
+usage: mkdtboimg [--id ID] [--rev REV] [--flags FLAGS] [--custom0 CUSTOM0]
+                 [--custom1 CUSTOM1] [--custom2 CUSTOM2] [--custom3 CUSTOM3]
+                 [dt_file]
+mkdtboimg: error: unrecognized arguments: -h

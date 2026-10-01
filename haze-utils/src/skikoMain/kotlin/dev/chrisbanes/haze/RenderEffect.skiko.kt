@@ -1,0 +1,234 @@
+// Copyright 2024, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
+@file:OptIn(InternalHazeApi::class)
+
+package dev.chrisbanes.haze
+
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RenderEffect
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.colorspace.ColorSpaces
+import androidx.compose.ui.graphics.skiaShader
+import kotlin.jvm.JvmInline
+import org.jetbrains.skia.ColorFilter
+import org.jetbrains.skia.FilterTileMode
+import org.jetbrains.skia.IRect
+import org.jetbrains.skia.ImageFilter
+import org.jetbrains.skia.RuntimeEffect
+import org.jetbrains.skia.RuntimeShaderBuilder
+
+@InternalHazeApi
+public actual typealias PlatformRuntimeEffect = RuntimeEffect
+
+@InternalHazeApi
+public actual typealias PlatformRenderEffect = ImageFilter
+
+@InternalHazeApi
+public actual typealias PlatformColorFilter = ColorFilter
+
+@InternalHazeApi
+public actual fun createRuntimeEffect(sksl: String): PlatformRuntimeEffect {
+  return wrapRuntimeShaderConstruction {
+    RuntimeEffect.makeForShader(sksl)
+  }
+}
+
+@InternalHazeApi
+public actual fun createShaderRenderEffect(shader: Shader, crop: Rect?): PlatformRenderEffect =
+  ImageFilter.makeShader(shader.skiaShader, crop = crop?.toIRect())
+
+@InternalHazeApi
+public actual fun createBlendRenderEffect(
+  blendMode: BlendMode,
+  background: PlatformRenderEffect,
+  foreground: PlatformRenderEffect,
+  crop: Rect?,
+): PlatformRenderEffect = ImageFilter.makeBlend(
+  blendMode = blendMode.toSkiaBlendMode(),
+  bg = background,
+  fg = foreground,
+  crop = crop?.toIRect(),
+)
+
+@InternalHazeApi
+public actual fun createColorFilterRenderEffect(
+  colorFilter: PlatformColorFilter,
+  input: PlatformRenderEffect?,
+  crop: Rect?,
+): PlatformRenderEffect = ImageFilter.makeColorFilter(
+  f = colorFilter,
+  input = input,
+  crop = crop?.toIRect(),
+)
+
+@InternalHazeApi
+public actual fun createBlurRenderEffect(
+  radiusX: Float,
+  radiusY: Float,
+  tileMode: TileMode,
+  input: PlatformRenderEffect?,
+  crop: Rect?,
+): PlatformRenderEffect? {
+  if (radiusX <= 0f && radiusY <= 0f) {
+    return null
+  }
+
+  return ImageFilter.makeBlur(
+    sigmaX = radiusToSigma(radiusX),
+    sigmaY = radiusToSigma(radiusY),
+    mode = when (tileMode) {
+      TileMode.Clamp -> FilterTileMode.CLAMP
+      TileMode.Repeated -> FilterTileMode.REPEAT
+      TileMode.Mirror -> FilterTileMode.MIRROR
+      TileMode.Decal -> FilterTileMode.DECAL
+      else -> FilterTileMode.CLAMP
+    },
+    input = input,
+    crop = crop?.toIRect(),
+  )
+}
+
+/**
+ * Converts a blur radius to a sigma value for Skia's blur filter.
+ * This matches the formula used by Compose's BlurEffect.
+ */
+private fun radiusToSigma(radius: Float): Float {
+  return (radius * 0.57735f + 0.5f)
+}
+
+@InternalHazeApi
+public actual fun createOffsetRenderEffect(
+  offsetX: Float,
+  offsetY: Float,
+  input: PlatformRenderEffect?,
+  crop: Rect?,
+): PlatformRenderEffect = ImageFilter.makeOffset(
+  dx = offsetX,
+  dy = offsetY,
+  input = input,
+  crop = crop?.toIRect(),
+)
+
+@InternalHazeApi
+public actual fun PlatformRenderEffect.then(other: PlatformRenderEffect): PlatformRenderEffect {
+  return ImageFilter.makeCompose(other, this)
+}
+
+@InternalHazeApi
+public actual fun PlatformRenderEffect.asComposeRenderEffect(): RenderEffect {
+  return asComposeRenderEffect()
+}
+
+private fun Rect.toIRect(): IRect = IRect.makeLTRB(
+  l = left.toInt(),
+  t = top.toInt(),
+  r = right.toInt(),
+  b = bottom.toInt(),
+)
+
+/** Returns `true` because Skiko supports runtime-shader render effects. */
+@InternalHazeApi
+public actual fun isRuntimeShaderRenderEffectSupported(): Boolean = true
+
+@InternalHazeApi
+public actual fun createRuntimeShaderRenderEffect(
+  effect: PlatformRuntimeEffect,
+  shaderNames: Array<String>,
+  inputs: Array<PlatformRenderEffect?>,
+  uniforms: RuntimeShaderUniformProvider.() -> Unit,
+): PlatformRenderEffect {
+  val builder = wrapRuntimeShaderConstruction {
+    RuntimeShaderBuilder(effect)
+  }
+  SkikoRuntimeShaderUniformProvider(builder).also(uniforms)
+
+  return wrapRuntimeShaderConstruction {
+    ImageFilter.makeRuntimeShader(
+      runtimeShaderBuilder = builder,
+      shaderNames = shaderNames,
+      inputs = inputs,
+    )
+  }
+}
+
+@InternalHazeApi
+public actual fun createMutableRuntimeShaderRenderEffect(
+  effect: PlatformRuntimeEffect,
+  shaderNames: Array<String>,
+  inputs: Array<PlatformRenderEffect?>,
+): MutableRuntimeShaderRenderEffect = wrapRuntimeShaderConstruction {
+  SkikoMutableRuntimeShaderRenderEffect(
+    effect = effect,
+    shaderNames = shaderNames,
+    inputs = inputs,
+  )
+}
+
+private class SkikoMutableRuntimeShaderRenderEffect(
+  private val effect: RuntimeEffect,
+  private val shaderNames: Array<String>,
+  inputs: Array<ImageFilter?>,
+) : MutableRuntimeShaderRenderEffect {
+  private val builder = RuntimeShaderBuilder(effect)
+  private val provider = SkikoRuntimeShaderUniformProvider(builder)
+  private var inputs = inputs.copyOf()
+
+  override fun updateUniforms(
+    uniforms: RuntimeShaderUniformProvider.() -> Unit,
+  ): PlatformRenderEffect {
+    uniforms(provider)
+    // ImageFilter snapshots the builder's current uniforms, unlike Android's live RuntimeShader.
+    return wrapRuntimeShaderConstruction {
+      ImageFilter.makeRuntimeShader(builder, shaderNames, inputs)
+    }
+  }
+
+  override fun updateInputs(
+    inputs: Array<ImageFilter?>,
+    uniforms: RuntimeShaderUniformProvider.() -> Unit,
+  ): PlatformRenderEffect {
+    this.inputs = inputs.copyOf()
+    return updateUniforms(uniforms)
+  }
+}
+
+@JvmInline
+private value class SkikoRuntimeShaderUniformProvider(
+  private val builder: RuntimeShaderBuilder,
+) : RuntimeShaderUniformProvider {
+  override fun setColorUniform(name: String, color: Color) {
+    val extendedSrgb = color.convert(ColorSpaces.ExtendedSrgb)
+    builder.uniform(
+      name,
+      extendedSrgb.red,
+      extendedSrgb.green,
+      extendedSrgb.blue,
+      extendedSrgb.alpha,
+    )
+  }
+
+  override fun setFloatUniform(name: String, value: Float) {
+    builder.uniform(name, value)
+  }
+
+  override fun setFloatUniform(name: String, value1: Float, value2: Float) {
+    builder.uniform(name, value1, value2)
+  }
+
+  override fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float) {
+    builder.uniform(name, value1, value2, value3, value4)
+  }
+
+  override fun setIntUniform(name: String, value: Int) {
+    builder.uniform(name, value)
+  }
+
+  override fun setChildShader(name: String, shader: Shader) {
+    builder.child(name, shader.skiaShader)
+  }
+}

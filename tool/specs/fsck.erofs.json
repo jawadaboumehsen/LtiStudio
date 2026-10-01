@@ -1,0 +1,115 @@
+{
+    "schemaVersion": 1,
+    "tool": "fsck.erofs",
+    "executable": "fsck.erofs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "658c729534e87e55089eafd6a1ded7604a49ba7f109ac9358eb264fce0a6217d",
+    "helpSha256": "b8e11943fcd4c5e9f60b6d40e8d906f0a19a939f398711d453806a5806ea1687",
+    "globalOptions": [
+        {
+            "name": "version",
+            "spelling": "--version",
+            "aliases": [
+                "-V"
+            ],
+            "description": "print the version number of fsck.erofs and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "display this help and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "D",
+            "spelling": "-d",
+            "description": "set output verbosity; 0=quiet, 9=verbose (default=2)",
+            "type": "STRING"
+        },
+        {
+            "name": "P",
+            "spelling": "-p",
+            "description": "print total compression ratio of all files",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "device",
+            "spelling": "--device",
+            "description": "specify an extra device to be used together",
+            "type": "STRING"
+        },
+        {
+            "name": "extract",
+            "spelling": "--extract",
+            "description": "check if all files are well encoded, optionally",
+            "type": "STRING"
+        },
+        {
+            "name": "offset",
+            "spelling": "--offset",
+            "description": "skip # bytes at the beginning of IMAGE",
+            "type": "STRING"
+        },
+        {
+            "name": "A",
+            "spelling": "-a",
+            "description": "-y             no-op, for compatibility with fsck of other filesystems",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "force",
+            "spelling": "--force",
+            "description": "allow extracting to root",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "overwrite",
+            "spelling": "--overwrite",
+            "description": "overwrite files that already exist",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

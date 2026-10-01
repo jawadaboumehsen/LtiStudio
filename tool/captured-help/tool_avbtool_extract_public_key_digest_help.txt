@@ -1,0 +1,6 @@
+usage: avbtool extract_public_key_digest [-h] --key KEY --output OUTPUT
+
+options:
+  -h, --help       show this help message and exit
+  --key KEY        Path to RSA private key file
+  --output OUTPUT  Output file name

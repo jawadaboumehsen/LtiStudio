@@ -1,0 +1,26 @@
+<tools-bin>/sload.f2fs: invalid option -- '-'
+	Error: Unknown option ?
+
+Usage: sload.f2fs [options] device
+[options]:
+  -C fs_config
+  -f source directory [path of the source directory]
+  -p product out directory
+  -s file_contexts
+  -S sparse_mode
+  -t mount point [prefix of target fs path, default:/]
+  -T timestamp
+  -P preserve owner: user and group
+  -c enable compression (default allow policy)
+    ------------ Compression sub-options -----------------
+    -L <log-of-blocks-per-cluster>, default 2
+    -a <algorithm> compression algorithm, default LZ4
+    -x <ext> compress files except for these extensions.
+    -i <ext> compress files with these extensions only.
+    * -i or -x: use it many times for multiple extensions.
+    * -i and -x cannot be used together..
+    -m <num> min compressed blocks per cluster
+    -r read only (to release unused blocks) for compressed files
+    ------------------------------------------------------
+  -d debug level [default:0]
+  -V print the version number and exit

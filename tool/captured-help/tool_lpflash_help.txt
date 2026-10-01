@@ -1,0 +1,4 @@
+lpflash - command-line tool for dumping Android Logical Partition images.
+
+Usage:
+  lpflash [block-device] [img-file]

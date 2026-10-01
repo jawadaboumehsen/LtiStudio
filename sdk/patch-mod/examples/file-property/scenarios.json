@@ -1,0 +1,18 @@
+[
+  {
+    "name": "default-settings",
+    "settings": {},
+    "facts": {},
+    "capabilities": [],
+    "expectResolved": true
+  },
+  {
+    "name": "illegal-boolean-setting",
+    "settings": {
+      "opt_custom_hosts": "not-a-boolean"
+    },
+    "facts": {},
+    "capabilities": [],
+    "expectResolved": false
+  }
+]

@@ -1,0 +1,88 @@
+{
+    "schemaVersion": 1,
+    "tool": "mkbootfs",
+    "executable": "mkbootfs",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "66cd1d8a87d2cb81b3152211efa965bfcfc90ac9f984d8535eb6e5f5c9f1dec4",
+    "helpSha256": "d9074b3f680166c5863e73fe5e55e83ddee37d6873db04ffecc80aa38a4cfd9e",
+    "globalOptions": [
+        {
+            "name": "dirname",
+            "spelling": "--dirname",
+            "aliases": [
+                "-d"
+            ],
+            "description": ": fs-config directory",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "file",
+            "spelling": "--file",
+            "aliases": [
+                "-f"
+            ],
+            "description": ": Canned configuration file",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": ": Print this help",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "nodes",
+            "spelling": "--nodes",
+            "aliases": [
+                "-n"
+            ],
+            "description": ": Dev nodes description file",
+            "type": "PATH",
+            "valueType": "path"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

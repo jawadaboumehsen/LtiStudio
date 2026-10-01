@@ -1,0 +1,15 @@
+usage: img2sdat [-h] [-B BLOCK_LIST_FILE] [-c CACHE_SIZE] [-o OUTDIR] image
+
+Visit xda thread for more information.
+
+positional arguments:
+  image                 input partition image
+
+options:
+  -h, --help            show this help message and exit
+  -B BLOCK_LIST_FILE, --block-list-file BLOCK_LIST_FILE
+                        block map file
+  -c CACHE_SIZE, --cache-size CACHE_SIZE
+                        cache partition size
+  -o OUTDIR, --outdir OUTDIR
+                        output directory (current directory by default)

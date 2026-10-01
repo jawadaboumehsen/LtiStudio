@@ -1,0 +1,12 @@
+lpdump - command-line tool for dumping Android Logical Partition images.
+
+Usage:
+  lpdump [-s <SLOT#>|--slot=<SLOT#>] [-j|--json] [FILE|DEVICE]
+
+Options:
+  -s, --slot=N     Slot number or suffix.
+  -j, --json       Print in JSON format.
+  -d, --dump-metadata-size
+                   Print the space reserved for metadata to stdout
+                   in bytes.
+  -a, --all        Dump all slots (not available in JSON mode).

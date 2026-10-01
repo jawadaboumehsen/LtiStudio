@@ -1,0 +1,5 @@
+dump xmlstrings [options] --file arg files...
+
+Options:
+ --help                                            Displays this help menu
+ --file arg                                        A compiled xml file to print

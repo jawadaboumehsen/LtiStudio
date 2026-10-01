@@ -1,0 +1,11 @@
+usage: avbtool info_image [-h] --image IMAGE [--output OUTPUT] [--cert]
+                          [--output_pubkey OUTPUT_PUBKEY]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to show information about
+  --output OUTPUT       Write info to file
+  --cert, --atx         Show information about the avb_cert extension
+                        certificate.
+  --output_pubkey OUTPUT_PUBKEY
+                        Write public key to file

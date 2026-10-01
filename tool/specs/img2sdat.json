@@ -1,0 +1,81 @@
+{
+    "schemaVersion": 1,
+    "tool": "img2sdat",
+    "executable": "img2sdat",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "1f78bcbd577e620e23b750a99fb052c1c52e27c9c2ab560c60f7a17e51b03b57",
+    "helpSha256": "a2b8dbcf88c268d42efbbb7d2d613386dd44c104e74b6ca3d2142cc6a648fb22",
+    "globalOptions": [
+        {
+            "name": "help",
+            "spelling": "--help",
+            "aliases": [
+                "-h"
+            ],
+            "description": "show this help message and exit",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "blockListFile",
+            "spelling": "-B",
+            "description": "BLOCK_LIST_FILE, --block-list-file BLOCK_LIST_FILE",
+            "type": "PATH",
+            "valueType": "path"
+        },
+        {
+            "name": "cacheSize",
+            "spelling": "-c",
+            "description": "CACHE_SIZE, --cache-size CACHE_SIZE",
+            "type": "INT"
+        },
+        {
+            "name": "outDir",
+            "spelling": "-o",
+            "description": "OUTDIR, --outdir OUTDIR",
+            "type": "PATH",
+            "valueType": "path"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": [
+                {"name": "inputImage", "parameter": "positionalArgs", "index": 0, "type": "FILE", "direction": "INPUT", "required": true},
+                {"name": "outputDirectory", "parameter": "outDir", "type": "DIRECTORY", "direction": "OUTPUT", "required": true}
+            ]
+        }
+    ]
+}

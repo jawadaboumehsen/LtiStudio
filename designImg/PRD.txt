@@ -1,0 +1,276 @@
+RPD Level 0 — Root System
+
+System Name: IDR
+Description:
+A modular, multi-panel, intelligent desktop workspace platform designed for managing projects, files, tools, and AI-assisted workflows in a unified environment.
+The system operates through recursive layers of navigation, context, and modular extension.
+
+Contains:
+
+Level 1: Core Screens
+
+Level 2: Panel System
+
+Level 3: Logic Layers
+
+Level 4: Persistence Layer
+
+Level 5: Meta and Intelligence Layer
+
+RPD Level 1 — Core Screens
+1.1 Setup Screen
+
+Purpose: Entry point of the application.
+Submodules:
+
+Connect Table → Handles environment or service connections.
+
+Open Project Table → Lists and opens available workspaces.
+
+Recent Projects → Quick access to previously used projects.
+
+Settings Access → Opens global configuration module.
+
+Recursive Behavior:
+If a project is selected, recursion enters Workspace Screen (Level 1.2).
+If settings are selected, recursion opens Settings Screen (Level 1.3).
+
+1.2 Workspace Screen
+
+Purpose: Primary working environment divided into four panels.
+Submodules:
+
+Left Panel → Tool-based zone (e.g., explorer, search, structure).
+
+Main Panel → Central file editor (multi-tab, split-view).
+
+Right Panel → Contextual tools and inspectors.
+
+Bottom Panel → Logs, terminals, and process outputs.
+
+Recursive Behavior:
+Each panel recursively contains multiple tabs (Level 2).
+Workspace communicates with global state manager and can open Settings (Level 1.3).
+
+1.3 Settings Screen
+
+Purpose: Configuration interface for global, project, and panel preferences.
+Submodules:
+
+Global Settings → UI, theme, general behavior.
+
+Project Settings → Workspace and environment parameters.
+
+Panel Settings → Behavior rules for specific panels.
+
+Recursive Behavior:
+Returns to the caller screen after configuration is saved.
+May trigger reinitialization of affected modules.
+
+RPD Level 2 — Panel System
+
+Each panel is an independent recursive unit with its own tabs, content, and state.
+
+2.1 Panel (Generic Structure)
+
+Attributes:
+
+ID → Unique identifier (Left, Main, Right, Bottom).
+
+Tabs[] → List of active content tabs.
+
+State → Active/Inactive/Hidden.
+
+Context → Determines which data or tools appear.
+
+Recursive Behavior:
+Each tab can contain:
+
+Data views
+
+Editors
+
+Tools
+
+Dynamic components (AI assistants, logs, etc.)
+
+2.2 Left Panel
+
+Specialization: Navigation and search tools.
+Tabs: Explorer, Search, Outline, History.
+Recursive Rule:
+Active tab defines left panel context (e.g., selecting “Search” focuses the main panel on results).
+
+2.3 Main Panel
+
+Specialization: Core editing zone.
+Tabs: File editors, previewers, split-views.
+Recursive Rule:
+Each open file creates a new tab node with child entities (document model, cursor, state).
+Tabs may spawn new subviews recursively (e.g., diff view, preview view).
+
+2.4 Right Panel
+
+Specialization: Contextual insights.
+Tabs: Inspector, Variables, Debugger, AI Dock.
+Recursive Rule:
+When the main panel changes context, the right panel updates via event propagation.
+
+2.5 Bottom Panel
+
+Specialization: Process output and logs.
+Tabs: Terminal, Logs, Tasks, Problems.
+Recursive Rule:
+Each process instance is a recursive tab; terminated tasks remove their node.
+
+RPD Level 3 — Logic Layers
+3.1 Navigation Controller
+
+Purpose: Manages transitions between screens and panels.
+Submodules:
+
+State Manager (current screen, history stack)
+
+Routing Engine (screen → screen transitions)
+
+Panel Navigator (focus handling)
+
+3.2 Event Bus
+
+Purpose: Global communication layer between modules.
+Recursive Rule:
+Any module can publish or subscribe to events; events propagate recursively down to children.
+Example: File opened → Event triggers → Main Panel receives → Opens Tab → Right Panel reacts.
+
+3.3 Layout Manager
+
+Purpose: Manages panel positions, sizes, and docking.
+Recursive Behavior:
+Each panel node saves its layout state; layouts persist per workspace and restore on reload.
+
+3.4 Session Manager
+
+Purpose: Stores and restores workspace state.
+Contains:
+
+Open tabs
+
+Active panels
+
+Project metadata
+
+Recursive Rule:
+When closing workspace, recursion unwinds and saves all nested states.
+
+RPD Level 4 — Persistence Layer
+4.1 Workspace File
+
+File: .idrworkspace
+Content:
+Stores serialized layout, open tabs, active states, and settings hierarchy.
+
+Recursive Structure:
+
+{
+  "workspace": {
+    "panels": {
+      "left": { "tabs": [...] },
+      "main": { "tabs": [...] },
+      "right": { "tabs": [...] },
+      "bottom": { "tabs": [...] }
+    },
+    "settings": {
+      "global": {},
+      "project": {},
+      "panel": {}
+    }
+  }
+}
+
+4.2 Profile System
+
+Purpose:
+Store layout and theme profiles (e.g., Coding, Debugging, AI Mode).
+Profiles can recursively inherit from base configurations.
+
+RPD Level 5 — Meta and Intelligence Layer
+5.1 Context Engine
+
+Monitors user behavior and workspace states.
+Recursive Behavior:
+Feeds suggestions or panel adjustments based on user activity.
+
+5.2 Knowledge Map
+
+Visual model that links project elements (files, modules, dependencies).
+Recursive Rule:
+Each entity node links to other nodes, forming a recursive graph of relationships.
+
+5.3 Plugin Layer
+
+Allows dynamic addition of new panels, tools, or behaviors.
+Recursive Behavior:
+Each plugin defines:
+
+Parent attachment point (Left, Right, Main, Bottom)
+
+Recursive module tree of its own tools.
+
+5.4 AI Layer
+
+Contextual intelligence built into the environment.
+Submodules:
+
+AI Assistant (Right Panel)
+
+AI Summarizer (Bottom Panel)
+
+AI Navigator (Predictive Panel Switching)
+
+Recursive Rule:
+AI modules access the current workspace tree recursively to understand context and offer suggestions.
+
+5.5 Automation Rules
+
+Define triggers and actions recursively:
+
+WHEN event THEN action
+
+
+Examples:
+
+WHEN file.type == "markdown" THEN open rightPanel.preview
+
+WHEN runCommand == true THEN open bottomPanel.logs
+
+WHEN focus == "terminal" THEN hide rightPanel
+Rules are evaluated recursively at runtime.
+
+RPD Level 6 — Collaboration and Distributed Layer
+6.1 Session Sharing
+
+Each user session is represented as a node in a distributed workspace tree.
+Changes propagate recursively across shared nodes.
+
+6.2 Remote Workspace
+
+Allows offloading computation to remote hosts.
+Each remote workspace mirrors the local workspace structure recursively.
+
+6.3 Versioned Workspaces
+
+Workspace states are version-controlled; users can rollback to previous recursive states (layout + data).
+
+RPD Recursive Flow Summary
+Level	Description
+0	Root system definition
+1	Screens and entry navigation
+2	Panel architecture and tabs
+3	Core logic and event flow
+4	Persistence and data models
+5	Intelligence, plugins, and automation
+6	Collaboration and distributed logic
+
+✅ Result:
+Your IDR RPD is a recursive, hierarchical system model describing how each part of the app self-defines and communicates — from high-level screens down to panel tabs, context engines, and intelligence modules.
+It’s structured so that each node can be expanded infinitely (recursively) for deeper detailing later in development.

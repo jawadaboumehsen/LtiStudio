@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "sdkApiRange": "1.x",
+  "publisher": "org.ide.lti",
+  "id": "example-file-property",
+  "version": "1.0.0",
+  "displayName": "Example File and Property Mod",
+  "license": "MPL-2.0",
+  "compatibleTargets": [
+    "PQ84P01"
+  ],
+  "requiredCapabilities": [],
+  "dependencies": [],
+  "conflicts": [],
+  "payloads": [
+    {
+      "path": "assets/overlay/hosts",
+      "sizeBytes": 58,
+      "sha256": "ce756eb065979cddc3104b97c1e07d7db4ac90e0dd92f1459fb3e3a3d7c21693"
+    }
+  ],
+  "planPath": "plan.json",
+  "settingsPath": "settings.schema.json"
+}

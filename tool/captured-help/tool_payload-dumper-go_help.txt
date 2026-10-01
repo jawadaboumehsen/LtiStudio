@@ -1,0 +1,16 @@
+Usage of payload-dumper-go:
+  -c int
+    	Number of multiple workers to extract (shorthand) (default 4)
+  -concurrency int
+    	Number of multiple workers to extract (default 4)
+  -l	Show list of partitions in payload.bin (shorthand)
+  -list
+    	Show list of partitions in payload.bin
+  -o string
+    	Set output directory (shorthand)
+  -output string
+    	Set output directory
+  -p string
+    	Dump only selected partitions (comma-separated) (shorthand)
+  -partitions string
+    	Dump only selected partitions (comma-separated)

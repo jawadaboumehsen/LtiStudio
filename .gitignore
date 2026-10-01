@@ -1,0 +1,105 @@
+*.iml
+.gradle
+.gradle-codex/
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures 
+.externalNativeBuild
+.idea
+/*.iml
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+out/
+build/
+.externalNativeBuild
+.cxx
+iosApp/Podfile.lock
+iosApp/Pods/*
+iosApp/iosApp.xcworkspace/*
+iosApp/iosApp.xcodeproj/*
+!iosApp/iosApp.xcodeproj/project.pbxproj
+mifos-shared/mifospay-shared.podspec
+
+# Eclipse project files
+.classpath
+.project
+
+# Windows thumbnail db
+.DS_Store
+
+# IDEA/Android Studio project files, because
+# the project can be imported from settings.gradle.kts
+*.iml
+.idea/*
+!.idea/copyright
+# Keep the code styles.
+!/.idea/codeStyles
+/.idea/codeStyles/*
+!/.idea/codeStyles/Project.xml
+!/.idea/codeStyles/codeStyleConfig.xml
+
+# Kotlin
+.kotlin
+
+# Android Studio captures folder
+captures/
+
+/app/app-release.apk
+app/app.iml
+app/manifest-merger-release-report.txt
+
+# Exclude Google services from prod flavour
+mifos-android/src/prod/google-services.json
+
+#*.keystore
+
+version.txt
+fastlane/report.xml
+firebaseAppDistributionServiceCredentialsFile.json
+playStorePublishServiceCredentialsFile.json
+
+# Ruby stuff we don't care about
+.bundle/
+vendor/
+secrets/
+
+# Personal Claude Code overrides (not shared with the team)
+.claude/settings.local.json
+
+# Graphify output and cache
+graphify-out/
+
+# "build/" above also matches real source directories that happen to be package-named "build"
+# (e.g. org.ide.lti.feature.rom.studio.stage.build, org.ide.lti.core.domain.usecase.build) -
+# Gradle's own build/ output is never nested inside a src/ tree, so un-ignore anything under one.
+!**/src/**/build/
+!**/src/**/build/**
+
+# --- Local tooling, agent state and generated artifacts (never commit) ---
+.kotlin/
+.claude/
+.delegate/
+.codex/
+.gemini/
+.agents/
+graphify-out/
+local.properties
+*.log
+hs_err_pid*
+*.backup
+*.orig
+*.rej
+Thumbs.db
+# Generated screenshot candidates (goldens under src/**/screenshots are tracked)
+**/build/reports/

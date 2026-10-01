@@ -1,0 +1,8 @@
+# Minimal detekt config for the detekt-rules/ module itself (our own custom Rule/RuleSetProvider
+# classes). This module has no Compose UI code and doesn't provide the ktlint/Compose/
+# lti-design-system rule sets on its own detektPlugins classpath, so it can't share the root
+# config/detekt/detekt.yml file wholesale (those ruleset sections would fail to resolve here).
+# Everything not listed below falls back to detekt's own built-in defaults.
+
+ruleauthors:
+  active: true

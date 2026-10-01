@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassSignature:BuildRun.kt:RunIndex</ID>
+    <ID>ClassSignature:DeviceOperationResult.kt:DeviceOperationResult</ID>
+    <ID>ClassSignature:NotificationSettings.kt:NotificationSettings</ID>
+    <ID>ClassSignature:PersistedSubmoduleState.kt:PersistedSubmoduleState</ID>
+    <ID>ClassSignature:TargetBinding.kt:TargetBinding</ID>
+    <ID>ClassSignature:TargetDevice.kt:FirmwareAcquisitionMode</ID>
+    <ID>ClassSignature:TargetDevice.kt:TargetRegion</ID>
+    <ID>ClassSignature:WirelessPairingRequest.kt:WirelessPairingRequest</ID>
+    <ID>ClassSignature:Workspace.kt:EnvironmentId</ID>
+    <ID>ClassSignature:WorkspaceSession.kt:LayoutState</ID>
+    <ID>ClassSignature:WorkspaceSession.kt:OpenFile</ID>
+    <ID>FunctionSignature:TargetDevice.kt:FirmwareAcquisitionMode.Companion$fun fromId: FirmwareAcquisitionMode</ID>
+    <ID>ImportOrdering:RecentProject.kt:import kotlinx.datetime.Instant import kotlinx.serialization.Serializable import org.ide.lti.core.model.target.TargetBinding</ID>
+    <ID>ImportOrdering:Workspace.kt:import kotlinx.datetime.Instant import kotlinx.serialization.Serializable import org.ide.lti.core.model.target.TargetBinding</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_CN/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/China/PQ84P01(NP05J)/REDMAGICOS10.5.16_NP05J_CN/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.12_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.15_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$acquisitionUrl = "https://rom.download.nubia.com/Europe&amp;Asia/PQ84P01(NP05J)/REDMAGICOS10.5.8_NP05J_GB/update.zip"</ID>
+    <ID>MaxLineLength:RunState.kt:RunState$*</ID>
+    <ID>MaximumLineLength:DefaultTargetCatalog.kt:DefaultTargetCatalog$,</ID>
+    <ID>TrailingCommaOnDeclarationSite:RunState.kt:RunState</ID>
+    <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:FirmwareAcquisitionMode</ID>
+    <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:TargetRegion</ID>
+    <ID>TrailingCommaOnDeclarationSite:TargetDevice.kt:TargetStatus</ID>
+  </CurrentIssues>
+</SmellBaseline>

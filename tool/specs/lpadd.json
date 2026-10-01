@@ -1,0 +1,61 @@
+{
+    "schemaVersion": 1,
+    "tool": "lpadd",
+    "executable": "lpadd",
+    "platform": [
+        "linux-x86_64"
+    ],
+    "sourceRevision": "HEAD",
+    "binarySha256": "4cbed2cf021674ee3f03cd83913f1961f554e25891ea1b294cc6eb62080b7578",
+    "helpSha256": "590e8b8076860eaf8282ff632df4b4f60ea56d65a2fc86a50975562656cc694b",
+    "globalOptions": [
+        {
+            "name": "readonly",
+            "spelling": "--readonly",
+            "description": "The partition should be mapped read-only.",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "replace",
+            "spelling": "--replace",
+            "description": "The partition contents should be replaced with",
+            "type": "BOOLEAN"
+        }
+    ],
+    "exitCodes": [
+        {
+            "code": 0,
+            "meaning": "Success",
+            "isSuccess": true
+        },
+        {
+            "code": 1,
+            "meaning": "Error/Failure",
+            "isSuccess": false
+        }
+    ],
+    "defaultTimeout": "30s",
+    "risk": "HOST_WRITE",
+    "commands": [
+        {
+            "name": "execute",
+            "subcommandPath": [
+                "_self"
+            ],
+            "description": "Execute the tool with its options and positional operands",
+            "arguments": [
+                {
+                    "name": "positionalArgs",
+                    "description": "Tool-specific positional operands",
+                    "type": "STRING",
+                    "required": false,
+                    "repeatable": true
+                }
+            ],
+            "risk": "HOST_WRITE",
+            "outputParser": "identity",
+            "outputType": "String",
+            "artifacts": []
+        }
+    ]
+}

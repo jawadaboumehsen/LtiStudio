@@ -1,0 +1,18 @@
+usage: avbtool resign_image [-h] --image IMAGE --key KEY --algorithm ALGORITHM
+                            [--signing_helper SIGNING_HELPER]
+                            [--signing_helper_with_files SIGNING_HELPER_WITH_FILES]
+                            [--auto_resize]
+
+options:
+  -h, --help            show this help message and exit
+  --image IMAGE         Image to resign
+  --key KEY             Path to RSA private key file
+  --algorithm ALGORITHM
+                        Algorithm to use
+  --signing_helper SIGNING_HELPER
+                        Program that signs a hash and returns a signature.
+  --signing_helper_with_files SIGNING_HELPER_WITH_FILES
+                        Same as signing_helper but uses files for
+                        communication.
+  --auto_resize         Automatically resize the image if the new key is
+                        larger.
