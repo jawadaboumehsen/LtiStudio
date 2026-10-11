@@ -30,31 +30,33 @@ public class StepExecutionAdapter(
     private val transport: RemoteTransportPort,
     private val pollIntervalMs: Long = DEFAULT_POLL_INTERVAL_MS,
 ) : PipelineExecutionPort {
-
     private companion object {
         const val DEFAULT_POLL_INTERVAL_MS = 500L
-        val TERMINAL = setOf(
-            RunStatusValue.COMPLETED,
-            RunStatusValue.FAILED,
-            RunStatusValue.CANCELLED,
-            RunStatusValue.INTERRUPTED,
-        )
+        val TERMINAL =
+            setOf(
+                RunStatusValue.COMPLETED,
+                RunStatusValue.FAILED,
+                RunStatusValue.CANCELLED,
+                RunStatusValue.INTERRUPTED,
+            )
     }
 
     override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
         val workingDir = step.workingDir ?: ws.linuxPath ?: ws.path
-        val toolRequest = ToolExecutionRequest(
-            toolId = step.toolId,
-            arguments = step.args,
-            workingDirectory = workingDir,
-            timeoutMs = step.timeoutMs,
-            streamOutput = true,
-        )
-        val startReq = StartRunRequest(
-            request = toolRequest,
-            idempotencyKey = idempotencyKey,
-            workspaceLock = workingDir,
-        )
+        val toolRequest =
+            ToolExecutionRequest(
+                toolId = step.toolId,
+                arguments = step.args,
+                workingDirectory = workingDir,
+                timeoutMs = step.timeoutMs,
+                streamOutput = true,
+            )
+        val startReq =
+            StartRunRequest(
+                request = toolRequest,
+                idempotencyKey = idempotencyKey,
+                workspaceLock = workingDir,
+            )
         val handle = transport.startRun(startReq)
         return RunHandle(
             runId = handle.runId,
@@ -69,27 +71,33 @@ public class StepExecutionAdapter(
      */
     override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flow {
         val startSeq = fromSeq.coerceAtLeast(0L)
-        transport.attachRun(serverRunId, startSeq).collect { sequenced ->
-            when (val event = sequenced.event) {
-                is CoreStreamEvent.OutputChunk -> {
-                    emit(StepEvent.Output(sequenced.seq, event.text, event.isError))
-                }
-                is CoreStreamEvent.Heartbeat -> {
-                    emit(StepEvent.Heartbeat)
-                }
-                is CoreStreamEvent.ExecutionFinished -> {
-                    val run = runCatching { transport.getRun(serverRunId) }.getOrNull()
-                    val exitCode = if (run?.status == RunStatusValue.INTERRUPTED) {
-                        -1
-                    } else {
-                        event.exitCode
+        try {
+            transport.attachRun(serverRunId, startSeq).collect { sequenced ->
+                when (val event = sequenced.event) {
+                    is CoreStreamEvent.OutputChunk -> {
+                        emit(StepEvent.Output(sequenced.seq, event.text, event.isError))
                     }
-                    emit(StepEvent.Finished(exitCode))
-                }
-                is CoreStreamEvent.ProgressUpdate -> {
-                    // Ignored for pipeline steps
+                    is CoreStreamEvent.Heartbeat -> {
+                        emit(StepEvent.Heartbeat)
+                    }
+                    is CoreStreamEvent.ExecutionFinished -> {
+                        val run = runCatching { transport.getRun(serverRunId) }.getOrNull()
+                        val exitCode =
+                            if (run?.status == RunStatusValue.INTERRUPTED) {
+                                -1
+                            } else {
+                                event.exitCode
+                            }
+                        emit(StepEvent.Finished(exitCode))
+                    }
+                    is CoreStreamEvent.ProgressUpdate -> {
+                        // Ignored for pipeline steps
+                    }
                 }
             }
+        } catch (e: io.ltirom.tooling.core.RunOutputUnavailableException) {
+            val exitCode = e.runStatus.exitCode ?: if (e.runStatus.status == RunStatusValue.COMPLETED) 0 else -1
+            emit(StepEvent.Finished(exitCode))
         }
     }
 
@@ -130,13 +138,14 @@ public class StepExecutionAdapter(
     override suspend fun stat(ws: Workspace, relPath: String): FileStat {
         val wsPath = ws.linuxPath ?: ws.path
         val fullPath = "$wsPath/$relPath"
-        val response = transport.execute(
-            ToolExecutionRequest(
-                toolId = "stat",
-                arguments = listOf("-c", "%s", fullPath),
-                workingDirectory = wsPath,
-            ),
-        )
+        val response =
+            transport.execute(
+                ToolExecutionRequest(
+                    toolId = "stat",
+                    arguments = listOf("-c", "%s", fullPath),
+                    workingDirectory = wsPath,
+                ),
+            )
         return if (response.exitCode == 0) {
             val size = response.stdout.trim().toLongOrNull() ?: 0L
             FileStat(path = fullPath, exists = true, sizeBytes = size)
@@ -146,26 +155,28 @@ public class StepExecutionAdapter(
     }
 
     override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult {
-        val response = transport.execute(
-            ToolExecutionRequest(
-                toolId = command.toolId,
-                arguments = command.args,
-                workingDirectory = command.workingDir ?: ws.linuxPath ?: ws.path,
-                timeoutMs = command.timeoutMs,
-            ),
-        )
+        val response =
+            transport.execute(
+                ToolExecutionRequest(
+                    toolId = command.toolId,
+                    arguments = command.args,
+                    workingDirectory = command.workingDir ?: ws.linuxPath ?: ws.path,
+                    timeoutMs = command.timeoutMs,
+                ),
+            )
         return ToolResult(exitCode = response.exitCode, stdout = response.stdout, stderr = response.stderr)
     }
 
     override suspend fun checkAvailableDiskSpace(ws: Workspace): Long? {
         val wsPath = ws.linuxPath ?: ws.path
-        val response = transport.execute(
-            ToolExecutionRequest(
-                toolId = "df",
-                arguments = listOf("-B1", "--output=avail", wsPath),
-                workingDirectory = wsPath,
-            ),
-        )
+        val response =
+            transport.execute(
+                ToolExecutionRequest(
+                    toolId = "df",
+                    arguments = listOf("-B1", "--output=avail", wsPath),
+                    workingDirectory = wsPath,
+                ),
+            )
         if (response.exitCode != 0) return null
         return response.stdout.trim().lines().lastOrNull()?.trim()?.toLongOrNull()
     }

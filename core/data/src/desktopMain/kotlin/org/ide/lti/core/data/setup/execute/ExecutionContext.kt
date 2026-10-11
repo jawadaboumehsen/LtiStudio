@@ -15,7 +15,6 @@ import org.ide.lti.core.data.setup.SetupJournalContext
 import org.ide.lti.core.data.setup.state.InstalledScope
 import org.ide.lti.core.data.setup.state.OperationScope
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
-import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupPlan
@@ -36,7 +35,6 @@ public data class ExecutionContext(
     val serviceCli: WslCliExecutor? = null,
     val repository: ToolchainSetupRepository? = null,
     val transport: RemoteTransportPort? = null,
-    val toolPublicationPort: ToolPublicationPort? = null,
     val recordRunStarted: (SetupStepStage, String) -> Unit = { _, _ -> },
     val setStepProgress: (SetupStepStage, String, Int, Int) -> Unit = { _, _, _, _ -> },
     val setStepStatus: (

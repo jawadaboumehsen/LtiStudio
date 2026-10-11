@@ -32,12 +32,6 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
-import org.ide.lti.core.domain.ports.PublicationReport
-import org.ide.lti.core.domain.ports.ToolPublicationPort
-import org.ide.lti.core.domain.ports.ToolRegistryResult
-import org.ide.lti.core.domain.ports.ToolSource
-import org.ide.lti.core.domain.ports.ToolStatus
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -49,7 +43,6 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetupExecutionPathTest {
-
     private class SpyWslCliExecutor : WslCliExecutor() {
         var bridgeConnected: Boolean = false
         val bootstrapCommands = mutableListOf<List<String>>()
@@ -85,8 +78,9 @@ class SetupExecutionPathTest {
                 }
                 command.contains("echo -n \$HOME") -> CliExecutionResult(0, "/home/lti", "")
                 cmdStr.contains("JAVA_HOMES_BEGIN") -> {
-                    val javaSection = "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64|openjdk version " +
-                        "\"21.0.4\" 2024-07-16\nJAVA_HOMES_END\n"
+                    val javaSection =
+                        "JAVA_HOMES_BEGIN\n/usr/lib/jvm/java-21-openjdk-amd64|openjdk version " +
+                            "\"21.0.4\" 2024-07-16|javac 21.0.4\nJAVA_HOMES_END\n"
                     val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
                     CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
                 }
@@ -118,20 +112,24 @@ class SetupExecutionPathTest {
 
         override suspend fun ensureStarted(): ServerConnectionDescriptor {
             onBridgeConnected()
-            val desc = ServerConnectionDescriptor(
-                host = "127.0.0.1",
-                port = 9090,
-                token = "secret",
-                pid = 4321L,
-                distro = "Ubuntu",
-            )
+            val desc =
+                ServerConnectionDescriptor(
+                    host = "127.0.0.1",
+                    port = 9090,
+                    token = "secret",
+                    pid = 4321L,
+                    distro = "Ubuntu",
+                )
             descriptor = desc
             return desc
         }
 
         override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = descriptor
+
         override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = true
+
         override suspend fun shutdownDaemon(): Boolean = true
+
         override fun close() {}
     }
 
@@ -160,30 +158,34 @@ class SetupExecutionPathTest {
                     ToolExecutionResponse(0, "/home/lti\n", "", 2L)
                 }
                 request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
-                    val subs = listOf("android-tools", "apktool", "erofs-utils", "img2sdat") +
-                        (if (sourcesSynced) listOf("signapk") else emptyList())
+                    val subs =
+                        listOf("android-tools", "apktool", "erofs-utils", "img2sdat") +
+                            (if (sourcesSynced) listOf("signapk") else emptyList())
                     ToolExecutionResponse(0, subs.joinToString("\n"), "", 5L)
                 }
                 request.toolId == "find" -> {
-                    val sample = listOf(
-                        "adb", "fastboot", "mke2fs", "dump.erofs", "mkfs.erofs", "img2sdat", "avbtool", "erofsfuse",
-                        "cmake", "make", "clang", "clang++", "gcc", "g++", "python3", "pip3", "java", "javac",
-                        "java-17-openjdk-amd64", "java-21-openjdk-amd64", "attr", "getfattr", "setfattr",
-                        "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file", "xxd", "truncate",
-                        "fuse", "fusermount3", "openssl", "sudo", "loop-control", "ccache",
-                        "apktool.jar", "signapk.jar", "zipalign", "lpunpack", "lpmake", "lpdump", "payload-dumper-go",
-                    )
-                    val listing = if ("%m %f\n" in
-                        request.arguments
-                    ) {
-                        fakeBinListing(sample)
-                    } else {
-                        sample.joinToString("\n")
-                    }
+                    val sample =
+                        listOf(
+                            "adb", "fastboot", "mke2fs", "dump.erofs", "mkfs.erofs", "img2sdat", "avbtool", "erofsfuse",
+                            "cmake", "make", "clang", "clang++", "gcc", "g++", "python3", "pip3", "java", "javac",
+                            "java-17-openjdk-amd64", "java-21-openjdk-amd64", "attr", "getfattr", "setfattr",
+                            "zip", "unzip", "brotli", "curl", "git", "rsync", "tar", "file", "xxd", "truncate",
+                            "fuse", "fusermount3", "openssl", "sudo", "loop-control", "ccache",
+                            "apktool.jar", "signapk.jar", "zipalign", "lpunpack", "lpmake",
+                            "lpdump", "payload-dumper-go",
+                        )
+                    val listing =
+                        if ("%m %f\n" in
+                            request.arguments
+                        ) {
+                            fakeBinListing(sample)
+                        } else {
+                            sample.joinToString("\n")
+                        }
                     ToolExecutionResponse(0, listing, "", 5L)
                 }
                 request.toolId == "dpkg-query" -> {
-                    val pkgs = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
+                    val pkgs = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES
                     ToolExecutionResponse(0, pkgs.joinToString("\n") { "$it install ok installed" }, "", 2L)
                 }
                 request.toolId == "java" -> {
@@ -206,16 +208,29 @@ class SetupExecutionPathTest {
                     fakeGitRevParse(listOf("git") + request.arguments)!!.let {
                         ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
                     }
-                request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
-                    ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
-                }
-                request.toolId == "which" -> ToolExecutionResponse(
-                    0,
-                    "/usr/bin/${request.arguments.firstOrNull()}",
-                    "",
-                    1L,
-                )
+                request.toolId == "sha256sum" ->
+                    fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                        ToolExecutionResponse(it.exitCode, it.output, it.error, 1L)
+                    }
+                request.toolId == "which" ->
+                    ToolExecutionResponse(
+                        0,
+                        "/usr/bin/${request.arguments.firstOrNull()}",
+                        "",
+                        1L,
+                    )
                 request.toolId == "sudo" && request.arguments.contains("true") -> ToolExecutionResponse(0, "", "", 1L)
+                request.toolId == "sh" &&
+                    request.arguments.any {
+                        it.contains("JAVA_HOMES_BEGIN") || it.contains("PACKAGES_FRESH")
+                    }
+                -> {
+                    val javaSection =
+                        "JAVA_HOMES_BEGIN\n" +
+                            "/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" 2024-07-16|javac 21.0.4\nJAVA_HOMES_END\n"
+                    val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
+                    ToolExecutionResponse(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "", 2L)
+                }
                 request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 1L)
                 else -> ToolExecutionResponse(0, "success", "", 5L)
             }
@@ -244,58 +259,48 @@ class SetupExecutionPathTest {
             endedAtEpochMs = 1100L,
         )
 
-        var tools: List<ToolStatusInfo> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
-            ToolStatusInfo(tool = it, installed = true)
-        }
+        var tools: List<ToolStatusInfo> =
+            ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS.map {
+                ToolStatusInfo(tool = it, installed = true)
+            }
+
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
+
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(tools)
+
         override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(tools)
+
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
+
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
+
         override suspend fun shutdown(): Boolean = true
-    }
-
-    private class FakePublicationPort : ToolPublicationPort {
-        override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport = PublicationReport(
-            requested = toolIds,
-            registered = toolIds,
-            failed = emptyMap(),
-            pruned = emptySet(),
-        )
-
-        override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
-            ToolCatalog.ALL_TOOL_IDS.map {
-                ToolStatus(
-                    tool = it,
-                    installed = true,
-                    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "",
-                    source = ToolSource.DYNAMIC,
-                    reason = null,
-                )
-            },
-        )
     }
 
     @Test
     fun `after SERVER_CONNECTIVITY succeeds setup uses strictly transport executor and records zero wsl calls`() =
         runTest {
             val spyCli = SpyWslCliExecutor()
-            val supervisor = RecordingSupervisor {
-                spyCli.bridgeConnected = true
-            }
+            val supervisor =
+                RecordingSupervisor {
+                    spyCli.bridgeConnected = true
+                }
             val transport = RecordingTransport()
+            val store = RecordingComponentStore()
+            val manager = org.ide.lti.core.domain.tools.ToolManager(store)
             val detector = WslEnvironmentDetector(spyCli)
-            val publicationPort = FakePublicationPort()
 
-            val provisioner = WslToolchainProvisioner(
-                supervisor = supervisor,
-                transport = transport,
-                repository = inMemoryToolchainRepository(),
-                detector = detector,
-                cli = spyCli,
-                toolPublicationPort = publicationPort,
-                dispatcher = UnconfinedTestDispatcher(testScheduler),
-            )
+            val provisioner =
+                WslToolchainProvisioner(
+                    supervisor = supervisor,
+                    transport = transport,
+                    planExecutor = componentTestPlanExecutor(manager),
+                    toolManager = manager,
+                    repository = inMemoryToolchainRepository(),
+                    detector = detector,
+                    cli = spyCli,
+                    dispatcher = UnconfinedTestDispatcher(testScheduler),
+                )
 
             // Product flow: a live Check establishes WSL/bridge evidence (the only host wsl.exe calls),
             // then the plan is previewed and confirmed against that evidence.
@@ -308,17 +313,19 @@ class SetupExecutionPathTest {
             val finalState = provisioner.state.value
             val stageStatuses = finalState.steps.associate { it.stage to it.status }
             assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.WSL_DETECTION])
-            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_PACKAGES])
             assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SERVER_CONNECTIVITY])
-            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_DIAGNOSTICS])
-            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.REPO_SYNCHRONIZATION])
+            assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.SYSTEM_PACKAGES])
             assertEquals(StepStatus.SUCCESS, stageStatuses[SetupStepStage.TOOLCHAIN_COMPILATION])
 
             // CRITICAL ASSERTION: Zero calls made to WslCliExecutor after SERVER_CONNECTIVITY (excluding pre-server
             // host prerequisite probe)
-            val nonProbePostBridge = spyCli.postBridgeCommands.filterNot {
-                it.any { arg -> arg.contains("JAVA_HOMES_BEGIN") || arg.contains("/var/lib/apt/lists") }
-            }
+            // The one allowed host-side read is `wsl.exe -l -v` (default distro and WSL version are re-read on every
+            // verification); it never enters the distro. Anything run inside the distro still counts.
+            val nonProbePostBridge =
+                spyCli.postBridgeCommands.filterNot {
+                    it == listOf("wsl.exe", "-l", "-v") ||
+                        it.any { arg -> arg.contains("JAVA_HOMES_BEGIN") || arg.contains("/var/lib/apt/lists") }
+                }
             assertTrue(
                 nonProbePostBridge.isEmpty(),
                 "Expected ZERO calls to direct WslCliExecutor after SERVER_CONNECTIVITY succeeded, but found " +
@@ -327,6 +334,6 @@ class SetupExecutionPathTest {
 
             // Assert transport handled commands
             assertTrue(transport.executedRequests.isNotEmpty(), "Transport executor must handle post-bridge commands")
-            assertTrue(transport.startedRuns.isNotEmpty(), "Durable runs must be initiated via transport")
+            assertTrue(transport.startedRuns.isEmpty(), "Native recipe runs are owned by the component-store adapter")
         }
 }

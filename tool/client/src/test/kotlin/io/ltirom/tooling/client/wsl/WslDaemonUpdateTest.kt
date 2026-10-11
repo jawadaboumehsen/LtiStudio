@@ -32,6 +32,8 @@ class WslDaemonUpdateTest {
         var acceptShutdown: Boolean = true,
         /** After accepting, the service process actually exits. */
         var exitsAfterShutdown: Boolean = true,
+        /** What a declined shutdown looks like: an explicit refusal, or silence. */
+        var refusal: ShutdownOutcome = ShutdownOutcome.NO_ANSWER,
     ) : DaemonHealthProber(null) {
         val shutdownRequests = mutableListOf<Boolean>()
 
@@ -40,14 +42,14 @@ class WslDaemonUpdateTest {
 
         override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long): Boolean = healthy
         override suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? = serverInfo
-        override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): Boolean {
+        override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): ShutdownOutcome {
             shutdownRequests += force
             if (acceptShutdown) {
                 // An accepted shutdown stops health answers at once; the process may still be alive.
                 healthy = false
                 if (exitsAfterShutdown) processAlive = false
             }
-            return acceptShutdown
+            return if (acceptShutdown) ShutdownOutcome.ACCEPTED else refusal
         }
     }
 
@@ -272,6 +274,43 @@ class WslDaemonUpdateTest {
         launcher = launcher,
         customProber = prober,
     )
+
+    private fun managerWithOwnedService(prober: FakeProber, launcher: FakeProcessLauncher) = WslDaemonManager(
+        config = WslDaemonConfig(
+            distroName = "Ubuntu-24.04",
+            serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
+        ),
+        stateStore = FakeStateStore(null),
+        launcher = launcher,
+        customProber = prober,
+    )
+
+    @Test
+    fun `a forced shutdown the service refuses keeps the connection and the launcher it owns`() = runTest {
+        val prober = FakeProber(acceptShutdown = false, refusal = ShutdownOutcome.REFUSED)
+        val launcher = FakeProcessLauncher()
+        val manager = managerWithOwnedService(prober, launcher)
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = null)
+        assertEquals(1, launcher.launchCount)
+
+        assertFalse(manager.shutdownDaemon(force = true), "a refusal is not a stop")
+
+        assertFalse(launcher.launched.single().destroyed, "the service still runs work; its launcher must not be killed")
+        assertTrue(manager.getConnectionInfo() != null, "ownership of the surviving service is kept")
+    }
+
+    @Test
+    fun `a forced shutdown nobody answers still tears the owned service down`() = runTest {
+        val prober = FakeProber(acceptShutdown = false, refusal = ShutdownOutcome.NO_ANSWER)
+        val launcher = FakeProcessLauncher()
+        val manager = managerWithOwnedService(prober, launcher)
+        manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = null)
+
+        assertFalse(manager.shutdownDaemon(force = true))
+
+        assertTrue(launcher.launched.single().destroyed)
+        assertEquals(null, manager.getConnectionInfo())
+    }
 
     @Test
     fun `a run that starts during the update makes the service refuse shutdown and nothing is killed`() = runTest {

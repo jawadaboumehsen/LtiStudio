@@ -23,6 +23,7 @@ public data class StageContext(
     val snapshot: ConfigurationSnapshot,
     val target: TargetDevice,
     val runtimeValues: Map<String, String> = emptyMap(),
+    val toolPaths: Map<String, String> = emptyMap(),
 ) {
     val wsPath: String get() = requireNotNull(workspace.linuxPath) { "Workspace ${workspace.id} has no Linux path" }
 
@@ -30,8 +31,11 @@ public data class StageContext(
     public fun abs(relPath: String): String = "$wsPath/$relPath"
 
     public fun value(key: String): String? = runtimeValues[key]
+
     public fun has(key: String): Boolean = runtimeValues.containsKey(key)
+
     public fun exitOf(key: String): Int? = runtimeValues[RuntimeKeys.exitOf(key)]?.toIntOrNull()
+
     public fun longValue(key: String): Long? = runtimeValues[key]?.trim()?.toLongOrNull()
 }
 

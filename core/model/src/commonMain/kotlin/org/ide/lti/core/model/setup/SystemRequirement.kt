@@ -17,15 +17,19 @@ public enum class Need {
 
 public sealed interface RequirementCheck {
     public data class Command(val name: String) : RequirementCheck
+
     public data class Package(val name: String) : RequirementCheck
-    public data class JavaMajor(val min: Int) : RequirementCheck
+
     public data class PythonImport(val modules: List<String>) : RequirementCheck
 }
 
 public sealed interface RequirementStatus {
     public data object Present : RequirementStatus
+
     public data object Missing : RequirementStatus
+
     public data class Unavailable(val release: String) : RequirementStatus
+
     public data class CheckFailed(val reason: String) : RequirementStatus
 }
 

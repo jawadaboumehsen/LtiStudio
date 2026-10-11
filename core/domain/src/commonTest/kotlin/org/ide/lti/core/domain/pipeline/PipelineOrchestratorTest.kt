@@ -26,17 +26,17 @@ import kotlin.test.assertTrue
 
 @Suppress("MaxLineLength")
 class PipelineOrchestratorTest {
-
     private val fixture = PipelineFixture()
     private val ws = fixture.workspace.linuxPath!!
 
     private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository, vendored: Boolean = true) =
-        PipelineOrchestrator(port, repo, FakeVendoredFiles(vendored))
+        PipelineOrchestrator(port, repo, FakeVendoredFiles(vendored), toolStore = PipelinePinnedToolStore())
 
     private fun globalPort() = SimulatedExecutionPort(ws).apply {
         archiveSha256 =
             fixture.snapshotGlobalOta.acquisition.firmware.sha256
     }
+
     private fun chinaPort() = SimulatedExecutionPort(ws).apply {
         archiveSha256 =
             fixture.snapshotChinaRaw.acquisition.firmware.sha256
@@ -58,11 +58,12 @@ class PipelineOrchestratorTest {
         assertTrue(run.stages.all { it.state == StageState.EXECUTED })
 
         // Captured values drive later steps: the AVB footer uses the real salt and searched size.
-        val footer = port.durableSteps.first {
-            it.toolId == "avbtool" &&
-                it.args[0] == "add_hashtree_footer" &&
-                "--salt" in it.args
-        }
+        val footer =
+            port.durableSteps.first {
+                it.toolId == "avbtool" &&
+                    it.args[0] == "add_hashtree_footer" &&
+                    "--salt" in it.args
+            }
         val salt = footer.args[footer.args.indexOf("--salt") + 1]
         assertEquals(SimulatedExecutionPort.fakeDigest("$ws/out/images/odm.img", 64), salt)
         val partitionSize = footer.args[footer.args.indexOf("--partition_size") + 1].toLong()
@@ -82,7 +83,9 @@ class PipelineOrchestratorTest {
         // Sidecars came from the dumps, with run-as capabilities applied.
         val fsConfig = assertNotNull(port.text("firmware/extracted/fs_config-system"))
         assertTrue(fsConfig.contains("system/bin/run-as 0 2000 755 capabilities=0xc0"))
-        assertTrue(assertNotNull(port.text("work/system/system/build.prop")).contains("org.lti.build.version=1.0.0"))
+        assertTrue(
+            assertNotNull(port.text("work/system/system/build.prop")).contains("org.lti.build.version=1.0.0"),
+        )
 
         val manifest = assertNotNull(port.text("out/manifest.json"))
         assertTrue(manifest.contains("https://ota.ltirom.org/updates/Lti_1.0.0_20260911_PQ84P01-sign.zip"))
@@ -143,11 +146,12 @@ class PipelineOrchestratorTest {
     fun missingVendoredUpdaterFailsInsteadOfSubstituting() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()
-        val events = orchestrator(
-            port,
-            repo,
-            vendored = false,
-        ).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        val events =
+            orchestrator(
+                port,
+                repo,
+                vendored = false,
+            ).drive("run-1", fixture.globalOtaContext(), "d1").toList()
 
         val failed = events.filterIsInstance<PipelineEvent.StageFailed>().single()
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, failed.stageId)

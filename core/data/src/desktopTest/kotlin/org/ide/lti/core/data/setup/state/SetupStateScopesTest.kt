@@ -23,21 +23,20 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SetupStateScopesTest {
-
     @Test
     fun operationScope_updatesOnlyItsOwnFields() {
         val stateFlow = MutableStateFlow(ToolchainSetupState())
         val scope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
 
-        scope.start(SetupStepStage.REPO_SYNCHRONIZATION)
+        scope.start(SetupStepStage.TOOLCHAIN_COMPILATION)
         scope.appendLog("Cloning repo...")
-        scope.setStepRunId(SetupStepStage.REPO_SYNCHRONIZATION, "run-101")
+        scope.setStepRunId(SetupStepStage.TOOLCHAIN_COMPILATION, "run-101")
 
         val state = stateFlow.value
         assertTrue(state.isRunning)
-        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, state.currentStage)
+        assertEquals(SetupStepStage.TOOLCHAIN_COMPILATION, state.currentStage)
         assertEquals(listOf("Cloning repo..."), state.logs)
-        assertEquals("run-101", state.stepRunIds[SetupStepStage.REPO_SYNCHRONIZATION])
+        assertEquals("run-101", state.stepRunIds[SetupStepStage.TOOLCHAIN_COMPILATION])
 
         // Verify other scope fields remained untouched
         assertFalse(state.isChecking)

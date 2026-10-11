@@ -83,7 +83,6 @@ data class PlannedSetupChanges(
     val requiresElevation: Boolean = false,
     val elevationReason: String? = null,
     val targetDistro: String = "",
-    val autoDoctorRemediation: Boolean = true,
 ) {
     /** True when the plan installs, syncs, compiles and publishes nothing (e.g. a cache reset). */
     val isEmpty: Boolean
@@ -104,7 +103,6 @@ data class SetupOperation(
     val toolId: String? = null,
     val plannedChanges: PlannedSetupChanges = PlannedSetupChanges(),
     val executionState: SetupOperationState = SetupOperationState.PREVIEW,
-    val autoDoctorEnabled: Boolean = true,
     val failure: String? = null,
     val plan: SetupPlan? = null,
     val awaitingHandoff: UserRepairHandoff? = null,
@@ -159,9 +157,6 @@ class EnvironmentSetupState(
         _activeOperation.value = operation
     }
 
-    private val _isAutoDoctorEnabled = MutableStateFlow(true)
-    val isAutoDoctorEnabled: StateFlow<Boolean> = _isAutoDoctorEnabled.asStateFlow()
-
     private val _environmentNotice = MutableStateFlow<String?>(null)
     val environmentNotice: StateFlow<String?> = _environmentNotice.asStateFlow()
 
@@ -210,7 +205,6 @@ class EnvironmentSetupState(
                             kind = if (stage != null) SetupOperationKind.RETRY_STAGE else SetupOperationKind.FULL_SETUP,
                             stageId = stage,
                             executionState = SetupOperationState.RECONNECTING,
-                            autoDoctorEnabled = _isAutoDoctorEnabled.value,
                         )
                 }
             }
@@ -278,8 +272,77 @@ class EnvironmentSetupState(
                     // Nothing is left to recover: a recovery notice from earlier is stale, not a warning.
                     _environmentNotice.value = null
                 }
+                maybeAutoInstallTools()
             }
     }
+
+    /** The preview being prepared; a newer request cancels it and its late result is dropped. */
+    private var previewJob: Job? = null
+    private var previewGeneration = 0
+
+    /** One automatic tool install per launch/state-holder lifetime (never persisted, FR-019, T050). */
+    var attemptedThisLaunch: Boolean = false
+        private set
+
+    /**
+     * Spec 009 US1/FR-019: once WSL, packages, and build service pass, missing tool groups are
+     * installed automatically with their target versions.
+     */
+    @Suppress("ReturnCount")
+    private fun maybeAutoInstallTools() {
+        val service = toolchainService ?: return
+        val reason =
+            if (_activeOperation.value != null) {
+                "operation ${_activeOperation.value?.kind} is open"
+            } else {
+                AutoToolsGate.blockReason(toolchainSetupState.value, attemptedThisLaunch)
+            }
+        if (reason != null) {
+            service.log("[auto-tools] not started: $reason")
+            return
+        }
+        attemptedThisLaunch = true
+        service.log("[auto-tools] installing missing tools")
+        val generation = ++previewGeneration
+        previewJob?.cancel()
+        previewJob =
+            scope.launch {
+                val plan =
+                    try {
+                        service.prepare(
+                            SetupPlanKind.FULL_SETUP,
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        service.log("[auto-tools] prepare failed: ${e.message}")
+                        _environmentNotice.value = "Couldn't prepare automatic tool install: ${e.message}"
+                        return@launch
+                    }
+                // A preview the user opened while this one was being prepared is the newer decision.
+                if (generation != previewGeneration || _activeOperation.value != null) {
+                    service.log("[auto-tools] plan discarded: a newer operation is open")
+                    return@launch
+                }
+                val operation =
+                    SetupOperation(
+                        kind = plan.kind.toOperationKind(),
+                        stageId = SetupStepStage.TOOLCHAIN_COMPILATION,
+                        plannedChanges = plan.toPlannedChanges(),
+                        executionState = SetupOperationState.PREVIEW,
+                        plan = plan,
+                    )
+                _activeOperation.value = operation
+                if (isToolInstallOnly(plan)) {
+                    confirmOperation()
+                } else {
+                    service.log("[auto-tools] plan has non-tool actions; waiting for confirmation in the preview")
+                }
+            }
+    }
+
+    private fun isToolInstallOnly(plan: SetupPlan): Boolean =
+        plan.orderedActions.isNotEmpty() && plan.orderedActions.all { it is SetupPlanAction.SwitchToolchain }
 
     /** Switches the session to [distro] (WSL row picker) and re-checks against it. */
     fun selectDistro(distro: String) {
@@ -325,44 +388,33 @@ class EnvironmentSetupState(
      */
     private fun launchPreview(kind: SetupPlanKind, targetId: String?, stage: SetupStepStage?) {
         val service = toolchainService ?: return
-        scope.launch {
-            try {
-                val plan = service.prepare(kind, targetId, _isAutoDoctorEnabled.value)
-                _activeOperation.value =
-                    SetupOperation(
-                        operationId = null,
-                        kind = plan.kind.toOperationKind(),
-                        stageId = stage,
-                        plannedChanges = plan.toPlannedChanges(),
-                        executionState = SetupOperationState.PREVIEW,
-                        autoDoctorEnabled = plan.autoDoctorEnabled,
-                        plan = plan,
-                    )
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _environmentNotice.value = "Failed to preview setup: ${e.message}"
+        val generation = ++previewGeneration
+        previewJob?.cancel()
+        previewJob =
+            scope.launch {
+                try {
+                    val plan = service.prepare(kind, targetId)
+                    if (generation != previewGeneration) return@launch // superseded while it was being prepared
+                    _activeOperation.value =
+                        SetupOperation(
+                            operationId = null,
+                            kind = plan.kind.toOperationKind(),
+                            stageId = stage,
+                            plannedChanges = plan.toPlannedChanges(),
+                            executionState = SetupOperationState.PREVIEW,
+                            plan = plan,
+                        )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _environmentNotice.value = "Failed to preview setup: ${e.message}"
+                }
             }
-        }
-    }
-
-    /**
-     * Previews Auto-Fix (automatic doctor remediation) as an explicitly confirmable plan (FR-003).
-     * Automatic remediation never runs when Auto Doctor is disabled (FR-004).
-     */
-    fun previewAutoFix() {
-        if (!_isAutoDoctorEnabled.value) {
-            _environmentNotice.value = "Auto Doctor is disabled; enable it to preview automatic remediation."
-            return
-        }
-        previewSetup(SetupStepStage.SYSTEM_DIAGNOSTICS)
     }
 
     private fun SetupPlan.toPlannedChanges(): PlannedSetupChanges {
         val installs = orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>()
         val aptPackages = installs.flatMap { it.packages }.distinct()
-        val pipPackages = installs.flatMap { it.pipPackages }.distinct()
-        val loopMountElevation = installs.any { it.configureLoopMountElevation }
         val requiresElevation = installs.any { it.requiresElevation }
         val elevationReason =
             when {
@@ -371,15 +423,16 @@ class EnvironmentSetupState(
                 else -> null
             }
         return PlannedSetupChanges(
-            packagesToInstall = aptPackages + pipPackages.map { "$it (pip)" },
-            // SyncSources/BuildRecipes/PublishTools no longer exist in the 008 plan.
+            packagesToInstall = aptPackages,
             // A SwitchToolchain action encompasses all of fetch, build, and publish.
             // Surface the groups being switched for the preview instead.
-            submodulesToSync = orderedActions
+            submodulesToSync =
+            orderedActions
                 .filterIsInstance<SetupPlanAction.SwitchToolchain>()
                 .flatMap { it.inputs.keys.map { id -> id.value } }
                 .distinct(),
-            toolsToCompile = orderedActions
+            toolsToCompile =
+            orderedActions
                 .filterIsInstance<SetupPlanAction.SwitchToolchain>()
                 .flatMap { it.inputs.keys.map { id -> id.value } }
                 .distinct(),
@@ -387,7 +440,6 @@ class EnvironmentSetupState(
             requiresElevation = requiresElevation,
             elevationReason = elevationReason,
             targetDistro = environmentKey,
-            autoDoctorRemediation = autoDoctorEnabled,
         )
     }
 
@@ -427,6 +479,7 @@ class EnvironmentSetupState(
         // The confirmed cache reset is the user-directed recovery for an unreconcilable journal (FR-008).
         if (plan.kind != SetupPlanKind.CACHE_RESET && refuseWhileJournalNeedsRecovery()) return
         if (toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true) {
+            toolchainService.log("[setup] ${plan.kind} not started: another operation is running")
             return
         }
 
@@ -435,7 +488,6 @@ class EnvironmentSetupState(
             currentOp.copy(
                 operationId = opId,
                 executionState = SetupOperationState.RUNNING,
-                autoDoctorEnabled = plan.autoDoctorEnabled,
             )
 
         currentExecutionJob =
@@ -535,7 +587,6 @@ class EnvironmentSetupState(
                 kind = if (stage != null) SetupOperationKind.RETRY_STAGE else SetupOperationKind.FULL_SETUP,
                 stageId = stage,
                 executionState = SetupOperationState.RECONNECTING,
-                autoDoctorEnabled = _isAutoDoctorEnabled.value,
             )
         val service = toolchainService
         // Only an operation the owner is actually running can be observed to its end; otherwise the
@@ -569,7 +620,6 @@ class EnvironmentSetupState(
             SetupOperation(
                 operationId = attemptId,
                 executionState = SetupOperationState.RECONNECTING,
-                autoDoctorEnabled = _isAutoDoctorEnabled.value,
             )
         currentExecutionJob =
             scope.launch {
@@ -621,7 +671,9 @@ class EnvironmentSetupState(
                         failure = "Operation cancelled",
                     )
                 throw e
-            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
                 _environmentNotice.value = "Failed to cancel operation: ${e.message}"
             }
         }
@@ -699,19 +751,6 @@ class EnvironmentSetupState(
         }
     }
 
-    /**
-     * Toggling Auto Doctor regenerates an open preview so package/elevation summaries reflect the
-     * policy the confirmed attempt will freeze (FR-004).
-     */
-    fun setAutoDoctorEnabled(enabled: Boolean) {
-        _isAutoDoctorEnabled.value = enabled
-        val op = _activeOperation.value
-        val plan = op?.plan
-        if (op != null && plan != null && op.executionState == SetupOperationState.PREVIEW) {
-            launchPreview(plan.kind, plan.targetStageOrToolId, op.stageId)
-        }
-    }
-
     fun selectStage(stage: SetupStepStage?) {
         _selectedStage.value = stage
     }
@@ -762,7 +801,6 @@ class EnvironmentSetupState(
                         service.prepare(
                             kind = SetupPlanKind.BOOTSTRAP_PACKAGES,
                             targetId = SetupStepStage.SYSTEM_PACKAGES.name,
-                            autoDoctorEnabled = _isAutoDoctorEnabled.value,
                         )
                     _activeOperation.value =
                         SetupOperation(
@@ -771,7 +809,6 @@ class EnvironmentSetupState(
                             stageId = SetupStepStage.SYSTEM_PACKAGES,
                             plannedChanges = plan.toPlannedChanges(),
                             executionState = SetupOperationState.RUNNING,
-                            autoDoctorEnabled = plan.autoDoctorEnabled,
                             plan = plan,
                         )
                     val outcome = service.confirm(plan.planId, plan.revisionHash)
@@ -878,8 +915,9 @@ class EnvironmentSetupState(
         val service = toolchainService
         val currentOp = _activeOperation.value
         val planId = currentOp?.plan?.planId ?: currentOp?.operationId
-        val awaiting = currentOp?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
-            _handoffSheetState.value == TerminalHandoffState.Verifying
+        val awaiting =
+            currentOp?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
+                _handoffSheetState.value == TerminalHandoffState.Verifying
         when {
             service == null -> _environmentNotice.value = "Toolchain service is not available in this session."
             currentOp == null || planId == null || !awaiting ->
@@ -927,24 +965,27 @@ class EnvironmentSetupState(
     private fun applyResumeOutcome(outcome: SetupOutcome, currentHandoff: UserRepairHandoff?) {
         when (outcome) {
             is SetupOutcome.Succeeded -> {
-                _activeOperation.value = _activeOperation.value?.copy(
-                    executionState = SetupOperationState.SUCCEEDED,
-                    awaitingHandoff = null,
-                    failure = null,
-                )
+                _activeOperation.value =
+                    _activeOperation.value?.copy(
+                        executionState = SetupOperationState.SUCCEEDED,
+                        awaitingHandoff = null,
+                        failure = null,
+                    )
                 _handoffSheetState.value = TerminalHandoffState.Done
                 _isHandoffSheetVisible.value = false
             }
             is SetupOutcome.AwaitingUserAction -> {
-                _activeOperation.value = _activeOperation.value?.copy(
-                    executionState = SetupOperationState.AWAITING_USER_ACTION,
-                    awaitingHandoff = outcome.handoff,
-                    failure = outcome.reason,
-                )
-                _handoffSheetState.value = TerminalHandoffState.StillMissing(
-                    packages = outcome.handoff.packages,
-                    command = outcome.handoff.terminalCommand,
-                )
+                _activeOperation.value =
+                    _activeOperation.value?.copy(
+                        executionState = SetupOperationState.AWAITING_USER_ACTION,
+                        awaitingHandoff = outcome.handoff,
+                        failure = outcome.reason,
+                    )
+                _handoffSheetState.value =
+                    TerminalHandoffState.StillMissing(
+                        packages = outcome.handoff.packages,
+                        command = outcome.handoff.terminalCommand,
+                    )
                 _environmentNotice.value = "Action still pending: requirements not yet satisfied."
             }
             is SetupOutcome.Cancelled -> {
@@ -953,11 +994,12 @@ class EnvironmentSetupState(
             }
             is SetupOutcome.Failed -> {
                 val kept = keepHandoffOrFail(currentHandoff, outcome.reason)
-                _environmentNotice.value = if (kept) {
-                    "Pre-flight check failed before resumption: ${outcome.reason}"
-                } else {
-                    "Operation failed: ${outcome.reason}"
-                }
+                _environmentNotice.value =
+                    if (kept) {
+                        "Pre-flight check failed before resumption: ${outcome.reason}"
+                    } else {
+                        "Operation failed: ${outcome.reason}"
+                    }
             }
             is SetupOutcome.Busy -> {
                 keepAwaiting(currentHandoff, "Another setup operation is running")
@@ -974,11 +1016,12 @@ class EnvironmentSetupState(
 
     /** Keeps the pending terminal step open with [reason]; the operation stays AWAITING_USER_ACTION. */
     private fun keepAwaiting(currentHandoff: UserRepairHandoff?, reason: String) {
-        _activeOperation.value = _activeOperation.value?.copy(
-            executionState = SetupOperationState.AWAITING_USER_ACTION,
-            awaitingHandoff = currentHandoff ?: _activeOperation.value?.awaitingHandoff,
-            failure = reason,
-        )
+        _activeOperation.value =
+            _activeOperation.value?.copy(
+                executionState = SetupOperationState.AWAITING_USER_ACTION,
+                awaitingHandoff = currentHandoff ?: _activeOperation.value?.awaitingHandoff,
+                failure = reason,
+            )
     }
 
     /**
@@ -991,20 +1034,22 @@ class EnvironmentSetupState(
             endOperation(SetupOperationState.FAILED, reason)
         } else {
             keepAwaiting(handoff, reason)
-            _handoffSheetState.value = TerminalHandoffState.StillMissing(
-                packages = handoff.packages,
-                command = handoff.terminalCommand,
-            )
+            _handoffSheetState.value =
+                TerminalHandoffState.StillMissing(
+                    packages = handoff.packages,
+                    command = handoff.terminalCommand,
+                )
         }
         return handoff != null
     }
 
     private fun endOperation(state: SetupOperationState, failure: String?) {
-        _activeOperation.value = _activeOperation.value?.copy(
-            executionState = state,
-            failure = failure,
-            awaitingHandoff = null,
-        )
+        _activeOperation.value =
+            _activeOperation.value?.copy(
+                executionState = state,
+                failure = failure,
+                awaitingHandoff = null,
+            )
         _handoffSheetState.value = TerminalHandoffState.Idle
         _isHandoffSheetVisible.value = false
     }

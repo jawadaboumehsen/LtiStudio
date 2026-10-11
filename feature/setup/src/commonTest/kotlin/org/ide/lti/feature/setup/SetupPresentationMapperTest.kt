@@ -139,8 +139,7 @@ class SetupPresentationMapperTest {
                 listOf(
                     step(SetupStepStage.WSL_DETECTION),
                     step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION, status = StepStatus.PENDING),
+                    step(SetupStepStage.SYSTEM_PACKAGES, status = StepStatus.PENDING),
                     step(SetupStepStage.TOOLCHAIN_COMPILATION, status = StepStatus.PENDING),
                 ),
             )
@@ -163,8 +162,7 @@ class SetupPresentationMapperTest {
                 listOf(
                     step(SetupStepStage.WSL_DETECTION),
                     step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION),
+                    step(SetupStepStage.SYSTEM_PACKAGES),
                     step(SetupStepStage.TOOLCHAIN_COMPILATION),
                 ),
                 toolsMatrix = readyTools,
@@ -256,7 +254,7 @@ class SetupPresentationMapperTest {
                 steps =
                 listOf(
                     step(SetupStepStage.WSL_DETECTION),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION, status = StepStatus.PENDING),
+                    step(SetupStepStage.TOOLCHAIN_COMPILATION, status = StepStatus.PENDING),
                 ),
             )
         val presentation = SetupPresentationMapper.mapEnvironment(stateAfterCheck)
@@ -277,8 +275,7 @@ class SetupPresentationMapperTest {
                 listOf(
                     step(SetupStepStage.WSL_DETECTION),
                     step(SetupStepStage.SERVER_CONNECTIVITY),
-                    step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                    step(SetupStepStage.REPO_SYNCHRONIZATION),
+                    step(SetupStepStage.SYSTEM_PACKAGES),
                     step(SetupStepStage.TOOLCHAIN_COMPILATION),
                 ),
                 toolsMatrix = listOf(coreTool("lpunpack", "LP Unpack")),
@@ -305,11 +302,11 @@ class SetupPresentationMapperTest {
     private fun checkedState(toolchain: SetupStepDetail, tools: List<ToolComponentItem>, published: Set<String>) =
         ToolchainSetupState(
             checkedAt = 1700000300000L,
-            steps = listOf(
+            steps =
+            listOf(
                 step(SetupStepStage.WSL_DETECTION),
                 step(SetupStepStage.SERVER_CONNECTIVITY),
-                step(SetupStepStage.SYSTEM_DIAGNOSTICS),
-                step(SetupStepStage.REPO_SYNCHRONIZATION),
+                step(SetupStepStage.SYSTEM_PACKAGES),
                 toolchain,
             ),
             toolsMatrix = tools,
@@ -320,21 +317,24 @@ class SetupPresentationMapperTest {
     fun testToolchainProblemReportedByTheCheckPreventsReady() {
         // Missing publication, a failed required-tool test and an empty inventory all fail the Toolchain stage in
         // the check; that stage is what both this screen and Projects read.
-        val reported = listOf(
-            "Missing published tools: mkfs.erofs",
-            "Tool lpunpack verification probe failed with exit code 1",
-            "adb not built",
-        )
-        for (problem in reported) {
-            val state = checkedState(
-                toolchain = step(
-                    SetupStepStage.TOOLCHAIN_COMPILATION,
-                    status = StepStatus.FAILED,
-                    description = problem,
-                ),
-                tools = listOf(coreTool("lpunpack", "LP Unpack")),
-                published = setOf("lpunpack"),
+        val reported =
+            listOf(
+                "Missing published tools: mkfs.erofs",
+                "Tool lpunpack verification probe failed with exit code 1",
+                "adb not built",
             )
+        for (problem in reported) {
+            val state =
+                checkedState(
+                    toolchain =
+                    step(
+                        SetupStepStage.TOOLCHAIN_COMPILATION,
+                        status = StepStatus.FAILED,
+                        description = problem,
+                    ),
+                    tools = listOf(coreTool("lpunpack", "LP Unpack")),
+                    published = setOf("lpunpack"),
+                )
 
             val presentation = SetupPresentationMapper.mapEnvironment(state)
 
@@ -347,11 +347,12 @@ class SetupPresentationMapperTest {
     fun testEnvironmentAndProjectsShareOneReadyUntestedToolsIncluded() {
         // All stages green but no tool individually tested yet (a full setup does not probe each one): Projects
         // admits the workspace, so this screen must not keep offering Set up.
-        val state = checkedState(
-            toolchain = step(SetupStepStage.TOOLCHAIN_COMPILATION),
-            tools = listOf(coreTool("lpunpack", "LP Unpack", lastTested = null)),
-            published = setOf("lpunpack"),
-        )
+        val state =
+            checkedState(
+                toolchain = step(SetupStepStage.TOOLCHAIN_COMPILATION),
+                tools = listOf(coreTool("lpunpack", "LP Unpack", lastTested = null)),
+                published = setOf("lpunpack"),
+            )
 
         val presentation = SetupPresentationMapper.mapEnvironment(state)
 
@@ -451,20 +452,6 @@ class SetupPresentationMapperTest {
                         provenance = StepProvenance.LIVE,
                     ),
                     SetupStepDetail(
-                        stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                        title = "Doctor",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                    SetupStepDetail(
-                        stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                        title = "Repos",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                    SetupStepDetail(
                         stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                         title = "Tools",
                         description = "",
@@ -509,12 +496,13 @@ class SetupPresentationMapperTest {
     @Test
     fun testRecoveryMapping_idleState_returnsEmpty() {
         val idleState = ToolchainSetupState()
-        val pres = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = idleState,
-            activeOperation = null,
-            attemptRecord = null,
-            hasLogs = false,
-        )
+        val pres =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = idleState,
+                activeOperation = null,
+                attemptRecord = null,
+                hasLogs = false,
+            )
 
         assertTrue(pres.isEmpty, "Idle state must map to isEmpty=true")
         assertNull(pres.operation)
@@ -527,21 +515,23 @@ class SetupPresentationMapperTest {
     @Test
     fun testRecoveryMapping_interruptedAttempt_showsOperationDetails() {
         val state = ToolchainSetupState(pendingAttemptId = "attempt-99")
-        val record = SetupAttemptRecord(
-            attemptId = "attempt-99",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            status = AttemptStatus.INTERRUPTED,
-            terminalReason = "WSL connection dropped",
-            createdAtEpochMs = 1700000000000L,
-        )
+        val record =
+            SetupAttemptRecord(
+                attemptId = "attempt-99",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.INTERRUPTED,
+                terminalReason = "WSL connection dropped",
+                createdAtEpochMs = 1700000000000L,
+            )
 
-        val pres = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = state,
-            attemptRecord = record,
-        )
+        val pres =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = state,
+                attemptRecord = record,
+            )
 
         assertFalse(pres.isEmpty)
         val op = pres.operation
@@ -555,19 +545,22 @@ class SetupPresentationMapperTest {
 
     @Test
     fun testRecoveryMapping_serviceStopped_showsBuildServiceRowState() {
-        val serverStep = step(
-            stage = SetupStepStage.SERVER_CONNECTIVITY,
-            status = StepStatus.FAILED,
-            description = "Build service didn't start: port collision",
-            error = "port collision",
-        )
-        val state = ToolchainSetupState(
-            steps = listOf(serverStep),
-        )
+        val serverStep =
+            step(
+                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                status = StepStatus.FAILED,
+                description = "Build service didn't start: port collision",
+                error = "port collision",
+            )
+        val state =
+            ToolchainSetupState(
+                steps = listOf(serverStep),
+            )
 
-        val pres = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = state,
-        )
+        val pres =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = state,
+            )
 
         assertFalse(pres.isEmpty)
         val srv = pres.service
@@ -579,13 +572,15 @@ class SetupPresentationMapperTest {
 
     @Test
     fun testRecoveryMapping_recoveryBlockReason_showsBlockedReason() {
-        val state = ToolchainSetupState(
-            recoveryBlockReason = "ambiguous receipt on attempt-12",
-        )
+        val state =
+            ToolchainSetupState(
+                recoveryBlockReason = "ambiguous receipt on attempt-12",
+            )
 
-        val pres = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = state,
-        )
+        val pres =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = state,
+            )
 
         assertFalse(pres.isEmpty)
         assertEquals("ambiguous receipt on attempt-12", pres.blockedReason)
@@ -593,42 +588,47 @@ class SetupPresentationMapperTest {
 
     @Test
     fun testRecoveryMapping_evidenceAndProblemsTabs() {
-        val failedStep = step(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            status = StepStatus.FAILED,
-            description = "llvm build failed",
-            error = "clang error 1",
-        )
-        val state = ToolchainSetupState(
-            steps = listOf(failedStep),
-        )
-        val childIntent = ChildIntentRecord(
-            childIndex = 0,
-            stage = "TOOLCHAIN_COMPILATION",
-            actionId = "build-llvm",
-            request = PersistedExecutionRequest(toolId = "llvm"),
-            idempotencyKey = "idem-llvm",
-            workspaceLock = "lock-1",
-        )
-        val record = SetupAttemptRecord(
-            attemptId = "attempt-1",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            orderedIntents = listOf(childIntent),
-        )
+        val failedStep =
+            step(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                status = StepStatus.FAILED,
+                description = "llvm build failed",
+                error = "clang error 1",
+            )
+        val state =
+            ToolchainSetupState(
+                steps = listOf(failedStep),
+            )
+        val childIntent =
+            ChildIntentRecord(
+                childIndex = 0,
+                stage = "TOOLCHAIN_COMPILATION",
+                actionId = "build-llvm",
+                request = PersistedExecutionRequest(toolId = "llvm"),
+                idempotencyKey = "idem-llvm",
+                workspaceLock = "lock-1",
+            )
+        val record =
+            SetupAttemptRecord(
+                attemptId = "attempt-1",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                orderedIntents = listOf(childIntent),
+            )
 
-        val pres = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = state,
-            attemptRecord = record,
-        )
+        val pres =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = state,
+                attemptRecord = record,
+            )
 
         assertTrue(pres.hasEvidence)
         assertEquals(1, pres.evidence.intents.size)
         assertTrue(pres.hasProblems)
         assertEquals(1, pres.problems.size)
-        assertEquals("Toolchain Binaries", pres.problems.first().title)
+        assertEquals("Tools", pres.problems.first().title)
         assertEquals("clang error 1", pres.problems.first().detail)
     }
 }

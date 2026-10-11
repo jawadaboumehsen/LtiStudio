@@ -27,6 +27,8 @@ import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.DistroStatus
+import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 import org.ide.lti.feature.setup.steps.EnvironmentStepContent
@@ -47,36 +49,38 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalTestApi::class)
 class SetupActionsTest {
-
     @Test
     fun testCheckAgainCallsCheckEnvironmentNotNavigation() {
         runDesktopComposeUiTest(width = 1120, height = 1200) {
             var checkCalled = false
             var navigateCalled = false
 
-            val state = ToolchainSetupState(
-                steps = listOf(
-                    SetupStepDetail(
-                        stage = SetupStepStage.WSL_DETECTION,
-                        title = "WSL Detection",
-                        description = "Ubuntu 22.04 LTS",
-                        status = StepStatus.SUCCESS,
+            val state =
+                ToolchainSetupState(
+                    steps =
+                    listOf(
+                        SetupStepDetail(
+                            stage = SetupStepStage.WSL_DETECTION,
+                            title = "WSL Detection",
+                            description = "Ubuntu 22.04 LTS",
+                            status = StepStatus.SUCCESS,
+                        ),
+                        SetupStepDetail(
+                            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                            title = "Toolchain Compilation",
+                            description = "Pending compilation",
+                            status = StepStatus.PENDING,
+                        ),
                     ),
-                    SetupStepDetail(
-                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                        title = "Toolchain Compilation",
-                        description = "Pending compilation",
-                        status = StepStatus.PENDING,
-                    ),
-                ),
-                isChecking = false,
-            )
+                    isChecking = false,
+                )
 
             setContent {
                 LtiTheme {
                     EnvironmentStepContent(
                         state = SetupUiState(toolchainSetupState = state),
-                        actions = SetupUiActions(
+                        actions =
+                        SetupUiActions(
                             onCheckEnvironment = { checkCalled = true },
                         ),
                         onNavigateToProjects = { navigateCalled = true },
@@ -97,15 +101,17 @@ class SetupActionsTest {
             var checkCalled = false
             var navigateCalled = false
 
-            val state = SetupUiState(
-                environmentNotice = "Environment verification is required before proceeding.",
-            )
+            val state =
+                SetupUiState(
+                    environmentNotice = "Environment verification is required before proceeding.",
+                )
 
             setContent {
                 LtiTheme {
                     SetupScreenContent(
                         state = state,
-                        actions = SetupUiActions(
+                        actions =
+                        SetupUiActions(
                             onCheckEnvironment = { checkCalled = true },
                             onNavigateToEnvironment = { navigateCalled = true },
                         ),
@@ -124,12 +130,13 @@ class SetupActionsTest {
     fun testCancelOnRunningRowShowsConfirmationAndDispatchesCancel() {
         runDesktopComposeUiTest(width = 1120, height = 1200) {
             var cancelDispatched = false
-            val runningStep = SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Binaries",
-                status = StepStatus.RUNNING,
-                description = "Building llvm (1 of 4)",
-            )
+            val runningStep =
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Binaries",
+                    status = StepStatus.RUNNING,
+                    description = "Building llvm (1 of 4)",
+                )
 
             setContent {
                 LtiTheme {
@@ -161,12 +168,13 @@ class SetupActionsTest {
     @Test
     fun testCheckingToolchainRowOffersNoCancelItCannotHonour() {
         runDesktopComposeUiTest(width = 1120, height = 1200) {
-            val checkingStep = SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Binaries",
-                status = StepStatus.RUNNING,
-                description = "Checking tools…",
-            )
+            val checkingStep =
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Binaries",
+                    status = StepStatus.RUNNING,
+                    description = "Checking tools…",
+                )
 
             setContent {
                 LtiTheme {
@@ -178,6 +186,43 @@ class SetupActionsTest {
 
             onNodeWithText("Checking tools…", substring = true).assertIsDisplayed()
             onAllNodesWithText("Cancel").assertCountEquals(0)
+        }
+    }
+
+    @Test
+    fun testUnmanagedToolFolderShowsSafeCommandAndTerminalRetryActions() {
+        runDesktopComposeUiTest(width = 1120, height = 900) {
+            var openedDistro: String? = null
+            var retriedStage: SetupStepStage? = null
+            val failedServerStep =
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Bridge",
+                    status = StepStatus.FAILED,
+                    description = "Failed to start server: start",
+                    error = "Startup failed: ~/LtiRomTools/bin exists but is a directory, " +
+                        "not a managed toolchain symlink.",
+                )
+
+            setContent {
+                LtiTheme {
+                    ToolchainPipelineTracker(
+                        steps = listOf(failedServerStep),
+                        onRetryStep = {},
+                        onRetryStage = { retriedStage = it },
+                        activeDistro = "Ubuntu",
+                        onOpenDistro = { openedDistro = it },
+                    )
+                }
+            }
+
+            onNodeWithText("without deleting its contents", substring = true).assertIsDisplayed()
+            onNodeWithText("Copy recovery command").assertIsDisplayed()
+            onNodeWithText("Open WSL terminal").performClick()
+            onNodeWithText("Retry").performClick()
+
+            assertEquals("Ubuntu", openedDistro)
+            assertEquals(SetupStepStage.SERVER_CONNECTIVITY, retriedStage)
         }
     }
 
@@ -338,10 +383,12 @@ class SetupActionsTest {
         setContent {
             LtiTheme {
                 SetupScreenContent(
-                    state = SetupUiState(
+                    state =
+                    SetupUiState(
                         selectedTab = SetupTab.TOOLS,
                     ),
-                    actions = SetupUiActions(
+                    actions =
+                    SetupUiActions(
                         onSelectTab = { selectedTab = it },
                     ),
                     iconsOnly = true,
@@ -357,12 +404,118 @@ class SetupActionsTest {
         onNodeWithTag("RailItem_tools").assertExists()
         onNodeWithTag("RailItem_recovery").assertExists()
 
-        onNodeWithTag("NavigatorItem_all_tools").assertExists()
-        onNodeWithTag("NavigatorItem_firmware").assertExists()
-        onNodeWithTag("NavigatorItem_filesystems").assertExists()
-        onNodeWithTag("NavigatorItem_signing").assertExists()
-
         onNodeWithTag("RailItem_environment").performClick()
         assertEquals(SetupTab.ENVIRONMENT, selectedTab)
+    }
+
+    @Test
+    fun testInstallUbuntuDispatchesLaunchInstallerAction() = runDesktopComposeUiTest(width = 1120, height = 900) {
+        var installedDistro: String? = null
+        val wslStep =
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 Runtime",
+                status = StepStatus.FAILED,
+                description = "No Linux distribution.",
+            )
+
+        setContent {
+            LtiTheme {
+                ToolchainPipelineTracker(
+                    steps = listOf(wslStep),
+                    onRetryStep = {},
+                    distroStatuses = listOf(DistroStatus.NoDistro),
+                    onInstallUbuntu = { installedDistro = it },
+                )
+            }
+        }
+
+        onNodeWithText("Install Ubuntu").performClick()
+        assertEquals("Ubuntu-24.04", installedDistro)
+    }
+
+    @Test
+    fun testUseDistroDispatchesSelectDistroAction() = runDesktopComposeUiTest(width = 1120, height = 900) {
+        var selectedDistro: String? = null
+        val wslStep =
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 Runtime",
+                status = StepStatus.FAILED,
+                description = "Unsupported distribution",
+            )
+        val unsupported = DistroStatus.Unsupported("Debian", "found debian 12")
+        val usable =
+            DistroStatus.Usable(
+                SetupEnvironment("Ubuntu-22.04", 2, "ubuntu", "22.04", "testuser", "/home/testuser"),
+            )
+
+        setContent {
+            LtiTheme {
+                ToolchainPipelineTracker(
+                    steps = listOf(wslStep),
+                    onRetryStep = {},
+                    distroStatuses = listOf(unsupported, usable),
+                    activeDistro = "Debian",
+                    onSelectDistro = { selectedDistro = it },
+                )
+            }
+        }
+
+        onNodeWithText("Use Ubuntu-22.04").performClick()
+        assertEquals("Ubuntu-22.04", selectedDistro)
+    }
+
+    @Test
+    fun testOpenDistroDispatchesOpenTerminalAction() = runDesktopComposeUiTest(width = 1120, height = 900) {
+        var openedDistro: String? = null
+        val wslStep =
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 Runtime",
+                status = StepStatus.FAILED,
+                description = "Ubuntu-24.04 needs a user",
+            )
+        val noUser = DistroStatus.NoUsableUser("Ubuntu-24.04", "default user is root")
+
+        setContent {
+            LtiTheme {
+                ToolchainPipelineTracker(
+                    steps = listOf(wslStep),
+                    onRetryStep = {},
+                    distroStatuses = listOf(noUser),
+                    onOpenDistro = { openedDistro = it },
+                )
+            }
+        }
+
+        onNodeWithText("Open Ubuntu-24.04").performClick()
+        assertEquals("Ubuntu-24.04", openedDistro)
+    }
+
+    @Test
+    fun testWslFailedRowCheckAgainDispatchesVerifyAction() = runDesktopComposeUiTest(width = 1120, height = 900) {
+        var verified = false
+        val wslStep =
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL 2 Runtime",
+                status = StepStatus.FAILED,
+                description = "No Linux distribution.",
+            )
+
+        setContent {
+            LtiTheme {
+                ToolchainPipelineTracker(
+                    steps = listOf(wslStep),
+                    onRetryStep = {},
+                    distroStatuses = listOf(DistroStatus.NoDistro),
+                    onVerify = { verified = true },
+                )
+            }
+        }
+
+        onNodeWithText("Check again").performClick()
+        assertTrue(verified)
     }
 }

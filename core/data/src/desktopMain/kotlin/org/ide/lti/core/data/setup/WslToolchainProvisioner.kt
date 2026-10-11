@@ -33,30 +33,27 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.ide.lti.core.data.remote.ToolStatusMapper
+import org.ide.lti.core.data.setup.check.CheckContext
+import org.ide.lti.core.data.setup.check.EnvironmentCheck
 import org.ide.lti.core.data.setup.check.PackagesPreparationResult
-import org.ide.lti.core.data.setup.check.ServerPreparationResult
+import org.ide.lti.core.data.setup.check.ReadOnlyCommands
 import org.ide.lti.core.data.setup.check.ServicePreparation
-import org.ide.lti.core.data.setup.check.WslPreparationResult
-import org.ide.lti.core.data.setup.doctor.CompositeSystemDoctorEngine
-import org.ide.lti.core.data.setup.doctor.DiagnosticContext
-import org.ide.lti.core.data.setup.doctor.NativeLibrariesInspector
-import org.ide.lti.core.data.setup.doctor.WslPackageRemediator
+import org.ide.lti.core.data.setup.check.stages.DistroStage
+import org.ide.lti.core.data.setup.check.stages.PackagesStage
+import org.ide.lti.core.data.setup.check.stages.ServiceStage
+import org.ide.lti.core.data.setup.check.stages.ToolsStage
 import org.ide.lti.core.data.setup.execute.ExecutionContext
 import org.ide.lti.core.data.setup.execute.PlanExecutor
 import org.ide.lti.core.data.setup.execute.handlers.InstallPackagesHandler
-import org.ide.lti.core.data.setup.install.detectHostArch
+import org.ide.lti.core.data.setup.state.CheckScope
 import org.ide.lti.core.data.setup.state.InstalledScope
 import org.ide.lti.core.data.setup.state.OperationScope
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
-import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.ports.ToolchainFailureCategory
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
-import org.ide.lti.core.domain.setup.CompatibilityResult
-import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ResolvedInput
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupLogKind
@@ -69,26 +66,22 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolCapabilities
 import org.ide.lti.core.domain.setup.ToolEvidence
-import org.ide.lti.core.domain.setup.ToolGroup
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolGroupId
-import org.ide.lti.core.domain.setup.ToolSource
+import org.ide.lti.core.domain.setup.ToolOutputKind
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.setup.UserRepairHandoff
-import org.ide.lti.core.domain.setup.ports.ResolveOutcome
-import org.ide.lti.core.domain.setup.ports.SourceResolverPort
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.DistroStatus
-import org.ide.lti.core.model.setup.PersistedPlanAction
 import org.ide.lti.core.model.setup.PersistedResolvedInput
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
+import org.ide.lti.core.model.setup.PrerequisiteReport
 import org.ide.lti.core.model.setup.RequirementStatus
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.ToolRef
-import org.ide.lti.core.model.setup.ToolSelection
 import org.ide.lti.core.model.setup.distroName
 import org.ide.lti.core.model.setup.toDomain
 import org.ide.lti.core.model.setup.toPersisted
@@ -100,9 +93,8 @@ import java.util.UUID
  *
  * Adheres to:
  * - Single Responsibility Principle: coordinates sequential setup workflow and state emissions.
- *   Diagnostic health checks are delegated to [CompositeSystemDoctorEngine] over the service transport.
- *   Submodule management is delegated to [SubmoduleSyncEngine].
- *   Binary compilation is delegated to [ToolchainBuildEngine].
+ *   Component sources and builds are delegated to the tool manager.
+ *   The bundled helper performs compilation inside WSL.
  *   Mutation admission and single ownership are delegated to [SetupOperationCoordinator].
  * - Dependency Inversion Principle: depends on abstractions ([DaemonSupervisorPort], [RemoteTransportPort],
  *   [ToolchainSetupRepository]).
@@ -117,7 +109,6 @@ public class WslToolchainProvisioner(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val repository: ToolchainSetupRepository? = null,
-    private val toolPublicationPort: ToolPublicationPort? = null,
     private val coordinator: SetupOperationCoordinator = SetupOperationCoordinator(repository),
     private val scope: CoroutineScope = CoroutineScope(dispatcher + SupervisorJob()),
     private val hostPrerequisitePort: HostPrerequisitePort = WslHostPrerequisiteProbe(detector, cli),
@@ -125,41 +116,49 @@ public class WslToolchainProvisioner(
     servicePreparation: ServicePreparation? = null,
     planExecutor: PlanExecutor? = null,
     recoveryCoordinator: RecoveryCoordinator? = null,
-    sourceResolver: SourceResolverPort? = null,
+    private val toolManager: org.ide.lti.core.domain.tools.ToolManager? = null,
+    private val heartbeatMonitor: io.ltirom.tooling.client.resilience.DaemonHeartbeatMonitor? = null,
+    environmentCheck: EnvironmentCheck? = null,
 ) : ToolchainProvisioningService {
+    private val servicePreparation: ServicePreparation =
+        servicePreparation ?: ServicePreparation(
+            hostPrerequisitePort = hostPrerequisitePort,
+            supervisor = supervisor,
+            transport = transport,
+            serverArtifactPort = serverArtifactPort,
+            dispatcher = dispatcher,
+        )
+    private val planExecutor: PlanExecutor =
+        planExecutor ?: PlanExecutor(
+            installPackagesHandler = InstallPackagesHandler(),
+        )
 
-    private val sourceResolver: SourceResolverPort? = sourceResolver
-
-    private val servicePreparation: ServicePreparation = servicePreparation ?: ServicePreparation(
-        hostPrerequisitePort = hostPrerequisitePort,
-        supervisor = supervisor,
-        transport = transport,
-        serverArtifactPort = serverArtifactPort,
-        dispatcher = dispatcher,
-    )
-    private val planExecutor: PlanExecutor = planExecutor ?: PlanExecutor(
-        installPackagesHandler = InstallPackagesHandler(
-            remediator = { action, ctx ->
-                val sCli = ctx.serviceCli as? TransportCliExecutor
-                if (sCli != null) {
-                    executeRemediation(action, ctx.distro, ctx.home, ctx.binDir, sCli)
-                } else {
-                    null
-                }
-            },
-        ),
-    )
+    private val environmentCheck: EnvironmentCheck =
+        environmentCheck ?: EnvironmentCheck(
+            listOf(
+                DistroStage(detector),
+                ServiceStage(
+                    supervisor = supervisor,
+                    transport = transport,
+                    heartbeatMonitor = heartbeatMonitor,
+                    servicePreparation = this.servicePreparation,
+                ),
+                PackagesStage(servicePreparation = this.servicePreparation),
+                ToolsStage(toolManager = toolManager),
+            ),
+        )
 
     /** Bounded activity history (FR-011); run output is recorded here with real journal identity. */
     private val logBuffer = SetupLogBuffer(onRecorded = { event -> publishLogTail(event.text) })
 
-    private val recoveryCoordinator: RecoveryCoordinator = recoveryCoordinator ?: RecoveryCoordinator(
-        transport = transport,
-        supervisor = supervisor,
-        repository = repository,
-        activity = logBuffer,
-        dispatcher = dispatcher,
-    )
+    private val recoveryCoordinator: RecoveryCoordinator =
+        recoveryCoordinator ?: RecoveryCoordinator(
+            transport = transport,
+            supervisor = supervisor,
+            repository = repository,
+            activity = logBuffer,
+            dispatcher = dispatcher,
+        )
 
     private var currentEnvironment: SetupEnvironment? = null
 
@@ -199,48 +198,51 @@ public class WslToolchainProvisioner(
         val persisted = repository?.currentState ?: return ToolchainSetupState()
         // An unreconciled attempt or a recovery block is restored first: it is the journal's truth about
         // possibly-running server work and must be visible before any evidence (US3 T023).
-        val journal = ToolchainSetupState(
-            pendingAttemptId = persisted.activeAttempt?.attemptId,
-            pendingAttempt = persisted.activeAttempt,
-            recoveryBlockReason = persisted.recoveryBlockReason?.takeIf { persisted.recoveryBlocked },
-        )
+        val journal =
+            ToolchainSetupState(
+                pendingAttemptId = persisted.activeAttempt?.attemptId,
+                pendingAttempt = persisted.activeAttempt,
+                recoveryBlockReason = persisted.recoveryBlockReason?.takeIf { persisted.recoveryBlocked },
+            )
         if (!persisted.isSetupCompleted && persisted.completedStages.isEmpty() && persisted.tools.isEmpty()) {
             return journal
         }
 
         val lastVerified = persisted.lastVerifiedTimestamp
-        val restoredSteps = ToolchainSetupState.defaultSteps().map { step ->
-            if (persisted.isStageCompleted(step.stage.name) || persisted.isSetupCompleted) {
-                step.copy(
-                    status = StepStatus.PENDING,
-                    provenance = StepProvenance.RESTORED,
-                    verifiedAtEpochMs = lastVerified,
-                    description = "Last verified ${formatAgo(lastVerified)} — re-checking…",
-                )
-            } else {
-                step.copy(
-                    provenance = StepProvenance.RESTORED,
-                    verifiedAtEpochMs = lastVerified,
-                )
+        val restoredSteps =
+            ToolchainSetupState.defaultSteps().map { step ->
+                if (persisted.isStageCompleted(step.stage.name) || persisted.isSetupCompleted) {
+                    step.copy(
+                        status = StepStatus.PENDING,
+                        provenance = StepProvenance.RESTORED,
+                        verifiedAtEpochMs = lastVerified,
+                        description = "Last verified ${formatAgo(lastVerified)} — re-checking…",
+                    )
+                } else {
+                    step.copy(
+                        provenance = StepProvenance.RESTORED,
+                        verifiedAtEpochMs = lastVerified,
+                    )
+                }
             }
-        }
 
         val defaultTools = ToolchainSetupState.defaultToolsMatrix()
-        val restoredTools = defaultTools.map { tool ->
-            val pTool = persisted.tools[tool.id]
-            if (pTool != null && pTool.isCompiled) {
-                // Installed is a persisted fact; "tested" only restores from a real verification
-                // timestamp, never from the binary's mere existence (FR-010).
-                tool.copy(
-                    status = StepStatus.SUCCESS,
-                    path = pTool.binaryPath,
-                    version = pTool.version,
-                    lastTested = pTool.lastVerifiedTimestamp?.takeIf { pTool.isVerified }?.let { "Restored" },
-                )
-            } else {
-                tool
+        val restoredTools =
+            defaultTools.map { tool ->
+                val pTool = persisted.tools[tool.id]
+                if (pTool != null && pTool.isCompiled) {
+                    // Installed is a persisted fact; "tested" only restores from a real verification
+                    // timestamp, never from the binary's mere existence (FR-010).
+                    tool.copy(
+                        status = StepStatus.SUCCESS,
+                        path = pTool.binaryPath,
+                        version = pTool.version,
+                        lastTested = pTool.lastVerifiedTimestamp?.takeIf { pTool.isVerified }?.let { "Restored" },
+                    )
+                } else {
+                    tool
+                }
             }
-        }
 
         return ToolchainSetupState(
             steps = restoredSteps,
@@ -276,13 +278,7 @@ public class WslToolchainProvisioner(
         private const val OWNER_READ: Int = 0x100 // 0400
         private const val OWNER_EXECUTE: Int = 0x40 // 0100
 
-        public val SUBMODULES: List<SubmoduleSyncEngine.PinnedSubmodule> get() = SubmoduleSyncEngine.DEFAULT_SUBMODULES
-
-        public val CORE_BINARIES: List<String> get() = ToolCatalog.CORE_BINARIES
-
-        public val ALL_CORE_TOOLS: List<String> get() = ToolCatalog.ALL_CORE_TOOLS
-
-        public val REQUIRED_DEV_PACKAGES: List<String> = NativeLibrariesInspector.DEFAULT_REQUIRED_DEV_PACKAGES
+        public val REQUIRED_DEV_PACKAGES: List<String> = RequirementCatalog.HOST_LIBRARY_PACKAGES + "libfuse3-dev"
 
         public val SUPPORTED_RECIPES: Set<String> get() = ToolCapabilities.SUPPORTED_TOOL_IDS
 
@@ -297,35 +293,26 @@ public class WslToolchainProvisioner(
         }.toSet()
     }
 
-    /**
-     * Names of the usable tool files in [binDir] (symlinks followed) via a single `find` call, by the same
-     * rule as the probe: a JAR must be readable (it runs as `java -jar`), anything else executable.
-     */
-    private suspend fun listExecutables(distro: String, binDir: String, executor: WslCliExecutor): Set<String> {
-        val result = runInterruptible(dispatcher) {
-            executor.execute(
-                distro,
-                listOf("find", "-L", binDir, "-maxdepth", "1", "-type", "f", "-printf", "%m %f\n"),
-            )
-        }
-        return if (result.exitCode == 0) usableToolFiles(result.output) else emptySet()
-    }
-
     override suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
 
     override suspend fun selectDistro(distro: String): ToolchainSetupState {
         val snapshot = _state.value
-        val usable = snapshot.distroStatuses.filterIsInstance<DistroStatus.Usable>().any {
-            it.environment.distro ==
-                distro
-        }
+        val usable =
+            snapshot.distroStatuses.filterIsInstance<DistroStatus.Usable>().any {
+                it.environment.distro ==
+                    distro
+            }
         if (!usable || snapshot.isBusy) return snapshot
+        withContext(dispatcher) {
+            detector.setDefaultDistro(distro)
+        }
         preferredDistro = distro
         currentEnvironment = null
         // Detection must run again for the new target instead of reusing the previous verified one.
         _state.update { state ->
             state.copy(
-                steps = state.steps.map { step ->
+                steps =
+                state.steps.map { step ->
                     if (step.stage == SetupStepStage.WSL_DETECTION ||
                         step.stage == SetupStepStage.SERVER_CONNECTIVITY
                     ) {
@@ -340,13 +327,14 @@ public class WslToolchainProvisioner(
     }
 
     override suspend fun verifyEnvironment(): ToolchainSetupState {
-        val deferred = verificationMutex.withLock {
-            activeVerificationDeferred ?: scope.async(dispatcher) {
-                runVerificationInternal()
-            }.also { created ->
-                activeVerificationDeferred = created
+        val deferred =
+            verificationMutex.withLock {
+                activeVerificationDeferred ?: scope.async(dispatcher) {
+                    runVerificationInternal()
+                }.also { created ->
+                    activeVerificationDeferred = created
+                }
             }
-        }
         return deferred.await()
     }
 
@@ -362,13 +350,14 @@ public class WslToolchainProvisioner(
             throw e
         } catch (e: Exception) {
             val currentStage = _state.value.currentStage ?: SetupStepStage.SERVER_CONNECTIVITY
-            val cat = if (currentStage ==
-                SetupStepStage.SERVER_CONNECTIVITY
-            ) {
-                DaemonFailureCategory.UNREACHABLE
-            } else {
-                null
-            }
+            val cat =
+                if (currentStage ==
+                    SetupStepStage.SERVER_CONNECTIVITY
+                ) {
+                    DaemonFailureCategory.UNREACHABLE
+                } else {
+                    null
+                }
             setStepStatus(
                 currentStage,
                 StepStatus.FAILED,
@@ -388,516 +377,225 @@ public class WslToolchainProvisioner(
         }
     }
 
-    /** Runs the check stages in order; a failed stage marks the rest pending and stops the chain. */
+    /** Runs the check stages in order; delegated to [EnvironmentCheck]. */
+    @Suppress("CyclomaticComplexMethod")
     private suspend fun runStages() {
-        val environment = runCheckStage(SetupStepStage.WSL_DETECTION) { verifyWslStage() } ?: return
-        val packagesStage = SetupStepStage.SYSTEM_PACKAGES
-        val javaHome = runCheckStage(packagesStage) {
-            verifySystemPackagesStage(environment)
-        } ?: return
-        val serverOk = runCheckStage(SetupStepStage.SERVER_CONNECTIVITY) { verifyServerStage(environment, javaHome) }
-        if (serverOk) {
-            verifyBuildEnvironment(environment)
-        }
-    }
-
-    private suspend fun <T> runCheckStage(stage: SetupStepStage, block: suspend () -> T): T {
-        appendLog("[check] ${stage.displayName}: started", SetupLogKind.CHECK)
-        val startMs = System.currentTimeMillis()
-        return try {
-            val result = block()
-            val durationMs = (System.currentTimeMillis() - startMs).coerceAtLeast(1L)
-            val step = _state.value.steps.firstOrNull { it.stage == stage }
-            val desc = step?.description ?: "ok"
-            appendLog("[check] ${stage.displayName}: $desc ($durationMs ms)", SetupLogKind.CHECK)
-            if (step?.status == StepStatus.FAILED) {
-                appendLog("[check] ${stage.displayName} ERROR: ${step.error ?: desc}", SetupLogKind.ERROR)
-            }
-            _state.update { s ->
-                s.copy(steps = s.steps.map { if (it.stage == stage) it.copy(durationMs = durationMs) else it })
-            }
-            result
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-            val durationMs = (System.currentTimeMillis() - startMs).coerceAtLeast(1L)
-            appendLog("[check] ${stage.displayName}: failed ($durationMs ms)", SetupLogKind.CHECK)
-            appendLog("[check] ${stage.displayName} ERROR: ${e.message ?: "error"}", SetupLogKind.ERROR)
-            throw e
-        }
-    }
-
-    /** WSL_DETECTION: picks the environment for this check, or fails the step and returns null. */
-    private suspend fun verifyWslStage(): SetupEnvironment? {
         val wslStep = _state.value.steps.firstOrNull { it.stage == SetupStepStage.WSL_DETECTION }
-        val isBridgeConnected = _state.value.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-            ?.let { it.status == StepStatus.SUCCESS && it.provenance == StepProvenance.LIVE } == true
+        val serverStep = _state.value.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+        val isBridgeConnected = serverStep?.status == StepStatus.SUCCESS
+        val wanted =
+            repository?.currentState?.activeAttempt?.let {
+                it.environmentKey ?: it.environment?.distro
+            }
+        val cachedWsl =
+            (
+                isBridgeConnected ||
+                    (wslStep?.status == StepStatus.SUCCESS && wslStep.provenance == StepProvenance.LIVE)
+                ) &&
+                currentEnvironment != null && (wanted == null || currentEnvironment?.distro == wanted)
+        // The OS and user are kept from the earlier verification; the default distribution and WSL version are not.
         val alreadyVerifiedWsl =
-            isBridgeConnected ||
-                (wslStep?.status == StepStatus.SUCCESS && wslStep.provenance == StepProvenance.LIVE)
-        setStepRunning(SetupStepStage.WSL_DETECTION)
-        val res = servicePreparation.verifyWsl(
-            preferredDistro = preferredDistro,
-            persistedDistro = repository?.currentState?.activeAttempt?.environment?.distro,
-            currentEnvironment = currentEnvironment,
-            alreadyVerifiedWsl = alreadyVerifiedWsl,
-            fallbackDistros = _state.value.installedDistros,
-        )
-        return when (res) {
-            is WslPreparationResult.Failure -> {
-                _state.update { it.copy(distroStatuses = res.detectionStatuses) }
-                setStepStatus(
-                    SetupStepStage.WSL_DETECTION,
-                    StepStatus.FAILED,
-                    desc = res.description,
-                    error = res.error,
-                )
-                shortCircuitRemaining(SetupStepStage.WSL_DETECTION, "Pending WSL.")
+            cachedWsl &&
+                currentEnvironment?.let { env ->
+                    runInterruptible(dispatcher) { detector.stillCurrent(env, requireDefault = wanted == null) }
+                } == true
+
+        val detected =
+            if (alreadyVerifiedWsl && currentEnvironment != null) {
+                listOf(DistroStatus.Usable(currentEnvironment!!))
+            } else {
+                detector.detectAll()
+            }
+        val wantedEnv =
+            if (wanted != null) {
+                detected.filterIsInstance<DistroStatus.Usable>().firstOrNull {
+                    it.environment.distro == wanted
+                }?.environment
+            } else {
                 null
             }
-            is WslPreparationResult.Success -> {
-                currentEnvironment = res.environment
-                _state.update {
-                    it.copy(
-                        distroStatuses = res.detectionStatuses.ifEmpty { it.distroStatuses },
-                        activeDistro = res.environment.distro,
-                        installedDistros = res.installedDistros,
-                    )
-                }
-                setStepStatus(
-                    SetupStepStage.WSL_DETECTION,
-                    StepStatus.SUCCESS,
-                    desc = "WSL 2 active with distribution '${res.environment.distro}'.",
+        val primary = detected.firstOrNull()
+        val usableEnv =
+            wantedEnv
+                ?: (primary as? DistroStatus.Usable)?.environment
+                ?: (detected.filterIsInstance<DistroStatus.Usable>().firstOrNull()?.environment)
+        val distro = preferredDistro ?: wanted ?: currentEnvironment?.distro ?: usableEnv?.distro ?: "Ubuntu"
+        val home =
+            currentEnvironment?.home
+                ?: usableEnv?.home
+                ?: resolveHome(distro)
+        val cleanHome = if (home.startsWith("/")) home else "/home/lti"
+        val env =
+            if (wanted != null && currentEnvironment?.distro != wanted && wantedEnv != null) {
+                wantedEnv
+            } else {
+                currentEnvironment ?: usableEnv ?: SetupEnvironment(
+                    distro = distro,
+                    wslVersion = 2,
+                    osId = "ubuntu",
+                    osVersionId = "24.04",
+                    user = usableEnv?.user ?: "lti",
+                    home = cleanHome,
                 )
-                res.environment
             }
-        }
-    }
-
-    /** SYSTEM_PACKAGES: checks host prerequisites without the build service; returns the Java 21 home. */
-    private suspend fun verifySystemPackagesStage(selectedEnv: SetupEnvironment): String? {
-        setStepRunning(SetupStepStage.SYSTEM_PACKAGES)
-        val res = servicePreparation.verifySystemPackages(selectedEnv)
-        lastPrerequisiteReport = res.prerequisiteReport
-        return when (res) {
-            is PackagesPreparationResult.Failure -> {
-                setStepStatus(
-                    SetupStepStage.SYSTEM_PACKAGES,
-                    StepStatus.FAILED,
-                    desc = res.description,
-                    error = res.error,
-                )
-                shortCircuitRemaining(SetupStepStage.SYSTEM_PACKAGES, "Pending system packages.")
-                null
-            }
-            is PackagesPreparationResult.Success -> {
-                setStepStatus(
-                    SetupStepStage.SYSTEM_PACKAGES,
-                    StepStatus.SUCCESS,
-                    desc = "All prerequisite packages installed · Java: ${res.javaHome}",
-                )
-                res.javaHome
-            }
-        }
-    }
-
-    /** SERVER_CONNECTIVITY: installs/starts the build service and checks its health. */
-    private suspend fun verifyServerStage(selectedEnv: SetupEnvironment, javaHome: String): Boolean {
-        setStepRunning(SetupStepStage.SERVER_CONNECTIVITY)
-        val res = servicePreparation.verifyServer(selectedEnv, javaHome)
-        return when (res) {
-            is ServerPreparationResult.Success -> {
-                val pidSuffix = if (res.connPid != null) " · pid ${res.connPid}" else ""
-                setStepStatus(
-                    SetupStepStage.SERVER_CONNECTIVITY,
-                    StepStatus.SUCCESS,
-                    desc = "Connected · ${res.pingMs}ms$pidSuffix",
-                )
-                _state.update { it.copy(daemonPingMs = res.pingMs) }
-                true
-            }
-            is ServerPreparationResult.Outdated -> {
-                setStepStatus(
-                    SetupStepStage.SERVER_CONNECTIVITY,
-                    StepStatus.WARNING,
-                    desc = "Update waiting: build service ${res.runningVersion ?: "(old)"} is finishing " +
-                        "${res.runningActiveRuns} active run(s); " +
-                        "${res.activeVersion ?: "the new version"} starts after.",
-                )
-                shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending build service update.")
-                false
-            }
-            is ServerPreparationResult.Failure -> {
-                setStepStatus(
-                    SetupStepStage.SERVER_CONNECTIVITY,
-                    StepStatus.FAILED,
-                    desc = res.description,
-                    error = res.error,
-                    failureCategory = res.failureCategory,
-                )
-                shortCircuitRemaining(SetupStepStage.SERVER_CONNECTIVITY, "Pending daemon.")
-                false
-            }
-        }
-    }
-
-    /** Doctor, repositories, toolchain and the tools matrix: everything that runs through the service. */
-    private suspend fun verifyBuildEnvironment(environment: SetupEnvironment) {
-        val distro = environment.distro
-        // Post-bridge: All remote calls use transport
-        val home = currentEnvironment?.home ?: resolveHome(distro)
-        val binDir = "$home/LtiRomTools/bin"
-        val extDir = "$home/LtiRomTools/external"
-        val workDir = "$home/LtiRomWorkDir"
-        val avbKeyFile = "$workDir/security/avb/lti_rsa4096.pem"
-        val transportCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
-
-        // One inventory rule everywhere (JARs readable, the rest executable): see listExecutables.
-        val executables = listExecutables(distro, binDir, transportCli)
-        val missingBins = CORE_BINARIES.filterNot { it in executables }
-        val binariesPresent = missingBins.isEmpty()
-
-        val diagnosticsList = runCheckStage(SetupStepStage.SYSTEM_DIAGNOSTICS) {
-            runDoctorStage(transportCli, home, distro, binariesPresent)
-        }
-        runCheckStage(SetupStepStage.REPO_SYNCHRONIZATION) {
-            verifyRepoStage(extDir, workDir)
-        }
-        val publishedTools = runCheckStage(SetupStepStage.TOOLCHAIN_COMPILATION) {
-            verifyToolchainStage(missingBins, executables, binDir)
-        }
-
-        // AVB Key Check
-        val testAvb = transport.execute(
-            ToolExecutionRequest(
-                toolId = "test",
-                arguments = listOf("-f", avbKeyFile),
-                workingDirectory = "/",
-                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-            ),
-        )
-        val hasAvbKey = testAvb.exitCode == 0
-
-        val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
-        val updatedTools = currentTools.map { tool ->
-            val toolPath = ToolCatalog.expectedPath(binDir, tool.id) ?: "$binDir/${tool.binaryName}"
-            val exists = toolPath.substringAfterLast('/') in executables
-            val newStatus = when {
-                !exists -> StepStatus.PENDING
-                tool.status == StepStatus.FAILED -> StepStatus.FAILED
-                else -> StepStatus.SUCCESS
-            }
-            tool.copy(
-                path = if (exists) toolPath else null,
-                status = newStatus,
-                lastTested = tool.lastTested,
+        val workDir = "$cleanHome/LtiRomWorkDir"
+        val binDir = "$cleanHome/LtiRomTools/bin"
+        val extDir = "$cleanHome/LtiRomTools/external"
+        val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = cleanHome)
+        val readOnlyCommands = ReadOnlyCommands(serviceCli)
+        val checkId = UUID.randomUUID().toString()
+        val scope =
+            CheckScope(
+                environmentKey = distro,
+                checkId = checkId,
+                stateFlow = _state,
+                activeCheckId = { checkId },
             )
-        }
+        val ctx =
+            CheckContext(
+                environment = env,
+                readOnlyCommands = readOnlyCommands,
+                userHome = cleanHome,
+                workDir = workDir,
+                binDir = binDir,
+                extDir = extDir,
+                transport = transport,
+                repository = repository,
+                log = { msg, kind -> appendLog(msg, kind) },
+                onPrerequisiteReport = { report -> lastPrerequisiteReport = report },
+                alreadyVerifiedWsl = alreadyVerifiedWsl,
+            )
 
-        val (storageAvailableBytes, storageMeasuredAt) = measureStorage(home)
-
+        environmentCheck.run(ctx, scope)
+        val currentSteps = _state.value.steps
+        val (storageAvailableBytes, storageMeasuredAt) = measureStorage(cleanHome)
         val now = System.currentTimeMillis()
+        val detectedDistro = _state.value.activeDistro
+        val detectedUsable =
+            _state.value.distroStatuses.filterIsInstance<DistroStatus.Usable>()
+                .firstOrNull { it.environment.distro == detectedDistro }
+        if (detectedUsable != null) {
+            currentEnvironment = detectedUsable.environment
+        }
+        val registry = reconcileWithToolRegistry()
+        val publishedTools = registry.published
+        val unpublished = registry.unpublished
+        val isFullyReady = registry.fullyReady
+
         _state.update { s ->
-            val allPublished = publishedTools.containsAll(ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS)
-            val isFullyReady = s.isAllReady && allPublished
             s.copy(
-                diagnostics = diagnosticsList.ifEmpty { s.diagnostics },
-                isAvbKeyProvisioned = hasAvbKey,
-                avbKeyPath = if (hasAvbKey) avbKeyFile else null,
-                activeDistro = distro,
-                toolsMatrix = updatedTools,
-                currentStage = null,
-                isChecking = false,
-                lastVerifiedTimestamp = if (isFullyReady) now else s.lastVerifiedTimestamp,
-                checkedAt = now,
-                lastReadyAt = if (isFullyReady) now else s.lastReadyAt,
-                // Live daemon listing is the publication fact; it replaces any earlier/restored set.
-                publishedToolIds = publishedTools,
                 storageAvailableBytes = storageAvailableBytes ?: s.storageAvailableBytes,
                 storageMeasuredAt = storageMeasuredAt ?: s.storageMeasuredAt,
-                userHome = home,
+                userHome = cleanHome,
                 workDirLinuxPath = workDir,
+                lastVerifiedTimestamp = if (isFullyReady) now else s.lastVerifiedTimestamp,
+                checkedAt = now,
+                lastReadyAt = if (isFullyReady) now else null,
+                publishedToolIds = publishedTools,
+                unpublishedToolIds = unpublished,
             )
         }
         if (_state.value.isAllReady) {
-            val now = _state.value.lastVerifiedTimestamp
+            val ts = _state.value.lastVerifiedTimestamp
             repository?.let { repo ->
-                repo.saveToolchainState(repo.currentState.copy(lastVerifiedTimestamp = now))
+                repo.saveToolchainState(repo.currentState.copy(lastVerifiedTimestamp = ts))
             }
         }
-        _state.value
     }
 
-    private suspend fun runDoctorStage(
-        transportCli: TransportCliExecutor,
-        home: String,
-        distro: String,
-        binariesPresent: Boolean,
-    ): List<DiagnosticCheckItem> {
-        setStepRunning(SetupStepStage.SYSTEM_DIAGNOSTICS)
-        val doctorEngine = CompositeSystemDoctorEngine(
-            cli = transportCli,
-            detector = detector,
-            dispatcher = dispatcher,
-            inspectors = CompositeSystemDoctorEngine.defaultInspectors(transportCli),
-            remediator = WslPackageRemediator(transportCli),
-            userHome = home,
-        )
-        val diagnosticsList = doctorEngine.runDiagnostics(
-            distro = distro,
-            binariesPresent = binariesPresent,
-            onProgress = { title, idx, total ->
-                setStepProgress(SetupStepStage.SYSTEM_DIAGNOSTICS, title, idx, total)
-            },
-        )
-        val anyDiagFailed = diagnosticsList.any { it.status == StepStatus.FAILED }
-        val anyDiagWarn = diagnosticsList.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
-        val diagStatus = when {
-            anyDiagFailed -> StepStatus.FAILED
-            anyDiagWarn -> StepStatus.WARNING
-            else -> StepStatus.SUCCESS
-        }
-        val diagDesc = when {
-            anyDiagFailed -> "${diagnosticsList.count { it.status == StepStatus.FAILED }} critical checks failed."
-            anyDiagWarn ->
-                "${diagnosticsList.count {
-                    it.status == StepStatus.WARNING
-                }} warnings detected in pre-flight checks."
-            else -> "${diagnosticsList.size}/${diagnosticsList.size} host and build system checks verified."
-        }
-        setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, diagStatus, desc = diagDesc)
-        _state.update { it.copy(diagnostics = diagnosticsList) }
-        return diagnosticsList
-    }
+    private class RegistryCheck(val published: Set<String>, val unpublished: Set<String>, val fullyReady: Boolean)
 
-    private suspend fun verifyRepoStage(extDir: String, workDir: String) {
-        setStepRunning(SetupStepStage.REPO_SYNCHRONIZATION)
-        val findExt = transport.execute(
-            ToolExecutionRequest(
-                toolId = "find",
-                arguments = listOf(extDir, "-maxdepth", "1", "-mindepth", "1", "-type", "d", "-printf", "%f\n"),
-                workingDirectory = "/",
-                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-            ),
-        )
-        val subdirs = if (findExt.exitCode == 0) {
-            findExt.stdout.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-        } else {
-            emptySet()
-        }
-        val testWorkDir = transport.execute(
-            ToolExecutionRequest(
-                toolId = "test",
-                arguments = listOf("-d", workDir),
-                workingDirectory = "/",
-                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-            ),
-        )
-        val workDirExists = testWorkDir.exitCode == 0
-        val missingSubs = SUBMODULES.filter { it.name !in subdirs }
-        // Present is not enough: each must be its own clone at its pinned commit (an imported folder inside a
-        // larger repository, or another commit, builds something nobody pinned).
-        val notAtPin = SUBMODULES.filter { it.name in subdirs }.filterNot { sub ->
-            val dir = "$extDir/${sub.name}"
-            val res = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "git",
-                    arguments = listOf("-C", dir, "rev-parse", "--show-toplevel", "HEAD"),
-                    workingDirectory = "/",
-                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                ),
-            )
-            val lines = res.stdout.lines().map { it.trim() }
-            res.exitCode == 0 &&
-                lines.getOrNull(0)?.trimEnd('/') == dir.trimEnd('/') &&
-                lines.getOrNull(1) == sub.commit
-        }
-        val repoStatus = when {
-            notAtPin.isNotEmpty() -> StepStatus.FAILED
-            missingSubs.isEmpty() && workDirExists -> StepStatus.SUCCESS
-            else -> StepStatus.PENDING
-        }
-        val repoDesc = when {
-            notAtPin.isNotEmpty() -> {
-                val subject = if (notAtPin.size ==
-                    1
-                ) {
-                    "1 source repository is"
-                } else {
-                    "${notAtPin.size} source repositories are"
-                }
-                "$subject not at the pinned commit: ${notAtPin.joinToString { it.name }}"
-            }
-            missingSubs.isEmpty() && workDirExists -> "${SUBMODULES.size} submodules · ~/LtiRomWorkDir"
-            !workDirExists -> "Workspace directory $workDir not created yet."
-            else -> "${missingSubs.size} submodule(s) missing in $extDir."
-        }
-        if (notAtPin.isNotEmpty()) {
-            setStepStatus(
-                SetupStepStage.REPO_SYNCHRONIZATION,
-                repoStatus,
-                desc = repoDesc,
-                error =
-                notAtPin.joinToString("\n") { "${it.name}: expected its own clone of ${it.url} at ${it.commit}" } +
-                    "\nRetry syncs them: a folder that is not its own clone is moved aside (not deleted) " +
-                    "and cloned fresh.",
-            )
-            return
-        }
-        setStepStatus(SetupStepStage.REPO_SYNCHRONIZATION, repoStatus, desc = repoDesc)
-    }
-
-    /** TOOLCHAIN_COMPILATION: binaries, published tools and mkfs.erofs; returns the published tool IDs. */
-    private suspend fun verifyToolchainStage(
-        missingBins: List<String>,
-        executables: Set<String>,
-        binDir: String,
-    ): Set<String> {
-        setStepRunning(SetupStepStage.TOOLCHAIN_COMPILATION)
-        // A rescan, not the service's cached list: manifests written by an interrupted publish count.
-        val registryResult = toolPublicationPort?.resolvedTools()
-            ?: ToolStatusMapper.toDomain(transport.refreshTools())
-        val isServiceError = registryResult is ToolRegistryResult.ServiceError
-        val publishedTools = when (registryResult) {
-            // Same rule as publication: resolved from this app's manifest at its bin path, not a fallback.
-            is ToolRegistryResult.Tools ->
-                registryResult.list
-                    .filter { ToolCatalog.isProjectPublished(it, binDir) }
-                    .map { it.tool }
-                    .toSet()
-            is ToolRegistryResult.ServiceError -> {
-                setStepStatus(
-                    SetupStepStage.SERVER_CONNECTIVITY,
-                    StepStatus.FAILED,
-                    desc = "Can't reach the build service",
-                    error = "Build service unreachable: ${registryResult.reason}",
-                    failureCategory = DaemonFailureCategory.UNREACHABLE,
-                )
-                emptySet()
-            }
-        }
-
-        val missingPublished =
-            if (isServiceError) {
-                emptySet()
-            } else {
+    /**
+     * Compares what the service offers with what the product requires, and says so on the tools step. Fully
+     * ready needs every step green *and* a readable tool list that has every required tool.
+     */
+    private suspend fun reconcileWithToolRegistry(): RegistryCheck {
+        val registryResult = readToolRegistry()
+        val publishedTools: Set<String> =
+            (registryResult as? ToolRegistryResult.Tools)?.list?.filter { it.installed }?.map { it.tool }?.toSet()
+                ?: emptySet()
+        // Unknown (not asked, or no readable answer) is not "everything is missing".
+        val unpublished: Set<String> =
+            if (registryResult is ToolRegistryResult.Tools) {
                 ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS - publishedTools
+            } else {
+                emptySet()
             }
-
-        val outdated = if (isServiceError) emptyList() else markOutdatedPinnedReleases(executables, binDir)
-
-        // Check EROFS compatibility only when binaries and published tools are present
-        val erofsCompatible = if (!isServiceError && missingBins.isEmpty() && missingPublished.isEmpty()) {
-            val erofsCheck = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "mkfs.erofs",
-                    arguments = ToolCapabilities.probeArgumentsFor("mkfs.erofs"),
-                    workingDirectory = "/",
-                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                ),
-            )
-            ToolchainReadinessPolicy.isErofsCompatible(erofsCheck.exitCode, erofsCheck.stdout)
-        } else {
-            true
-        }
-
-        data class ToolchainOutcome(
-            val status: StepStatus,
-            val desc: String,
-            val error: String?,
-            val category: ToolchainFailureCategory?,
-        )
-        val outcome = when {
-            isServiceError -> ToolchainOutcome(
-                StepStatus.PENDING,
-                "Waiting for build service",
-                null,
-                null,
-            )
-            missingBins.isNotEmpty() -> ToolchainOutcome(
-                StepStatus.FAILED,
-                "${missingBins.first()} not built",
-                "Missing core binaries: ${missingBins.joinToString()}",
-                ToolchainFailureCategory.MISSING_BINARIES,
-            )
-            missingPublished.isNotEmpty() -> ToolchainOutcome(
-                StepStatus.FAILED,
-                "Missing published tools: ${missingPublished.first()}",
-                "Required tools not published on daemon: ${missingPublished.joinToString()}",
-                ToolchainFailureCategory.MISSING_PUBLISHED_TOOLS,
-            )
-            outdated.isNotEmpty() -> ToolchainOutcome(
-                StepStatus.FAILED,
-                "${outdated.first().toolId} outdated",
-                "Not the pinned download: " + outdated.joinToString { "${it.toolId} (expected ${it.version})" } +
-                    ". Retry installs the pinned versions.",
-                ToolchainFailureCategory.MISSING_BINARIES,
-            )
-            !erofsCompatible -> ToolchainOutcome(
-                StepStatus.FAILED,
-                "mkfs.erofs incompatible",
-                "mkfs.erofs does not support ${ToolchainReadinessPolicy.EROFS_REQUIRED_FLAG}",
-                ToolchainFailureCategory.EROFS_INCOMPATIBLE,
-            )
-            else -> ToolchainOutcome(
-                StepStatus.SUCCESS,
-                "${executables.count {
-                    it in ALL_CORE_TOOLS
-                }}/${ALL_CORE_TOOLS.size} tools · ${publishedTools.size} published",
-                null,
-                null,
-            )
-        }
-        setStepStatus(
-            SetupStepStage.TOOLCHAIN_COMPILATION,
-            outcome.status,
-            desc = outcome.desc,
-            error = outcome.error,
-            toolchainFailureCategory = outcome.category,
-        )
-        return publishedTools
+        reportRegistryOnSteps(registryResult, unpublished)
+        val allReady =
+            _state.value.steps.all { it.status == StepStatus.SUCCESS || it.status == StepStatus.WARNING } &&
+                registryResult is ToolRegistryResult.Tools
+        return RegistryCheck(publishedTools, unpublished, allReady && unpublished.isEmpty())
     }
 
     /**
-     * Pinned downloads in [binDir] whose checksum is not their pin's (e.g. an app update moved the pin). A tool
-     * that is not installed is reported as missing elsewhere, not here.
+     * The tool list is asked only of a service the earlier stages found connected: after a failed stage there is
+     * nothing to learn from it, and its error would hide the real first failure. Null: not asked.
      */
-    private suspend fun markOutdatedPinnedReleases(executables: Set<String>, binDir: String): List<PinnedRelease> {
-        val outdated = PinnedReleases.ALL.filter { it.toolId in executables }.filter { release ->
-            val res = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "sha256sum",
-                    arguments = listOf("$binDir/${release.toolId}"),
-                    workingDirectory = "/",
-                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                ),
-            )
-            res.stdout.trim().substringBefore(' ') != release.sha256
+    private suspend fun readToolRegistry(): ToolRegistryResult? {
+        val serverUp = _state.value.steps.any {
+            it.stage == SetupStepStage.SERVER_CONNECTIVITY && it.status == StepStatus.SUCCESS
         }
-        // Marked failed so the Toolchain retry reinstalls them (it installs whatever differs from the pin).
-        val ids = outdated.map { it.toolId }.toSet()
-        if (ids.isNotEmpty()) {
-            _state.update { s ->
-                s.copy(
-                    toolsMatrix = s.toolsMatrix.map { if (it.id in ids) it.copy(status = StepStatus.FAILED) else it },
+        if (!serverUp) return null
+        return try {
+            ToolStatusMapper.toDomain(transport.listTools())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ToolRegistryResult.Unreachable(e.message ?: "no answer")
+        }
+    }
+
+    private fun reportRegistryOnSteps(registryResult: ToolRegistryResult?, unpublished: Set<String>) {
+        when (registryResult) {
+            is ToolRegistryResult.Unreachable -> {
+                setStepStatus(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    status = StepStatus.FAILED,
+                    desc = "Build service unreachable: ${registryResult.reason}",
+                    error = "Build service unreachable: ${registryResult.reason}",
+                    failureCategory = DaemonFailureCategory.UNREACHABLE,
+                )
+                setStepStatus(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    status = StepStatus.PENDING,
+                    desc = "Waiting for build service",
                 )
             }
+            is ToolRegistryResult.ServiceError ->
+                // The service is there; its tool list is what failed. The bridge stays connected.
+                failToolsStep("Couldn't read the tool list from the build service: ${registryResult.reason}")
+            is ToolRegistryResult.Tools ->
+                if (unpublished.isNotEmpty() && toolsStepSucceeded()) {
+                    failToolsStep("The build service does not offer: ${unpublished.sorted().joinToString(", ")}")
+                }
+            null -> Unit
         }
-        return outdated
     }
+
+    private fun failToolsStep(message: String) = setStepStatus(
+        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+        status = StepStatus.FAILED,
+        desc = message,
+        error = message,
+    )
+
+    private fun toolsStepSucceeded(): Boolean =
+        _state.value.steps.any { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION && it.status == StepStatus.SUCCESS }
 
     /** Free bytes under [home] from `df`, with when they were measured; nulls when `df` fails. */
     private suspend fun measureStorage(home: String): Pair<Long?, Long?> {
-        val storageDf = runCatching {
-            transport.execute(
-                ToolExecutionRequest(
-                    toolId = "df",
-                    arguments = listOf("-B1", home),
-                    workingDirectory = "/",
-                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                ),
-            )
-        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
+        val storageDf =
+            runCatching {
+                transport.execute(
+                    ToolExecutionRequest(
+                        toolId = "df",
+                        arguments = listOf("-B1", home),
+                        workingDirectory = "/",
+                        purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                    ),
+                )
+            }.onFailure { if (it is CancellationException) throw it }.getOrNull()
         return if (storageDf != null && storageDf.exitCode == 0) {
             val lines = storageDf.stdout.lines()
             val tokens = if (lines.size >= 2) lines[1].trim().split("\\s+".toRegex()) else null
@@ -914,11 +612,12 @@ public class WslToolchainProvisioner(
      */
     private fun resolveEnvironmentKey(): String {
         val snapshot = _state.value
-        val liveVerified = snapshot.steps.any {
-            (it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY) &&
-                it.status == StepStatus.SUCCESS &&
-                it.provenance == StepProvenance.LIVE
-        }
+        val liveVerified =
+            snapshot.steps.any {
+                (it.stage == SetupStepStage.WSL_DETECTION || it.stage == SetupStepStage.SERVER_CONNECTIVITY) &&
+                    it.status == StepStatus.SUCCESS &&
+                    it.provenance == StepProvenance.LIVE
+            }
         return if (liveVerified) {
             currentEnvironment?.distro ?: snapshot.activeDistro ?: error("No verified distribution in state")
         } else {
@@ -930,17 +629,18 @@ public class WslToolchainProvisioner(
     private suspend fun setStepRunning(stage: SetupStepStage) {
         val now = System.currentTimeMillis()
         _state.update { s ->
-            val updatedSteps = s.steps.map { step ->
-                if (step.stage == stage) {
-                    step.copy(
-                        status = StepStatus.RUNNING,
-                        provenance = StepProvenance.LIVE,
-                        startedAt = step.startedAt ?: now,
-                    )
-                } else {
-                    step
+            val updatedSteps =
+                s.steps.map { step ->
+                    if (step.stage == stage) {
+                        step.copy(
+                            status = StepStatus.RUNNING,
+                            provenance = StepProvenance.LIVE,
+                            startedAt = step.startedAt ?: now,
+                        )
+                    } else {
+                        step
+                    }
                 }
-            }
             s.copy(
                 steps = updatedSteps,
                 currentStage = stage,
@@ -950,23 +650,23 @@ public class WslToolchainProvisioner(
     }
 
     override fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {
-        val desc = when (stage) {
-            SetupStepStage.SYSTEM_DIAGNOSTICS -> "Checking $index of $total: $currentItem"
-            SetupStepStage.REPO_SYNCHRONIZATION -> "Syncing $currentItem ($index of $total)"
-            SetupStepStage.TOOLCHAIN_COMPILATION -> "Building $currentItem ($index of $total)"
-            else -> "$currentItem ($index of $total)"
-        }
-        _state.update { s ->
-            val updated = s.steps.map { step ->
-                if (step.stage == stage) {
-                    step.copy(
-                        description = desc,
-                        startedAt = step.startedAt ?: System.currentTimeMillis(),
-                    )
-                } else {
-                    step
-                }
+        val desc =
+            when (stage) {
+                SetupStepStage.TOOLCHAIN_COMPILATION -> "Building $currentItem ($index of $total)"
+                else -> "$currentItem ($index of $total)"
             }
+        _state.update { s ->
+            val updated =
+                s.steps.map { step ->
+                    if (step.stage == stage) {
+                        step.copy(
+                            description = desc,
+                            startedAt = step.startedAt ?: System.currentTimeMillis(),
+                        )
+                    } else {
+                        step
+                    }
+                }
             s.copy(steps = updated, activeLogLine = desc)
         }
     }
@@ -985,21 +685,22 @@ public class WslToolchainProvisioner(
         val now = System.currentTimeMillis()
         _state.update { s ->
             var markPending = false
-            val updatedSteps = s.steps.map { step ->
-                if (step.stage == failedStage) {
-                    markPending = true
-                    step
-                } else if (markPending) {
-                    step.copy(
-                        status = StepStatus.PENDING,
-                        description = reason,
-                        provenance = StepProvenance.LIVE,
-                        error = null,
-                    )
-                } else {
-                    step
+            val updatedSteps =
+                s.steps.map { step ->
+                    if (step.stage == failedStage) {
+                        markPending = true
+                        step
+                    } else if (markPending) {
+                        step.copy(
+                            status = StepStatus.PENDING,
+                            description = reason,
+                            provenance = StepProvenance.LIVE,
+                            error = null,
+                        )
+                    } else {
+                        step
+                    }
                 }
-            }
             s.copy(
                 steps = updatedSteps,
                 currentStage = null,
@@ -1035,10 +736,20 @@ public class WslToolchainProvisioner(
         val keyExists = effectiveCli.execute(distro, listOf("test", "-f", keyPath)).exitCode == 0
         if (!keyExists) {
             appendLog("[AVB 2.0] Generating RSA-4096 private key via OpenSSL...")
-            val genRes = effectiveCli.execute(
-                distro,
-                listOf("openssl", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:4096", "-out", keyPath),
-            )
+            val genRes =
+                effectiveCli.execute(
+                    distro,
+                    listOf(
+                        "openssl",
+                        "genpkey",
+                        "-algorithm",
+                        "RSA",
+                        "-pkeyopt",
+                        "rsa_keygen_bits:4096",
+                        "-out",
+                        keyPath,
+                    ),
+                )
             effectiveCli.execute(distro, listOf("chmod", "600", keyPath))
             appendLog("[AVB 2.0] Private key generated with mode 0600 at $keyPath.")
         } else {
@@ -1070,11 +781,12 @@ public class WslToolchainProvisioner(
 
     @Suppress("CyclomaticComplexMethod")
     override suspend fun testTool(toolId: String): SetupOutcome = withContext(dispatcher) {
-        val toolItem = _state.value.toolsMatrix.firstOrNull { it.id == toolId }
-            ?: return@withContext SetupOutcome.Failed(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
-                reason = "Tool $toolId not found in tools matrix",
-            )
+        val toolItem =
+            _state.value.toolsMatrix.firstOrNull { it.id == toolId }
+                ?: return@withContext SetupOutcome.Failed(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
+                    reason = "Tool $toolId not found in tools matrix",
+                )
         if (_state.value.isChecking) {
             // A live check is not an operation owner, but its probes must not race a tool probe.
             return@withContext SetupOutcome.Busy(ownerId = "environment-check")
@@ -1088,27 +800,68 @@ public class WslToolchainProvisioner(
         ) {
             val userHome = resolveHome(distro)
             val binDir = "$userHome/LtiRomTools/bin"
-            val probe = ToolCatalog.probePlan(toolId, binDir, toolItem.binaryName)
-            val binaryPath = probe.path
+            val group = ToolGroupCatalog.allGroups.firstOrNull { g -> g.outputs.any { it.toolId == toolId } }
+            val output = group?.outputs?.firstOrNull { it.toolId == toolId }
+            val binaryPath =
+                if (group != null && output != null) {
+                    "$userHome/LtiRomTools/bin/${group.id.value}/current/${output.file}"
+                } else {
+                    "$binDir/${toolItem.binaryName}"
+                }
 
             _state.update { s ->
                 s.copy(
-                    toolsMatrix = s.toolsMatrix.map {
+                    toolsMatrix =
+                    s.toolsMatrix.map {
                         if (it.id == toolId) it.copy(status = StepStatus.RUNNING) else it
                     },
                 )
             }
 
             try {
-                val effectiveCli = TransportCliExecutor(transport, defaultWorkingDirectory = userHome)
-                val verifier = ToolVerifier(effectiveCli, repository)
-                val verifyResult = verifier.verify(distro, toolId, binDir, toolItem.binaryName)
-                val testStatus = if (verifyResult.isSuccess) StepStatus.SUCCESS else StepStatus.FAILED
-                val exists = (verifyResult as? ToolVerifier.Result.Failure)?.isInstalled != false
+                val isJar = output?.kind == ToolOutputKind.JAR
+                val checkFlag = if (isJar) "-r" else "-x"
+                val exists =
+                    transport.execute(
+                        ToolExecutionRequest(
+                            toolId = "test",
+                            arguments = listOf(checkFlag, binaryPath),
+                            workingDirectory = "/",
+                            purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                        ),
+                    ).exitCode == 0
+
+                val isVerified =
+                    if (exists) {
+                        val probeArgs = ToolCapabilities.probeArgumentsFor(toolId)
+                        val probeRequest =
+                            if (isJar) {
+                                ToolExecutionRequest(
+                                    toolId = "java",
+                                    arguments = listOf("-jar", binaryPath) + probeArgs,
+                                    workingDirectory = "/",
+                                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                                )
+                            } else {
+                                ToolExecutionRequest(
+                                    toolId = binaryPath,
+                                    arguments = probeArgs,
+                                    workingDirectory = "/",
+                                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                                )
+                            }
+                        val probeResp = transport.execute(probeRequest)
+                        ToolCapabilities.isAcceptedExitCode(toolId, probeResp.exitCode)
+                    } else {
+                        false
+                    }
+
+                val testStatus = if (isVerified) StepStatus.SUCCESS else StepStatus.FAILED
 
                 _state.update { s ->
                     s.copy(
-                        toolsMatrix = s.toolsMatrix.map {
+                        toolsMatrix =
+                        s.toolsMatrix.map {
                             if (it.id == toolId) {
                                 it.copy(
                                     status = testStatus,
@@ -1122,33 +875,58 @@ public class WslToolchainProvisioner(
                     )
                 }
 
-                when (verifyResult) {
-                    is ToolVerifier.Result.Success -> {
-                        SetupOutcome.Succeeded(evidence = mapOf(toolId to verifyResult.evidence))
+                if (isVerified) {
+                    repository?.updateTool(toolId) {
+                        it.copy(
+                            isCompiled = true,
+                            isVerified = true,
+                            binaryPath = binaryPath,
+                            lastVerifiedTimestamp = System.currentTimeMillis(),
+                        )
                     }
-                    is ToolVerifier.Result.Failure -> {
-                        val reason = if (!exists) {
+                    val groupName = ToolGroupCatalog.groupByToolId(toolId)?.id?.value ?: toolId
+                    SetupOutcome.Succeeded(
+                        evidence =
+                        mapOf(
+                            toolId to
+                                ToolEvidence(
+                                    toolId = toolId,
+                                    recipeGroup = groupName,
+                                    isInstalled = true,
+                                    isVerified = true,
+                                    lastVerifiedTimestamp = System.currentTimeMillis(),
+                                ),
+                        ),
+                    )
+                } else {
+                    repository?.updateTool(toolId) {
+                        it.copy(
+                            isVerified = false,
+                        )
+                    }
+                    val reason =
+                        if (!exists) {
                             "Tool $toolId binary not found or not executable"
                         } else {
-                            "Tool $toolId verification probe failed with exit code ${verifyResult.exitCode}"
+                            "Tool $toolId verification probe failed"
                         }
-                        appendLog("[Test] ERROR: $reason")
-                        if (toolId in ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS) {
-                            setStepStatus(
-                                SetupStepStage.TOOLCHAIN_COMPILATION,
-                                StepStatus.FAILED,
-                                reason,
-                                error = reason,
-                            )
-                            repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, false)
-                        }
-                        SetupOutcome.Failed(stage = SetupStepStage.TOOLCHAIN_COMPILATION.name, reason = reason)
+                    appendLog("[Test] ERROR: $reason")
+                    if (toolId in ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS) {
+                        setStepStatus(
+                            SetupStepStage.TOOLCHAIN_COMPILATION,
+                            StepStatus.FAILED,
+                            reason,
+                            error = reason,
+                        )
+                        repository?.markStageCompleted(SetupStepStage.TOOLCHAIN_COMPILATION.name, false)
                     }
+                    SetupOutcome.Failed(stage = SetupStepStage.TOOLCHAIN_COMPILATION.name, reason = reason)
                 }
             } finally {
                 _state.update { s ->
                     s.copy(
-                        toolsMatrix = s.toolsMatrix.map {
+                        toolsMatrix =
+                        s.toolsMatrix.map {
                             if (it.id == toolId && it.status == StepStatus.RUNNING) {
                                 it.copy(status = StepStatus.FAILED)
                             } else {
@@ -1169,11 +947,12 @@ public class WslToolchainProvisioner(
     // policy carried by the plan, and runs under the single environment operation owner. Every
     // attempt is journaled before submission and reconciled by [recover] (003 US3).
 
-    override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-        withContext(dispatcher) {
-            val snapshot = _state.value
-            val distro = resolveEnvironmentKey()
-            val bootstrapPkgs = if (kind == SetupPlanKind.BOOTSTRAP_PACKAGES ||
+    override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan = withContext(dispatcher) {
+        val snapshot = _state.value
+        val distro = resolveEnvironmentKey()
+        val bootstrapPkgs =
+            if (kind == SetupPlanKind.BOOTSTRAP_PACKAGES ||
+                kind == SetupPlanKind.FULL_SETUP ||
                 targetId == SetupStepStage.SYSTEM_PACKAGES.name
             ) {
                 val report = lastPrerequisiteReport ?: (currentEnvironment?.let { hostPrerequisitePort.probe(it) })
@@ -1181,265 +960,182 @@ public class WslToolchainProvisioner(
             } else {
                 emptyList()
             }
-            val (switchInputs, selectionRevision) = resolveDesiredSwitchInputs(distro)
-            val plan = SetupPlanFactory.createPlan(
+        val switchInputs = SetupPlanFactory.toolManagerTargets(toolManager)
+        val plan =
+            SetupPlanFactory.createPlan(
                 kind = kind,
                 targetId = targetId,
-                autoDoctorEnabled = autoDoctorEnabled,
                 snapshot = snapshot,
                 environmentKey = distro,
                 bootstrapPackages = bootstrapPkgs,
                 switchInputs = switchInputs,
-                selectionRevision = selectionRevision,
+                selectionRevision = null,
             )
-            activePlan = plan
-            plan
-        }
-
-    private suspend fun resolveDesiredSwitchInputs(distro: String): Pair<Map<ToolGroupId, ResolvedInput>?, Long?> {
-        val repo = repository
-        val selections = repo?.desiredSelections(distro)
-        return if (selections != null && selections.desired.isNotEmpty()) {
-            val mappedInputs = SetupPlanFactory.defaultCatalogInputs().toMutableMap()
-            for ((groupStr, sel) in selections.desired) {
-                val groupId = ToolGroupId(groupStr)
-                val catGroup = ToolGroupCatalog.group(groupId)
-                mappedInputs[groupId] = mapSelectionToResolvedInput(groupId, sel, catGroup)
-            }
-            mappedInputs to selections.revision
-        } else {
-            null to null
-        }
-    }
-
-    @Suppress("CyclomaticComplexMethod")
-    private suspend fun mapSelectionToResolvedInput(
-        groupId: ToolGroupId,
-        sel: ToolSelection,
-        catGroup: ToolGroup?,
-    ): ResolvedInput {
-        val resolver = sourceResolver
-        if (resolver != null) {
-            when (val outcome = resolver.resolve(sel)) {
-                is ResolveOutcome.Resolved -> {
-                    val input = outcome.input
-                    if (input is ResolvedInput.Git) {
-                        val compat = resolver.checkLayout(input)
-                        if (compat is CompatibilityResult.Unsupported) {
-                            error(
-                                "Group '${groupId.value}' is layout-incompatible with repository: " +
-                                    "missing ${compat.missingPaths}",
-                            )
-                        }
-                    }
-                    return input
-                }
-                is ResolveOutcome.NotFound ->
-                    error("Group '${groupId.value}' ref '${sel.ref}' was not found on remote repository.")
-                is ResolveOutcome.Unreachable ->
-                    error("Group '${groupId.value}' repository unreachable: ${outcome.reason}")
-                is ResolveOutcome.AccessDenied ->
-                    error("Group '${groupId.value}' repository access denied.")
-            }
-        }
-        return when (val ref = sel.ref) {
-            is ToolRef.Commit -> ResolvedInput.Git(
-                group = groupId,
-                repoUrl = sel.repoUrl,
-                ref = ref,
-                commit = ref.sha,
-                resolvedAt = System.currentTimeMillis(),
-            )
-            is ToolRef.Tag -> {
-                val gitSource = catGroup?.source as? ToolSource.Git
-                val commit = if (sel.repoUrl == null &&
-                    gitSource != null &&
-                    gitSource.recommendedLabel == ref.name
-                ) {
-                    gitSource.recommendedCommit
-                } else {
-                    error("Cannot resolve Tag '${ref.name}' without live SourceResolverPort")
-                }
-                ResolvedInput.Git(
-                    group = groupId,
-                    repoUrl = sel.repoUrl,
-                    ref = ref,
-                    commit = commit,
-                    resolvedAt = System.currentTimeMillis(),
-                )
-            }
-            is ToolRef.Branch -> {
-                error("Cannot resolve Branch '${ref.name}' without live SourceResolverPort")
-            }
-            is ToolRef.ReleaseVersion -> {
-                val relConfig = catGroup?.recipe as? RecipeConfig.Release
-                val ver = relConfig?.versions?.firstOrNull { it.version == ref.version }
-                    ?: error("Release version '${ref.version}' not supported for group '${groupId.value}'")
-                ResolvedInput.Release(
-                    group = groupId,
-                    version = ref.version,
-                    url = ver.url,
-                    archiveMember = ver.archiveMember,
-                    sha256 = ver.sha256,
-                    platform = "linux-${detectHostArch()}",
-                )
-            }
-        }
+        activePlan = plan
+        plan
     }
 
     @Suppress("CyclomaticComplexMethod") // plan validation, per-kind execution, cancel/failure archiving and post-check
     override suspend fun confirm(
         planId: String,
         revisionHash: String,
-    ): SetupOutcome = withContext(dispatcher) {
-        val currentPlan = activePlan
-        val matches = currentPlan != null &&
-            currentPlan.planId == planId &&
-            currentPlan.revisionHash == revisionHash
-        if (currentPlan == null || !matches) {
-            val outcome = SetupOutcome.Failed(
-                stage = null,
-                reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
-            )
-            _operationOutcome.value = outcome
-            return@withContext outcome
-        }
-
-        // Revalidate revision and environment against the CURRENT state: a plan previewed before a
-        // later check (or against another distro) is stale and needs a fresh preview (FR-004).
-        val switchAction = currentPlan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
-        val liveRevision = SetupPlanFactory.computeRevisionHash(
-            snapshot = _state.value,
-            autoDoctorEnabled = currentPlan.autoDoctorEnabled,
-            switchInputs = switchAction?.inputs,
-            selectionRevision = switchAction?.selectionRevision,
-        )
-        val liveDistro = resolveEnvironmentKey()
-        if (liveRevision != currentPlan.revisionHash || liveDistro != currentPlan.environmentKey) {
-            val outcome = SetupOutcome.Failed(
-                stage = null,
-                reason = "Environment evidence changed since the plan was previewed; preview again before confirming.",
-            )
-            _operationOutcome.value = outcome
-            return@withContext outcome
-        }
-
-        val liveSelectionRevision = repository?.desiredSelections(currentPlan.environmentKey)?.revision
-        if (switchAction?.selectionRevision != null && liveSelectionRevision != null &&
-            liveSelectionRevision != switchAction.selectionRevision
-        ) {
-            val outcome = SetupOutcome.Failed(
-                stage = null,
-                reason = "Saved selections changed since the plan was previewed; preview again before confirming.",
-            )
-            _operationOutcome.value = outcome
-            return@withContext outcome
-        }
-
-        val distro = currentPlan.environmentKey
-
-        coordinator.withAdmission(
-            environmentKey = distro,
-            operationId = currentPlan.planId,
-            kind = currentPlan.kind.name,
-        ) {
-            val journal = openAttempt(
-                environmentKey = distro,
-                planId = currentPlan.planId,
-                revisionHash = currentPlan.revisionHash,
-                kind = currentPlan.kind,
-                plannedActionIds = currentPlan.orderedActions.map { it.actionId() },
-            ).getOrElse {
-                return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
+    ): SetupOutcome =
+        withContext(dispatcher) {
+            val currentPlan = activePlan
+            val matches =
+                currentPlan != null &&
+                    currentPlan.planId == planId &&
+                    currentPlan.revisionHash == revisionHash
+            if (currentPlan == null || !matches) {
+                val outcome =
+                    SetupOutcome.Failed(
+                        stage = null,
+                        reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
+                    )
+                _operationOutcome.value = outcome
+                return@withContext outcome
             }
-            val newAttemptId = journal?.attemptId ?: currentPlan.planId
 
-            // The plan is consumed by this attempt: a second confirmation must preview again.
-            activePlan = null
-            _state.update { it.copy(isRunning = true, activeOperationId = currentPlan.planId) }
-            try {
-                val planOutcome = when (currentPlan.kind) {
-                    SetupPlanKind.CACHE_RESET -> executeCacheReset()
-                    SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
-                    SetupPlanKind.FULL_SETUP,
-                    SetupPlanKind.STAGE_RETRY,
-                    SetupPlanKind.REPAIR_TOOL,
-                    -> {
-                        if (currentPlan.targetStageOrToolId == SetupStepStage.SERVER_CONNECTIVITY.name) {
-                            val env = currentEnvironment
-                            if (serverArtifactPort != null && env != null) {
-                                serverArtifactPort.ensureInstalled(env)
-                                // The single Java discovery result; re-probe once rather than guess a path.
-                                val jHome = lastPrerequisiteReport?.javaHome
-                                    ?: hostPrerequisitePort.probe(env).also { lastPrerequisiteReport = it }.javaHome
-                                if (jHome != null) {
-                                    serverArtifactPort.ensureRunningCurrent(env, jHome)
+            // Revalidate revision and environment against the CURRENT state: a plan previewed before a
+            // later check (or against another distro) is stale and needs a fresh preview (FR-004).
+            val switchAction =
+                currentPlan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+            val liveRevision =
+                SetupPlanFactory.computeRevisionHash(
+                    snapshot = _state.value,
+                    switchInputs = switchAction?.inputs,
+                    selectionRevision = switchAction?.selectionRevision,
+                )
+            val liveDistro = resolveEnvironmentKey()
+            if (liveRevision != currentPlan.revisionHash || liveDistro != currentPlan.environmentKey) {
+                val outcome =
+                    SetupOutcome.Failed(
+                        stage = null,
+                        reason = "Environment evidence changed since the plan was previewed; " +
+                            "preview again before confirming.",
+                    )
+                _operationOutcome.value = outcome
+                return@withContext outcome
+            }
+
+            val distro = currentPlan.environmentKey
+
+            coordinator.withAdmission(
+                environmentKey = distro,
+                operationId = currentPlan.planId,
+                kind = currentPlan.kind.name,
+            ) {
+                val journal =
+                    openAttempt(
+                        environmentKey = distro,
+                        planId = currentPlan.planId,
+                        revisionHash = currentPlan.revisionHash,
+                        kind = currentPlan.kind,
+                        plannedActionIds = currentPlan.orderedActions.map { it.actionId() },
+                    ).getOrElse {
+                        return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
+                    }
+                val newAttemptId = journal?.attemptId ?: currentPlan.planId
+
+                // The plan is consumed by this attempt: a second confirmation must preview again.
+                activePlan = null
+                _state.update { it.copy(isRunning = true, activeOperationId = currentPlan.planId) }
+                try {
+                    val planOutcome =
+                        when (currentPlan.kind) {
+                            SetupPlanKind.CACHE_RESET -> executeCacheReset()
+                            SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
+                            SetupPlanKind.FULL_SETUP,
+                            SetupPlanKind.STAGE_RETRY,
+                            SetupPlanKind.REPAIR_TOOL,
+                            -> {
+                                if (currentPlan.targetStageOrToolId == SetupStepStage.SERVER_CONNECTIVITY.name) {
+                                    val env = currentEnvironment
+                                    if (serverArtifactPort != null && env != null) {
+                                        serverArtifactPort.ensureInstalled(env)
+                                        serverArtifactPort.ensureRunningCurrent(env)
+                                    } else {
+                                        supervisor.ensureStarted(distro)
+                                    }
                                 }
-                            } else {
-                                supervisor.ensureStarted(distro)
+                                // Failed health is a terminal prerequisite failure: nothing else runs.
+                                val health = transport.checkHealth()
+                                if (health == null) {
+                                    SetupOutcome.Failed(
+                                        stage = SetupStepStage.SERVER_CONNECTIVITY.name,
+                                        reason = "Daemon bridge failed: health check returned null.",
+                                    )
+                                } else {
+                                    val heartbeatOk =
+                                        heartbeatMonitor?.awaitInitialHeartbeat() ?: transport.sendHeartbeat()
+                                    if (!heartbeatOk) {
+                                        SetupOutcome.Failed(
+                                            stage = SetupStepStage.SERVER_CONNECTIVITY.name,
+                                            reason = "Daemon bridge failed: client heartbeat was not acknowledged.",
+                                        )
+                                    } else {
+                                        heartbeatMonitor?.start()
+                                        executePlan(currentPlan, distro, journal)
+                                    }
+                                }
                             }
                         }
-                        // Failed health is a terminal prerequisite failure: nothing else runs.
-                        val health = transport.checkHealth()
-                        if (health == null) {
-                            SetupOutcome.Failed(
-                                stage = SetupStepStage.SERVER_CONNECTIVITY.name,
-                                reason = "Daemon bridge failed: health check returned null.",
-                            )
+                    val shouldVerifyAfter =
+                        planOutcome is SetupOutcome.Succeeded &&
+                            currentPlan.kind != SetupPlanKind.CACHE_RESET
+                    val finalOutcome =
+                        if (shouldVerifyAfter) {
+                            verifyEnvironment()
+                            evaluateCompletionRule(currentPlan, _state.value, planOutcome)
                         } else {
-                            executePlan(currentPlan, distro, journal)
+                            planOutcome
                         }
-                    }
+                    archiveAttempt(newAttemptId, finalOutcome)
+                } catch (ce: CancellationException) {
+                    // Explicit cancel: the attempt is archived as cancelled only if every submitted child is
+                    // proven; otherwise it stays journaled for reconciliation ("cancellation acknowledgement
+                    // alone never unlocks mutation").
+                    archiveAttempt(newAttemptId, SetupOutcome.Cancelled)
+                    throw ce
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") e: Exception,
+                ) {
+                    // Transport/adapter failure escaping the plan is a typed Failed, but the attempt is only
+                    // archived when every submitted child has terminal proof; otherwise it stays journaled and
+                    // recovery is blocked until reconciled (never a silent retry).
+                    appendLog("[Plan] ERROR: ${e.message}")
+                    archiveAttempt(
+                        newAttemptId,
+                        SetupOutcome.Failed(
+                            stage = _state.value.currentStage?.name,
+                            reason = e.message ?: "Plan execution failed",
+                        ),
+                    )
+                } finally {
+                    _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
+                    publishJournalState()
                 }
-                val shouldVerifyAfter = planOutcome is SetupOutcome.Succeeded &&
-                    currentPlan.kind != SetupPlanKind.CACHE_RESET
-                val finalOutcome = if (shouldVerifyAfter) {
-                    verifyEnvironment()
-                    evaluateCompletionRule(currentPlan, _state.value, planOutcome)
-                } else {
-                    planOutcome
-                }
-                archiveAttempt(newAttemptId, finalOutcome)
-            } catch (ce: CancellationException) {
-                // Explicit cancel: the attempt is archived as cancelled only if every submitted child is
-                // proven; otherwise it stays journaled for reconciliation ("cancellation acknowledgement
-                // alone never unlocks mutation").
-                archiveAttempt(newAttemptId, SetupOutcome.Cancelled)
-                throw ce
-            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                // Transport/adapter failure escaping the plan is a typed Failed, but the attempt is only
-                // archived when every submitted child has terminal proof; otherwise it stays journaled and
-                // recovery is blocked until reconciled (never a silent retry).
-                appendLog("[Plan] ERROR: ${e.message}")
-                archiveAttempt(
-                    newAttemptId,
-                    SetupOutcome.Failed(
-                        stage = _state.value.currentStage?.name,
-                        reason = e.message ?: "Plan execution failed",
-                    ),
-                )
-            } finally {
-                _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
-                publishJournalState()
+            }.also {
+                _operationOutcome.value = it
             }
-        }.also {
-            _operationOutcome.value = it
         }
-    }
 
-    private suspend fun resolveHome(distro: String): String = currentEnvironment?.takeIf { it.distro == distro }?.home
-        ?: runCatching {
-            val res = transport.execute(
-                ToolExecutionRequest(
-                    toolId = "printenv",
-                    arguments = listOf("HOME"),
-                    workingDirectory = "/",
-                    purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                ),
-            )
-            if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
-        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
-        ?: runInterruptible(dispatcher) { detector.resolveWslUserHome(distro) }
+    private suspend fun resolveHome(distro: String): String = (
+        currentEnvironment?.takeIf { it.distro == distro }?.home
+            ?: runCatching {
+                val res =
+                    transport.execute(
+                        ToolExecutionRequest(
+                            toolId = "printenv",
+                            arguments = listOf("HOME"),
+                            workingDirectory = "/",
+                            purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                        ),
+                    )
+                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+            }.onFailure { if (it is CancellationException) throw it }.getOrNull()
+            ?: runInterruptible(dispatcher) { detector.resolveWslUserHome(distro) }
+        ).takeIf { it.startsWith("/") } ?: "/home/lti"
 
     /**
      * Resumes a package handoff: probes the attempt's own environment (never the current selection),
@@ -1453,24 +1149,58 @@ public class WslToolchainProvisioner(
         distro: String,
     ): SetupOutcome {
         // The attempt's own journaled environment wins; nothing is guessed (FR-006, FR-007c).
-        val env = active.environment?.toDomain()
-            ?: currentEnvironment?.takeIf { it.distro == active.environmentKey }
-            ?: return SetupOutcome.Interrupted(
+        val env =
+            active.environment?.toDomain()
+                ?: currentEnvironment?.takeIf { it.distro == active.environmentKey }
+        if (env == null) {
+            return SetupOutcome.Interrupted(
                 "Attempt '${active.attemptId}' has no recorded environment; run the environment check again.",
             )
+        }
         currentEnvironment = env
-        val probeReport = hostPrerequisitePort.probe(env)
-        lastPrerequisiteReport = probeReport
+        val isServerReady =
+            _state.value.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
+                ?.let { it.status == StepStatus.SUCCESS } == true
+        val probeRes = resolveResumeProbeReport(env, isServerReady)
+        val probeReport = probeRes.getOrNull()
+        return if (probeReport == null) {
+            SetupOutcome.Interrupted(probeRes.exceptionOrNull()?.message ?: "Failed to probe packages")
+        } else {
+            lastPrerequisiteReport = probeReport
+            evaluateBootstrapReport(repo, active, handoff, planId, distro, env, probeReport)
+        }
+    }
+
+    private suspend fun resolveResumeProbeReport(
+        env: SetupEnvironment,
+        isServerReady: Boolean,
+    ): Result<PrerequisiteReport> = if (isServerReady) {
+        val res = servicePreparation.verifySystemPackages(env)
+        if (res is PackagesPreparationResult.Failure && res.prerequisiteReport.results.isEmpty()) {
+            Result.failure(IllegalStateException("Couldn't check packages via build service: ${res.error}"))
+        } else {
+            Result.success(res.prerequisiteReport)
+        }
+    } else {
+        val hostReport = hostPrerequisitePort.probe(env)
+        Result.success(hostReport)
+    }
+
+    private suspend fun evaluateBootstrapReport(
+        repo: ToolchainSetupRepository,
+        active: SetupAttemptRecord,
+        handoff: PersistedUserHandoff,
+        planId: String,
+        distro: String,
+        env: SetupEnvironment,
+        probeReport: PrerequisiteReport,
+    ): SetupOutcome {
         val checkFailure = probeReport.results.values.filterIsInstance<RequirementStatus.CheckFailed>().firstOrNull()
         val unavailable = probeReport.results.filterValues { it is RequirementStatus.Unavailable }.keys
-        // Judged against every requirement, not the shrinking handoff list: a package that was present
-        // before but is gone now blocks success too, and joins the command.
         val missing = probeReport.missingPackages
         return when {
-            // An unreadable probe proves nothing: keep the handoff pending instead of archiving it.
             checkFailure != null -> SetupOutcome.Interrupted("Couldn't check packages: ${checkFailure.reason}")
             unavailable.isNotEmpty() -> {
-                // apt has no candidate, so no terminal command can fix it; the attempt stays pending.
                 val reason = "${unavailable.joinToString(", ")} isn't available on Ubuntu ${env.osVersionId}"
                 setStepStatus(
                     SetupStepStage.SYSTEM_PACKAGES,
@@ -1481,16 +1211,16 @@ public class WslToolchainProvisioner(
                 SetupOutcome.Failed(stage = SetupStepStage.SYSTEM_PACKAGES.name, reason = reason)
             }
             missing.isNotEmpty() -> keepHandoffOpen(repo, active, handoff, planId, distro, missing)
-            else -> archiveAttempt(active.attemptId, SetupOutcome.Succeeded()).also { archived ->
-                // Only a durably archived attempt may show the step as done.
-                if (archived is SetupOutcome.Succeeded) {
-                    setStepStatus(
-                        SetupStepStage.SYSTEM_PACKAGES,
-                        StepStatus.SUCCESS,
-                        desc = "Prerequisite packages installed",
-                    )
+            else ->
+                archiveAttempt(active.attemptId, SetupOutcome.Succeeded()).also { archived ->
+                    if (archived is SetupOutcome.Succeeded) {
+                        setStepStatus(
+                            SetupStepStage.SYSTEM_PACKAGES,
+                            StepStatus.SUCCESS,
+                            desc = "Prerequisite packages installed",
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -1504,12 +1234,13 @@ public class WslToolchainProvisioner(
         missing: List<String>,
     ): SetupOutcome {
         val newCommand = AptCommandBuilder.install(missing)
-        val persistedPlan = active.persistedPlan ?: PersistedSetupPlan(
-            planId = active.planId,
-            revisionHash = active.planRevisionHash,
-            environmentKey = active.environmentKey,
-            kind = active.planKind,
-        )
+        val persistedPlan =
+            active.persistedPlan ?: PersistedSetupPlan(
+                planId = active.planId,
+                revisionHash = active.planRevisionHash,
+                environmentKey = active.environmentKey,
+                kind = active.planKind,
+            )
         repo.recordAttemptAwaitingUserAction(
             active.attemptId,
             handoff.copy(packages = missing, command = newCommand),
@@ -1521,26 +1252,14 @@ public class WslToolchainProvisioner(
             pendingPlanId = planId,
             stage = SetupStepStage.SYSTEM_PACKAGES,
             reason = "Required packages are still not installed in WSL: ${missing.joinToString()}",
-            handoff = UserRepairHandoff(
+            handoff =
+            UserRepairHandoff(
                 actionId = handoff.actionId,
                 description = "Required packages are still missing",
                 terminalCommand = newCommand,
                 packages = missing,
                 distro = distro,
             ),
-        )
-    }
-
-    /** A doctor whose checks run through the build service, rooted at the user's home. */
-    private fun serviceDoctor(home: String): CompositeSystemDoctorEngine {
-        val serviceCli = TransportCliExecutor(transport, defaultWorkingDirectory = home)
-        return CompositeSystemDoctorEngine(
-            cli = serviceCli,
-            detector = detector,
-            dispatcher = dispatcher,
-            inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
-            remediator = WslPackageRemediator(serviceCli),
-            userHome = home,
         )
     }
 
@@ -1551,43 +1270,35 @@ public class WslToolchainProvisioner(
         environmentKey = environmentKey,
         kind = SetupPlanKind.valueOf(kind),
         targetStageOrToolId = targetStageOrToolId,
-        autoDoctorEnabled = autoDoctorEnabled,
-        orderedActions = actions.map { act ->
+        orderedActions =
+        actions.map { act ->
             when (act.type) {
                 "INSTALL_PACKAGES" -> SetupPlanAction.InstallPackages(packages = act.payload)
                 "SWITCH_TOOLCHAIN" -> {
                     // Frozen inputs are persisted in the full PersistedPlanAction.switchInputs field.
-                    val inputs = (act.switchInputs
-                        ?: throw IllegalStateException("SWITCH_TOOLCHAIN is missing frozen source inputs")).let { persistedInputs ->
+                    val persistedInputs =
+                        act.switchInputs
+                            ?: error("SWITCH_TOOLCHAIN is missing frozen source inputs")
+                    val inputs =
                         persistedInputs.map { (groupId, pinput) ->
                             val gid = org.ide.lti.core.domain.setup.ToolGroupId(groupId)
                             gid to pinput.toDomain(gid)
                         }.toMap()
-                    }
-                    val rev = act.selectionRevision
-                        ?: throw IllegalStateException("SWITCH_TOOLCHAIN is missing its selection revision")
-                    val forceGroups = act.forceRebuildGroups.orEmpty()
-                        .map { org.ide.lti.core.domain.setup.ToolGroupId(it) }.toSet()
+                    val rev =
+                        act.selectionRevision
+                            ?: error("SWITCH_TOOLCHAIN is missing its selection revision")
+                    val forceGroups =
+                        act.forceRebuildGroups.orEmpty()
+                            .map { org.ide.lti.core.domain.setup.ToolGroupId(it) }.toSet()
                     SetupPlanAction.SwitchToolchain(
                         inputs = inputs,
                         selectionRevision = rev,
                         forceRebuildGroups = forceGroups,
                     )
                 }
-                // Legacy types from pre-008 journal entries are silently dropped.
-                // A resumed plan with no SwitchToolchain will produce an empty plan that
-                // immediately succeeds; the caller must re-plan in that case.
-                "SYNC_SOURCES", "BUILD_RECIPES", "PUBLISH_TOOLS" -> {
-                    appendLog(
-                        "[Resume] Dropping legacy action type '${act.type}' from persisted plan — " +
-                            "pre-008 journal entry; re-plan required.",
-                        SetupLogKind.RUN,
-                    )
-                    throw IllegalArgumentException("Unsupported persisted action type '${act.type}'")
-                }
                 else -> {
                     appendLog(
-                        "[Resume] Unknown action type '${act.type}' in persisted plan — skipping.",
+                        "[Resume] Unsupported action type '${act.type}' in persisted plan — re-plan required.",
                         SetupLogKind.RUN,
                     )
                     throw IllegalArgumentException("Unknown persisted action type '${act.type}'")
@@ -1599,29 +1310,32 @@ public class WslToolchainProvisioner(
     @Suppress("CyclomaticComplexMethod")
     private fun PersistedResolvedInput.toDomain(groupId: ToolGroupId): ResolvedInput = when (kind) {
         "git" -> {
-            val frozenCommit = commit
-                ?: throw IllegalStateException("Git input '${groupId.value}' has no frozen commit")
+            val frozenCommit =
+                commit
+                    ?: throw IllegalStateException("Git input '${groupId.value}' has no frozen commit")
             val frozenRef = ref ?: throw IllegalStateException("Git input '${groupId.value}' has no frozen ref")
             ResolvedInput.Git(
                 group = groupId,
                 repoUrl = repoUrl,
-                ref = when {
+                ref =
+                when {
                     frozenRef.startsWith("tag:") -> ToolRef.Tag(frozenRef.removePrefix("tag:"))
                     frozenRef.startsWith("branch:") -> ToolRef.Branch(frozenRef.removePrefix("branch:"))
                     else -> ToolRef.Commit(frozenCommit)
                 },
                 commit = frozenCommit,
                 submoduleCommits = submoduleCommits.orEmpty(),
-                resolvedAt = resolvedAt
+                resolvedAt =
+                resolvedAt
                     ?: throw IllegalStateException("Git input '${groupId.value}' has no resolution timestamp"),
             )
         }
         "release" -> {
-            val v = version ?: throw IllegalStateException("Release input '${groupId.value}' has no version")
-            val u = url ?: throw IllegalStateException("Release input '${groupId.value}' has no URL")
-            val m = archiveMember ?: throw IllegalStateException("Release input '${groupId.value}' has no archive member")
-            val s = sha256 ?: throw IllegalStateException("Release input '${groupId.value}' has no checksum")
-            val p = platform ?: throw IllegalStateException("Release input '${groupId.value}' has no platform")
+            val v = version ?: error("Release input '${groupId.value}' has no version")
+            val u = url ?: error("Release input '${groupId.value}' has no URL")
+            val m = archiveMember ?: error("Release input '${groupId.value}' has no archive member")
+            val s = sha256 ?: error("Release input '${groupId.value}' has no checksum")
+            val p = platform ?: error("Release input '${groupId.value}' has no platform")
             ResolvedInput.Release(
                 group = groupId,
                 version = v,
@@ -1634,7 +1348,7 @@ public class WslToolchainProvisioner(
         else -> throw IllegalArgumentException("Unknown frozen input kind '$kind'")
     }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     override suspend fun resume(planId: String): SetupOutcome = withContext(dispatcher) {
         val distro = resolveEnvironmentKey()
         coordinator.withAdmission(
@@ -1642,10 +1356,11 @@ public class WslToolchainProvisioner(
             operationId = planId,
             kind = SetupOperationCoordinator.KIND_RESUME,
         ) {
-            val repo = repository ?: return@withAdmission SetupOutcome.Failed(
-                stage = null,
-                reason = "No repository configured to resume setup.",
-            )
+            val repo =
+                repository ?: return@withAdmission SetupOutcome.Failed(
+                    stage = null,
+                    reason = "No repository configured to resume setup.",
+                )
             val active = repo.currentState.activeAttempt
             if (active == null ||
                 (active.planId != planId && active.attemptId != planId) ||
@@ -1659,7 +1374,8 @@ public class WslToolchainProvisioner(
             if (active.environmentKey != distro) {
                 return@withAdmission SetupOutcome.Failed(
                     stage = null,
-                    reason = "Attempt '${active.attemptId}' was for distro '${active.environmentKey}', not current " +
+                    reason =
+                    "Attempt '${active.attemptId}' was for distro '${active.environmentKey}', not current " +
                         "'$distro'.",
                 )
             }
@@ -1668,24 +1384,27 @@ public class WslToolchainProvisioner(
                     "Attempt '${active.attemptId}' has unproven commands; reconnect before resuming.",
                 )
             }
-            val handoff = active.awaitingHandoff ?: return@withAdmission SetupOutcome.Failed(
-                stage = null,
-                reason = "Attempt '${active.attemptId}' has no handoff details.",
-            )
-            val persistedPlan = active.persistedPlan ?: return@withAdmission SetupOutcome.Interrupted(
-                "Attempt '${active.attemptId}' has no persisted plan; preview and confirm a new plan.",
-            )
-            val domainPlan = try {
-                persistedPlan.toDomainPlan()
-            } catch (e: IllegalArgumentException) {
-                return@withAdmission SetupOutcome.Interrupted(
-                    "Attempt '${active.attemptId}' has an invalid persisted plan: ${e.message}",
+            val handoff =
+                active.awaitingHandoff ?: return@withAdmission SetupOutcome.Failed(
+                    stage = null,
+                    reason = "Attempt '${active.attemptId}' has no handoff details.",
                 )
-            } catch (e: IllegalStateException) {
-                return@withAdmission SetupOutcome.Interrupted(
-                    "Attempt '${active.attemptId}' cannot safely reconstruct its plan: ${e.message}",
+            val persistedPlan =
+                active.persistedPlan ?: return@withAdmission SetupOutcome.Interrupted(
+                    "Attempt '${active.attemptId}' has no persisted plan; preview and confirm a new plan.",
                 )
-            }
+            val domainPlan =
+                try {
+                    persistedPlan.toDomainPlan()
+                } catch (e: IllegalArgumentException) {
+                    return@withAdmission SetupOutcome.Interrupted(
+                        "Attempt '${active.attemptId}' has an invalid persisted plan: ${e.message}",
+                    )
+                } catch (e: IllegalStateException) {
+                    return@withAdmission SetupOutcome.Interrupted(
+                        "Attempt '${active.attemptId}' cannot safely reconstruct its plan: ${e.message}",
+                    )
+                }
             if (domainPlan.orderedActions.isEmpty()) {
                 return@withAdmission SetupOutcome.Interrupted(
                     "Attempt '${active.attemptId}' has no resumable actions in its persisted plan; " +
@@ -1693,29 +1412,37 @@ public class WslToolchainProvisioner(
                 )
             }
 
-            val isBootstrap = active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
-                active.persistedPlan?.kind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
-                active.bootstrapRequirementIds.isNotEmpty() ||
-                (
-                    handoff.actionId.contains("install_packages", ignoreCase = true) &&
-                        active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
-                    )
+            val isBootstrap =
+                active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
+                    active.persistedPlan?.kind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
+                    active.bootstrapRequirementIds.isNotEmpty() ||
+                    (
+                        handoff.actionId.contains("install_packages", ignoreCase = true) &&
+                            active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
+                        )
 
             if (isBootstrap) return@withAdmission resumeBootstrap(repo, active, handoff, planId, distro)
 
-            // Re-run diagnostics to verify package installation facts
-            val diagnostics = serviceDoctor(resolveHome(distro)).runDiagnostics(distro, binariesPresent = false)
-            _state.update { it.copy(diagnostics = diagnostics) }
-
-            val remainingRemediation = WslPackageRemediator.resolve(diagnostics)
-            val stillMissing = remainingRemediation.aptPackages.filter { it in handoff.packages }
+            // Re-probe prerequisite packages
+            val currentEnv =
+                currentEnvironment
+                    ?: active.environment?.toDomain()
+                    ?: (detector.classify(distro) as? org.ide.lti.core.model.setup.DistroStatus.Usable)?.environment
+                    ?: return@withAdmission SetupOutcome.Failed(
+                        stage = SetupStepStage.SYSTEM_PACKAGES.name,
+                        reason = "No active WSL environment found",
+                    )
+            currentEnvironment = currentEnv
+            val report = hostPrerequisitePort.probe(currentEnv)
+            val stillMissing = report.missingPackages.filter { it in handoff.packages }
             if (stillMissing.isNotEmpty()) {
                 appendLog("[Resume] Required packages still missing: ${stillMissing.joinToString()}")
                 return@withAdmission SetupOutcome.AwaitingUserAction(
                     pendingPlanId = planId,
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
                     reason = "Required packages are still not installed in WSL: ${stillMissing.joinToString()}",
-                    handoff = UserRepairHandoff(
+                    handoff =
+                    UserRepairHandoff(
                         actionId = handoff.actionId,
                         description = "Required packages are still missing",
                         terminalCommand = handoff.command,
@@ -1725,84 +1452,82 @@ public class WslToolchainProvisioner(
                 )
             }
 
-            // Require all relevant diagnostic checks to pass before continuing.
-            // If another required check failed during the pause, do not mark success or continue.
-            val failed = diagnostics.filter { it.status == StepStatus.FAILED }
-            val nonOptionalWarnings = diagnostics.filter { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
-            val criticalProblems = failed + nonOptionalWarnings
-            if (criticalProblems.isNotEmpty()) {
-                val problemNames = criticalProblems.joinToString { "${it.title}: ${it.detail}" }
-                appendLog(
-                    "[Resume] ERROR: Environment became unhealthy while paused. Critical pre-flight diagnostics " +
-                        "failed: $problemNames",
-                )
+            val otherMissing = report.missingPackages.filterNot { it in handoff.packages }
+            if (otherMissing.isNotEmpty()) {
+                val problemNames = otherMissing.joinToString()
+                appendLog("[Resume] ERROR: Environment became unhealthy while paused: $problemNames")
                 setStepStatus(
-                    SetupStepStage.SYSTEM_DIAGNOSTICS,
+                    SetupStepStage.SYSTEM_PACKAGES,
                     StepStatus.FAILED,
                     desc = "Environment check failed before resumption: $problemNames",
                     error = problemNames,
                 )
                 return@withAdmission SetupOutcome.Failed(
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS.name,
+                    stage = SetupStepStage.SYSTEM_PACKAGES.name,
                     reason = "Environment check failed before resumption: $problemNames",
                 )
             }
 
             // Mark the handoff action as completed!
             repo.recordPlanActionCompleted(active.attemptId, handoff.actionId).onFailure { failure ->
-                return@withAdmission SetupOutcome.Interrupted("Failed to record action completion: ${failure.message}")
+                return@withAdmission SetupOutcome.Interrupted(
+                    "Failed to record action completion: ${failure.message}",
+                )
             }
             repo.updateAttemptStatus(active.attemptId, AttemptStatus.RUNNING).onFailure { failure ->
                 return@withAdmission SetupOutcome.Interrupted("Failed to update attempt status: ${failure.message}")
             }
 
-            val anyWarn = diagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
             setStepStatus(
-                SetupStepStage.SYSTEM_DIAGNOSTICS,
-                if (anyWarn) StepStatus.WARNING else StepStatus.SUCCESS,
-                "Host runtimes, compilers, and dependencies verified.",
-            )
-            repo.updateDiagnosticsSnapshot(
-                diagnostics.filter { it.status == StepStatus.SUCCESS }.map { it.id }.toSet(),
+                SetupStepStage.SYSTEM_PACKAGES,
+                StepStatus.SUCCESS,
+                "System packages verified.",
             )
 
-            val completedActionIds = (active.completedActionIds + handoff.actionId)
-                .filter { it != "switch-toolchain" && !it.startsWith("prereq-") }
-                .toSet()
-            val journal = SetupJournalContext(
-                environmentKey = distro,
-                attemptId = active.attemptId,
-                activity = logBuffer,
-            )
+            val completedActionIds =
+                (active.completedActionIds + handoff.actionId)
+                    .filter { it != "switch-toolchain" && !it.startsWith("prereq-") }
+                    .toSet()
+            val journal =
+                SetupJournalContext(
+                    environmentKey = distro,
+                    attemptId = active.attemptId,
+                    activity = logBuffer,
+                )
 
             _state.update { it.copy(isRunning = true, activeOperationId = active.planId) }
-            val resumeOutcome = try {
-                val planOutcome = executePlan(domainPlan, distro, journal, actionsToSkip = completedActionIds)
-                val shouldVerifyAfter = planOutcome is SetupOutcome.Succeeded &&
-                    domainPlan.kind != SetupPlanKind.CACHE_RESET
-                val finalOutcome = if (shouldVerifyAfter) {
-                    verifyEnvironment()
-                    evaluateCompletionRule(domainPlan, _state.value, planOutcome)
-                } else {
-                    planOutcome
+            val resumeOutcome =
+                try {
+                    val planOutcome = executePlan(domainPlan, distro, journal, actionsToSkip = completedActionIds)
+                    val shouldVerifyAfter =
+                        planOutcome is SetupOutcome.Succeeded &&
+                            domainPlan.kind != SetupPlanKind.CACHE_RESET
+                    val finalOutcome =
+                        if (shouldVerifyAfter) {
+                            verifyEnvironment()
+                            evaluateCompletionRule(domainPlan, _state.value, planOutcome)
+                        } else {
+                            planOutcome
+                        }
+                    archiveAttempt(active.attemptId, finalOutcome)
+                } catch (ce: CancellationException) {
+                    archiveAttempt(active.attemptId, SetupOutcome.Cancelled)
+                    throw ce
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") e: Exception,
+                ) {
+                    appendLog("[Resume] ERROR: ${e.message}")
+                    archiveAttempt(
+                        active.attemptId,
+                        SetupOutcome.Failed(
+                            stage = _state.value.currentStage?.name,
+                            reason = e.message ?: "Plan resumption failed",
+                        ),
+                    )
+                } finally {
+                    _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
+                    publishJournalState()
                 }
-                archiveAttempt(active.attemptId, finalOutcome)
-            } catch (ce: CancellationException) {
-                archiveAttempt(active.attemptId, SetupOutcome.Cancelled)
-                throw ce
-            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                appendLog("[Resume] ERROR: ${e.message}")
-                archiveAttempt(
-                    active.attemptId,
-                    SetupOutcome.Failed(
-                        stage = _state.value.currentStage?.name,
-                        reason = e.message ?: "Plan resumption failed",
-                    ),
-                )
-            } finally {
-                _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
-                publishJournalState()
-            }
 
             resumeOutcome
         }.also {
@@ -1915,28 +1640,32 @@ public class WslToolchainProvisioner(
             return outcome
         }
         if (active.unprovenIntents.isNotEmpty()) {
-            val reason = "Attempt $attemptId ended (${outcome::class.simpleName}) while " +
-                "${active.unprovenIntents.size} journaled command(s) lack terminal proof; reconnect to reconcile."
+            val reason =
+                "Attempt $attemptId ended (${outcome::class.simpleName}) while " +
+                    "${active.unprovenIntents.size} journaled command(s) lack terminal proof; reconnect to reconcile."
             repo.setRecoveryBlocked(true, reason)
             return SetupOutcome.Interrupted(reason)
         }
-        val status = when (outcome) {
-            is SetupOutcome.Succeeded -> AttemptStatus.SUCCEEDED
-            is SetupOutcome.Cancelled -> if (active.status == AttemptStatus.AWAITING_USER_ACTION &&
-                active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
-            ) {
-                AttemptStatus.ABANDONED
-            } else {
-                AttemptStatus.CANCELLED
+        val status =
+            when (outcome) {
+                is SetupOutcome.Succeeded -> AttemptStatus.SUCCEEDED
+                is SetupOutcome.Cancelled ->
+                    if (active.status == AttemptStatus.AWAITING_USER_ACTION &&
+                        active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
+                    ) {
+                        AttemptStatus.ABANDONED
+                    } else {
+                        AttemptStatus.CANCELLED
+                    }
+                is SetupOutcome.Failed -> AttemptStatus.FAILED
+                is SetupOutcome.Interrupted -> AttemptStatus.INTERRUPTED
+                is SetupOutcome.Busy -> AttemptStatus.INTERRUPTED
+                is SetupOutcome.AwaitingUserAction -> return outcome
             }
-            is SetupOutcome.Failed -> AttemptStatus.FAILED
-            is SetupOutcome.Interrupted -> AttemptStatus.INTERRUPTED
-            is SetupOutcome.Busy -> AttemptStatus.INTERRUPTED
-            is SetupOutcome.AwaitingUserAction -> return outcome
-        }
         repo.recordAttemptTerminal(attemptId, status, outcome).onFailure { failure ->
             return SetupOutcome.Interrupted("Attempt $attemptId finished but could not be archived: ${failure.message}")
         }
+        publishJournalState()
         return outcome
     }
 
@@ -1955,16 +1684,17 @@ public class WslToolchainProvisioner(
     ): Result<SetupJournalContext?> {
         val repo = repository ?: return Result.success(null)
         val attemptId = UUID.randomUUID().toString()
-        val record = SetupAttemptRecord(
-            attemptId = attemptId,
-            environmentKey = environmentKey,
-            planId = planId,
-            planRevisionHash = revisionHash,
-            planKind = kind.name,
-            status = AttemptStatus.AUTHORIZED,
-            plannedActionIds = plannedActionIds,
-            environment = currentEnvironment?.toPersisted(),
-        )
+        val record =
+            SetupAttemptRecord(
+                attemptId = attemptId,
+                environmentKey = environmentKey,
+                planId = planId,
+                planRevisionHash = revisionHash,
+                planKind = kind.name,
+                status = AttemptStatus.AUTHORIZED,
+                plannedActionIds = plannedActionIds,
+                environment = currentEnvironment?.toPersisted(),
+            )
         return repo.recordAttemptAuthorized(record).fold(
             onSuccess = {
                 publishJournalState()
@@ -2018,8 +1748,9 @@ public class WslToolchainProvisioner(
         val targetTool = currentPlan.targetStageOrToolId
         if (currentPlan.kind == SetupPlanKind.REPAIR_TOOL) {
             if (targetTool == null || !ToolCapabilities.isRecipeSupported(targetTool)) {
-                val reason = ToolCapabilities.unavailableReasonFor(targetTool ?: "")
-                    ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON
+                val reason =
+                    ToolCapabilities.unavailableReasonFor(targetTool ?: "")
+                        ?: ToolCapabilities.REPAIR_UNAVAILABLE_REASON
                 appendLog("[Tool Matrix] Repair unavailable for '$targetTool': $reason")
                 return SetupOutcome.Failed(
                     stage = SetupStepStage.TOOLCHAIN_COMPILATION.name,
@@ -2035,7 +1766,8 @@ public class WslToolchainProvisioner(
                 }
                 _state.update { s ->
                     s.copy(
-                        toolsMatrix = s.toolsMatrix.map {
+                        toolsMatrix =
+                        s.toolsMatrix.map {
                             if (it.id in affectedTools) {
                                 it.copy(
                                     status = if (it.id == targetTool) StepStatus.RUNNING else StepStatus.PENDING,
@@ -2050,150 +1782,145 @@ public class WslToolchainProvisioner(
             }
         }
 
-        val operationScope = OperationScope(
-            environmentKey = distro,
-            operationId = journal?.attemptId ?: "plan-${currentPlan.planId}",
-            stateFlow = _state,
-            activeOpId = { _state.value.activeOperationId },
-        )
-        val installedScope = InstalledScope(
-            environmentKey = distro,
-            stateFlow = _state,
-        )
-        val context = ExecutionContext(
-            distro = distro,
-            home = home,
-            binDir = binDir,
-            extDir = extDir,
-            workDir = workDir,
-            plan = currentPlan,
-            scope = operationScope,
-            installedScope = installedScope,
-            journal = journal,
-            actionsToSkip = actionsToSkip,
-            serviceCli = serviceCli,
-            repository = repository,
-            transport = transport,
-            toolPublicationPort = toolPublicationPort,
-            recordRunStarted = ::recordRunStarted,
-            setStepProgress = { stage, label, idx, total ->
-                setStepProgress(stage, label, idx, total)
-            },
-            setStepStatus = { stage, status, desc, error, daemonFail, toolchainFail ->
-                setStepStatus(stage, status, desc, error, daemonFail, toolchainFail)
-            },
-            appendLog = { appendLog(it) },
-        )
+        val operationScope =
+            OperationScope(
+                environmentKey = distro,
+                operationId = journal?.attemptId ?: "plan-${currentPlan.planId}",
+                stateFlow = _state,
+                activeOpId = { _state.value.activeOperationId },
+            )
+        val installedScope =
+            InstalledScope(
+                environmentKey = distro,
+                stateFlow = _state,
+            )
+        val context =
+            ExecutionContext(
+                distro = distro,
+                home = home,
+                binDir = binDir,
+                extDir = extDir,
+                workDir = workDir,
+                plan = currentPlan,
+                scope = operationScope,
+                installedScope = installedScope,
+                journal = journal,
+                actionsToSkip = actionsToSkip,
+                serviceCli = serviceCli,
+                repository = repository,
+                transport = transport,
+                recordRunStarted = ::recordRunStarted,
+                setStepProgress = { stage, label, idx, total ->
+                    setStepProgress(stage, label, idx, total)
+                },
+                setStepStatus = { stage, status, desc, error, daemonFail, toolchainFail ->
+                    setStepStatus(stage, status, desc, error, daemonFail, toolchainFail)
+                },
+                appendLog = { appendLog(it) },
+            )
 
         val planOutcome = planExecutor.execute(context)
         if (planOutcome !is SetupOutcome.Succeeded) {
             return planOutcome
         }
 
-        // Installed evidence from a real listing of the binary directory. This is file discovery
-        // only: it updates paths and installed status, and never overrides a failed execution probe.
-        val builtExecutables = listExecutables(distro, binDir, serviceCli)
+        // Installed evidence: updates paths and installed status from component inventory or probe.
         val currentTools = _state.value.toolsMatrix.ifEmpty { ToolchainSetupState.defaultToolsMatrix() }
         val now = System.currentTimeMillis()
-        val updatedTools = currentTools.map { tool ->
-            // The same file the probe and the publisher use (a JAR is <id>.jar).
-            val toolPath = ToolCatalog.expectedPath(binDir, tool.id) ?: "$binDir/${tool.binaryName}"
-            val exists = toolPath.substringAfterLast('/') in builtExecutables
-            if (exists) {
-                repository?.updateTool(tool.id) { t ->
-                    t.copy(isCompiled = true, binaryPath = toolPath)
+        val inventory = toolManager?.refresh()?.getOrNull() ?: toolManager?.state?.value?.inventory
+        val updatedTools =
+            if (inventory != null) {
+                currentTools.map { tool ->
+                    val group = ToolGroupCatalog.allGroups.firstOrNull { g -> g.outputs.any { it.toolId == tool.id } }
+                    val output = group?.outputs?.firstOrNull { it.toolId == tool.id }
+                    val current = group?.id?.let { inventory.groups[it]?.current }
+                    val exists = output != null && current?.outputs.orEmpty().any { it.file == output.file }
+                    val status =
+                        when {
+                            !exists -> StepStatus.PENDING
+                            tool.status == StepStatus.FAILED -> StepStatus.FAILED
+                            current?.intact != true -> StepStatus.FAILED
+                            else -> StepStatus.SUCCESS
+                        }
+                    tool.copy(
+                        path =
+                        if (exists && group != null && output != null) {
+                            "$home/LtiRomTools/bin/${group.id.value}/current/${output.file}"
+                        } else {
+                            null
+                        },
+                        status = status,
+                    )
+                }
+            } else {
+                currentTools.map { tool ->
+                    val group = ToolGroupCatalog.allGroups.firstOrNull { g -> g.outputs.any { it.toolId == tool.id } }
+                    val output = group?.outputs?.firstOrNull { it.toolId == tool.id }
+                    val toolPath =
+                        if (group != null && output != null) {
+                            "$home/LtiRomTools/bin/${group.id.value}/current/${output.file}"
+                        } else {
+                            "$binDir/${tool.binaryName}"
+                        }
+                    val exists =
+                        transport.execute(
+                            ToolExecutionRequest(
+                                toolId = "test",
+                                arguments = listOf("-f", toolPath),
+                                workingDirectory = "/",
+                                purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                            ),
+                        ).exitCode == 0
+                    if (exists) {
+                        repository?.updateTool(tool.id) { t ->
+                            t.copy(isCompiled = true, binaryPath = toolPath)
+                        }
+                    }
+                    tool.copy(
+                        path = if (exists) toolPath else null,
+                        status =
+                        when {
+                            !exists -> tool.status
+                            tool.status == StepStatus.FAILED -> StepStatus.FAILED
+                            else -> StepStatus.SUCCESS
+                        },
+                    )
                 }
             }
-            tool.copy(
-                path = if (exists) toolPath else null,
-                status = when {
-                    !exists -> tool.status
-                    tool.status == StepStatus.FAILED -> StepStatus.FAILED
-                    else -> StepStatus.SUCCESS
-                },
-            )
+        if (toolManager != null) {
+            for (tool in updatedTools) {
+                repository?.updateTool(tool.id) {
+                    it.copy(
+                        isCompiled = tool.path != null,
+                        isVerified = tool.status == StepStatus.SUCCESS,
+                        binaryPath = tool.path,
+                    )
+                }
+            }
         }
         _state.update { it.copy(toolsMatrix = updatedTools, lastVerifiedTimestamp = now) }
         if (currentPlan.kind == SetupPlanKind.FULL_SETUP) {
             repository?.markSetupCompleted(true, now)
         }
 
-        val evidenceMap = updatedTools
-            .filter { it.status == StepStatus.SUCCESS }
-            .associate { tool ->
-                tool.id to ToolEvidence(
-                    toolId = tool.id,
-                    recipeGroup = ToolCapabilities.recipeGroupFor(tool.id),
-                    probeArgv = ToolCapabilities.probeArgumentsFor(tool.id, "$binDir/${tool.binaryName}"),
-                    acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(tool.id),
-                    isInstalled = true,
-                    isVerified = tool.lastTested != null,
-                    isFailedExecution = false,
-                    lastVerifiedTimestamp = now,
-                )
-            }
+        val evidenceMap =
+            updatedTools
+                .filter { it.status == StepStatus.SUCCESS }
+                .associate { tool ->
+                    tool.id to
+                        ToolEvidence(
+                            toolId = tool.id,
+                            recipeGroup = ToolCapabilities.recipeGroupFor(tool.id),
+                            probeArgv = ToolCapabilities.probeArgumentsFor(tool.id, "$binDir/${tool.binaryName}"),
+                            acceptedExitCodes = ToolCapabilities.acceptedExitCodesFor(tool.id),
+                            isInstalled = true,
+                            isVerified = tool.lastTested != null,
+                            isFailedExecution = false,
+                            lastVerifiedTimestamp = now,
+                        )
+                }
         appendLog("=== Plan ${currentPlan.planId} (${currentPlan.kind}) completed ===")
         return SetupOutcome.Succeeded(evidence = evidenceMap)
-    }
-
-    /**
-     * Runs the previewed remediation through the service transport and verifies the result by
-     * re-running the doctor. Returns a typed failure, or null when the diagnostics stage is healthy.
-     */
-    private suspend fun executeRemediation(
-        action: SetupPlanAction.InstallPackages,
-        distro: String,
-        home: String,
-        binDir: String,
-        serviceCli: TransportCliExecutor,
-    ): SetupOutcome? {
-        setStepRunning(SetupStepStage.SYSTEM_DIAGNOSTICS)
-        val remediation = WslPackageRemediator.RemediationPlan(
-            aptPackages = action.packages,
-            pipPackages = action.pipPackages,
-            configureLoopMountElevation = action.configureLoopMountElevation,
-            syncToolchainBinaries = false,
-        )
-        appendLog("[Step 3/5] Applying previewed remediation: ${action.description}")
-        val context = DiagnosticContext(distro = distro, home = home, binDir = binDir, binariesPresent = false)
-        val applied = WslPackageRemediator(serviceCli).remediate(context, remediation) { appendLog("[Step 3/5] $it") }
-        if (!applied) {
-            return diagnosticsFailure("Automated remediation could not run (passwordless sudo is not configured).")
-        }
-
-        // Verify the fact, do not trust the install command's return.
-        val doctor = CompositeSystemDoctorEngine(
-            cli = serviceCli,
-            detector = detector,
-            dispatcher = dispatcher,
-            inspectors = CompositeSystemDoctorEngine.defaultInspectors(serviceCli),
-            remediator = WslPackageRemediator(serviceCli),
-            userHome = home,
-        )
-        val diagnostics = doctor.runDiagnostics(distro, binariesPresent = false)
-        _state.update { it.copy(diagnostics = diagnostics) }
-        val failed = diagnostics.filter { it.status == StepStatus.FAILED }
-        val anyWarn = diagnostics.any { it.status == StepStatus.WARNING && !it.isOptionalForRuntime }
-        return if (failed.isNotEmpty()) {
-            val failedNames = failed.joinToString { it.title }
-            diagnosticsFailure("Critical pre-flight requirements still not met after remediation: $failedNames.")
-        } else {
-            setStepStatus(
-                SetupStepStage.SYSTEM_DIAGNOSTICS,
-                if (anyWarn) StepStatus.WARNING else StepStatus.SUCCESS,
-                "Host runtimes, compilers, and dependencies verified.",
-            )
-            repository?.updateDiagnosticsSnapshot(
-                diagnostics.filter { it.status == StepStatus.SUCCESS }.map { it.id }.toSet(),
-            )
-            null
-        }
-    }
-
-    private fun diagnosticsFailure(reason: String): SetupOutcome.Failed {
-        appendLog("[Step 3/5] ERROR: $reason")
-        setStepStatus(SetupStepStage.SYSTEM_DIAGNOSTICS, StepStatus.FAILED, error = reason)
-        return SetupOutcome.Failed(SetupStepStage.SYSTEM_DIAGNOSTICS.name, reason)
     }
 
     override fun observe(): Flow<SetupOutcome?> = _operationOutcome.asStateFlow()
@@ -2246,20 +1973,21 @@ public class WslToolchainProvisioner(
         toolchainFailureCategory: ToolchainFailureCategory? = null,
     ) {
         _state.update { s ->
-            val updatedSteps = s.steps.map { step ->
-                if (step.stage == stage) {
-                    step.copy(
-                        status = status,
-                        description = desc ?: step.description,
-                        error = error,
-                        provenance = StepProvenance.LIVE,
-                        failureCategory = failureCategory,
-                        toolchainFailureCategory = toolchainFailureCategory,
-                    )
-                } else {
-                    step
+            val updatedSteps =
+                s.steps.map { step ->
+                    if (step.stage == stage) {
+                        step.copy(
+                            status = status,
+                            description = desc ?: step.description,
+                            error = error,
+                            provenance = StepProvenance.LIVE,
+                            failureCategory = failureCategory,
+                            toolchainFailureCategory = toolchainFailureCategory,
+                        )
+                    } else {
+                        step
+                    }
                 }
-            }
             s.copy(
                 steps = updatedSteps,
                 currentStage = if (status == StepStatus.RUNNING) stage else null,
@@ -2271,6 +1999,10 @@ public class WslToolchainProvisioner(
      * Provisioner-originated narration (not server run output). Streamed run output reaches
      * [logBuffer] through [SetupJournalContext.activity] with its real journal identity instead.
      */
+    override fun log(line: String) {
+        appendLog(line, SetupLogKind.CHECK)
+    }
+
     private fun appendLog(line: String, kind: SetupLogKind = SetupLogKind.RUN) {
         val attemptId = repository?.currentState?.activeAttempt?.attemptId ?: LOCAL_ATTEMPT_ID
         logBuffer.append(text = line, attemptId = attemptId, childRunId = PROVISIONER_CHILD_ID, kind = kind)

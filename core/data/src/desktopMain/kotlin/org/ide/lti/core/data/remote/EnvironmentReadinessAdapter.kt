@@ -36,16 +36,16 @@ public class EnvironmentReadinessAdapter(
     private val transport: RemoteTransportPort,
     private val requiredProductTools: Set<String> = DEFAULT_REQUIRED_PRODUCT_TOOLS,
 ) : EnvironmentReadinessPort {
-
     public companion object {
         public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
         public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
     }
 
-    private val readinessState = MutableStateFlow(
-        EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT),
-    )
+    private val readinessState =
+        MutableStateFlow(
+            EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT),
+        )
 
     override fun observe(): Flow<EnvironmentReadiness> = readinessState.asStateFlow()
 
@@ -68,10 +68,9 @@ public class EnvironmentReadinessAdapter(
     /** The first failing stage, in pipeline order, decides readiness; otherwise the live check does. */
     private fun mapToolchainStateToReadiness(state: ToolchainSetupState): EnvironmentReadiness = emptyInventory()
         ?: failedStep(state, SetupStepStage.WSL_DETECTION)?.let(::wslFailure)
-        ?: failedStep(state, SetupStepStage.SYSTEM_PACKAGES)?.let(::packagesFailure)
         ?: failedStep(state, SetupStepStage.SERVER_CONNECTIVITY)?.let(::serverFailure)
+        ?: failedStep(state, SetupStepStage.SYSTEM_PACKAGES)?.let(::packagesFailure)
         ?: failedStep(state, SetupStepStage.TOOLCHAIN_COMPILATION)?.let { toolchainFailure(it, state) }
-        ?: failedStep(state, SetupStepStage.SYSTEM_DIAGNOSTICS)?.let(::doctorFailure)
         ?: liveReadiness(state)
 
     private fun failedStep(state: ToolchainSetupState, stage: SetupStepStage): SetupStepDetail? =
@@ -101,20 +100,21 @@ public class EnvironmentReadinessAdapter(
     )
 
     private fun serverFailure(step: SetupStepDetail): EnvironmentReadiness {
-        val (state, remediation) = when (step.failureCategory ?: DaemonFailureCategory.UNREACHABLE) {
-            DaemonFailureCategory.UNSUPPORTED_JAVA ->
-                EnvironmentReadinessState.TOOLS_INCOMPATIBLE to
-                    "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
-            DaemonFailureCategory.UNHEALTHY_STATUS,
-            DaemonFailureCategory.UNRECOGNIZED_STATUS,
-            -> EnvironmentReadinessState.SERVICE_UNHEALTHY to "Check daemon logs and restart the daemon"
-            DaemonFailureCategory.UNREACHABLE ->
-                EnvironmentReadinessState.SERVICE_UNREACHABLE to
-                    "Start the LtiRomServer daemon or verify WSL connectivity"
-            DaemonFailureCategory.COMPATIBILITY_MODE ->
-                EnvironmentReadinessState.SERVICE_UNHEALTHY to
-                    "Verify daemon version and check daemon logs"
-        }
+        val (state, remediation) =
+            when (step.failureCategory ?: DaemonFailureCategory.UNREACHABLE) {
+                DaemonFailureCategory.UNSUPPORTED_JAVA ->
+                    EnvironmentReadinessState.TOOLS_INCOMPATIBLE to
+                        "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
+                DaemonFailureCategory.UNHEALTHY_STATUS,
+                DaemonFailureCategory.UNRECOGNIZED_STATUS,
+                -> EnvironmentReadinessState.SERVICE_UNHEALTHY to "Check daemon logs and restart the daemon"
+                DaemonFailureCategory.UNREACHABLE ->
+                    EnvironmentReadinessState.SERVICE_UNREACHABLE to
+                        "Start the LtiRomServer daemon or verify WSL connectivity"
+                DaemonFailureCategory.COMPATIBILITY_MODE ->
+                    EnvironmentReadinessState.SERVICE_UNHEALTHY to
+                        "Verify daemon version and check daemon logs"
+            }
         return EnvironmentReadiness(state = state, failingCheck = step.description, remediation = remediation)
     }
 
@@ -211,24 +211,26 @@ public class EnvironmentReadinessAdapter(
     }
 
     private suspend fun readFileContent(linuxPath: String, fileName: String): String? {
-        val res = transport.execute(
-            ToolExecutionRequest(
-                toolId = "cat",
-                arguments = listOf("$linuxPath/$fileName"),
-                workingDirectory = "/",
-            ),
-        )
+        val res =
+            transport.execute(
+                ToolExecutionRequest(
+                    toolId = "cat",
+                    arguments = listOf("$linuxPath/$fileName"),
+                    workingDirectory = "/",
+                ),
+            )
         return if (res.exitCode == 0) res.stdout else null
     }
 
     private suspend fun hasFile(linuxPath: String, fileName: String): Boolean {
-        val check = transport.execute(
-            ToolExecutionRequest(
-                toolId = "test",
-                arguments = listOf("-f", "$linuxPath/$fileName"),
-                workingDirectory = "/",
-            ),
-        )
+        val check =
+            transport.execute(
+                ToolExecutionRequest(
+                    toolId = "test",
+                    arguments = listOf("-f", "$linuxPath/$fileName"),
+                    workingDirectory = "/",
+                ),
+            )
         return check.exitCode == 0
     }
 }

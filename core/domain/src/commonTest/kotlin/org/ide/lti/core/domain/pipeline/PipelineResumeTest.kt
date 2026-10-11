@@ -31,7 +31,6 @@ import org.ide.lti.core.model.workspace.WorkspaceSession
 import kotlin.test.*
 
 class PipelineResumeTest {
-
     private val fixture = PipelineFixture()
     private val ws = fixture.workspace.linuxPath!!
 
@@ -40,33 +39,49 @@ class PipelineResumeTest {
     }
 
     private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository) =
-        PipelineOrchestrator(port, repo, FakeVendoredFiles(true))
+        PipelineOrchestrator(port, repo, FakeVendoredFiles(true), toolStore = PipelinePinnedToolStore())
 
     private class FakeWorkspaceRepo(vararg initial: Workspace) : WorkspaceRepository {
         val workspaces = initial.associateBy { it.id }.toMutableMap()
+
         override fun getWorkspaces(): Flow<List<Workspace>> = flowOf(workspaces.values.toList())
+
         override suspend fun getWorkspace(id: String): Workspace? = workspaces[id]
+
         override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
         }
+
         override suspend fun deleteWorkspace(id: String) {
             workspaces.remove(id)
         }
+
         override fun getRecentProjects(): Flow<List<RecentProject>> = flowOf(emptyList())
+
         override suspend fun addRecentProject(project: RecentProject) {}
+
         override suspend fun removeRecentProject(workspaceId: String) {}
+
         override suspend fun clearRecentProjects() {}
+
         override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = emptyList()
+
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
+
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
     }
 
     private class FakeTargetRepo(private val target: TargetDevice) : TargetRepository {
         override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(listOf(target))
+
         override fun getSelectedTarget(): Flow<TargetDevice> = flowOf(target)
+
         override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(target)
+
         override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
+
         override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
+
         override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
@@ -78,36 +93,48 @@ class PipelineResumeTest {
         val runId = "run-resume-1"
         val now = Clock.System.now()
 
-        val initialRun = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.RUNNING,
-            startedAt = now,
-            stages = listOf(StageOutcome(stageId = StageId.FIRMWARE_ACQUISITION, state = StageState.RUNNING, startedAt = now)),
-            steps = listOf(
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 0,
-                    serverRunId = "srv-inflight-1",
-                    idempotencyKey = "key-1",
-                    command = StepCommand("mkdir", listOf("-p", "$ws/firmware/downloaded")),
-                    state = StepState.RUNNING,
-                    lastSeq = 5L,
+        val initialRun =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.RUNNING,
+                startedAt = now,
+                stages =
+                listOf(
+                    StageOutcome(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        state = StageState.RUNNING,
+                        startedAt = now,
+                    ),
                 ),
-            ),
-            lastSeqByStep = mapOf("srv-inflight-1" to 5L),
-            driverInstanceId = "driver-1",
-            driverHeartbeatEpochMs = System.currentTimeMillis(),
-        )
+                steps =
+                listOf(
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 0,
+                        serverRunId = "srv-inflight-1",
+                        idempotencyKey = "key-1",
+                        command = StepCommand("mkdir", listOf("-p", "$ws/firmware/downloaded")),
+                        state = StepState.RUNNING,
+                        lastSeq = 5L,
+                    ),
+                ),
+                lastSeqByStep = mapOf("srv-inflight-1" to 5L),
+                driverInstanceId = "driver-1",
+                driverHeartbeatEpochMs = System.currentTimeMillis(),
+            )
         repo.upsert(initialRun)
 
-        port.statuses["srv-inflight-1"] = StepStatus(
-            runId = "srv-inflight-1",
-            status = "RUNNING",
-            lastSeq = 5L,
-            pid = 1234L,
-        )
+        port.statuses["srv-inflight-1"] =
+            StepStatus(
+                runId = "srv-inflight-1",
+                status = "RUNNING",
+                lastSeq = 5L,
+                pid = 1234L,
+            )
 
         var requestedFromSeq: Long? = null
         port.observedFlows["srv-inflight-1"] = { fromSeq ->
@@ -141,78 +168,102 @@ class PipelineResumeTest {
         port.files[ctx.abs(archiveRel)] = ByteArray(100)
         port.files["${ctx.abs(archiveRel)}.partial"] = ByteArray(100)
 
-        val pausedRun = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.PAUSED_WAITING_FOR_APP,
-            startedAt = now,
-            stages = listOf(
-                StageOutcome(stageId = StageId.FIRMWARE_ACQUISITION, state = StageState.RUNNING, startedAt = now),
-            ),
-            steps = listOf(
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 0,
-                    serverRunId = "srv-mkdir-0",
-                    idempotencyKey = "key-0",
-                    command = StepCommand("mkdir", listOf("-p", "$ws/firmware/downloaded")),
-                    state = StepState.COMPLETED,
-                    lastSeq = 1L,
+        val pausedRun =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.PAUSED_WAITING_FOR_APP,
+                startedAt = now,
+                stages =
+                listOf(
+                    StageOutcome(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        state = StageState.RUNNING,
+                        startedAt = now,
+                    ),
                 ),
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 1,
-                    serverRunId = "srv-curl-1",
-                    idempotencyKey = "key-1",
-                    command = StepCommand("curl", listOf("-fL", "--retry", "3", "-C", "-", "-o", "$ws/$archiveRel.partial", "https://url")),
-                    state = StepState.COMPLETED,
-                    lastSeq = 10L,
+                steps =
+                listOf(
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 0,
+                        serverRunId = "srv-mkdir-0",
+                        idempotencyKey = "key-0",
+                        command = StepCommand("mkdir", listOf("-p", "$ws/firmware/downloaded")),
+                        state = StepState.COMPLETED,
+                        lastSeq = 1L,
+                    ),
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 1,
+                        serverRunId = "srv-curl-1",
+                        idempotencyKey = "key-1",
+                        command =
+                        StepCommand(
+                            "curl",
+                            listOf(
+                                "-fL",
+                                "--retry",
+                                "3",
+                                "-C",
+                                "-",
+                                "-o",
+                                "$ws/$archiveRel.partial",
+                                "https://url",
+                            ),
+                        ),
+                        state = StepState.COMPLETED,
+                        lastSeq = 10L,
+                    ),
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 2,
+                        serverRunId = "srv-file-2",
+                        idempotencyKey = "key-2",
+                        command = StepCommand("file", listOf("-b", "--mime-type", "$ws/$archiveRel.partial")),
+                        state = StepState.COMPLETED,
+                        lastSeq = 11L,
+                    ),
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 3,
+                        serverRunId = "srv-mv-3",
+                        idempotencyKey = "key-3",
+                        command = StepCommand("mv", listOf("$ws/$archiveRel.partial", "$ws/$archiveRel")),
+                        state = StepState.COMPLETED,
+                        lastSeq = 12L,
+                    ),
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 4,
+                        serverRunId = "srv-sha-4",
+                        idempotencyKey = "key-4",
+                        command = StepCommand("sha256sum", listOf("$ws/$archiveRel")),
+                        state = StepState.COMPLETED,
+                        lastSeq = 13L,
+                    ),
                 ),
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 2,
-                    serverRunId = "srv-file-2",
-                    idempotencyKey = "key-2",
-                    command = StepCommand("file", listOf("-b", "--mime-type", "$ws/$archiveRel.partial")),
-                    state = StepState.COMPLETED,
-                    lastSeq = 11L,
+                lastSeqByStep =
+                mapOf(
+                    "srv-mkdir-0" to 1L,
+                    "srv-curl-1" to 10L,
+                    "srv-file-2" to 11L,
+                    "srv-mv-3" to 12L,
+                    "srv-sha-4" to 13L,
                 ),
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 3,
-                    serverRunId = "srv-mv-3",
-                    idempotencyKey = "key-3",
-                    command = StepCommand("mv", listOf("$ws/$archiveRel.partial", "$ws/$archiveRel")),
-                    state = StepState.COMPLETED,
-                    lastSeq = 12L,
+                runtimeValues =
+                mapOf(
+                    RuntimeKeys.DOWNLOAD_RESUME to "",
+                    RuntimeKeys.exitOf(RuntimeKeys.DOWNLOAD_RESUME) to "0",
+                    RuntimeKeys.ARCHIVE_MIME to "application/zip",
+                    RuntimeKeys.ARCHIVE_SHA256 to fixture.snapshotGlobalOta.acquisition.firmware.sha256!!,
                 ),
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 4,
-                    serverRunId = "srv-sha-4",
-                    idempotencyKey = "key-4",
-                    command = StepCommand("sha256sum", listOf("$ws/$archiveRel")),
-                    state = StepState.COMPLETED,
-                    lastSeq = 13L,
-                ),
-            ),
-            lastSeqByStep = mapOf(
-                "srv-mkdir-0" to 1L,
-                "srv-curl-1" to 10L,
-                "srv-file-2" to 11L,
-                "srv-mv-3" to 12L,
-                "srv-sha-4" to 13L,
-            ),
-            runtimeValues = mapOf(
-                RuntimeKeys.DOWNLOAD_RESUME to "",
-                RuntimeKeys.exitOf(RuntimeKeys.DOWNLOAD_RESUME) to "0",
-                RuntimeKeys.ARCHIVE_MIME to "application/zip",
-                RuntimeKeys.ARCHIVE_SHA256 to fixture.snapshotGlobalOta.acquisition.firmware.sha256!!,
-            ),
-            driverInstanceId = "driver-1",
-            driverHeartbeatEpochMs = System.currentTimeMillis(),
-        )
+                driverInstanceId = "driver-1",
+                driverHeartbeatEpochMs = System.currentTimeMillis(),
+            )
         repo.upsert(pausedRun)
 
         listOf("srv-mkdir-0", "srv-curl-1", "srv-file-2", "srv-mv-3", "srv-sha-4").forEach { id ->
@@ -238,28 +289,39 @@ class PipelineResumeTest {
         val runId = "run-resume-3"
         val now = Clock.System.now()
 
-        val interruptedRun = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.RUNNING,
-            startedAt = now,
-            stages = listOf(StageOutcome(stageId = StageId.FIRMWARE_ACQUISITION, state = StageState.RUNNING, startedAt = now)),
-            steps = listOf(
-                StageStep(
-                    stageId = StageId.FIRMWARE_ACQUISITION,
-                    index = 0,
-                    serverRunId = "srv-dead-0",
-                    idempotencyKey = "key-dead",
-                    command = StepCommand("curl", listOf("-o", "$ws/firmware/downloaded", "https://url")),
-                    state = StepState.RUNNING,
-                    lastSeq = 2L,
+        val interruptedRun =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.RUNNING,
+                startedAt = now,
+                stages =
+                listOf(
+                    StageOutcome(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        state = StageState.RUNNING,
+                        startedAt = now,
+                    ),
                 ),
-            ),
-            lastSeqByStep = mapOf("srv-dead-0" to 2L),
-            driverInstanceId = "driver-1",
-            driverHeartbeatEpochMs = System.currentTimeMillis(),
-        )
+                steps =
+                listOf(
+                    StageStep(
+                        stageId = StageId.FIRMWARE_ACQUISITION,
+                        index = 0,
+                        serverRunId = "srv-dead-0",
+                        idempotencyKey = "key-dead",
+                        command = StepCommand("curl", listOf("-o", "$ws/firmware/downloaded", "https://url")),
+                        state = StepState.RUNNING,
+                        lastSeq = 2L,
+                    ),
+                ),
+                lastSeqByStep = mapOf("srv-dead-0" to 2L),
+                driverInstanceId = "driver-1",
+                driverHeartbeatEpochMs = System.currentTimeMillis(),
+            )
         repo.upsert(interruptedRun)
 
         // Status is null (daemon lost track of run after restart)
@@ -267,7 +329,10 @@ class PipelineResumeTest {
 
         val events = orchestrator(port, repo).resume(interruptedRun, ctx, "driver-1").toList()
 
-        assertEquals(PipelineEvent.StageInterrupted(StageId.FIRMWARE_ACQUISITION), events.filterIsInstance<PipelineEvent.StageInterrupted>().single())
+        assertEquals(
+            PipelineEvent.StageInterrupted(StageId.FIRMWARE_ACQUISITION),
+            events.filterIsInstance<PipelineEvent.StageInterrupted>().single(),
+        )
         assertEquals(PipelineEvent.RunFinished(RunState.INTERRUPTED), events.last())
 
         val run = assertNotNull(repo.getRun(runId))
@@ -284,15 +349,18 @@ class PipelineResumeTest {
         val now = Clock.System.now()
 
         // Case 1: Fresh lease (< 45s ago) cannot be taken over
-        val freshRun = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.RUNNING,
-            startedAt = now,
-            driverInstanceId = "driver-original",
-            driverHeartbeatEpochMs = System.currentTimeMillis() - 10_000L,
-        )
+        val freshRun =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.RUNNING,
+                startedAt = now,
+                driverInstanceId = "driver-original",
+                driverHeartbeatEpochMs = System.currentTimeMillis() - 10_000L,
+            )
         repo.upsert(freshRun)
 
         assertFailsWith<IllegalStateException> {
@@ -300,9 +368,10 @@ class PipelineResumeTest {
         }
 
         // Case 2: Stale lease (> 45s ago) is taken over
-        val staleRun = freshRun.copy(
-            driverHeartbeatEpochMs = System.currentTimeMillis() - 60_000L,
-        )
+        val staleRun =
+            freshRun.copy(
+                driverHeartbeatEpochMs = System.currentTimeMillis() - 60_000L,
+            )
         repo.upsert(staleRun)
 
         // Resuming with new driver succeeds and updates driverInstanceId
@@ -323,28 +392,37 @@ class PipelineResumeTest {
         val stageDir = "$ws/out/package/.stage"
         port.files["$stageDir/updater-script"] = ByteArray(10)
 
-        val run = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.RUNNING,
-            startedAt = now,
-            stages = listOf(
-                StageOutcome(stageId = StageId.BUILD_FLASHABLE_ZIP, state = StageState.RUNNING, startedAt = now),
-            ),
-            steps = listOf(
-                StageStep(
-                    stageId = StageId.BUILD_FLASHABLE_ZIP,
-                    index = 0,
-                    serverRunId = "srv-to-cancel",
-                    idempotencyKey = "key-cancel",
-                    command = StepCommand("zip", listOf("rom.zip")),
-                    state = StepState.RUNNING,
+        val run =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.RUNNING,
+                startedAt = now,
+                stages =
+                listOf(
+                    StageOutcome(
+                        stageId = StageId.BUILD_FLASHABLE_ZIP,
+                        state = StageState.RUNNING,
+                        startedAt = now,
+                    ),
                 ),
-            ),
-            driverInstanceId = "driver-1",
-            driverHeartbeatEpochMs = System.currentTimeMillis(),
-        )
+                steps =
+                listOf(
+                    StageStep(
+                        stageId = StageId.BUILD_FLASHABLE_ZIP,
+                        index = 0,
+                        serverRunId = "srv-to-cancel",
+                        idempotencyKey = "key-cancel",
+                        command = StepCommand("zip", listOf("rom.zip")),
+                        state = StepState.RUNNING,
+                    ),
+                ),
+                driverInstanceId = "driver-1",
+                driverHeartbeatEpochMs = System.currentTimeMillis(),
+            )
         repo.upsert(run)
 
         val fakeWorkspaceRepo = FakeWorkspaceRepo(ctx.workspace)
@@ -373,23 +451,27 @@ class PipelineResumeTest {
         val targetRepo = FakeTargetRepo(fixture.targetGlobal)
         val workspaceRepo = FakeWorkspaceRepo(ctx.workspace)
 
-        val run = BuildRun(
-            id = runId,
-            workspaceId = ctx.workspace.id,
-            snapshotId = ctx.snapshot.id,
-            state = RunState.PAUSED_WAITING_FOR_APP,
-            startedAt = now,
-        )
+        val run =
+            BuildRun(
+                pinnedTools = PipelinePinnedToolStore.defaultPins.paths,
+                toolVersions = PipelinePinnedToolStore.defaultPins.versions,
+                id = runId,
+                workspaceId = ctx.workspace.id,
+                snapshotId = ctx.snapshot.id,
+                state = RunState.PAUSED_WAITING_FOR_APP,
+                startedAt = now,
+            )
         repo.upsert(run)
 
         val orch = orchestrator(port, repo)
-        val reattachUseCase = ReattachRunUseCase(
-            workspaceRepository = workspaceRepo,
-            snapshotRepository = snapshotRepo,
-            targetRepository = targetRepo,
-            runRepository = repo,
-            orchestrator = orch,
-        )
+        val reattachUseCase =
+            ReattachRunUseCase(
+                workspaceRepository = workspaceRepo,
+                snapshotRepository = snapshotRepo,
+                targetRepository = targetRepo,
+                runRepository = repo,
+                orchestrator = orch,
+            )
 
         val flow = reattachUseCase(ctx.workspace.id, runId, "driver-reattach")
         assertNotNull(flow)

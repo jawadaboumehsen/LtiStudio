@@ -13,21 +13,10 @@ import org.ide.lti.core.data.setup.execute.handlers.InstallPackagesHandler
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanAction
 
-/**
- * Executes a [SetupPlan] by dispatching actions to typed [PlanActionHandler]s.
- *
- * Only two action kinds are dispatched in the 008 layout:
- * - [SetupPlanAction.InstallPackages]: privilege-requiring system remediation.
- * - [SetupPlanAction.SwitchToolchain]: content-addressable build-and-activate step.
- *
- * Any plan that contains only [SetupPlanAction.SwitchToolchain] without a registered
- * [switchToolchainHandler] fails with a typed [SetupOutcome.Failed] — not a crash — so
- * a missing DI binding is caught at test time by [KoinGraphResolutionTest], which asserts
- * [switchToolchainHandler] is not null.
- */
+/** Executes confirmed setup actions through the component tool manager. */
 public class PlanExecutor(
     private val installPackagesHandler: PlanActionHandler<SetupPlanAction.InstallPackages> = InstallPackagesHandler(),
-    public val switchToolchainHandler: PlanActionHandler<SetupPlanAction.SwitchToolchain>? = null,
+    public val componentToolsHandler: PlanActionHandler<SetupPlanAction.SwitchToolchain>? = null,
 ) {
     public suspend fun execute(context: ExecutionContext): SetupOutcome {
         val plan = context.plan
@@ -47,14 +36,16 @@ public class PlanExecutor(
     }
 
     private suspend fun executeAction(action: SetupPlanAction, context: ExecutionContext): SetupOutcome? {
-        val outcome: SetupOutcome? = when (action) {
-            is SetupPlanAction.InstallPackages -> installPackagesHandler.execute(action, context)
-            is SetupPlanAction.SwitchToolchain -> {
-                val handler = switchToolchainHandler
-                    ?: return SetupOutcome.Failed(null, "No SwitchToolchainHandler registered — DI binding missing")
-                handler.execute(action, context)
+        val outcome: SetupOutcome? =
+            when (action) {
+                is SetupPlanAction.InstallPackages -> installPackagesHandler.execute(action, context)
+                is SetupPlanAction.SwitchToolchain -> {
+                    val handler =
+                        componentToolsHandler
+                            ?: return SetupOutcome.Failed(null, "No component tools handler registered")
+                    handler.execute(action, context)
+                }
             }
-        }
         return outcome ?: recordActionCompletion(action, context)
     }
 
@@ -62,8 +53,9 @@ public class PlanExecutor(
         val journal = context.journal ?: return null
         val result = context.repository?.recordPlanActionCompleted(journal.attemptId, action.actionId())
         return if (result != null && result.isFailure) {
-            val reason = "Plan action '${action.actionId()}' completed but could not be journaled: " +
-                result.exceptionOrNull()?.message
+            val reason =
+                "Plan action '${action.actionId()}' completed but could not be journaled: " +
+                    result.exceptionOrNull()?.message
             context.appendLog("[Journal] ERROR: $reason")
             SetupOutcome.Interrupted(reason)
         } else {

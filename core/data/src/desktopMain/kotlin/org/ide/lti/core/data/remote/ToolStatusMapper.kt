@@ -27,6 +27,7 @@ public object ToolStatusMapper {
     public fun toDomain(result: ToolListResult): ToolRegistryResult = when (result) {
         is ToolListResult.Tools -> ToolRegistryResult.Tools(result.list.map { toDomain(it) })
         is ToolListResult.ServiceError -> ToolRegistryResult.ServiceError(result.reason)
+        is ToolListResult.Unreachable -> ToolRegistryResult.Unreachable(result.reason)
     }
 
     private fun parseSource(source: String): ToolSource? = when (source.uppercase()) {

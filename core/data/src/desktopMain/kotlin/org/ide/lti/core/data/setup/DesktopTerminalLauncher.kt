@@ -24,9 +24,11 @@ import org.ide.lti.core.domain.ports.TerminalLauncherPort
 public class DesktopTerminalLauncher(
     private val processStarter: (List<String>) -> Unit = { cmd -> ProcessBuilder(cmd).start() },
 ) : TerminalLauncherPort {
-
     override fun launchTerminal(distro: String): Result<Unit> = tryLaunchWindowsTerminal(distro)
         .recoverCatching { tryLaunchConhost(distro).getOrThrow() }
+
+    override fun launchInstaller(distro: String): Result<Unit> = tryLaunchWindowsTerminalInstaller(distro)
+        .recoverCatching { tryLaunchConhostInstaller(distro).getOrThrow() }
 
     private fun tryLaunchWindowsTerminal(distro: String): Result<Unit> = runCatching {
         processStarter(
@@ -38,5 +40,17 @@ public class DesktopTerminalLauncher(
         processStarter(listOf("conhost.exe") + wslShell(distro))
     }
 
+    private fun tryLaunchWindowsTerminalInstaller(distro: String): Result<Unit> = runCatching {
+        processStarter(
+            listOf("wt.exe", "--title", "Install Ubuntu") + wslInstaller(distro),
+        )
+    }
+
+    private fun tryLaunchConhostInstaller(distro: String): Result<Unit> = runCatching {
+        processStarter(listOf("conhost.exe") + wslInstaller(distro))
+    }
+
     private fun wslShell(distro: String): List<String> = listOf("wsl.exe", "-d", distro, "--cd", "~")
+
+    private fun wslInstaller(distro: String): List<String> = listOf("wsl.exe", "--install", "-d", distro)
 }

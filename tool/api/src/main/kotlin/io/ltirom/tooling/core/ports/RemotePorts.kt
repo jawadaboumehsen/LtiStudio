@@ -1,9 +1,14 @@
 package io.ltirom.tooling.core.ports
 
+import io.ltirom.tooling.core.RunOutputUnavailableException
 import io.ltirom.tooling.core.remote.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
+
+@Serializable
+public data class StopClientResult(val stopped: Boolean, val unconfirmedExecutionIds: List<String> = emptyList())
 
 /**
  * Domain descriptor for remote server connection parameters.
@@ -13,7 +18,7 @@ public data class ServerConnectionDescriptor(
     val port: Int,
     val token: String,
     val pid: Long,
-    val distro: String
+    val distro: String,
 ) {
     val httpBaseUrl: String get() = "http://$host:$port"
     val wsBaseUrl: String get() = "ws://$host:$port"
@@ -64,6 +69,15 @@ public interface RemoteTransportPort {
     /** Requests graceful shutdown of the remote server. */
     public suspend fun shutdown(): Boolean
 
+    /** Sends a client heartbeat to keep command admission open. Returns true if accepted (204). */
+    public suspend fun sendHeartbeat(): Boolean = true
+
+    /** Sends a client heartbeat to a specific connection descriptor. Returns true if accepted (204). */
+    public suspend fun sendHeartbeat(descriptor: ServerConnectionDescriptor): Boolean = sendHeartbeat()
+
+    /** Requests the server to close command admission, cancel active executions, and stop. */
+    public suspend fun stopClient(): StopClientResult = StopClientResult(stopped = true)
+
     /** Cancels an active remote execution by ID. */
     public suspend fun cancel(executionId: String, signal: String = "SIGTERM"): Boolean = false
 
@@ -77,7 +91,8 @@ public interface RemoteTransportPort {
     public suspend fun replaySession(sessionId: String, fromSeq: Long = 0L): List<SequencedStreamEvent> = emptyList()
 
     /** Starts a durable execution run on the remote daemon. */
-    public suspend fun startRun(request: StartRunRequest): RunHandle = error("startRun not implemented")
+    public suspend fun startRun(request: StartRunRequest): RunHandle =
+        throw UnsupportedOperationException("startRun not implemented")
 
     /** Retrieves the status of a specific run by ID. */
     public suspend fun getRun(runId: String): RunStatus? = null
@@ -109,16 +124,24 @@ public interface RemoteTransportPort {
         var pollDelayMs = 50L
         while (true) {
             val run = runCatching { getRun(runId) }.getOrNull()
-            if (run != null && run.status in setOf(RunStatusValue.COMPLETED, RunStatusValue.FAILED, RunStatusValue.CANCELLED, RunStatusValue.INTERRUPTED)) {
+            if (run != null &&
+                run.status in
+                setOf(RunStatusValue.COMPLETED, RunStatusValue.FAILED, RunStatusValue.CANCELLED, RunStatusValue.INTERRUPTED)
+            ) {
                 val more = runCatching { replaySession(runId, nextSeq) }.getOrDefault(emptyList())
+                var finishedEmitted = false
                 for (ev in more) {
                     if (ev.seq >= nextSeq) {
                         emit(ev)
                         nextSeq = ev.seq + 1
+                        if (ev.event is StreamEvent.ExecutionFinished) {
+                            finishedEmitted = true
+                        }
                     }
                 }
-                val exitCode = run.exitCode ?: if (run.status == RunStatusValue.FAILED) 1 else 0
-                emit(SequencedStreamEvent(nextSeq, StreamEvent.ExecutionFinished(exitCode, 0L)))
+                if (!finishedEmitted) {
+                    throw RunOutputUnavailableException(runId, run)
+                }
                 return@flow
             }
             emit(SequencedStreamEvent(nextSeq, StreamEvent.Heartbeat(System.currentTimeMillis())))
@@ -132,16 +155,6 @@ public interface RemoteTransportPort {
 
     /** Requests graceful shutdown of the remote server, optionally forcing even with active runs. */
     public suspend fun shutdownDaemon(force: Boolean = false): Boolean = shutdown()
-
-    /** Sends an activation request to activate a target toolchain install. */
-    public suspend fun activateToolchain(request: io.ltirom.tooling.core.remote.ActivateToolchainRequest): io.ltirom.tooling.core.remote.ActivateToolchainResponse =
-        error("activateToolchain not implemented")
-
-    /** Retrieves the current toolchain state from the remote server. */
-    public suspend fun getToolchainState(): io.ltirom.tooling.core.remote.ToolchainStateResponse? = null
-
-    /** Retrieves the stored activation record for an activation request id. */
-    public suspend fun getActivation(requestId: String): String? = null
 }
 
 /**

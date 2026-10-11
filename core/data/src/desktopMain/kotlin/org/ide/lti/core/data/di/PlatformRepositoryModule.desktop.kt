@@ -19,7 +19,6 @@ import org.ide.lti.core.data.remote.EnvironmentReadinessAdapter
 import org.ide.lti.core.data.remote.RemoteWorkspaceProvisioner
 import org.ide.lti.core.data.remote.ResourceVendoredFileAdapter
 import org.ide.lti.core.data.remote.StepExecutionAdapter
-import org.ide.lti.core.data.remote.ToolPublicationAdapter
 import org.ide.lti.core.data.remote.WorkspaceKeyProvisioner
 import org.ide.lti.core.data.repository.device.ConnectedDeviceRepositoryImpl
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
@@ -32,7 +31,6 @@ import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
-import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
@@ -43,49 +41,48 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-internal actual val platformRepositoryModule = module {
-    singleOf(::DesktopFileSystemRepository) { bind<FileSystemRepository>() }
-    singleOf(::ConnectedDeviceRepositoryImpl) { bind<ConnectedDeviceRepository>() }
-    // Explicit lambdas: `singleOf` resolves every constructor parameter through Koin, including
-    // the defaulted `Set<String>`/`Json` ones, which have no definition and crash at startup.
-    single<ToolPublicationPort> { ToolPublicationAdapter(transport = get()) }
-    single<EnvironmentReadinessPort> {
-        EnvironmentReadinessAdapter(
-            toolchainService = get(),
-            transport = get(),
-        )
-    }
-    single { WorkspaceKeyProvisioner(transport = get()) }
-    single<WorkspaceProvisioningPort> {
-        RemoteWorkspaceProvisioner(transport = get(), readinessPort = get(), keyProvisioner = get())
-    }
-    single<PipelineExecutionPort> {
-        StepExecutionAdapter(transport = get())
-    }
-    single<VendoredFilePort> { ResourceVendoredFileAdapter() }
-    single<RunRepository> {
-        RunRepositoryImpl(
-            runRecordDataSource = get(),
-            workspaceRepository = getOrNull(),
-            executionPort = getOrNull(),
-        )
-    }
-    single<PluginInstallPort> {
-        InstalledPluginRepository(storeDir = resolveAppDataDir("plugins/installed"))
-    }
-    single<MarketplaceIndexPort> {
-        PluginIndexAdapter(cacheDir = resolveAppDataDir("plugins/index-cache"))
-    }
-    single<AuthorProjectTrustPort> {
-        AuthorTaskProcessAdapter(trustStoreDir = resolveAppDataDir("plugins/author-trust"))
-    }
-    // Bind PluginCatalogPort to EmptyPluginCatalog explicitly; a real catalog-backed implementation is a later task.
-    single<PluginCatalogPort> { EmptyPluginCatalog }
+internal actual val platformRepositoryModule =
+    module {
+        singleOf(::DesktopFileSystemRepository) { bind<FileSystemRepository>() }
+        singleOf(::ConnectedDeviceRepositoryImpl) { bind<ConnectedDeviceRepository>() }
+        // Explicit lambdas: `singleOf` resolves every constructor parameter through Koin, including
+        single<EnvironmentReadinessPort> {
+            EnvironmentReadinessAdapter(
+                toolchainService = get(),
+                transport = get(),
+            )
+        }
+        single { WorkspaceKeyProvisioner(transport = get()) }
+        single<WorkspaceProvisioningPort> {
+            RemoteWorkspaceProvisioner(transport = get(), readinessPort = get(), keyProvisioner = get())
+        }
+        single<PipelineExecutionPort> {
+            StepExecutionAdapter(transport = get())
+        }
+        single<VendoredFilePort> { ResourceVendoredFileAdapter() }
+        single<RunRepository> {
+            RunRepositoryImpl(
+                runRecordDataSource = get(),
+                workspaceRepository = getOrNull(),
+                executionPort = getOrNull(),
+            )
+        }
+        single<PluginInstallPort> {
+            InstalledPluginRepository(storeDir = resolveAppDataDir("plugins/installed"))
+        }
+        single<MarketplaceIndexPort> {
+            PluginIndexAdapter(cacheDir = resolveAppDataDir("plugins/index-cache"))
+        }
+        single<AuthorProjectTrustPort> {
+            AuthorTaskProcessAdapter(trustStoreDir = resolveAppDataDir("plugins/author-trust"))
+        }
+        // Bind PluginCatalogPort to EmptyPluginCatalog explicitly; a real catalog is a later task.
+        single<PluginCatalogPort> { EmptyPluginCatalog }
 
-    single<WorkspaceAdmissionPort> {
-        WorkspaceAdmissionRepository(storageDir = resolveAppDataDir("workspace-admission"))
+        single<WorkspaceAdmissionPort> {
+            WorkspaceAdmissionRepository(storageDir = resolveAppDataDir("workspace-admission"))
+        }
+        single<SnapshotMaterializerPort> {
+            SnapshotMaterializer(storageDir = resolveAppDataDir("snapshot-intents"))
+        }
     }
-    single<SnapshotMaterializerPort> {
-        SnapshotMaterializer(storageDir = resolveAppDataDir("snapshot-intents"))
-    }
-}

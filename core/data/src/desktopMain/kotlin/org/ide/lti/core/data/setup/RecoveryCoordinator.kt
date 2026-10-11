@@ -18,7 +18,6 @@ import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.core.domain.setup.ports.InstallId
 
 /**
  * Coordinates recovery of interrupted setup operations and journals (T031, T085, T086).
@@ -30,21 +29,10 @@ public class RecoveryCoordinator(
     private val activity: SetupActivitySink? = null,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
-    private val engine: SetupRunRecovery? = repository?.let {
-        SetupRunRecovery(transport, it, activity = activity)
-    }
-
-    public fun checkHealth(
-        selectedInstallId: InstallId?,
-        isIntact: Boolean,
-        serviceResolvesTools: Boolean,
-        lastOperationCompleted: Boolean,
-    ): ToolchainHealthReport = ToolchainHealthReport(
-        selectedInstallId = selectedInstallId,
-        isIntact = isIntact,
-        serviceResolvesTools = serviceResolvesTools,
-        lastOperationCompleted = lastOperationCompleted,
-    )
+    private val engine: SetupRunRecovery? =
+        repository?.let {
+            SetupRunRecovery(transport, it, activity = activity)
+        }
 
     public suspend fun recover(
         distro: String,
@@ -56,10 +44,11 @@ public class RecoveryCoordinator(
         if (supervisor.getConnectionInfo() == null) {
             ensureConnected()
         }
-        val recoveryEngine = engine ?: return@withContext SetupOutcome.Failed(
-            stage = null,
-            reason = "No durable journal is configured; nothing to recover.",
-        )
+        val recoveryEngine =
+            engine ?: return@withContext SetupOutcome.Failed(
+                stage = null,
+                reason = "No durable journal is configured; nothing to recover.",
+            )
         val outcome = recoveryEngine.recover(distro, attemptId) { appendLog(it) }
         if (outcome is SetupOutcome.Succeeded) {
             val verified = verifyEnvironment()

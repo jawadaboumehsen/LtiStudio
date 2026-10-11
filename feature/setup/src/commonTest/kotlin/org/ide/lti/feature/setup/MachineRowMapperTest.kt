@@ -82,31 +82,48 @@ class MachineRowMapperTest {
         assertTrue(wslUnavailPres.detailText.contains("WSL isn't installed"))
         assertEquals(IdeStatusSeverity.Failed, wslUnavailPres.severity)
         assertFalse(wslUnavailPres.isReady)
+        assertNull(wslUnavailPres.primaryActionLabel)
+        assertEquals("Check again", wslUnavailPres.secondaryActionLabel)
 
         val noDistro = DistroStatus.NoDistro
         val noDistroPres = MachineRowMapper.mapDistroStatus(noDistro)
         assertTrue(noDistroPres.detailText.contains("No Linux distribution"))
         assertEquals(IdeStatusSeverity.Failed, noDistroPres.severity)
         assertFalse(noDistroPres.isReady)
+        assertEquals("Install Ubuntu", noDistroPres.primaryActionLabel)
+        assertEquals("Check again", noDistroPres.secondaryActionLabel)
 
         val startupFailed = DistroStatus.StartupFailed("Ubuntu-24.04", "timeout after 5s")
         val startupFailedPres = MachineRowMapper.mapDistroStatus(startupFailed)
         assertTrue(startupFailedPres.detailText.contains("Ubuntu-24.04 didn't start"))
-        assertEquals("Retry", startupFailedPres.primaryActionLabel)
-        assertEquals("Show diagnostics", startupFailedPres.secondaryActionLabel)
+        assertNull(startupFailedPres.primaryActionLabel)
+        assertEquals("Check again", startupFailedPres.secondaryActionLabel)
         assertEquals(IdeStatusSeverity.Failed, startupFailedPres.severity)
         assertFalse(startupFailedPres.isReady)
 
-        val unsupported = DistroStatus.Unsupported("Debian", "found debian 12")
-        val unsupportedPres = MachineRowMapper.mapDistroStatus(unsupported)
-        assertTrue(unsupportedPres.detailText.contains("Debian isn't a supported Ubuntu LTS"))
-        assertEquals(IdeStatusSeverity.Failed, unsupportedPres.severity)
-        assertFalse(unsupportedPres.isReady)
+        val unsupportedNoUsable = DistroStatus.Unsupported("Debian", "found debian 12")
+        val unsupportedNoUsablePres = MachineRowMapper.mapDistroStatus(unsupportedNoUsable, emptyList())
+        assertTrue(unsupportedNoUsablePres.detailText.contains("Debian isn't a supported Ubuntu LTS"))
+        assertEquals(IdeStatusSeverity.Failed, unsupportedNoUsablePres.severity)
+        assertFalse(unsupportedNoUsablePres.isReady)
+        assertEquals("Install Ubuntu", unsupportedNoUsablePres.primaryActionLabel)
+        assertEquals("Check again", unsupportedNoUsablePres.secondaryActionLabel)
+
+        val usableEnv = SetupEnvironment("Ubuntu-22.04", 2, "ubuntu", "22.04", "testuser", "/home/testuser")
+        val usableStatus = DistroStatus.Usable(usableEnv)
+        val unsupportedWithUsablePres =
+            MachineRowMapper.mapDistroStatus(
+                unsupportedNoUsable,
+                listOf(unsupportedNoUsable, usableStatus),
+            )
+        assertEquals("Use Ubuntu-22.04", unsupportedWithUsablePres.primaryActionLabel)
+        assertEquals("Check again", unsupportedWithUsablePres.secondaryActionLabel)
 
         val noUser = DistroStatus.NoUsableUser("Ubuntu-24.04", "default user is root")
         val noUserPres = MachineRowMapper.mapDistroStatus(noUser)
         assertTrue(noUserPres.detailText.contains("Ubuntu-24.04 needs a user"))
         assertEquals("Open Ubuntu-24.04", noUserPres.primaryActionLabel)
+        assertEquals("Check again", noUserPres.secondaryActionLabel)
         assertEquals(IdeStatusSeverity.Failed, noUserPres.severity)
         assertFalse(noUserPres.isReady)
 
@@ -251,12 +268,13 @@ class MachineRowMapperTest {
     fun mapToolchainRow_covers_all_statuses() {
         assertNull(MachineRowMapper.mapToolchainRow(null))
 
-        val successStep = SetupStepDetail(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            title = "Toolchain",
-            description = "10 tools ready",
-            status = StepStatus.SUCCESS,
-        )
+        val successStep =
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain",
+                description = "10 tools ready",
+                status = StepStatus.SUCCESS,
+            )
         val successRow = MachineRowMapper.mapToolchainRow(successStep)
         assertEquals("10 tools ready", successRow?.detailText)
         assertEquals(IdeStatusSeverity.Ready, successRow?.severity)
@@ -264,51 +282,59 @@ class MachineRowMapperTest {
         assertFalse(successRow?.isRunning == true)
         assertNull(successRow?.primaryAction)
 
-        val runningStep = SetupStepDetail(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            title = "Toolchain",
-            description = "Building lz4 (2 of 10)",
-            status = StepStatus.RUNNING,
-        )
+        val runningStep =
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain",
+                description = "Building lz4 (2 of 10)",
+                status = StepStatus.RUNNING,
+            )
         val runningRow = MachineRowMapper.mapToolchainRow(runningStep)
         assertEquals("Building lz4 (2 of 10)", runningRow?.detailText)
         assertEquals(IdeStatusSeverity.Running, runningRow?.severity)
         assertTrue(runningRow?.isRunning == true)
         assertFalse(runningRow?.isReady == true)
 
-        val failedStep = SetupStepDetail(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            title = "Toolchain",
-            description = "Tool registration failed",
-            error = "erofsfuse: not executable, adb: resolved elsewhere",
-            status = StepStatus.FAILED,
-        )
+        val failedStep =
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain",
+                description = "Tool registration failed",
+                error = "erofsfuse: not executable, adb: resolved elsewhere",
+                status = StepStatus.FAILED,
+            )
         val failedRow = MachineRowMapper.mapToolchainRow(failedStep)
         assertEquals("Tool registration failed", failedRow?.detailText)
         assertEquals(IdeStatusSeverity.Failed, failedRow?.severity)
         assertEquals(SetupRowAction.RETRY, failedRow?.primaryAction)
-        assertEquals("Retry", failedRow?.primaryActionLabel)
+        assertEquals("Retry failed", failedRow?.primaryActionLabel)
+        assertEquals(SetupRowAction.SHOW_LOG, failedRow?.secondaryAction)
+        assertEquals("View log", failedRow?.secondaryActionLabel)
         assertEquals("erofsfuse: not executable, adb: resolved elsewhere", failedRow?.errorText)
 
-        val warningStep = SetupStepDetail(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            title = "Toolchain",
-            description = "Some tools optional",
-            error = "optional tool missing",
-            status = StepStatus.WARNING,
-        )
+        val warningStep =
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain",
+                description = "Some tools optional",
+                error = "optional tool missing",
+                status = StepStatus.WARNING,
+            )
         val warningRow = MachineRowMapper.mapToolchainRow(warningStep)
         assertEquals("Some tools optional", warningRow?.detailText)
         assertEquals(IdeStatusSeverity.Warning, warningRow?.severity)
         assertEquals(SetupRowAction.RETRY, warningRow?.primaryAction)
-        assertEquals("Retry", warningRow?.primaryActionLabel)
+        assertEquals("Retry failed", warningRow?.primaryActionLabel)
+        assertEquals(SetupRowAction.SHOW_LOG, warningRow?.secondaryAction)
+        assertEquals("View log", warningRow?.secondaryActionLabel)
 
-        val pendingStep = SetupStepDetail(
-            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-            title = "Toolchain",
-            description = "",
-            status = StepStatus.PENDING,
-        )
+        val pendingStep =
+            SetupStepDetail(
+                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                title = "Toolchain",
+                description = "",
+                status = StepStatus.PENDING,
+            )
         val pendingRow = MachineRowMapper.mapToolchainRow(pendingStep)
         assertEquals("Waiting for prerequisites", pendingRow?.detailText)
         assertEquals(IdeStatusSeverity.Neutral, pendingRow?.severity)

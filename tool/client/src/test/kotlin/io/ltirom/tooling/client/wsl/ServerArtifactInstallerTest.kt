@@ -10,7 +10,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ServerArtifactInstallerTest {
-
     private class RecordingFakeCli(
         var failOnCommandSubstring: String? = null,
         var stderrToEmit: String = "simulated error",
@@ -52,21 +51,23 @@ class ServerArtifactInstallerTest {
         }
     }
 
-    private val testEnv = SetupEnvironment(
-        distro = "Ubuntu-24.04",
-        wslVersion = 2,
-        osId = "ubuntu",
-        osVersionId = "24.04",
-        user = "testuser",
-        home = "/home/testuser",
-    )
+    private val testEnv =
+        SetupEnvironment(
+            distro = "Ubuntu-24.04",
+            wslVersion = 2,
+            osId = "ubuntu",
+            osVersionId = "24.04",
+            user = "testuser",
+            home = "/home/testuser",
+        )
 
     @Test
     fun `fresh install performs staged install through partial, verify, rename, and atomic swap`() {
-        val tempDir = File.createTempFile("server_bundle_", "").apply {
-            delete()
-            mkdirs()
-        }
+        val tempDir =
+            File.createTempFile("server_bundle_", "").apply {
+                delete()
+                mkdirs()
+            }
         try {
             File(tempDir, "server-version.txt").writeText("1.2.0\n")
             val binDir = File(tempDir, "bin").apply { mkdirs() }
@@ -118,18 +119,20 @@ class ServerArtifactInstallerTest {
 
     @Test
     fun `failure at staging leaves previous current untouched and returns Failed state`() {
-        val tempDir = File.createTempFile("server_bundle_", "").apply {
-            delete()
-            mkdirs()
-        }
+        val tempDir =
+            File.createTempFile("server_bundle_", "").apply {
+                delete()
+                mkdirs()
+            }
         try {
             File(tempDir, "server-version.txt").writeText("2.0.0\n")
 
-            val cli = RecordingFakeCli(
-                failOnCommandSubstring = "mv",
-                stderrToEmit = "Permission denied",
-                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
-            )
+            val cli =
+                RecordingFakeCli(
+                    failOnCommandSubstring = "mv",
+                    stderrToEmit = "Permission denied",
+                    activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+                )
             val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
 
             val result = installer.ensureInstalled(testEnv)
@@ -181,11 +184,12 @@ class ServerArtifactInstallerTest {
     fun `checksum mismatch fails at verify and never activates`() {
         val tempDir = bundle("1.5.0")
         try {
-            val cli = RecordingFakeCli(
-                failOnCommandSubstring = "sha256sum",
-                stderrToEmit = "lib/app.jar: FAILED",
-                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
-            )
+            val cli =
+                RecordingFakeCli(
+                    failOnCommandSubstring = "sha256sum",
+                    stderrToEmit = "lib/app.jar: FAILED",
+                    activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+                )
             val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
 
             val failed = result.installState as InstallState.Failed
@@ -202,10 +206,11 @@ class ServerArtifactInstallerTest {
     fun `failed link swap keeps the previous version active`() {
         val tempDir = bundle("1.6.0")
         try {
-            val cli = RecordingFakeCli(
-                failOnCommandSubstring = "mv -T",
-                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
-            )
+            val cli =
+                RecordingFakeCli(
+                    failOnCommandSubstring = "mv -T",
+                    activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+                )
             val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
 
             assertEquals("activate", (result.installState as InstallState.Failed).step)
@@ -237,29 +242,36 @@ class ServerArtifactInstallerTest {
         val tempDir = bundle("1.7.0")
         try {
             // The active copy is 1.7.0 and its launcher runs, but a JAR no longer matches its checksum.
-            val cli = object : WslCliExecutor() {
-                val commands = mutableListOf<String>()
-                override fun execute(
-                    distro: String,
-                    command: List<String>,
-                    timeoutSeconds: Long,
-                    charset: Charset,
-                    user: String?,
-                ): CliExecutionResult {
-                    val cmd = command.joinToString(" ")
-                    commands += cmd
-                    return when {
-                        cmd.startsWith("readlink") -> CliExecutionResult(0, "/home/testuser/.ltirom/server/versions/1.7.0", "")
-                        cmd.contains("/current") && cmd.contains("sha256sum") ->
-                            CliExecutionResult(1, "", "lib/ltirom-server.jar: FAILED")
-                        else -> CliExecutionResult(0, "", "")
+            val cli =
+                object : WslCliExecutor() {
+                    val commands = mutableListOf<String>()
+
+                    override fun execute(
+                        distro: String,
+                        command: List<String>,
+                        timeoutSeconds: Long,
+                        charset: Charset,
+                        user: String?,
+                    ): CliExecutionResult {
+                        val cmd = command.joinToString(" ")
+                        commands += cmd
+                        return when {
+                            cmd.startsWith(
+                                "readlink",
+                            ) -> CliExecutionResult(0, "/home/testuser/.ltirom/server/versions/1.7.0", "")
+                            cmd.contains("/current") && cmd.contains("sha256sum") ->
+                                CliExecutionResult(1, "", "lib/ltirom-server.jar: FAILED")
+                            else -> CliExecutionResult(0, "", "")
+                        }
                     }
                 }
-            }
             val result = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
 
             assertEquals(InstallState.Current, result.installState)
-            assertTrue(cli.commands.any { it.startsWith("cp -r") }, "A damaged install must be re-copied: ${cli.commands}")
+            assertTrue(
+                cli.commands.any { it.startsWith("cp -r") },
+                "A damaged install must be re-copied: ${cli.commands}",
+            )
             // The damaged copy is moved aside (not deleted) before the verified one replaces it.
             assertTrue(cli.commands.any { it.contains("mv '/home/testuser/.ltirom/server/versions/1.7.0' ") })
         } finally {
@@ -271,14 +283,18 @@ class ServerArtifactInstallerTest {
     fun `a failed swap puts the set-aside install back`() {
         val tempDir = bundle("1.8.0")
         try {
-            val cli = RecordingFakeCli(
-                failOnCommandSubstring = "mv /home/testuser/.ltirom/server/versions/1.8.0.partial",
-                activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
-            )
+            val cli =
+                RecordingFakeCli(
+                    failOnCommandSubstring = "mv /home/testuser/.ltirom/server/versions/1.8.0.partial",
+                    activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0",
+                )
             ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv)
 
             val commands = cli.executedCommands.map { it.joinToString(" ") }
-            assertTrue(commands.any { it.contains("mv '/home/testuser/.ltirom/server/versions/1.8.0.old'") }, "$commands")
+            assertTrue(
+                commands.any { it.contains("mv '/home/testuser/.ltirom/server/versions/1.8.0.old'") },
+                "$commands",
+            )
         } finally {
             tempDir.deleteRecursively()
         }
@@ -293,7 +309,7 @@ class ServerArtifactInstallerTest {
             ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
                 .ensureInstalled(testEnv, keepVersions = setOf("1.0.0"))
 
-            val prune = cli.executedCommands.map { it.joinToString(" ") }.single { it.contains("find ") }
+            val prune = cli.executedCommands.map { it.joinToString(" ") }.single { it.contains("-mindepth") }
             assertTrue("! -name '1.0.0'" in prune, "The running v1 must survive pruning: $prune")
             assertTrue("! -name '2.0.0'" in prune && "! -name '3.0.0'" in prune, prune)
         } finally {
@@ -308,7 +324,25 @@ class ServerArtifactInstallerTest {
             val cli = RecordingFakeCli(activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/2.0.0")
             ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir }).ensureInstalled(testEnv, prune = false)
 
-            assertTrue(cli.executedCommands.none { it.joinToString(" ").contains("find ") })
+            assertTrue(cli.executedCommands.none { it.joinToString(" ").contains("-mindepth") })
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `runtime extract extracts jre and checks java intactness`() {
+        val tempDir = bundle("1.9.0")
+        try {
+            val cli = RecordingFakeCli(activeVersionSymlinkTarget = "/home/testuser/.ltirom/server/versions/1.0.0")
+            val installer = ServerArtifactInstaller(cli = cli, bundleDirProvider = { tempDir })
+            installer.ensureInstalled(testEnv)
+
+            val commands = cli.executedCommands.map { it.joinToString(" ") }
+            assertTrue(
+                commands.any { it.contains("tar") && it.contains("jre.tar.gz") },
+                "Should extract bundled runtime JRE: $commands",
+            )
         } finally {
             tempDir.deleteRecursively()
         }

@@ -36,11 +36,10 @@ data class SetupUiState(
     val filteredProjects: List<RecentProject> = emptyList(),
     val searchQuery: String = "",
     val selectedWorkspaceId: String? = null,
-    val selectedCockpitTab: String = "doctor",
+    val selectedCockpitTab: String = "console",
     val toolSearchQuery: String = "",
     val toolSelection: ToolSelection = ToolSelection(),
     val filteredToolsMatrix: List<ToolComponentItem> = emptyList(),
-    val isAutoDoctorEnabled: Boolean = true,
     val selectedTab: SetupTab = SetupTab.PROJECTS,
     val selectedDestination: SetupDestination = SetupDestination.WORKSPACES,
     val environmentNotice: String? = null,
@@ -53,27 +52,30 @@ data class SetupUiState(
     val attemptRecord: SetupAttemptRecord? = null,
 ) {
     val environmentPresentation: EnvironmentPresentation
-        get() = SetupPresentationMapper.mapEnvironment(
-            state = toolchainSetupState,
-            isToolchainBound = isToolchainBound,
-            activeOperation = activeOperation,
-        )
+        get() =
+            SetupPresentationMapper.mapEnvironment(
+                state = toolchainSetupState,
+                isToolchainBound = isToolchainBound,
+                activeOperation = activeOperation,
+            )
 
     val environmentSummary: EnvironmentSummaryPresentation
         get() = SetupPresentationMapper.mapEnvironmentSummary(toolchainSetupState)
 
     val statusBarPresentation: SetupStatusBarPresentation
-        get() = SetupPresentationMapper.mapStatusBar(
-            activeOperation = activeOperation,
-            toolchainSetupState = toolchainSetupState,
-        )
+        get() =
+            SetupPresentationMapper.mapStatusBar(
+                activeOperation = activeOperation,
+                toolchainSetupState = toolchainSetupState,
+            )
 
     val recoveryPresentation: RecoveryPresentation
-        get() = SetupPresentationMapper.mapRecovery(
-            toolchainSetupState = toolchainSetupState,
-            activeOperation = activeOperation,
-            attemptRecord = attemptRecord,
-        )
+        get() =
+            SetupPresentationMapper.mapRecovery(
+                toolchainSetupState = toolchainSetupState,
+                activeOperation = activeOperation,
+                attemptRecord = attemptRecord,
+            )
 }
 
 /**
@@ -89,7 +91,6 @@ data class SetupUiActions(
     val onRetrySetupStep: () -> Unit = {},
     val onProvisionAvbKey: () -> Unit = {},
     val onSelectTarget: (TargetDevice) -> Unit = {},
-    val onAutoRemediateDoctor: () -> Unit = {},
     val onNavigateToEnvironment: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onSearchQueryChange: (String) -> Unit = {},
@@ -101,12 +102,9 @@ data class SetupUiActions(
     val onToolSearchQueryChange: (String) -> Unit = {},
     val onSelectToolCategory: (ToolCategory?) -> Unit = {},
     val onSelectToolPackage: (ToolNavPackage) -> Unit = {},
-    val onTestTool: (String) -> Unit = {},
-    val onRecompileTool: (String) -> Unit = {},
     val onSelectTab: (SetupTab) -> Unit = {},
     val onSelectDestination: (SetupDestination) -> Unit = {},
     val onDismissEnvironmentNotice: () -> Unit = {},
-    val onSetAutoDoctorEnabled: (Boolean) -> Unit = {},
     val onResetToolchainCache: () -> Unit = {},
     val onCreateWorkspace: () -> Unit = {},
     val onOpenManageTargets: () -> Unit = {},
@@ -124,6 +122,7 @@ data class SetupUiActions(
     val onShowHandoffSheet: () -> Unit = {},
     val onOpenTerminal: (String) -> Unit = {},
     val onSelectDistro: (String) -> Unit = {},
+    val onInstallUbuntu: (String) -> Unit = {},
     val onInstallPackages: () -> Unit = {},
     val onCancelOperation: () -> Unit = {},
     val onExportLogs: () -> Unit = {},

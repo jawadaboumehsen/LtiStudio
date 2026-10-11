@@ -11,9 +11,12 @@ package org.ide.lti.core.data.setup.state
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import org.ide.lti.core.data.setup.check.StageOutcome
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
+import org.ide.lti.core.domain.setup.StepProvenance
+import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolComponentItem
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.DistroStatus
@@ -149,6 +152,70 @@ public class CheckScope(
             )
         }
     }
+
+    public fun setCurrentStage(stage: SetupStepStage?) {
+        updateIfActive { it.copy(currentStage = stage) }
+    }
+
+    public fun setStepRunning(stage: SetupStepStage) {
+        updateIfActive { state ->
+            state.copy(
+                currentStage = stage,
+                steps =
+                state.steps.map { step ->
+                    if (step.stage == stage) {
+                        step.copy(
+                            status = StepStatus.RUNNING,
+                            provenance = StepProvenance.LIVE,
+                        )
+                    } else {
+                        step
+                    }
+                },
+            )
+        }
+    }
+
+    public fun setStepOutcome(stage: SetupStepStage, outcome: StageOutcome, durationMs: Long? = null) {
+        val now = System.currentTimeMillis()
+        updateIfActive { state ->
+            val status =
+                when (outcome) {
+                    is StageOutcome.Success -> StepStatus.SUCCESS
+                    is StageOutcome.Failed -> StepStatus.FAILED
+                    is StageOutcome.Warning -> StepStatus.WARNING
+                    is StageOutcome.Pending -> StepStatus.PENDING
+                }
+            val error =
+                when (outcome) {
+                    is StageOutcome.Failed -> outcome.error ?: outcome.description
+                    is StageOutcome.Warning -> outcome.warning
+                    is StageOutcome.Pending -> outcome.error
+                    else -> null
+                }
+            state.copy(
+                steps =
+                state.steps.map { step ->
+                    if (step.stage == stage) {
+                        step.copy(
+                            status = status,
+                            description = outcome.description,
+                            error = error,
+                            durationMs = durationMs ?: step.durationMs,
+                            provenance = StepProvenance.LIVE,
+                            verifiedAtEpochMs = if (outcome is StageOutcome.Success) now else step.verifiedAtEpochMs,
+                        )
+                    } else {
+                        step
+                    }
+                },
+            )
+        }
+    }
+
+    public fun setToolsMatrix(matrix: List<ToolComponentItem>) {
+        updateIfActive { it.copy(toolsMatrix = matrix) }
+    }
 }
 
 /**
@@ -165,7 +232,8 @@ public class InstalledScope(
     public fun updateTool(toolId: String, transform: (ToolComponentItem) -> ToolComponentItem) {
         stateFlow.update { state ->
             state.copy(
-                toolsMatrix = state.toolsMatrix.map {
+                toolsMatrix =
+                state.toolsMatrix.map {
                     if (it.id == toolId) transform(it) else it
                 },
             )

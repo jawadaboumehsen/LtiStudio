@@ -23,6 +23,9 @@ import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
+import org.ide.lti.core.domain.tools.ToolStorePort
+import org.ide.lti.core.domain.tools.ToolUsageCoordinator
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
@@ -39,19 +42,24 @@ import org.ide.lti.core.model.workspace.Workspace
 
 public sealed interface PipelineEvent {
     public data class StageStarted(val stageId: StageId) : PipelineEvent
+
     public data class StageSkipped(val stageId: StageId, val cacheKey: String) : PipelineEvent
+
     public data class StageCompleted(val stageId: StageId, val durationMs: Long) : PipelineEvent
-    public data class StageFailed(
-        val stageId: StageId,
-        val stepIndex: Int,
-        val exitCode: Int,
-        val message: String,
-    ) : PipelineEvent
+
+    public data class StageFailed(val stageId: StageId, val stepIndex: Int, val exitCode: Int, val message: String) :
+        PipelineEvent
+
     public data class StageCancelled(val stageId: StageId) : PipelineEvent
+
     public data class StageInterrupted(val stageId: StageId) : PipelineEvent
+
     public data class RunPaused(val stageId: StageId) : PipelineEvent
+
     public data class RunResumed(val stageId: StageId) : PipelineEvent
+
     public data class StepOutput(val stageId: StageId, val text: String) : PipelineEvent
+
     public data class RunFinished(val state: RunState) : PipelineEvent
 }
 
@@ -61,17 +69,22 @@ public sealed interface PipelineEvent {
  * (sizes, digests, probe results). Cache keys skip a stage only when the recorded input digest
  * matches **and** the recorded output digest still matches the current outputs.
  */
-@Suppress("LargeClass")
+@Suppress("LargeClass", "TooManyFunctions")
 public class PipelineOrchestrator(
     private val executionPort: PipelineExecutionPort,
     private val runRepository: RunRepository,
     private val vendoredFiles: VendoredFilePort,
     private val registry: PipelineDefinitionRegistry = PipelineDefinitionRegistry(),
     private val clock: Clock = Clock.System,
+    private val toolStore: ToolStorePort? = null,
+    private val toolUsageCoordinator: ToolUsageCoordinator? = null,
 ) {
     private val stages: List<StageDefinition> get() = registry.executableStages()
+
     private class StageFailure(val stepIndex: Int, val exitCode: Int, message: String) : RuntimeException(message)
+
     private class StageInterruptedFailure(message: String) : RuntimeException(message)
+
     private class StageCancelledFailure(message: String) : RuntimeException(message)
 
     private inner class Driver(
@@ -84,7 +97,10 @@ public class PipelineOrchestrator(
         lateinit var baseContext: StageContext
         val ws: Workspace get() = baseContext.workspace
 
-        fun context(): StageContext = baseContext.copy(runtimeValues = runtimeValues.toMap())
+        fun context(): StageContext = baseContext.copy(
+            runtimeValues = runtimeValues.toMap(),
+            toolPaths = run.pinnedTools,
+        )
 
         suspend fun persist(mutate: (BuildRun) -> BuildRun) {
             run = mutate(run).copy(runtimeValues = runtimeValues.filterValues { it.length <= PERSISTED_VALUE_LIMIT })
@@ -92,245 +108,322 @@ public class PipelineOrchestrator(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     public fun drive(runId: String, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> = flow {
         val now = clock.now()
         val existing = runRepository.getRun(runId)
         val startedAt = existing?.startedAt ?: now
-        if (existing == null) {
-            runRepository.upsert(BuildRun(runId, ctx.workspace.id, ctx.snapshot.id, startedAt = startedAt))
-        }
-        check(runRepository.claimDriver(runId, driverInstanceId, now.toEpochMilliseconds())) {
-            "Cannot drive run $runId: lease held by another active driver"
-        }
-        val outcomes = stages.map { stage ->
-            existing?.stages?.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
-        }
-        val runtimeValues = (existing?.runtimeValues.orEmpty() + ctx.runtimeValues).toMutableMap()
-        runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
-        runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
-
-        val driver = Driver(
-            runId = runId,
-            driverInstanceId = driverInstanceId,
-            collector = this,
-            run = (existing ?: BuildRun(runId, ctx.workspace.id, ctx.snapshot.id, startedAt = startedAt)),
-            runtimeValues = runtimeValues,
-        )
-        driver.baseContext = ctx
-        driver.persist {
-            it.copy(
-                state = RunState.RUNNING,
-                stages = outcomes,
-                driverInstanceId = driverInstanceId,
-                driverHeartbeatEpochMs = now.toEpochMilliseconds(),
-            )
-        }
-
+        val pins =
+            if (existing == null && toolStore != null) {
+                toolUsageCoordinator?.admitJob(runId) {
+                    toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
+                        throw IllegalStateException("Cannot capture tool paths for this ROM run", cause)
+                    }
+                } ?: toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
+                    throw IllegalStateException("Cannot capture tool paths for this ROM run", cause)
+                }
+            } else {
+                toolUsageCoordinator?.admitJob(runId) { null }
+                null
+            }
+        // Admission succeeded: every later initialization failure must release our job.
+        // A duplicate admission throws above, outside this cleanup boundary.
         try {
-            var previousKey = ""
-            for ((index, stage) in stages.withIndex()) {
-                val startedStage = clock.now()
-                emit(PipelineEvent.StageStarted(stage.id))
-                driver.persist { it.withStage(index) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) } }
-                runRepository.heartbeatDriver(runId, driverInstanceId, startedStage.toEpochMilliseconds())
+            val pinnedPaths = pins?.paths.orEmpty().toMap()
+            val pinnedVersions = pins?.versions.orEmpty().toMap()
+            if (toolStore != null) {
+                val capturedPaths = existing?.pinnedTools ?: pinnedPaths
+                check(
+                    capturedPaths.isNotEmpty() &&
+                        capturedPaths.values.all {
+                            it.startsWith("/") && "/current/" !in it && !it.endsWith("/current")
+                        },
+                ) {
+                    "Cannot admit a ROM run without immutable tool pins"
+                }
+            }
+            if (existing == null) {
+                runRepository.upsert(
+                    BuildRun(
+                        runId,
+                        ctx.workspace.id,
+                        ctx.snapshot.id,
+                        startedAt = startedAt,
+                        pinnedTools = pinnedPaths,
+                        toolVersions = pinnedVersions,
+                    ),
+                )
+            }
+            check(runRepository.claimDriver(runId, driverInstanceId, now.toEpochMilliseconds())) {
+                "Cannot drive run $runId: lease held by another active driver"
+            }
+            val outcomes =
+                stages.map { stage ->
+                    existing?.stages?.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
+                }
+            val runtimeValues = (existing?.runtimeValues.orEmpty() + ctx.runtimeValues).toMutableMap()
+            runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
+            runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
 
-                val cacheKey = stage.computeCacheKey(driver.context(), previousKey)
-                if (isCacheValid(driver, stage, cacheKey)) {
+            val initialRun =
+                existing ?: BuildRun(
+                    runId,
+                    ctx.workspace.id,
+                    ctx.snapshot.id,
+                    startedAt = startedAt,
+                    pinnedTools = pinnedPaths,
+                    toolVersions = pinnedVersions,
+                )
+            val driver =
+                Driver(
+                    runId = runId,
+                    driverInstanceId = driverInstanceId,
+                    collector = this,
+                    run = initialRun,
+                    runtimeValues = runtimeValues,
+                )
+            driver.baseContext = ctx
+            driver.persist {
+                it.copy(
+                    state = RunState.RUNNING,
+                    stages = outcomes,
+                    driverInstanceId = driverInstanceId,
+                    driverHeartbeatEpochMs = now.toEpochMilliseconds(),
+                )
+            }
+
+            try {
+                var previousKey = ""
+                for ((index, stage) in stages.withIndex()) {
+                    val startedStage = clock.now()
+                    emit(PipelineEvent.StageStarted(stage.id))
+                    driver.persist {
+                        it.withStage(
+                            index,
+                        ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
+                    }
+                    runRepository.heartbeatDriver(runId, driverInstanceId, startedStage.toEpochMilliseconds())
+
+                    val cacheKey = computeStageCacheKey(driver, stage, previousKey)
+                    if (isCacheValid(driver, stage, cacheKey)) {
+                        val ended = clock.now()
+                        driver.persist {
+                            it.withStage(index) { s ->
+                                s.copy(
+                                    state = StageState.SKIPPED,
+                                    endedAt = ended,
+                                    durationMs = ended.millisSince(startedStage),
+                                    cacheKey = cacheKey,
+                                )
+                            }
+                        }
+                        emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
+                        previousKey = cacheKey
+                        continue
+                    }
+
+                    val failure =
+                        runCatching { executeStage(driver, stage, isResumeStage = false) }.exceptionOrNull()
+                            ?.also { if (it is CancellationException) throw it }
+                            ?: outputDigestOrFailure(driver, stage)
+                    if (failure != null) {
+                        if (failure is StageInterruptedFailure) {
+                            handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
+                            return@flow
+                        }
+                        if (failure is StageCancelledFailure) {
+                            handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
+                            return@flow
+                        }
+                        failStage(driver, index, stage, startedStage, failure)
+                        return@flow
+                    }
                     val ended = clock.now()
+                    val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
+                    executionPort.uploadFile(
+                        driver.ws,
+                        cacheFile(stage),
+                        "input=$cacheKey\noutput=$outputDigest\n".encodeToByteArray(),
+                    )
                     driver.persist {
                         it.withStage(index) { s ->
                             s.copy(
-                                state = StageState.SKIPPED,
+                                state = StageState.EXECUTED,
                                 endedAt = ended,
                                 durationMs = ended.millisSince(startedStage),
                                 cacheKey = cacheKey,
                             )
                         }
                     }
-                    emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
+                    emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
                     previousKey = cacheKey
-                    continue
                 }
 
-                val failure = runCatching { executeStage(driver, stage, isResumeStage = false) }.exceptionOrNull()
-                    ?.also { if (it is CancellationException) throw it }
-                    ?: outputDigestOrFailure(driver, stage)
-                if (failure != null) {
-                    if (failure is StageInterruptedFailure) {
-                        handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
-                        return@flow
-                    }
-                    if (failure is StageCancelledFailure) {
-                        handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
-                        return@flow
-                    }
-                    failStage(driver, index, stage, startedStage, failure)
-                    return@flow
+                val artifacts = collectArtifacts(driver)
+                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
+            } catch (e: CancellationException) {
+                if (driver.run.state == RunState.RUNNING) {
+                    driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
                 }
-                val ended = clock.now()
-                val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
-                executionPort.uploadFile(
-                    driver.ws,
-                    cacheFile(stage),
-                    "input=$cacheKey\noutput=$outputDigest\n".encodeToByteArray(),
-                )
-                driver.persist {
-                    it.withStage(index) { s ->
-                        s.copy(
-                            state = StageState.EXECUTED,
-                            endedAt = ended,
-                            durationMs = ended.millisSince(startedStage),
-                            cacheKey = cacheKey,
-                        )
-                    }
-                }
-                emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
-                previousKey = cacheKey
+                throw e
             }
-
-            val artifacts = collectArtifacts(driver)
-            driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
-            emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
-        } catch (e: CancellationException) {
-            if (driver.run.state == RunState.RUNNING) {
-                driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
-            }
-            throw e
+        } finally {
+            toolUsageCoordinator?.finishJob(runId)
         }
     }
 
     public fun resume(run: BuildRun, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> = flow {
         val now = clock.now()
-        check(runRepository.claimDriver(run.id, driverInstanceId, now.toEpochMilliseconds())) {
-            "Cannot drive run ${run.id}: lease held by another active driver"
-        }
-
         if (run.state.isTerminal) {
             emit(PipelineEvent.RunFinished(run.state))
             return@flow
         }
 
-        val latestRun = runRepository.getRun(run.id) ?: run
-        val wasPaused = latestRun.state == RunState.PAUSED_WAITING_FOR_APP
-        val startedAt = latestRun.startedAt
-        val runtimeValues = (latestRun.runtimeValues + ctx.runtimeValues).toMutableMap()
-        runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
-        runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
-
-        val outcomes = stages.map { stage ->
-            latestRun.stages.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
+        if (toolStore != null) {
+            check(run.pinnedTools.isNotEmpty() && run.toolVersions.isNotEmpty()) {
+                "Cannot resume a ROM run without persisted component tool pins"
+            }
         }
-
-        val driver = Driver(
-            runId = latestRun.id,
-            driverInstanceId = driverInstanceId,
-            collector = this,
-            run = latestRun.copy(stages = outcomes),
-            runtimeValues = runtimeValues,
-        )
-        driver.baseContext = ctx
-
-        val startStageIndex = stages.indexOfFirst { stage ->
-            val outcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
-            outcome == null || (outcome.state != StageState.EXECUTED && outcome.state != StageState.SKIPPED)
-        }
-
-        if (startStageIndex == -1) {
-            val artifacts = collectArtifacts(driver)
-            driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
-            emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
-            return@flow
-        }
-
-        var previousKey = if (startStageIndex > 0) {
-            driver.run.stages.getOrNull(startStageIndex - 1)?.cacheKey.orEmpty()
-        } else {
-            ""
-        }
+        toolUsageCoordinator?.admitJob(run.id) { Unit }
 
         try {
-            for (index in startStageIndex until stages.size) {
-                val stage = stages[index]
-                val existingOutcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
-                val startedStage = existingOutcome?.startedAt ?: clock.now()
+            check(runRepository.claimDriver(run.id, driverInstanceId, now.toEpochMilliseconds())) {
+                "Cannot drive run ${run.id}: lease held by another active driver"
+            }
+            val latestRun = runRepository.getRun(run.id) ?: run
+            val wasPaused = latestRun.state == RunState.PAUSED_WAITING_FOR_APP
+            val startedAt = latestRun.startedAt
+            val runtimeValues = (latestRun.runtimeValues + ctx.runtimeValues).toMutableMap()
+            runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
+            runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
 
-                if (wasPaused && index == startStageIndex) {
-                    emit(PipelineEvent.RunResumed(stage.id))
-                    driver.persist { it.copy(state = RunState.RUNNING) }
+            val outcomes =
+                stages.map { stage ->
+                    latestRun.stages.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
                 }
 
-                if (existingOutcome?.state != StageState.RUNNING) {
-                    emit(PipelineEvent.StageStarted(stage.id))
-                    driver.persist { it.withStage(index) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) } }
-                }
-                runRepository.heartbeatDriver(driver.runId, driverInstanceId, clock.now().toEpochMilliseconds())
+            val driver =
+                Driver(
+                    runId = latestRun.id,
+                    driverInstanceId = driverInstanceId,
+                    collector = this,
+                    run = latestRun.copy(stages = outcomes),
+                    runtimeValues = runtimeValues,
+                )
+            driver.baseContext = ctx
 
-                val cacheKey = stage.computeCacheKey(driver.context(), previousKey)
-                if (isCacheValid(driver, stage, cacheKey)) {
+            val startStageIndex =
+                stages.indexOfFirst { stage ->
+                    val outcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
+                    outcome == null || (outcome.state != StageState.EXECUTED && outcome.state != StageState.SKIPPED)
+                }
+
+            if (startStageIndex == -1) {
+                val artifacts = collectArtifacts(driver)
+                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
+                return@flow
+            }
+
+            var previousKey =
+                if (startStageIndex > 0) {
+                    driver.run.stages.getOrNull(startStageIndex - 1)?.cacheKey.orEmpty()
+                } else {
+                    ""
+                }
+
+            try {
+                for (index in startStageIndex until stages.size) {
+                    val stage = stages[index]
+                    val existingOutcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
+                    val startedStage = existingOutcome?.startedAt ?: clock.now()
+
+                    if (wasPaused && index == startStageIndex) {
+                        emit(PipelineEvent.RunResumed(stage.id))
+                        driver.persist { it.copy(state = RunState.RUNNING) }
+                    }
+
+                    if (existingOutcome?.state != StageState.RUNNING) {
+                        emit(PipelineEvent.StageStarted(stage.id))
+                        driver.persist {
+                            it.withStage(
+                                index,
+                            ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
+                        }
+                    }
+                    runRepository.heartbeatDriver(driver.runId, driverInstanceId, clock.now().toEpochMilliseconds())
+
+                    val cacheKey = computeStageCacheKey(driver, stage, previousKey)
+                    if (isCacheValid(driver, stage, cacheKey)) {
+                        val ended = clock.now()
+                        driver.persist {
+                            it.withStage(index) { s ->
+                                s.copy(
+                                    state = StageState.SKIPPED,
+                                    endedAt = ended,
+                                    durationMs = ended.millisSince(startedStage),
+                                    cacheKey = cacheKey,
+                                )
+                            }
+                        }
+                        emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
+                        previousKey = cacheKey
+                        continue
+                    }
+
+                    val failure =
+                        runCatching {
+                            executeStage(driver, stage, isResumeStage = (index == startStageIndex))
+                        }.exceptionOrNull()
+                            ?.also { if (it is CancellationException) throw it }
+                            ?: outputDigestOrFailure(driver, stage)
+
+                    if (failure != null) {
+                        if (failure is StageInterruptedFailure) {
+                            handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
+                            return@flow
+                        }
+                        if (failure is StageCancelledFailure) {
+                            handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
+                            return@flow
+                        }
+                        failStage(driver, index, stage, startedStage, failure)
+                        return@flow
+                    }
+
                     val ended = clock.now()
+                    val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
+                    executionPort.uploadFile(
+                        driver.ws,
+                        cacheFile(stage),
+                        "input=$cacheKey\noutput=$outputDigest\n".encodeToByteArray(),
+                    )
                     driver.persist {
                         it.withStage(index) { s ->
                             s.copy(
-                                state = StageState.SKIPPED,
+                                state = StageState.EXECUTED,
                                 endedAt = ended,
                                 durationMs = ended.millisSince(startedStage),
                                 cacheKey = cacheKey,
                             )
                         }
                     }
-                    emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
+                    emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
                     previousKey = cacheKey
-                    continue
                 }
 
-                val failure = runCatching {
-                    executeStage(driver, stage, isResumeStage = (index == startStageIndex))
-                }.exceptionOrNull()
-                    ?.also { if (it is CancellationException) throw it }
-                    ?: outputDigestOrFailure(driver, stage)
-
-                if (failure != null) {
-                    if (failure is StageInterruptedFailure) {
-                        handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
-                        return@flow
-                    }
-                    if (failure is StageCancelledFailure) {
-                        handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
-                        return@flow
-                    }
-                    failStage(driver, index, stage, startedStage, failure)
-                    return@flow
+                val artifacts = collectArtifacts(driver)
+                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
+            } catch (e: CancellationException) {
+                if (driver.run.state == RunState.RUNNING) {
+                    driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
                 }
-
-                val ended = clock.now()
-                val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
-                executionPort.uploadFile(
-                    driver.ws,
-                    cacheFile(stage),
-                    "input=$cacheKey\noutput=$outputDigest\n".encodeToByteArray(),
-                )
-                driver.persist {
-                    it.withStage(index) { s ->
-                        s.copy(
-                            state = StageState.EXECUTED,
-                            endedAt = ended,
-                            durationMs = ended.millisSince(startedStage),
-                            cacheKey = cacheKey,
-                        )
-                    }
-                }
-                emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
-                previousKey = cacheKey
+                throw e
             }
-
-            val artifacts = collectArtifacts(driver)
-            driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
-            emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
-        } catch (e: CancellationException) {
-            if (driver.run.state == RunState.RUNNING) {
-                driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
-            }
-            throw e
+        } finally {
+            toolUsageCoordinator?.finishJob(run.id)
         }
     }
 
@@ -387,8 +480,13 @@ public class PipelineOrchestrator(
 
     /** Digests the stage outputs into a scratch value, or returns the failure to report. */
     private suspend fun outputDigestOrFailure(driver: Driver, stage: StageDefinition): Throwable? {
-        val digest = outputDigest(driver, stage.outputs(driver.context()))
-            ?: return StageFailure(-1, -1, "Output verification failed for ${stage.id}: a declared output is missing")
+        val digest =
+            outputDigest(driver, stage.outputs(driver.context()))
+                ?: return StageFailure(
+                    -1,
+                    -1,
+                    "Output verification failed for ${stage.id}: a declared output is missing",
+                )
         driver.runtimeValues[OUTPUT_DIGEST_SCRATCH] = digest
         return null
     }
@@ -425,24 +523,26 @@ public class PipelineOrchestrator(
         var index = 0
         while (index < steps.size) {
             val step = steps[index]
-            val recorded = if (isResumeStage) {
-                driver.run.steps.firstOrNull { it.stageId == stage.id && it.index == index }
-            } else {
-                null
-            }
-
-            val captured = if (recorded != null && recorded.serverRunId != null && step is PipelineStep.Tool) {
-                reconcileRecordedToolStep(driver, stage, index, step, recorded)
-            } else {
-                when (step) {
-                    is PipelineStep.Tool -> runTool(driver, stage, index, step)
-                    is PipelineStep.WriteFile -> false.also { writeFile(driver, index, step.relPath, step.content) }
-                    is PipelineStep.WriteVendoredFile -> false.also { writeVendored(driver, index, step) }
-                    is PipelineStep.EditFile -> false.also { editFile(driver, index, step) }
-                    is PipelineStep.AvbSizeSearch -> true.also { avbSearch(driver, index, step) }
-                    is PipelineStep.Check -> false.also { check(driver, index, step) }
+            val recorded =
+                if (isResumeStage) {
+                    driver.run.steps.firstOrNull { it.stageId == stage.id && it.index == index }
+                } else {
+                    null
                 }
-            }
+
+            val captured =
+                if (recorded != null && recorded.serverRunId != null && step is PipelineStep.Tool) {
+                    reconcileRecordedToolStep(driver, stage, index, step, recorded)
+                } else {
+                    when (step) {
+                        is PipelineStep.Tool -> runTool(driver, stage, index, step)
+                        is PipelineStep.WriteFile -> false.also { writeFile(driver, index, step.relPath, step.content) }
+                        is PipelineStep.WriteVendoredFile -> false.also { writeVendored(driver, index, step) }
+                        is PipelineStep.EditFile -> false.also { editFile(driver, index, step) }
+                        is PipelineStep.AvbSizeSearch -> true.also { avbSearch(driver, index, step) }
+                        is PipelineStep.Check -> false.also { check(driver, index, step) }
+                    }
+                }
             index++
             if (captured) {
                 val replanned = stage.plan(driver.context())
@@ -490,26 +590,28 @@ public class PipelineOrchestrator(
                         driver.collector.emit(PipelineEvent.StepOutput(stage.id, event.text))
                     }
                     is StepEvent.Finished -> exitCode = event.exitCode
-                    StepEvent.Heartbeat -> runRepository.heartbeatDriver(
-                        driver.runId,
-                        driver.driverInstanceId,
-                        clock.now().toEpochMilliseconds(),
-                    )
+                    StepEvent.Heartbeat ->
+                        runRepository.heartbeatDriver(
+                            driver.runId,
+                            driver.driverInstanceId,
+                            clock.now().toEpochMilliseconds(),
+                        )
                 }
             }
 
             driver.persist { r ->
-                val updatedSteps = r.steps.map {
-                    if (it.stageId == stage.id && it.index == index) {
-                        it.copy(
-                            state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
-                            exitCode = exitCode,
-                            lastSeq = currentSeq,
-                        )
-                    } else {
-                        it
+                val updatedSteps =
+                    r.steps.map {
+                        if (it.stageId == stage.id && it.index == index) {
+                            it.copy(
+                                state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
+                                exitCode = exitCode,
+                                lastSeq = currentSeq,
+                            )
+                        } else {
+                            it
+                        }
                     }
-                }
                 val updatedSeqMap = r.lastSeqByStep + (serverRunId to currentSeq)
                 r.copy(steps = updatedSteps, lastSeqByStep = updatedSeqMap)
             }
@@ -523,20 +625,29 @@ public class PipelineOrchestrator(
                 throw StageFailure(index, exitCode, "${step.label}: ${step.command.toolId} exited with $exitCode")
             }
             step.expectStdoutContains.firstOrNull { it !in output }?.let { missing ->
-                throw StageFailure(index, exitCode, "${step.label}: expected '$missing' in ${step.command.toolId} output")
+                throw StageFailure(
+                    index,
+                    exitCode,
+                    "${step.label}: expected '$missing' in ${step.command.toolId} output",
+                )
             }
             return step.resultKey != null
         }
 
         if (status.status == "COMPLETED" || (status.exitCode != null && status.exitCode == 0)) {
             driver.persist { r ->
-                val updatedSteps = r.steps.map {
-                    if (it.stageId == stage.id && it.index == index) {
-                        it.copy(state = StepState.COMPLETED, exitCode = status.exitCode ?: 0, lastSeq = status.lastSeq)
-                    } else {
-                        it
+                val updatedSteps =
+                    r.steps.map {
+                        if (it.stageId == stage.id && it.index == index) {
+                            it.copy(
+                                state = StepState.COMPLETED,
+                                exitCode = status.exitCode ?: 0,
+                                lastSeq = status.lastSeq,
+                            )
+                        } else {
+                            it
+                        }
                     }
-                }
                 r.copy(steps = updatedSteps)
             }
             if (step.resultKey != null && !driver.runtimeValues.containsKey(step.resultKey)) {
@@ -561,17 +672,19 @@ public class PipelineOrchestrator(
 
     /** Runs one durable step; returns true when a result was captured (caller re-plans). */
     private suspend fun runTool(driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Tool): Boolean {
+        val resolvedCommand = resolvePinnedCommand(driver, step.command)
         val idempotencyKey = StageStep.deriveIdempotencyKey(driver.runId, stage.id, index)
-        val handle = executionPort.startStep(driver.ws, step.command, idempotencyKey)
-        val initialStep = StageStep(
-            stageId = stage.id,
-            index = index,
-            serverRunId = handle.runId,
-            idempotencyKey = idempotencyKey,
-            command = step.command,
-            state = StepState.RUNNING,
-            lastSeq = 0L,
-        )
+        val handle = executionPort.startStep(driver.ws, resolvedCommand, idempotencyKey)
+        val initialStep =
+            StageStep(
+                stageId = stage.id,
+                index = index,
+                serverRunId = handle.runId,
+                idempotencyKey = idempotencyKey,
+                command = resolvedCommand,
+                state = StepState.RUNNING,
+                lastSeq = 0L,
+            )
         driver.persist { r ->
             val updated = r.steps.filterNot { it.stageId == stage.id && it.index == index } + initialStep
             r.copy(steps = updated)
@@ -589,26 +702,28 @@ public class PipelineOrchestrator(
                     driver.collector.emit(PipelineEvent.StepOutput(stage.id, event.text))
                 }
                 is StepEvent.Finished -> exitCode = event.exitCode
-                StepEvent.Heartbeat -> runRepository.heartbeatDriver(
-                    driver.runId,
-                    driver.driverInstanceId,
-                    clock.now().toEpochMilliseconds(),
-                )
+                StepEvent.Heartbeat ->
+                    runRepository.heartbeatDriver(
+                        driver.runId,
+                        driver.driverInstanceId,
+                        clock.now().toEpochMilliseconds(),
+                    )
             }
         }
 
         driver.persist { r ->
-            val updated = r.steps.map {
-                if (it.stageId == stage.id && it.index == index) {
-                    it.copy(
-                        state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
-                        exitCode = exitCode,
-                        lastSeq = lastSeq,
-                    )
-                } else {
-                    it
+            val updated =
+                r.steps.map {
+                    if (it.stageId == stage.id && it.index == index) {
+                        it.copy(
+                            state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
+                            exitCode = exitCode,
+                            lastSeq = lastSeq,
+                        )
+                    } else {
+                        it
+                    }
                 }
-            }
             val updatedSeqMap = r.lastSeqByStep + (handle.runId to lastSeq)
             r.copy(steps = updated, lastSeqByStep = updatedSeqMap)
         }
@@ -644,71 +759,114 @@ public class PipelineOrchestrator(
     }
 
     private suspend fun writeVendored(driver: Driver, index: Int, step: PipelineStep.WriteVendoredFile) {
-        val file = vendoredFiles.load(step.resourceId) ?: throw StageFailure(
-            index,
-            -1,
-            "Vendored file '${step.resourceId}' is missing or its sha256 does not match the pin; " +
-                "place the real prebuilt at core/data/src/desktopMain/resources/${step.resourceId} " +
-                "with a matching .sha256",
-        )
+        val file =
+            vendoredFiles.load(step.resourceId) ?: throw StageFailure(
+                index,
+                -1,
+                "Vendored file '${step.resourceId}' is missing or its sha256 does not match the pin; " +
+                    "place the real prebuilt at core/data/src/desktopMain/resources/${step.resourceId} " +
+                    "with a matching .sha256",
+            )
         writeFile(driver, index, step.relPath, file.bytes)
     }
 
     private suspend fun editFile(driver: Driver, index: Int, step: PipelineStep.EditFile) {
-        val original = executionPort.readFile(driver.ws, step.relPath) ?: throw StageFailure(
-            index,
-            -1,
-            "Cannot read ${step.relPath}",
-        )
+        val original =
+            executionPort.readFile(driver.ws, step.relPath) ?: throw StageFailure(
+                index,
+                -1,
+                "Cannot read ${step.relPath}",
+            )
         writeFile(driver, index, step.relPath, step.transform(original).encodeToByteArray())
     }
 
     private suspend fun avbSearch(driver: Driver, index: Int, step: PipelineStep.AvbSizeSearch) {
-        val size = AvbSizeCalculator.findPartitionSize(step.imageSizeBytes) { probe ->
-            val result = executionPort.execute(
-                driver.ws,
-                StepCommand(
-                    toolId = "avbtool",
-                    args = listOf("add_hashtree_footer", "--partition_size", probe.toString(), "--calc_max_image_size"),
-                    workingDir = driver.ws.linuxPath,
-                ),
-            )
-            if (result.exitCode != 0) {
-                throw StageFailure(
-                    index,
-                    result.exitCode,
-                    "${step.label}: avbtool probe failed: ${result.stderr.trim()}",
-                )
+        val size =
+            AvbSizeCalculator.findPartitionSize(step.imageSizeBytes) { probe ->
+                val cmd =
+                    resolvePinnedCommand(
+                        driver,
+                        StepCommand(
+                            toolId = "avbtool",
+                            args =
+                            listOf(
+                                "add_hashtree_footer",
+                                "--partition_size",
+                                probe.toString(),
+                                "--calc_max_image_size",
+                            ),
+                            workingDir = driver.ws.linuxPath,
+                        ),
+                    )
+                val result = executionPort.execute(driver.ws, cmd)
+                if (result.exitCode != 0) {
+                    throw StageFailure(
+                        index,
+                        result.exitCode,
+                        "${step.label}: avbtool probe failed: ${result.stderr.trim()}",
+                    )
+                }
+                result.stdout.trim().lines().last().trim().toLongOrNull()
+                    ?: throw StageFailure(
+                        index,
+                        -1,
+                        "${step.label}: unparseable --calc_max_image_size output '${result.stdout.trim()}'",
+                    )
             }
-            result.stdout.trim().lines().last().trim().toLongOrNull()
-                ?: throw StageFailure(
-                    index,
-                    -1,
-                    "${step.label}: unparseable --calc_max_image_size output '${result.stdout.trim()}'",
-                )
-        }
         driver.runtimeValues[step.resultKey] = size.toString()
+    }
+
+    private suspend fun computeStageCacheKey(driver: Driver, stage: StageDefinition, previousKey: String): String {
+        val baseCacheKey = stage.computeCacheKey(driver.context(), previousKey)
+        val stageToolsFingerprint =
+            stage.requiredToolIds.sorted().joinToString(";") { toolId ->
+                val pin = driver.run.pinnedTools[toolId] ?: ""
+                val ver = driver.run.toolVersions[toolId] ?: ""
+                "$toolId=$pin@$ver"
+            }
+        return if (stageToolsFingerprint.isNotBlank()) {
+            CacheKeys.sha256("$baseCacheKey|$stageToolsFingerprint")
+        } else {
+            baseCacheKey
+        }
     }
 
     private suspend fun isCacheValid(driver: Driver, stage: StageDefinition, cacheKey: String): Boolean {
         val recorded = executionPort.readFile(driver.ws, cacheFile(stage)) ?: return false
-        val fields = recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
-            .associate { it[0].trim() to it[1].trim() }
+        val fields =
+            recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
+                .associate { it[0].trim() to it[1].trim() }
         val inputMatches = fields["input"] == cacheKey
         return inputMatches && fields["output"] == outputDigest(driver, stage.outputs(driver.context()))
     }
 
     /** sha256 over the sorted `sha256sum` lines of every declared output; empty outputs digest to a constant. */
     private suspend fun outputDigest(driver: Driver, outputs: List<String>): String? {
-        val lines = outputs.sorted().map { rel ->
-            val result = executionPort.execute(
-                driver.ws,
-                StepCommand("sha256sum", listOf(driver.baseContext.abs(rel)), driver.ws.linuxPath),
-            )
-            if (result.exitCode != 0) return null
-            "${result.stdout.digestToken()} $rel"
-        }
+        val lines =
+            outputs.sorted().map { rel ->
+                val result =
+                    executionPort.execute(
+                        driver.ws,
+                        StepCommand("sha256sum", listOf(driver.baseContext.abs(rel)), driver.ws.linuxPath),
+                    )
+                if (result.exitCode != 0) return null
+                "${result.stdout.digestToken()} $rel"
+            }
         return CacheKeys.sha256(lines.joinToString("\n"))
+    }
+
+    private fun resolvePinnedCommand(driver: Driver, cmd: StepCommand): StepCommand {
+        val pinned = driver.run.pinnedTools[cmd.toolId]
+        val isCatalogTool =
+            ToolGroupCatalog.DEFAULT_GROUPS.any { group ->
+                group.outputs.any { it.toolId == cmd.toolId || cmd.toolId in it.aliases }
+            }
+        if (isCatalogTool) {
+            check(pinned != null && pinned.startsWith("/") && "/current/" !in pinned && !pinned.endsWith("/current")) {
+                "Required tool '${cmd.toolId}' has no immutable pin in run ${driver.runId}"
+            }
+        }
+        return if (pinned != null) cmd.copy(toolId = pinned) else cmd
     }
 
     private suspend fun collectArtifacts(driver: Driver): List<Artifact> {

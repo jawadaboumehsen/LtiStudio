@@ -1,6 +1,5 @@
 package org.ide.lti.desktop.di
 
-import kotlinx.coroutines.runBlocking
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.shared.di.KoinModules
 import org.ide.lti.shared.di.toolingModule
@@ -12,7 +11,6 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 
 class ToolingDiResolutionTest {
-
     @BeforeTest
     fun setUp() {
         stopKoin()
@@ -40,8 +38,8 @@ class ToolingDiResolutionTest {
         val koin = org.koin.core.context.GlobalContext.get()
         assertNotNull(koin.getOrNull<org.ide.lti.core.domain.ports.WslPresencePort>())
         assertNotNull(koin.getOrNull<io.ltirom.tooling.core.ports.DaemonSupervisorPort>())
-        assertNotNull(koin.getOrNull<io.ltirom.tooling.core.ports.RemoteTransportPort>())
-        assertNotNull(koin.getOrNull<org.ide.lti.core.domain.setup.doctor.SystemDoctorPort>())
+        assertNotNull(koin.getOrNull<org.ide.lti.core.domain.tools.ToolStorePort>())
+        assertNotNull(koin.getOrNull<org.ide.lti.core.domain.tools.ToolManager>())
         assertNotNull(koin.getOrNull<ToolchainProvisioningService>())
     }
 }

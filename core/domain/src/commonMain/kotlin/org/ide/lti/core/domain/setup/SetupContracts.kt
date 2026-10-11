@@ -106,11 +106,13 @@ public data class CheckSnapshot(
         get() {
             if (connection != EnvironmentConnectionStatus.CONNECTED) return false
             if (requiredToolEvidence.isEmpty()) return false
-            val allToolsReady = requiredToolEvidence.values.all {
-                it.isInstalled && it.isVerified && !it.isFailedExecution
-            }
-            val allPublished = publicationEvidence.isNotEmpty() &&
-                requiredToolEvidence.keys.all { it in publicationEvidence }
+            val allToolsReady =
+                requiredToolEvidence.values.all {
+                    it.isInstalled && it.isVerified && !it.isFailedExecution
+                }
+            val allPublished =
+                publicationEvidence.isNotEmpty() &&
+                    requiredToolEvidence.keys.all { it in publicationEvidence }
             return allToolsReady && allPublished
         }
 
@@ -119,11 +121,12 @@ public data class CheckSnapshot(
      */
     public fun withUpdatedToolEvidence(evidence: ToolEvidence): CheckSnapshot {
         val current = requiredToolEvidence[evidence.toolId]
-        val updated = if (current != null && current.isFailedExecution && !evidence.isVerified) {
-            evidence.copy(isFailedExecution = true)
-        } else {
-            evidence
-        }
+        val updated =
+            if (current != null && current.isFailedExecution && !evidence.isVerified) {
+                evidence.copy(isFailedExecution = true)
+            } else {
+                evidence
+            }
         return copy(requiredToolEvidence = requiredToolEvidence + (evidence.toolId to updated))
     }
 
@@ -144,17 +147,18 @@ public data class CheckSnapshot(
                     "Only a completed live check updates checkedAt; only fully ready live evidence updates lastReadyAt."
                 }
             }
-            val candidate = CheckSnapshot(
-                environmentKey = environmentKey,
-                checkedAt = checkedAt,
-                lastReadyAt = lastReadyAt,
-                connection = connection,
-                requiredToolEvidence = requiredToolEvidence,
-                publicationEvidence = publicationEvidence,
-                storageAvailableBytes = storageAvailableBytes,
-                storageMeasuredAt = storageMeasuredAt,
-                reason = reason,
-            )
+            val candidate =
+                CheckSnapshot(
+                    environmentKey = environmentKey,
+                    checkedAt = checkedAt,
+                    lastReadyAt = lastReadyAt,
+                    connection = connection,
+                    requiredToolEvidence = requiredToolEvidence,
+                    publicationEvidence = publicationEvidence,
+                    storageAvailableBytes = storageAvailableBytes,
+                    storageMeasuredAt = storageMeasuredAt,
+                    reason = reason,
+                )
             if (lastReadyAt != null) {
                 check(candidate.isReady) {
                     "Only a completed live check updates checkedAt; only fully ready live evidence updates lastReadyAt."
@@ -204,11 +208,12 @@ public sealed interface SetupPlanAction {
         public val requiresElevation: Boolean
             get() = packages.isNotEmpty() || configureLoopMountElevation
 
-        override val description: String = buildString {
-            append("Install packages: ")
-            append((packages + pipPackages.map { "$it (pip)" }).joinToString())
-            if (configureLoopMountElevation) append("; configure loop-mount elevation")
-        }
+        override val description: String =
+            buildString {
+                append("Install packages: ")
+                append((packages + pipPackages.map { "$it (pip)" }).joinToString())
+                if (configureLoopMountElevation) append("; configure loop-mount elevation")
+            }
     }
 
     /**
@@ -227,6 +232,7 @@ public sealed interface SetupPlanAction {
         init {
             require(inputs.isNotEmpty()) { "SwitchToolchain requires at least one frozen input" }
         }
+
         override val description: String = "Switch toolchain to revision $selectionRevision"
     }
 }
@@ -240,7 +246,6 @@ public data class SetupPlan(
     val environmentKey: String,
     val kind: SetupPlanKind,
     val targetStageOrToolId: String? = null,
-    val autoDoctorEnabled: Boolean = true,
     val orderedActions: List<SetupPlanAction> = emptyList(),
     val prerequisiteEvidenceRevision: String? = null,
 ) {
@@ -250,15 +255,6 @@ public data class SetupPlan(
     public fun validateConfirmation(confirmedPlanId: String, confirmedRevisionHash: String) {
         require(confirmedPlanId == planId && confirmedRevisionHash == revisionHash) {
             "Confirmation requires the displayed plan ID and unchanged revision hash."
-        }
-    }
-
-    /**
-     * Enforces: "Auto Doctor policy is immutable for the confirmed attempt."
-     */
-    public fun validateAttemptPolicy(attemptAutoDoctorPolicy: Boolean) {
-        require(attemptAutoDoctorPolicy == autoDoctorEnabled) {
-            "Auto Doctor policy is immutable for the confirmed attempt."
         }
     }
 }
@@ -281,9 +277,13 @@ public sealed interface SetupOutcome {
     }
 
     public data class Succeeded(val evidence: Map<String, ToolEvidence> = emptyMap()) : SetupOutcome
+
     public data class Failed(val stage: String?, val reason: String) : SetupOutcome
+
     public data object Cancelled : SetupOutcome
+
     public data class Busy(val ownerId: String) : SetupOutcome
+
     public data class Interrupted(val reason: String) : SetupOutcome
 
     /**

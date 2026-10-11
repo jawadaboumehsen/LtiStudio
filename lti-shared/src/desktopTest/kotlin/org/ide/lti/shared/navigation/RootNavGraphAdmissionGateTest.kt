@@ -43,44 +43,54 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class RootNavGraphAdmissionGateTest {
-
     private class TestToolchainService(initialReady: Boolean = false) : ToolchainProvisioningService {
-        val stateFlow = MutableStateFlow(
-            ToolchainSetupState(
-                isChecking = false,
-                steps = if (initialReady) {
-                    SetupStepStage.entries.map {
-                        SetupStepDetail(
-                            stage = it,
-                            title = it.displayName,
-                            description = "OK",
-                            status = StepStatus.SUCCESS,
+        val stateFlow =
+            MutableStateFlow(
+                ToolchainSetupState(
+                    isChecking = false,
+                    steps =
+                    if (initialReady) {
+                        SetupStepStage.entries.map {
+                            SetupStepDetail(
+                                stage = it,
+                                title = it.displayName,
+                                description = "OK",
+                                status = StepStatus.SUCCESS,
+                            )
+                        }
+                    } else {
+                        listOf(
+                            SetupStepDetail(
+                                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                                title = "Server Bridge",
+                                description = "Offline",
+                                status = StepStatus.FAILED,
+                            ),
                         )
-                    }
-                } else {
-                    listOf(
-                        SetupStepDetail(
-                            stage = SetupStepStage.SERVER_CONNECTIVITY,
-                            title = "Server Bridge",
-                            description = "Offline",
-                            status = StepStatus.FAILED,
-                        ),
-                    )
-                },
-            ),
-        )
+                    },
+                ),
+            )
 
         override val state: StateFlow<ToolchainSetupState> = stateFlow.asStateFlow()
+
         override suspend fun verifyEnvironment(): ToolchainSetupState = state.value
+
         override suspend fun provisionAvbKey(): Boolean = false
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            error("Unused")
+
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan = error("Unused")
+
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome = error("Unused")
+
         override suspend fun resume(planId: String): SetupOutcome = error("Unused")
+
         override fun observe(): Flow<SetupOutcome?> = emptyFlow()
+
         override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
+
         override suspend fun recover(attemptId: String?): SetupOutcome = error("Unused")
+
         override suspend fun cancel(): SetupOutcome = SetupOutcome.Cancelled
+
         override suspend fun testTool(binaryName: String): SetupOutcome = error("Unused")
     }
 
@@ -118,13 +128,14 @@ class RootNavGraphAdmissionGateTest {
         }
 
         // Set active workspace while environment readiness is FALSE
-        val sampleWorkspace = Workspace(
-            id = "ws-test",
-            name = "Test Project",
-            path = "/tmp/test",
-            type = WorkspaceType.LOCAL,
-            lastOpened = Clock.System.now(),
-        )
+        val sampleWorkspace =
+            Workspace(
+                id = "ws-test",
+                name = "Test Project",
+                path = "/tmp/test",
+                type = WorkspaceType.LOCAL,
+                lastOpened = Clock.System.now(),
+            )
         workspaceManager.setCurrentWorkspace(sampleWorkspace)
         waitForIdle()
 
@@ -136,12 +147,14 @@ class RootNavGraphAdmissionGateTest {
         )
 
         // Now open the gate
-        toolchainService.stateFlow.value = ToolchainSetupState(
-            isChecking = false,
-            steps = SetupStepStage.entries.map {
-                SetupStepDetail(stage = it, title = it.displayName, description = "OK", status = StepStatus.SUCCESS)
-            },
-        )
+        toolchainService.stateFlow.value =
+            ToolchainSetupState(
+                isChecking = false,
+                steps =
+                SetupStepStage.entries.map {
+                    SetupStepDetail(stage = it, title = it.displayName, description = "OK", status = StepStatus.SUCCESS)
+                },
+            )
         waitForIdle()
 
         // Gate opened: RootNavGraph navigates to Studio

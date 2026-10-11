@@ -16,6 +16,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.data.setup.RemotePrerequisiteProbe
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
@@ -42,8 +43,7 @@ public sealed interface WslPreparationResult {
 public sealed interface PackagesPreparationResult {
     public val prerequisiteReport: PrerequisiteReport
 
-    public data class Success(val javaHome: String, override val prerequisiteReport: PrerequisiteReport) :
-        PackagesPreparationResult
+    public data class Success(override val prerequisiteReport: PrerequisiteReport) : PackagesPreparationResult
 
     public data class Failure(
         val description: String,
@@ -75,23 +75,31 @@ public class ServicePreparation(
     private val transport: RemoteTransportPort,
     private val serverArtifactPort: ServerArtifactPort? = null,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val remotePrerequisiteProbe: RemotePrerequisiteProbe = RemotePrerequisiteProbe(transport),
 ) {
     public suspend fun verifyWsl(
-        preferredDistro: String?,
+        @Suppress("UnusedParameter") preferredDistro: String?,
         persistedDistro: String?,
         currentEnvironment: SetupEnvironment?,
         alreadyVerifiedWsl: Boolean,
         fallbackDistros: List<String> = emptyList(),
     ): WslPreparationResult = withContext(dispatcher) {
-        val (selectedEnv, detectionStatuses) = if (alreadyVerifiedWsl && currentEnvironment != null) {
-            currentEnvironment to emptyList()
-        } else {
-            val statuses = hostPrerequisitePort.detect()
-            val wanted = preferredDistro ?: persistedDistro
-            val picked = statuses.filterIsInstance<DistroStatus.Usable>()
-                .firstOrNull { it.environment.distro == wanted }?.environment
-            (picked ?: hostPrerequisitePort.selectEnvironment(statuses)) to statuses
-        }
+        val (selectedEnv, detectionStatuses) =
+            if (alreadyVerifiedWsl && currentEnvironment != null) {
+                currentEnvironment to emptyList()
+            } else {
+                val statuses = hostPrerequisitePort.detect()
+                val defaultEnv = hostPrerequisitePort.selectEnvironment(statuses)
+
+                // If an active attempt exists, honor its recorded environment snapshot (snapshot rule);
+                // otherwise strictly enforce the default WSL distro.
+                val activeAttemptEnv =
+                    persistedDistro?.let { wanted ->
+                        statuses.filterIsInstance<DistroStatus.Usable>()
+                            .firstOrNull { it.environment.distro == wanted }?.environment
+                    }
+                (activeAttemptEnv ?: defaultEnv) to statuses
+            }
 
         if (selectedEnv == null) {
             val (desc, error) = detectionFailure(detectionStatuses.closestToUsable())
@@ -99,53 +107,76 @@ public class ServicePreparation(
         }
 
         val distro = selectedEnv.distro
-        val distros = detectionStatuses.mapNotNull { it.distroName }
-            .ifEmpty { fallbackDistros }
-            .ifEmpty { listOf(distro) }
+        val distros =
+            detectionStatuses.mapNotNull { it.distroName }
+                .ifEmpty { fallbackDistros }
+                .ifEmpty { listOf(distro) }
 
         WslPreparationResult.Success(selectedEnv, distros, detectionStatuses)
     }
 
     public suspend fun verifySystemPackages(selectedEnv: SetupEnvironment): PackagesPreparationResult =
         withContext(dispatcher) {
-            val prerequisiteReport = hostPrerequisitePort.probe(selectedEnv)
+            val prerequisiteReport =
+                try {
+                    remotePrerequisiteProbe.probe(selectedEnv)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    val errMsg = e.message ?: "Remote execution failed"
+                    return@withContext PackagesPreparationResult.Failure(
+                        description = "Couldn't check packages via build service: $errMsg",
+                        error = errMsg,
+                        prerequisiteReport =
+                        PrerequisiteReport(
+                            environment = selectedEnv,
+                            results = emptyMap(),
+                            packageListsFresh = false,
+                            missingPackages = emptyList(),
+                            installCommand = null,
+                            javaHome = null,
+                            checkedAt = System.currentTimeMillis(),
+                        ),
+                    )
+                }
             val missingPkgs = prerequisiteReport.missingPackages
-            val javaHome = prerequisiteReport.javaHome
-            val checkFailure = prerequisiteReport.results.values
-                .filterIsInstance<RequirementStatus.CheckFailed>()
-                .firstOrNull()
+            val checkFailure =
+                prerequisiteReport.results.values
+                    .filterIsInstance<RequirementStatus.CheckFailed>()
+                    .firstOrNull()
             val unavailable = prerequisiteReport.results.filterValues { it is RequirementStatus.Unavailable }.keys
 
-            val failure: Pair<String, String>? = when {
-                checkFailure != null ->
-                    "Couldn't check packages: ${checkFailure.reason}" to checkFailure.reason
-                unavailable.isNotEmpty() ->
-                    "${unavailable.joinToString(", ")} isn't available on Ubuntu ${selectedEnv.osVersionId}" to
-                        "Enable the Ubuntu 'universe' repository or use a supported Ubuntu LTS release."
-                missingPkgs.isNotEmpty() -> {
-                    val suffix = if (missingPkgs.size > 3) "..." else ""
-                    val summary = "${missingPkgs.size} package(s) missing: " +
-                        "${missingPkgs.take(3).joinToString(", ")}$suffix"
-                    summary to prerequisiteReport.installCommand.orEmpty()
+            val failure: Pair<String, String>? =
+                when {
+                    checkFailure != null ->
+                        "Couldn't check packages: ${checkFailure.reason}" to checkFailure.reason
+                    unavailable.isNotEmpty() ->
+                        "${unavailable.joinToString(", ")} isn't available on Ubuntu ${selectedEnv.osVersionId}" to
+                            "Enable the Ubuntu 'universe' repository or use a supported Ubuntu LTS release."
+                    missingPkgs.isNotEmpty() -> {
+                        val suffix = if (missingPkgs.size > 3) "..." else ""
+                        val summary =
+                            "${missingPkgs.size} package(s) missing: " +
+                                "${missingPkgs.take(3).joinToString(", ")}$suffix"
+                        summary to prerequisiteReport.installCommand.orEmpty()
+                    }
+                    else -> null
                 }
-                javaHome == null ->
-                    "Couldn't check packages: Java 21 was not found under /usr/lib/jvm" to "No JDK 21 home found"
-                else -> null
-            }
 
             if (failure != null) {
                 PackagesPreparationResult.Failure(failure.first, failure.second, prerequisiteReport)
             } else {
-                PackagesPreparationResult.Success(javaHome ?: "/usr/lib/jvm/java-21-openjdk-amd64", prerequisiteReport)
+                PackagesPreparationResult.Success(prerequisiteReport)
             }
         }
 
-    public suspend fun verifyServer(selectedEnv: SetupEnvironment, javaHome: String): ServerPreparationResult =
+    public suspend fun verifyServer(selectedEnv: SetupEnvironment, javaHome: String? = null): ServerPreparationResult =
         withContext(dispatcher) {
             if (serverArtifactPort != null) {
                 val installed = serverArtifactPort.ensureInstalled(selectedEnv)
-                val running = (installed.installState as? InstallState.Failed)?.let { installed }
-                    ?: serverArtifactPort.ensureRunningCurrent(selectedEnv, javaHome)
+                val running =
+                    (installed.installState as? InstallState.Failed)?.let { installed }
+                        ?: serverArtifactPort.ensureRunningCurrent(selectedEnv, javaHome)
                 val state = running.installState
                 when {
                     state is InstallState.Failed -> {
@@ -166,12 +197,14 @@ public class ServicePreparation(
                     else -> Unit
                 }
             } else {
-                val desc = runCatching { supervisor.ensureStarted(selectedEnv.distro) }
-                    .onFailure { if (it is CancellationException) throw it }
+                val desc =
+                    runCatching { supervisor.ensureStarted(selectedEnv.distro) }
+                        .onFailure { if (it is CancellationException) throw it }
                 if (desc.isFailure) {
                     val err = desc.exceptionOrNull()
-                    val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
-                        ?: supervisor.lastLaunchErrorLogTail
+                    val logTail =
+                        (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
+                            ?: supervisor.lastLaunchErrorLogTail
                     val errMsg = logTail ?: err?.message ?: "Failed to connect to daemon"
                     return@withContext ServerPreparationResult.Failure(
                         description = "Daemon bridge failed: ${err?.message ?: "unreachable"}",
@@ -187,8 +220,9 @@ public class ServicePreparation(
     private suspend fun checkServerHealth(): ServerPreparationResult {
         val startMs = System.currentTimeMillis()
         val health = transport.checkHealth()
-        val logTail = (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
-            ?: supervisor.lastLaunchErrorLogTail
+        val logTail =
+            (supervisor as? WslDaemonManager)?.lastLaunchErrorLogTail
+                ?: supervisor.lastLaunchErrorLogTail
         val daemonEval = ToolchainReadinessPolicy.evaluateDaemonHealth(health, logTail)
         if (!daemonEval.isHealthy) {
             return ServerPreparationResult.Failure(

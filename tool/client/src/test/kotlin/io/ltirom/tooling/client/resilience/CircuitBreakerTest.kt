@@ -1,5 +1,6 @@
 package io.ltirom.tooling.client.resilience
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -63,5 +64,39 @@ class CircuitBreakerTest {
         val result = breaker.execute { "recovered" }
         assertEquals("recovered", result)
         assertEquals(CircuitState.CLOSED, breaker.getState())
+    }
+
+    @Test
+    fun `a dead server's failures do not gate its replacement`() = runBlocking {
+        val breaker = CircuitBreaker(failureThreshold = 2, resetTimeoutMs = 60_000)
+        repeat(2) { assertFailsWith<IllegalStateException> { breaker.execute("server-1") { error("down") } } }
+        assertFailsWith<CircuitBreakerOpenException> { breaker.execute("server-1") { "never runs" } }
+
+        assertEquals("up", breaker.execute("server-2") { "up" }, "a new connection starts from a closed breaker")
+        assertEquals(CircuitState.CLOSED, breaker.getState())
+    }
+
+    @Test
+    fun `a late result of the replaced connection does not change the new one`() = runBlocking {
+        val breaker = CircuitBreaker(failureThreshold = 1, resetTimeoutMs = 60_000)
+        val oldCallStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val oldCallMayFail = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val oldCall = async {
+            runCatching {
+                breaker.execute("server-1") {
+                    oldCallStarted.complete(Unit)
+                    oldCallMayFail.await()
+                    error("old connection died")
+                }
+            }
+        }
+        oldCallStarted.await()
+
+        breaker.execute("server-2") { "healthy" } // the replacement is in use
+        oldCallMayFail.complete(Unit)
+        oldCall.await()
+
+        assertEquals(CircuitState.CLOSED, breaker.getState(), "server-1's failure belongs to server-1")
+        assertEquals("still works", breaker.execute("server-2") { "still works" })
     }
 }

@@ -115,9 +115,7 @@ actual fun SetupPerformanceScenarioHook(
  * Benchmark scenario driver component running synthetic fixtures and automated scroll cycle.
  */
 @Composable
-fun SetupPerformanceScenarioDriver(
-    modifier: Modifier = Modifier,
-) {
+fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
     val coroutineScope = rememberCoroutineScope()
 
     // 1. Synthetic Fixture Data Preloaded at Presentation Boundary
@@ -172,19 +170,20 @@ fun SetupPerformanceScenarioDriver(
                 val seg1StartNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Workspaces' started at monotonic nanos: $seg1StartNanos")
 
-                val seg1Job = launch {
-                    var direction = 1f
-                    while (isActive) {
-                        workspacesListState.scrollBy(15f * direction)
-                        val firstVisible = workspacesListState.firstVisibleItemIndex
-                        if (firstVisible >= 75) {
-                            direction = -1f
-                        } else if (firstVisible == 0 && workspacesListState.firstVisibleItemScrollOffset == 0) {
-                            direction = 1f
+                val seg1Job =
+                    launch {
+                        var direction = 1f
+                        while (isActive) {
+                            workspacesListState.scrollBy(15f * direction)
+                            val firstVisible = workspacesListState.firstVisibleItemIndex
+                            if (firstVisible >= 75) {
+                                direction = -1f
+                            } else if (firstVisible == 0 && workspacesListState.firstVisibleItemScrollOffset == 0) {
+                                direction = 1f
+                            }
+                            delay(16)
                         }
-                        delay(16)
                     }
-                }
                 delay(segmentDuration)
                 seg1Job.cancel()
                 val seg1EndNanos = System.nanoTime()
@@ -206,20 +205,21 @@ fun SetupPerformanceScenarioDriver(
                 val seg2StartNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Tools' started at monotonic nanos: $seg2StartNanos")
 
-                val seg2Job = launch {
-                    var direction = 1f
-                    while (isActive) {
-                        toolsScrollState.scrollBy(12f * direction)
-                        val maxScroll = toolsScrollState.maxValue
-                        val currentVal = toolsScrollState.value
-                        if (maxScroll > 0 && currentVal >= maxScroll - 40) {
-                            direction = -1f
-                        } else if (currentVal <= 10) {
-                            direction = 1f
+                val seg2Job =
+                    launch {
+                        var direction = 1f
+                        while (isActive) {
+                            toolsScrollState.scrollBy(12f * direction)
+                            val maxScroll = toolsScrollState.maxValue
+                            val currentVal = toolsScrollState.value
+                            if (maxScroll > 0 && currentVal >= maxScroll - 40) {
+                                direction = -1f
+                            } else if (currentVal <= 10) {
+                                direction = 1f
+                            }
+                            delay(16)
                         }
-                        delay(16)
                     }
-                }
                 delay(segmentDuration)
                 seg2Job.cancel()
                 val seg2EndNanos = System.nanoTime()
@@ -242,31 +242,32 @@ fun SetupPerformanceScenarioDriver(
                 val seg3StartNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Environment' started at monotonic nanos: $seg3StartNanos")
 
-                val seg3Job = launch {
-                    var direction = 1f
-                    var streamCounter = 12_000
-                    var tick = 0
-                    while (isActive) {
-                        activityListState.scrollBy(20f * direction)
-                        val firstVisible = activityListState.firstVisibleItemIndex
-                        if (firstVisible >= 9500) {
-                            direction = -1f
-                        } else if (firstVisible == 0 && activityListState.firstVisibleItemScrollOffset == 0) {
-                            direction = 1f
+                val seg3Job =
+                    launch {
+                        var direction = 1f
+                        var streamCounter = 12_000
+                        var tick = 0
+                        while (isActive) {
+                            activityListState.scrollBy(20f * direction)
+                            val firstVisible = activityListState.firstVisibleItemIndex
+                            if (firstVisible >= 9500) {
+                                direction = -1f
+                            } else if (firstVisible == 0 && activityListState.firstVisibleItemScrollOffset == 0) {
+                                direction = 1f
+                            }
+                            // Periodically feed more lines to exercise bounded steady-cap retention while scrolling
+                            tick++
+                            if (tick % 60 == 0) {
+                                activityState.appendLines(
+                                    List(25) {
+                                        val padded = (streamCounter++).toString().padStart(5, '0')
+                                        "[$padded] [STREAM] Live benchmark event while scrolling"
+                                    },
+                                )
+                            }
+                            delay(16)
                         }
-                        // Periodically feed additional lines to exercise bounded steady-cap retention while scrolling
-                        tick++
-                        if (tick % 60 == 0) {
-                            activityState.appendLines(
-                                List(25) {
-                                    val padded = (streamCounter++).toString().padStart(5, '0')
-                                    "[$padded] [STREAM] Live benchmark event while scrolling"
-                                },
-                            )
-                        }
-                        delay(16)
                     }
-                }
 
                 // Modal Preview open/close cycle inside Segment 3 (open at 60%, hold for 25% of segment duration)
                 val modalOpenDelay = (segmentDuration * 0.6).toLong()
@@ -303,94 +304,95 @@ fun SetupPerformanceScenarioDriver(
                 statusMessage = "Scenario completed. Markers recorded."
 
                 // Save markers to file
-                val payload = BenchmarkMarkersPayload(
-                    scenarioStartNanos = scenarioStartNanos,
-                    scenarioEndNanos = scenarioEndNanos,
-                    captureStart = 0.0,
-                    captureEnd = 30.0,
-                    segments = markers,
-                )
+                val payload =
+                    BenchmarkMarkersPayload(
+                        scenarioStartNanos = scenarioStartNanos,
+                        scenarioEndNanos = scenarioEndNanos,
+                        captureStart = 0.0,
+                        captureEnd = 30.0,
+                        segments = markers,
+                    )
                 saveMarkersToFile(payload)
             }
         }
     }
 
     // Compose synthetic UI state and actions
-    val syntheticUiState = SetupUiState(
-        toolchainSetupState = ToolchainSetupState(
-            toolsMatrix = benchmarkTools,
-            logs = benchmarkLogs,
-        ),
-        recentProjects = benchmarkRecents,
-        filteredProjects = benchmarkRecents,
-        searchQuery = "",
-        selectedWorkspaceId = selectedWorkspaceId,
-        selectedCockpitTab = selectedCockpitTab,
-        toolSearchQuery = "",
-        toolSelection = ToolSelection(),
-        filteredToolsMatrix = benchmarkTools,
-        isAutoDoctorEnabled = true,
-        selectedTab = currentTab,
-        selectedDestination = SetupDestination.fromId(currentTab.id),
-        environmentNotice = null,
-        activeOperation = activeOperation,
-    )
+    val syntheticUiState =
+        SetupUiState(
+            toolchainSetupState =
+            ToolchainSetupState(
+                toolsMatrix = benchmarkTools,
+                logs = benchmarkLogs,
+            ),
+            recentProjects = benchmarkRecents,
+            filteredProjects = benchmarkRecents,
+            searchQuery = "",
+            selectedWorkspaceId = selectedWorkspaceId,
+            selectedCockpitTab = selectedCockpitTab,
+            toolSearchQuery = "",
+            toolSelection = ToolSelection(),
+            filteredToolsMatrix = benchmarkTools,
+            selectedTab = currentTab,
+            selectedDestination = SetupDestination.fromId(currentTab.id),
+            environmentNotice = null,
+            activeOperation = activeOperation,
+        )
 
     val toggleModalPreview: () -> Unit = {
-        activeOperation = if (activeOperation == null) {
-            createBenchmarkPreviewOperation()
-        } else {
-            null
-        }
+        activeOperation =
+            if (activeOperation == null) {
+                createBenchmarkPreviewOperation()
+            } else {
+                null
+            }
     }
 
-    val syntheticUiActions = SetupUiActions(
-        onSearchQueryChange = {},
-        onRemoveRecentProject = {},
-        onOpenFolder = {},
-        onRecentProjectClick = {},
-        onSelectWorkspace = { selectedWorkspaceId = it },
-        onCheckEnvironment = {},
-        onRetrySetupStep = {},
-        onProvisionAvbKey = {},
-        onSelectTarget = {},
-        onAutoRemediateDoctor = {},
-        onSelectCockpitTab = { selectedCockpitTab = it },
-        onToolSearchQueryChange = {},
-        onSelectToolCategory = {},
-        onTestTool = {},
-        onRecompileTool = {},
-        onNavigateToEnvironment = { currentTab = SetupTab.ENVIRONMENT },
-        onOpenSettings = {},
-        onSelectTab = { currentTab = it },
-        onSelectDestination = { dest ->
-            when (dest) {
-                SetupDestination.WORKSPACES -> currentTab = SetupTab.PROJECTS
-                SetupDestination.ENVIRONMENT -> currentTab = SetupTab.ENVIRONMENT
-                SetupDestination.TOOLS -> currentTab = SetupTab.TOOLS
-                SetupDestination.RECOVERY -> currentTab = SetupTab.RECOVERY
-            }
-        },
-        onDismissEnvironmentNotice = {},
-        onSetAutoDoctorEnabled = {},
-        onResetToolchainCache = {},
-        onCreateWorkspace = {},
-        onOpenManageTargets = {},
-        onOpenHelp = {},
-        onPreviewSetup = {
-            activeOperation = createBenchmarkPreviewOperation()
-        },
-        onConfirmOperation = {
-            activeOperation = null
-        },
-        onDismissPreview = {
-            activeOperation = null
-        },
-        onRetryStage = {},
-    )
+    val syntheticUiActions =
+        SetupUiActions(
+            onSearchQueryChange = {},
+            onRemoveRecentProject = {},
+            onOpenFolder = {},
+            onRecentProjectClick = {},
+            onSelectWorkspace = { selectedWorkspaceId = it },
+            onCheckEnvironment = {},
+            onRetrySetupStep = {},
+            onProvisionAvbKey = {},
+            onSelectTarget = {},
+            onSelectCockpitTab = { selectedCockpitTab = it },
+            onToolSearchQueryChange = {},
+            onSelectToolCategory = {},
+            onNavigateToEnvironment = { currentTab = SetupTab.ENVIRONMENT },
+            onOpenSettings = {},
+            onSelectTab = { currentTab = it },
+            onSelectDestination = { dest ->
+                when (dest) {
+                    SetupDestination.WORKSPACES -> currentTab = SetupTab.PROJECTS
+                    SetupDestination.ENVIRONMENT -> currentTab = SetupTab.ENVIRONMENT
+                    SetupDestination.TOOLS -> currentTab = SetupTab.TOOLS
+                    SetupDestination.RECOVERY -> currentTab = SetupTab.RECOVERY
+                }
+            },
+            onDismissEnvironmentNotice = {},
+            onResetToolchainCache = {},
+            onCreateWorkspace = {},
+            onOpenManageTargets = {},
+            onOpenHelp = {},
+            onPreviewSetup = {
+                activeOperation = createBenchmarkPreviewOperation()
+            },
+            onConfirmOperation = {
+                activeOperation = null
+            },
+            onDismissPreview = {
+                activeOperation = null
+            },
+            onRetryStage = {},
+        )
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxSize()
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown &&
@@ -424,7 +426,8 @@ fun SetupPerformanceScenarioDriver(
 
         // Benchmark HUD Banner Overlay
         GlassCard(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = Spacing.ExtraLarge, end = Spacing.Large),
         ) {
@@ -475,7 +478,8 @@ fun SetupPerformanceScenarioDriver(
                     GlassPrimaryButton(
                         onClick = startScenario,
                         enabled = !isRunningScenario,
-                        modifier = Modifier.semantics {
+                        modifier =
+                        Modifier.semantics {
                             contentDescription = "Start capture scenario"
                         },
                     ) {
@@ -503,12 +507,13 @@ fun createBenchmarkRecents(): List<RecentProject> {
     val baseInstant = Instant.fromEpochMilliseconds(1726185600000L) // Fixed timestamp for determinism
     return List(100) { i ->
         val id = "bench-workspace-${i + 1}"
-        val device = when (i % 4) {
-            0 -> "Pixel 8 Pro (husky)"
-            1 -> "Pixel 7a (lynx)"
-            2 -> "Generic System Image (arm64)"
-            else -> "AOSP Automotive (car_x86_64)"
-        }
+        val device =
+            when (i % 4) {
+                0 -> "Pixel 8 Pro (husky)"
+                1 -> "Pixel 7a (lynx)"
+                2 -> "Generic System Image (arm64)"
+                else -> "AOSP Automotive (car_x86_64)"
+            }
         RecentProject(
             workspaceId = id,
             name = "ROM Workspace ${i + 1}",
@@ -547,60 +552,58 @@ fun createBenchmarkTools(): List<ToolComponentItem> {
 /**
  * Generates synthetic log lines for bounded activity viewport benchmarking (default: 12,000 to exercise steady cap).
  */
-fun createBenchmarkLogs(count: Int = 12_000): List<String> {
-    return List(count) { i ->
-        val padded = i.toString().padStart(5, '0')
-        when (i % 5) {
-            0 -> "[$padded] [INFO] Subsystem kernel readiness validated on WSL2 instance"
-            1 -> "[$padded] [BUILD] Compiling native binary partition-tools-$i target: [OK]"
-            2 -> "[$padded] [WARNING] Minor headroom delta detected on /dev/sdb, 14200MB available"
-            3 -> "[$padded] [STAGE] Pre-flight system doctor verified 24 diagnostic rules"
-            else -> "[$padded] [SUCCESS] Completed step execution with zero exit code"
-        }
+fun createBenchmarkLogs(count: Int = 12_000): List<String> = List(count) { i ->
+    val padded = i.toString().padStart(5, '0')
+    when (i % 5) {
+        0 -> "[$padded] [INFO] Subsystem kernel readiness validated on WSL2 instance"
+        1 -> "[$padded] [BUILD] Compiling native binary partition-tools-$i target: [OK]"
+        2 -> "[$padded] [WARNING] Minor headroom delta detected on /dev/sdb, 14200MB available"
+        3 -> "[$padded] [STAGE] System packages and tool dependencies verified"
+        else -> "[$padded] [SUCCESS] Completed step execution with zero exit code"
     }
 }
 
 /**
  * Creates a synthetic confirmable SetupOperation preview for performance benchmarking.
  */
-fun createBenchmarkPreviewOperation(): SetupOperation {
-    return SetupOperation(
-        operationId = "bench-op-preview-01",
-        kind = SetupOperationKind.FULL_SETUP,
-        plannedChanges = PlannedSetupChanges(
-            packagesToInstall = listOf("cmake", "ninja-build", "ccache"),
-            submodulesToSync = listOf("android-tools", "erofs-utils"),
-            toolsToCompile = listOf("adb", "fastboot", "mkfs.erofs"),
-            toolsToPublish = listOf("adb", "fastboot", "mkfs.erofs"),
-            requiresElevation = true,
-            elevationReason = "Package installation and udev rule deployment",
-            autoDoctorRemediation = true,
-        ),
-        executionState = SetupOperationState.PREVIEW,
-    )
-}
+fun createBenchmarkPreviewOperation(): SetupOperation = SetupOperation(
+    operationId = "bench-op-preview-01",
+    kind = SetupOperationKind.FULL_SETUP,
+    plannedChanges =
+    PlannedSetupChanges(
+        packagesToInstall = listOf("cmake", "ninja-build", "ccache"),
+        submodulesToSync = listOf("android-tools", "erofs-utils"),
+        toolsToCompile = listOf("adb", "fastboot", "mkfs.erofs"),
+        toolsToPublish = listOf("adb", "fastboot", "mkfs.erofs"),
+        requiresElevation = true,
+        elevationReason = "Package installation and udev rule deployment",
+    ),
+    executionState = SetupOperationState.PREVIEW,
+)
 
 /**
  * Writes the captured segment markers to a deterministic JSON file.
  */
 fun saveMarkersToFile(payload: BenchmarkMarkersPayload) {
-    val filePath = SetupBenchmarkConfig.customMarkerFilePath
-        ?: File(System.getProperty("user.dir"), "setup-performance-markers.json").absolutePath
+    val filePath =
+        SetupBenchmarkConfig.customMarkerFilePath
+            ?: File(System.getProperty("user.dir"), "setup-performance-markers.json").absolutePath
     val file = File(filePath)
     val parent = file.parentFile
     if (parent != null && !parent.exists()) {
         parent.mkdirs()
     }
 
-    val segmentsJson = payload.segments.joinToString(",\n") { seg ->
-        """    {
+    val segmentsJson =
+        payload.segments.joinToString(",\n") { seg ->
+            """    {
       "name": "${seg.name}",
       "start": ${seg.startSeconds},
       "end": ${seg.endSeconds},
       "startNanos": ${seg.startNanos},
       "endNanos": ${seg.endNanos}
     }"""
-    }
+        }
 
     val jsonContent = """{
   "scenarioStartNanos": ${payload.scenarioStartNanos},

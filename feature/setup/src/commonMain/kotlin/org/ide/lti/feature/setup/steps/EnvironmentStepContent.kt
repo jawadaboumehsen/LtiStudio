@@ -56,7 +56,6 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
-import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.feature.setup.EnvironmentPresentation
 import org.ide.lti.feature.setup.EnvironmentState
 import org.ide.lti.feature.setup.PrimaryAction
@@ -66,7 +65,6 @@ import org.ide.lti.feature.setup.SetupPresentationMapper
 import org.ide.lti.feature.setup.SetupUiActions
 import org.ide.lti.feature.setup.SetupUiState
 import org.ide.lti.feature.setup.TerminalHandoffState
-import org.ide.lti.feature.setup.components.DoctorDiagnosticsDrawer
 import org.ide.lti.feature.setup.components.SetupActivityPanel
 import org.ide.lti.feature.setup.components.ToolchainPipelineTracker
 
@@ -100,10 +98,8 @@ fun EnvironmentStepContent(
         onPreviewSetup = actions.onPreviewSetup,
         onProceedToLaunchpad = onProceedToLaunchpad,
         modifier = modifier,
-        onAutoRemediateDoctor = actions.onAutoRemediateDoctor,
         selectedCockpitTab = state.selectedCockpitTab,
         onSelectCockpitTab = actions.onSelectCockpitTab,
-        readiness = state.environmentReadiness,
         activityState = activityState,
         activityListState = activityListState,
         previewInvokerFocusRequester = previewInvokerFocusRequester,
@@ -112,6 +108,7 @@ fun EnvironmentStepContent(
         onShowHandoffSheet = actions.onShowHandoffSheet,
         onOpenDistro = actions.onOpenTerminal,
         onSelectDistro = actions.onSelectDistro,
+        onInstallUbuntu = actions.onInstallUbuntu,
         onOpenProject = actions.onOpenFolder,
         onCreateProject = actions.onCreateWorkspace,
         onCancelOperation = actions.onCancelOperation,
@@ -154,10 +151,8 @@ fun EnvironmentStepContent(
     onRetryStage: (SetupStepStage) -> Unit = {},
     onPreviewSetup: (SetupStepStage?) -> Unit = {},
     onNavigateToProjects: (() -> Unit)? = null,
-    onAutoRemediateDoctor: (() -> Unit)? = null,
-    selectedCockpitTab: String = "doctor",
+    selectedCockpitTab: String = "console",
     onSelectCockpitTab: (String) -> Unit = {},
-    readiness: EnvironmentReadiness? = null,
     activityState: SetupActivityState? = null,
     activityListState: androidx.compose.foundation.lazy.LazyListState =
         androidx.compose.foundation.lazy
@@ -168,6 +163,7 @@ fun EnvironmentStepContent(
     onShowHandoffSheet: () -> Unit = {},
     onOpenDistro: (String) -> Unit = {},
     onSelectDistro: (String) -> Unit = {},
+    onInstallUbuntu: (String) -> Unit = {},
     onOpenProject: () -> Unit = {},
     onCreateProject: () -> Unit = {},
     onCancelOperation: () -> Unit = {},
@@ -208,7 +204,8 @@ fun EnvironmentStepContent(
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .weight(1f, fill = false)
                         .semantics { liveRegion = LiveRegionMode.Polite },
                 ) {
@@ -284,12 +281,13 @@ fun EnvironmentStepContent(
                     val sysStep =
                         toolchainSetupState.steps
                             .firstOrNull { it.stage == SetupStepStage.SYSTEM_PACKAGES }
-                    val bridgePres = SetupPresentationMapper.mapBuildService(
-                        step = bridgeStep,
-                        daemonPingMs = toolchainSetupState.daemonPingMs,
-                        isChecking = toolchainSetupState.isChecking,
-                        systemPackagesStep = sysStep,
-                    )
+                    val bridgePres =
+                        SetupPresentationMapper.mapBuildService(
+                            step = bridgeStep,
+                            daemonPingMs = toolchainSetupState.daemonPingMs,
+                            isChecking = toolchainSetupState.isChecking,
+                            systemPackagesStep = sysStep,
+                        )
 
                     val wslStatus =
                         when (wslStep?.status) {
@@ -341,6 +339,7 @@ fun EnvironmentStepContent(
                 onVerify = onCheckEnvironment,
                 onOpenDistro = onOpenDistro,
                 onSelectDistro = onSelectDistro,
+                onInstallUbuntu = onInstallUbuntu,
                 onShowDiagnostics = { onSelectCockpitTab("console") },
                 onCancel = onCancelOperation,
                 daemonPingMs = toolchainSetupState.daemonPingMs,
@@ -355,7 +354,8 @@ fun EnvironmentStepContent(
 
             if (isMachineReady) {
                 GlassCard(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxWidth()
                         .semantics { liveRegion = LiveRegionMode.Polite },
                     surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -440,10 +440,6 @@ fun EnvironmentStepContent(
             val cockpitTabs =
                 listOf(
                     org.ide.lti.core.designsystem.component.navigation.GlassTab(
-                        id = "doctor",
-                        title = "Doctor Diagnostics",
-                    ),
-                    org.ide.lti.core.designsystem.component.navigation.GlassTab(
                         id = "console",
                         title = "Pipeline Console",
                     ),
@@ -457,10 +453,7 @@ fun EnvironmentStepContent(
             )
 
             EnvironmentCockpitTabContent(
-                selectedCockpitTab = selectedCockpitTab,
                 toolchainSetupState = toolchainSetupState,
-                readiness = readiness,
-                onAutoRemediateDoctor = onAutoRemediateDoctor,
                 activityState = activityState,
                 activityListState = activityListState,
                 onExportLogs = onExportLogs,
@@ -483,38 +476,25 @@ fun EnvironmentStepContent(
 
 @Composable
 private fun EnvironmentCockpitTabContent(
-    selectedCockpitTab: String,
     toolchainSetupState: ToolchainSetupState,
-    readiness: EnvironmentReadiness? = null,
-    onAutoRemediateDoctor: (() -> Unit)?,
     activityState: SetupActivityState?,
     activityListState: androidx.compose.foundation.lazy.LazyListState,
     onExportLogs: (() -> Unit)? = null,
 ) {
-    when (selectedCockpitTab) {
-        "doctor" -> {
-            DoctorDiagnosticsDrawer(
-                diagnosticsList = toolchainSetupState.diagnostics,
-                readiness = readiness,
-                onAutoRemediateDoctor = onAutoRemediateDoctor,
-            )
-        }
-        "console" -> {
-            if (activityState != null) {
-                SetupActivityPanel(
-                    activityState = activityState,
-                    title = "Execution Terminal Logs",
-                    isRunning = toolchainSetupState.isBusy,
-                    listState = activityListState,
-                    onExport = onExportLogs,
-                )
-            } else {
-                GlassConsoleDrawer(
-                    logs = toolchainSetupState.logs,
-                    isRunning = toolchainSetupState.isBusy,
-                )
-            }
-        }
+    if (activityState != null) {
+        SetupActivityPanel(
+            activityState = activityState,
+            title = "Execution Terminal Logs",
+            isRunning = toolchainSetupState.isBusy,
+            listState = activityListState,
+            onExport = onExportLogs,
+        )
+    } else {
+        val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+        GlassConsoleDrawer(
+            logs = toolchainSetupState.logs,
+            isRunning = if (isReducedMotion) false else toolchainSetupState.isBusy,
+        )
     }
 }
 

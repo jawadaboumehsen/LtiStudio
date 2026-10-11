@@ -102,6 +102,7 @@ fun ToolchainPipelineTracker(
     onVerify: () -> Unit = {},
     onOpenDistro: (String) -> Unit = {},
     onSelectDistro: (String) -> Unit = {},
+    onInstallUbuntu: (String) -> Unit = {},
     onShowDiagnostics: () -> Unit = {},
     onCancel: () -> Unit = {},
     daemonPingMs: Long? = null,
@@ -111,24 +112,12 @@ fun ToolchainPipelineTracker(
 
     val stepMap = steps.associateBy { it.stage }
     val orderedStages =
-        if (stepMap.containsKey(SetupStepStage.SYSTEM_PACKAGES)) {
-            listOf(
-                SetupStepStage.WSL_DETECTION,
-                SetupStepStage.SYSTEM_PACKAGES,
-                SetupStepStage.SERVER_CONNECTIVITY,
-                SetupStepStage.SYSTEM_DIAGNOSTICS,
-                SetupStepStage.REPO_SYNCHRONIZATION,
-                SetupStepStage.TOOLCHAIN_COMPILATION,
-            )
-        } else {
-            listOf(
-                SetupStepStage.WSL_DETECTION,
-                SetupStepStage.SERVER_CONNECTIVITY,
-                SetupStepStage.SYSTEM_DIAGNOSTICS,
-                SetupStepStage.REPO_SYNCHRONIZATION,
-                SetupStepStage.TOOLCHAIN_COMPILATION,
-            )
-        }
+        listOf(
+            SetupStepStage.WSL_DETECTION,
+            SetupStepStage.SERVER_CONNECTIVITY,
+            SetupStepStage.SYSTEM_PACKAGES,
+            SetupStepStage.TOOLCHAIN_COMPILATION,
+        )
 
     val completedCount =
         orderedStages.count { stage ->
@@ -201,6 +190,7 @@ fun ToolchainPipelineTracker(
                         handoffSheetState = handoffSheetState,
                         daemonPingMs = daemonPingMs,
                         systemPackagesStep = systemPackagesStep,
+                        activeDistro = activeDistro,
                         wslPres =
                         if (stage == SetupStepStage.WSL_DETECTION) {
                             MachineRowMapper.mapWslRow(step, distroStatuses, activeDistro)
@@ -218,6 +208,9 @@ fun ToolchainPipelineTracker(
                                 onInstallPackages = onInstallPackages,
                                 onShowHandoffSheet = onShowHandoffSheet,
                                 onOpenDistro = onOpenDistro,
+                                onSelectDistro = onSelectDistro,
+                                onInstallUbuntu = onInstallUbuntu,
+                                activeDistro = activeDistro,
                                 onShowDiagnostics = onShowDiagnostics,
                                 onShowCancelDialog = { tool ->
                                     cancelTargetTool = tool
@@ -250,7 +243,8 @@ private fun SetupCancelDialog(toolText: String, onConfirm: () -> Unit, onDismiss
         },
     ) {
         Text(
-            text = "The current build of $toolText stops; tools already built are kept. " +
+            text =
+            "The current build of $toolText stops; tools already built are kept. " +
                 "You can resume setup at any time.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -268,11 +262,15 @@ private fun handleTrackerAction(
     onInstallPackages: () -> Unit,
     onShowHandoffSheet: () -> Unit,
     onOpenDistro: (String) -> Unit,
+    onSelectDistro: (String) -> Unit,
+    onInstallUbuntu: (String) -> Unit,
+    activeDistro: String?,
     onShowDiagnostics: () -> Unit,
     onShowCancelDialog: (String?) -> Unit,
 ) {
+    val actionDistro = distro ?: if (stage == SetupStepStage.SERVER_CONNECTIVITY) activeDistro else null
     when (action) {
-        SetupRowAction.RETRY ->
+        SetupRowAction.RETRY, SetupRowAction.CHECK_AGAIN ->
             if (stage == SetupStepStage.WSL_DETECTION || stage == SetupStepStage.SYSTEM_PACKAGES) {
                 onVerify()
             } else {
@@ -280,9 +278,11 @@ private fun handleTrackerAction(
             }
         SetupRowAction.INSTALL_PACKAGES -> onInstallPackages()
         SetupRowAction.CONTINUE_SETUP -> onShowHandoffSheet()
-        SetupRowAction.OPEN_DISTRO -> distro?.let(onOpenDistro)
+        SetupRowAction.OPEN_DISTRO -> actionDistro?.let(onOpenDistro)
         SetupRowAction.SHOW_DIAGNOSTICS, SetupRowAction.SHOW_LOG -> onShowDiagnostics()
         SetupRowAction.CANCEL -> onShowCancelDialog(extractToolName(stepDescription))
+        SetupRowAction.INSTALL_UBUNTU -> onInstallUbuntu(actionDistro ?: "Ubuntu-24.04")
+        SetupRowAction.USE_DISTRO -> actionDistro?.let(onSelectDistro) ?: onVerify()
     }
 }
 
@@ -303,11 +303,13 @@ private fun VerticalStageRow(
     wslPres: WslRowPresentation? = null,
     daemonPingMs: Long? = null,
     systemPackagesStep: SetupStepDetail? = null,
+    activeDistro: String? = null,
     onSelectDistro: (String) -> Unit = {},
 ) {
     val diagnostics = GlassTheme.diagnosticColors
+    val clipboardManager = LocalClipboardManager.current
 
-    val stageDisplayName = stage.displayName
+    val stageDisplayName = step.title.ifBlank { stage.displayName }
 
     val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
     val currentEpochMs by produceState<Long?>(
@@ -336,6 +338,15 @@ private fun VerticalStageRow(
         } else {
             null
         }
+
+    val layoutRecovery = buildServicePres?.layoutRecovery
+    var recoveryCommandCopied by remember(layoutRecovery?.command) { mutableStateOf(false) }
+    LaunchedEffect(layoutRecovery?.command, recoveryCommandCopied) {
+        if (recoveryCommandCopied) {
+            delay(COPIED_FEEDBACK_MS)
+            recoveryCommandCopied = false
+        }
+    }
 
     val systemPackagesPres =
         if (stage == SetupStepStage.SYSTEM_PACKAGES) {
@@ -418,7 +429,14 @@ private fun VerticalStageRow(
             ?: buildServicePres?.primaryActionLabel
             ?: wslPres?.primaryActionLabel
             ?: "Retry Stage"
-    val secondaryAction = wslPres?.secondaryAction ?: buildServicePres?.secondaryAction
+    val secondaryAction =
+        wslPres?.secondaryAction
+            ?: buildServicePres?.secondaryAction
+            ?: toolchainPres?.secondaryAction
+    val secondaryActionLabel =
+        wslPres?.secondaryActionLabel
+            ?: buildServicePres?.secondaryActionLabel
+            ?: toolchainPres?.secondaryActionLabel
 
     if (isActionRequired) {
         // Expanded Failed / Warning Stage Row
@@ -489,6 +507,59 @@ private fun VerticalStageRow(
                     color = if (isFailed) diagnostics.error else diagnostics.warning,
                 )
 
+                layoutRecovery?.let { recovery ->
+                    Column(
+                        modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(GlassShapes.ExtraSmall)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .border(
+                                width = StrokeWidth.Hairline,
+                                color = MaterialTheme.colorScheme.outline,
+                                shape = GlassShapes.ExtraSmall,
+                            )
+                            .padding(Spacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Text(
+                            text = recovery.explanation,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        SelectionContainer {
+                            Text(
+                                text = recovery.command,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        GlassSecondaryButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(recovery.command))
+                                recoveryCommandCopied = true
+                            },
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                            ) {
+                                Icon(
+                                    painter =
+                                    if (recoveryCommandCopied) {
+                                        AppIcons.ideStatusSuccess()
+                                    } else {
+                                        AppIcons.CopyPainterResource()
+                                    },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                                Text(if (recoveryCommandCopied) "Copied" else "Copy recovery command")
+                            }
+                        }
+                    }
+                }
+
                 val errorText = toolchainPres?.errorText ?: if (!hasMappedRow) step.error else null
                 if (!errorText.isNullOrBlank()) {
                     CopyableErrorText(errorText)
@@ -524,11 +595,11 @@ private fun VerticalStageRow(
                     ) {
                         if (secondaryAction != null) {
                             GlassSecondaryButton(
-                                onClick = { onAction(secondaryAction, wslPres?.distro) },
+                                onClick = { onAction(secondaryAction, wslPres?.distro ?: activeDistro) },
                                 enabled = !isBusy,
                             ) {
                                 Text(
-                                    wslPres?.secondaryActionLabel.orEmpty(),
+                                    secondaryActionLabel.orEmpty(),
                                     maxLines = 1,
                                     softWrap = false,
                                     overflow = TextOverflow.Ellipsis,
@@ -537,7 +608,7 @@ private fun VerticalStageRow(
                         }
                         if (primaryAction != null) {
                             GlassPrimaryButton(
-                                onClick = { onAction(primaryAction, wslPres?.distro) },
+                                onClick = { onAction(primaryAction, wslPres?.distro ?: activeDistro) },
                                 enabled = !isBusy,
                             ) {
                                 Row(
@@ -692,7 +763,8 @@ internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier)
         }
     }
     Row(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxWidth()
             .clip(GlassShapes.ExtraSmall)
             .background(MaterialTheme.colorScheme.surfaceContainer)

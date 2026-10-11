@@ -20,7 +20,7 @@ public interface ServerArtifactPort {
 
     /**
      * Start, or restart onto, the active version if the running one differs and activeRuns == 0.
-     * [javaHome] is PrerequisiteReport.javaHome: the single Java discovery result. The adapter never searches again.
+     * [javaHome] is optional; when null, the bundled runtime or daemon manager default is used.
      */
-    public suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String): ServerArtifact
+    public suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String? = null): ServerArtifact
 }

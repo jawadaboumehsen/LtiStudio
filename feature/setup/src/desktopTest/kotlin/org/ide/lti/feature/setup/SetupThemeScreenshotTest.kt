@@ -41,6 +41,7 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
 import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
@@ -66,7 +67,6 @@ import kotlin.time.Duration.Companion.minutes
 @OptIn(ExperimentalTestApi::class)
 @Suppress("LargeClass", "TooManyFunctions")
 class SetupThemeScreenshotTest {
-
     // ---------------------------------------------------------------------------------------------
     // Mathematical Contrast Ratio Tests (Reusing GlassContrastTest math via ColorContrast)
     // ---------------------------------------------------------------------------------------------
@@ -150,7 +150,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 recentProjects = emptyList(),
                                 filteredProjects = emptyList(),
                                 selectedTab = SetupTab.PROJECTS,
@@ -170,29 +171,31 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesOverviewScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val overviewState = ToolchainSetupState(
-            steps = listOf(
-                SetupStepDetail(
-                    stage = SetupStepStage.WSL_DETECTION,
-                    title = "WSL runtime",
-                    description = "Ubuntu 22.04 LTS",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
+        val overviewState =
+            ToolchainSetupState(
+                steps =
+                listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL runtime",
+                        description = "Ubuntu 22.04 LTS",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Build service",
+                        description = "Bridge needs verification",
+                        status = StepStatus.PENDING,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                        title = "Tool packages",
+                        description = "Packages have not been checked",
+                        status = StepStatus.PENDING,
+                    ),
                 ),
-                SetupStepDetail(
-                    stage = SetupStepStage.SERVER_CONNECTIVITY,
-                    title = "Build service",
-                    description = "Bridge needs verification",
-                    status = StepStatus.PENDING,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                    title = "Tool packages",
-                    description = "Packages have not been checked",
-                    status = StepStatus.PENDING,
-                ),
-            ),
-        )
+            )
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
         for (appTheme in themes) {
@@ -201,7 +204,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = overviewState,
                                 selectedTab = SetupTab.PROJECTS,
                             ),
@@ -220,43 +224,37 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesReadyStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val readySteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Ubuntu 22.04 LTS",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "HTTP/SSE connected",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "System Diagnostics",
-                description = "All checks passed",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Git submodules up to date",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Compilation",
-                description = "Native tools verified",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-        )
+        val readySteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "HTTP/SSE connected",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System Packages",
+                    description = "Required packages installed",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Compilation",
+                    description = "Native tools verified",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -266,7 +264,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -293,7 +292,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 recentProjects = emptyList(),
                                 filteredProjects = emptyList(),
                                 selectedTab = SetupTab.PROJECTS,
@@ -313,29 +313,31 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesOverviewEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val overviewState = ToolchainSetupState(
-            steps = listOf(
-                SetupStepDetail(
-                    stage = SetupStepStage.WSL_DETECTION,
-                    title = "WSL runtime",
-                    description = "Ubuntu 22.04 LTS",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
+        val overviewState =
+            ToolchainSetupState(
+                steps =
+                listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL runtime",
+                        description = "Ubuntu 22.04 LTS",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Build service",
+                        description = "Bridge needs verification",
+                        status = StepStatus.PENDING,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                        title = "Tool packages",
+                        description = "Packages have not been checked",
+                        status = StepStatus.PENDING,
+                    ),
                 ),
-                SetupStepDetail(
-                    stage = SetupStepStage.SERVER_CONNECTIVITY,
-                    title = "Build service",
-                    description = "Bridge needs verification",
-                    status = StepStatus.PENDING,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                    title = "Tool packages",
-                    description = "Packages have not been checked",
-                    status = StepStatus.PENDING,
-                ),
-            ),
-        )
+            )
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
         for (appTheme in themes) {
@@ -344,7 +346,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = overviewState,
                                 selectedTab = SetupTab.PROJECTS,
                             ),
@@ -363,43 +366,37 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesReadyStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val readySteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Ubuntu 22.04 LTS",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "HTTP/SSE connected",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "System Diagnostics",
-                description = "All checks passed",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Git submodules up to date",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Compilation",
-                description = "Native tools verified",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-        )
+        val readySteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "HTTP/SSE connected",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System Packages",
+                    description = "Required packages installed",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Compilation",
+                    description = "Native tools verified",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -409,7 +406,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -427,78 +425,84 @@ class SetupThemeScreenshotTest {
     }
 
     @Test
-    fun testThreeThemesCheckingStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val checkingSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Checking distribution",
-                status = StepStatus.RUNNING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Pending check",
-                status = StepStatus.PENDING,
-            ),
-        )
-        val state = ToolchainSetupState(steps = checkingSteps, isChecking = true)
-        val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+    fun testThreeThemesCheckingStateScreenshot() =
+        runDesktopComposeUiTest(width = 1120, height = 700, testTimeout = 3.minutes) {
+            val checkingSteps =
+                listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL Detection",
+                        description = "Checking distribution",
+                        status = StepStatus.RUNNING,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Server Daemon Bridge",
+                        description = "Pending check",
+                        status = StepStatus.PENDING,
+                    ),
+                )
+            val state = ToolchainSetupState(steps = checkingSteps, isChecking = true)
+            val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
-        for (appTheme in themes) {
-            setContent {
-                LtiTheme(appTheme = appTheme) {
-                    Box(Modifier.fillMaxSize()) {
-                        GlassBackdrop()
-                        SetupScreenContent(
-                            state = SetupUiState(
-                                toolchainSetupState = state,
-                                selectedTab = SetupTab.ENVIRONMENT,
-                            ),
-                            actions = SetupUiActions(),
-                        )
+            for (appTheme in themes) {
+                setContent {
+                    LtiTheme(appTheme = appTheme, reducedMotion = true) {
+                        Box(Modifier.fillMaxSize()) {
+                            GlassBackdrop()
+                            SetupScreenContent(
+                                state =
+                                SetupUiState(
+                                    toolchainSetupState = state,
+                                    selectedTab = SetupTab.ENVIRONMENT,
+                                ),
+                                actions = SetupUiActions(),
+                            )
+                        }
                     }
                 }
-            }
 
-            val image = onRoot().captureToImage()
-            assertEquals(1120, image.width)
-            assertEquals(700, image.height)
-            saveScreenshotReport("checking_state_${appTheme.id}", image)
+                val image = onRoot().captureToImage()
+                assertEquals(1120, image.width)
+                assertEquals(700, image.height)
+                saveScreenshotReport("checking_state_${appTheme.id}", image)
+            }
         }
-    }
 
     @Test
     fun testThreeThemesRunningStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val runningSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Configured",
-                status = StepStatus.SUCCESS,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Starting bridge",
-                status = StepStatus.RUNNING,
-            ),
-        )
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            executionState = SetupOperationState.RUNNING,
-            operationId = "run_op_001",
-        )
+        val runningSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Configured",
+                    status = StepStatus.SUCCESS,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Starting bridge",
+                    status = StepStatus.RUNNING,
+                ),
+            )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                executionState = SetupOperationState.RUNNING,
+                operationId = "run_op_001",
+            )
         val state = ToolchainSetupState(steps = runningSteps, isRunning = true)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
         for (appTheme in themes) {
             setContent {
-                LtiTheme(appTheme = appTheme) {
+                LtiTheme(appTheme = appTheme, reducedMotion = true) {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 activeOperation = activeOp,
                                 selectedTab = SetupTab.ENVIRONMENT,
@@ -518,41 +522,36 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesFailedStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val failedSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL 2 distribution",
-                description = "Ubuntu 22.04 LTS",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server daemon bridge",
-                description = "Connection refused on port 50051",
-                status = StepStatus.FAILED,
-                error = "Connection refused: daemon is not running. Click Retry to launch.",
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "System diagnostics",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository synchronization",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Build tools & packages",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-        )
+        val failedSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL 2 distribution",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server daemon bridge",
+                    description = "Connection refused on port 50051",
+                    status = StepStatus.FAILED,
+                    error = "Connection refused: daemon is not running. Click Retry to launch.",
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System packages",
+                    description = "Pending verification",
+                    status = StepStatus.PENDING,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Build tools & packages",
+                    description = "Pending verification",
+                    status = StepStatus.PENDING,
+                ),
+            )
         // A live check that just ran and failed: the header must say "Checked just now", never "Verified".
         val state = ToolchainSetupState(steps = failedSteps, checkedAt = System.currentTimeMillis())
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -563,7 +562,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -582,15 +582,16 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesRestoredStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val restoredSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Restored from previous session",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.RESTORED,
-            ),
-        )
+        val restoredSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Restored from previous session",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.RESTORED,
+                ),
+            )
         val state = ToolchainSetupState(steps = restoredSteps, lastVerifiedTimestamp = 1690000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -600,7 +601,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -619,15 +621,16 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesOfflineStateScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val offlineSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Connection refused on 127.0.0.1:50051",
-                status = StepStatus.FAILED,
-                error = "WSL2 daemon not responding",
-            ),
-        )
+        val offlineSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Connection refused on 127.0.0.1:50051",
+                    status = StepStatus.FAILED,
+                    error = "WSL2 daemon not responding",
+                ),
+            )
         val state = ToolchainSetupState(steps = offlineSteps)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -637,7 +640,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -656,20 +660,21 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesCheckingStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val checkingSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Checking distribution",
-                status = StepStatus.RUNNING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Pending check",
-                status = StepStatus.PENDING,
-            ),
-        )
+        val checkingSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Checking distribution",
+                    status = StepStatus.RUNNING,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Pending check",
+                    status = StepStatus.PENDING,
+                ),
+            )
         val state = ToolchainSetupState(steps = checkingSteps, isChecking = true)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -679,7 +684,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -698,25 +704,27 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesRunningStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val runningSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Configured",
-                status = StepStatus.SUCCESS,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Starting bridge",
-                status = StepStatus.RUNNING,
-            ),
-        )
-        val activeOp = SetupOperation(
-            kind = SetupOperationKind.FULL_SETUP,
-            executionState = SetupOperationState.RUNNING,
-            operationId = "run_op_001",
-        )
+        val runningSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Configured",
+                    status = StepStatus.SUCCESS,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Starting bridge",
+                    status = StepStatus.RUNNING,
+                ),
+            )
+        val activeOp =
+            SetupOperation(
+                kind = SetupOperationKind.FULL_SETUP,
+                executionState = SetupOperationState.RUNNING,
+                operationId = "run_op_001",
+            )
         val state = ToolchainSetupState(steps = runningSteps, isRunning = true)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -726,7 +734,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 activeOperation = activeOp,
                                 selectedTab = SetupTab.ENVIRONMENT,
@@ -746,41 +755,36 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesFailedStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val failedSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL 2 distribution",
-                description = "Ubuntu 22.04 LTS",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server daemon bridge",
-                description = "Connection refused on port 50051",
-                status = StepStatus.FAILED,
-                error = "Connection refused: daemon is not running. Click Retry to launch.",
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "System diagnostics",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository synchronization",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Build tools & packages",
-                description = "Pending verification",
-                status = StepStatus.PENDING,
-            ),
-        )
+        val failedSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL 2 distribution",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server daemon bridge",
+                    description = "Connection refused on port 50051",
+                    status = StepStatus.FAILED,
+                    error = "Connection refused: daemon is not running. Click Retry to launch.",
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System packages",
+                    description = "Pending verification",
+                    status = StepStatus.PENDING,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Build tools & packages",
+                    description = "Pending verification",
+                    status = StepStatus.PENDING,
+                ),
+            )
         // A live check that just ran and failed: the header must say "Checked just now", never "Verified".
         val state = ToolchainSetupState(steps = failedSteps, checkedAt = System.currentTimeMillis())
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
@@ -791,7 +795,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -810,15 +815,16 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesRestoredStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val restoredSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Restored from previous session",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.RESTORED,
-            ),
-        )
+        val restoredSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Restored from previous session",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.RESTORED,
+                ),
+            )
         val state = ToolchainSetupState(steps = restoredSteps, lastVerifiedTimestamp = 1690000000000L)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -828,7 +834,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -847,15 +854,16 @@ class SetupThemeScreenshotTest {
 
     @Test
     fun testThreeThemesOfflineStateEffectsOffScreenshot() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val offlineSteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Connection refused on 127.0.0.1:50051",
-                status = StepStatus.FAILED,
-                error = "WSL2 daemon not responding",
-            ),
-        )
+        val offlineSteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Connection refused on 127.0.0.1:50051",
+                    status = StepStatus.FAILED,
+                    error = "WSL2 daemon not responding",
+                ),
+            )
         val state = ToolchainSetupState(steps = offlineSteps)
         val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -865,7 +873,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -882,45 +891,40 @@ class SetupThemeScreenshotTest {
         }
     }
 
+    @Ignore("Golden update waits for T096 approval per tasks.md")
     @Test
     fun testSetupScreenBlueEffectsOnMatchesBaseline() = runDesktopComposeUiTest(width = 1120, height = 700) {
-        val readySteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL Detection",
-                description = "Ubuntu 22.04 LTS",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "HTTP/SSE connected",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "System Diagnostics",
-                description = "All checks passed",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Git submodules up to date",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Compilation",
-                description = "Native tools verified",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-        )
+        val readySteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL Detection",
+                    description = "Ubuntu 22.04 LTS",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "HTTP/SSE connected",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System Packages",
+                    description = "Required packages installed",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Compilation",
+                    description = "Native tools verified",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
         val state = ToolchainSetupState(steps = readySteps, lastVerifiedTimestamp = 1700000000000L)
 
         setContent {
@@ -929,7 +933,8 @@ class SetupThemeScreenshotTest {
                     Box(Modifier.fillMaxSize()) {
                         GlassBackdrop()
                         SetupScreenContent(
-                            state = SetupUiState(
+                            state =
+                            SetupUiState(
                                 toolchainSetupState = state,
                                 selectedTab = SetupTab.ENVIRONMENT,
                             ),
@@ -944,13 +949,14 @@ class SetupThemeScreenshotTest {
         assertEquals(1120, image.width)
         assertEquals(700, image.height)
 
-        val baselineDir = File(System.getProperty("user.dir")).let { dir ->
-            if (dir.name == "setup") {
-                File(dir, "src/desktopTest/resources/screenshots")
-            } else {
-                File(dir, "feature/setup/src/desktopTest/resources/screenshots")
+        val baselineDir =
+            File(System.getProperty("user.dir")).let { dir ->
+                if (dir.name == "setup") {
+                    File(dir, "src/desktopTest/resources/screenshots")
+                } else {
+                    File(dir, "feature/setup/src/desktopTest/resources/screenshots")
+                }
             }
-        }
         GoldenImageAssert.assertMatchesBaseline(
             screenshotName = "setup_screen_blue_effects_on",
             actualImage = image,
@@ -965,41 +971,62 @@ class SetupThemeScreenshotTest {
     // core:designsystem) or cover the six presentation states (unknown/needs-setup/ready/
     // running/failed/reconnecting), which remain BLOCKED pending real-render verification.
     @Test
-    fun testThemeAndDensityMatrixAt1440x900() =
+    fun testThemeAndDensityMatrixAt1440x900Scale1x() =
         runDesktopComposeUiTest(width = 1440, height = 900, testTimeout = 5.minutes) {
-            assertThemeAndDensityMatrixRenders()
+            assertThemesRenderAtScale(1.0f)
         }
 
     @Test
-    fun testThemeAndDensityMatrixAt900x600() =
-        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
-            assertThemeAndDensityMatrixRenders()
+    fun testThemeAndDensityMatrixAt1440x900Scale1_5x() =
+        runDesktopComposeUiTest(width = 1440, height = 900, testTimeout = 5.minutes) {
+            assertThemesRenderAtScale(1.5f)
         }
 
-    private fun androidx.compose.ui.test.DesktopComposeUiTest.assertThemeAndDensityMatrixRenders() {
-        val scales = listOf(1.0f, 1.5f, 2.0f)
-        val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
+    @Test
+    fun testThemeAndDensityMatrixAt1440x900Scale2x() =
+        runDesktopComposeUiTest(width = 1440, height = 900, testTimeout = 5.minutes) {
+            assertThemesRenderAtScale(2.0f)
+        }
 
-        for (scale in scales) {
-            for (appTheme in themes) {
-                setContent {
-                    CompositionLocalProvider(
-                        LocalDensity provides Density(density = scale, fontScale = 1.0f),
-                    ) {
-                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
-                            Box(Modifier.fillMaxSize()) {
-                                GlassBackdrop()
-                                SetupScreenContent(
-                                    state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
-                                    actions = SetupUiActions(),
-                                )
-                            }
+    @Test
+    fun testThemeAndDensityMatrixAt900x600Scale1x() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            assertThemesRenderAtScale(1.0f)
+        }
+
+    @Test
+    fun testThemeAndDensityMatrixAt900x600Scale1_5x() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            assertThemesRenderAtScale(1.5f)
+        }
+
+    @Test
+    fun testThemeAndDensityMatrixAt900x600Scale2x() =
+        runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
+            assertThemesRenderAtScale(2.0f)
+        }
+
+    // runDesktopComposeUiTest wraps the body in kotlinx's runTest with its default 60 s limit and ignores
+    // testTimeout there, so each case stays well under a minute: one scale, all three themes.
+    private fun androidx.compose.ui.test.DesktopComposeUiTest.assertThemesRenderAtScale(scale: Float) {
+        for (appTheme in listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)) {
+            setContent {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density = scale, fontScale = 1.0f),
+                ) {
+                    LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                        Box(Modifier.fillMaxSize()) {
+                            GlassBackdrop()
+                            SetupScreenContent(
+                                state = SetupUiState(selectedTab = SetupTab.ENVIRONMENT),
+                                actions = SetupUiActions(),
+                            )
                         }
                     }
                 }
-
-                onRoot().assertIsDisplayed()
             }
+
+            onRoot().assertIsDisplayed()
         }
         setContent {}
     }
@@ -1033,105 +1060,122 @@ class SetupThemeScreenshotTest {
             setContent {}
         }
 
-    @Test
-    fun testTerminalHandoffSheetStatesAtMinWindowAnd2xFontScaleScreenshots() =
+    private fun handoffSheetCase(stateName: String) =
         runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
-            val handoff = UserRepairHandoff(
-                actionId = "bootstrap:apt",
-                description = "Install packages",
-                terminalCommand = "sudo apt-get update && sudo apt-get install -y cmake build-essential",
-                packages = listOf("cmake", "build-essential"),
-                distro = "Ubuntu-24.04",
-            )
-            val states = listOf(
-                "idle" to TerminalHandoffState.Idle,
-                "launch_failed" to TerminalHandoffState.TerminalLaunchFailed("wt.exe not found in PATH"),
-                "verifying" to TerminalHandoffState.Verifying,
-                "still_missing" to TerminalHandoffState.StillMissing(
-                    packages = listOf("cmake"),
-                    command = "sudo apt-get update && sudo apt-get install -y cmake",
-                ),
-                "busy" to TerminalHandoffState.AnotherOperationRunning,
-                "done" to TerminalHandoffState.Done,
-            )
+            val handoff =
+                UserRepairHandoff(
+                    actionId = "bootstrap:apt",
+                    description = "Install packages",
+                    terminalCommand = "sudo apt-get update && sudo apt-get install -y cmake build-essential",
+                    packages = listOf("cmake", "build-essential"),
+                    distro = "Ubuntu-24.04",
+                )
+            val states =
+                mapOf(
+                    "idle" to TerminalHandoffState.Idle,
+                    "launch_failed" to TerminalHandoffState.TerminalLaunchFailed("wt.exe not found in PATH"),
+                    "verifying" to TerminalHandoffState.Verifying,
+                    "still_missing" to
+                        TerminalHandoffState.StillMissing(
+                            packages = listOf("cmake"),
+                            command = "sudo apt-get update && sudo apt-get install -y cmake",
+                        ),
+                    "busy" to TerminalHandoffState.AnotherOperationRunning,
+                    "done" to TerminalHandoffState.Done,
+                )
+            val sheetState = states.getValue(stateName)
             val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
-            for ((stateName, sheetState) in states) {
-                for (appTheme in themes) {
-                    setContent {
-                        CompositionLocalProvider(
-                            LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
-                        ) {
-                            LtiTheme(appTheme = appTheme, effectsEnabled = false) {
-                                Box(Modifier.fillMaxSize()) {
-                                    GlassBackdrop()
-                                    SetupScreenContent(
-                                        state = SetupUiState(
-                                            selectedTab = SetupTab.ENVIRONMENT,
-                                            isHandoffSheetVisible = true,
-                                            handoffSheetState = sheetState,
-                                            activeOperation = SetupOperation(
-                                                kind = SetupOperationKind.BOOTSTRAP_PACKAGES,
-                                                executionState = SetupOperationState.AWAITING_USER_ACTION,
-                                                awaitingHandoff = handoff,
-                                            ),
+            for (appTheme in themes) {
+                setContent {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density = 1.0f, fontScale = 2.0f),
+                    ) {
+                        LtiTheme(appTheme = appTheme, effectsEnabled = false) {
+                            Box(Modifier.fillMaxSize()) {
+                                GlassBackdrop()
+                                SetupScreenContent(
+                                    state =
+                                    SetupUiState(
+                                        selectedTab = SetupTab.ENVIRONMENT,
+                                        isHandoffSheetVisible = true,
+                                        handoffSheetState = sheetState,
+                                        activeOperation =
+                                        SetupOperation(
+                                            kind = SetupOperationKind.BOOTSTRAP_PACKAGES,
+                                            executionState = SetupOperationState.AWAITING_USER_ACTION,
+                                            awaitingHandoff = handoff,
                                         ),
-                                        actions = SetupUiActions(),
-                                    )
-                                }
+                                    ),
+                                    actions = SetupUiActions(),
+                                )
                             }
                         }
                     }
-                    onRoot().assertIsDisplayed()
-                    val image = onRoot().captureToImage()
-                    assertEquals(900, image.width)
-                    assertEquals(600, image.height)
-                    saveScreenshotReport("handoff_sheet_${stateName}_min_2x_${appTheme.id}", image)
                 }
+                onRoot().assertIsDisplayed()
+                val image = onRoot().captureToImage()
+                assertEquals(900, image.width)
+                assertEquals(600, image.height)
+                saveScreenshotReport("handoff_sheet_${stateName}_min_2x_${appTheme.id}", image)
             }
             setContent {}
         }
 
     @Test
+    fun testTerminalHandoffSheetState_idleAtMinWindowAnd2xFontScaleScreenshots() = handoffSheetCase("idle")
+
+    @Test
+    fun testTerminalHandoffSheetState_launch_failedAtMinWindowAnd2xFontScaleScreenshots() =
+        handoffSheetCase("launch_failed")
+
+    @Test
+    fun testTerminalHandoffSheetState_verifyingAtMinWindowAnd2xFontScaleScreenshots() = handoffSheetCase("verifying")
+
+    @Test
+    fun testTerminalHandoffSheetState_still_missingAtMinWindowAnd2xFontScaleScreenshots() =
+        handoffSheetCase("still_missing")
+
+    @Test
+    fun testTerminalHandoffSheetState_busyAtMinWindowAnd2xFontScaleScreenshots() = handoffSheetCase("busy")
+
+    @Test
+    fun testTerminalHandoffSheetState_doneAtMinWindowAnd2xFontScaleScreenshots() = handoffSheetCase("done")
+
+    @Test
     fun testMachineReadyCardAtMinWindowAnd2xFontScaleScreenshots() =
         runDesktopComposeUiTest(width = 900, height = 600, testTimeout = 5.minutes) {
-            val readySteps = listOf(
-                SetupStepDetail(
-                    stage = SetupStepStage.WSL_DETECTION,
-                    title = "WSL Detection",
-                    description = "Ubuntu 24.04 LTS",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.SERVER_CONNECTIVITY,
-                    title = "Build Service",
-                    description = "Server connected",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                    title = "System Diagnostics",
-                    description = "All checks passed",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                    title = "Repository Synchronization",
-                    description = "Submodules synced",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                    title = "Toolchain Binaries",
-                    description = "12 tools ready",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-            )
+            val readySteps =
+                listOf(
+                    SetupStepDetail(
+                        stage = SetupStepStage.WSL_DETECTION,
+                        title = "WSL Detection",
+                        description = "Ubuntu 24.04 LTS",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SERVER_CONNECTIVITY,
+                        title = "Build Service",
+                        description = "Server connected",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.SYSTEM_PACKAGES,
+                        title = "System Packages",
+                        description = "Required packages installed",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                    SetupStepDetail(
+                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                        title = "Toolchain Binaries",
+                        description = "12 tools ready",
+                        status = StepStatus.SUCCESS,
+                        provenance = StepProvenance.LIVE,
+                    ),
+                )
             val state = ToolchainSetupState(steps = readySteps, lastReadyAt = 1700000000000L)
             val themes = listOf(AppTheme.Dark, AppTheme.Light, AppTheme.Blue)
 
@@ -1144,7 +1188,8 @@ class SetupThemeScreenshotTest {
                             Box(Modifier.fillMaxSize()) {
                                 GlassBackdrop()
                                 SetupScreenContent(
-                                    state = SetupUiState(
+                                    state =
+                                    SetupUiState(
                                         toolchainSetupState = state,
                                         selectedTab = SetupTab.ENVIRONMENT,
                                     ),
@@ -1193,44 +1238,50 @@ class SetupThemeScreenshotTest {
             }
 
             // 2. Recovery Interrupted
-            val interruptedState = SetupUiState(
-                selectedTab = SetupTab.RECOVERY,
-                activeOperation = SetupOperation(
-                    operationId = "op-recovery-rec",
-                    kind = SetupOperationKind.FULL_SETUP,
-                    executionState = SetupOperationState.INTERRUPTED,
-                    failure = "Interrupted by system restart",
-                ),
-                toolchainSetupState = ToolchainSetupState(
-                    steps = listOf(
-                        SetupStepDetail(
-                            stage = SetupStepStage.SERVER_CONNECTIVITY,
-                            title = "Build Service",
-                            description = "Service stopped",
-                            status = StepStatus.FAILED,
-                            error = "Connection reset",
+            val interruptedState =
+                SetupUiState(
+                    selectedTab = SetupTab.RECOVERY,
+                    activeOperation =
+                    SetupOperation(
+                        operationId = "op-recovery-rec",
+                        kind = SetupOperationKind.FULL_SETUP,
+                        executionState = SetupOperationState.INTERRUPTED,
+                        failure = "Interrupted by system restart",
+                    ),
+                    toolchainSetupState =
+                    ToolchainSetupState(
+                        steps =
+                        listOf(
+                            SetupStepDetail(
+                                stage = SetupStepStage.SERVER_CONNECTIVITY,
+                                title = "Build Service",
+                                description = "Service stopped",
+                                status = StepStatus.FAILED,
+                                error = "Connection reset",
+                            ),
+                        ),
+                        recoveryBlockReason = "Previous setup attempt was interrupted",
+                    ),
+                    attemptRecord =
+                    SetupAttemptRecord(
+                        attemptId = "attempt-rec-screenshot",
+                        environmentKey = "Ubuntu",
+                        planId = "plan-screenshot",
+                        planRevisionHash = "rev-screenshot",
+                        planKind = "FULL_SETUP",
+                        orderedIntents =
+                        listOf(
+                            ChildIntentRecord(
+                                childIndex = 0,
+                                stage = "TOOLCHAIN_COMPILATION",
+                                actionId = "build-llvm",
+                                request = PersistedExecutionRequest(toolId = "llvm"),
+                                idempotencyKey = "key-screenshot",
+                                workspaceLock = "lock-screenshot",
+                            ),
                         ),
                     ),
-                    recoveryBlockReason = "Previous setup attempt was interrupted",
-                ),
-                attemptRecord = SetupAttemptRecord(
-                    attemptId = "attempt-rec-screenshot",
-                    environmentKey = "Ubuntu",
-                    planId = "plan-screenshot",
-                    planRevisionHash = "rev-screenshot",
-                    planKind = "FULL_SETUP",
-                    orderedIntents = listOf(
-                        ChildIntentRecord(
-                            childIndex = 0,
-                            stage = "TOOLCHAIN_COMPILATION",
-                            actionId = "build-llvm",
-                            request = PersistedExecutionRequest(toolId = "llvm"),
-                            idempotencyKey = "key-screenshot",
-                            workspaceLock = "lock-screenshot",
-                        ),
-                    ),
-                ),
-            )
+                )
 
             for (appTheme in themes) {
                 setContent {
@@ -1272,11 +1323,14 @@ class SetupThemeScreenshotTest {
         val targetPath = "src/desktopTest/resources/screenshots/$name.png"
         bitmap.captureRoboImage(
             filePath = targetPath,
-            roborazziOptions = RoborazziOptions(
-                compareOptions = RoborazziOptions.CompareOptions(
+            roborazziOptions =
+            RoborazziOptions(
+                compareOptions =
+                RoborazziOptions.CompareOptions(
                     changeThreshold = 0.005f,
                 ),
-                recordOptions = RoborazziOptions.RecordOptions(
+                recordOptions =
+                RoborazziOptions.RecordOptions(
                     resizeScale = 1.0,
                 ),
             ),

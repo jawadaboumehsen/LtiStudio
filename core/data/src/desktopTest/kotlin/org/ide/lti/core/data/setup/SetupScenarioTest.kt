@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.model.setup.PersistedEnvironment
 import org.ide.lti.core.model.setup.SetupAttemptRecord
 import kotlin.test.Test
@@ -24,9 +25,8 @@ import kotlin.test.assertTrue
 /** Whole-check scenarios from the setup review: inventory, pinned downloads, and the distro after a restart. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetupScenarioTest {
-
     private fun healthyMachine() = FakeWslCliExecutor().apply {
-        ToolCatalog.entries.forEach { existingPaths.add("$FAKE_BIN_DIR/${it.binaryName}") }
+        ToolGroupCatalog.allOutputs.forEach { existingPaths.add("$FAKE_BIN_DIR/${it.file}") }
     }
 
     private fun provisioner(

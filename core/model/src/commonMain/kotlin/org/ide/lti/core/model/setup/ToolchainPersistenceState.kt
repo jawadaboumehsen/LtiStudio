@@ -36,9 +36,10 @@ public data class ToolchainPersistenceState(
     val recoveryBlockReason: String? = null,
     val toolSelections: Map<String, DistroToolSelections> = emptyMap(),
     val trustedRepositories: Set<String> = emptySet(),
-    val pendingSwitch: PendingSwitchRecord? = null,
 ) {
     public fun isStageCompleted(stageName: String): Boolean = stageName in completedStages
+
     public fun isSubmoduleSynced(name: String): Boolean = submodules[name]?.isSynced == true
+
     public fun isToolCompiled(name: String): Boolean = tools[name]?.isCompiled == true
 }

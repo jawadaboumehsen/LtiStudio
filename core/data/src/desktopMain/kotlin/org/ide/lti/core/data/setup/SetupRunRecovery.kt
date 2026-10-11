@@ -56,6 +56,7 @@ public class SetupRunRecovery(
 
     private sealed interface ChildReconciliation {
         data class Terminal(val status: String) : ChildReconciliation
+
         data class Blocked(val reason: String) : ChildReconciliation
     }
 
@@ -77,13 +78,15 @@ public class SetupRunRecovery(
         if (attemptId != null && attemptId != active.attemptId) {
             return SetupOutcome.Failed(
                 stage = null,
-                reason = "Attempt '$attemptId' is not the active attempt ('${active.attemptId}'); " +
+                reason =
+                "Attempt '$attemptId' is not the active attempt ('${active.attemptId}'); " +
                     "history is never re-run.",
             )
         }
         if (active.environmentKey != environmentKey) {
-            val reason = "Attempt '${active.attemptId}' belongs to environment " +
-                "'${active.environmentKey}', not '$environmentKey'."
+            val reason =
+                "Attempt '${active.attemptId}' belongs to environment " +
+                    "'${active.environmentKey}', not '$environmentKey'."
             return block(active, reason)
         }
 
@@ -97,20 +100,15 @@ public class SetupRunRecovery(
             if (active.status != AttemptStatus.AWAITING_USER_ACTION) {
                 repository.updateAttemptStatus(active.attemptId, AttemptStatus.AWAITING_USER_ACTION)
             }
-            val domainHandoff = org.ide.lti.core.domain.setup.UserRepairHandoff(
-                actionId = handoff.actionId,
-                description = "External terminal authorization required to install packages",
-                terminalCommand = handoff.command,
-                packages = handoff.packages,
-                distro = handoff.distro,
-            )
-            val recoveryStage = if (active.planKind == "BOOTSTRAP_PACKAGES" ||
-                active.bootstrapRequirementIds.isNotEmpty()
-            ) {
-                org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_PACKAGES
-            } else {
-                org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_DIAGNOSTICS
-            }
+            val domainHandoff =
+                org.ide.lti.core.domain.setup.UserRepairHandoff(
+                    actionId = handoff.actionId,
+                    description = "External terminal authorization required to install packages",
+                    terminalCommand = handoff.command,
+                    packages = handoff.packages,
+                    distro = handoff.distro,
+                )
+            val recoveryStage = org.ide.lti.core.domain.setup.SetupStepStage.SYSTEM_PACKAGES
             log("[Recovery] Restoring active attempt ${active.attemptId} in AWAITING_USER_ACTION state.")
             return SetupOutcome.AwaitingUserAction(
                 pendingPlanId = active.planId,
@@ -125,18 +123,20 @@ public class SetupRunRecovery(
         }
         log("[Recovery] Reconnecting attempt ${active.attemptId} (${active.orderedIntents.size} journaled commands).")
 
-        val launcher = JournaledRunLauncher(
-            transport = transport,
-            repository = repository,
-            context = SetupJournalContext(environmentKey, active.attemptId, activity),
-        )
+        val launcher =
+            JournaledRunLauncher(
+                transport = transport,
+                repository = repository,
+                context = SetupJournalContext(environmentKey, active.attemptId, activity),
+            )
         var worstStatus: String? = null
         for (intent in active.orderedIntents) {
             val current = repository.currentState.activeAttempt ?: break
-            val reconciled = when (val known = current.orderedIntents.getOrNull(intent.childIndex)?.terminalStatus) {
-                null -> reconcileChild(current, intent, launcher, log)
-                else -> ChildReconciliation.Terminal(known)
-            }
+            val reconciled =
+                when (val known = current.orderedIntents.getOrNull(intent.childIndex)?.terminalStatus) {
+                    null -> reconcileChild(current, intent, launcher, log)
+                    else -> ChildReconciliation.Terminal(known)
+                }
             when (reconciled) {
                 is ChildReconciliation.Blocked -> return block(current, reconciled.reason)
                 is ChildReconciliation.Terminal -> {
@@ -147,9 +147,10 @@ public class SetupRunRecovery(
             }
         }
 
-        val reconciledAttempt = repository.currentState.activeAttempt ?: return SetupOutcome.Interrupted(
-            "Attempt '${active.attemptId}' disappeared from the journal during reconciliation.",
-        )
+        val reconciledAttempt =
+            repository.currentState.activeAttempt ?: return SetupOutcome.Interrupted(
+                "Attempt '${active.attemptId}' disappeared from the journal during reconciliation.",
+            )
         return finish(reconciledAttempt, worstStatus, log)
     }
 
@@ -170,10 +171,11 @@ public class SetupRunRecovery(
         return when (candidates.size) {
             0 -> reconcileNeverAccepted(attempt, intent)
             1 -> adoptCandidate(attempt, intent, candidates.single(), launcher, log)
-            else -> ChildReconciliation.Blocked(
-                "${candidates.size} server runs hold lock '${intent.workspaceLock}' for " +
-                    "'${intent.actionId}'; identity is ambiguous.",
-            )
+            else ->
+                ChildReconciliation.Blocked(
+                    "${candidates.size} server runs hold lock '${intent.workspaceLock}' for " +
+                        "'${intent.actionId}'; identity is ambiguous.",
+                )
         }
     }
 
@@ -223,13 +225,14 @@ public class SetupRunRecovery(
     ): ChildReconciliation {
         log("[Recovery] Attaching to run $runId for '${intent.actionId}' from seq ${intent.lastSeq + 1}.")
         return when (
-            val result = launcher.attachAndCommit(
-                childIndex = intent.childIndex,
-                runId = runId,
-                fromSeq = intent.lastSeq + 1L,
-                actionId = intent.actionId,
-                log = log,
-            )
+            val result =
+                launcher.attachAndCommit(
+                    childIndex = intent.childIndex,
+                    runId = runId,
+                    fromSeq = intent.lastSeq + 1L,
+                    actionId = intent.actionId,
+                    log = log,
+                )
         ) {
             is JournaledRunResult.Finished -> ChildReconciliation.Terminal(result.status.name)
             is JournaledRunResult.JournalRejected -> ChildReconciliation.Blocked(result.reason)
@@ -237,7 +240,11 @@ public class SetupRunRecovery(
         }
     }
 
-    private suspend fun finish(attempt: SetupAttemptRecord, worstStatus: String?, log: (String) -> Unit): SetupOutcome {
+    private suspend fun finish(
+        attempt: SetupAttemptRecord,
+        worstStatus: String?,
+        log: (String) -> Unit,
+    ): SetupOutcome {
         val remaining = attempt.plannedActionIds.filterNot { it in attempt.completedActionIds }
         val outcome: SetupOutcome
         val status: AttemptStatus
@@ -247,19 +254,21 @@ public class SetupRunRecovery(
                 status = AttemptStatus.CANCELLED
             }
             worstStatus == RunStatusValue.FAILED.name || worstStatus == RunStatusValue.INTERRUPTED.name -> {
-                outcome = SetupOutcome.Failed(
-                    stage = null,
-                    reason = "A journaled command ended with status $worstStatus.",
-                )
+                outcome =
+                    SetupOutcome.Failed(
+                        stage = null,
+                        reason = "A journaled command ended with status $worstStatus.",
+                    )
                 status = AttemptStatus.FAILED
             }
             worstStatus == NOT_SUBMITTED_STATUS || remaining.isNotEmpty() -> {
                 // Completion is journaled after an action ends, so "not completed" also covers an action that
                 // started and was cut off (e.g. the app closed mid-way); it must not claim it "never ran".
-                outcome = SetupOutcome.Interrupted(
-                    "Attempt ${attempt.attemptId} was interrupted: ${remaining.size} planned action(s) " +
-                        "(${remaining.joinToString()}) did not finish; preview again to start a new attempt.",
-                )
+                outcome =
+                    SetupOutcome.Interrupted(
+                        "Attempt ${attempt.attemptId} was interrupted: ${remaining.size} planned action(s) " +
+                            "(${remaining.joinToString()}) did not finish; preview again to start a new attempt.",
+                    )
                 status = AttemptStatus.INTERRUPTED
             }
             else -> {

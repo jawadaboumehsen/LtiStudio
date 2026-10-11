@@ -9,22 +9,11 @@
  */
 package org.ide.lti.core.domain.repository.setup
 
-import org.ide.lti.core.domain.setup.ToolGroupId
-import org.ide.lti.core.model.setup.DistroToolSelections
-import org.ide.lti.core.model.setup.ToolSelection
-
 /**
- * Repository interface for toolchain version selection persistence with CAS (008 US1).
+ * Repository interface for toolchain repository trust persistence.
  */
 public interface ToolchainSelectionRepository {
-    public suspend fun desiredSelections(distro: String): DistroToolSelections
-
-    public suspend fun saveSelections(
-        distro: String,
-        expectedRevision: Long,
-        desired: Map<ToolGroupId, ToolSelection>,
-    ): Result<Long>
-
     public suspend fun recordTrust(repoUrl: String): Result<Unit>
+
     public suspend fun isTrusted(repoUrl: String): Boolean
 }

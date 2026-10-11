@@ -27,13 +27,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.domain.setup.DiagnosticCategory
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
+import org.ide.lti.core.domain.setup.RecipeConfig
+import org.ide.lti.core.domain.setup.ResolvedInput
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
 import org.ide.lti.core.domain.setup.SetupPlanKind
-import org.ide.lti.core.domain.setup.RecipeConfig
-import org.ide.lti.core.domain.setup.ResolvedInput
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
@@ -129,60 +129,65 @@ class EnvironmentSetupStateTest {
         var lastPreparedKind: SetupPlanKind? = null
             private set
 
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
+        var prepareGate: CompletableDeferred<Unit>? = null
+
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan {
             prepareCount++
             lastPreparedKind = kind
-            // Actions are derived from the fake's own state the way the real factory does, so the
-            // preview the state holder shows is exactly what this fake would execute.
+            // The first call waits here (once), like a plan that is slow to compute.
+            prepareGate?.also { prepareGate = null }?.await()
             val snapshot = _state.value
             val actions =
                 buildList {
-                    val hasFailedDiagnostics = snapshot.diagnostics.any { it.status == StepStatus.FAILED }
-                    if (autoDoctorEnabled && hasFailedDiagnostics) {
+                    val pkgPending =
+                        snapshot.steps.any {
+                            it.stage == SetupStepStage.SYSTEM_PACKAGES && it.status != StepStatus.SUCCESS
+                        }
+                    if (pkgPending) {
                         add(SetupPlanAction.InstallPackages(listOf("build-essential", "cmake")))
                     }
-                    val repoPending =
+                    val toolsPending =
                         snapshot.steps.any {
-                            it.stage == SetupStepStage.REPO_SYNCHRONIZATION && it.status != StepStatus.SUCCESS
+                            it.stage == SetupStepStage.TOOLCHAIN_COMPILATION && it.status != StepStatus.SUCCESS
                         }
-                    // 008: REPO_SYNCHRONIZATION pending → produce SwitchToolchain (includes fetch+build)
-                    if (repoPending) {
+                    if (toolsPending) {
                         add(SetupPlanAction.SwitchToolchain(inputs = frozenCatalogInputs(), selectionRevision = 0L))
                     }
                 }
             return SetupPlan(
                 planId = "fake-plan-$prepareCount",
-                revisionHash = "fake-rev-${snapshot.hashCode()}-$autoDoctorEnabled",
+                revisionHash = "fake-rev-${snapshot.hashCode()}",
                 environmentKey = snapshot.activeDistro ?: "fake-env",
                 kind = kind,
                 targetStageOrToolId = targetId,
-                autoDoctorEnabled = autoDoctorEnabled,
                 orderedActions = if (kind == SetupPlanKind.CACHE_RESET) emptyList() else actions,
             ).also { preparedPlans[it.planId] = it }
         }
 
         private fun frozenCatalogInputs(): Map<org.ide.lti.core.domain.setup.ToolGroupId, ResolvedInput> =
             ToolGroupCatalog.allGroups.associate { group ->
-                val input = when (val source = group.source) {
-                    is ToolSource.Git -> ResolvedInput.Git(
-                        group = group.id,
-                        repoUrl = source.recommendedUrl,
-                        ref = ToolRef.Commit(source.recommendedCommit),
-                        commit = source.recommendedCommit,
-                        resolvedAt = 1L,
-                    )
-                    ToolSource.Release -> {
-                        val release = (group.recipe as RecipeConfig.Release).versions.first()
-                        ResolvedInput.Release(
-                            group = group.id,
-                            version = release.version,
-                            url = release.url,
-                            archiveMember = release.archiveMember,
-                            sha256 = release.sha256,
-                            platform = "linux-x86_64",
-                        )
+                val input =
+                    when (val source = group.source) {
+                        is ToolSource.Git ->
+                            ResolvedInput.Git(
+                                group = group.id,
+                                repoUrl = source.recommendedUrl,
+                                ref = ToolRef.Commit(source.recommendedCommit),
+                                commit = source.recommendedCommit,
+                                resolvedAt = 1L,
+                            )
+                        ToolSource.Release -> {
+                            val release = (group.recipe as RecipeConfig.Release).versions.first()
+                            ResolvedInput.Release(
+                                group = group.id,
+                                version = release.version,
+                                url = release.url,
+                                archiveMember = release.archiveMember,
+                                sha256 = release.sha256,
+                                platform = "linux-x86_64",
+                            )
+                        }
                     }
-                }
                 group.id to input
             }
 
@@ -210,6 +215,12 @@ class EnvironmentSetupStateTest {
         override fun observe(): Flow<SetupOutcome?> = observedOutcomes.asStateFlow()
 
         override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
+
+        val logLines = mutableListOf<String>()
+
+        override fun log(line: String) {
+            logLines += line
+        }
 
         var recoverOutcome: SetupOutcome? = null
         var recoverCount = 0
@@ -322,6 +333,28 @@ class EnvironmentSetupStateTest {
     }
 
     @Test
+    fun testALatePlanNeverReplacesTheNewerPreview() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService()
+        val gate = CompletableDeferred<Unit>()
+        spyService.prepareGate = gate
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        stateHolder.previewSetup(SetupStepStage.TOOLCHAIN_COMPILATION) // slow: waits on the gate
+        stateHolder.previewSetup() // the newer request, answered at once
+        testScheduler.advanceUntilIdle()
+        assertEquals(SetupOperationKind.FULL_SETUP, stateHolder.activeOperation.value?.kind)
+
+        gate.complete(Unit) // the older plan finishes late
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(
+            SetupOperationKind.FULL_SETUP,
+            stateHolder.activeOperation.value?.kind,
+            "a plan prepared for an older request must be discarded",
+        )
+    }
+
+    @Test
     fun testRepeatedClicksDoNotDuplicateMutationsSingleFlight() = runEnvironmentTest { envScope ->
         val spyService = SpyToolchainProvisioningService()
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
@@ -344,78 +377,17 @@ class EnvironmentSetupStateTest {
     }
 
     @Test
-    fun testAutoDoctorHonoredWhenEnabledAndPreventedWhenDisabled() = runEnvironmentTest { envScope ->
-        val spyService =
-            SpyToolchainProvisioningService(
-                initialState =
-                ToolchainSetupState(
-                    steps = ToolchainSetupState.defaultSteps(),
-                    diagnostics =
-                    listOf(
-                        DiagnosticCheckItem(
-                            id = "host_compilers",
-                            title = "Host Compilers",
-                            category = DiagnosticCategory.COMPILERS,
-                            status = StepStatus.FAILED,
-                        ),
-                    ),
-                ),
-            )
-        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
-
-        // Case 1: Auto Doctor enabled (default)
-        assertTrue(stateHolder.isAutoDoctorEnabled.value)
-        stateHolder.previewSetup()
-        stateHolder.confirmOperation()
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(1, spyService.remediationCount, "Auto doctor remediation must run when enabled")
-        assertEquals(1, spyService.fullSetupCount, "Full setup must run on confirmed operation")
-
-        // Reset service state and configure Case 2: Auto Doctor disabled
-        spyService._state.value =
-            ToolchainSetupState(
-                steps = ToolchainSetupState.defaultSteps(),
-                diagnostics =
-                listOf(
-                    DiagnosticCheckItem(
-                        id = "host_compilers",
-                        title = "Host Compilers",
-                        category = DiagnosticCategory.COMPILERS,
-                        status = StepStatus.FAILED,
-                    ),
-                ),
-            )
-        stateHolder.setAutoDoctorEnabled(false)
-        assertFalse(stateHolder.isAutoDoctorEnabled.value)
-
-        stateHolder.previewSetup()
-        assertFalse(
-            stateHolder.activeOperation.value
-                ?.plannedChanges
-                ?.autoDoctorRemediation == true,
-        )
-
-        stateHolder.confirmOperation()
-        testScheduler.advanceUntilIdle()
-
-        // remediationCount should remain 1 (from Case 1), NOT incremented in Case 2!
-        assertEquals(1, spyService.remediationCount, "Auto doctor remediation must NOT run when disabled")
-        assertEquals(2, spyService.fullSetupCount, "Full setup runs even with auto doctor disabled")
-    }
-
-    @Test
     fun testReconnectAttachesToDurableRunId() = runEnvironmentTest { envScope ->
         val spyService = SpyToolchainProvisioningService()
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
         val durableRunId = "durable-run-submodule-001-abc"
-        stateHolder.attachToDurableRun(durableRunId, stage = SetupStepStage.REPO_SYNCHRONIZATION)
+        stateHolder.attachToDurableRun(durableRunId, stage = SetupStepStage.TOOLCHAIN_COMPILATION)
 
         val op = stateHolder.activeOperation.value
         assertNotNull(op)
         assertEquals(durableRunId, op.operationId)
-        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, op.stageId)
+        assertEquals(SetupStepStage.TOOLCHAIN_COMPILATION, op.stageId)
         assertEquals(SetupOperationState.RECONNECTING, op.executionState)
     }
 
@@ -427,8 +399,8 @@ class EnvironmentSetupStateTest {
                 ToolchainSetupState(
                     steps = ToolchainSetupState.defaultSteps(),
                     isRunning = true,
-                    currentStage = SetupStepStage.REPO_SYNCHRONIZATION,
-                    stepRunIds = mapOf(SetupStepStage.REPO_SYNCHRONIZATION to "durable-run-existing-123"),
+                    currentStage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    stepRunIds = mapOf(SetupStepStage.TOOLCHAIN_COMPILATION to "durable-run-existing-123"),
                 ),
             )
 
@@ -440,7 +412,7 @@ class EnvironmentSetupStateTest {
         val op = stateHolder.activeOperation.value
         assertNotNull(op, "Re-creating the state holder must reconnect to the in-flight run")
         assertEquals("durable-run-existing-123", op.operationId)
-        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, op.stageId)
+        assertEquals(SetupStepStage.TOOLCHAIN_COMPILATION, op.stageId)
         assertEquals(SetupOperationState.RECONNECTING, op.executionState)
         assertEquals(0, spyService.fullSetupCount, "Reconnecting must not start a new mutation")
         assertEquals(0, spyService.stageRetryCount, "Reconnecting must not start a new mutation")
@@ -452,15 +424,13 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
         // Mutate session properties
-        stateHolder.selectStage(SetupStepStage.SYSTEM_DIAGNOSTICS)
-        stateHolder.setAutoDoctorEnabled(false)
+        stateHolder.selectStage(SetupStepStage.SYSTEM_PACKAGES)
 
-        assertEquals(SetupStepStage.SYSTEM_DIAGNOSTICS, stateHolder.selectedStage.value)
-        assertFalse(stateHolder.isAutoDoctorEnabled.value)
+        assertEquals(SetupStepStage.SYSTEM_PACKAGES, stateHolder.selectedStage.value)
 
         // Simulate reading mapped presentation
         val presentation = stateHolder.presentation()
-        assertEquals(6, presentation.stages.size)
+        assertEquals(4, presentation.stages.size)
     }
 
     @Test
@@ -510,17 +480,10 @@ class EnvironmentSetupStateTest {
                         provenance = StepProvenance.LIVE,
                     ),
                     SetupStepDetail(
-                        stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                        title = "Doctor",
+                        stage = SetupStepStage.SYSTEM_PACKAGES,
+                        title = "Packages",
                         description = "",
                         status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                    SetupStepDetail(
-                        stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                        title = "Repos",
-                        description = "",
-                        status = StepStatus.PENDING,
                         provenance = StepProvenance.LIVE,
                     ),
                     SetupStepDetail(
@@ -620,7 +583,7 @@ class EnvironmentSetupStateTest {
                             provenance = StepProvenance.LIVE,
                         ),
                         SetupStepDetail(
-                            stage = SetupStepStage.REPO_SYNCHRONIZATION,
+                            stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                             title = "Repos",
                             description = "",
                             status = StepStatus.PENDING,
@@ -644,13 +607,13 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
         // Calling retryStage must ONLY enter PREVIEW; it must NOT auto-confirm or mutate!
-        stateHolder.retryStage(SetupStepStage.REPO_SYNCHRONIZATION)
+        stateHolder.retryStage(SetupStepStage.TOOLCHAIN_COMPILATION)
         testScheduler.advanceUntilIdle()
 
         val op = stateHolder.activeOperation.value
         assertNotNull(op, "retryStage must generate an active operation in PREVIEW")
         assertEquals(SetupOperationState.PREVIEW, op.executionState)
-        assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, op.stageId)
+        assertEquals(SetupStepStage.TOOLCHAIN_COMPILATION, op.stageId)
         assertEquals(0, spyService.stageRetryCount, "retryStage must NOT mutate service before confirmation")
         assertEquals(0, spyService.confirmCount, "retryStage must NOT auto-confirm")
 
@@ -897,7 +860,7 @@ class EnvironmentSetupStateTest {
         spyService.recoverOutcome =
             SetupOutcome.AwaitingUserAction(
                 pendingPlanId = expectedPlanId,
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = SetupStepStage.SYSTEM_PACKAGES,
                 reason = "Awaiting user terminal authorization",
                 handoff = handoff,
             )
@@ -926,20 +889,22 @@ class EnvironmentSetupStateTest {
 
     @Test
     fun testSuccessfulResumeChecksAgainOnlyWhenItDidNotCheckItself() = runEnvironmentTest { envScope ->
-        val handoff = UserRepairHandoff(
-            actionId = "packages",
-            description = "Install dev packages",
-            terminalCommand = "sudo apt-get install pkg-config",
-            packages = listOf("pkg-config"),
-            distro = "Ubuntu",
-        )
+        val handoff =
+            UserRepairHandoff(
+                actionId = "packages",
+                description = "Install dev packages",
+                terminalCommand = "sudo apt-get install pkg-config",
+                packages = listOf("pkg-config"),
+                distro = "Ubuntu",
+            )
         val spyService = SpyToolchainProvisioningService(ToolchainSetupState(pendingAttemptId = "attempt-1"))
-        spyService.recoverOutcome = SetupOutcome.AwaitingUserAction(
-            pendingPlanId = "plan-1",
-            stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-            reason = "Awaiting user terminal authorization",
-            handoff = handoff,
-        )
+        spyService.recoverOutcome =
+            SetupOutcome.AwaitingUserAction(
+                pendingPlanId = "plan-1",
+                stage = SetupStepStage.SYSTEM_PACKAGES,
+                reason = "Awaiting user terminal authorization",
+                handoff = handoff,
+            )
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
         testScheduler.advanceUntilIdle()
         val checksBefore = spyService.verifyEnvironmentCount
@@ -952,7 +917,11 @@ class EnvironmentSetupStateTest {
         stateHolder.resumeAwaitingOperation()
         testScheduler.advanceUntilIdle()
 
-        assertEquals(checksBefore, spyService.verifyEnvironmentCount, "the user waited through the same check twice")
+        assertEquals(
+            checksBefore,
+            spyService.verifyEnvironmentCount,
+            "the user waited through the same check twice",
+        )
     }
 
     @Test
@@ -973,7 +942,7 @@ class EnvironmentSetupStateTest {
         spyService.recoverOutcome =
             SetupOutcome.AwaitingUserAction(
                 pendingPlanId = expectedPlanId,
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = SetupStepStage.SYSTEM_PACKAGES,
                 reason = "Awaiting user terminal authorization",
                 handoff = handoff,
             )
@@ -991,7 +960,7 @@ class EnvironmentSetupStateTest {
         val failureReason = "Environment check failed before resumption: Python 3 Runtime: python3 not found"
         spyService.resumeOutcome =
             SetupOutcome.Failed(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS.name,
+                stage = SetupStepStage.SYSTEM_PACKAGES.name,
                 reason = failureReason,
             )
 
@@ -1048,7 +1017,7 @@ class EnvironmentSetupStateTest {
         spyService.recoverOutcome =
             SetupOutcome.AwaitingUserAction(
                 pendingPlanId = "plan-201",
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = SetupStepStage.SYSTEM_PACKAGES,
                 reason = "Awaiting user terminal authorization",
                 handoff = handoff,
             )
@@ -1113,7 +1082,7 @@ class EnvironmentSetupStateTest {
         spyService.recoverOutcome =
             SetupOutcome.AwaitingUserAction(
                 pendingPlanId = "plan-202",
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = SetupStepStage.SYSTEM_PACKAGES,
                 reason = "Awaiting user terminal authorization",
                 handoff = handoff,
             )
@@ -1198,7 +1167,7 @@ class EnvironmentSetupStateTest {
         spyService.recoverOutcome =
             SetupOutcome.AwaitingUserAction(
                 pendingPlanId = "plan-205",
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
+                stage = SetupStepStage.SYSTEM_PACKAGES,
                 reason = "Awaiting user terminal authorization",
                 handoff = handoff,
             )
@@ -1374,6 +1343,72 @@ class EnvironmentSetupStateTest {
                 "Handoff sheet must NOT automatically open after restart reconciliation",
             )
         }
+
+    private fun missingToolsState(): ToolchainSetupState = ToolchainSetupState(
+        steps =
+        ToolchainSetupState.defaultSteps().map { step ->
+            when (step.stage) {
+                SetupStepStage.TOOLCHAIN_COMPILATION ->
+                    step.copy(
+                        status = StepStatus.FAILED,
+                        toolchainFailureCategory =
+                        org.ide.lti.core.domain.ports.ToolchainFailureCategory.MISSING_BINARIES,
+                    )
+                // WARNING still counts as passing; it also makes the fake plan include the tool install.
+                // warning
+                else -> step.copy(status = StepStatus.SUCCESS)
+            }
+        },
+    )
+
+    @Test
+    fun testMissingToolsAreInstalledAutomaticallyOnceAfterPrerequisitesPass() = runEnvironmentTest { envScope ->
+        val spyService = SpyToolchainProvisioningService(initialState = missingToolsState())
+        spyService.confirmOutcome = SetupOutcome.Failed(stage = null, reason = "build failed")
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        stateHolder.checkEnvironmentStatus()
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, spyService.fullSetupCount, "missing tools must be installed without user action")
+        assertTrue("[auto-tools] installing missing tools" in spyService.logLines, "${spyService.logLines}")
+        assertTrue(spyService.executedPlans.single().orderedActions.all { it is SetupPlanAction.SwitchToolchain })
+
+        // A failed automatic install is not retried in a loop by later checks.
+        stateHolder.dismissPreview()
+        stateHolder.checkEnvironmentStatus()
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, spyService.fullSetupCount)
+        assertTrue(
+            "[auto-tools] not started: operation FULL_SETUP is open" in spyService.logLines,
+            "${spyService.logLines}",
+        )
+    }
+
+    @Test
+    fun testToolsAreNotAutoInstalledWhilePrerequisitesFail() = runEnvironmentTest { envScope ->
+        val failingPackages =
+            missingToolsState().let { state ->
+                state.copy(
+                    steps =
+                    state.steps.map {
+                        if (it.stage == SetupStepStage.SYSTEM_PACKAGES) {
+                            it.copy(
+                                status = StepStatus.FAILED,
+                            )
+                        } else {
+                            it
+                        }
+                    },
+                )
+            }
+        val spyService = SpyToolchainProvisioningService(initialState = failingPackages)
+        val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
+
+        stateHolder.checkEnvironmentStatus()
+        testScheduler.advanceUntilIdle()
+        assertEquals(0, spyService.confirmCount)
+        assertEquals(0, spyService.prepareCount)
+    }
 
     @Test
     fun testCheckAgainRetriesARecoveryThatFailedBeforeTheServiceWasUp() = runEnvironmentTest { envScope ->

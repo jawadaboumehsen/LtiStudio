@@ -18,43 +18,49 @@ import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.ToolRef
 
 public fun SetupPlanAction.toPersistedPlanAction(): PersistedPlanAction = when (this) {
-    is SetupPlanAction.InstallPackages -> PersistedPlanAction(
-        actionId = actionId(),
-        type = "INSTALL_PACKAGES",
-        payload = packages,
-    )
-    is SetupPlanAction.SwitchToolchain -> PersistedPlanAction(
-        actionId = actionId(),
-        type = "SWITCH_TOOLCHAIN",
-        payload = inputs.keys.map { it.value },
-        switchInputs = inputs.mapKeys { it.key.value }.mapValues { (_, input) ->
-            when (input) {
-                is ResolvedInput.Git -> PersistedResolvedInput(
-                    kind = "git",
-                    repoUrl = input.repoUrl,
-                    ref = when (val r = input.ref) {
-                        is ToolRef.Tag -> "tag:${r.name}"
-                        is ToolRef.Branch -> "branch:${r.name}"
-                        is ToolRef.Commit -> r.sha
-                        is ToolRef.ReleaseVersion -> r.version
-                    },
-                    commit = input.commit,
-                    submoduleCommits = input.submoduleCommits,
-                    resolvedAt = input.resolvedAt,
-                )
-                is ResolvedInput.Release -> PersistedResolvedInput(
-                    kind = "release",
-                    version = input.version,
-                    url = input.url,
-                    archiveMember = input.archiveMember,
-                    sha256 = input.sha256,
-                    platform = input.platform,
-                )
-            }
-        },
-        selectionRevision = selectionRevision,
-        forceRebuildGroups = forceRebuildGroups.map { it.value },
-    )
+    is SetupPlanAction.InstallPackages ->
+        PersistedPlanAction(
+            actionId = actionId(),
+            type = "INSTALL_PACKAGES",
+            payload = packages,
+        )
+    is SetupPlanAction.SwitchToolchain ->
+        PersistedPlanAction(
+            actionId = actionId(),
+            type = "SWITCH_TOOLCHAIN",
+            payload = inputs.keys.map { it.value },
+            switchInputs =
+            inputs.mapKeys { it.key.value }.mapValues { (_, input) ->
+                when (input) {
+                    is ResolvedInput.Git ->
+                        PersistedResolvedInput(
+                            kind = "git",
+                            repoUrl = input.repoUrl,
+                            ref =
+                            when (val r = input.ref) {
+                                is ToolRef.Tag -> "tag:${r.name}"
+                                is ToolRef.Branch -> "branch:${r.name}"
+                                is ToolRef.Commit -> r.sha
+                                is ToolRef.ReleaseVersion -> r.version
+                            },
+                            commit = input.commit,
+                            submoduleCommits = input.submoduleCommits,
+                            resolvedAt = input.resolvedAt,
+                        )
+                    is ResolvedInput.Release ->
+                        PersistedResolvedInput(
+                            kind = "release",
+                            version = input.version,
+                            url = input.url,
+                            archiveMember = input.archiveMember,
+                            sha256 = input.sha256,
+                            platform = input.platform,
+                        )
+                }
+            },
+            selectionRevision = selectionRevision,
+            forceRebuildGroups = forceRebuildGroups.map { it.value },
+        )
 }
 
 public fun SetupPlan.toPersistedSetupPlan(): PersistedSetupPlan = PersistedSetupPlan(
@@ -63,6 +69,5 @@ public fun SetupPlan.toPersistedSetupPlan(): PersistedSetupPlan = PersistedSetup
     environmentKey = environmentKey,
     kind = kind.name,
     targetStageOrToolId = targetStageOrToolId,
-    autoDoctorEnabled = autoDoctorEnabled,
     actions = orderedActions.map { it.toPersistedPlanAction() },
 )

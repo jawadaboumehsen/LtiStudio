@@ -61,10 +61,10 @@ class StrayServiceRetirementTest {
             status = "UP", distro = "Ubuntu", kernelRelease = "6", architecture = "x86_64", javaVersion = "21",
             serverUptimeMs = 1, serverVersion = "1.0.0-a", activeRuns = if (info.pid == 71719L) 1 else 0,
         )
-        override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): Boolean {
+        override suspend fun requestShutdown(info: ServerConnectionDescriptor, force: Boolean): ShutdownOutcome {
             assertEquals(false, force, "leftovers are never force-stopped")
             shutdownAsked += info.pid
-            return false // 71719 refuses (busy); 12946 has no endpoint
+            return ShutdownOutcome.NO_ANSWER // 71719 refuses (busy); 12946 has no endpoint
         }
     }
 
@@ -88,5 +88,22 @@ class StrayServiceRetirementTest {
 
         assertEquals(listOf(71719L, 12946L), prober.shutdownAsked, "every leftover is asked; not the one in use")
         assertEquals(listOf("12946"), cli.kills, "only the idle old build without the endpoint is terminated")
+    }
+
+    @Test
+    fun `a service that is alive but not answering is kept, not replaced by a second one`() = runTest {
+        val current = ServerConnectionDescriptor("172.30.0.1", 43559, "tokA", 76598L, "Ubuntu")
+        val silent = object : DaemonHealthProber(null) {
+            override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long) = false
+        }
+        val manager = WslDaemonManager(
+            config = WslDaemonConfig(distroName = "Ubuntu"),
+            cli = FakeCli(ps, ss),
+            stateStore = StateStore(current),
+            customProber = silent,
+        )
+
+        // Launching would fail here (no server binary in the fake), so returning proves nothing was launched.
+        assertEquals(current, manager.ensureStarted("Ubuntu"))
     }
 }

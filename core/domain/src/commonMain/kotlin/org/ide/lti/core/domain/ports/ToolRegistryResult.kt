@@ -11,5 +11,10 @@ package org.ide.lti.core.domain.ports
 
 public sealed interface ToolRegistryResult {
     public data class Tools(val list: List<ToolStatus>) : ToolRegistryResult
+
+    /** The service answered, but not with a tool list. */
     public data class ServiceError(val reason: String) : ToolRegistryResult
+
+    /** No answer: the connection failed. */
+    public data class Unreachable(val reason: String) : ToolRegistryResult
 }

@@ -18,12 +18,10 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
  * Stages in the environment check and toolchain provisioning pipeline.
  */
 public enum class SetupStepStage(public val displayName: String) {
-    WSL_DETECTION("WSL 2 Runtime"),
-    SYSTEM_PACKAGES("System Packages"),
-    SERVER_CONNECTIVITY("Server Bridge"),
-    SYSTEM_DIAGNOSTICS("Pre-Flight Doctor"),
-    REPO_SYNCHRONIZATION("Source Repositories"),
-    TOOLCHAIN_COMPILATION("Toolchain Binaries"),
+    WSL_DETECTION("Ubuntu (WSL)"),
+    SERVER_CONNECTIVITY("Build service"),
+    SYSTEM_PACKAGES("System packages"),
+    TOOLCHAIN_COMPILATION("Tools"),
 }
 
 /**
@@ -161,8 +159,7 @@ public data class ToolchainSetupState(
     val unpublishedToolIds: Set<String> = emptySet(),
     // TODO: not yet populated by any ToolchainProvisioningService implementation -- the durable-run
     // reattach indicator UI that reads this (EnvironmentStepContent.kt) will always see an empty map
-    // until WslToolchainProvisioner threads RunHandle.runId out of SubmoduleSyncEngine/
-    // ToolchainBuildEngine's startRun() calls and into a _state.update.
+    // until component-tool operations publish their server run IDs into setup step state.
     val stepRunIds: Map<SetupStepStage, String> = emptyMap(),
     val storageAvailableBytes: Long? = null,
     val storageMeasuredAt: Long? = null,
@@ -186,11 +183,14 @@ public data class ToolchainSetupState(
      * True if every step was verified live in this process and is SUCCESS or tolerated WARNING.
      */
     val isAllReady: Boolean
-        get() = steps.isNotEmpty() &&
-            steps.all { step ->
-                step.provenance == StepProvenance.LIVE &&
-                    (step.status == StepStatus.SUCCESS || step.status == StepStatus.WARNING)
-            }
+        get() =
+            steps.isNotEmpty() &&
+                // A required tool the service does not offer is not ready, whatever the folders on disk say.
+                unpublishedToolIds.isEmpty() &&
+                steps.all { step ->
+                    step.provenance == StepProvenance.LIVE &&
+                        (step.status == StepStatus.SUCCESS || step.status == StepStatus.WARNING)
+                }
 
     /**
      * True if the local LtiRomServer daemon bridge is connected and responsive.
@@ -223,32 +223,22 @@ public data class ToolchainSetupState(
         public fun defaultSteps(): List<SetupStepDetail> = listOf(
             SetupStepDetail(
                 stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL 2 Runtime",
-                description = "Detect Windows Subsystem for Linux installation and active distribution.",
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_PACKAGES,
-                title = "System Packages",
-                description = "Prerequisite system packages and Java runtime.",
+                title = "Ubuntu (WSL)",
+                description = "Detect Ubuntu distribution running on WSL 2.",
             ),
             SetupStepDetail(
                 stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Bridge",
+                title = "Build service",
                 description = "Connect to local LtiRomServer daemon and verify API health.",
             ),
             SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "Pre-Flight Doctor",
-                description = "Verify compilers, C++ build libraries, Python crypto, dual JDK, FUSE, and storage.",
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Source Repositories",
-                description = "Validate LtiRomTools/external and synchronize pinned submodules.",
+                stage = SetupStepStage.SYSTEM_PACKAGES,
+                title = "System packages",
+                description = "Prerequisite system packages and Java runtime.",
             ),
             SetupStepDetail(
                 stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Toolchain Binaries",
+                title = "Tools",
                 description = "Verify and compile tool binaries in LtiRomTools/bin.",
             ),
         )
@@ -264,7 +254,8 @@ public data class ToolchainSetupState(
                 id = "host_libraries",
                 title = "Native C/C++ Build Dependencies",
                 category = DiagnosticCategory.LIBRARIES,
-                detail = "pkg-config, protobuf, brotli, lz4, zstd, pcre2, libusb, uuid, and libfuse3 development " +
+                detail =
+                "pkg-config, protobuf, brotli, lz4, zstd, pcre2, libusb, uuid, and libfuse3 development " +
                     "headers.",
             ),
             DiagnosticCheckItem(
@@ -301,7 +292,8 @@ public data class ToolchainSetupState(
                 id = "sudo_noninteractive",
                 title = "Non-Interactive Sudo Elevation",
                 category = DiagnosticCategory.OS_UTILITIES,
-                detail = "Non-interactive passwordless sudo for headless package management and automated system " +
+                detail =
+                "Non-interactive passwordless sudo for headless package management and automated system " +
                     "configuration.",
                 isOptionalForRuntime = true,
             ),
@@ -387,7 +379,6 @@ public data class ToolchainSetupState(
                 capabilities = listOf("flash_partition", "dynamic_remap"),
                 isCore = false,
             ),
-
             // Filesystem & Images
             ToolComponentItem(
                 id = "mkfs.erofs",
@@ -509,7 +500,6 @@ public data class ToolchainSetupState(
                 capabilities = listOf("convert_block_sparse", "transfer_list"),
                 isCore = true,
             ),
-
             // Boot & Kernel
             ToolComponentItem(
                 id = "mkbootimg",
@@ -551,7 +541,6 @@ public data class ToolchainSetupState(
                 capabilities = listOf("create_dtbo_image", "device_tree_table"),
                 isCore = false,
             ),
-
             // Signing & Security
             ToolComponentItem(
                 id = "avbtool",
@@ -577,7 +566,6 @@ public data class ToolchainSetupState(
                 capabilities = listOf("encode_forward_error_correction", "decode_fec"),
                 isCore = false,
             ),
-
             // Bridge & Flashing
             ToolComponentItem(
                 id = "adb",
@@ -595,16 +583,7 @@ public data class ToolchainSetupState(
                 capabilities = listOf("flash", "boot", "getvar", "reboot_fastbootd"),
                 isCore = true,
             ),
-
             // Packaging & Tools
-            ToolComponentItem(
-                id = "aapt2",
-                name = "AAPT2",
-                category = ToolCategory.PACKAGING_AND_TOOLS,
-                binaryName = "aapt2",
-                capabilities = listOf("compile", "link", "dump_badging"),
-                isCore = true,
-            ),
             ToolComponentItem(
                 id = "apktool",
                 name = "Apktool",
@@ -679,11 +658,7 @@ public interface ToolchainProvisioningService {
      * Prepares an immutable [SetupPlan] describing the changes a confirmed operation would make.
      * Preparing never mutates the environment.
      */
-    public suspend fun prepare(
-        kind: SetupPlanKind,
-        targetId: String? = null,
-        autoDoctorEnabled: Boolean = true,
-    ): SetupPlan
+    public suspend fun prepare(kind: SetupPlanKind, targetId: String? = null): SetupPlan
 
     /**
      * Confirms and executes the operation described by [planId] and [revisionHash].
@@ -731,6 +706,9 @@ public interface ToolchainProvisioningService {
 
     /** Sets progress for a long-running step (T063, contracts/ui-states.md § 2-3). */
     public fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {}
+
+    /** Writes [line] to the setup activity log, so decisions made outside a check are visible there. */
+    public fun log(line: String) {}
 
     /** Retrieves the persisted attempt log text (T067, T068). Returns null if not found. */
     public suspend fun getAttemptLog(attemptId: String? = null): String? = null

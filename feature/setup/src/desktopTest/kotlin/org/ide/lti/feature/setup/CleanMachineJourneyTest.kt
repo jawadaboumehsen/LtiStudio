@@ -83,6 +83,8 @@ class CleanMachineJourneyTest {
             launchedDistro = distro
             return Result.success(Unit)
         }
+
+        override fun launchInstaller(distro: String): Result<Unit> = Result.success(Unit)
     }
 
     private class FakeWorkspaceRepository : WorkspaceRepository {
@@ -144,7 +146,7 @@ class CleanMachineJourneyTest {
 
         private val preparedPlans = mutableMapOf<String, SetupPlan>()
 
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan {
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan {
             prepareCount++
             return SetupPlan(
                 planId = "bootstrap-plan-$prepareCount",
@@ -152,7 +154,6 @@ class CleanMachineJourneyTest {
                 environmentKey = "Ubuntu-24.04",
                 kind = kind,
                 targetStageOrToolId = targetId,
-                autoDoctorEnabled = autoDoctorEnabled,
             ).also { preparedPlans[it.planId] = it }
         }
 
@@ -258,20 +259,6 @@ class CleanMachineJourneyTest {
                 description = "Waiting for System packages",
                 status = StepStatus.PENDING,
             )
-        val stepDoctorPending =
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "Pre-Flight Doctor",
-                description = "Waiting for Build service",
-                status = StepStatus.PENDING,
-            )
-        val stepReposPending =
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Source Repositories",
-                description = "Waiting for Pre-Flight Doctor",
-                status = StepStatus.PENDING,
-            )
         val stepToolsPending =
             SetupStepDetail(
                 stage = SetupStepStage.TOOLCHAIN_COMPILATION,
@@ -287,8 +274,6 @@ class CleanMachineJourneyTest {
                     stepWsl,
                     stepPackagesChecking,
                     stepServerPending,
-                    stepDoctorPending,
-                    stepReposPending,
                     stepToolsPending,
                 ),
                 activeDistro = "Ubuntu-24.04",
@@ -340,8 +325,6 @@ class CleanMachineJourneyTest {
                     stepWsl,
                     stepPackagesMissing,
                     stepServerPending,
-                    stepDoctorPending,
-                    stepReposPending,
                     stepToolsPending,
                 ),
                 isChecking = false,
@@ -447,71 +430,6 @@ class CleanMachineJourneyTest {
             )
         waitForIdle()
         onAllNodesWithText("0.1.0 · connected")[0].assertIsDisplayed()
-
-        // 8b. Pre-flight doctor checking -> passed
-        fakeService.stateFlow.value =
-            fakeService.stateFlow.value.copy(
-                steps =
-                fakeService.stateFlow.value.steps.map {
-                    if (it.stage == SetupStepStage.SYSTEM_DIAGNOSTICS) {
-                        it.copy(status = StepStatus.RUNNING, description = "Checking 1 of 8: Compilers")
-                    } else {
-                        it
-                    }
-                },
-            )
-        waitForIdle()
-        onNodeWithText("Checking 1 of 8: Compilers").assertIsDisplayed()
-
-        fakeService.stateFlow.value =
-            fakeService.stateFlow.value.copy(
-                steps =
-                fakeService.stateFlow.value.steps.map {
-                    if (it.stage == SetupStepStage.SYSTEM_DIAGNOSTICS) {
-                        it.copy(
-                            status = StepStatus.SUCCESS,
-                            description = "All checks passed",
-                            provenance = StepProvenance.LIVE,
-                        )
-                    } else {
-                        it
-                    }
-                },
-            )
-        waitForIdle()
-
-        // 8c. Source repositories syncing -> pinned
-        fakeService.stateFlow.value =
-            fakeService.stateFlow.value.copy(
-                steps =
-                fakeService.stateFlow.value.steps.map {
-                    if (it.stage == SetupStepStage.REPO_SYNCHRONIZATION) {
-                        it.copy(status = StepStatus.RUNNING, description = "Syncing android-tools (1 of 3)")
-                    } else {
-                        it
-                    }
-                },
-            )
-        waitForIdle()
-        onNodeWithText("Syncing android-tools (1 of 3)").assertIsDisplayed()
-
-        fakeService.stateFlow.value =
-            fakeService.stateFlow.value.copy(
-                steps =
-                fakeService.stateFlow.value.steps.map {
-                    if (it.stage == SetupStepStage.REPO_SYNCHRONIZATION) {
-                        it.copy(
-                            status = StepStatus.SUCCESS,
-                            description = "3 repositories at pinned versions",
-                            provenance = StepProvenance.LIVE,
-                        )
-                    } else {
-                        it
-                    }
-                },
-            )
-        waitForIdle()
-        onNodeWithText("3 repositories at pinned versions").assertIsDisplayed()
 
         // 8d. Toolchain compilation -> ready
         fakeService.stateFlow.value =

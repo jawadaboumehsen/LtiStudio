@@ -11,6 +11,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ltirom.tooling.client.wsl.DaemonHealthProber
+import io.ltirom.tooling.client.wsl.ShutdownOutcome
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import io.ltirom.tooling.client.wsl.WslProcessLauncher
@@ -49,7 +50,6 @@ public class WslDaemonManager(
     private val launcher: WslProcessLauncher = WslProcessLauncher(config.startupTimeoutMs),
     customProber: DaemonHealthProber? = null,
 ) : DaemonSupervisorPort {
-
     private val mutex = Mutex()
 
     /**
@@ -64,6 +64,16 @@ public class WslDaemonManager(
     private var connectionInfo: ServerConnectionDescriptor? = null
 
     public val activeDistro: String? get() = connectionInfo?.distro ?: boundDistro ?: config.distroName
+
+    /** Absolute home of the user that owns the running service, when known. */
+    public val activeHome: String? get() = boundHome
+
+    /** Resolves and remembers the owner home used by the current distro. */
+    public suspend fun resolveActiveHome(): String {
+        boundHome?.let { return it }
+        val distro = activeDistro ?: error("Build service has not selected a WSL distribution")
+        return detector.resolveWslUserHome(distro).also { boundHome = it }
+    }
 
     /**
      * Target of the last admitted start (distro, home, Java). Callers without an operation context
@@ -90,11 +100,12 @@ public class WslDaemonManager(
 
     override val lastLaunchErrorLogTail: String? get() = launcher.lastLogTail
 
-    public val json: Json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        encodeDefaults = true
-    }
+    public val json: Json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            encodeDefaults = true
+        }
 
     public val httpClient: HttpClient by lazy {
         HttpClient(CIO) {
@@ -126,13 +137,19 @@ public class WslDaemonManager(
         ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
 
     public suspend fun ensureStarted(distro: String, home: String? = null): ServerConnectionDescriptor =
-        ensureRunningVersion(distro = distro, activeVersion = null, home = home, javaHome = null)
+        ensureRunningVersion(
+            distro = distro,
+            activeVersion = null,
+            home = home,
+            javaHome = null,
+        )
 
     override suspend fun ensureStarted(): ServerConnectionDescriptor {
-        val distro = connectionInfo?.distro
-            ?: boundDistro
-            ?: config.distroName
-            ?: error("Build service has not been started yet: run the environment check first.")
+        val distro =
+            connectionInfo?.distro
+                ?: boundDistro
+                ?: config.distroName
+                ?: error("Build service has not been started yet: run the environment check first.")
         return ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
     }
 
@@ -200,6 +217,15 @@ public class WslDaemonManager(
             }
         }
 
+        // A service that stops answering for a few seconds (a WSL networking hiccup) is not dead. Launching a
+        // second one split the app between two services and lost the first one's running build; keep it and
+        // let the next check retry. ponytail: a live but permanently hung service needs a manual restart.
+        val recorded = current?.takeIf { it.distro == distro } ?: existing
+        if (recorded != null && isServiceProcessAlive(recorded)) {
+            connectionInfo = recorded
+            return recorded
+        }
+
         lastStartAdopted = false
         isUpdateWaiting = false
         val info = launchDaemon(distro, boundHome, boundJavaHome)
@@ -213,19 +239,26 @@ public class WslDaemonManager(
      * only when its health report shows no active runs; one that doesn't answer at all is left alone.
      */
     private suspend fun retireStrayServices(keep: ServerConnectionDescriptor) {
-        val strays = withContext(Dispatchers.IO) {
-            val ps = cli.execute(keep.distro, listOf("ps", "-eo", "pid=,args="), timeoutSeconds = 5).output
-            val ss = cli.execute(keep.distro, listOf("ss", "-ltnpH"), timeoutSeconds = 5).output
-            parseLtiRomServices(ps, ss, keep.host, keep.distro).filter { it.pid != keep.pid }
-        }
+        val strays =
+            withContext(Dispatchers.IO) {
+                val ps = cli.execute(keep.distro, listOf("ps", "-eo", "pid=,args="), timeoutSeconds = 5).output
+                val ss = cli.execute(keep.distro, listOf("ss", "-ltnpH"), timeoutSeconds = 5).output
+                parseLtiRomServices(ps, ss, keep.host, keep.distro).filter { it.pid != keep.pid }
+            }
         for (stray in strays) {
-            if (prober.requestShutdown(stray, force = false)) continue
+            if (prober.requestShutdown(stray, force = false) == ShutdownOutcome.ACCEPTED) continue
             if (prober.getServerInfo(stray)?.activeRuns == 0) {
                 withContext(Dispatchers.IO) {
                     cli.execute(keep.distro, listOf("kill", "-TERM", stray.pid.toString()), timeoutSeconds = 5)
                 }
             }
         }
+    }
+
+    /** The pid is checked by command line, so a pid reused by another process doesn't count. */
+    private suspend fun isServiceProcessAlive(info: ServerConnectionDescriptor): Boolean = withContext(Dispatchers.IO) {
+        val ps = cli.execute(info.distro, listOf("ps", "-p", info.pid.toString(), "-o", "args="), timeoutSeconds = 5)
+        ps.exitCode == 0 && "ltirom-server" in ps.output
     }
 
     override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = mutex.withLock { connectionInfo }
@@ -260,11 +293,12 @@ public class WslDaemonManager(
         val binary = findServerBinary(distro, home)
         val wslIp = detector.resolveWslIp(distro)
 
-        val launchResult = if (javaHome != null) {
-            launcher.launch(distro, binary, javaHome)
-        } else {
-            launcher.launch(distro, binary)
-        }
+        val launchResult =
+            if (javaHome != null) {
+                launcher.launch(distro, binary, javaHome)
+            } else {
+                launcher.launch(distro, binary)
+            }
         owned = OwnedProcess(distro, launchResult.pid, launchResult.process)
 
         // Determine working host IP: test WSL IP then fallback to 127.0.0.1
@@ -272,13 +306,14 @@ public class WslDaemonManager(
         var workingHost: String? = null
 
         for (host in candidateHosts) {
-            val testInfo = ServerConnectionDescriptor(
-                host = host,
-                port = launchResult.port,
-                token = launchResult.token,
-                pid = launchResult.pid,
-                distro = distro,
-            )
+            val testInfo =
+                ServerConnectionDescriptor(
+                    host = host,
+                    port = launchResult.port,
+                    token = launchResult.token,
+                    pid = launchResult.pid,
+                    distro = distro,
+                )
             if (isHealthy(testInfo)) {
                 workingHost = host
                 break
@@ -313,9 +348,10 @@ public class WslDaemonManager(
      * anything, so a status read never changes [isUpdateWaiting] or the connection.
      */
     public suspend fun getServerInfo(environment: SetupEnvironment): WslServerInfo? {
-        val info = mutex.withLock { connectionInfo }?.takeIf { it.distro == environment.distro }
-            ?: checkExistingDaemon(environment.distro)
-            ?: return null
+        val info =
+            mutex.withLock { connectionInfo }?.takeIf { it.distro == environment.distro }
+                ?: checkExistingDaemon(environment.distro)
+                ?: return null
         return prober.getServerInfo(info)
     }
 
@@ -355,9 +391,12 @@ public class WslDaemonManager(
     }
 
     private suspend fun stopDaemonInternal(info: ServerConnectionDescriptor, force: Boolean): Boolean {
-        val stoppedCleanly = prober.requestShutdown(info, force)
+        val outcome = prober.requestShutdown(info, force)
+        val stoppedCleanly = outcome == ShutdownOutcome.ACCEPTED
 
-        if (stoppedCleanly || force) {
+        // A forced stop also tears down on silence (the service is unreachable, so the launcher is all that's left),
+        // but never on a refusal: the service answered that it keeps running its work, and we still own it.
+        if (stoppedCleanly || (force && outcome == ShutdownOutcome.NO_ANSWER)) {
             owned?.takeIf { it.belongsTo(info) }?.let { o ->
                 if (o.process.isAlive) {
                     o.process.waitFor(2, TimeUnit.SECONDS)
@@ -394,8 +433,9 @@ public class WslDaemonManager(
             host: String,
             distro: String,
         ): List<ServerConnectionDescriptor> {
-            val portByPid = ss.lines().mapNotNull { LISTENER.find(it) }
-                .associate { it.groupValues[2].toLong() to it.groupValues[1].toInt() }
+            val portByPid =
+                ss.lines().mapNotNull { LISTENER.find(it) }
+                    .associate { it.groupValues[2].toLong() to it.groupValues[1].toInt() }
             return ps.lines().map { it.trim() }.filter { "ltirom-server" in it }.mapNotNull { line ->
                 val pid = line.substringBefore(' ').toLongOrNull() ?: return@mapNotNull null
                 val token = TOKEN_ARG.find(line)?.groupValues?.get(1) ?: return@mapNotNull null

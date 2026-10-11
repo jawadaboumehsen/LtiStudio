@@ -51,9 +51,13 @@ sealed interface ResolvedInput {
  */
 sealed interface CompatibilityResult {
     data object LayoutCompatible : CompatibilityResult
+
     data class Unsupported(val missingPaths: List<String>) : CompatibilityResult
+
     data class Unreachable(val reason: String) : CompatibilityResult
+
     data object AccessDenied : CompatibilityResult
+
     data class NotFound(val ref: String) : CompatibilityResult
 }
 
@@ -62,17 +66,6 @@ sealed interface CompatibilityResult {
  */
 sealed interface UpdateAvailability {
     data object UpToDate : UpdateAvailability
-    data class UpdateAvailable(val newCommit: String) : UpdateAvailability
-}
 
-/**
- * Health assessment of the installed toolchain across the four necessary operational facts.
- */
-data class ToolchainHealth(
-    val selectedInstallId: String?,
-    val intact: Boolean,
-    val serviceResolves: Boolean,
-    val journalCommitted: Boolean,
-) {
-    val isHealthy: Boolean get() = selectedInstallId != null && intact && serviceResolves && journalCommitted
+    data class UpdateAvailable(val newCommit: String) : UpdateAvailability
 }

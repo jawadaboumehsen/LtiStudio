@@ -39,51 +39,47 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalTestApi::class)
 class EnvironmentScreenTest {
-
     @Test
     fun testStageFailureDisplaysErrorBoxWithTargetedRetryButton() =
         runDesktopComposeUiTest(width = 1120, height = 1800) {
             val errorMessage = "Git submodule sync failed: connection timed out"
-            val failedStage = SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repository Synchronization",
-                description = "Synchronizing Git submodules",
-                status = StepStatus.FAILED,
-                error = errorMessage,
-            )
-            val state = ToolchainSetupState(
-                steps = listOf(
-                    SetupStepDetail(
-                        stage = SetupStepStage.WSL_DETECTION,
-                        title = "WSL Detection",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
+            val failedStage =
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Toolchain Compilation",
+                    description = "Compiling tools",
+                    status = StepStatus.FAILED,
+                    error = errorMessage,
+                )
+            val state =
+                ToolchainSetupState(
+                    steps =
+                    listOf(
+                        SetupStepDetail(
+                            stage = SetupStepStage.WSL_DETECTION,
+                            title = "WSL Detection",
+                            description = "",
+                            status = StepStatus.SUCCESS,
+                            provenance = StepProvenance.LIVE,
+                        ),
+                        SetupStepDetail(
+                            stage = SetupStepStage.SERVER_CONNECTIVITY,
+                            title = "Server Daemon Bridge",
+                            description = "",
+                            status = StepStatus.SUCCESS,
+                            provenance = StepProvenance.LIVE,
+                        ),
+                        SetupStepDetail(
+                            stage = SetupStepStage.SYSTEM_PACKAGES,
+                            title = "System Packages",
+                            description = "",
+                            status = StepStatus.SUCCESS,
+                            provenance = StepProvenance.LIVE,
+                        ),
+                        failedStage,
                     ),
-                    SetupStepDetail(
-                        stage = SetupStepStage.SERVER_CONNECTIVITY,
-                        title = "Server Daemon Bridge",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                    SetupStepDetail(
-                        stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                        title = "System Diagnostics",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
-                    ),
-                    failedStage,
-                    SetupStepDetail(
-                        stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                        title = "Toolchain Compilation",
-                        description = "",
-                        status = StepStatus.PENDING,
-                    ),
-                ),
-                lastVerifiedTimestamp = 1700000000000L,
-            )
+                    lastVerifiedTimestamp = 1700000000000L,
+                )
 
             var retriedStage: SetupStepStage? = null
 
@@ -91,7 +87,8 @@ class EnvironmentScreenTest {
                 LtiTheme {
                     EnvironmentStepContent(
                         state = SetupUiState(toolchainSetupState = state),
-                        actions = SetupUiActions(
+                        actions =
+                        SetupUiActions(
                             onRetryStage = { retriedStage = it },
                         ),
                     )
@@ -101,33 +98,37 @@ class EnvironmentScreenTest {
             // Error message must be displayed in the expanded error box
             onNodeWithText(errorMessage).assertIsDisplayed()
 
-            // Targeted "Retry Stage" button must be displayed and functional
-            onNodeWithText("Retry Stage").assertIsDisplayed().performClick()
-            assertEquals(SetupStepStage.REPO_SYNCHRONIZATION, retriedStage)
+            // Targeted "Retry failed" and "View log" buttons must be displayed and functional
+            onNodeWithText("View log").assertIsDisplayed()
+            onNodeWithText("Retry failed").assertIsDisplayed().performClick()
+            assertEquals(SetupStepStage.TOOLCHAIN_COMPILATION, retriedStage)
         }
 
     @Test
     fun testOfflineStateShowsRetryConnectionAndCachedWorkspacesUsable() =
         runDesktopComposeUiTest(width = 1120, height = 1800) {
-            val offlineStep = SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server Daemon Bridge",
-                description = "Daemon unreachable on port 50051",
-                status = StepStatus.FAILED,
-            )
-            val state = ToolchainSetupState(
-                steps = listOf(
-                    SetupStepDetail(
-                        stage = SetupStepStage.WSL_DETECTION,
-                        title = "WSL Detection",
-                        description = "",
-                        status = StepStatus.SUCCESS,
-                        provenance = StepProvenance.LIVE,
+            val offlineStep =
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server Daemon Bridge",
+                    description = "Daemon unreachable on port 50051",
+                    status = StepStatus.FAILED,
+                )
+            val state =
+                ToolchainSetupState(
+                    steps =
+                    listOf(
+                        SetupStepDetail(
+                            stage = SetupStepStage.WSL_DETECTION,
+                            title = "WSL Detection",
+                            description = "",
+                            status = StepStatus.SUCCESS,
+                            provenance = StepProvenance.LIVE,
+                        ),
+                        offlineStep,
                     ),
-                    offlineStep,
-                ),
-                lastVerifiedTimestamp = 1700000000000L,
-            )
+                    lastVerifiedTimestamp = 1700000000000L,
+                )
 
             var retriedStage: SetupStepStage? = null
             var navigatedToProjects = false
@@ -136,7 +137,8 @@ class EnvironmentScreenTest {
                 LtiTheme {
                     EnvironmentStepContent(
                         state = SetupUiState(toolchainSetupState = state),
-                        actions = SetupUiActions(
+                        actions =
+                        SetupUiActions(
                             onRetryStage = { retriedStage = it },
                         ),
                         onNavigateToProjects = { navigatedToProjects = true },
@@ -155,17 +157,19 @@ class EnvironmentScreenTest {
 
     @Test
     fun testRestoredProvenanceShowsHistoricalLabel() = runDesktopComposeUiTest(width = 1120, height = 1800) {
-        val restoredStep = SetupStepDetail(
-            stage = SetupStepStage.WSL_DETECTION,
-            title = "WSL Detection",
-            description = "Ubuntu 22.04 LTS",
-            status = StepStatus.SUCCESS,
-            provenance = StepProvenance.RESTORED,
-        )
-        val state = ToolchainSetupState(
-            steps = listOf(restoredStep),
-            lastVerifiedTimestamp = 1700000000000L,
-        )
+        val restoredStep =
+            SetupStepDetail(
+                stage = SetupStepStage.WSL_DETECTION,
+                title = "WSL Detection",
+                description = "Ubuntu 22.04 LTS",
+                status = StepStatus.SUCCESS,
+                provenance = StepProvenance.RESTORED,
+            )
+        val state =
+            ToolchainSetupState(
+                steps = listOf(restoredStep),
+                lastVerifiedTimestamp = 1700000000000L,
+            )
 
         setContent {
             LtiTheme {
@@ -183,38 +187,38 @@ class EnvironmentScreenTest {
     @Test
     fun testProvisioningPreviewSheetDisplaysPlannedChangesAndElevation() =
         runDesktopComposeUiTest(width = 1120, height = 1800) {
-            val planned = PlannedSetupChanges(
-                packagesToInstall = listOf("build-essential", "cmake", "libssl-dev"),
-                submodulesToSync = listOf("core/external/boringssl"),
-                toolsToCompile = listOf("avbtool", "fastboot"),
-                requiresElevation = true,
-                elevationReason = "sudo apt-get install build-essential cmake libssl-dev",
-                targetDistro = "Ubuntu-22.04",
-            )
-            val activeOp = SetupOperation(
-                kind = SetupOperationKind.FULL_SETUP,
-                plannedChanges = planned,
-                executionState = SetupOperationState.PREVIEW,
-                autoDoctorEnabled = true,
-            )
+            val planned =
+                PlannedSetupChanges(
+                    packagesToInstall = listOf("build-essential", "cmake", "libssl-dev"),
+                    submodulesToSync = listOf("core/external/boringssl"),
+                    toolsToCompile = listOf("avbtool", "fastboot"),
+                    requiresElevation = true,
+                    elevationReason = "sudo apt-get install build-essential cmake libssl-dev",
+                    targetDistro = "Ubuntu-22.04",
+                )
+            val activeOp =
+                SetupOperation(
+                    kind = SetupOperationKind.FULL_SETUP,
+                    plannedChanges = planned,
+                    executionState = SetupOperationState.PREVIEW,
+                )
 
             var confirmed = false
             var dismissed = false
-            var autoDoctorToggled = false
 
             setContent {
                 LtiTheme {
                     SetupScreenContent(
-                        state = SetupUiState(
+                        state =
+                        SetupUiState(
                             toolchainSetupState = ToolchainSetupState(lastVerifiedTimestamp = 1700000000000L),
                             activeOperation = activeOp,
-                            isAutoDoctorEnabled = true,
                             selectedTab = SetupTab.ENVIRONMENT,
                         ),
-                        actions = SetupUiActions(
+                        actions =
+                        SetupUiActions(
                             onConfirmOperation = { confirmed = true },
                             onDismissPreview = { dismissed = true },
-                            onSetAutoDoctorEnabled = { autoDoctorToggled = it },
                         ),
                     )
                 }
@@ -231,9 +235,6 @@ class EnvironmentScreenTest {
             onNodeWithText("core/external/boringssl").assertIsDisplayed()
             onNodeWithText("avbtool").assertIsDisplayed()
 
-            // Auto Doctor toggle option
-            onNodeWithText("Automated Doctor Remediation").assertIsDisplayed()
-
             // Confirm & Set Up button
             onNodeWithText("Confirm & Set Up").assertIsDisplayed().performClick()
             assertTrue(confirmed, "Clicking Confirm & Set Up must invoke onConfirmOperation")
@@ -241,62 +242,58 @@ class EnvironmentScreenTest {
 
     @Test
     fun testReadyStateShowsOpenWorkspacesPrimaryAction() = runDesktopComposeUiTest(width = 1120, height = 1800) {
-        val readySteps = listOf(
-            SetupStepDetail(
-                stage = SetupStepStage.WSL_DETECTION,
-                title = "WSL",
-                description = "",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SERVER_CONNECTIVITY,
-                title = "Server",
-                description = "",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                title = "Doctor",
-                description = "",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                title = "Repos",
-                description = "",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-            SetupStepDetail(
-                stage = SetupStepStage.TOOLCHAIN_COMPILATION,
-                title = "Build",
-                description = "",
-                status = StepStatus.SUCCESS,
-                provenance = StepProvenance.LIVE,
-            ),
-        )
-        val readyTools = listOf(
-            ToolComponentItem(
-                id = "lpunpack",
-                name = "LP Unpack",
-                category = ToolCategory.DYNAMIC_PARTITIONS,
-                binaryName = "lpunpack",
-                status = StepStatus.SUCCESS,
-                lastTested = "2026-09-13",
-                isCore = true,
-            ),
-        )
-        val state = ToolchainSetupState(
-            steps = readySteps,
-            toolsMatrix = readyTools,
-            publishedToolIds = setOf("lpunpack"),
-            checkedAt = 1700000000000L,
-            lastReadyAt = 1700000000000L,
-            lastVerifiedTimestamp = 1700000000000L,
-        )
+        val readySteps =
+            listOf(
+                SetupStepDetail(
+                    stage = SetupStepStage.WSL_DETECTION,
+                    title = "WSL",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SERVER_CONNECTIVITY,
+                    title = "Server",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "Packages",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+                SetupStepDetail(
+                    stage = SetupStepStage.TOOLCHAIN_COMPILATION,
+                    title = "Build",
+                    description = "",
+                    status = StepStatus.SUCCESS,
+                    provenance = StepProvenance.LIVE,
+                ),
+            )
+        val readyTools =
+            listOf(
+                ToolComponentItem(
+                    id = "lpunpack",
+                    name = "LP Unpack",
+                    category = ToolCategory.DYNAMIC_PARTITIONS,
+                    binaryName = "lpunpack",
+                    status = StepStatus.SUCCESS,
+                    lastTested = "2026-09-13",
+                    isCore = true,
+                ),
+            )
+        val state =
+            ToolchainSetupState(
+                steps = readySteps,
+                toolsMatrix = readyTools,
+                publishedToolIds = setOf("lpunpack"),
+                checkedAt = 1700000000000L,
+                lastReadyAt = 1700000000000L,
+                lastVerifiedTimestamp = 1700000000000L,
+            )
 
         var navigatedToProjects = false
 

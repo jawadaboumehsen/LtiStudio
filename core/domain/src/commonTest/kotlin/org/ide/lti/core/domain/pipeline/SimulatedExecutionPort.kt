@@ -28,6 +28,17 @@ import org.ide.lti.core.model.workspace.Workspace
  */
 @Suppress("CyclomaticComplexMethod", "ReturnCount", "MaxLineLength")
 class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort {
+    /** Commands retain their real immutable paths here for pinning assertions. */
+    val submittedCommands = mutableListOf<StepCommand>()
+
+    private fun simulatedCommand(command: StepCommand): StepCommand {
+        submittedCommands += command
+        val toolId =
+            PipelinePinnedToolStore.defaultPins.paths.entries
+                .firstOrNull { it.value == command.toolId }?.key ?: command.toolId
+        return command.copy(toolId = toolId)
+    }
+
     val files = mutableMapOf<String, ByteArray>()
     val durableSteps = mutableListOf<StepCommand>()
     val syncCalls = mutableListOf<StepCommand>()
@@ -48,16 +59,19 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     fun put(rel: String, text: String) {
         files["$wsRoot/$rel"] = text.encodeToByteArray()
     }
+
     fun text(rel: String): String? = files["$wsRoot/$rel"]?.decodeToString()
+
     fun has(rel: String): Boolean = files.containsKey("$wsRoot/$rel")
 
     val statuses = mutableMapOf<String, StepStatus>()
     val observedFlows = mutableMapOf<String, (Long) -> Flow<StepEvent>>()
 
     override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
-        durableSteps += step
+        val simulated = simulatedCommand(step)
+        durableSteps += simulated
         val id = "srv-${++handleCounter}"
-        pending[id] = simulate(step)
+        pending[id] = simulate(simulated)
         return RunHandle(id, "RUNNING", 0L)
     }
 
@@ -71,6 +85,7 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     }
 
     override suspend fun status(serverRunId: String): StepStatus? = statuses[serverRunId]
+
     override suspend fun cancel(serverRunId: String): Boolean = true
 
     override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean {
@@ -82,12 +97,15 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
 
     override suspend fun stat(ws: Workspace, relPath: String): FileStat {
         val bytes = files["$wsRoot/$relPath"] ?: return FileStat(relPath, exists = false)
-        return FileStat(relPath, exists = true, sizeBytes = bytes.size.toLong())
+        val name = relPath.substringAfterLast('/').removeSuffix(".img")
+        val size = if (name in BOOT) bootBytes(name).toLong() else bytes.size.toLong()
+        return FileStat(relPath, exists = true, sizeBytes = size)
     }
 
     override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult {
-        syncCalls += command
-        return simulate(command)
+        val simulated = simulatedCommand(command)
+        syncCalls += simulated
+        return simulate(simulated)
     }
 
     override suspend fun checkAvailableDiskSpace(ws: Workspace): Long? = freeBytes
@@ -116,16 +134,20 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
                 "$digest  $path"
             }
             "sha1sum" -> "${fakeDigest(args.last(), 40)}  ${args.last()}"
-            "stat" -> (files[args.last()]?.size ?: 0).toString()
+            "stat" -> {
+                val name = args.last().substringAfterLast('/').removeSuffix(".img")
+                if (name in BOOT) bootBytes(name).toString() else (files[args.last()]?.size ?: 0).toString()
+            }
             "cat" -> files[args.last()]?.decodeToString() ?: ""
             "xxd" -> "3aff26ed"
             "getfattr" -> getfattrDump(args.last())
             "mkfs.erofs" -> "".also { files[args[args.size - 2]] = ByteArray(IMAGE_BYTES) }
-            "img2sdat" -> "".also {
-                val name = args.last().substringAfterLast('/').removeSuffix(".img")
-                files["${args[1]}/$name.new.dat"] = ByteArray(10)
-                files["${args[1]}/$name.transfer.list"] = ByteArray(5)
-            }
+            "img2sdat" ->
+                "".also {
+                    val name = args.last().substringAfterLast('/').removeSuffix(".img")
+                    files["${args[1]}/$name.new.dat"] = ByteArray(10)
+                    files["${args[1]}/$name.transfer.list"] = ByteArray(5)
+                }
             "signapk" -> "".also { files[args.last()] = ByteArray(ZIP_BYTES) }
             "avbtool" -> avbtool(args)
             else -> ""
@@ -136,18 +158,20 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         val args = cmd.args
         when (cmd.toolId) {
             "find" -> if ("stat" in args) return statDump(args[0])
-            "unzip" -> when {
-                args[0] == "-l" -> return zipListing()
-                args[0] == "-o" && args.size == 4 -> { // raw archive extracted into a directory
-                    val dir = args.last()
-                    BOOT.forEach { files["$dir/$it.img"] = ByteArray(bootBytes(it)) }
-                    files["$dir/super.img"] = ByteArray(IMAGE_BYTES * 2)
-                    files["$dir/super.raw.img"] = ByteArray(IMAGE_BYTES * 2)
+            "unzip" ->
+                when {
+                    args[0] == "-l" -> return zipListing()
+                    args[0] == "-o" && args.size == 4 -> { // raw archive extracted into a directory
+                        val dir = args.last()
+                        BOOT.forEach { files["$dir/$it.img"] = ByteArray(1024) }
+                        files["$dir/super.img"] = ByteArray(IMAGE_BYTES * 2)
+                        files["$dir/super.raw.img"] = ByteArray(IMAGE_BYTES * 2)
+                    }
                 }
-            }
-            "payload-dumper-go" -> DYNAMIC.forEach { files["${args[1]}/$it.img"] = ByteArray(IMAGE_BYTES) }.also {
-                BOOT.forEach { files["${args[1]}/$it.img"] = ByteArray(bootBytes(it)) }
-            }
+            "payload-dumper-go" ->
+                DYNAMIC.forEach { files["${args[1]}/$it.img"] = ByteArray(IMAGE_BYTES) }.also {
+                    BOOT.forEach { files["${args[1]}/$it.img"] = ByteArray(1024) }
+                }
             "lpmake" -> files[args.last()] = ByteArray(65536)
             "lpunpack" -> DYNAMIC.forEach { files["${args.last()}/${it}_a.img"] = ByteArray(IMAGE_BYTES) }
             "brotli" -> files[args[2].removePrefix("--output=")] = ByteArray(8)
@@ -166,13 +190,14 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     }
 
     private fun avbtool(args: List<String>): String = when (args[0]) {
-        "add_hashtree_footer" -> if ("--calc_max_image_size" in args) {
-            (args[args.indexOf("--partition_size") + 1].toLong() - AVB_OVERHEAD).toString()
-        } else {
-            val image = args[args.indexOf("--image") + 1]
-            files[image] = ByteArray(args[args.indexOf("--partition_size") + 1].toInt())
-            ""
-        }
+        "add_hashtree_footer" ->
+            if ("--calc_max_image_size" in args) {
+                (args[args.indexOf("--partition_size") + 1].toLong() - AVB_OVERHEAD).toString()
+            } else {
+                val image = args[args.indexOf("--image") + 1]
+                files[image] = ByteArray(args[args.indexOf("--partition_size") + 1].toInt())
+                ""
+            }
         "info_image" -> {
             val image = args[args.indexOf("--image") + 1]
             val name = image.substringAfterLast('/').removeSuffix(".img")
@@ -182,21 +207,23 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         else -> ""
     }
 
-    private fun statDump(mnt: String): String =
-        "0 0 755 $mnt\n0 0 644 $mnt/build.prop\n0 2000 755 $mnt/bin/run-as\n"
+    private fun statDump(mnt: String): String = "0 0 755 $mnt\n0 0 644 $mnt/build.prop\n0 2000 755 $mnt/bin/run-as\n"
 
-    private fun getfattrDump(mnt: String): String = listOf(mnt, "$mnt/build.prop", "$mnt/bin/run-as").joinToString("\n") {
-        "# file: $it\nsecurity.selinux=\"u:object_r:system_file:s0\"\n"
-    }
+    private fun getfattrDump(mnt: String): String =
+        listOf(mnt, "$mnt/build.prop", "$mnt/bin/run-as").joinToString("\n") {
+            "# file: $it\nsecurity.selinux=\"u:object_r:system_file:s0\"\n"
+        }
 
     private fun zipListing(): String = buildString {
         appendLine("Archive: rom.zip")
         appendLine("  Length      Date    Time    Name")
-        val members = DYNAMIC.flatMap { listOf("$it.new.dat.br", "$it.transfer.list") } + BOOT.map { "$it.img" } + listOf(
-            "META-INF/com/android/otacert", "META-INF/com/android/metadata",
-            "META-INF/com/google/android/update-binary", "META-INF/com/google/android/updater-script",
-            "dynamic_partitions_op_list", "unsparse_super_empty.img", "build_info.txt", "changelog.md",
-        )
+        val members =
+            DYNAMIC.flatMap { listOf("$it.new.dat.br", "$it.transfer.list") } + BOOT.map { "$it.img" } +
+                listOf(
+                    "META-INF/com/android/otacert", "META-INF/com/android/metadata",
+                    "META-INF/com/google/android/update-binary", "META-INF/com/google/android/updater-script",
+                    "dynamic_partitions_op_list", "unsparse_super_empty.img", "build_info.txt", "changelog.md",
+                )
         members.forEach { appendLine("     1000  2026-09-11 12:00   $it") }
     }
 
@@ -206,8 +233,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         const val AVB_OVERHEAD = 4096L * 32
         val DYNAMIC = listOf("odm", "product", "system", "system_dlkm", "system_ext", "vendor", "vendor_dlkm")
         val BOOT = listOf("boot", "init_boot", "vendor_boot", "dtbo")
-        const val STOCK_BUILD_PROP = "ro.build.type=user\nro.build.fingerprint=nubia/NX_PQ84P01:15/AQ3A.240812.002/20260311:user/release-keys\n" +
-            "ro.build.version.incremental=20260311.222527\nro.build.version.sdk=35\nro.build.version.security_patch=2026-02-01\n"
+        const val STOCK_BUILD_PROP =
+            "ro.build.type=user\nro.build.fingerprint=nubia/NX_PQ84P01:15/AQ3A.240812.002/20260311:user/release-keys\n" +
+                "ro.build.version.incremental=20260311.222527\nro.build.version.sdk=35\nro.build.version.security_patch=2026-02-01\n"
 
         fun bootBytes(image: String): Int = when (image) {
             "boot", "vendor_boot" -> 100663296

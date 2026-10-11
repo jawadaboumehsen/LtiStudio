@@ -685,21 +685,16 @@ Before merging UI changes or releasing new features:
 ## Setup Flow & Clean Machine Architecture
 
 Setup takes a Windows machine with an empty WSL Ubuntu to a working toolchain (spec
-`specs/007-clean-machine-setup/`). The check runs in `WslToolchainProvisioner` (`core:data`), one function
+`specs/007-clean-machine-setup/`, `specs/009-component-tool-manager/`). The check runs in `WslToolchainProvisioner` (`core:data`), one function
 per stage; a failed stage marks every later stage pending and stops.
 
 ### 1. Stages (in order)
-1. **WSL 2 Runtime** (`WSL_DETECTION`): classifies every distro (`DistroStatus`: WSL unavailable, no
-   distro, didn't start, unsupported, needs a user, usable). Picks the single usable Ubuntu LTS, else the
-   WSL default (`wsl -l -v`), else asks the user to pick. Nothing is guessed: no hard-coded "Ubuntu".
-2. **System packages** (`SYSTEM_PACKAGES`): `WslHostPrerequisiteProbe` checks every `RequirementCatalog`
-   entry in one `wsl.exe` round trip, **without the build service**, and finds a Java >= 21 home.
-3. **Build service** (`SERVER_CONNECTIVITY`): installs the bundled server if missing or outdated, starts
-   it with that Java, and checks health.
-4. **Pre-Flight Doctor** (`SYSTEM_DIAGNOSTICS`): inspectors that run through the build service.
-5. **Source Repositories** (`REPO_SYNCHRONIZATION`): pinned tool sources.
-6. **Toolchain Binaries** (`TOOLCHAIN_COMPILATION`): builds the `ToolCatalog` tools and registers exactly
-   those IDs with the service (`ToolPublicationAdapter`), then confirms each resolves as `DYNAMIC`.
+1. **WSL 2 Runtime** (`WSL_DETECTION`): strictly requires the default WSL distribution to be usable Ubuntu LTS.
+2. **Build service** (`SERVER_CONNECTIVITY`): installs/updates bundled server with its bundled Java runtime, starts it, and checks health. No system Java install is required in WSL.
+3. **System packages** (`SYSTEM_PACKAGES`): checked remotely through the build service (no direct WSL fallback). Missing packages transition to manual sudo terminal handoff.
+4. **Tools** (`TOOLCHAIN_COMPILATION`): app-managed `ToolManager` automatically provisions and registers configured component tools.
+
+*Note*: No Doctor stage runs (Doctor and system diagnostics are removed), and neither Studio nor the build service requires or embeds Python (individual tools like `img2sdat` may be Python scripts invoked during builds).
 
 ### 2. Package handoff (no stored passwords)
 - Missing packages produce one command from `AptCommandBuilder`: `sudo apt-get update && sudo apt-get
@@ -716,6 +711,7 @@ per stage; a failed stage marks every later stage pending and stops.
 - `ServerArtifactInstaller` copies it to `~/.ltirom/server/versions/<v>.partial`, runs
   `sha256sum -c checksums.txt`, renames it to `versions/<v>` and swaps the `current` link atomically.
   A failure keeps the previous version active; the active version is never deleted.
+- The server runs on its bundled Java runtime without needing system JDK packages in the distro.
 
 ### 4. SetupEnvironment snapshot rule
 - An operation captures one `SetupEnvironment` (distro, user, home) when it starts; every command, the
@@ -729,7 +725,7 @@ per stage; a failed stage marks every later stage pending and stops.
 - The Recovery tab shows only journal data (`ToolchainSetupState.pendingAttempt`) and real step state;
   with nothing to recover it says so.
 
-### 6. Tool Group Catalog & Recipes (008 Tool Version Editing)
+### 6. Tool Group Catalog & Recipes
 - `ToolGroupCatalog` (`core:domain`) defines 7 authoritative tool build groups:
   - `ANDROID_TOOLS` (`android-tools`): `ToolSource.Git`, `RecipeConfig.AndroidTools`. Native outputs: `adb`, `fastboot`, `mke2fs`, `e2fsdroid`, `lpmake`, `lpunpack`, `simg2img`, `avbtool`, etc.
   - `EROFS_UTILS` (`erofs-utils`): `ToolSource.Git`, `RecipeConfig.CMake`. Native outputs: `mkfs.erofs`, `dump.erofs`, `fsck.erofs`, `erofsfuse`.
@@ -739,45 +735,43 @@ per stage; a failed stage marks every later stage pending and stops.
   - `GH` (`gh`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `gh`.
   - `PAYLOAD_DUMPER_GO` (`payload-dumper-go`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `payload-dumper-go`.
 - Sealed `RecipeConfig` types (`core:domain`):
-  - `RecipeConfig.AndroidTools(cmakeArgs, gitIdentity, patchVendor, revision)`: native build via `AndroidToolsRecipe`.
-  - `RecipeConfig.CMake(sourceSubdir, buildSubdir, cmakeArgs, revision)`: CMake-based build via `CMakeRecipe`.
-  - `RecipeConfig.GradleJar(task, outputPath, revision)`: shadow JAR build via `GradleJarRecipe`.
-  - `RecipeConfig.ScriptCopy(files, revision)`: script stage copy via `ScriptCopyRecipe`.
-  - `RecipeConfig.Release(versions, revision)`: checksum-verified release tarball download via `ReleaseDownloadRecipe`.
-- Layout verification: `SourceResolverPort.checkLayout` / `GitSourceResolver.checkLayout` validates expected repository layout before offering a build.
-- Build dependencies: missing `buildPackages` transition to `TerminalHandoffSheet`.
+  - `RecipeConfig.AndroidTools`: native build with vendor patches applied via git identity.
+  - `RecipeConfig.CMake`: CMake-based build with custom args and parallel compile.
+  - `RecipeConfig.GradleJar`: shadow JAR build via wrapper.
+  - `RecipeConfig.ScriptCopy`: executable script copy and mode set.
+  - `RecipeConfig.Release`: checksum-verified release archive download and member extraction.
 
-### 7. Content-Addressable Artifacts & Toolchain Installations (008)
-- Multi-version directory layout under `~/LtiRomTools/`:
-  - `~/LtiRomTools/artifacts/<groupId>/<artifactId>/`: Immutable artifact stores for built or downloaded binaries, containing `manifest.json` (`ArtifactManifest`) and tool outputs.
-  - `~/LtiRomTools/installs/<installId>/`: Assembled installations containing `install.json` (`InstallManifest`) and `bin/` directory with relative symlinks to artifact binaries (`../../artifacts/<groupId>/<artifactId>/bin/<file>`).
-  - `~/LtiRomTools/bin`: Active installation symlink pointing directly to `installs/<installId>/bin` (swapped atomically via `bin.tmp-<nano>`).
-- Direct writes into `~/LtiRomTools/bin` or candidate directories are prohibited outside `ArtifactStore` and `InstallationManager`.
+### 7. Side-by-Side Storage Layout & Kotlin Tool Store
+- Managed directory layout under `~/LtiRomTools/`:
+  - `~/LtiRomTools/src/<tool>/`: Bare Git repository mirrors reused across version checkouts.
+  - `~/LtiRomTools/work/<opId>/`: Disposable isolated build workspace (`src/`, `out/`).
+  - `~/LtiRomTools/results/<opId>.json`: Durable operation result written before exit (survives cleanup).
+  - `~/LtiRomTools/bin/<tool>/<version>/`: Immutable installed version folders with readable names containing `version.json` and outputs.
+  - `~/LtiRomTools/bin/<tool>/current -> <version>`: Active version symlink.
+  - `~/LtiRomTools/settings.json`: User version picks and source provenance.
+  - Flat legacy `bin` and `bin.old-*` directories are deleted during store `init`.
+- Kotlin/JVM Tool Store (`KotlinToolStoreAdapter`):
+  - Completely owned inside the desktop app (`core:data`).
+  - No server-side Python helper: all git cloning, recipes, output verification, probe execution, and symlink publication are orchestrated in Kotlin and executed remotely via `RemoteTransportPort`.
+  - Server remains purely generic for process execution and streaming.
 
-### 8. Atomic Activation, Health Verification & Safe Switching
-- `SwitchToolchainHandler` (`core:data`) coordinates toolchain switching:
-  1. Freezes selections into `ResolvedInput` and checks `ArtifactStore` cache; reuses matching artifacts by input fingerprint.
-  2. Compiles or downloads changed tool groups into isolated staging directories before publishing to `ArtifactStore`.
-  3. Assembles candidate installation directory via `InstallationManager` at `~/LtiRomTools/installs/<installId>`.
-  4. Runs verification suite (`ToolVerifier`) on required candidate binaries.
-  5. Records checkpoint in `ActivationReconciler` (`SwitchCheckpoint.CANDIDATE_VERIFIED`).
-  6. Dispatches activation to `ToolchainActivator` on the build service via `ToolchainInstallationPort.activate`.
-- Build service activation safety (`ToolchainActivator`):
-  - Engine hold check: if active work exists, rejects activation with `ActivationOutcome.Blocked`.
-  - Atomic link swap: swaps `~/LtiRomTools/bin` to point to `installs/<targetInstallId>/bin` using atomic filesystem rename.
-  - Self-healing rollback: if post-switch verification fails, restores previous active install and returns `ActivationOutcome.VerifyFailedRestored`.
-  - Audit logging: records transitions to `ToolchainJournal`.
+### 8. Atomic Selection Commit, Safe Switching & Automatic Tools
+- `ToolManager` (`core:domain`) coordinates SDK Manager operations:
+  1. `prepareMissing()`: sequential setup pass running `init` first, building uninstalled tools with recommended sources, repairing damaged installations with recorded sources, and halting on shared blockers (`MissingPackages`, `DiskFull`, `ConnectionLost`). Automatic tools compilation triggers in the background when the setup gate opens (`AutoToolsGate`).
+  2. `installAndUse()`: prepares source, runs build recipe, verifies outputs and probe exit codes, and atomically commits selection to `~/LtiRomTools/settings.json`.
+  3. `use()`: prepares stable `bin/` links and registers manifests; atomically swaps `current` symlink and records the pick in `settings.json`.
+  4. `remove()`: deletes unreferenced versions; refuses removal of `current` or active selection (`InUse`), validating strict path containment.
 
-### 9. Toolchain Health & Recovery
-- Clean layout policy:
-  - No legacy migration: all operations strictly target `~/LtiRomTools/{artifacts,installs,bin}`.
-  - Uninitialized state: if no active install exists, toolchain remains uninitialized until the first activation commits.
-- Health tracking:
-  - `ToolchainHealth` (`core:domain`) evaluates four operational facts: `selectedInstallId != null`, `intact` (artifact files exist and match sha256), `serviceResolves` (build service resolves binaries), and `journalCommitted` (active install recorded in journal).
-  - Overall health: `isHealthy = selectedInstallId != null && intact && serviceResolves && journalCommitted`.
-- Recovery and repair:
-  - Unhealthy installations transition group row status to `ToolGroupStatus.NEEDS_RECOVERY` ("Needs recovery") in `ToolVersionsState` / `ToolVersionsPresentationMapper`.
-  - Repair operations rebuild damaged artifacts via `SwitchToolchainHandler` or roll back via `ToolchainRestoreCoordinator`.
+### 9. Tool Pinning, Coordination & Lifecycle Admission
+- Pinned tools:
+  - `BuildRun.pinnedTools` and `BuildRun.toolVersions` capture real binary paths once at run creation.
+  - ROM jobs pin tool paths for their entire execution lifetime; mid-run version switches affect subsequent runs only.
+- App-scoped mutual exclusion (`ToolUsageCoordinator`):
+  - Shared mutex between ROM job admission and tool version removal.
+  - Active ROM jobs prevent removal of tool versions (`InUse`).
+- Client watchdog & graceful shutdown:
+  - `ClientWatchdog` on build service enforces authenticated heartbeats every 5 s; 30 s deadline cancels orphaned processes.
+  - `AppShutdownCoordinator` intercepts all client exit surfaces, calls `/api/v1/client/stop` to terminate active jobs, and stops heartbeat last.
 
 ## Build Layout & Multi-Repo Requirements
 

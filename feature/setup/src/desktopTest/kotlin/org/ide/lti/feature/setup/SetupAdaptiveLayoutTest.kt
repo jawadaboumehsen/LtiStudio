@@ -71,20 +71,6 @@ class SetupAdaptiveLayoutTest {
                     provenance = StepProvenance.LIVE,
                 ),
                 SetupStepDetail(
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                    title = "Diagnostics",
-                    description = "All checks passed",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                    title = "Repos",
-                    description = "Synced",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
                     stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                     title = "Toolchain",
                     description = "Ready",
@@ -199,20 +185,6 @@ class SetupAdaptiveLayoutTest {
                     provenance = StepProvenance.LIVE,
                 ),
                 SetupStepDetail(
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                    title = "Diagnostics",
-                    description = "All checks passed",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
-                    stage = SetupStepStage.REPO_SYNCHRONIZATION,
-                    title = "Repos",
-                    description = "Synced",
-                    status = StepStatus.SUCCESS,
-                    provenance = StepProvenance.LIVE,
-                ),
-                SetupStepDetail(
                     stage = SetupStepStage.TOOLCHAIN_COMPILATION,
                     title = "Toolchain",
                     description = "Ready",
@@ -264,8 +236,8 @@ class SetupAdaptiveLayoutTest {
                     provenance = StepProvenance.LIVE,
                 ),
                 SetupStepDetail(
-                    stage = SetupStepStage.SYSTEM_DIAGNOSTICS,
-                    title = "System Diagnostics",
+                    stage = SetupStepStage.SYSTEM_PACKAGES,
+                    title = "System Packages",
                     description = "Healthy",
                     status = StepStatus.SUCCESS,
                     provenance = StepProvenance.LIVE,
@@ -289,7 +261,7 @@ class SetupAdaptiveLayoutTest {
         // Environment header and navigation visible in compact mode (SC-005)
         onAllNodesWithText("Machine setup").onFirst().assertIsDisplayed()
         onNodeWithText("Environment").assertIsDisplayed()
-        onNodeWithText("Tools").assertIsDisplayed()
+        onAllNodesWithText("Tools").onFirst().assertIsDisplayed()
     }
 
     @Test

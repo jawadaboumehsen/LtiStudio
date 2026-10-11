@@ -41,16 +41,19 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ToolRepairTest {
-
     private class SpyDaemonSupervisor(
         var descriptor: ServerConnectionDescriptor? =
             ServerConnectionDescriptor("127.0.0.1", 9090, "token", 1234L, "Ubuntu"),
     ) : DaemonSupervisorPort {
         override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = descriptor
+
         override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = true
+
         override suspend fun ensureStarted(): ServerConnectionDescriptor =
             descriptor ?: throw IllegalStateException("No descriptor")
+
         override suspend fun shutdownDaemon(): Boolean = true
+
         override fun close() {}
     }
 
@@ -64,8 +67,23 @@ class ToolRepairTest {
         /** Basenames reported by the `find` listing of the bin directory. */
         var installedBinaries: List<String> = emptyList(),
     ) : RemoteTransportPort {
+        val componentStore = RecordingComponentStore().apply { seedRecommended() }
+        val manager = org.ide.lti.core.domain.tools.ToolManager(componentStore)
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         val startedRuns = mutableListOf<StartRunRequest>()
+
+        init {
+            componentStore.result = {
+                if (buildExitCode == 0) {
+                    org.ide.lti.core.domain.tools.OperationResult.Installed("version-${it.group.value}")
+                } else {
+                    org.ide.lti.core.domain.tools.OperationResult.Failed(
+                        org.ide.lti.core.domain.tools.ToolError.BuildFailed("compiler failed"),
+                        "compiler failed",
+                    )
+                }
+            }
+        }
 
         override suspend fun checkHealth(): WslServerInfo = WslServerInfo(
             status = "UP",
@@ -136,10 +154,15 @@ class ToolRepairTest {
         )
 
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
+
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
+
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
+
         override suspend fun shutdown(): Boolean = true
     }
 
@@ -161,18 +184,22 @@ class ToolRepairTest {
 
     @Test
     fun testVerificationRequiresExitCodeZeroAndDoesNotInfersSuccessFromStdoutAlone() = runTest {
-        val transport = SpyRemoteTransport(
-            testXExitCode = 0,
-            helpExitCode = 1,
-            helpOutput = "Syntax error or usage text on failure",
-        )
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val transport =
+            SpyRemoteTransport(
+                testXExitCode = 0,
+                helpExitCode = 1,
+                helpOutput = "Syntax error or usage text on failure",
+            )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         val status = provisioner.testTool("lpmake")
         assertTrue(
@@ -190,19 +217,21 @@ class ToolRepairTest {
     fun `a required tool failing its test revokes workspace readiness at once`() = runTest {
         val repository = inMemoryToolchainRepository()
         repository.markStageCompleted(org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION.name, true)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            // lpmake deleted or no longer executable
-            transport = SpyRemoteTransport(testXExitCode = 1),
-            repository = repository,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                // lpmake deleted or no longer executable
+                transport = SpyRemoteTransport(testXExitCode = 1),
+                repository = repository,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         provisioner.testTool("lpmake")
 
-        val toolchain = provisioner.state.value.steps
-            .first { it.stage == org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION }
+        val toolchain =
+            provisioner.state.value.steps
+                .first { it.stage == org.ide.lti.core.domain.setup.SetupStepStage.TOOLCHAIN_COMPILATION }
         assertEquals(StepStatus.FAILED, toolchain.status, "admission reads the stage, so the stage must fail")
         assertFalse(provisioner.state.value.canLaunchWorkspace)
         assertFalse(
@@ -214,16 +243,20 @@ class ToolRepairTest {
 
     @Test
     fun testVerificationFailsWhenBinaryDoesNotExist() = runTest {
-        val transport = SpyRemoteTransport(
-            testXExitCode = 1,
-        )
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val transport =
+            SpyRemoteTransport(
+                testXExitCode = 1,
+            )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         val status = provisioner.testTool("lpmake")
         assertTrue(status is SetupOutcome.Failed, "Tool test must fail when binary is not found or not executable")
@@ -237,13 +270,16 @@ class ToolRepairTest {
     @Test
     fun testRepairRequiresSupportedRecipeOtherwiseRejectsAction() = runTest {
         val transport = SpyRemoteTransport()
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         // A tool no recipe builds or downloads
         val unsupportedResult = provisioner.repairTool("custom-vendor-tool")
@@ -263,28 +299,32 @@ class ToolRepairTest {
     fun testSingleFlightMutationBlocksConcurrentToolRepair() = runTest {
         val transport = SpyRemoteTransport()
         val coordinator = SetupOperationCoordinator()
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
 
         // A real operation holds the environment owner in the shared coordinator; repair must be
         // refused by admission (Busy), not by a flag the test flips.
         val started = java.util.concurrent.CountDownLatch(1)
         val release = java.util.concurrent.CountDownLatch(1)
-        val ownerThread = Thread {
-            kotlinx.coroutines.runBlocking {
-                coordinator.withAdmission("Ubuntu", "setup-in-flight", "FULL_SETUP") {
-                    started.countDown()
-                    release.await()
-                    SetupOutcome.Succeeded()
+        val ownerThread =
+            Thread {
+                kotlinx.coroutines.runBlocking {
+                    coordinator.withAdmission("Ubuntu", "setup-in-flight", "FULL_SETUP") {
+                        started.countDown()
+                        release.await()
+                        SetupOutcome.Succeeded()
+                    }
                 }
             }
-        }
         ownerThread.start()
         try {
             started.await()
@@ -313,24 +353,27 @@ class ToolRepairTest {
             it.copy(isCompiled = true, isVerified = true, binaryPath = "/home/lti/LtiRomTools/bin/adb")
         }
         val coordinator = SetupOperationCoordinator(repo)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = repo,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = repo,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
 
         // Repairing lpunpack must force rebuilding android-tools despite adb sentinel
         val result = provisioner.repairTool("lpunpack")
         assertTrue(result is SetupOutcome.Succeeded, "repair must succeed: $result")
         assertTrue(
-            transport.startedRuns.any { it.idempotencyKey.contains("android-tools") },
+            transport.componentStore.requests.any { it.group.value == "android-tools" && it.forceNew },
             "android-tools recipe group must be rebuilt even when adb sentinel is present (FR-009)",
         )
         assertFalse(
-            transport.startedRuns.any { it.idempotencyKey.contains("erofs-utils") },
+            transport.componentStore.requests.any { it.group.value == "erofs-utils" && it.forceNew },
             "Unrelated recipe group (erofs-utils) must not be built when repairing android-tools (FR-009)",
         )
     }
@@ -344,24 +387,27 @@ class ToolRepairTest {
             it.copy(isCompiled = true, isVerified = true, binaryPath = "/home/lti/LtiRomTools/bin/mkfs.erofs")
         }
         val coordinator = SetupOperationCoordinator(repo)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = repo,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = repo,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
 
         // Repairing dump.erofs must force rebuilding erofs-utils despite mkfs.erofs sentinel
         val result = provisioner.repairTool("dump.erofs")
         assertTrue(result is SetupOutcome.Succeeded, "repair must succeed: $result")
         assertTrue(
-            transport.startedRuns.any { it.idempotencyKey.contains("erofs-utils") },
+            transport.componentStore.requests.any { it.group.value == "erofs-utils" && it.forceNew },
             "erofs-utils recipe group must be rebuilt even when mkfs.erofs sentinel is present (FR-009)",
         )
         assertFalse(
-            transport.startedRuns.any { it.idempotencyKey.contains("android-tools") },
+            transport.componentStore.requests.any { it.group.value == "android-tools" && it.forceNew },
             "Unrelated recipe group (android-tools) must not be built when repairing erofs-utils (FR-009)",
         )
     }
@@ -379,14 +425,17 @@ class ToolRepairTest {
         }
 
         val coordinator = SetupOperationCoordinator(repo)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = repo,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = repo,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
 
         // Repair lpunpack (belongs to android-tools)
         provisioner.repairTool("lpunpack")
@@ -404,13 +453,16 @@ class ToolRepairTest {
     fun testAcceptedExitCodesComeFromDomainInventory() = runTest {
         // simg2img has no help flag: the inventory probes it bare and accepts exit(-1) == 255.
         val transport = SpyRemoteTransport(probeExitCodes = mutableMapOf("simg2img" to 255))
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         val accepted = provisioner.testTool("simg2img")
         assertTrue(accepted is SetupOutcome.Succeeded, "Inventory-accepted exit code 255 must verify simg2img")
@@ -433,20 +485,24 @@ class ToolRepairTest {
     @Test
     fun testFileDiscoveryAfterRepairPreservesFailedProbeOfUnrelatedTool() = runTest {
         // lpmake fails its execution probe; the binary still exists on disk.
-        val transport = SpyRemoteTransport(
-            helpExitCode = 1,
-            installedBinaries = listOf("lpmake", "mkfs.erofs", "dump.erofs", "fsck.erofs"),
-        )
+        val transport =
+            SpyRemoteTransport(
+                helpExitCode = 1,
+                installedBinaries = listOf("lpmake", "mkfs.erofs", "dump.erofs", "fsck.erofs"),
+            )
         val repo = inMemoryToolchainRepository()
         val coordinator = SetupOperationCoordinator(repo)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = repo,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = repo,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
         assertTrue(provisioner.testTool("lpmake") is SetupOutcome.Failed)
         assertEquals(StepStatus.FAILED, provisioner.state.value.toolsMatrix.first { it.id == "lpmake" }.status)
 
@@ -461,7 +517,11 @@ class ToolRepairTest {
             lpmake.status,
             "File discovery must never overwrite a failed execution verification (FR-010)",
         )
-        assertEquals("/home/lti/LtiRomTools/bin/lpmake", lpmake.path, "Installed remains a separate, updated fact")
+        assertEquals(
+            "/home/lti/LtiRomTools/bin/android-tools/current/lpmake",
+            lpmake.path,
+            "Installed remains a separate, updated fact",
+        )
         assertFalse(lpmake.lastTested == "Just now")
     }
 
@@ -470,29 +530,30 @@ class ToolRepairTest {
         val transport = SpyRemoteTransport(installedBinaries = listOf("mkfs.erofs", "dump.erofs", "fsck.erofs"))
         val repo = inMemoryToolchainRepository()
         val coordinator = SetupOperationCoordinator(repo)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = repo,
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            coordinator = coordinator,
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = repo,
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                coordinator = coordinator,
+            )
 
         val outcome = provisioner.repairTool("dump.erofs")
         assertTrue(outcome is SetupOutcome.Succeeded, "repair must succeed: $outcome")
 
-        val probedBasenames = transport.executedRequests
-            .filter { it.toolId.startsWith("/home/lti/LtiRomTools/bin/") }
-            .map { it.toolId.substringAfterLast('/') }
-            .toSet()
-        val erofsSiblings = ToolCapabilities.toolsForRecipeGroup(ToolCapabilities.GROUP_EROFS_UTILS)
-            .filter { id -> provisioner.state.value.toolsMatrix.any { it.id == id } }
-            .toSet()
-        assertEquals(erofsSiblings, probedBasenames, "Every sibling of the owning group is probed after a repair")
+        val request = transport.componentStore.requests.single()
+        val erofsSiblings =
+            ToolCapabilities.toolsForRecipeGroup(ToolCapabilities.GROUP_EROFS_UTILS)
+                .filter { id -> provisioner.state.value.toolsMatrix.any { it.id == id } }.toSet()
+        assertEquals("erofs-utils", request.group.value)
+        assertTrue(request.forceNew, "Repair must rebuild the selected component, not reuse a damaged cache")
         assertTrue(
-            ToolCapabilities.toolsForRecipeGroup(ToolCapabilities.GROUP_ANDROID_TOOLS).none { it in probedBasenames },
-            "Tools outside the owning group are never probed by a repair",
+            request.outputs.map { it.toolId }.containsAll(erofsSiblings),
+            "The helper receives every sibling's verification specification",
         )
         for (sibling in erofsSiblings) {
             assertEquals(true, repo.currentState.tools[sibling]?.isVerified, "$sibling is verified by a real probe")
@@ -501,16 +562,20 @@ class ToolRepairTest {
 
     @Test
     fun testFailureReleasesBusyStateInFinally() = runTest {
-        val transport = SpyRemoteTransport(
-            buildExitCode = 1,
-        )
-        val provisioner = WslToolchainProvisioner(
-            supervisor = SpyDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            cli = StubCliExecutor(),
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val transport =
+            SpyRemoteTransport(
+                buildExitCode = 1,
+            )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = SpyDaemonSupervisor(),
+                transport = transport,
+                planExecutor = componentTestPlanExecutor(transport.manager),
+                toolManager = transport.manager,
+                repository = inMemoryToolchainRepository(),
+                cli = StubCliExecutor(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+            )
 
         val result = provisioner.repairTool("lpmake")
         assertTrue(result is SetupOutcome.Failed)

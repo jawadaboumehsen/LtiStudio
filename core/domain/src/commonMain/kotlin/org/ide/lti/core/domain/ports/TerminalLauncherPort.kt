@@ -17,4 +17,9 @@ public interface TerminalLauncherPort {
      * Launches an external interactive terminal session inside the specified [distro].
      */
     public fun launchTerminal(distro: String): Result<Unit>
+
+    /**
+     * Launches an external interactive terminal running the WSL distribution installer for [distro].
+     */
+    public fun launchInstaller(distro: String): Result<Unit>
 }

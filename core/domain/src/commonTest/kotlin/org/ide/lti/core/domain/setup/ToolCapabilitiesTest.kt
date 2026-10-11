@@ -17,7 +17,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ToolCapabilitiesTest {
-
     @Test
     fun testSupportedAndUnsupportedRecipes() {
         assertTrue(ToolCapabilities.isRecipeSupported("adb"))
@@ -101,11 +100,12 @@ class ToolCapabilitiesTest {
 
     @Test
     fun testInvalidateOwningGroupForRepair() {
-        val evidenceMap = mapOf(
-            "adb" to ToolEvidence(toolId = "adb", isVerified = true),
-            "lpunpack" to ToolEvidence(toolId = "lpunpack", isVerified = true),
-            "mkfs.erofs" to ToolEvidence(toolId = "mkfs.erofs", isVerified = true),
-        )
+        val evidenceMap =
+            mapOf(
+                "adb" to ToolEvidence(toolId = "adb", isVerified = true),
+                "lpunpack" to ToolEvidence(toolId = "lpunpack", isVerified = true),
+                "mkfs.erofs" to ToolEvidence(toolId = "mkfs.erofs", isVerified = true),
+            )
 
         // Repairing lpunpack invalidates android-tools only (adb + lpunpack)
         val invalidated = ToolCapabilities.invalidateOwningGroupForRepair("lpunpack", evidenceMap)
@@ -117,20 +117,20 @@ class ToolCapabilitiesTest {
     @Test
     fun everyToolTheToolsPageListsHasARecipe() {
         // The Tools page shows the matrix; a tool missing from the inventory reads "can't be rebuilt".
-        val withoutRecipe = ToolchainSetupState.defaultToolsMatrix().map { it.id }
-            .filterNot { ToolCapabilities.isRecipeSupported(it) }
+        val withoutRecipe =
+            ToolchainSetupState.defaultToolsMatrix().map { it.id }
+                .filterNot { ToolCapabilities.isRecipeSupported(it) }
         assertEquals(emptyList(), withoutRecipe, "Every listed tool must be buildable or downloadable by setup")
         assertEquals(listOf("version"), ToolCapabilities.probeArgumentsFor("gh"))
     }
 
     @Test
     fun f2fsAndSdkBuildToolsBelongToAndroidToolsWithTheirRealProbes() {
-        for (id in listOf("make_f2fs", "sload_f2fs", "mkf2fsuserimg", "aapt2", "zipalign")) {
+        for (id in listOf("make_f2fs", "sload_f2fs", "mkf2fsuserimg", "zipalign")) {
             assertEquals(ToolCapabilities.GROUP_ANDROID_TOOLS, ToolCapabilities.recipeGroupFor(id), id)
         }
         // Exit codes measured on the built binaries: `--help` is not a valid option for these.
         assertEquals(listOf("-V"), ToolCapabilities.probeArgumentsFor("make_f2fs"))
-        assertEquals(listOf("version"), ToolCapabilities.probeArgumentsFor("aapt2"))
         assertEquals(setOf(2), ToolCapabilities.acceptedExitCodesFor("zipalign"))
     }
 }

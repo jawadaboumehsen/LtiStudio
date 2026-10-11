@@ -25,6 +25,11 @@ public class ServerArtifactInstaller(
         System.getProperty("compose.application.resources.dir")
             ?.let { File(it, BUNDLE_DIR_NAME) }
             ?.takeIf { it.isDirectory }
+            ?: listOf(
+                File("build/bundledServer/ltirom-server"),
+                File("lti-desktop/build/bundledServer/ltirom-server"),
+                File("../LtiRomGui/lti-desktop/build/bundledServer/ltirom-server"),
+            ).firstOrNull { it.isDirectory }
     },
     private val pathTranslator: WslPathTranslator = WslPathTranslator(),
 ) {
@@ -46,11 +51,14 @@ public class ServerArtifactInstaller(
     public fun status(environment: SetupEnvironment): ServerArtifact {
         val bundled = getBundledVersion()
         val active = getActiveVersion(environment)
-        val state = when {
-            active == null -> InstallState.NotInstalled
-            bundled == null || active == bundled -> InstallState.Current
-            else -> InstallState.Outdated
-        }
+        val state =
+            when {
+                active == null -> InstallState.NotInstalled
+                !isIntact(environment, currentLink(environment)) ->
+                    InstallState.Failed("intact", "Build service or runtime is damaged or not executable")
+                bundled == null || active == bundled -> InstallState.Current
+                else -> InstallState.Outdated
+            }
         return artifact(bundled, active, state)
     }
 
@@ -76,7 +84,8 @@ public class ServerArtifactInstaller(
             )
         }
 
-        val serverBase = "${environment.home}/.ltirom/server"
+        val home = pathTranslator.toWslPath(environment.home)
+        val serverBase = "$home/.ltirom/server"
         if (activeBefore == bundled && isIntact(environment, currentLink(environment))) {
             return artifact(bundled, bundled, InstallState.Current)
         }
@@ -87,20 +96,26 @@ public class ServerArtifactInstaller(
         val tmpLink = "$serverBase/current.tmp"
         val source = pathTranslator.toWslPath(bundle.absolutePath)
 
-        val steps = listOf(
-            "cleanup" to listOf("rm", "-rf", partialDir, tmpLink),
-            "mkdir" to listOf("mkdir", "-p", versionsDir),
-            "copy" to listOf("cp", "-r", source, partialDir),
-            "chmod" to listOf("sh", "-c", "chmod +x '$partialDir'/bin/*"),
-            "verify" to listOf("sh", "-c", "cd '$partialDir' && sha256sum --quiet -c $CHECKSUMS_FILE"),
-            "verify" to listOf("test", "-x", "$partialDir/bin/ltirom-server"),
-            // finalDir is the active target only when that install is damaged (checked above). It is moved
-            // aside, never deleted, until the verified copy has replaced it.
-            "stage" to listOf("sh", "-c", "rm -rf '$finalDir.old' && if [ -e '$finalDir' ]; then mv '$finalDir' '$finalDir.old'; fi"),
-            "stage" to listOf("mv", partialDir, finalDir),
-            "activate" to listOf("ln", "-sfn", finalDir, tmpLink),
-            "activate" to listOf("mv", "-T", tmpLink, currentLink(environment)),
-        )
+        val steps =
+            listOf(
+                "cleanup" to listOf("rm", "-rf", partialDir, tmpLink),
+                "mkdir" to listOf("mkdir", "-p", versionsDir),
+                "copy" to listOf("cp", "-r", source, partialDir),
+                "chmod" to listOf("sh", "-c", "chmod +x '$partialDir'/bin/*"),
+                "verify" to listOf("sh", "-c", "cd '$partialDir' && sha256sum --quiet -c $CHECKSUMS_FILE"),
+                "verify" to listOf("test", "-x", "$partialDir/bin/ltirom-server"),
+                "extract-runtime" to
+                    listOf("sh", "-c", extractRuntime(partialDir)),
+                "verify-runtime" to
+                    listOf("sh", "-c", runtimeCheck(partialDir)),
+                // finalDir is the active target only when that install is damaged (checked above). It is moved
+                // aside, never deleted, until the verified copy has replaced it.
+                "stage" to
+                    listOf("sh", "-c", "rm -rf '$finalDir.old' && if [ -e '$finalDir' ]; then mv '$finalDir' '$finalDir.old'; fi"),
+                "stage" to listOf("mv", partialDir, finalDir),
+                "activate" to listOf("ln", "-sfn", finalDir, tmpLink),
+                "activate" to listOf("mv", "-T", tmpLink, currentLink(environment)),
+            )
         for ((step, command) in steps) {
             // Copying and hashing the bundle across the 9P mount takes far longer than the 10 s default.
             val result = cli.execute(environment.distro, command, timeoutSeconds = STEP_TIMEOUT_SECONDS)
@@ -108,7 +123,11 @@ public class ServerArtifactInstaller(
                 // Put a set-aside install back so `current` keeps pointing at something (best effort).
                 cli.execute(
                     environment.distro,
-                    listOf("sh", "-c", "if [ ! -e '$finalDir' ] && [ -e '$finalDir.old' ]; then mv '$finalDir.old' '$finalDir'; fi"),
+                    listOf(
+                        "sh",
+                        "-c",
+                        "if [ ! -e '$finalDir' ] && [ -e '$finalDir.old' ]; then mv '$finalDir.old' '$finalDir'; fi",
+                    ),
                 )
                 val detail = result.error.ifBlank { result.output }.ifBlank { "exit code ${result.exitCode}" }
                 return artifact(bundled, activeBefore, InstallState.Failed(step, detail))
@@ -118,8 +137,9 @@ public class ServerArtifactInstaller(
 
         if (prune) {
             // Keep the new version, the one it replaced and any version a service still runs from.
-            val keep = (listOfNotNull(bundled, activeBefore) + keepVersions).distinct()
-                .joinToString(" ") { "! -name '$it'" }
+            val keep =
+                (listOfNotNull(bundled, activeBefore) + keepVersions).distinct()
+                    .joinToString(" ") { "! -name '$it'" }
             cli.execute(
                 environment.distro,
                 listOf("sh", "-c", "find '$versionsDir' -mindepth 1 -maxdepth 1 $keep -exec rm -rf {} +"),
@@ -131,12 +151,36 @@ public class ServerArtifactInstaller(
     private fun ok(environment: SetupEnvironment, command: List<String>): Boolean =
         cli.execute(environment.distro, command, timeoutSeconds = STEP_TIMEOUT_SECONDS).exitCode == 0
 
-    /** The launcher is executable and every bundled file (JARs included) still matches its checksum. */
-    private fun isIntact(environment: SetupEnvironment, dir: String): Boolean =
-        ok(environment, listOf("test", "-x", "$dir/bin/ltirom-server")) &&
-            ok(environment, listOf("sh", "-c", "cd '$dir' && sha256sum --quiet -c $CHECKSUMS_FILE"))
+    /** The launcher is executable, runtime java is executable and works, and every bundled file matches its checksum. */
+    private fun isIntact(environment: SetupEnvironment, dir: String): Boolean {
+        val launcherOk = ok(environment, listOf("test", "-x", "$dir/bin/ltirom-server"))
+        val checksumsOk = ok(environment, listOf("sh", "-c", "cd '$dir' && sha256sum --quiet -c $CHECKSUMS_FILE"))
+        val runtimeOk = ok(environment, listOf("sh", "-c", runtimeCheck(dir)))
+        return launcherOk && checksumsOk && runtimeOk
+    }
 
-    private fun currentLink(environment: SetupEnvironment): String = "${environment.home}/.ltirom/server/current"
+    /**
+     * The bundle's checksums cover `jre.tar.gz`, not what was extracted from it. A damaged native library (the
+     * networking one, say) would still let `java -version` run, so the extracted files are checked against the
+     * manifest recorded when they were extracted, and a runtime without that manifest counts as damaged.
+     */
+    private fun runtimeCheck(dir: String): String =
+        "if [ -d '$dir/runtime' ]; then test -x '$dir/runtime/bin/java' && '$dir/runtime/bin/java' -version && " +
+            "if [ -f '$dir/runtime/jre.tar.gz' ]; then cd '$dir/runtime' && test -s $RUNTIME_MANIFEST && " +
+            "sha256sum --quiet -c $RUNTIME_MANIFEST; fi; fi"
+
+    /** Unpacks the bundled JRE and records every extracted file (not the archive or the manifest itself). */
+    private fun extractRuntime(dir: String): String =
+        "if [ -f '$dir/runtime/jre.tar.gz' ]; then " +
+            "tar --force-local -xzf '$dir/runtime/jre.tar.gz' -C '$dir/runtime' --strip-components=1 && " +
+            "chmod +x '$dir'/runtime/bin/* && cd '$dir/runtime' && " +
+            "find . -type f ! -name jre.tar.gz ! -name $RUNTIME_MANIFEST -print0 | sort -z | " +
+            "xargs -0 sha256sum > $RUNTIME_MANIFEST; fi"
+
+    private fun currentLink(environment: SetupEnvironment): String {
+        val home = pathTranslator.toWslPath(environment.home)
+        return "$home/.ltirom/server/current"
+    }
 
     private fun artifact(bundled: String?, active: String?, state: InstallState): ServerArtifact = ServerArtifact(
         bundledVersion = bundled,
@@ -152,5 +196,6 @@ public class ServerArtifactInstaller(
         public const val VERSION_FILE: String = "server-version.txt"
         public const val CHECKSUMS_FILE: String = "checksums.txt"
         private const val STEP_TIMEOUT_SECONDS: Long = 180
+        private const val RUNTIME_MANIFEST = ".extracted.sha256"
     }
 }

@@ -10,9 +10,7 @@
 package org.ide.lti.core.data.setup.check
 
 import io.ltirom.tooling.core.ports.RemoteTransportPort
-import org.ide.lti.core.data.setup.ToolVerifier
 import org.ide.lti.core.data.setup.state.CheckScope
-import org.ide.lti.core.domain.ports.ToolPublicationPort
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupLogKind
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -22,26 +20,30 @@ public sealed interface StageOutcome {
     public val description: String
 
     public data class Success(override val description: String) : StageOutcome
+
     public data class Failed(override val description: String, val error: String? = null) : StageOutcome
+
     public data class Warning(override val description: String, val warning: String? = null) : StageOutcome
-    public data class Pending(override val description: String) : StageOutcome
+
+    public data class Pending(override val description: String, val error: String? = null) : StageOutcome
 }
 
 public data class CheckContext(
     val environment: SetupEnvironment,
     val readOnlyCommands: ReadOnlyCommands,
-    val toolVerifier: ToolVerifier,
     val userHome: String,
     val workDir: String,
     val binDir: String,
     val extDir: String,
-    val toolPublicationPort: ToolPublicationPort? = null,
     val transport: RemoteTransportPort? = null,
     val repository: ToolchainSetupRepository? = null,
     val log: (String, SetupLogKind) -> Unit = { _, _ -> },
+    val onPrerequisiteReport: ((org.ide.lti.core.model.setup.PrerequisiteReport) -> Unit)? = null,
+    val alreadyVerifiedWsl: Boolean = false,
 )
 
 public interface CheckStage {
     public val stage: SetupStepStage
+
     public suspend fun run(ctx: CheckContext, scope: CheckScope): StageOutcome
 }

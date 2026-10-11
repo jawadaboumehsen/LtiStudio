@@ -12,6 +12,7 @@ package org.ide.lti.core.data.setup.check
 import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
+import org.ide.lti.core.domain.setup.ToolOutputKind
 
 /**
  * Runner for environment inspection stages that enforces argument-level read-only
@@ -19,40 +20,42 @@ import org.ide.lti.core.domain.setup.ToolGroupCatalog
  * throws [IllegalArgumentException].
  */
 public class ReadOnlyCommands(private val cli: WslCliExecutor = WslCliExecutor()) : WslCliExecutor() {
-
     public companion object {
         private const val DEFAULT_TIMEOUT_SECONDS = 10L
         private val UNRESTRICTED_READ_COMMANDS = setOf("test", "stat", "readlink", "sha256sum", "df")
 
-        private val FORBIDDEN_FIND_FLAGS = setOf(
-            "-exec",
-            "-execdir",
-            "-ok",
-            "-okdir",
-            "-delete",
-            "-fprint",
-            "-fprintf",
-            "-fprint0",
-            "-fls",
-        )
+        private val FORBIDDEN_FIND_FLAGS =
+            setOf(
+                "-exec",
+                "-execdir",
+                "-ok",
+                "-okdir",
+                "-delete",
+                "-fprint",
+                "-fprintf",
+                "-fprint0",
+                "-fls",
+            )
 
-        private val ALLOWED_FIND_FLAGS = setOf(
-            "-L",
-            "-maxdepth",
-            "-mindepth",
-            "-type",
-            "-name",
-            "-perm",
-            "-printf",
-        )
+        private val ALLOWED_FIND_FLAGS =
+            setOf(
+                "-L",
+                "-maxdepth",
+                "-mindepth",
+                "-type",
+                "-name",
+                "-perm",
+                "-printf",
+            )
 
-        private val ALLOWED_GIT_SUBCOMMANDS = setOf(
-            "rev-parse",
-            "ls-tree",
-            "ls-remote",
-            "remote",
-            "status",
-        )
+        private val ALLOWED_GIT_SUBCOMMANDS =
+            setOf(
+                "rev-parse",
+                "ls-tree",
+                "ls-remote",
+                "remote",
+                "status",
+            )
     }
 
     override fun execute(
@@ -127,9 +130,23 @@ public class ReadOnlyCommands(private val cli: WslCliExecutor = WslCliExecutor()
     }
 
     private fun validateJava(args: List<String>) {
-        if (args != listOf("-version")) {
-            throw IllegalArgumentException("Forbidden java command: $args (only 'java -version' allowed)")
+        if (args == listOf("-version")) return
+
+        if (args.size >= 2 && args[0] == "-jar") {
+            val jarFile = args[1].substringAfterLast('/')
+            val matchingOutput =
+                ToolGroupCatalog.allOutputs.firstOrNull {
+                    it.kind == ToolOutputKind.JAR &&
+                        (it.file == jarFile || it.toolId == jarFile || "${it.toolId}.jar" == jarFile)
+                }
+            if (matchingOutput != null) {
+                val jarProbeArgs = args.drop(2)
+                validateProbeArgs(jarFile, jarProbeArgs, matchingOutput.probe.args)
+                return
+            }
         }
+
+        throw IllegalArgumentException("Forbidden java command: $args (only 'java -version' allowed)")
     }
 
     private fun validatePython(args: List<String>) {

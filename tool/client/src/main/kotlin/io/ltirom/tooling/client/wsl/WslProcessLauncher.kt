@@ -10,38 +10,32 @@ import java.io.IOException
 import java.util.UUID
 import kotlin.concurrent.thread
 
-public data class WslProcessLaunchResult(
-    val process: Process,
-    val port: Int,
-    val token: String,
-    val pid: Long
-)
+public data class WslProcessLaunchResult(val process: Process, val port: Int, val token: String, val pid: Long)
 
 /**
  * Single Responsibility: Spawns the LtiRomServer process in WSL and parses the handshake.
  */
-public open class WslProcessLauncher(
-    internal val startupTimeoutMs: Long = 20_000L,
-) {
+public open class WslProcessLauncher(internal val startupTimeoutMs: Long = 20_000L) {
     public var lastLogTail: String? = null
         private set
 
-    public open suspend fun launch(
-        distro: String,
-        binaryPath: String,
-    ): WslProcessLaunchResult = launch(distro, binaryPath, null)
+    public open suspend fun launch(distro: String, binaryPath: String): WslProcessLaunchResult =
+        launch(distro, binaryPath, null)
 
-    public open suspend fun launch(
-        distro: String,
-        binaryPath: String,
-        javaHome: String?
-    ): WslProcessLaunchResult {
+    public open suspend fun launch(distro: String, binaryPath: String, javaHome: String?): WslProcessLaunchResult {
         val token = UUID.randomUUID().toString().replace("-", "")
 
+        val effectiveJavaHome =
+            javaHome?.takeIf { it.isNotBlank() } ?: run {
+                val parent = binaryPath.substringBeforeLast("/", "")
+                val grandParent = parent.substringBeforeLast("/", "")
+                if (grandParent.isNotBlank()) "$grandParent/runtime" else null
+            }
+
         val cmd = mutableListOf("wsl.exe", "-d", distro, "-e")
-        if (!javaHome.isNullOrBlank()) {
+        if (!effectiveJavaHome.isNullOrBlank()) {
             cmd.add("env")
-            cmd.add("JAVA_HOME=$javaHome")
+            cmd.add("JAVA_HOME=$effectiveJavaHome")
         }
         cmd.addAll(
             listOf(
@@ -50,12 +44,13 @@ public open class WslProcessLauncher(
                 "--token", token,
                 "--host", "0.0.0.0",
                 "--distro", distro,
-            )
+            ),
         )
 
-        val process = withContext(Dispatchers.IO) {
-            ProcessBuilder(cmd).redirectErrorStream(true).start()
-        }
+        val process =
+            withContext(Dispatchers.IO) {
+                ProcessBuilder(cmd).redirectErrorStream(true).start()
+            }
         val (port, pid) = awaitHandshake(process, distro)
         return WslProcessLaunchResult(process = process, port = port, token = token, pid = pid)
     }
@@ -90,16 +85,17 @@ public open class WslProcessLauncher(
             }
         }
 
-        val match = try {
-            withTimeout(startupTimeoutMs) { ready.await() }
-        } catch (_: TimeoutCancellationException) {
-            null
-        } catch (e: CancellationException) {
-            process.destroyForcibly()
-            throw e
-        } catch (_: IOException) {
-            null
-        }
+        val match =
+            try {
+                withTimeout(startupTimeoutMs) { ready.await() }
+            } catch (_: TimeoutCancellationException) {
+                null
+            } catch (e: CancellationException) {
+                process.destroyForcibly()
+                throw e
+            } catch (_: IOException) {
+                null
+            }
 
         if (match == null) {
             process.destroyForcibly()

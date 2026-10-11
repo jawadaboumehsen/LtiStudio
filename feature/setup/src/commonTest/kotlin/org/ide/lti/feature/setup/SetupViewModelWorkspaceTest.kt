@@ -51,7 +51,6 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SetupViewModelWorkspaceTest {
-
     private class FakeWorkspaceRepository : WorkspaceRepository {
         val recents = MutableStateFlow<List<RecentProject>>(emptyList())
         val workspaces = mutableMapOf<String, Workspace>()
@@ -59,43 +58,54 @@ class SetupViewModelWorkspaceTest {
         var throwMessage = "Disk I/O error"
 
         override fun getWorkspaces(): Flow<List<Workspace>> = MutableStateFlow(workspaces.values.toList())
+
         override suspend fun getWorkspace(id: String): Workspace? {
             if (shouldThrowOnGet) throw IllegalStateException(throwMessage)
             return workspaces[id]
         }
+
         override suspend fun saveWorkspace(workspace: Workspace) {
             workspaces[workspace.id] = workspace
         }
+
         override suspend fun deleteWorkspace(id: String) {
             workspaces.remove(id)
         }
+
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
+
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
+
         override fun getRecentProjects(): Flow<List<RecentProject>> = recents.asStateFlow()
+
         override suspend fun addRecentProject(project: RecentProject) {
             recents.value = listOf(project) + recents.value.filter { it.workspaceId != project.workspaceId }
         }
+
         override suspend fun removeRecentProject(workspaceId: String) {
             recents.value = recents.value.filter { it.workspaceId != workspaceId }
         }
+
         override suspend fun clearRecentProjects() {
             recents.value = emptyList()
         }
+
         override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> {
-            val defaults = listOf(
-                RecentProject(
-                    workspaceId = "ltirom_staging_workdir",
-                    name = "LtiRom Staging WorkDir",
-                    path = "~/LtiRomWorkDir",
-                    lastOpened = Clock.System.now(),
-                ),
-                RecentProject(
-                    workspaceId = "target_pq84p01",
-                    name = "REDMAGIC Astra (PQ84P01)",
-                    path = "~/LtiRomWorkDir/workspaces/target_pq84p01",
-                    lastOpened = Clock.System.now(),
-                ),
-            )
+            val defaults =
+                listOf(
+                    RecentProject(
+                        workspaceId = "ltirom_staging_workdir",
+                        name = "LtiRom Staging WorkDir",
+                        path = "~/LtiRomWorkDir",
+                        lastOpened = Clock.System.now(),
+                    ),
+                    RecentProject(
+                        workspaceId = "target_pq84p01",
+                        name = "REDMAGIC Astra (PQ84P01)",
+                        path = "~/LtiRomWorkDir/workspaces/target_pq84p01",
+                        lastOpened = Clock.System.now(),
+                    ),
+                )
             val current = recents.value
             val combined = (current + defaults).distinctBy { it.workspaceId }
             recents.value = combined
@@ -110,24 +120,27 @@ class SetupViewModelWorkspaceTest {
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
-            val project1 = RecentProject(
-                workspaceId = "p1",
-                name = "LtiRomProject",
-                path = "/Users/dev/LtiRomProject",
-                lastOpened = Clock.System.now(),
-            )
-            val project2 = RecentProject(
-                workspaceId = "p2",
-                name = "KmpTemplate",
-                path = "/Users/dev/KmpTemplate",
-                lastOpened = Clock.System.now(),
-            )
+            val project1 =
+                RecentProject(
+                    workspaceId = "p1",
+                    name = "LtiRomProject",
+                    path = "/Users/dev/LtiRomProject",
+                    lastOpened = Clock.System.now(),
+                )
+            val project2 =
+                RecentProject(
+                    workspaceId = "p2",
+                    name = "KmpTemplate",
+                    path = "/Users/dev/KmpTemplate",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project1, project2)
 
             val viewModel = SetupViewModel(manager)
-            val collectJob = backgroundScope.launch(testDispatcher) {
-                viewModel.filteredRecentProjects.collect()
-            }
+            val collectJob =
+                backgroundScope.launch(testDispatcher) {
+                    viewModel.filteredRecentProjects.collect()
+                }
 
             // When query is empty, all projects returned
             assertEquals(2, viewModel.filteredRecentProjects.value.size)
@@ -164,12 +177,13 @@ class SetupViewModelWorkspaceTest {
         try {
             val repo = FakeWorkspaceRepository()
             val manager = WorkspaceManager(repo, this)
-            val project = RecentProject(
-                workspaceId = "p1",
-                name = "LtiRomProject",
-                path = "/Users/dev/LtiRomProject",
-                lastOpened = Clock.System.now(),
-            )
+            val project =
+                RecentProject(
+                    workspaceId = "p1",
+                    name = "LtiRomProject",
+                    path = "/Users/dev/LtiRomProject",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project)
 
             val viewModel = SetupViewModel(manager)
@@ -196,16 +210,18 @@ class SetupViewModelWorkspaceTest {
             val openWorkspace = OpenWorkspaceUseCase(repo)
             val removeRecent = RemoveRecentWorkspaceUseCase(repo)
 
-            val viewModel = SetupViewModel(
-                workspaceManager = manager,
-                getRecentWorkspacesUseCase = getRecents,
-                discoverWorkdirWorkspacesUseCase = discoverWorkdir,
-                openWorkspaceUseCase = openWorkspace,
-                removeRecentWorkspaceUseCase = removeRecent,
-            )
-            val collectJob = backgroundScope.launch(testDispatcher) {
-                viewModel.recentProjects.collect()
-            }
+            val viewModel =
+                SetupViewModel(
+                    workspaceManager = manager,
+                    getRecentWorkspacesUseCase = getRecents,
+                    discoverWorkdirWorkspacesUseCase = discoverWorkdir,
+                    openWorkspaceUseCase = openWorkspace,
+                    removeRecentWorkspaceUseCase = removeRecent,
+                )
+            val collectJob =
+                backgroundScope.launch(testDispatcher) {
+                    viewModel.recentProjects.collect()
+                }
             testScheduler.advanceUntilIdle()
 
             // On init, recents is clean and empty (no auto-seeding without user action)
@@ -242,12 +258,13 @@ class SetupViewModelWorkspaceTest {
             repo.shouldThrowOnGet = true
             repo.throwMessage = "Corrupted workspace XML on disk"
             val manager = WorkspaceManager(repo, this)
-            val project = RecentProject(
-                workspaceId = "p_corrupt",
-                name = "CorruptedProject",
-                path = "/Users/dev/CorruptedProject",
-                lastOpened = Clock.System.now(),
-            )
+            val project =
+                RecentProject(
+                    workspaceId = "p_corrupt",
+                    name = "CorruptedProject",
+                    path = "/Users/dev/CorruptedProject",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project)
 
             val viewModel = SetupViewModel(manager)
@@ -285,12 +302,13 @@ class SetupViewModelWorkspaceTest {
             val repo = FakeWorkspaceRepository()
             // Workspace is NOT present in repo.workspaces (simulating removed/deleted workspace directory)
             val manager = WorkspaceManager(repo, this)
-            val project = RecentProject(
-                workspaceId = "p_missing",
-                name = "DeletedFolderProject",
-                path = "/Users/dev/DeletedFolderProject",
-                lastOpened = Clock.System.now(),
-            )
+            val project =
+                RecentProject(
+                    workspaceId = "p_missing",
+                    name = "DeletedFolderProject",
+                    path = "/Users/dev/DeletedFolderProject",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project)
 
             val viewModel = SetupViewModel(manager)
@@ -325,18 +343,20 @@ class SetupViewModelWorkspaceTest {
             repo.shouldThrowOnGet = true
             repo.throwMessage = "Transient lock timeout"
             val manager = WorkspaceManager(repo, this)
-            val targetWorkspace = Workspace(
-                id = "p_retry",
-                name = "RetryableProject",
-                path = "/Users/dev/RetryableProject",
-            )
+            val targetWorkspace =
+                Workspace(
+                    id = "p_retry",
+                    name = "RetryableProject",
+                    path = "/Users/dev/RetryableProject",
+                )
             repo.workspaces[targetWorkspace.id] = targetWorkspace
-            val project = RecentProject(
-                workspaceId = "p_retry",
-                name = "RetryableProject",
-                path = "/Users/dev/RetryableProject",
-                lastOpened = Clock.System.now(),
-            )
+            val project =
+                RecentProject(
+                    workspaceId = "p_retry",
+                    name = "RetryableProject",
+                    path = "/Users/dev/RetryableProject",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project)
 
             val viewModel = SetupViewModel(manager)
@@ -369,39 +389,44 @@ class SetupViewModelWorkspaceTest {
         Dispatchers.setMain(testDispatcher)
         try {
             val repo = FakeWorkspaceRepository()
-            val project1 = RecentProject(
-                workspaceId = "cached_1",
-                name = "AlphaRom",
-                path = "/data/AlphaRom",
-                lastOpened = Clock.System.now(),
-            )
-            val project2 = RecentProject(
-                workspaceId = "cached_2",
-                name = "BetaRom",
-                path = "/data/BetaRom",
-                lastOpened = Clock.System.now(),
-            )
+            val project1 =
+                RecentProject(
+                    workspaceId = "cached_1",
+                    name = "AlphaRom",
+                    path = "/data/AlphaRom",
+                    lastOpened = Clock.System.now(),
+                )
+            val project2 =
+                RecentProject(
+                    workspaceId = "cached_2",
+                    name = "BetaRom",
+                    path = "/data/BetaRom",
+                    lastOpened = Clock.System.now(),
+                )
             repo.recents.value = listOf(project1, project2)
             val manager = WorkspaceManager(repo, this)
 
-            val failingReadinessPort = object : EnvironmentReadinessPort {
-                override fun observe(): Flow<EnvironmentReadiness> = emptyFlow()
+            val failingReadinessPort =
+                object : EnvironmentReadinessPort {
+                    override fun observe(): Flow<EnvironmentReadiness> = emptyFlow()
 
-                override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(
-                    state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
-                    failingCheck = "WSL2 daemon bridge unreachable",
+                    override suspend fun refresh(): EnvironmentReadiness = EnvironmentReadiness(
+                        state = EnvironmentReadinessState.SERVICE_UNREACHABLE,
+                        failingCheck = "WSL2 daemon bridge unreachable",
+                    )
+
+                    override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = refresh()
+                }
+
+            val viewModel =
+                SetupViewModel(
+                    workspaceManager = manager,
+                    environmentReadinessPort = failingReadinessPort,
                 )
-
-                override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = refresh()
-            }
-
-            val viewModel = SetupViewModel(
-                workspaceManager = manager,
-                environmentReadinessPort = failingReadinessPort,
-            )
-            val collectJob = backgroundScope.launch(testDispatcher) {
-                viewModel.filteredRecentProjects.collect()
-            }
+            val collectJob =
+                backgroundScope.launch(testDispatcher) {
+                    viewModel.filteredRecentProjects.collect()
+                }
             testScheduler.advanceUntilIdle()
 
             // Cached browsing works offline:
@@ -427,9 +452,8 @@ class SetupViewModelWorkspaceTest {
         }
     }
 
-    private class FakeToolchainProvisioningService(
-        initialState: ToolchainSetupState = ToolchainSetupState(),
-    ) : ToolchainProvisioningService {
+    private class FakeToolchainProvisioningService(initialState: ToolchainSetupState = ToolchainSetupState()) :
+        ToolchainProvisioningService {
         val _state = MutableStateFlow(initialState)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
 
@@ -437,12 +461,14 @@ class SetupViewModelWorkspaceTest {
         var verifyEnvironmentCount = 0
 
         fun markAllReady() {
-            _state.value = _state.value.copy(
-                steps = ToolchainSetupState.defaultSteps().map {
-                    it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
-                },
-                lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
-            )
+            _state.value =
+                _state.value.copy(
+                    steps =
+                    ToolchainSetupState.defaultSteps().map {
+                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                    },
+                    lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
+                )
         }
 
         override suspend fun verifyEnvironment(): ToolchainSetupState {
@@ -464,23 +490,29 @@ class SetupViewModelWorkspaceTest {
         }
 
         // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?, autoDoctorEnabled: Boolean): SetupPlan =
-            SetupPlan(
-                planId = "fake-plan",
-                revisionHash = "fake-rev",
-                environmentKey = "fake-env",
-                kind = kind,
-                targetStageOrToolId = targetId,
-                autoDoctorEnabled = autoDoctorEnabled,
-            )
+        override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan = SetupPlan(
+            planId = "fake-plan",
+            revisionHash = "fake-rev",
+            environmentKey = "fake-env",
+            kind = kind,
+            targetStageOrToolId = targetId,
+        )
+
         override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
+
         override fun observe(): Flow<SetupOutcome?> = flowOf(null)
+
         override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
+
         override suspend fun recover(attemptId: String?): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
-        override suspend fun cancel(): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service has nothing to cancel")
+
+        override suspend fun cancel(): SetupOutcome = SetupOutcome.Failed(
+            stage = null,
+            reason = "fake service has nothing to cancel",
+        )
+
         override suspend fun resume(planId: String): SetupOutcome =
             SetupOutcome.Failed(stage = null, reason = "fake service does not resume plans")
 

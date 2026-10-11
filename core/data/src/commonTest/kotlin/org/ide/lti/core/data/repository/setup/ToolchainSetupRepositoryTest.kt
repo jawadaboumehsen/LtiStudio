@@ -32,7 +32,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ToolchainSetupRepositoryTest {
-
     @Test
     fun testRepositoryDelegationAndStateFlow() = runTest {
         val settings = MapSettings()
@@ -53,8 +52,8 @@ class ToolchainSetupRepositoryTest {
         assertEquals(true, repository.currentState.tools["adb"]?.isVerified)
         assertEquals("/bin/adb", repository.currentState.tools["adb"]?.binaryPath)
 
-        repository.markStageCompleted(SetupStepStage.REPO_SYNCHRONIZATION.name, true)
-        assertTrue(repository.currentState.isStageCompleted(SetupStepStage.REPO_SYNCHRONIZATION.name))
+        repository.markStageCompleted(SetupStepStage.SYSTEM_PACKAGES.name, true)
+        assertTrue(repository.currentState.isStageCompleted(SetupStepStage.SYSTEM_PACKAGES.name))
 
         repository.updateAvbKeyState(provisioned = true, keyPath = "/security/avb/key.pem")
         assertTrue(repository.currentState.isAvbKeyProvisioned)
@@ -75,16 +74,17 @@ class ToolchainSetupRepositoryTest {
     fun testLegacyRecordMigrationDecodesToNoActiveAttempt() = runTest {
         val settings = MapSettings()
         // Legacy JSON format without any ledger fields
-        val legacyJson = """
-            {
-                "isSetupCompleted": true,
-                "completedStages": ["WSL_DETECTION", "SERVER_CONNECTIVITY"],
-                "tools": {},
-                "submodules": {},
-                "lastVerifiedTimestamp": 1700000000000,
-                "isAvbKeyProvisioned": false
-            }
-        """.trimIndent()
+        val legacyJson =
+            """
+                {
+                    "isSetupCompleted": true,
+                    "completedStages": ["WSL_DETECTION", "SERVER_CONNECTIVITY"],
+                    "tools": {},
+                    "submodules": {},
+                    "lastVerifiedTimestamp": 1700000000000,
+                    "isAvbKeyProvisioned": false
+                }
+            """.trimIndent()
         settings[ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE] = legacyJson
 
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
@@ -122,7 +122,7 @@ class ToolchainSetupRepositoryTest {
 
         // When disk write fails, failure must surface to caller
         failingSettings.failWrites = true
-        val failedRes = repository.markStageCompleted("REPO_SYNCHRONIZATION", true)
+        val failedRes = repository.markStageCompleted("TOOLS", true)
         assertTrue(failedRes.isFailure, "Durable write failure must surface as Result.failure, not be swallowed")
     }
 
@@ -133,26 +133,28 @@ class ToolchainSetupRepositoryTest {
             ToolchainPreferencesDataSource(settings = failingSettings, ioDispatcher = Dispatchers.Unconfined)
         val repository = ToolchainSetupRepositoryImpl(dataSource)
 
-        val attempt = SetupAttemptRecord(
-            attemptId = "attempt-atomic-1",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            status = AttemptStatus.RUNNING,
-            orderedIntents = listOf(
-                ChildIntentRecord(
-                    childIndex = 0,
-                    stage = "REPO_SYNCHRONIZATION",
-                    actionId = "android-tools",
-                    request = PersistedExecutionRequest(toolId = "git"),
-                    idempotencyKey = "key-1",
-                    workspaceLock = "lock-1",
-                    lastSeq = 10L,
-                    replayLogs = listOf("line 10"),
+        val attempt =
+            SetupAttemptRecord(
+                attemptId = "attempt-atomic-1",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.RUNNING,
+                orderedIntents =
+                listOf(
+                    ChildIntentRecord(
+                        childIndex = 0,
+                        stage = "TOOLS",
+                        actionId = "android-tools",
+                        request = PersistedExecutionRequest(toolId = "git"),
+                        idempotencyKey = "key-1",
+                        workspaceLock = "lock-1",
+                        lastSeq = 10L,
+                        replayLogs = listOf("line 10"),
+                    ),
                 ),
-            ),
-        )
+            )
         repository.recordAttemptAuthorized(attempt)
         assertEquals(10L, repository.currentState.activeAttempt?.orderedIntents?.first()?.lastSeq)
 
@@ -173,7 +175,8 @@ class ToolchainSetupRepositoryTest {
 
     @Test
     fun testPersistedReplayEvidenceObeysLineAndByteBounds() = runTest {
-        val dataSource = ToolchainPreferencesDataSource(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
+        val dataSource =
+            ToolchainPreferencesDataSource(settings = MapSettings(), ioDispatcher = Dispatchers.Unconfined)
         val repository = ToolchainSetupRepositoryImpl(dataSource)
         val legacyHistory = List(SetupLogBounds.MAX_BUFFER_LINES) { "legacy $it" }
         repository.recordAttemptAuthorized(
@@ -184,10 +187,11 @@ class ToolchainSetupRepositoryTest {
                 planRevisionHash = "rev-1",
                 planKind = "FULL_SETUP",
                 status = AttemptStatus.RUNNING,
-                orderedIntents = listOf(
+                orderedIntents =
+                listOf(
                     ChildIntentRecord(
                         childIndex = 0,
-                        stage = "REPO_SYNCHRONIZATION",
+                        stage = "TOOLS",
                         actionId = "android-tools",
                         request = PersistedExecutionRequest(toolId = "git"),
                         idempotencyKey = "key-1",
@@ -200,7 +204,12 @@ class ToolchainSetupRepositoryTest {
         ).getOrThrow()
 
         val oversized = "日".repeat(SetupLogBounds.MAX_LINE_BYTES) // 3-byte code points, ~48 KiB
-        repository.commitChildCursorAndEvidence("attempt-bounded", 0, legacyHistory.size + 1L, oversized).getOrThrow()
+        repository.commitChildCursorAndEvidence(
+            "attempt-bounded",
+            0,
+            legacyHistory.size + 1L,
+            oversized,
+        ).getOrThrow()
 
         val intent = repository.currentState.activeAttempt?.orderedIntents?.single()
         val logs = intent?.replayLogs.orEmpty()
@@ -231,14 +240,15 @@ class ToolchainSetupRepositoryTest {
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
         val repository = ToolchainSetupRepositoryImpl(dataSource)
 
-        val attempt = SetupAttemptRecord(
-            attemptId = "attempt-hist-1",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            status = AttemptStatus.RUNNING,
-        )
+        val attempt =
+            SetupAttemptRecord(
+                attemptId = "attempt-hist-1",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.RUNNING,
+            )
         repository.recordAttemptAuthorized(attempt)
         assertEquals("attempt-hist-1", repository.currentState.activeAttempt?.attemptId)
 
@@ -259,14 +269,15 @@ class ToolchainSetupRepositoryTest {
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
         val repository = ToolchainSetupRepositoryImpl(dataSource)
 
-        val attempt = SetupAttemptRecord(
-            attemptId = "attempt-active-protect",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            status = AttemptStatus.RUNNING,
-        )
+        val attempt =
+            SetupAttemptRecord(
+                attemptId = "attempt-active-protect",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.RUNNING,
+            )
         repository.recordAttemptAuthorized(attempt)
 
         // Clear without force should fail
@@ -290,39 +301,42 @@ class ToolchainSetupRepositoryTest {
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
         val repository = ToolchainSetupRepositoryImpl(dataSource)
 
-        val attempt = SetupAttemptRecord(
-            attemptId = "attempt-proof-1",
-            environmentKey = "Ubuntu",
-            planId = "plan-1",
-            planRevisionHash = "rev-1",
-            planKind = "FULL_SETUP",
-            status = AttemptStatus.RUNNING,
-            orderedIntents = listOf(
-                ChildIntentRecord(
-                    childIndex = 0,
-                    stage = "REPO_SYNCHRONIZATION",
-                    actionId = "android-tools",
-                    request = PersistedExecutionRequest(toolId = "git"),
-                    idempotencyKey = "key-1",
-                    workspaceLock = "lock-1",
-                    submissionTimestampEpochMs = 1000L,
-                    runId = "server-run-1",
+        val attempt =
+            SetupAttemptRecord(
+                attemptId = "attempt-proof-1",
+                environmentKey = "Ubuntu",
+                planId = "plan-1",
+                planRevisionHash = "rev-1",
+                planKind = "FULL_SETUP",
+                status = AttemptStatus.RUNNING,
+                orderedIntents =
+                listOf(
+                    ChildIntentRecord(
+                        childIndex = 0,
+                        stage = "TOOLS",
+                        actionId = "android-tools",
+                        request = PersistedExecutionRequest(toolId = "git"),
+                        idempotencyKey = "key-1",
+                        workspaceLock = "lock-1",
+                        submissionTimestampEpochMs = 1000L,
+                        runId = "server-run-1",
+                    ),
                 ),
-            ),
-            recoveryBlocked = true,
-        )
+                recoveryBlocked = true,
+            )
         repository.saveToolchainState(ToolchainPersistenceState(activeAttempt = attempt, recoveryBlocked = true))
 
         assertTrue(repository.currentState.recoveryBlocked, "Must start recovery blocked")
 
         // Record terminal proof for child 0
-        val proof = ChildTerminalProof(
-            environmentKey = "Ubuntu",
-            attemptId = "attempt-proof-1",
-            runId = "server-run-1",
-            authoritativeTerminalStatus = "COMPLETED",
-            observedAtEpochMs = System.currentTimeMillis(),
-        )
+        val proof =
+            ChildTerminalProof(
+                environmentKey = "Ubuntu",
+                attemptId = "attempt-proof-1",
+                runId = "server-run-1",
+                authoritativeTerminalStatus = "COMPLETED",
+                observedAtEpochMs = System.currentTimeMillis(),
+            )
         repository.recordChildTerminalProof(proof)
 
         // Once proof is recorded, recoveryBlocked is cleared
@@ -344,14 +358,15 @@ class ToolchainSetupRepositoryTest {
                 planKind = "FULL_SETUP",
             ),
         )
-        val intent = ChildIntentRecord(
-            childIndex = -1,
-            stage = "REPO_SYNCHRONIZATION",
-            actionId = "submodule:android-tools",
-            request = PersistedExecutionRequest(toolId = "git", arguments = listOf("clone")),
-            idempotencyKey = "Ubuntu:attempt-append-1:submodule:android-tools",
-            workspaceLock = "lock:Ubuntu:attempt-append-1:submodule:android-tools",
-        )
+        val intent =
+            ChildIntentRecord(
+                childIndex = -1,
+                stage = "TOOLS",
+                actionId = "submodule:android-tools",
+                request = PersistedExecutionRequest(toolId = "git", arguments = listOf("clone")),
+                idempotencyKey = "Ubuntu:attempt-append-1:submodule:android-tools",
+                workspaceLock = "lock:Ubuntu:attempt-append-1:submodule:android-tools",
+            )
 
         val first = repository.appendChildIntent("attempt-append-1", intent)
         assertEquals(0, first.getOrNull(), "First journaled child gets index 0")
@@ -390,17 +405,18 @@ class ToolchainSetupRepositoryTest {
                 planKind = "FULL_SETUP",
             ),
         )
-        val index = repository.appendChildIntent(
-            "attempt-ns-1",
-            ChildIntentRecord(
-                childIndex = -1,
-                stage = "REPO_SYNCHRONIZATION",
-                actionId = "submodule:android-tools",
-                request = PersistedExecutionRequest(toolId = "git"),
-                idempotencyKey = "k",
-                workspaceLock = "l",
-            ),
-        ).getOrThrow()
+        val index =
+            repository.appendChildIntent(
+                "attempt-ns-1",
+                ChildIntentRecord(
+                    childIndex = -1,
+                    stage = "TOOLS",
+                    actionId = "submodule:android-tools",
+                    request = PersistedExecutionRequest(toolId = "git"),
+                    idempotencyKey = "k",
+                    workspaceLock = "l",
+                ),
+            ).getOrThrow()
         assertEquals(
             1,
             repository.currentState.activeAttempt?.unprovenIntents?.size,

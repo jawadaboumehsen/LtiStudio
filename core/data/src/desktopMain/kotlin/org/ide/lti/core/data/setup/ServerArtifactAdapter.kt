@@ -21,7 +21,6 @@ public class ServerArtifactAdapter(
     private val installer: ServerArtifactInstaller = ServerArtifactInstaller(),
     private val daemonManager: WslDaemonManager = WslDaemonManager(),
 ) : ServerArtifactPort {
-
     override suspend fun status(environment: SetupEnvironment): ServerArtifact {
         val artifact = installer.status(environment)
         val serverInfo = daemonManager.getServerInfo(environment)
@@ -32,7 +31,9 @@ public class ServerArtifactAdapter(
     }
 
     override suspend fun ensureInstalled(environment: SetupEnvironment): ServerArtifact =
-        installProtectingRunningService(environment)
+        installProtectingRunningService(
+            environment,
+        )
 
     /**
      * A service that is still running (for example while an update waits for its runs) loads classes and
@@ -49,24 +50,27 @@ public class ServerArtifactAdapter(
         )
     }
 
-    override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String): ServerArtifact {
+    override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String?): ServerArtifact {
         val installed = installer.status(environment)
-        val needsInstall = installed.installState is InstallState.Failed ||
-            installed.installState is InstallState.NotInstalled
-        val installFailure = if (needsInstall) {
-            installProtectingRunningService(environment).takeIf { it.installState is InstallState.Failed }
-        } else {
-            null
-        }
+        val needsInstall =
+            installed.installState is InstallState.Failed ||
+                installed.installState is InstallState.NotInstalled
+        val installFailure =
+            if (needsInstall) {
+                installProtectingRunningService(environment).takeIf { it.installState is InstallState.Failed }
+            } else {
+                null
+            }
         val activeVer = installed.activeVersion ?: installer.getActiveVersion(environment)
-        val failure = installFailure ?: startFailure(environment, activeVer, javaHome)?.let { detail ->
-            installed.copy(activeVersion = activeVer, installState = InstallState.Failed("start", detail))
-        }
+        val failure =
+            installFailure ?: startFailure(environment, activeVer, javaHome)?.let { detail ->
+                installed.copy(activeVersion = activeVer, installState = InstallState.Failed("start", detail))
+            }
         return failure?.copy(javaHome = javaHome) ?: runningArtifact(environment, installed, activeVer, javaHome)
     }
 
     /** Starts (or adopts) the service; returns why it failed, or null when it is running. */
-    private suspend fun startFailure(environment: SetupEnvironment, activeVer: String?, javaHome: String): String? =
+    private suspend fun startFailure(environment: SetupEnvironment, activeVer: String?, javaHome: String?): String? =
         try {
             daemonManager.ensureRunningVersion(
                 distro = environment.distro,
@@ -88,7 +92,7 @@ public class ServerArtifactAdapter(
         environment: SetupEnvironment,
         installed: ServerArtifact,
         activeVer: String?,
-        javaHome: String,
+        javaHome: String?,
     ): ServerArtifact {
         val serverInfo = daemonManager.getServerInfo(environment)
         return ServerArtifact(

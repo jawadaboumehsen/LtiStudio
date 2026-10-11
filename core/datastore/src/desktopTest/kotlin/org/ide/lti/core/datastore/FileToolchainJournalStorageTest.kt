@@ -29,7 +29,6 @@ import kotlin.test.assertTrue
  * The journal must survive what `java.util.prefs` cannot: values far above 8 KiB and a torn write.
  */
 class FileToolchainJournalStorageTest {
-
     private fun tempFile(): File = Files.createTempDirectory("lti-journal").resolve("toolchain/journal.json").toFile()
 
     @Test
@@ -70,24 +69,26 @@ class FileToolchainJournalStorageTest {
             "{\"isSetupCompleted\":true,\"completedStages\":[\"WSL_DETECTION\"]}",
         )
         val storage = FileToolchainJournalStorage(tempFile())
-        val dataSource = ToolchainPreferencesDataSource(
-            settings = settings,
-            ioDispatcher = Dispatchers.Unconfined,
-            storage = storage,
-        )
+        val dataSource =
+            ToolchainPreferencesDataSource(
+                settings = settings,
+                ioDispatcher = Dispatchers.Unconfined,
+                storage = storage,
+            )
         assertTrue(dataSource.currentToolchainState.isSetupCompleted, "legacy key is read when no document exists")
         assertNull(dataSource.currentToolchainState.activeAttempt, "legacy record decodes to no active attempt")
 
         val record = SetupAttemptRecord("a1", "env", "p1", "h1", "FULL_SETUP", AttemptStatus.AUTHORIZED)
         assertTrue(dataSource.recordAttemptAuthorized(record).isSuccess)
-        val intent = ChildIntentRecord(
-            childIndex = -1,
-            stage = "REPO_SYNCHRONIZATION",
-            actionId = "submodule:x",
-            request = PersistedExecutionRequest(toolId = "git"),
-            idempotencyKey = "k",
-            workspaceLock = "l",
-        )
+        val intent =
+            ChildIntentRecord(
+                childIndex = -1,
+                stage = "TOOLCHAIN_COMPILATION",
+                actionId = "submodule:x",
+                request = PersistedExecutionRequest(toolId = "git"),
+                idempotencyKey = "k",
+                workspaceLock = "l",
+            )
         assertTrue(dataSource.appendChildIntent("a1", intent).isSuccess)
         repeat(400) { seq ->
             assertTrue(
@@ -98,11 +99,12 @@ class FileToolchainJournalStorageTest {
         val document = storage.read()!!
         assertTrue(document.length > 8 * 1024, "journal grew past the preference limit: ${document.length}")
 
-        val reopened = ToolchainPreferencesDataSource(
-            settings = settings,
-            ioDispatcher = Dispatchers.Unconfined,
-            storage = storage,
-        )
+        val reopened =
+            ToolchainPreferencesDataSource(
+                settings = settings,
+                ioDispatcher = Dispatchers.Unconfined,
+                storage = storage,
+            )
         val reloaded = reopened.currentToolchainState.activeAttempt!!
         assertEquals(400L, reloaded.orderedIntents.single().lastSeq)
         assertEquals(400, reloaded.orderedIntents.single().replayLogs.size)

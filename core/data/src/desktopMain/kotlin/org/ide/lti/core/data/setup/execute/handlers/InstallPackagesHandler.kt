@@ -17,20 +17,17 @@ import org.ide.lti.core.data.setup.execute.actionId
 import org.ide.lti.core.data.setup.execute.toPersistedSetupPlan
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanAction
-import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.UserRepairHandoff
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 
-public class InstallPackagesHandler(
-    private val remediator: (suspend (SetupPlanAction.InstallPackages, ExecutionContext) -> SetupOutcome?)? = null,
-) : PlanActionHandler<SetupPlanAction.InstallPackages> {
+public class InstallPackagesHandler : PlanActionHandler<SetupPlanAction.InstallPackages> {
     override suspend fun execute(action: SetupPlanAction.InstallPackages, context: ExecutionContext): SetupOutcome? =
-        if (action.packages.isNotEmpty() || action.configureLoopMountElevation) {
+        if (action.packages.isNotEmpty()) {
             handleElevatedInstall(action, context)
         } else {
-            remediator?.invoke(action, context)
+            null
         }
 
     private suspend fun handleElevatedInstall(
@@ -44,32 +41,31 @@ public class InstallPackagesHandler(
 
         val handoffPackages = action.packages.filter { RequirementCatalog.isPackageApproved(it) }
         val pkgString = handoffPackages.joinToString(" ")
-        val terminalCommand = if (handoffPackages.isNotEmpty()) {
-            AptCommandBuilder.install(handoffPackages)
-        } else {
-            "echo 'No elevated package installation required.'"
-        }
-        val handoff = UserRepairHandoff(
-            actionId = action.actionId(),
-            description = action.description,
-            terminalCommand = terminalCommand,
-            packages = handoffPackages,
-            distro = distro,
-        )
-        val persistedHandoff = PersistedUserHandoff(
-            actionId = action.actionId(),
-            distro = distro,
-            command = terminalCommand,
-            packages = handoffPackages,
-            timestampEpochMs = System.currentTimeMillis(),
-        )
+        val terminalCommand =
+            if (handoffPackages.isNotEmpty()) {
+                AptCommandBuilder.install(handoffPackages)
+            } else {
+                "echo 'No elevated package installation required.'"
+            }
+        val handoff =
+            UserRepairHandoff(
+                actionId = action.actionId(),
+                description = action.description,
+                terminalCommand = terminalCommand,
+                packages = handoffPackages,
+                distro = distro,
+            )
+        val persistedHandoff =
+            PersistedUserHandoff(
+                actionId = action.actionId(),
+                distro = distro,
+                command = terminalCommand,
+                packages = handoffPackages,
+                timestampEpochMs = System.currentTimeMillis(),
+            )
         val persistedPlan = currentPlan.toPersistedSetupPlan()
 
-        val targetStage = if (currentPlan.kind == SetupPlanKind.BOOTSTRAP_PACKAGES) {
-            SetupStepStage.SYSTEM_PACKAGES
-        } else {
-            SetupStepStage.SYSTEM_DIAGNOSTICS
-        }
+        val targetStage = SetupStepStage.SYSTEM_PACKAGES
 
         if (repository == null || journal == null) {
             context.appendLog("[Plan] ERROR: Cannot pause for user authorization without a configured repository.")
@@ -87,11 +83,12 @@ public class InstallPackagesHandler(
             )
         }
 
-        val recordResult = repository.recordAttemptAwaitingUserAction(
-            journal.attemptId,
-            persistedHandoff,
-            persistedPlan,
-        )
+        val recordResult =
+            repository.recordAttemptAwaitingUserAction(
+                journal.attemptId,
+                persistedHandoff,
+                persistedPlan,
+            )
         return if (recordResult.isFailure) {
             val err = recordResult.exceptionOrNull()?.message ?: "Unknown journal error"
             context.appendLog("[Plan] Journal write failed while recording pending handoff: $err")

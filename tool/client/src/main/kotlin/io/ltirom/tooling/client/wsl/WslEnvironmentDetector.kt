@@ -16,23 +16,32 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
             .filter { it.isNotBlank() }
     }
 
-    public fun listDistrosWithVersions(): Map<String, Int> {
+    /**
+     * The WSL version of each distribution `wsl -l -v` lists. A distribution whose row cannot be read, or a
+     * failed query, is simply absent: an unknown version is never reported as a number.
+     */
+    public fun listDistrosWithVersions(): Map<String, Int> =
+        listVerboseRows().mapNotNull { row -> row.version?.let { row.name to it } }.toMap()
+
+    private class DistroRow(val name: String, val isDefault: Boolean, val version: Int?)
+
+    /**
+     * Rows of `wsl -l -v`: `[*] NAME  STATE  VERSION`. A name may contain spaces, so the state and version are
+     * taken from the right and everything before them is the name.
+     */
+    private fun listVerboseRows(): List<DistroRow> {
         val res = cli.executeHost(listOf("wsl.exe", "-l", "-v"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
-        if (res.exitCode != 0) return emptyMap()
-        val result = mutableMapOf<String, Int>()
-        for (line in res.output.lines()) {
-            val clean = line.trim().replace("\u0000", "")
-            if (clean.isBlank() || clean.startsWith("NAME", ignoreCase = true)) continue
-            val parts = clean.split(Regex("""\s+""")).filter { it.isNotBlank() }
-            if (parts.isEmpty()) continue
-            val name = if (parts.first() == "*") parts.getOrNull(1) else parts.first()
-            val versionStr = parts.lastOrNull()
-            if (name != null && versionStr != null) {
-                val version = versionStr.toIntOrNull() ?: 2
-                result[name] = version
-            }
+        if (res.exitCode != 0) return emptyList()
+        return res.output.lines().mapNotNull { line ->
+            val clean = line.replace("\u0000", "").trim()
+            if (clean.isBlank() || clean.startsWith("NAME", ignoreCase = true)) return@mapNotNull null
+            val match = VERBOSE_ROW.matchEntire(clean) ?: return@mapNotNull null
+            DistroRow(
+                name = match.groupValues[2].trim(),
+                isDefault = match.groupValues[1].isNotEmpty(),
+                version = match.groupValues[4].toIntOrNull(),
+            )
         }
-        return result
     }
 
     public fun readOsRelease(distro: String): Map<String, String> {
@@ -45,9 +54,10 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
             val eqIdx = trimmed.indexOf('=')
             if (eqIdx > 0) {
                 val key = trimmed.substring(0, eqIdx).trim()
-                val value = trimmed.substring(eqIdx + 1).trim()
-                    .removeSurrounding("\"")
-                    .removeSurrounding("'")
+                val value =
+                    trimmed.substring(eqIdx + 1).trim()
+                        .removeSurrounding("\"")
+                        .removeSurrounding("'")
                 result[key] = value
             }
         }
@@ -66,37 +76,56 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
     public fun classify(distro: String? = null): DistroStatus {
         val hostCheck = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (hostCheck.exitCode != 0) {
-            val detail = hostCheck.error.ifBlank {
-                hostCheck.output
-            }.ifBlank { "wsl.exe is not available or returned an error." }
+            val detail =
+                hostCheck.error.ifBlank {
+                    hostCheck.output
+                }.ifBlank { "wsl.exe is not available or returned an error." }
             return DistroStatus.WslUnavailable(detail)
         }
 
-        val distros = hostCheck.output.lines()
-            .map { it.trim().replace("\u0000", "") }
-            .filter { it.isNotBlank() }
+        val distros =
+            hostCheck.output.lines()
+                .map { it.trim().replace("\u0000", "") }
+                .filter { it.isNotBlank() }
 
         if (distros.isEmpty()) {
             return DistroStatus.NoDistro
         }
 
-        val targetDistro = distro ?: getDefaultDistro() ?: distros.first()
+        val defaultDistro = getDefaultDistro()
+        val targetDistro = distro ?: defaultDistro
+        if (targetDistro == null) {
+            return DistroStatus.NoDistro
+        }
+        if (distro == null && defaultDistro != null) {
+            // When auto-detecting, the default distro must be Ubuntu LTS
+            if (targetDistro !in distros) {
+                return DistroStatus.Unsupported(
+                    targetDistro,
+                    "Default distribution '$targetDistro' is not installed in WSL. Set Ubuntu as default: wsl --set-default Ubuntu-24.04",
+                )
+            }
+        }
         if (distro != null && targetDistro !in distros) {
             return DistroStatus.Unsupported(targetDistro, "Distribution '$targetDistro' is not installed in WSL.")
         }
 
-        val versions = listDistrosWithVersions()
-        val wslVersion = versions[targetDistro] ?: 2
+        val wslVersion = listDistrosWithVersions()[targetDistro]
+            ?: return DistroStatus.StartupFailed(
+                targetDistro,
+                "Could not determine whether '$targetDistro' runs on WSL 2 (wsl.exe -l -v gave no readable row for it).",
+            )
         if (wslVersion != 2) {
             return DistroStatus.Unsupported(targetDistro, "requires WSL 2, found version $wslVersion")
         }
 
         // First contact may cold-boot the distro, which can take well over 5 s.
-        val osReleaseRes = cli.execute(
-            targetDistro,
-            listOf("cat", "/etc/os-release"),
-            timeoutSeconds = DISTRO_BOOT_TIMEOUT_SECONDS,
-        )
+        val osReleaseRes =
+            cli.execute(
+                targetDistro,
+                listOf("cat", "/etc/os-release"),
+                timeoutSeconds = DISTRO_BOOT_TIMEOUT_SECONDS,
+            )
         if (osReleaseRes.exitCode == -1 || osReleaseRes.error.contains("timed out", ignoreCase = true)) {
             return DistroStatus.StartupFailed(targetDistro, osReleaseRes.error)
         }
@@ -116,14 +145,21 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         val isLts = isSupportedLts(versionId, version)
 
         if (!isUbuntu || !isLts) {
-            return DistroStatus.Unsupported(targetDistro, "found $id $versionId")
+            val guidance =
+                if (distro == null) {
+                    "Default distribution '$targetDistro' is $id $versionId, not Ubuntu LTS. Set an Ubuntu LTS distribution as default: wsl --set-default <Ubuntu-Distro>"
+                } else {
+                    "found $id $versionId"
+                }
+            return DistroStatus.Unsupported(targetDistro, guidance)
         }
 
-        val userRes = cli.execute(
-            targetDistro,
-            listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""),
-            timeoutSeconds = 5,
-        )
+        val userRes =
+            cli.execute(
+                targetDistro,
+                listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""),
+                timeoutSeconds = 5,
+            )
         if (userRes.exitCode == -1 || userRes.error.contains("timed out", ignoreCase = true)) {
             return DistroStatus.StartupFailed(targetDistro, userRes.error)
         }
@@ -162,9 +198,10 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         if (hostCheck.exitCode != 0) {
             return listOf(DistroStatus.WslUnavailable(hostCheck.error.ifBlank { "wsl.exe is not available." }))
         }
-        val distros = hostCheck.output.lines()
-            .map { it.trim().replace("\u0000", "") }
-            .filter { it.isNotBlank() }
+        val distros =
+            hostCheck.output.lines()
+                .map { it.trim().replace("\u0000", "") }
+                .filter { it.isNotBlank() }
         if (distros.isEmpty()) {
             return listOf(DistroStatus.NoDistro)
         }
@@ -201,15 +238,28 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         false
     }
 
+    /**
+     * Whether what was verified for [environment] still holds, from one `wsl -l -v` (no distro boot): it is still
+     * installed, still WSL 2 and - when [requireDefault] - still the default. The OS and user, which cost a boot
+     * to read, are what a cached verification is allowed to keep.
+     */
+    public fun stillCurrent(environment: SetupEnvironment, requireDefault: Boolean): Boolean {
+        val row = listVerboseRows().firstOrNull { it.name == environment.distro } ?: return false
+        return row.version == 2 && (!requireDefault || row.isDefault)
+    }
+
     /** The distro WSL marks as default (`*` in `wsl -l -v`); null when WSL reports none. Never guessed. */
-    public fun getDefaultDistro(): String? {
-        val res = cli.executeHost(listOf("wsl.exe", "-l", "-v"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
-        if (res.exitCode != 0) return null
-        return res.output.lines()
-            .map { it.replace("\u0000", "").trim() }
-            .firstOrNull { it.startsWith("*") }
-            ?.removePrefix("*")?.trim()
-            ?.split(Regex("""\s+"""))?.firstOrNull()
+    public fun getDefaultDistro(): String? = listVerboseRows().firstOrNull { it.isDefault }?.name
+
+    /**
+     * Sets the default WSL distribution via `wsl.exe --set-default <name>`.
+     */
+    public fun setDefaultDistro(name: String): Result<Unit> = runCatching {
+        val res = cli.executeHost(listOf("wsl.exe", "--set-default", name), timeoutSeconds = 10)
+        if (res.exitCode != 0) {
+            val err = res.error.ifBlank { res.output }.ifBlank { "Exit code ${res.exitCode}" }
+            error("Failed to set default distro to '$name': $err")
+        }
     }
 
     private fun parseOsReleaseOutput(output: String): Map<String, String> {
@@ -220,9 +270,10 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
             val eqIdx = trimmed.indexOf('=')
             if (eqIdx > 0) {
                 val key = trimmed.substring(0, eqIdx).trim()
-                val value = trimmed.substring(eqIdx + 1).trim()
-                    .removeSurrounding("\"")
-                    .removeSurrounding("'")
+                val value =
+                    trimmed.substring(eqIdx + 1).trim()
+                        .removeSurrounding("\"")
+                        .removeSurrounding("'")
                 result[key] = value
             }
         }
@@ -238,5 +289,6 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
 
     private companion object {
         const val DISTRO_BOOT_TIMEOUT_SECONDS = 30L
+        val VERBOSE_ROW = Regex("""^(\*?)\s*(.+?)\s+(\S+)\s+(\d+)$""")
     }
 }

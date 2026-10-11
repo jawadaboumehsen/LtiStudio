@@ -47,7 +47,6 @@ import kotlin.test.assertTrue
  * a specific window and recovers with fresh objects.
  */
 class SetupRecoveryTest {
-
     private class PersistentFakeServer : RemoteTransportPort {
         val runs = linkedMapOf<String, RunStatus>()
         val runLocks = mutableMapOf<String, String?>()
@@ -63,12 +62,13 @@ class SetupRecoveryTest {
             exitCode: Int? = null,
             startedAtEpochMs: Long = System.currentTimeMillis(),
         ) {
-            runs[runId] = RunStatus(
-                runId = runId,
-                status = status,
-                exitCode = exitCode,
-                startedAtEpochMs = startedAtEpochMs,
-            )
+            runs[runId] =
+                RunStatus(
+                    runId = runId,
+                    status = status,
+                    exitCode = exitCode,
+                    startedAtEpochMs = startedAtEpochMs,
+                )
             runLocks[runId] = workspaceLock
             runEvents.getOrPut(runId) { mutableListOf() }
         }
@@ -105,14 +105,26 @@ class SetupRecoveryTest {
         }
 
         override suspend fun cancelRun(runId: String, signal: String): RunCancelResponse? = null
-        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
-            ToolExecutionResponse(0, "", "", 1L)
+
+        override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse = ToolExecutionResponse(
+            0,
+            "",
+            "",
+            1L,
+        )
+
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = flow {}
+
         override suspend fun checkHealth(): WslServerInfo? = null
+
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
+
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
+
         override suspend fun shutdown(): Boolean = true
     }
 
@@ -153,7 +165,7 @@ class SetupRecoveryTest {
         ATTEMPT,
         ChildIntentRecord(
             childIndex = -1,
-            stage = "REPO_SYNCHRONIZATION",
+            stage = "TOOLCHAIN_COMPILATION",
             actionId = ACTION,
             request = PersistedExecutionRequest(toolId = "git", arguments = listOf("clone")),
             idempotencyKey = JournaledRunLauncher.idempotencyKey(CTX, ACTION),
@@ -185,9 +197,10 @@ class SetupRecoveryTest {
         assertEquals(SetupRunRecovery.NOT_SUBMITTED_STATUS, archived.orderedIntents.single().terminalStatus)
 
         // "Explicit retry allocates a new attemptId": a fresh attempt is admitted and gets its own identity.
-        val gate = SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
-            SetupOutcome.Succeeded()
-        }
+        val gate =
+            SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
+                SetupOutcome.Succeeded()
+            }
         assertTrue(gate is SetupOutcome.Succeeded, "Journal gate admits new work once history is reconciled: $gate")
         repo.recordAttemptAuthorized(
             archived.copy(attemptId = "attempt-2", status = AttemptStatus.AUTHORIZED, orderedIntents = emptyList()),
@@ -210,7 +223,11 @@ class SetupRecoveryTest {
                 LOCK,
             ),
         )
-        server.addEvents("server-run-1", StreamEvent.OutputChunk("Cloning..."), StreamEvent.ExecutionFinished(0, 10L))
+        server.addEvents(
+            "server-run-1",
+            StreamEvent.OutputChunk("Cloning..."),
+            StreamEvent.ExecutionFinished(0, 10L),
+        )
         server.runs["server-run-1"] =
             server.runs.getValue("server-run-1").copy(status = RunStatusValue.COMPLETED, exitCode = 0)
         val startsBefore = server.startRunCalls.size
@@ -219,7 +236,11 @@ class SetupRecoveryTest {
         val outcome = SetupRunRecovery(server, repo).recover(ENV)
 
         assertEquals(startsBefore, server.startRunCalls.size, "The lost receipt is reconciled, never resubmitted")
-        assertEquals(listOf("server-run-1" to 1L), server.attachCalls, "Attached once, from the committed cursor + 1")
+        assertEquals(
+            listOf("server-run-1" to 1L),
+            server.attachCalls,
+            "Attached once, from the committed cursor + 1",
+        )
         assertTrue(
             outcome is SetupOutcome.Interrupted,
             "sync-sources was never recorded complete, so this is not success",
@@ -339,18 +360,20 @@ class SetupRecoveryTest {
         assertTrue(repo.currentState.recoveryBlocked, "After 600,000 ms a missing receipt is ambiguous and blocks")
         assertEquals(0, server.startRunCalls.size)
         assertEquals(ATTEMPT, repo.currentState.activeAttempt?.attemptId, "A blocked attempt is not archived")
-        val gate = SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
-            SetupOutcome.Succeeded()
-        }
+        val gate =
+            SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
+                SetupOutcome.Succeeded()
+            }
         assertTrue(gate is SetupOutcome.Interrupted, "New mutations are refused while blocked")
-        val reset = SetupOperationCoordinator(repo).withAdmission(
-            ENV,
-            "reset",
-            SetupOperationCoordinator.KIND_CACHE_RESET,
-        ) {
-            repo.clearToolchainState(force = true)
-                .fold({ SetupOutcome.Succeeded() }, { SetupOutcome.Failed(null, it.message ?: "") })
-        }
+        val reset =
+            SetupOperationCoordinator(repo).withAdmission(
+                ENV,
+                "reset",
+                SetupOperationCoordinator.KIND_CACHE_RESET,
+            ) {
+                repo.clearToolchainState(force = true)
+                    .fold({ SetupOutcome.Succeeded() }, { SetupOutcome.Failed(null, it.message ?: "") })
+            }
         assertTrue(reset is SetupOutcome.Succeeded, "The confirmed cache reset is the user-directed escape")
         assertFalse(repo.currentState.recoveryBlocked)
     }
@@ -406,9 +429,10 @@ class SetupRecoveryTest {
 
         assertTrue(outcome is SetupOutcome.Failed, "$outcome")
         assertEquals(AttemptStatus.FAILED, repo.currentState.attemptHistory.single().status)
-        val gate = SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
-            SetupOutcome.Succeeded()
-        }
+        val gate =
+            SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
+                SetupOutcome.Succeeded()
+            }
         assertTrue(gate is SetupOutcome.Succeeded, "History never blocks a fresh, separately confirmed attempt")
     }
 
@@ -443,15 +467,17 @@ class SetupRecoveryTest {
         journalIntent(before)
 
         val repo = reopen(settings)
-        val gate = SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
-            SetupOutcome.Succeeded()
-        }
+        val gate =
+            SetupOperationCoordinator(repo).withAdmission(ENV, "plan-2", "FULL_SETUP") {
+                SetupOutcome.Succeeded()
+            }
         assertTrue(gate is SetupOutcome.Interrupted, "Unproven journaled work blocks new mutations: $gate")
-        val recoveryAdmitted = SetupOperationCoordinator(repo).withAdmission(
-            ENV,
-            ATTEMPT,
-            SetupOperationCoordinator.KIND_RECOVERY,
-        ) { SetupOutcome.Succeeded() }
+        val recoveryAdmitted =
+            SetupOperationCoordinator(repo).withAdmission(
+                ENV,
+                ATTEMPT,
+                SetupOperationCoordinator.KIND_RECOVERY,
+            ) { SetupOutcome.Succeeded() }
         assertTrue(recoveryAdmitted is SetupOutcome.Succeeded, "Recovery itself is admitted")
     }
 }

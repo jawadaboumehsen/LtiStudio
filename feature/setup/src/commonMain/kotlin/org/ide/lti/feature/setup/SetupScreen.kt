@@ -103,7 +103,6 @@ import org.ide.lti.feature.setup.steps.EnvironmentStepContent
 import org.ide.lti.feature.setup.steps.ProjectsStepContent
 import org.ide.lti.feature.setup.steps.RecoveryStepContent
 import org.ide.lti.feature.setup.steps.ToolsStepContent
-import org.ide.lti.feature.setup.versions.ToolVersionsState
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -132,7 +131,6 @@ fun SetupScreen(
     val toolSearchQuery by viewModel.toolSearchQuery.collectAsState()
     val toolSelection by viewModel.toolSelection.collectAsState()
     val filteredToolsMatrix by viewModel.filteredToolsMatrix.collectAsState()
-    val isAutoDoctorEnabled by viewModel.isAutoDoctorEnabled.collectAsState()
     val selectedTab by viewModel.selectedTab.collectAsState()
     val environmentNotice by viewModel.environmentNotice.collectAsState()
     val selectedTarget by viewModel.selectedTarget.collectAsState()
@@ -153,103 +151,102 @@ fun SetupScreen(
         onOpenWorkspace(workspace)
     }
 
-    val uiState = SetupUiState(
-        toolchainSetupState = toolchainSetupState,
-        // Recovery shows the journal's own record: kind, status, issue time and evidence.
-        attemptRecord = toolchainSetupState.pendingAttempt,
-        selectedTarget = selectedTarget,
-        availableTargets = availableTargets,
-        recentProjects = recentProjects,
-        filteredProjects = filteredProjects,
-        searchQuery = searchQuery,
-        selectedWorkspaceId = selectedWorkspaceId,
-        selectedCockpitTab = selectedCockpitTab,
-        toolSearchQuery = toolSearchQuery,
-        toolSelection = toolSelection,
-        filteredToolsMatrix = filteredToolsMatrix,
-        isAutoDoctorEnabled = isAutoDoctorEnabled,
-        selectedTab = activeTab,
-        selectedDestination = SetupDestination.fromId(activeTab.id),
-        environmentNotice = environmentNotice,
-        environmentReadiness = environmentReadiness,
-        activeOperation = activeOperation,
-        workspaceError = workspaceError,
-        pendingWorkspaceRequest = pendingWorkspaceRequest,
-        isHandoffSheetVisible = isHandoffSheetVisible,
-        handoffSheetState = handoffSheetState,
-        isToolchainBound = viewModel.isToolchainBound,
-    )
+    val uiState =
+        SetupUiState(
+            toolchainSetupState = toolchainSetupState,
+            // Recovery shows the journal's own record: kind, status, issue time and evidence.
+            attemptRecord = toolchainSetupState.pendingAttempt,
+            selectedTarget = selectedTarget,
+            availableTargets = availableTargets,
+            recentProjects = recentProjects,
+            filteredProjects = filteredProjects,
+            searchQuery = searchQuery,
+            selectedWorkspaceId = selectedWorkspaceId,
+            selectedCockpitTab = selectedCockpitTab,
+            toolSearchQuery = toolSearchQuery,
+            toolSelection = toolSelection,
+            filteredToolsMatrix = filteredToolsMatrix,
+            selectedTab = activeTab,
+            selectedDestination = SetupDestination.fromId(activeTab.id),
+            environmentNotice = environmentNotice,
+            environmentReadiness = environmentReadiness,
+            activeOperation = activeOperation,
+            workspaceError = workspaceError,
+            pendingWorkspaceRequest = pendingWorkspaceRequest,
+            isHandoffSheetVisible = isHandoffSheetVisible,
+            handoffSheetState = handoffSheetState,
+            isToolchainBound = viewModel.isToolchainBound,
+        )
 
-    val uiActions = SetupUiActions(
-        onSearchQueryChange = viewModel::onSearchQueryChange,
-        onRemoveRecentProject = viewModel::removeRecentProject,
-        onOpenFolder = { viewModel.openFolder(handleOpenWorkspace) },
-        onRecentProjectClick = { viewModel.openRecentProject(it, handleOpenWorkspace) },
-        onSelectWorkspace = viewModel::selectWorkspace,
-        onCheckEnvironment = viewModel::checkEnvironmentStatus,
-        onReconnect = viewModel::reconnectPendingAttempt,
-        onRetrySetupStep = viewModel::retrySetupStep,
-        onProvisionAvbKey = viewModel::onProvisionAvbKey,
-        onSelectTarget = viewModel::selectTarget,
-        onAutoRemediateDoctor = viewModel::autoRemediateDoctorIssues,
-        onSelectCockpitTab = viewModel::selectCockpitTab,
-        onToolSearchQueryChange = viewModel::onToolSearchQueryChange,
-        onSelectToolCategory = viewModel::selectToolCategory,
-        onSelectToolPackage = viewModel::selectToolPackage,
-        onTestTool = viewModel::testTool,
-        onRecompileTool = viewModel::recompileTool,
-        onNavigateToEnvironment = {
-            activeTab = SetupTab.ENVIRONMENT
-            viewModel.navigateToEnvironment()
-        },
-        onOpenSettings = onOpenSettings,
-        onSelectTab = { tab ->
-            activeTab = tab
-            viewModel.selectTab(tab)
-        },
-        onSelectDestination = { dest ->
-            val tab = when (dest) {
-                SetupDestination.WORKSPACES -> SetupTab.PROJECTS
-                SetupDestination.ENVIRONMENT -> SetupTab.ENVIRONMENT
-                SetupDestination.TOOLS -> SetupTab.TOOLS
-                SetupDestination.RECOVERY -> SetupTab.RECOVERY
-            }
-            activeTab = tab
-            viewModel.selectTab(tab)
-        },
-        onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
-        onSetAutoDoctorEnabled = viewModel::setAutoDoctorEnabled,
-        onResetToolchainCache = viewModel::previewResetToolchainCache,
-        onCreateWorkspace = onCreateWorkspace,
-        onOpenManageTargets = onOpenManageTargets,
-        onOpenHelp = {
-            onOpenHelp()
-            isHelpSheetOpen = true
-        },
-        onPreviewSetup = viewModel::previewSetup,
-        onConfirmOperation = viewModel::confirmOperation,
-        onDismissPreview = viewModel::dismissPreview,
-        onRetryStage = viewModel::retryStage,
-        onDismissWorkspaceError = viewModel::dismissWorkspaceError,
-        onLaunchStudio = {
-            val firstProject = recentProjects.firstOrNull()
-            if (firstProject != null) {
-                viewModel.openRecentProject(firstProject, handleOpenWorkspace)
-            } else {
-                activeTab = SetupTab.PROJECTS
-            }
-        },
-        onCancelPendingWorkspaceRequest = viewModel::cancelPendingWorkspaceRequest,
-        onResumeAwaitingOperation = viewModel::resumeAwaitingOperation,
-        onDismissHandoff = viewModel::dismissHandoff,
-        onAbandonAwaitingOperation = viewModel::abandonAwaitingOperation,
-        onShowHandoffSheet = viewModel::showHandoffSheet,
-        onOpenTerminal = viewModel::openTerminal,
-        onSelectDistro = viewModel::selectDistro,
-        onInstallPackages = viewModel::installPackages,
-        onCancelOperation = viewModel::cancelOperation,
-        onExportLogs = viewModel::exportLogs,
-    )
+    val uiActions =
+        SetupUiActions(
+            onSearchQueryChange = viewModel::onSearchQueryChange,
+            onRemoveRecentProject = viewModel::removeRecentProject,
+            onOpenFolder = { viewModel.openFolder(handleOpenWorkspace) },
+            onRecentProjectClick = { viewModel.openRecentProject(it, handleOpenWorkspace) },
+            onSelectWorkspace = viewModel::selectWorkspace,
+            onCheckEnvironment = viewModel::checkEnvironmentStatus,
+            onReconnect = viewModel::reconnectPendingAttempt,
+            onRetrySetupStep = viewModel::retrySetupStep,
+            onProvisionAvbKey = viewModel::onProvisionAvbKey,
+            onSelectTarget = viewModel::selectTarget,
+            onSelectCockpitTab = viewModel::selectCockpitTab,
+            onToolSearchQueryChange = viewModel::onToolSearchQueryChange,
+            onSelectToolCategory = viewModel::selectToolCategory,
+            onSelectToolPackage = viewModel::selectToolPackage,
+            onNavigateToEnvironment = {
+                activeTab = SetupTab.ENVIRONMENT
+                viewModel.navigateToEnvironment()
+            },
+            onOpenSettings = onOpenSettings,
+            onSelectTab = { tab ->
+                activeTab = tab
+                viewModel.selectTab(tab)
+            },
+            onSelectDestination = { dest ->
+                val tab =
+                    when (dest) {
+                        SetupDestination.WORKSPACES -> SetupTab.PROJECTS
+                        SetupDestination.ENVIRONMENT -> SetupTab.ENVIRONMENT
+                        SetupDestination.TOOLS -> SetupTab.TOOLS
+                        SetupDestination.RECOVERY -> SetupTab.RECOVERY
+                    }
+                activeTab = tab
+                viewModel.selectTab(tab)
+            },
+            onDismissEnvironmentNotice = viewModel::dismissEnvironmentNotice,
+            onResetToolchainCache = viewModel::previewResetToolchainCache,
+            onCreateWorkspace = onCreateWorkspace,
+            onOpenManageTargets = onOpenManageTargets,
+            onOpenHelp = {
+                onOpenHelp()
+                isHelpSheetOpen = true
+            },
+            onPreviewSetup = viewModel::previewSetup,
+            onConfirmOperation = viewModel::confirmOperation,
+            onDismissPreview = viewModel::dismissPreview,
+            onRetryStage = viewModel::retryStage,
+            onDismissWorkspaceError = viewModel::dismissWorkspaceError,
+            onLaunchStudio = {
+                val firstProject = recentProjects.firstOrNull()
+                if (firstProject != null) {
+                    viewModel.openRecentProject(firstProject, handleOpenWorkspace)
+                } else {
+                    activeTab = SetupTab.PROJECTS
+                }
+            },
+            onCancelPendingWorkspaceRequest = viewModel::cancelPendingWorkspaceRequest,
+            onResumeAwaitingOperation = viewModel::resumeAwaitingOperation,
+            onDismissHandoff = viewModel::dismissHandoff,
+            onAbandonAwaitingOperation = viewModel::abandonAwaitingOperation,
+            onShowHandoffSheet = viewModel::showHandoffSheet,
+            onOpenTerminal = viewModel::openTerminal,
+            onSelectDistro = viewModel::selectDistro,
+            onInstallUbuntu = viewModel::installUbuntu,
+            onInstallPackages = viewModel::installPackages,
+            onCancelOperation = viewModel::cancelOperation,
+            onExportLogs = viewModel::exportLogs,
+        )
 
     SetupPerformanceScenarioHook(
         modifier = modifier,
@@ -269,7 +266,7 @@ fun SetupScreen(
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
             activityState = viewModel.setupActivityState,
-            toolVersionsState = viewModel.toolVersionsState,
+            toolsPageState = viewModel.toolsPageState,
             iconsOnly = true,
         )
     }
@@ -295,7 +292,7 @@ fun SetupScreenContent(
     workspacesListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     toolsScrollState: androidx.compose.foundation.ScrollState = androidx.compose.foundation.rememberScrollState(),
     activityListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
-    toolVersionsState: ToolVersionsState? = null,
+    toolsPageState: org.ide.lti.feature.setup.tools.ToolsPageState? = null,
     iconsOnly: Boolean = false,
 ) {
     var localSelectedTab by remember { mutableStateOf(initialTab ?: state.selectedTab) }
@@ -348,36 +345,38 @@ fun SetupScreenContent(
 
     val currentRailId = effectiveTab.id
 
-    val setupRailStages = remember {
-        listOf(
-            IdePipelineStageItem(
-                id = SetupTab.PROJECTS.id,
-                label = "Projects",
-                icon = "projects",
-            ),
-            IdePipelineStageItem(
-                id = SetupTab.ENVIRONMENT.id,
-                label = "Environment",
-                icon = "environment",
-            ),
-            IdePipelineStageItem(
-                id = SetupTab.TOOLS.id,
-                label = "Tools",
-                icon = "tools",
-            ),
-            IdePipelineStageItem(
-                id = SetupTab.RECOVERY.id,
-                label = "Recovery",
-                icon = "recovery",
-            ),
-        )
-    }
+    val setupRailStages =
+        remember {
+            listOf(
+                IdePipelineStageItem(
+                    id = SetupTab.PROJECTS.id,
+                    label = "Projects",
+                    icon = "projects",
+                ),
+                IdePipelineStageItem(
+                    id = SetupTab.ENVIRONMENT.id,
+                    label = "Environment",
+                    icon = "environment",
+                ),
+                IdePipelineStageItem(
+                    id = SetupTab.TOOLS.id,
+                    label = "Tools",
+                    icon = "tools",
+                ),
+                IdePipelineStageItem(
+                    id = SetupTab.RECOVERY.id,
+                    label = "Recovery",
+                    icon = "recovery",
+                ),
+            )
+        }
 
     val density = LocalDensity.current
     var isCompact by remember { mutableStateOf(false) }
 
     IdeAppFrame(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxSize()
             .widthIn(min = SetupTokens.MinWindowWidth)
             .onSizeChanged { size ->
@@ -501,13 +500,15 @@ fun SetupScreenContent(
                     val isAwaiting = state.activeOperation?.executionState == SetupOperationState.AWAITING_USER_ACTION
                     GlassBanner(
                         severity = if (isAwaiting) GlassBannerSeverity.INFO else GlassBannerSeverity.WARNING,
-                        title = if (isAwaiting) {
+                        title =
+                        if (isAwaiting) {
                             "Terminal Authorization Required"
                         } else {
                             "Environment Verification Required"
                         },
                         description = state.environmentNotice,
-                        primaryAction = if (isAwaiting) {
+                        primaryAction =
+                        if (isAwaiting) {
                             GlassBannerAction(
                                 label = "Open Terminal Sheet",
                                 onClick = actions.onShowHandoffSheet,
@@ -518,7 +519,8 @@ fun SetupScreenContent(
                                 onClick = actions.onCheckEnvironment,
                             )
                         },
-                        secondaryAction = if (isAwaiting) {
+                        secondaryAction =
+                        if (isAwaiting) {
                             GlassBannerAction(
                                 label = "Abandon Setup",
                                 onClick = actions.onAbandonAwaitingOperation,
@@ -529,7 +531,8 @@ fun SetupScreenContent(
                                 onClick = actions.onNavigateToEnvironment,
                             )
                         },
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                     )
@@ -542,16 +545,18 @@ fun SetupScreenContent(
                         targetState = effectiveTab,
                         transitionSpec = setupTabTransitionSpec(isReducedMotion),
                         label = "SetupDestinationTransition",
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .weight(1f)
                             .fillMaxHeight(),
                         contentAlignment = Alignment.TopCenter,
                     ) { currentTab ->
-                        val contentModifier = if (currentTab == SetupTab.RECOVERY) {
-                            Modifier.fillMaxSize()
-                        } else {
-                            Modifier.fillMaxHeight().widthIn(max = SetupTokens.ContentMaxWidth)
-                        }
+                        val contentModifier =
+                            if (currentTab == SetupTab.RECOVERY) {
+                                Modifier.fillMaxSize()
+                            } else {
+                                Modifier.fillMaxHeight().widthIn(max = SetupTokens.ContentMaxWidth)
+                            }
                         Box(
                             modifier = contentModifier,
                             contentAlignment = Alignment.TopCenter,
@@ -580,11 +585,8 @@ fun SetupScreenContent(
                                 SetupTab.TOOLS -> {
                                     ToolsStepContent(
                                         state = state,
-                                        actions = actions,
                                         activityState = activityState,
-                                        toolVersionsState = toolVersionsState,
-                                        searchFocusRequester = toolSearchFocusRequester,
-                                        focusSearchOnMount = pendingSearchFocus,
+                                        toolsPageState = toolsPageState,
                                         scrollState = toolsScrollState,
                                     )
                                 }
@@ -602,22 +604,26 @@ fun SetupScreenContent(
 
                     AnimatedVisibility(
                         visible = !isCompact && effectiveTab == SetupTab.ENVIRONMENT,
-                        enter = if (isReducedMotion) {
+                        enter =
+                        if (isReducedMotion) {
                             fadeIn(animationSpec = snap())
                         } else {
                             expandHorizontally(
-                                animationSpec = spring(
+                                animationSpec =
+                                spring(
                                     dampingRatio = SetupTokens.MotionDampingRatio,
                                     stiffness = SetupTokens.MotionStiffness,
                                 ),
                                 expandFrom = Alignment.End,
                             ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
                         },
-                        exit = if (isReducedMotion) {
+                        exit =
+                        if (isReducedMotion) {
                             fadeOut(animationSpec = snap())
                         } else {
                             shrinkHorizontally(
-                                animationSpec = spring(
+                                animationSpec =
+                                spring(
                                     dampingRatio = SetupTokens.MotionDampingRatio,
                                     stiffness = SetupTokens.MotionStiffness,
                                 ),
@@ -630,8 +636,12 @@ fun SetupScreenContent(
                             GlassVerticalDivider(specular = true)
                             SetupEnvironmentSummary(
                                 state = state,
-                                modifier = Modifier
-                                    .widthIn(min = SetupTokens.SidebarWidthCompact, max = SetupTokens.SidebarWidthWide)
+                                modifier =
+                                Modifier
+                                    .widthIn(
+                                        min = SetupTokens.SidebarWidthCompact,
+                                        max = SetupTokens.SidebarWidthWide,
+                                    )
                                     .padding(Spacing.Medium),
                             )
                         }
@@ -649,7 +659,8 @@ fun SetupScreenContent(
             onDismissHelpSheet()
             (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
         },
-        modifier = Modifier.semantics {
+        modifier =
+        Modifier.semantics {
             paneTitle = "Help & Documentation"
         },
     ) {
@@ -660,8 +671,6 @@ fun SetupScreenContent(
     if (isPreviewOpen && activeOperationForPreview != null) {
         ProvisioningPreviewSheet(
             plannedChanges = activeOperationForPreview.plannedChanges,
-            isAutoDoctorEnabled = state.isAutoDoctorEnabled,
-            onSetAutoDoctorEnabled = actions.onSetAutoDoctorEnabled,
             onConfirm = {
                 actions.onConfirmOperation()
                 (lastInvokingFocusRequester ?: rootFocusRequester).requestFocus()
@@ -703,16 +712,18 @@ fun SetupScreenContent(
 
 @Composable
 private fun SummaryRow(label: String, value: String, severity: IdeStatusSeverity = IdeStatusSeverity.Neutral) {
-    val valueColor = when (severity) {
-        IdeStatusSeverity.Ready -> GlassTheme.diagnosticColors.success
-        IdeStatusSeverity.Running -> GlassTheme.diagnosticColors.info
-        IdeStatusSeverity.Warning -> GlassTheme.diagnosticColors.warning
-        IdeStatusSeverity.Blocking -> GlassTheme.diagnosticColors.error
-        IdeStatusSeverity.Failed -> GlassTheme.diagnosticColors.error
-        IdeStatusSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val valueColor =
+        when (severity) {
+            IdeStatusSeverity.Ready -> GlassTheme.diagnosticColors.success
+            IdeStatusSeverity.Running -> GlassTheme.diagnosticColors.info
+            IdeStatusSeverity.Warning -> GlassTheme.diagnosticColors.warning
+            IdeStatusSeverity.Blocking -> GlassTheme.diagnosticColors.error
+            IdeStatusSeverity.Failed -> GlassTheme.diagnosticColors.error
+            IdeStatusSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
     Row(
-        modifier = Modifier
+        modifier =
+        Modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.ExtraSmall),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -782,7 +793,8 @@ private fun SetupEnvironmentSummary(state: SetupUiState, modifier: Modifier = Mo
 @Composable
 private fun SetupStatusBar(leadingText: String, failureText: String?, modifier: Modifier = Modifier) {
     IdeStatusBar(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxWidth()
             .testTag("SetupStatusBar"),
         leadingContent = {
@@ -811,7 +823,8 @@ private fun SetupStatusBar(leadingText: String, failureText: String?, modifier: 
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     Box(
-                        modifier = Modifier
+                        modifier =
+                        Modifier
                             .size(IconSize.Indicator)
                             .clip(GlassShapes.Capsule)
                             .background(GlassTheme.diagnosticColors.error),
@@ -861,41 +874,49 @@ internal fun setupTabTransitionSpec(
         (EnterTransition.None togetherWith ExitTransition.None).using(null)
     } else {
         val isForward = targetState.ordinal > initialState.ordinal
-        val springSpec = spring<Float>(
-            dampingRatio = SetupTokens.MotionDampingRatio,
-            stiffness = SetupTokens.MotionStiffness,
-        )
-        val offsetSpringSpec = spring<IntOffset>(
-            dampingRatio = SetupTokens.MotionDampingRatio,
-            stiffness = SetupTokens.MotionStiffness,
-        )
+        val springSpec =
+            spring<Float>(
+                dampingRatio = SetupTokens.MotionDampingRatio,
+                stiffness = SetupTokens.MotionStiffness,
+            )
+        val offsetSpringSpec =
+            spring<IntOffset>(
+                dampingRatio = SetupTokens.MotionDampingRatio,
+                stiffness = SetupTokens.MotionStiffness,
+            )
         val fraction = SetupTokens.MotionSlideFraction
 
-        val enter = slideInHorizontally(
-            animationSpec = offsetSpringSpec,
-            initialOffsetX = { width ->
-                val offset = (width * fraction).toInt()
-                if (isForward) offset else -offset
-            },
-        ) + fadeIn(
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        ) + scaleIn(
-            animationSpec = springSpec,
-            initialScale = SetupTokens.MotionScaleInitial,
-        )
+        val enter =
+            slideInHorizontally(
+                animationSpec = offsetSpringSpec,
+                initialOffsetX = { width ->
+                    val offset = (width * fraction).toInt()
+                    if (isForward) offset else -offset
+                },
+            ) +
+                fadeIn(
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                ) +
+                scaleIn(
+                    animationSpec = springSpec,
+                    initialScale = SetupTokens.MotionScaleInitial,
+                )
 
-        val exit = slideOutHorizontally(
-            animationSpec = offsetSpringSpec,
-            targetOffsetX = { width ->
-                val offset = (width * fraction).toInt()
-                if (isForward) -offset else offset
-            },
-        ) + fadeOut(
-            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        ) + scaleOut(
-            animationSpec = springSpec,
-            targetScale = SetupTokens.MotionScaleInitial,
-        )
+        val exit =
+            slideOutHorizontally(
+                animationSpec = offsetSpringSpec,
+                targetOffsetX = { width ->
+                    val offset = (width * fraction).toInt()
+                    if (isForward) -offset else offset
+                },
+            ) +
+                fadeOut(
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                ) +
+                scaleOut(
+                    animationSpec = springSpec,
+                    targetScale = SetupTokens.MotionScaleInitial,
+                )
 
         (enter togetherWith exit).using(null)
     }

@@ -28,11 +28,9 @@ import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
-import org.ide.lti.core.domain.ports.PublicationReport
-import org.ide.lti.core.domain.ports.ToolPublicationPort
-import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.ports.ToolSource
-import org.ide.lti.core.domain.ports.ToolStatus
+import org.ide.lti.core.domain.setup.RecipeConfig
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import java.nio.charset.Charset
 
 internal class FakeDaemonSupervisor(
@@ -66,32 +64,35 @@ internal class FakeDaemonSupervisor(
     }
 
     override suspend fun shutdownDaemon(): Boolean = true
+
     override fun close() {}
 }
 
 internal class FakeRemoteTransport(
     val fakeCli: FakeWslCliExecutor? = null,
-    var healthInfo: WslServerInfo? = WslServerInfo(
-        status = "UP",
-        distro = "Ubuntu",
-        kernelRelease = "5.15.0",
-        architecture = "x86_64",
-        javaVersion = "21.0.11",
-        serverUptimeMs = 100_000L,
-        availableTools = listOf("adb", "fastboot"),
-    ),
-    var publishedTools: MutableList<ToolStatusInfo> = mutableListOf(
-        projectTool("payload-dumper-go"),
-        projectTool("lpunpack"),
-        projectTool("lpmake"),
-        projectTool("simg2img"),
-        projectTool("erofsfuse"),
-        projectTool("mkfs.erofs"),
-        projectTool("avbtool"),
-        projectTool("unpack_bootimg"),
-        projectTool("img2sdat"),
-        projectTool("signapk"),
-    ),
+    var healthInfo: WslServerInfo? =
+        WslServerInfo(
+            status = "UP",
+            distro = "Ubuntu",
+            kernelRelease = "5.15.0",
+            architecture = "x86_64",
+            javaVersion = "21.0.11",
+            serverUptimeMs = 100_000L,
+            availableTools = listOf("adb", "fastboot"),
+        ),
+    var publishedTools: MutableList<ToolStatusInfo> =
+        mutableListOf(
+            projectTool("payload-dumper-go"),
+            projectTool("lpunpack"),
+            projectTool("lpmake"),
+            projectTool("simg2img"),
+            projectTool("erofsfuse"),
+            projectTool("mkfs.erofs"),
+            projectTool("avbtool"),
+            projectTool("unpack_bootimg"),
+            projectTool("img2sdat"),
+            projectTool("signapk"),
+        ),
 ) : RemoteTransportPort {
     var checkHealthCount = 0
 
@@ -113,21 +114,23 @@ internal class FakeRemoteTransport(
                 ToolExecutionResponse(0, devNodes.joinToString("\n"), "", 10L)
             }
             request.toolId == "find" && "%m %f\n" in request.arguments -> {
-                val output = listOf(
-                    "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
-                    "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
-                    "img2sdat", "signapk", "adb", "fastboot",
-                ).let(::fakeBinListing)
+                val output =
+                    listOf(
+                        "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
+                        "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
+                        "img2sdat", "signapk", "adb", "fastboot",
+                    ).let(::fakeBinListing)
                 ToolExecutionResponse(0, output, "", 10L)
             }
             request.toolId == "find" && request.arguments.any { it.contains("external") } -> {
-                val output = listOf(
-                    "android-tools",
-                    "apktool",
-                    "erofs-utils",
-                    "img2sdat",
-                    "signapk",
-                ).joinToString("\n")
+                val output =
+                    listOf(
+                        "android-tools",
+                        "apktool",
+                        "erofs-utils",
+                        "img2sdat",
+                        "signapk",
+                    ).joinToString("\n")
                 ToolExecutionResponse(0, output, "", 10L)
             }
             request.toolId == "test" -> ToolExecutionResponse(0, "", "", 10L)
@@ -135,12 +138,23 @@ internal class FakeRemoteTransport(
                 fakeGitRevParse(listOf("git") + request.arguments)!!.let {
                     ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
                 }
-            request.toolId == "sha256sum" -> fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
-                ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
-            }
+            request.toolId == "sha256sum" ->
+                fakeSha256(request.arguments.firstOrNull().orEmpty()).let {
+                    ToolExecutionResponse(it.exitCode, it.output, it.error, 2L)
+                }
             request.toolId == "dpkg-query" -> ToolExecutionResponse(0, "all ok installed", "", 2L)
             request.toolId == "df" -> ToolExecutionResponse(0, "Filesystem 100G 50G 50G 50% /home/lti\n", "", 2L)
+            request.toolId == "sh" &&
+                request.arguments.any {
+                    it.contains("PACKAGES_FRESH") || it.contains("JAVA_HOMES_BEGIN")
+                }
+            -> {
+                val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") { "${it.id}=present" }
+                ToolExecutionResponse(0, "$reqSection\nPACKAGES_FRESH=1\n", "", 2L)
+            }
             request.toolId == "mkfs.erofs" -> ToolExecutionResponse(0, "mkfs.erofs 1.7.1 --fs-config-file", "", 10L)
+            request.toolId in setOf("simg2img", "img2simg", "mkf2fsuserimg") -> ToolExecutionResponse(1, "", "", 10L)
+            request.toolId == "zipalign" -> ToolExecutionResponse(2, "", "", 10L)
             else -> ToolExecutionResponse(0, "ok", "", 10L)
         }
     }
@@ -176,41 +190,30 @@ internal class FakeRemoteTransport(
         endedAtEpochMs = 1100L,
     )
 
-    override suspend fun listTools(): ToolListResult = ToolListResult.Tools(publishedTools)
-    override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(publishedTools)
+    var listToolsResult: ToolListResult? = null
+
+    override suspend fun listTools(): ToolListResult = listToolsResult ?: ToolListResult.Tools(publishedTools)
+
+    override suspend fun refreshTools(): ToolListResult = listToolsResult ?: ToolListResult.Tools(publishedTools)
+
     override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
+
     override suspend fun downloadFile(remotePath: String): ByteArray? = null
+
     override suspend fun shutdown(): Boolean = true
-}
 
-internal class FakeToolPublicationPort(
-    var publishedResult: PublicationReport = PublicationReport(
-        requested = ToolCatalog.ALL_TOOL_IDS,
-        registered = ToolCatalog.ALL_TOOL_IDS,
-        failed = emptyMap(),
-        pruned = emptySet(),
-    ),
-) : ToolPublicationPort {
-    var publishCallCount = 0
-    var lastBinDir: String? = null
+    var sendHeartbeatResult: Boolean = true
+    var sendHeartbeatCount: Int = 0
 
-    override suspend fun publish(binDir: String, toolIds: Set<String>): PublicationReport {
-        publishCallCount++
-        lastBinDir = binDir
-        return publishedResult
+    override suspend fun sendHeartbeat(): Boolean {
+        sendHeartbeatCount++
+        return sendHeartbeatResult
     }
 
-    override suspend fun resolvedTools(): ToolRegistryResult = ToolRegistryResult.Tools(
-        publishedResult.registered.map {
-            ToolStatus(
-                tool = it,
-                installed = true,
-                path = ToolCatalog.expectedPath(FAKE_BIN_DIR, it) ?: "$FAKE_BIN_DIR/$it",
-                source = ToolSource.DYNAMIC,
-                reason = null,
-            )
-        },
-    )
+    override suspend fun sendHeartbeat(descriptor: ServerConnectionDescriptor): Boolean {
+        sendHeartbeatCount++
+        return sendHeartbeatResult
+    }
 }
 
 @Suppress("CyclomaticComplexMethod", "ReturnCount", "ComplexCondition", "LongMethod")
@@ -282,21 +285,28 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
         if (cmdStr.contains("echo -n \$HOME") || cmdStr.contains("printenv HOME") || cmdStr.contains("printenv")) {
             return CliExecutionResult(0, userHome, "")
         }
-        if (cmdStr.contains("JAVA_HOMES_BEGIN")) {
-            val javaSection = "JAVA_HOMES_BEGIN\n" +
-                "/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" 2024-07-16\nJAVA_HOMES_END\n"
-            val reqSection = RequirementCatalog.REQUIREMENTS.joinToString("\n") {
-                "${it.id}=present"
-            }
-            return CliExecutionResult(0, "$javaSection$reqSection\nPACKAGES_FRESH=1\n", "")
+        if (cmdStr.contains("PACKAGES_FRESH") || cmdStr.contains("JAVA_HOMES_BEGIN")) {
+            val reqSection =
+                RequirementCatalog.REQUIREMENTS.joinToString("\n") {
+                    val isDevPkg = it.aptPackages.any { pkg -> pkg in WslToolchainProvisioner.REQUIRED_DEV_PACKAGES }
+                    val isPython = it.id.startsWith("python")
+                    val isMissing = (missingDevPackages && isDevPkg) || (pythonMissing && isPython)
+                    if (isMissing) {
+                        "${it.id}=missing"
+                    } else {
+                        "${it.id}=present"
+                    }
+                }
+            return CliExecutionResult(0, "$reqSection\nPACKAGES_FRESH=1\n", "")
         }
         if (cmdStr.contains("dpkg-query")) {
             if (missingDevPackages) {
                 return CliExecutionResult(0, "", "no packages installed")
             }
-            val pkgLines = WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") {
-                "$it install ok installed"
-            }
+            val pkgLines =
+                WslToolchainProvisioner.REQUIRED_DEV_PACKAGES.joinToString("\n") {
+                    "$it install ok installed"
+                }
             return CliExecutionResult(0, pkgLines, "")
         }
         if (pythonMissing && (cmdStr.contains("python") || cmdStr.contains("pip"))) {
@@ -329,12 +339,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 existingPaths.addAll(paths)
             }
             if (cmdStr.contains("/bin")) {
-                ToolCatalog.entries.forEach {
-                    existingPaths.add("$userHome/LtiRomTools/bin/${it.binaryName}")
-                    existingPaths.add("$userHome/LtiRomTools/bin/${it.id}")
-                }
-                org.ide.lti.core.data.setup.doctor.ToolchainIntegrityInspector.DEFAULT_CORE_TOOLS.forEach {
-                    existingPaths.add("$userHome/LtiRomTools/bin/$it")
+                ToolGroupCatalog.allOutputs.forEach {
+                    existingPaths.add("$userHome/LtiRomTools/bin/${it.file}")
+                    existingPaths.add("$userHome/LtiRomTools/bin/${it.toolId}")
                 }
             }
         }
@@ -356,8 +363,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                     ?: ""
             val matches = existingPaths.filter { it.startsWith("$dir/") }
             if (command.contains("-printf")) {
-                val direct = matches.filter { !it.removePrefix("$dir/").contains('/') }
-                    .map { it.removePrefix("$dir/") }
+                val direct =
+                    matches.filter { !it.removePrefix("$dir/").contains('/') }
+                        .map { it.removePrefix("$dir/") }
                 val listing = if (command.contains("%m %f\n")) fakeBinListing(direct) else direct.joinToString("\n")
                 return CliExecutionResult(0, listing, "")
             }
@@ -374,8 +382,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 return CliExecutionResult(0, content, "")
             }
             val parentDir = target.substringBeforeLast('/', "")
-            val isKnown = existingPaths.contains(target) ||
-                (parentDir.isNotBlank() && existingPaths.contains(parentDir))
+            val isKnown =
+                existingPaths.contains(target) ||
+                    (parentDir.isNotBlank() && existingPaths.contains(parentDir))
             if (isKnown) {
                 if (target.endsWith("install.json")) {
                     val installId = target.substringBeforeLast("/install.json").substringAfterLast('/')
@@ -387,8 +396,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
                 }
                 if (target.endsWith("manifest.json")) {
                     val artifactId = target.substringBeforeLast("/manifest.json").substringAfterLast('/')
-                    val mf = """{"schema":1,"group":"test","artifactId":"$artifactId","fingerprint":"fp",""" +
-                        """"source":{"kind":"git"},"recipe":{"type":"git","revision":1}}"""
+                    val mf =
+                        """{"schema":1,"group":"test","artifactId":"$artifactId","fingerprint":"fp",""" +
+                            """"source":{"kind":"git"},"recipe":{"type":"git","revision":1}}"""
                     return CliExecutionResult(0, mf, "")
                 }
                 return CliExecutionResult(0, "", "")
@@ -397,8 +407,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
         }
         if (command.firstOrNull() == "ls") {
             val dir = command.lastOrNull()?.trimEnd('/') ?: ""
-            val names = existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
-                .map { it.removePrefix("$dir/") }
+            val names =
+                existingPaths.filter { it.startsWith("$dir/") && !it.removePrefix("$dir/").contains('/') }
+                    .map { it.removePrefix("$dir/") }
             return CliExecutionResult(0, names.joinToString("\n"), "")
         }
         if (command.firstOrNull() == "rm") {
@@ -425,8 +436,9 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
             }
             val targetPath = command.lastOrNull() ?: ""
             // A synced submodule has its sources and build outputs.
-            val insideSyncedSource = targetPath.contains("/LtiRomTools/external/") &&
-                existingPaths.any { it.contains("/LtiRomTools/external/") && targetPath.startsWith("$it/") }
+            val insideSyncedSource =
+                targetPath.contains("/LtiRomTools/external/") &&
+                    existingPaths.any { it.contains("/LtiRomTools/external/") && targetPath.startsWith("$it/") }
             return if (existingPaths.contains(targetPath) || insideSyncedSource) {
                 CliExecutionResult(0, "", "")
             } else {
@@ -441,6 +453,12 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
         fakeGitRevParse(command)?.let { return it }
         if (cmdStr.contains("mkfs.erofs")) {
             return CliExecutionResult(0, "mkfs.erofs 1.7.1\noptions: --fs-config-file -C -T", "")
+        }
+        if (cmdStr.contains("simg2img") || cmdStr.contains("img2simg") || cmdStr.contains("mkf2fsuserimg")) {
+            return CliExecutionResult(1, "", "")
+        }
+        if (cmdStr.contains("zipalign")) {
+            return CliExecutionResult(2, "", "")
         }
         return CliExecutionResult(0, "ok", "")
     }
@@ -459,21 +477,30 @@ internal const val FAKE_BIN_DIR: String = "/home/lti/LtiRomTools/bin"
 internal fun projectTool(id: String): ToolStatusInfo = ToolStatusInfo(
     tool = id,
     installed = true,
-    path = ToolCatalog.expectedPath(FAKE_BIN_DIR, id) ?: "$FAKE_BIN_DIR/$id",
+    path = "$FAKE_BIN_DIR/$id",
     source = "DYNAMIC",
 )
 
 /** `sha256sum` on a fake machine: pinned release binaries (installed or downloaded) are the genuine ones. */
 internal fun fakeSha256(path: String): CliExecutionResult {
-    val release = PinnedReleases.ALL.firstOrNull {
-        path.endsWith("/${it.toolId}") ||
-            path.endsWith("/${it.archiveMember}")
-    }
+    val release =
+        ToolGroupCatalog.allGroups
+            .flatMap { (it.recipe as? RecipeConfig.Release)?.versions.orEmpty() }
+            .firstOrNull {
+                path.endsWith("/${it.archiveMember}") || path.endsWith("/${it.version}")
+            }
     return if (release != null) {
         CliExecutionResult(0, "${release.sha256}  $path", "")
     } else {
         CliExecutionResult(1, "", "sha256sum: $path: No such file or directory")
     }
+}
+
+internal data class PinnedToolSource(val name: String, val commit: String)
+
+internal fun recommendedToolSources(): List<PinnedToolSource> = ToolGroupCatalog.DEFAULT_GROUPS.mapNotNull { group ->
+    val git = group.source as? org.ide.lti.core.domain.setup.ToolSource.Git ?: return@mapNotNull null
+    PinnedToolSource(group.id.value, git.pinnedCommit)
 }
 
 /**
@@ -484,11 +511,13 @@ internal fun fakeSha256(path: String): CliExecutionResult {
 internal fun fakeGitRevParse(command: List<String>): CliExecutionResult? {
     if (command.firstOrNull() != "git" || "rev-parse" !in command) return null
     val dir = command.getOrNull(command.indexOf("-C") + 1)?.trimEnd('/') ?: return null
-    val pin = WslToolchainProvisioner.SUBMODULES.firstOrNull { dir.endsWith("/${it.name}") }?.commit
-        ?: return CliExecutionResult(128, "", "fatal: not a git repository")
-    val out = buildList {
-        if ("--show-toplevel" in command) add(dir)
-        if ("HEAD" in command) add(pin)
-    }
+    val pin =
+        recommendedToolSources().firstOrNull { dir.endsWith("/${it.name}") }?.commit
+            ?: return CliExecutionResult(128, "", "fatal: not a git repository")
+    val out =
+        buildList {
+            if ("--show-toplevel" in command) add(dir)
+            if ("HEAD" in command) add(pin)
+        }
     return CliExecutionResult(0, out.joinToString("\n"), "")
 }

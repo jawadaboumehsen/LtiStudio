@@ -10,13 +10,13 @@ public enum class RunStatusValue {
     CANCELLED,
     COMPLETED,
     FAILED,
-    INTERRUPTED
+    INTERRUPTED,
 }
 
 @Serializable
 public enum class RunPurpose {
     SETUP,
-    WORKSPACE
+    WORKSPACE,
 }
 
 @Serializable
@@ -24,27 +24,17 @@ public data class StartRunRequest(
     val request: ToolExecutionRequest,
     val idempotencyKey: String,
     val workspaceLock: String? = null,
-    val purpose: RunPurpose = RunPurpose.WORKSPACE
+    val purpose: RunPurpose = RunPurpose.WORKSPACE,
 )
 
 @Serializable
-public data class RunHandle(
-    val runId: String,
-    val status: RunStatusValue,
-    val startedAtEpochMs: Long
-)
+public data class RunHandle(val runId: String, val status: RunStatusValue, val startedAtEpochMs: Long)
 
 @Serializable
-public data class RunConflict(
-    val existingRunId: String,
-    val message: String? = null
-)
+public data class RunConflict(val existingRunId: String, val message: String? = null)
 
 @Serializable
-public data class InvalidWorkingDirectory(
-    val path: String? = null,
-    val reason: String = "working directory missing"
-)
+public data class InvalidWorkingDirectory(val path: String? = null, val reason: String = "working directory missing")
 
 @Serializable
 public data class RunStatus(
@@ -54,18 +44,12 @@ public data class RunStatus(
     val pid: Long? = null,
     val startedAtEpochMs: Long,
     val endedAtEpochMs: Long? = null,
-    val lastSeq: Long = 0L
+    val lastSeq: Long = 0L,
+    val unconfirmedSurvivors: List<Long> = emptyList(),
 )
 
 @Serializable
-public data class RunCancelResponse(
-    val accepted: Boolean,
-    val status: RunStatusValue,
-    val message: String? = null
-)
+public data class RunCancelResponse(val accepted: Boolean, val status: RunStatusValue, val message: String? = null)
 
 @Serializable
-public data class ActiveRuns(
-    val runIds: List<String>,
-    val message: String? = null
-)
+public data class ActiveRuns(val runIds: List<String>, val message: String? = null)

@@ -113,10 +113,11 @@ public data class SetupAttemptRecord(
 ) {
     /** Attempt statuses that still own the environment and block a second attempt. */
     val isActive: Boolean
-        get() = status == AttemptStatus.AUTHORIZED ||
-            status == AttemptStatus.RUNNING ||
-            status == AttemptStatus.RECONNECTING ||
-            status == AttemptStatus.AWAITING_USER_ACTION
+        get() =
+            status == AttemptStatus.AUTHORIZED ||
+                status == AttemptStatus.RUNNING ||
+                status == AttemptStatus.RECONNECTING ||
+                status == AttemptStatus.AWAITING_USER_ACTION
 
     /** A child is proven when its own terminal status or a persisted proof for its runId exists. */
     public fun isChildProven(intent: ChildIntentRecord): Boolean =
@@ -189,7 +190,6 @@ public data class PersistedSetupPlan(
     val environmentKey: String,
     val kind: String,
     val targetStageOrToolId: String? = null,
-    val autoDoctorEnabled: Boolean = true,
     val actions: List<PersistedPlanAction> = emptyList(),
 )
 

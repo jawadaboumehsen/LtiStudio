@@ -77,144 +77,147 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
-val DomainModule = module {
-    // Coroutine scope for managers
-    single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+val DomainModule =
+    module {
+        // Coroutine scope for managers
+        single { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
-    // Managers and Services
-    singleOf(::WorkspaceManager)
-    singleOf(::PanelManager)
-    singleOf(::TerminalManager)
-    singleOf(::ConnectionManager)
-    singleOf(::AIServiceImpl) { bind<AIService>() }
+        // Managers and Services
+        singleOf(::WorkspaceManager)
+        singleOf(::PanelManager)
+        singleOf(::TerminalManager)
+        singleOf(::ConnectionManager)
+        singleOf(::AIServiceImpl) { bind<AIService>() }
 
-    // Workspace Use Cases
-    singleOf(::GetRecentWorkspacesUseCase)
-    singleOf(::DiscoverWorkdirWorkspacesUseCase)
-    singleOf(::OpenWorkspaceUseCase)
-    singleOf(::OpenWorkspaceByPathUseCase)
-    // Explicit: `singleOf` would try to resolve the defaulted `appVersion: String` from Koin.
-    single {
-        CreateWorkspaceUseCase(
-            readinessPort = get(),
-            provisioningPort = get(),
-            workspaceRepository = get(),
-            snapshotRepository = get(),
-        )
-    }
-    single {
-        SaveConfigurationSnapshotUseCase(
-            workspaceRepository = get(),
-            snapshotRepository = get(),
-            runRepository = get(),
-            provisioningPort = get(),
-            admissionPort = get(),
-            materializerPort = get(),
-        )
-    }
+        // Workspace Use Cases
+        singleOf(::GetRecentWorkspacesUseCase)
+        singleOf(::DiscoverWorkdirWorkspacesUseCase)
+        singleOf(::OpenWorkspaceUseCase)
+        singleOf(::OpenWorkspaceByPathUseCase)
+        // Explicit: `singleOf` would try to resolve the defaulted `appVersion: String` from Koin.
+        single {
+            CreateWorkspaceUseCase(
+                readinessPort = get(),
+                provisioningPort = get(),
+                workspaceRepository = get(),
+                snapshotRepository = get(),
+            )
+        }
+        single {
+            SaveConfigurationSnapshotUseCase(
+                workspaceRepository = get(),
+                snapshotRepository = get(),
+                runRepository = get(),
+                provisioningPort = get(),
+                admissionPort = get(),
+                materializerPort = get(),
+            )
+        }
 
-    singleOf(::RemoveRecentWorkspaceUseCase)
+        singleOf(::RemoveRecentWorkspaceUseCase)
 
-    // Pipeline & Build Use Cases
-    single {
-        PipelineOrchestrator(
-            executionPort = get(),
-            runRepository = get(),
-            vendoredFiles = get(),
-        )
-    }
-    single {
-        StartPipelineRunUseCase(
-            workspaceRepository = get(),
-            snapshotRepository = get(),
-            targetRepository = get(),
-            readinessPort = get(),
-            executionPort = get(),
-            runRepository = get(),
-            orchestrator = get(),
-            scope = getOrNull(),
-        )
-    }
-    single {
-        CancelRunUseCase(
-            runRepository = get(),
-            executionPort = get(),
-            workspaceRepository = getOrNull(),
-        )
-    }
-    single {
-        ReattachRunUseCase(
-            workspaceRepository = get(),
-            snapshotRepository = get(),
-            targetRepository = get(),
-            runRepository = get(),
-            orchestrator = get(),
-            scope = getOrNull(),
-        )
-    }
-    singleOf(::ObserveRunUseCase)
-    single {
-        GetRunHistoryUseCase(
-            runRepository = get(),
-            workspaceRepository = getOrNull(),
-            executionPort = getOrNull(),
-        )
-    }
+        // Pipeline & Build Use Cases
+        single {
+            PipelineOrchestrator(
+                executionPort = get(),
+                runRepository = get(),
+                vendoredFiles = get(),
+                toolStore = getOrNull(),
+                toolUsageCoordinator = getOrNull(),
+            )
+        }
+        single {
+            StartPipelineRunUseCase(
+                workspaceRepository = get(),
+                snapshotRepository = get(),
+                targetRepository = get(),
+                readinessPort = get(),
+                executionPort = get(),
+                runRepository = get(),
+                orchestrator = get(),
+                scope = getOrNull(),
+            )
+        }
+        single {
+            CancelRunUseCase(
+                runRepository = get(),
+                executionPort = get(),
+                workspaceRepository = getOrNull(),
+            )
+        }
+        single {
+            ReattachRunUseCase(
+                workspaceRepository = get(),
+                snapshotRepository = get(),
+                targetRepository = get(),
+                runRepository = get(),
+                orchestrator = get(),
+                scope = getOrNull(),
+            )
+        }
+        singleOf(::ObserveRunUseCase)
+        single {
+            GetRunHistoryUseCase(
+                runRepository = get(),
+                workspaceRepository = getOrNull(),
+                executionPort = getOrNull(),
+            )
+        }
 
-    // Target Use Cases (common)
-    singleOf(::GetAvailableTargetsUseCase)
-    singleOf(::GetSelectedTargetUseCase)
-    singleOf(::AddTargetUseCase)
-    singleOf(::UpdateTargetUseCase)
-    singleOf(::DeleteTargetUseCase)
-    singleOf(::SelectTargetUseCase)
-    singleOf(::ValidateTargetConfigurationUseCase)
-    singleOf(::CreateTargetScaffoldUseCase)
-    singleOf(::DuplicateTargetUseCase)
-    single {
-        SaveTargetConfigurationUseCase(
-            validateTargetConfigurationUseCase = get(),
-            addTargetUseCase = get(),
-            updateTargetUseCase = get(),
-            selectTargetUseCase = get(),
-        )
+        // Target Use Cases (common)
+        singleOf(::GetAvailableTargetsUseCase)
+        singleOf(::GetSelectedTargetUseCase)
+        singleOf(::AddTargetUseCase)
+        singleOf(::UpdateTargetUseCase)
+        singleOf(::DeleteTargetUseCase)
+        singleOf(::SelectTargetUseCase)
+        singleOf(::ValidateTargetConfigurationUseCase)
+        singleOf(::CreateTargetScaffoldUseCase)
+        singleOf(::DuplicateTargetUseCase)
+        single {
+            SaveTargetConfigurationUseCase(
+                validateTargetConfigurationUseCase = get(),
+                addTargetUseCase = get(),
+                updateTargetUseCase = get(),
+                selectTargetUseCase = get(),
+            )
+        }
+
+        // Connected ADB & Fastboot Device Use Cases
+        singleOf(::GetConnectedDevicesUseCase)
+        singleOf(::GetSelectedConnectedDeviceUseCase)
+        singleOf(::SelectConnectedDeviceUseCase)
+        singleOf(::RefreshConnectedDevicesUseCase)
+        singleOf(::RebootConnectedDeviceUseCase)
+        singleOf(::PairWirelessDeviceUseCase)
+        singleOf(::ConnectWirelessDeviceUseCase)
+        singleOf(::DisconnectDeviceUseCase)
+
+        // Plugin Use Cases
+        single { InstallPluginUseCase(port = get()) }
+        single { PluginLifecycleUseCase(port = get()) }
+        single { AuthorProjectTrustUseCase(port = get()) }
+
+        // Pipeline Draft Session & Stage Configuration
+        singleOf(::PipelineDraftSessionRepository)
+        singleOf(::ObservePipelineDraftSessionUseCase)
+        singleOf(::SavePipelineDraftUseCase)
+        singleOf(::ValidatePipelineDraftUseCase)
+        singleOf(::DiscardPipelineDraftChangesUseCase)
+        singleOf(::ObserveAcquisitionConfigUseCase)
+        singleOf(::UpdateAcquisitionConfigUseCase)
+        singleOf(::ObserveExtractionConfigUseCase)
+        singleOf(::UpdateExtractionConfigUseCase)
+        singleOf(::ObserveAssemblyConfigUseCase)
+        singleOf(::UpdateAssemblyConfigUseCase)
+        singleOf(::ObserveDebloatConfigUseCase)
+        singleOf(::UpdateDebloatConfigUseCase)
+        singleOf(::ObserveCustomizationConfigUseCase)
+        singleOf(::UpdateCustomizationConfigUseCase)
+        singleOf(::ObserveBuildConfigUseCase)
+        singleOf(::UpdateBuildConfigUseCase)
+        singleOf(::ObserveReleaseConfigUseCase)
+        singleOf(::UpdateReleaseConfigUseCase)
+        singleOf(::ObservePublishConfigUseCase)
+        singleOf(::UpdatePublishConfigUseCase)
     }
-
-    // Connected ADB & Fastboot Device Use Cases
-    singleOf(::GetConnectedDevicesUseCase)
-    singleOf(::GetSelectedConnectedDeviceUseCase)
-    singleOf(::SelectConnectedDeviceUseCase)
-    singleOf(::RefreshConnectedDevicesUseCase)
-    singleOf(::RebootConnectedDeviceUseCase)
-    singleOf(::PairWirelessDeviceUseCase)
-    singleOf(::ConnectWirelessDeviceUseCase)
-    singleOf(::DisconnectDeviceUseCase)
-
-    // Plugin Use Cases
-    single { InstallPluginUseCase(port = get()) }
-    single { PluginLifecycleUseCase(port = get()) }
-    single { AuthorProjectTrustUseCase(port = get()) }
-
-    // Pipeline Draft Session & Stage Configuration
-    singleOf(::PipelineDraftSessionRepository)
-    singleOf(::ObservePipelineDraftSessionUseCase)
-    singleOf(::SavePipelineDraftUseCase)
-    singleOf(::ValidatePipelineDraftUseCase)
-    singleOf(::DiscardPipelineDraftChangesUseCase)
-    singleOf(::ObserveAcquisitionConfigUseCase)
-    singleOf(::UpdateAcquisitionConfigUseCase)
-    singleOf(::ObserveExtractionConfigUseCase)
-    singleOf(::UpdateExtractionConfigUseCase)
-    singleOf(::ObserveAssemblyConfigUseCase)
-    singleOf(::UpdateAssemblyConfigUseCase)
-    singleOf(::ObserveDebloatConfigUseCase)
-    singleOf(::UpdateDebloatConfigUseCase)
-    singleOf(::ObserveCustomizationConfigUseCase)
-    singleOf(::UpdateCustomizationConfigUseCase)
-    singleOf(::ObserveBuildConfigUseCase)
-    singleOf(::UpdateBuildConfigUseCase)
-    singleOf(::ObserveReleaseConfigUseCase)
-    singleOf(::UpdateReleaseConfigUseCase)
-    singleOf(::ObservePublishConfigUseCase)
-    singleOf(::UpdatePublishConfigUseCase)
-}

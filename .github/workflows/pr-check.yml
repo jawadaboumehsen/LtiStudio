@@ -90,3 +90,40 @@ jobs:
       web_package_name: 'mifos-web' # <-- Change Your Web Package Name
       ios_package_name: 'mifos-ios' # <-- Change Your iOS Package Name
       build_ios: false # <-- Enable/Disable iOS Build
+
+  real_host:
+    name: Real Host Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout LtiRomGui
+        uses: actions/checkout@v4
+        with:
+          path: LtiRomGui
+
+      - name: Checkout LtiRomServer
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/LtiRomServer
+          path: LtiRomServer
+        continue-on-error: true
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install -y git cmake make clang build-essential xvfb
+
+      - name: Run realHostTest
+        working-directory: LtiRomGui
+        run: LTI_REAL_HOST=linux xvfb-run ./gradlew :lti-desktop:realHostTest --rerun-tasks
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: realhost-test-reports
+          path: LtiRomGui/lti-desktop/build/reports/tests/realHostTest/
+

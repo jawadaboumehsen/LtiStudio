@@ -67,10 +67,11 @@ data class StageStep(
 ) {
     companion object {
         fun deriveIdempotencyKey(runId: String, stageId: Any, stepIndex: Int): String {
-            val stageName = when (stageId) {
-                is StageId -> stageId.name
-                else -> stageId.toString()
-            }
+            val stageName =
+                when (stageId) {
+                    is StageId -> stageId.name
+                    else -> stageId.toString()
+                }
             val raw = "$runId/$stageName/$stepIndex"
             val md = java.security.MessageDigest.getInstance("SHA-256")
             val hash = md.digest(raw.toByteArray(Charsets.UTF_8))
@@ -126,6 +127,10 @@ data class BuildRun(
     val driverHeartbeatEpochMs: Long? = null,
     /** Small captured step results (digests, sizes, dates) so a resumed driver can re-plan. */
     val runtimeValues: Map<String, String> = emptyMap(),
+    /** Pinned tool binary paths captured at run creation (009 US5). */
+    val pinnedTools: Map<String, String> = emptyMap(),
+    /** Pinned tool version IDs captured at run creation (009 US5). */
+    val toolVersions: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -142,10 +147,7 @@ public data class BuildRunSummary(
 )
 
 @Serializable
-public data class RunIndex(
-    val schemaVersion: Int = 1,
-    val items: List<BuildRunSummary> = emptyList(),
-)
+public data class RunIndex(val schemaVersion: Int = 1, val items: List<BuildRunSummary> = emptyList())
 
 public fun BuildRun.toSummary(): BuildRunSummary = BuildRunSummary(
     id = id,

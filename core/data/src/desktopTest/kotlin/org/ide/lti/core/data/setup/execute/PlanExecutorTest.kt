@@ -25,7 +25,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PlanExecutorTest {
-
     private class RecordingActionHandler<A : SetupPlanAction>(var shouldFail: Boolean = false) : PlanActionHandler<A> {
         val executedActions = mutableListOf<A>()
 
@@ -62,13 +61,14 @@ class PlanExecutorTest {
         val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
         val executor = PlanExecutor(installPackagesHandler = pkgHandler)
 
-        val plan = SetupPlan(
-            planId = "plan-pkg",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.BOOTSTRAP_PACKAGES,
-            orderedActions = listOf(SetupPlanAction.InstallPackages(listOf("git", "cmake"))),
-        )
+        val plan =
+            SetupPlan(
+                planId = "plan-pkg",
+                revisionHash = "rev-hash",
+                environmentKey = "Ubuntu",
+                kind = SetupPlanKind.BOOTSTRAP_PACKAGES,
+                orderedActions = listOf(SetupPlanAction.InstallPackages(listOf("git", "cmake"))),
+            )
 
         val outcome = executor.execute(makeContext(plan))
         assertIs<SetupOutcome.Succeeded>(outcome)
@@ -83,17 +83,18 @@ class PlanExecutorTest {
     @Test
     fun planExecutorWithNoSwitchHandlerProducesTypedFailure() = runTest {
         val inputs = SetupPlanFactory.defaultCatalogInputs()
-        val plan = SetupPlan(
-            planId = "plan-switch",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L)),
-        )
-        val executor = PlanExecutor(switchToolchainHandler = null)
+        val plan =
+            SetupPlan(
+                planId = "plan-switch",
+                revisionHash = "rev-hash",
+                environmentKey = "Ubuntu",
+                kind = SetupPlanKind.FULL_SETUP,
+                orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L)),
+            )
+        val executor = PlanExecutor(componentToolsHandler = null)
         val outcome = executor.execute(makeContext(plan))
         val failure = assertIs<SetupOutcome.Failed>(outcome)
-        assertTrue(failure.reason.contains("SwitchToolchainHandler"), "Failure must mention the missing handler")
+        assertTrue(failure.reason.contains("component tools handler"), "Failure must mention the missing handler")
     }
 
     // -----------------------------------------------------------------------
@@ -104,15 +105,16 @@ class PlanExecutorTest {
     fun planExecutorDispatchesSwitchToolchain() = runTest {
         val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
         val inputs = SetupPlanFactory.defaultCatalogInputs()
-        val executor = PlanExecutor(switchToolchainHandler = switchHandler)
+        val executor = PlanExecutor(componentToolsHandler = switchHandler)
 
-        val plan = SetupPlan(
-            planId = "plan-switch",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 42L)),
-        )
+        val plan =
+            SetupPlan(
+                planId = "plan-switch",
+                revisionHash = "rev-hash",
+                environmentKey = "Ubuntu",
+                kind = SetupPlanKind.FULL_SETUP,
+                orderedActions = listOf(SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 42L)),
+            )
 
         val outcome = executor.execute(makeContext(plan))
         assertIs<SetupOutcome.Succeeded>(outcome)
@@ -128,35 +130,38 @@ class PlanExecutorTest {
     fun planExecutorSkipsActionsInSkipSet() = runTest {
         val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>()
         val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
-        val executor = PlanExecutor(
-            installPackagesHandler = pkgHandler,
-            switchToolchainHandler = switchHandler,
-        )
+        val executor =
+            PlanExecutor(
+                installPackagesHandler = pkgHandler,
+                componentToolsHandler = switchHandler,
+            )
 
         val pkgAction = SetupPlanAction.InstallPackages(listOf("git"))
         val inputs = SetupPlanFactory.defaultCatalogInputs()
         val switchAction = SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L)
 
-        val plan = SetupPlan(
-            planId = "plan-skip",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(pkgAction, switchAction),
-        )
+        val plan =
+            SetupPlan(
+                planId = "plan-skip",
+                revisionHash = "rev-hash",
+                environmentKey = "Ubuntu",
+                kind = SetupPlanKind.FULL_SETUP,
+                orderedActions = listOf(pkgAction, switchAction),
+            )
 
         val stateFlow = MutableStateFlow(ToolchainSetupState())
         val scope = OperationScope("Ubuntu", "op-1", stateFlow) { "op-1" }
-        val context = ExecutionContext(
-            distro = "Ubuntu",
-            home = "/home/test",
-            binDir = "/home/test/bin",
-            extDir = "/home/test/ext",
-            workDir = "/home/test/work",
-            plan = plan,
-            scope = scope,
-            actionsToSkip = setOf(pkgAction.actionId()),
-        )
+        val context =
+            ExecutionContext(
+                distro = "Ubuntu",
+                home = "/home/test",
+                binDir = "/home/test/bin",
+                extDir = "/home/test/ext",
+                workDir = "/home/test/work",
+                plan = plan,
+                scope = scope,
+                actionsToSkip = setOf(pkgAction.actionId()),
+            )
 
         val outcome = executor.execute(context)
         assertIs<SetupOutcome.Succeeded>(outcome)
@@ -173,21 +178,24 @@ class PlanExecutorTest {
         val pkgHandler = RecordingActionHandler<SetupPlanAction.InstallPackages>(shouldFail = true)
         val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
         val inputs = SetupPlanFactory.defaultCatalogInputs()
-        val executor = PlanExecutor(
-            installPackagesHandler = pkgHandler,
-            switchToolchainHandler = switchHandler,
-        )
+        val executor =
+            PlanExecutor(
+                installPackagesHandler = pkgHandler,
+                componentToolsHandler = switchHandler,
+            )
 
-        val plan = SetupPlan(
-            planId = "plan-fail",
-            revisionHash = "rev-hash",
-            environmentKey = "Ubuntu",
-            kind = SetupPlanKind.FULL_SETUP,
-            orderedActions = listOf(
-                SetupPlanAction.InstallPackages(listOf("git")),
-                SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L),
-            ),
-        )
+        val plan =
+            SetupPlan(
+                planId = "plan-fail",
+                revisionHash = "rev-hash",
+                environmentKey = "Ubuntu",
+                kind = SetupPlanKind.FULL_SETUP,
+                orderedActions =
+                listOf(
+                    SetupPlanAction.InstallPackages(listOf("git")),
+                    SetupPlanAction.SwitchToolchain(inputs, selectionRevision = 1L),
+                ),
+            )
 
         val outcome = executor.execute(makeContext(plan))
         val failure = assertIs<SetupOutcome.Failed>(outcome)
@@ -196,13 +204,13 @@ class PlanExecutorTest {
     }
 
     // -----------------------------------------------------------------------
-    // PlanExecutor.switchToolchainHandler is accessible for DI assertion
+    // PlanExecutor.componentToolsHandler is accessible for DI assertion
     // -----------------------------------------------------------------------
 
     @Test
-    fun planExecutorExposesSwitchToolchainHandler() {
+    fun planExecutorExposesComponentToolsHandler() {
         val switchHandler = RecordingActionHandler<SetupPlanAction.SwitchToolchain>()
-        val executor = PlanExecutor(switchToolchainHandler = switchHandler)
-        assertNotNull(executor.switchToolchainHandler, "switchToolchainHandler must be exposed for DI gate")
+        val executor = PlanExecutor(componentToolsHandler = switchHandler)
+        assertNotNull(executor.componentToolsHandler, "componentToolsHandler must be exposed for DI gate")
     }
 }

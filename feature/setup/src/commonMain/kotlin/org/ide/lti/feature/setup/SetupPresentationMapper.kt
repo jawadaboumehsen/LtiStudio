@@ -63,10 +63,15 @@ data class BuildServicePresentation(
     val isReady: Boolean = false,
     val isRunning: Boolean = false,
     val errorText: String? = null,
+    val layoutRecovery: ToolchainLayoutRecoveryPresentation? = null,
+    val secondaryActionLabelOverride: String? = null,
 ) {
     val primaryActionLabel: String? get() = primaryAction?.let { actionLabel(it) }
-    val secondaryActionLabel: String? get() = secondaryAction?.let { actionLabel(it) }
+    val secondaryActionLabel: String? get() = secondaryActionLabelOverride ?: secondaryAction?.let { actionLabel(it) }
 }
+
+@Immutable
+data class ToolchainLayoutRecoveryPresentation(val explanation: String, val command: String)
 
 enum class StagePresentationState {
     UNKNOWN,
@@ -271,30 +276,33 @@ private fun checkNeedsSetup(state: ToolchainSetupState): EnvironmentState? {
 }
 
 private fun isJavaIssue(desc: String, err: String, systemPackagesStep: SetupStepDetail?): Boolean {
-    val matchesText = desc.contains("Needs Java", ignoreCase = true) ||
-        desc.contains("Java 21", ignoreCase = true) ||
-        err.contains("Needs Java", ignoreCase = true) ||
-        err.contains("Java 21", ignoreCase = true)
+    val matchesText =
+        desc.contains("Needs Java", ignoreCase = true) ||
+            desc.contains("Java 21", ignoreCase = true) ||
+            err.contains("Needs Java", ignoreCase = true) ||
+            err.contains("Java 21", ignoreCase = true)
     val isPkgFailed = systemPackagesStep?.status == StepStatus.FAILED
     val pkgDesc = systemPackagesStep?.description.orEmpty()
     val pkgErr = systemPackagesStep?.error.orEmpty()
-    val hasJavaPackageIssue = pkgDesc.contains("Java", ignoreCase = true) ||
-        pkgDesc.contains("jdk", ignoreCase = true) ||
-        pkgErr.contains("Java", ignoreCase = true) ||
-        pkgErr.contains("jdk", ignoreCase = true)
+    val hasJavaPackageIssue =
+        pkgDesc.contains("Java", ignoreCase = true) ||
+            pkgDesc.contains("jdk", ignoreCase = true) ||
+            pkgErr.contains("Java", ignoreCase = true) ||
+            pkgErr.contains("jdk", ignoreCase = true)
     val matchesPkg = isPkgFailed && hasJavaPackageIssue
     return matchesText || matchesPkg
 }
 
 private fun isStartupFailure(desc: String, err: String): Boolean {
-    val startupPhrases = listOf(
-        "didn't start",
-        "failed to start",
-        "start server",
-        "won't start",
-        "port collision",
-        "timeout",
-    )
+    val startupPhrases =
+        listOf(
+            "didn't start",
+            "failed to start",
+            "start server",
+            "won't start",
+            "port collision",
+            "timeout",
+        )
     return startupPhrases.any { desc.contains(it, ignoreCase = true) || err.contains(it, ignoreCase = true) }
 }
 
@@ -426,6 +434,27 @@ object SetupPresentationMapper {
         val desc = step.description
         val err = step.error.orEmpty()
 
+        if (step.status == StepStatus.FAILED && isUnmanagedToolBinFailure(desc, err)) {
+            return BuildServicePresentation(
+                detailText = "An existing tools folder is blocking the build service",
+                chipText = "Folder needs attention",
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+                secondaryAction = SetupRowAction.OPEN_DISTRO,
+                secondaryActionLabelOverride = "Open WSL terminal",
+                layoutRecovery =
+                ToolchainLayoutRecoveryPresentation(
+                    explanation =
+                    "The new toolchain layout needs ~/LtiRomTools/bin to be a managed symlink. " +
+                        "Your existing folder has not been changed. This command moves it to a timestamped backup " +
+                        "without deleting its contents; then return here and retry.",
+                    command =
+                    "backup=\"\$HOME/LtiRomTools/bin.pre-008.\$(date +%Y%m%d-%H%M%S)\" && " +
+                        "test ! -e \"\$backup\" && mv -- \"\$HOME/LtiRomTools/bin\" \"\$backup\"",
+                ),
+            )
+        }
+
         if (desc.contains("missing from this app", ignoreCase = true) ||
             desc.contains("not bundled", ignoreCase = true) ||
             desc.contains("bundle missing", ignoreCase = true) ||
@@ -516,11 +545,12 @@ object SetupPresentationMapper {
         }
 
         if (step.status == StepStatus.FAILED) {
-            val detail = if (desc.contains("Can't reach", ignoreCase = true)) {
-                desc
-            } else {
-                "Can't reach the build service"
-            }
+            val detail =
+                if (desc.contains("Can't reach", ignoreCase = true)) {
+                    desc
+                } else {
+                    "Can't reach the build service"
+                }
             return BuildServicePresentation(
                 detailText = detail,
                 chipText = "Unreachable",
@@ -545,6 +575,12 @@ object SetupPresentationMapper {
             chipText = "Pending",
             severity = IdeStatusSeverity.Neutral,
         )
+    }
+
+    private fun isUnmanagedToolBinFailure(description: String, error: String): Boolean {
+        val message = "$description\n$error"
+        return message.contains("LtiRomTools/bin exists but is a directory", ignoreCase = true) ||
+            message.contains("not a managed toolchain symlink", ignoreCase = true)
     }
 
     private fun mapBuildServiceItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
@@ -654,23 +690,25 @@ object SetupPresentationMapper {
         attemptRecord: SetupAttemptRecord? = null,
         hasLogs: Boolean = false,
     ): RecoveryPresentation {
-        val operation = mapRecoveryOperation(
-            attemptRecord = attemptRecord,
-            activeOperation = activeOperation,
-            pendingAttemptId = toolchainSetupState.pendingAttemptId,
-            recoveryBlockReason = toolchainSetupState.recoveryBlockReason,
-        )
+        val operation =
+            mapRecoveryOperation(
+                attemptRecord = attemptRecord,
+                activeOperation = activeOperation,
+                pendingAttemptId = toolchainSetupState.pendingAttemptId,
+                recoveryBlockReason = toolchainSetupState.recoveryBlockReason,
+            )
         val service = resolveRecoveryService(toolchainSetupState, activeOperation)
         val blockedReason = resolveRecoveryBlockedReason(toolchainSetupState, attemptRecord)
         val problems = resolveRecoveryProblems(toolchainSetupState)
         val evidence = resolveRecoveryEvidence(attemptRecord)
 
-        val isEmpty = operation == null &&
-            service == null &&
-            blockedReason == null &&
-            problems.isEmpty() &&
-            !evidence.hasEvidence &&
-            !hasLogs
+        val isEmpty =
+            operation == null &&
+                service == null &&
+                blockedReason == null &&
+                problems.isEmpty() &&
+                !evidence.hasEvidence &&
+                !hasLogs
 
         return RecoveryPresentation(
             isEmpty = isEmpty,
@@ -689,27 +727,37 @@ private fun mapRecoveryOperation(
     pendingAttemptId: String?,
     recoveryBlockReason: String?,
 ): RecoveryOperationPresentation? = when {
-    attemptRecord != null -> RecoveryOperationPresentation(
-        kind = formatPlanKind(attemptRecord.planKind),
-        attemptId = attemptRecord.attemptId,
-        state = formatAttemptStatus(attemptRecord.status),
-        failure = attemptRecord.terminalReason,
-        issuedAt = if (attemptRecord.createdAtEpochMs > 0) formatTimestamp(attemptRecord.createdAtEpochMs) else null,
-    )
-    activeOperation != null -> RecoveryOperationPresentation(
-        kind = formatPlanKind(activeOperation.kind.name),
-        attemptId = activeOperation.operationId ?: pendingAttemptId ?: "—",
-        state = formatOperationState(activeOperation.executionState),
-        failure = activeOperation.failure,
-        issuedAt = null,
-    )
-    pendingAttemptId != null -> RecoveryOperationPresentation(
-        kind = "Setup",
-        attemptId = pendingAttemptId,
-        state = "Interrupted",
-        failure = recoveryBlockReason,
-        issuedAt = null,
-    )
+    attemptRecord != null ->
+        RecoveryOperationPresentation(
+            kind = formatPlanKind(attemptRecord.planKind),
+            attemptId = attemptRecord.attemptId,
+            state = formatAttemptStatus(attemptRecord.status),
+            failure = attemptRecord.terminalReason,
+            issuedAt =
+            if (attemptRecord.createdAtEpochMs > 0) {
+                formatTimestamp(
+                    attemptRecord.createdAtEpochMs,
+                )
+            } else {
+                null
+            },
+        )
+    activeOperation != null ->
+        RecoveryOperationPresentation(
+            kind = formatPlanKind(activeOperation.kind.name),
+            attemptId = activeOperation.operationId ?: pendingAttemptId ?: "—",
+            state = formatOperationState(activeOperation.executionState),
+            failure = activeOperation.failure,
+            issuedAt = null,
+        )
+    pendingAttemptId != null ->
+        RecoveryOperationPresentation(
+            kind = "Setup",
+            attemptId = pendingAttemptId,
+            state = "Interrupted",
+            failure = recoveryBlockReason,
+            issuedAt = null,
+        )
     else -> null
 }
 
@@ -718,13 +766,15 @@ private fun resolveRecoveryService(
     activeOperation: SetupOperation?,
 ): BuildServicePresentation? {
     val serverStep = toolchainSetupState.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-    val hasErrorOrWarning = serverStep?.status == StepStatus.FAILED ||
-        serverStep?.status == StepStatus.WARNING ||
-        serverStep?.error != null
+    val hasErrorOrWarning =
+        serverStep?.status == StepStatus.FAILED ||
+            serverStep?.status == StepStatus.WARNING ||
+            serverStep?.error != null
     val isServiceIssue = serverStep != null && hasErrorOrWarning
-    val isInterrupted = activeOperation?.executionState == SetupOperationState.INTERRUPTED ||
-        activeOperation?.executionState == SetupOperationState.RECONNECTING ||
-        toolchainSetupState.pendingAttemptId != null
+    val isInterrupted =
+        activeOperation?.executionState == SetupOperationState.INTERRUPTED ||
+            activeOperation?.executionState == SetupOperationState.RECONNECTING ||
+            toolchainSetupState.pendingAttemptId != null
 
     return if ((isServiceIssue || isInterrupted) && serverStep != null) {
         SetupPresentationMapper.mapBuildService(
@@ -744,24 +794,26 @@ private fun resolveRecoveryBlockedReason(
     ?: if (attemptRecord?.recoveryBlocked == true) attemptRecord.terminalReason else null
 
 private fun resolveRecoveryProblems(toolchainSetupState: ToolchainSetupState): List<RecoveryProblemItem> {
-    val failedSteps = toolchainSetupState.steps
-        .filter { it.status == StepStatus.FAILED }
-        .map {
-            RecoveryProblemItem(
-                title = it.title.ifBlank { it.stage.displayName },
-                detail = it.error ?: it.description,
-                isStep = true,
-            )
-        }
-    val failedDiagnostics = toolchainSetupState.diagnostics
-        .filter { it.status == StepStatus.FAILED }
-        .map {
-            RecoveryProblemItem(
-                title = it.title,
-                detail = it.detail,
-                isStep = false,
-            )
-        }
+    val failedSteps =
+        toolchainSetupState.steps
+            .filter { it.status == StepStatus.FAILED }
+            .map {
+                RecoveryProblemItem(
+                    title = it.title.ifBlank { it.stage.displayName },
+                    detail = it.error ?: it.description,
+                    isStep = true,
+                )
+            }
+    val failedDiagnostics =
+        toolchainSetupState.diagnostics
+            .filter { it.status == StepStatus.FAILED }
+            .map {
+                RecoveryProblemItem(
+                    title = it.title,
+                    detail = it.detail,
+                    isStep = false,
+                )
+            }
     return failedSteps + failedDiagnostics
 }
 

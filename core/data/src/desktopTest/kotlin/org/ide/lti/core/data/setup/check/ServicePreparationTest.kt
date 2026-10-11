@@ -25,7 +25,6 @@ import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.InstallState
 import org.ide.lti.core.model.setup.PrerequisiteReport
-import org.ide.lti.core.model.setup.RequirementStatus
 import org.ide.lti.core.model.setup.ServerArtifact
 import org.ide.lti.core.model.setup.SetupEnvironment
 import kotlin.test.Test
@@ -34,23 +33,25 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ServicePreparationTest {
-
-    private val testEnv = SetupEnvironment(
-        distro = "Ubuntu-24.04",
-        wslVersion = 2,
-        osId = "ubuntu",
-        osVersionId = "24.04",
-        user = "testuser",
-        home = "/home/testuser",
-    )
+    private val testEnv =
+        SetupEnvironment(
+            distro = "Ubuntu-24.04",
+            wslVersion = 2,
+            osId = "ubuntu",
+            osVersionId = "24.04",
+            user = "testuser",
+            home = "/home/testuser",
+        )
 
     private class FakeHostPrerequisitePort(
         var statuses: List<DistroStatus> = emptyList(),
         var probeReport: PrerequisiteReport? = null,
     ) : HostPrerequisitePort {
         override suspend fun detect(): List<DistroStatus> = statuses
+
         override suspend fun selectEnvironment(statuses: List<DistroStatus>): SetupEnvironment? =
             statuses.filterIsInstance<DistroStatus.Usable>().firstOrNull()?.environment
+
         override suspend fun probe(environment: SetupEnvironment): PrerequisiteReport =
             probeReport ?: PrerequisiteReport(
                 environment = environment,
@@ -96,24 +97,34 @@ class ServicePreparationTest {
     }
 
     private class FakeTransport(
-        var serverInfo: WslServerInfo? = WslServerInfo(
-            status = "UP",
-            distro = "Ubuntu",
-            kernelRelease = "5.15.0",
-            architecture = "x86_64",
-            javaVersion = "21.0.11",
-            serverUptimeMs = 50_000L,
-            availableTools = listOf("adb", "fastboot"),
-        ),
+        var serverInfo: WslServerInfo? =
+            WslServerInfo(
+                status = "UP",
+                distro = "Ubuntu",
+                kernelRelease = "5.15.0",
+                architecture = "x86_64",
+                javaVersion = "21.0.11",
+                serverUptimeMs = 50_000L,
+                availableTools = listOf("adb", "fastboot"),
+            ),
     ) : RemoteTransportPort {
+        var execHandler: ((ToolExecutionRequest) -> ToolExecutionResponse)? = null
+
         override suspend fun checkHealth(): WslServerInfo? = serverInfo
+
         override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse =
-            ToolExecutionResponse(0, "ok", "", 10L)
+            execHandler?.invoke(request) ?: ToolExecutionResponse(0, "ok", "", 10L)
+
         override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = emptyFlow()
+
         override suspend fun listTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override suspend fun refreshTools(): ToolListResult = ToolListResult.Tools(emptyList())
+
         override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean = true
+
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
+
         override suspend fun shutdown(): Boolean = true
     }
 
@@ -133,28 +144,33 @@ class ServicePreparationTest {
         )
 
         override suspend fun status(environment: SetupEnvironment): ServerArtifact = artifact()
+
         override suspend fun ensureInstalled(environment: SetupEnvironment): ServerArtifact = artifact()
-        override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String): ServerArtifact =
+
+        override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String?): ServerArtifact =
             artifact()
     }
 
     @Test
     fun verifyWslSucceedsWhenUsableDistroPresent() = runTest {
-        val hostPort = FakeHostPrerequisitePort(
-            statuses = listOf(DistroStatus.Usable(testEnv)),
-        )
-        val prep = ServicePreparation(
-            hostPrerequisitePort = hostPort,
-            supervisor = FakeDaemonSupervisor(),
-            transport = FakeTransport(),
-        )
+        val hostPort =
+            FakeHostPrerequisitePort(
+                statuses = listOf(DistroStatus.Usable(testEnv)),
+            )
+        val prep =
+            ServicePreparation(
+                hostPrerequisitePort = hostPort,
+                supervisor = FakeDaemonSupervisor(),
+                transport = FakeTransport(),
+            )
 
-        val result = prep.verifyWsl(
-            preferredDistro = null,
-            persistedDistro = null,
-            currentEnvironment = null,
-            alreadyVerifiedWsl = false,
-        )
+        val result =
+            prep.verifyWsl(
+                preferredDistro = null,
+                persistedDistro = null,
+                currentEnvironment = null,
+                alreadyVerifiedWsl = false,
+            )
 
         val success = assertIs<WslPreparationResult.Success>(result)
         assertEquals("Ubuntu-24.04", success.environment.distro)
@@ -163,21 +179,24 @@ class ServicePreparationTest {
 
     @Test
     fun verifyWslFailsWhenNoDistroInstalled() = runTest {
-        val hostPort = FakeHostPrerequisitePort(
-            statuses = listOf(DistroStatus.NoDistro),
-        )
-        val prep = ServicePreparation(
-            hostPrerequisitePort = hostPort,
-            supervisor = FakeDaemonSupervisor(),
-            transport = FakeTransport(),
-        )
+        val hostPort =
+            FakeHostPrerequisitePort(
+                statuses = listOf(DistroStatus.NoDistro),
+            )
+        val prep =
+            ServicePreparation(
+                hostPrerequisitePort = hostPort,
+                supervisor = FakeDaemonSupervisor(),
+                transport = FakeTransport(),
+            )
 
-        val result = prep.verifyWsl(
-            preferredDistro = null,
-            persistedDistro = null,
-            currentEnvironment = null,
-            alreadyVerifiedWsl = false,
-        )
+        val result =
+            prep.verifyWsl(
+                preferredDistro = null,
+                persistedDistro = null,
+                currentEnvironment = null,
+                alreadyVerifiedWsl = false,
+            )
 
         val failure = assertIs<WslPreparationResult.Failure>(result)
         assertEquals("No Linux distribution", failure.description)
@@ -185,37 +204,46 @@ class ServicePreparationTest {
 
     @Test
     fun verifySystemPackagesReportsMissingPackages() = runTest {
-        val report = PrerequisiteReport(
-            environment = testEnv,
-            results = mapOf("git" to RequirementStatus.Missing),
-            packageListsFresh = true,
-            missingPackages = listOf("git"),
-            installCommand = "sudo apt-get install -y git",
-            javaHome = "/usr/lib/jvm/java-21-openjdk-amd64",
-            checkedAt = 1000L,
-        )
-        val prep = ServicePreparation(
-            hostPrerequisitePort = FakeHostPrerequisitePort(probeReport = report),
-            supervisor = FakeDaemonSupervisor(),
-            transport = FakeTransport(),
-        )
+        val transport = FakeTransport()
+        transport.execHandler = { req ->
+            val hasMarkers = req.arguments.any { it.contains("JAVA_HOMES_BEGIN") || it.contains("PACKAGES_FRESH") }
+            if (hasMarkers) {
+                val java =
+                    "JAVA_HOMES_BEGIN\n" +
+                        "/usr/lib/jvm/java-21-openjdk-amd64|openjdk version \"21.0.4\" 2024-07-16|javac 21.0.4\nJAVA_HOMES_END\n"
+                val remaining = org.ide.lti.core.data.setup.RequirementCatalog.REQUIREMENTS.filter { it.id != "git" }
+                val pkgs =
+                    "git=missing\nAPT_POLICY:git:2.43.0\n" +
+                        remaining.joinToString("\n") { "${it.id}=present" }
+                ToolExecutionResponse(0, "$java$pkgs\nPACKAGES_FRESH=1\n", "", 5L)
+            } else {
+                ToolExecutionResponse(0, "ok", "", 10L)
+            }
+        }
+        val prep =
+            ServicePreparation(
+                hostPrerequisitePort = FakeHostPrerequisitePort(),
+                supervisor = FakeDaemonSupervisor(),
+                transport = transport,
+            )
 
         val result = prep.verifySystemPackages(testEnv)
         val failure = assertIs<PackagesPreparationResult.Failure>(result)
         assertTrue(failure.description.contains("1 package(s) missing"))
-        assertEquals("sudo apt-get install -y git", failure.error)
+        assertEquals("sudo apt-get update && sudo apt-get install -y git", failure.error)
     }
 
     @Test
     fun verifyServerStartsBundledServerAndChecksHealth() = runTest {
         val artifactPort = FakeServerArtifactPort()
         val supervisor = FakeDaemonSupervisor(started = true)
-        val prep = ServicePreparation(
-            hostPrerequisitePort = FakeHostPrerequisitePort(),
-            supervisor = supervisor,
-            transport = FakeTransport(),
-            serverArtifactPort = artifactPort,
-        )
+        val prep =
+            ServicePreparation(
+                hostPrerequisitePort = FakeHostPrerequisitePort(),
+                supervisor = supervisor,
+                transport = FakeTransport(),
+                serverArtifactPort = artifactPort,
+            )
 
         val result = prep.verifyServer(testEnv, "/usr/lib/jvm/java-21-openjdk-amd64")
         val success = assertIs<ServerPreparationResult.Success>(result)
@@ -224,17 +252,19 @@ class ServicePreparationTest {
 
     @Test
     fun verifyServerReportsOutdatedWhenRunsActive() = runTest {
-        val artifactPort = FakeServerArtifactPort(
-            installState = InstallState.Outdated,
-            runningActiveRuns = 2,
-        )
+        val artifactPort =
+            FakeServerArtifactPort(
+                installState = InstallState.Outdated,
+                runningActiveRuns = 2,
+            )
         val supervisor = FakeDaemonSupervisor(started = true)
-        val prep = ServicePreparation(
-            hostPrerequisitePort = FakeHostPrerequisitePort(),
-            supervisor = supervisor,
-            transport = FakeTransport(),
-            serverArtifactPort = artifactPort,
-        )
+        val prep =
+            ServicePreparation(
+                hostPrerequisitePort = FakeHostPrerequisitePort(),
+                supervisor = supervisor,
+                transport = FakeTransport(),
+                serverArtifactPort = artifactPort,
+            )
 
         val result = prep.verifyServer(testEnv, "/usr/lib/jvm/java-21-openjdk-amd64")
         val outdated = assertIs<ServerPreparationResult.Outdated>(result)

@@ -13,24 +13,23 @@ import org.ide.lti.feature.setup.SetupViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val setupModule = module {
-    viewModel {
-        SetupViewModel(
-            getRecentWorkspacesUseCase = get(),
-            discoverWorkdirWorkspacesUseCase = get(),
-            openWorkspaceUseCase = get(),
-            openWorkspaceByPathUseCase = get(),
-            removeRecentWorkspaceUseCase = get(),
-            toolchainService = getOrNull(),
-            provisionAvbKeyUseCase = getOrNull(),
-            getAvailableTargetsUseCase = getOrNull(),
-            getSelectedTargetUseCase = getOrNull(),
-            selectTargetUseCase = getOrNull(),
-            terminalLauncher = getOrNull(),
-            toolchainSelectionRepository = getOrNull(),
-            sourceResolver = getOrNull(),
-            toolchainInstallationPort = getOrNull(),
-            restoreCoordinator = getOrNull(),
-        )
+val setupModule =
+    module {
+        viewModel {
+            SetupViewModel(
+                getRecentWorkspacesUseCase = get(),
+                discoverWorkdirWorkspacesUseCase = get(),
+                openWorkspaceUseCase = get(),
+                openWorkspaceByPathUseCase = get(),
+                removeRecentWorkspaceUseCase = get(),
+                toolchainService = getOrNull(),
+                provisionAvbKeyUseCase = getOrNull(),
+                getAvailableTargetsUseCase = getOrNull(),
+                getSelectedTargetUseCase = getOrNull(),
+                selectTargetUseCase = getOrNull(),
+                terminalLauncher = getOrNull(),
+                toolchainSelectionRepository = getOrNull(),
+                toolManager = get(),
+            )
+        }
     }
-}

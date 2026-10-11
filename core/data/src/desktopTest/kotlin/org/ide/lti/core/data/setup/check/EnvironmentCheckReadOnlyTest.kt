@@ -13,12 +13,9 @@ import io.ltirom.tooling.client.wsl.CliExecutionResult
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import org.ide.lti.core.data.setup.ToolVerifier
-import org.ide.lti.core.data.setup.check.stages.DoctorStage
-import org.ide.lti.core.data.setup.check.stages.SourcesStage
-import org.ide.lti.core.data.setup.check.stages.ToolchainStage
 import org.ide.lti.core.data.setup.fakeSha256
 import org.ide.lti.core.data.setup.state.CheckScope
+import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.SetupEnvironment
 import java.nio.charset.Charset
@@ -27,7 +24,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EnvironmentCheckReadOnlyTest {
-
     private class RecordingInspectionCli : WslCliExecutor() {
         val executedCommands = mutableListOf<List<String>>()
 
@@ -65,36 +61,39 @@ class EnvironmentCheckReadOnlyTest {
     fun fullEnvironmentCheckIssuesOnlyAllowlistedReadOnlyCommands() = runTest {
         val cli = RecordingInspectionCli()
         val readOnlyCommands = ReadOnlyCommands(cli)
-        val toolVerifier = ToolVerifier(readOnlyCommands)
         val stateFlow = MutableStateFlow(ToolchainSetupState())
         val checkScope = CheckScope("Ubuntu", "check-test", stateFlow) { "check-test" }
 
-        val env = SetupEnvironment(
-            distro = "Ubuntu",
-            wslVersion = 2,
-            osId = "ubuntu",
-            osVersionId = "24.04",
-            user = "lti",
-            home = "/home/lti",
-        )
+        val env =
+            SetupEnvironment(
+                distro = "Ubuntu",
+                wslVersion = 2,
+                osId = "ubuntu",
+                osVersionId = "24.04",
+                user = "lti",
+                home = "/home/lti",
+            )
 
-        val checkContext = CheckContext(
-            environment = env,
-            readOnlyCommands = readOnlyCommands,
-            toolVerifier = toolVerifier,
-            userHome = "/home/lti",
-            workDir = "/home/lti/LtiRomWorkDir",
-            binDir = "/home/lti/LtiRomTools/bin",
-            extDir = "/home/lti/LtiRomTools/external",
-        )
+        val checkContext =
+            CheckContext(
+                environment = env,
+                readOnlyCommands = readOnlyCommands,
+                userHome = "/home/lti",
+                workDir = "/home/lti/LtiRomWorkDir",
+                binDir = "/home/lti/LtiRomTools/bin",
+                extDir = "/home/lti/LtiRomTools/external",
+            )
 
-        val stages = listOf(
-            DoctorStage(),
-            SourcesStage(),
-            ToolchainStage(),
-        )
+        val dummyStage =
+            object : CheckStage {
+                override val stage: SetupStepStage = SetupStepStage.WSL_DETECTION
 
-        val environmentCheck = EnvironmentCheck(stages = stages)
+                override suspend fun run(ctx: CheckContext, scope: CheckScope): StageOutcome {
+                    ctx.readOnlyCommands.execute("Ubuntu", listOf("test", "-d", "/"))
+                    return StageOutcome.Success("ok")
+                }
+            }
+        val environmentCheck = EnvironmentCheck(stages = listOf(dummyStage))
         environmentCheck.run(checkContext, checkScope)
 
         assertTrue(cli.executedCommands.isNotEmpty(), "Inspection must issue commands")

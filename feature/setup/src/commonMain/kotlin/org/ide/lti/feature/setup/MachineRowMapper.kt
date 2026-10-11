@@ -15,6 +15,7 @@ import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.closestToUsable
+import org.ide.lti.core.model.setup.distroName
 
 /** What a row button does; the tracker dispatches on this, never on the button text. */
 enum class SetupRowAction {
@@ -25,16 +26,22 @@ enum class SetupRowAction {
     SHOW_DIAGNOSTICS,
     SHOW_LOG,
     CANCEL,
+    INSTALL_UBUNTU,
+    USE_DISTRO,
+    CHECK_AGAIN,
 }
 
 fun actionLabel(action: SetupRowAction, distro: String? = null): String = when (action) {
     SetupRowAction.RETRY -> "Retry"
     SetupRowAction.INSTALL_PACKAGES -> "Install packages"
     SetupRowAction.CONTINUE_SETUP -> "Continue setup"
-    SetupRowAction.OPEN_DISTRO -> "Open ${distro ?: "distribution"}"
+    SetupRowAction.OPEN_DISTRO -> "Open ${distro ?: "Ubuntu"}"
     SetupRowAction.SHOW_DIAGNOSTICS -> "Show diagnostics"
     SetupRowAction.SHOW_LOG -> "Show log"
     SetupRowAction.CANCEL -> "Cancel"
+    SetupRowAction.INSTALL_UBUNTU -> "Install Ubuntu"
+    SetupRowAction.USE_DISTRO -> "Use ${distro ?: "Ubuntu"}"
+    SetupRowAction.CHECK_AGAIN -> "Check again"
 }
 
 @Immutable
@@ -73,7 +80,9 @@ data class ToolchainRowPresentation(
     val detailText: String,
     val severity: IdeStatusSeverity,
     val primaryAction: SetupRowAction? = null,
-    val primaryActionLabel: String = "Retry",
+    val primaryActionLabel: String = "Retry failed",
+    val secondaryAction: SetupRowAction? = null,
+    val secondaryActionLabel: String? = null,
     val errorText: String? = null,
     val isRunning: Boolean = false,
     val isReady: Boolean = false,
@@ -87,41 +96,59 @@ object MachineRowMapper {
     private const val PROBE_FAILED = "Couldn't check packages:"
     private const val UNAVAILABLE = "isn't available on Ubuntu"
 
-    fun mapDistroStatus(status: DistroStatus): WslRowPresentation = when (status) {
-        is DistroStatus.WslUnavailable -> WslRowPresentation(
-            detailText = "WSL isn't installed. Run 'wsl --install' in PowerShell.",
-            severity = IdeStatusSeverity.Failed,
-            instruction = "Run 'wsl --install' in PowerShell.",
-        )
-        is DistroStatus.NoDistro -> WslRowPresentation(
-            detailText = "No Linux distribution. Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
-            severity = IdeStatusSeverity.Failed,
-            instruction = "Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
-        )
-        is DistroStatus.StartupFailed -> WslRowPresentation(
-            detailText = "${status.distro} didn't start: ${status.detail}",
-            severity = IdeStatusSeverity.Failed,
-            primaryAction = SetupRowAction.RETRY,
-            secondaryAction = SetupRowAction.SHOW_DIAGNOSTICS,
-            distro = status.distro,
-        )
-        is DistroStatus.Unsupported -> WslRowPresentation(
-            detailText = "${status.distro} isn't a supported Ubuntu LTS (found ${status.reason})",
-            severity = IdeStatusSeverity.Failed,
-        )
-        is DistroStatus.NoUsableUser -> WslRowPresentation(
-            detailText = "${status.distro} needs a user",
-            severity = IdeStatusSeverity.Failed,
-            primaryAction = SetupRowAction.OPEN_DISTRO,
-            distro = status.distro,
-        )
-        is DistroStatus.Usable -> WslRowPresentation(
-            detailText = "${status.environment.distro} · ${status.environment.user}",
-            severity = IdeStatusSeverity.Ready,
-            isReady = true,
-            distro = status.environment.distro,
-        )
-    }
+    fun mapDistroStatus(status: DistroStatus, allStatuses: List<DistroStatus> = emptyList()): WslRowPresentation =
+        when (status) {
+            is DistroStatus.WslUnavailable ->
+                WslRowPresentation(
+                    detailText = "WSL isn't installed. Run 'wsl --install' in PowerShell.",
+                    severity = IdeStatusSeverity.Failed,
+                    instruction = "Run 'wsl --install' in PowerShell.",
+                    primaryAction = null,
+                    secondaryAction = SetupRowAction.CHECK_AGAIN,
+                )
+            is DistroStatus.NoDistro ->
+                WslRowPresentation(
+                    detailText = "No Linux distribution. Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
+                    severity = IdeStatusSeverity.Failed,
+                    instruction = "Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",
+                    primaryAction = SetupRowAction.INSTALL_UBUNTU,
+                    secondaryAction = SetupRowAction.CHECK_AGAIN,
+                )
+            is DistroStatus.StartupFailed ->
+                WslRowPresentation(
+                    detailText = "${status.distro} didn't start: ${status.detail}",
+                    severity = IdeStatusSeverity.Failed,
+                    primaryAction = null,
+                    secondaryAction = SetupRowAction.CHECK_AGAIN,
+                    distro = status.distro,
+                )
+            is DistroStatus.Unsupported -> {
+                val usable = allStatuses.filterIsInstance<DistroStatus.Usable>()
+                val hasUsable = usable.isNotEmpty()
+                WslRowPresentation(
+                    detailText = "${status.distro} isn't a supported Ubuntu LTS (found ${status.reason})",
+                    severity = IdeStatusSeverity.Failed,
+                    primaryAction = if (hasUsable) SetupRowAction.USE_DISTRO else SetupRowAction.INSTALL_UBUNTU,
+                    secondaryAction = SetupRowAction.CHECK_AGAIN,
+                    distro = if (hasUsable) usable.first().environment.distro else status.distro,
+                )
+            }
+            is DistroStatus.NoUsableUser ->
+                WslRowPresentation(
+                    detailText = "${status.distro} needs a user",
+                    severity = IdeStatusSeverity.Failed,
+                    primaryAction = SetupRowAction.OPEN_DISTRO,
+                    secondaryAction = SetupRowAction.CHECK_AGAIN,
+                    distro = status.distro,
+                )
+            is DistroStatus.Usable ->
+                WslRowPresentation(
+                    detailText = "${status.environment.distro} · ${status.environment.user}",
+                    severity = IdeStatusSeverity.Ready,
+                    isReady = true,
+                    distro = status.environment.distro,
+                )
+        }
 
     /**
      * The WSL row from the last detection, or null when there is none to show (the generic step row
@@ -130,16 +157,21 @@ object MachineRowMapper {
      */
     fun mapWslRow(step: SetupStepDetail, statuses: List<DistroStatus>, activeDistro: String?): WslRowPresentation? {
         val usable = statuses.filterIsInstance<DistroStatus.Usable>()
+        val active = activeDistro?.let { name -> statuses.firstOrNull { it.distroName == name } }
         return when {
             statuses.isEmpty() || step.status == StepStatus.RUNNING || step.status == StepStatus.PENDING -> null
             step.status == StepStatus.SUCCESS ->
-                usable.firstOrNull { it.environment.distro == activeDistro }?.let(::mapDistroStatus)
-            usable.size > 1 -> WslRowPresentation(
-                detailText = "Several Ubuntu distributions are usable. Choose one for LtiRom.",
-                severity = IdeStatusSeverity.Warning,
-                choices = usable.map { it.environment.distro },
-            )
-            else -> statuses.closestToUsable()?.let(::mapDistroStatus)
+                usable.firstOrNull { it.environment.distro == activeDistro }?.let { mapDistroStatus(it, statuses) }
+            usable.size > 1 && activeDistro == null ->
+                WslRowPresentation(
+                    detailText = "Several Ubuntu distributions are usable. Choose one for LtiRom.",
+                    severity = IdeStatusSeverity.Warning,
+                    choices = usable.map { it.environment.distro },
+                )
+            active != null -> mapDistroStatus(active, statuses)
+            else ->
+                statuses.filter { it !is DistroStatus.Usable }.closestToUsable()?.let { mapDistroStatus(it, statuses) }
+                    ?: statuses.closestToUsable()?.let { mapDistroStatus(it, statuses) }
         }
     }
 
@@ -149,66 +181,76 @@ object MachineRowMapper {
         activeOperation: SetupOperation? = null,
         handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
     ): SystemPackagesRowPresentation {
-        val isAwaiting = activeOperation?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
-            activeOperation?.awaitingHandoff != null
+        val isAwaiting =
+            activeOperation?.executionState == SetupOperationState.AWAITING_USER_ACTION ||
+                activeOperation?.awaitingHandoff != null
         return when {
             handoffSheetState is TerminalHandoffState.Verifying -> checking("Checking installation…")
-            handoffSheetState is TerminalHandoffState.StillMissing -> SystemPackagesRowPresentation(
-                detailText = "Still missing: ${handoffSheetState.packages.joinToString(", ")}",
-                severity = IdeStatusSeverity.Failed,
-                primaryAction = SetupRowAction.INSTALL_PACKAGES,
-            )
-            isAwaiting -> SystemPackagesRowPresentation(
-                detailText = "Waiting for you in the terminal",
-                severity = IdeStatusSeverity.Warning,
-                primaryAction = SetupRowAction.CONTINUE_SETUP,
-            )
+            handoffSheetState is TerminalHandoffState.StillMissing ->
+                SystemPackagesRowPresentation(
+                    detailText = "Still missing: ${handoffSheetState.packages.joinToString(", ")}",
+                    severity = IdeStatusSeverity.Failed,
+                    primaryAction = SetupRowAction.INSTALL_PACKAGES,
+                )
+            isAwaiting ->
+                SystemPackagesRowPresentation(
+                    detailText = "Waiting for you in the terminal",
+                    severity = IdeStatusSeverity.Warning,
+                    primaryAction = SetupRowAction.CONTINUE_SETUP,
+                )
             isChecking && (step == null || step.status == StepStatus.RUNNING) -> checking("Checking…")
-            step == null -> SystemPackagesRowPresentation(
-                detailText = "Pending verification.",
-                severity = IdeStatusSeverity.Neutral,
-            )
+            step == null ->
+                SystemPackagesRowPresentation(
+                    detailText = "Pending verification.",
+                    severity = IdeStatusSeverity.Neutral,
+                )
             else -> mapPackagesStep(step, isChecking)
         }
     }
 
     private fun mapPackagesStep(step: SetupStepDetail, isChecking: Boolean): SystemPackagesRowPresentation =
         when (step.status) {
-            StepStatus.SUCCESS -> SystemPackagesRowPresentation(
-                detailText = "All present",
-                severity = IdeStatusSeverity.Ready,
-                isReady = true,
-            )
+            StepStatus.SUCCESS ->
+                SystemPackagesRowPresentation(
+                    detailText = "All present",
+                    severity = IdeStatusSeverity.Ready,
+                    isReady = true,
+                )
             StepStatus.RUNNING -> checking("Checking…")
-            StepStatus.WARNING -> SystemPackagesRowPresentation(
-                detailText = step.description.ifBlank { "All present" },
-                severity = IdeStatusSeverity.Warning,
-                isReady = true,
-            )
+            StepStatus.WARNING ->
+                SystemPackagesRowPresentation(
+                    detailText = step.description.ifBlank { "All present" },
+                    severity = IdeStatusSeverity.Warning,
+                    isReady = true,
+                )
             StepStatus.FAILED -> mapPackagesFailure(step.description, step.error.orEmpty())
-            StepStatus.PENDING -> SystemPackagesRowPresentation(
-                detailText = if (isChecking) "Checking…" else step.description.ifBlank { "Pending verification." },
-                severity = if (isChecking) IdeStatusSeverity.Running else IdeStatusSeverity.Neutral,
-                isChecking = isChecking,
-            )
+            StepStatus.PENDING ->
+                SystemPackagesRowPresentation(
+                    detailText = if (isChecking) "Checking…" else step.description.ifBlank { "Pending verification." },
+                    severity = if (isChecking) IdeStatusSeverity.Running else IdeStatusSeverity.Neutral,
+                    isChecking = isChecking,
+                )
         }
 
     /** Failure texts written by the provisioner's SYSTEM_PACKAGES step decide which action applies. */
     private fun mapPackagesFailure(desc: String, err: String): SystemPackagesRowPresentation = when {
-        UNAVAILABLE in desc || UNAVAILABLE in err -> SystemPackagesRowPresentation(
-            detailText = desc,
-            severity = IdeStatusSeverity.Failed,
-        )
-        desc.startsWith(PROBE_FAILED) || err.startsWith(PROBE_FAILED) -> SystemPackagesRowPresentation(
-            detailText = if (desc.startsWith(PROBE_FAILED)) desc else "$PROBE_FAILED $err",
-            severity = IdeStatusSeverity.Failed,
-            primaryAction = SetupRowAction.RETRY,
-        )
-        else -> SystemPackagesRowPresentation(
-            detailText = desc.ifBlank { "Packages missing" },
-            severity = IdeStatusSeverity.Failed,
-            primaryAction = SetupRowAction.INSTALL_PACKAGES,
-        )
+        UNAVAILABLE in desc || UNAVAILABLE in err ->
+            SystemPackagesRowPresentation(
+                detailText = desc,
+                severity = IdeStatusSeverity.Failed,
+            )
+        desc.startsWith(PROBE_FAILED) || err.startsWith(PROBE_FAILED) ->
+            SystemPackagesRowPresentation(
+                detailText = if (desc.startsWith(PROBE_FAILED)) desc else "$PROBE_FAILED $err",
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.RETRY,
+            )
+        else ->
+            SystemPackagesRowPresentation(
+                detailText = desc.ifBlank { "Packages missing" },
+                severity = IdeStatusSeverity.Failed,
+                primaryAction = SetupRowAction.INSTALL_PACKAGES,
+            )
     }
 
     private fun checking(text: String) = SystemPackagesRowPresentation(
@@ -240,18 +282,20 @@ object MachineRowMapper {
     ): ToolchainRowPresentation? {
         if (step == null) return null
         return when (step.status) {
-            StepStatus.SUCCESS -> ToolchainRowPresentation(
-                detailText = step.description.ifBlank { "All tools ready" },
-                severity = IdeStatusSeverity.Ready,
-                isReady = true,
-            )
+            StepStatus.SUCCESS ->
+                ToolchainRowPresentation(
+                    detailText = step.description.ifBlank { "All tools ready" },
+                    severity = IdeStatusSeverity.Ready,
+                    isReady = true,
+                )
             StepStatus.RUNNING -> {
                 val desc = step.description.ifBlank { "Compiling…" }
-                val detail = if (nowEpochMs != null && step.startedAt != null) {
-                    SetupPresentationMapper.formatProgressDetail(desc, step.startedAt, nowEpochMs)
-                } else {
-                    desc
-                }
+                val detail =
+                    if (nowEpochMs != null && step.startedAt != null) {
+                        SetupPresentationMapper.formatProgressDetail(desc, step.startedAt, nowEpochMs)
+                    } else {
+                        desc
+                    }
                 ToolchainRowPresentation(
                     detailText = detail,
                     severity = IdeStatusSeverity.Running,
@@ -260,24 +304,31 @@ object MachineRowMapper {
                     isRunning = true,
                 )
             }
-            StepStatus.FAILED -> ToolchainRowPresentation(
-                detailText = step.description.ifBlank { "Tool compilation failed" },
-                severity = IdeStatusSeverity.Failed,
-                primaryAction = SetupRowAction.RETRY,
-                primaryActionLabel = "Retry",
-                errorText = step.error,
-            )
-            StepStatus.WARNING -> ToolchainRowPresentation(
-                detailText = step.description.ifBlank { "Some tools require attention" },
-                severity = IdeStatusSeverity.Warning,
-                primaryAction = SetupRowAction.RETRY,
-                primaryActionLabel = "Retry",
-                errorText = step.error,
-            )
-            StepStatus.PENDING -> ToolchainRowPresentation(
-                detailText = step.description.ifBlank { "Waiting for prerequisites" },
-                severity = IdeStatusSeverity.Neutral,
-            )
+            StepStatus.FAILED ->
+                ToolchainRowPresentation(
+                    detailText = step.description.ifBlank { "Tool compilation failed" },
+                    severity = IdeStatusSeverity.Failed,
+                    primaryAction = SetupRowAction.RETRY,
+                    primaryActionLabel = "Retry failed",
+                    secondaryAction = SetupRowAction.SHOW_LOG,
+                    secondaryActionLabel = "View log",
+                    errorText = step.error,
+                )
+            StepStatus.WARNING ->
+                ToolchainRowPresentation(
+                    detailText = step.description.ifBlank { "Some tools require attention" },
+                    severity = IdeStatusSeverity.Warning,
+                    primaryAction = SetupRowAction.RETRY,
+                    primaryActionLabel = "Retry failed",
+                    secondaryAction = SetupRowAction.SHOW_LOG,
+                    secondaryActionLabel = "View log",
+                    errorText = step.error,
+                )
+            StepStatus.PENDING ->
+                ToolchainRowPresentation(
+                    detailText = step.description.ifBlank { "Waiting for prerequisites" },
+                    severity = IdeStatusSeverity.Neutral,
+                )
         }
     }
 }

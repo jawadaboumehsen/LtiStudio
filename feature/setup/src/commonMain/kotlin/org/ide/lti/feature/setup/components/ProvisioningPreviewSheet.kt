@@ -55,7 +55,6 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
-import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -80,8 +79,6 @@ import org.ide.lti.feature.setup.PlannedSetupChanges
 @Composable
 fun ProvisioningPreviewSheet(
     plannedChanges: PlannedSetupChanges,
-    isAutoDoctorEnabled: Boolean,
-    onSetAutoDoctorEnabled: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -96,7 +93,8 @@ fun ProvisioningPreviewSheet(
     }
 
     Box(
-        modifier = modifier
+        modifier =
+        modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Scrim))
             .clickable(
@@ -125,7 +123,8 @@ fun ProvisioningPreviewSheet(
         contentAlignment = Alignment.Center,
     ) {
         GlassCard(
-            modifier = Modifier
+            modifier =
+            Modifier
                 .widthIn(max = ComponentSize.MaxPanelWidth)
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
@@ -188,7 +187,8 @@ fun ProvisioningPreviewSheet(
 
                 // Bounded and Virtualized Action Lists
                 LazyColumn(
-                    modifier = Modifier
+                    modifier =
+                    Modifier
                         .fillMaxWidth()
                         .heightIn(max = ComponentSize.MaxPanelHeight),
                     verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -215,7 +215,8 @@ fun ProvisioningPreviewSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Box(
-                                modifier = Modifier
+                                modifier =
+                                Modifier
                                     .clip(GlassShapes.Small)
                                     .background(MaterialTheme.colorScheme.surfaceContainer)
                                     .border(
@@ -245,8 +246,9 @@ fun ProvisioningPreviewSheet(
                     // Elevation Banner if required
                     if (plannedChanges.requiresElevation) {
                         item(key = "elevation_banner") {
-                            val reason = plannedChanges.elevationReason
-                                ?: "sudo apt-get install / system configuration"
+                            val reason =
+                                plannedChanges.elevationReason
+                                    ?: "sudo apt-get install / system configuration"
                             GlassBanner(
                                 severity = GlassBannerSeverity.WARNING,
                                 title = "Root / Sudo Elevation Required",
@@ -276,7 +278,8 @@ fun ProvisioningPreviewSheet(
                                 ) {
                                     for (pkg in plannedChanges.packagesToInstall) {
                                         Box(
-                                            modifier = Modifier
+                                            modifier =
+                                            Modifier
                                                 .clip(GlassShapes.Small)
                                                 .background(MaterialTheme.colorScheme.surfaceContainer)
                                                 .border(
@@ -288,7 +291,10 @@ fun ProvisioningPreviewSheet(
                                         ) {
                                             Text(
                                                 text = pkg,
-                                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                                style =
+                                                MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = codeFontFamily(),
+                                                ),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
@@ -311,7 +317,8 @@ fun ProvisioningPreviewSheet(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Column(
-                                    modifier = Modifier
+                                    modifier =
+                                    Modifier
                                         .fillMaxWidth()
                                         .clip(GlassShapes.Small)
                                         .background(MaterialTheme.colorScheme.surfaceContainer)
@@ -326,7 +333,10 @@ fun ProvisioningPreviewSheet(
                                     for (sub in plannedChanges.submodulesToSync) {
                                         Text(
                                             text = sub,
-                                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                            style =
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                fontFamily = codeFontFamily(),
+                                            ),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
@@ -354,7 +364,8 @@ fun ProvisioningPreviewSheet(
                                 ) {
                                     for (tool in plannedChanges.toolsToCompile) {
                                         Box(
-                                            modifier = Modifier
+                                            modifier =
+                                            Modifier
                                                 .clip(GlassShapes.Small)
                                                 .background(MaterialTheme.colorScheme.surfaceContainer)
                                                 .border(
@@ -366,7 +377,10 @@ fun ProvisioningPreviewSheet(
                                         ) {
                                             Text(
                                                 text = tool,
-                                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                                                style =
+                                                MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = codeFontFamily(),
+                                                ),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
@@ -400,7 +414,8 @@ fun ProvisioningPreviewSheet(
                     if (plannedChanges.isEmpty) {
                         item(key = "empty_changes_notice") {
                             Text(
-                                text = if (plan?.kind == SetupPlanKind.CACHE_RESET) {
+                                text =
+                                if (plan?.kind == SetupPlanKind.CACHE_RESET) {
                                     "Persisted setup evidence for this environment will be cleared and the " +
                                         "environment re-checked. No packages, sources or binaries change."
                                 } else {
@@ -409,36 +424,6 @@ fun ProvisioningPreviewSheet(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                        }
-                    }
-
-                    // Auto Doctor Remediation Option
-                    item(key = "auto_doctor_toggle") {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                        ) {
-                            GlassToggle(
-                                checked = isAutoDoctorEnabled,
-                                onCheckedChange = onSetAutoDoctorEnabled,
-                            )
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            ) {
-                                Text(
-                                    text = "Automated Doctor Remediation",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = "Automatically fix non-interactive package prerequisites during setup",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
                         }
                     }
                 }

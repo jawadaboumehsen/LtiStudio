@@ -1,0 +1,130 @@
+[
+ {
+  "tool": "adb",
+  "installed": true
+ },
+ {
+  "tool": "apktool",
+  "installed": true
+ },
+ {
+  "tool": "append2simg",
+  "installed": true
+ },
+ {
+  "tool": "avbtool",
+  "installed": true
+ },
+ {
+  "tool": "dump.erofs",
+  "installed": true
+ },
+ {
+  "tool": "e2fsdroid",
+  "installed": true
+ },
+ {
+  "tool": "erofsfuse",
+  "installed": true
+ },
+ {
+  "tool": "ext2simg",
+  "installed": true
+ },
+ {
+  "tool": "fastboot",
+  "installed": true
+ },
+ {
+  "tool": "fec",
+  "installed": true
+ },
+ {
+  "tool": "fsck.erofs",
+  "installed": true
+ },
+ {
+  "tool": "gh",
+  "installed": true
+ },
+ {
+  "tool": "img2sdat",
+  "installed": true
+ },
+ {
+  "tool": "lpadd",
+  "installed": true
+ },
+ {
+  "tool": "lpdump",
+  "installed": true
+ },
+ {
+  "tool": "lpflash",
+  "installed": true
+ },
+ {
+  "tool": "lpmake",
+  "installed": true
+ },
+ {
+  "tool": "lpunpack",
+  "installed": true
+ },
+ {
+  "tool": "make_f2fs",
+  "installed": true
+ },
+ {
+  "tool": "mkbootfs",
+  "installed": true
+ },
+ {
+  "tool": "mkbootimg",
+  "installed": true
+ },
+ {
+  "tool": "mkdtboimg",
+  "installed": true
+ },
+ {
+  "tool": "mkf2fsuserimg",
+  "installed": true
+ },
+ {
+  "tool": "mkfs.erofs",
+  "installed": true
+ },
+ {
+  "tool": "mkuserimg_mke2fs",
+  "installed": true
+ },
+ {
+  "tool": "payload-dumper-go",
+  "installed": true
+ },
+ {
+  "tool": "repack_bootimg",
+  "installed": true
+ },
+ {
+  "tool": "signapk",
+  "installed": true
+ },
+ {
+  "tool": "simg2img",
+  "installed": true
+ },
+ {
+  "tool": "sload_f2fs",
+  "installed": true
+ },
+ {
+  "tool": "unpack_bootimg",
+  "installed": true
+ },
+ {
+  "tool": "zipalign",
+  "installed": true
+ }
+]

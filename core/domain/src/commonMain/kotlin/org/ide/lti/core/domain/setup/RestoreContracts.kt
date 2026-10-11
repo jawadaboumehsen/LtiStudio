@@ -9,10 +9,8 @@
  */
 package org.ide.lti.core.domain.setup
 
-import org.ide.lti.core.domain.setup.ports.InstallId
-
 /**
- * Descriptor of a tool group that will revert upon restoring the previous toolchain.
+ * Descriptor of a component group that will revert to its own previous version.
  */
 public data class RevertingGroup(
     val groupId: ToolGroupId,
@@ -24,22 +22,10 @@ public data class RevertingGroup(
 )
 
 /**
- * Outcome of a toolchain restore operation.
+ * Outcome of a component-version undo operation.
  */
 public sealed interface RestoreOutcome {
-    public data class Succeeded(
-        val activeInstallId: InstallId,
-        val revertSet: List<RevertingGroup>,
-        val desiredUpdated: Boolean,
-    ) : RestoreOutcome
+    public data class Succeeded(val revertSet: List<RevertingGroup>, val desiredUpdated: Boolean) : RestoreOutcome
 
     public data class Failed(val reason: String) : RestoreOutcome
-}
-
-/**
- * Port for coordinating a toolchain restore operation (T091, US2).
- */
-public interface RestoreCoordinatorPort {
-    public suspend fun getRevertSet(): List<RevertingGroup>
-    public suspend fun restore(distro: String, expectedRevision: Long? = null): RestoreOutcome
 }

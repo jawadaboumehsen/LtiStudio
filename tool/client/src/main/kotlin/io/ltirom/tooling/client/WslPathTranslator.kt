@@ -9,7 +9,6 @@ import io.ltirom.tooling.core.remote.PathTranslationDirection
 import io.ltirom.tooling.core.remote.PathTranslationRequest
 import io.ltirom.tooling.core.remote.PathTranslationResponse
 import org.ide.lti.core.model.setup.SetupEnvironment
-
 import java.util.Collections
 import java.util.LinkedHashMap
 
@@ -17,26 +16,30 @@ public class WslPathTranslator(
     private val distroName: String? = null,
     private val httpClient: HttpClient? = null,
     private val serverBaseUrl: String? = null,
-    private val authToken: String? = null
+    private val authToken: String? = null,
 ) : PathTranslatorPort {
-
     override fun toRemote(localPath: String): String = toWslPath(localPath)
+
     override fun toLocal(remotePath: String): String = toWindowsPath(remotePath)
+
     private val drivePattern = Regex("""^([a-zA-Z]):[/\\]?(.*)$""")
-    private val wslUncPattern = Regex("""^\\\\(?:wsl\$|wsl\.localhost)\\[^\\]+[/\\]?(.*)$""", RegexOption.IGNORE_CASE)
+    private val wslUncPattern =
+        Regex("""^(?:\\\\|//)(?:wsl\$|wsl\.localhost)[/\\][^/\\]+[/\\]?(.*)$""", RegexOption.IGNORE_CASE)
     private val mntPattern = Regex("""^/mnt/([a-zA-Z])(?:/(.*))?$""")
 
-    private val toWslCache: MutableMap<String, String> = Collections.synchronizedMap(
-        object : LinkedHashMap<String, String>(256, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 2048
-        }
-    )
+    private val toWslCache: MutableMap<String, String> =
+        Collections.synchronizedMap(
+            object : LinkedHashMap<String, String>(256, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 2048
+            },
+        )
 
-    private val toWinCache: MutableMap<String, String> = Collections.synchronizedMap(
-        object : LinkedHashMap<String, String>(256, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 2048
-        }
-    )
+    private val toWinCache: MutableMap<String, String> =
+        Collections.synchronizedMap(
+            object : LinkedHashMap<String, String>(256, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 2048
+            },
+        )
 
     public fun toWslPath(windowsPath: String): String {
         if (windowsPath.isBlank()) return windowsPath
@@ -114,11 +117,12 @@ public class WslPathTranslator(
         }
 
         return try {
-            val response = client.post("$baseUrl/api/v1/path/translate") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-                contentType(ContentType.Application.Json)
-                setBody(PathTranslationRequest(path = path, direction = direction))
-            }
+            val response =
+                client.post("$baseUrl/api/v1/path/translate") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(PathTranslationRequest(path = path, direction = direction))
+                }
             if (response.status.isSuccess()) {
                 response.body<PathTranslationResponse>().translatedPath
             } else {

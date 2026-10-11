@@ -30,7 +30,6 @@ import kotlin.test.assertTrue
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ServerUpdateWaitingTest {
-
     /** The new version is installed, but the old one keeps running because it has 2 active runs. */
     private class OldServiceStillBusy : ServerArtifactPort {
         private fun artifact(state: InstallState) = ServerArtifact(
@@ -43,8 +42,10 @@ class ServerUpdateWaitingTest {
         )
 
         override suspend fun status(environment: SetupEnvironment) = artifact(InstallState.Outdated)
+
         override suspend fun ensureInstalled(environment: SetupEnvironment) = artifact(InstallState.Current)
-        override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String) =
+
+        override suspend fun ensureRunningCurrent(environment: SetupEnvironment, javaHome: String?) =
             artifact(InstallState.Outdated)
     }
 
@@ -52,15 +53,16 @@ class ServerUpdateWaitingTest {
     fun `a deferred update stops setup at the build service with the waiting state`() = runTest {
         val fakeCli = FakeWslCliExecutor()
         val transport = FakeRemoteTransport(fakeCli = fakeCli)
-        val provisioner = WslToolchainProvisioner(
-            supervisor = FakeDaemonSupervisor(),
-            transport = transport,
-            repository = inMemoryToolchainRepository(),
-            detector = WslEnvironmentDetector(cli = fakeCli),
-            cli = fakeCli,
-            dispatcher = UnconfinedTestDispatcher(testScheduler),
-            serverArtifactPort = OldServiceStillBusy(),
-        )
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = FakeDaemonSupervisor(),
+                transport = transport,
+                repository = inMemoryToolchainRepository(),
+                detector = WslEnvironmentDetector(cli = fakeCli),
+                cli = fakeCli,
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                serverArtifactPort = OldServiceStillBusy(),
+            )
 
         val state = provisioner.verifyEnvironment()
 
@@ -69,12 +71,15 @@ class ServerUpdateWaitingTest {
         assertTrue(server.description.startsWith("Update waiting"), server.description)
         assertTrue("2 active run" in server.description, server.description)
         // Nothing after the service runs against the old version, and the machine is not ready.
-        val later = listOf(
-            SetupStepStage.SYSTEM_DIAGNOSTICS,
-            SetupStepStage.REPO_SYNCHRONIZATION,
-            SetupStepStage.TOOLCHAIN_COMPILATION,
+        val later =
+            listOf(
+                SetupStepStage.SYSTEM_PACKAGES,
+                SetupStepStage.TOOLCHAIN_COMPILATION,
+            )
+        assertTrue(
+            state.steps.filter { it.stage in later }.all { it.status == StepStatus.PENDING },
+            "${state.steps}",
         )
-        assertTrue(state.steps.filter { it.stage in later }.all { it.status == StepStatus.PENDING }, "${state.steps}")
         assertFalse(state.canLaunchWorkspace)
     }
 }

@@ -23,7 +23,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ToolchainPreferencesDataSourceTest {
-
     @Test
     fun testDefaultStateIsEmpty() = runTest {
         val settings = MapSettings()
@@ -42,30 +41,35 @@ class ToolchainPreferencesDataSourceTest {
         val settings = MapSettings()
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
 
-        val targetState = ToolchainPersistenceState(
-            isSetupCompleted = true,
-            lastCompletedTimestamp = 1725800000L,
-            completedStages = setOf("WSL_DETECTION", "SERVER_CONNECTIVITY", "TOOLCHAIN_COMPILATION"),
-            isAvbKeyProvisioned = true,
-            avbKeyPath = "/home/user/LtiRomWorkDir/security/avb/lti_rsa4096.pem",
-            tools = mapOf(
-                "adb" to PersistedToolState(
-                    id = "adb",
-                    binaryName = "adb",
-                    isCompiled = true,
-                    isVerified = true,
-                    version = "34.0.5",
-                    binaryPath = "/home/user/LtiRomTools/bin/adb",
+        val targetState =
+            ToolchainPersistenceState(
+                isSetupCompleted = true,
+                lastCompletedTimestamp = 1725800000L,
+                completedStages = setOf("WSL_DETECTION", "SERVER_CONNECTIVITY", "TOOLCHAIN_COMPILATION"),
+                isAvbKeyProvisioned = true,
+                avbKeyPath = "/home/user/LtiRomWorkDir/security/avb/lti_rsa4096.pem",
+                tools =
+                mapOf(
+                    "adb" to
+                        PersistedToolState(
+                            id = "adb",
+                            binaryName = "adb",
+                            isCompiled = true,
+                            isVerified = true,
+                            version = "34.0.5",
+                            binaryPath = "/home/user/LtiRomTools/bin/adb",
+                        ),
                 ),
-            ),
-            submodules = mapOf(
-                "android-tools" to PersistedSubmoduleState(
-                    name = "android-tools",
-                    isSynced = true,
-                    commit = "2c5e1b7c",
+                submodules =
+                mapOf(
+                    "android-tools" to
+                        PersistedSubmoduleState(
+                            name = "android-tools",
+                            isSynced = true,
+                            commit = "2c5e1b7c",
+                        ),
                 ),
-            ),
-        )
+            )
 
         dataSource.saveToolchainState(targetState)
 
@@ -128,16 +132,16 @@ class ToolchainPreferencesDataSourceTest {
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
 
         dataSource.markStageCompleted("WSL_DETECTION", true)
-        dataSource.markStageCompleted("REPO_SYNCHRONIZATION", true)
+        dataSource.markStageCompleted("SYSTEM_PACKAGES", true)
 
         var state = dataSource.currentToolchainState
         assertTrue(state.isStageCompleted("WSL_DETECTION"))
-        assertTrue(state.isStageCompleted("REPO_SYNCHRONIZATION"))
+        assertTrue(state.isStageCompleted("SYSTEM_PACKAGES"))
         assertFalse(state.isStageCompleted("TOOLCHAIN_COMPILATION"))
 
-        dataSource.markStageCompleted("REPO_SYNCHRONIZATION", false)
+        dataSource.markStageCompleted("SYSTEM_PACKAGES", false)
         state = dataSource.currentToolchainState
-        assertFalse(state.isStageCompleted("REPO_SYNCHRONIZATION"))
+        assertFalse(state.isStageCompleted("SYSTEM_PACKAGES"))
 
         dataSource.clearToolchainState()
         val cleared = dataSource.currentToolchainState
@@ -148,7 +152,10 @@ class ToolchainPreferencesDataSourceTest {
     @Test
     fun testCorruptedJsonRecoversCleanlyWithoutCrash() = runTest {
         val settings = MapSettings()
-        settings.putString(ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE, "{ corrupt_invalid_json: true ...")
+        settings.putString(
+            ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE,
+            "{ corrupt_invalid_json: true ...",
+        )
 
         val dataSource = ToolchainPreferencesDataSource(settings = settings, ioDispatcher = Dispatchers.Unconfined)
         val state = dataSource.currentToolchainState

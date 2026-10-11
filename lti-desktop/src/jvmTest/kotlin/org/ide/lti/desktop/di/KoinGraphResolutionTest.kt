@@ -1,5 +1,8 @@
 package org.ide.lti.desktop.di
 
+import org.ide.lti.core.data.AppShutdownCoordinator
+import org.ide.lti.core.data.setup.check.EnvironmentCheck
+import org.ide.lti.core.data.tools.KotlinToolStoreAdapter
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
@@ -12,12 +15,16 @@ import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
-import org.ide.lti.core.domain.ports.ToolPublicationPort
+import org.ide.lti.core.domain.ports.TerminalLauncherPort
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.tools.AppShutdownPort
+import org.ide.lti.core.domain.tools.ToolManager
+import org.ide.lti.core.domain.tools.ToolStorePort
+import org.ide.lti.core.domain.tools.ToolUsageCoordinator
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase
@@ -31,6 +38,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /**
  * Resolves every definition the desktop app reaches at startup and from the Setup / Workspace
@@ -38,16 +46,16 @@ import kotlin.test.assertNotNull
  * whose constructor has a defaulted parameter Koin then tries (and fails) to resolve.
  */
 class KoinGraphResolutionTest {
-
     private lateinit var koin: Koin
 
     @BeforeTest
     fun setUp() {
         stopKoin()
-        koin = startKoin {
-            modules(toolingModule)
-            modules(KoinModules.allModules)
-        }.koin
+        koin =
+            startKoin {
+                modules(toolingModule)
+                modules(KoinModules.allModules)
+            }.koin
     }
 
     @AfterTest
@@ -59,7 +67,6 @@ class KoinGraphResolutionTest {
     fun portsAndRepositoriesResolve() {
         assertNotNull(koin.get<HostPrerequisitePort>())
         assertNotNull(koin.get<ServerArtifactPort>())
-        assertNotNull(koin.get<ToolPublicationPort>())
         assertNotNull(koin.get<EnvironmentReadinessPort>())
         assertNotNull(koin.get<io.ltirom.tooling.client.wsl.TransportCliExecutor>())
         assertNotNull(koin.get<WorkspaceProvisioningPort>())
@@ -73,28 +80,24 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<PluginCatalogPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.WorkspaceAdmissionPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.SnapshotMaterializerPort>())
-        assertNotNull(koin.get<org.ide.lti.core.domain.setup.ports.ToolchainInstallationPort>())
-        assertNotNull(koin.get<org.ide.lti.core.domain.setup.ports.SourceResolverPort>())
-        assertNotNull(koin.get<org.ide.lti.core.domain.setup.RestoreCoordinatorPort>())
-        assertNotNull(koin.get<org.ide.lti.core.data.setup.install.ArtifactStore>())
-        assertNotNull(koin.get<org.ide.lti.core.data.setup.install.GitCache>())
-        assertNotNull(koin.get<org.ide.lti.core.data.setup.execute.handlers.SwitchToolchainHandler>())
+        val toolStore = koin.get<ToolStorePort>()
+        assertNotNull(toolStore)
+        assertTrue(toolStore is KotlinToolStoreAdapter)
+        assertNotNull(koin.get<ToolManager>())
+        assertNotNull(koin.get<ToolUsageCoordinator>())
+        assertNotNull(koin.get<AppShutdownPort>())
+        assertNotNull(koin.get<AppShutdownCoordinator>())
+        assertNotNull(koin.get<TerminalLauncherPort>())
+        assertNotNull(koin.get<EnvironmentCheck>())
         val planExecutor = koin.get<org.ide.lti.core.data.setup.execute.PlanExecutor>()
-        assertNotNull(planExecutor.switchToolchainHandler, "PlanExecutor must have SwitchToolchainHandler registered in DI")
+        assertNotNull(planExecutor.componentToolsHandler, "PlanExecutor must use the component tools handler")
 
         listOf(
-            "org.ide.lti.core.data.setup.recipe.BuildRecipeDispatcher",
             "org.ide.lti.core.data.setup.check.EnvironmentCheck",
             "org.ide.lti.core.data.setup.check.ServicePreparation",
             "org.ide.lti.core.data.setup.execute.PlanExecutor",
+            "org.ide.lti.core.data.setup.execute.handlers.ComponentToolsHandler",
             "org.ide.lti.core.data.setup.RecoveryCoordinator",
-            "org.ide.lti.core.data.setup.ToolVerifier",
-            "org.ide.lti.core.data.setup.install.InstallationManager",
-            "org.ide.lti.core.data.setup.install.ArtifactStore",
-            "org.ide.lti.core.data.setup.install.GitCache",
-            "org.ide.lti.core.data.setup.source.GitSourceResolver",
-            "org.ide.lti.core.data.setup.execute.ToolchainRestoreCoordinator",
-            "org.ide.lti.core.data.setup.execute.handlers.SwitchToolchainHandler",
         ).forEach { className ->
             val clazz = Class.forName(className).kotlin
             assertNotNull(koin.get<Any>(clazz, qualifier = null, parameters = null), className)
@@ -125,20 +128,21 @@ class KoinGraphResolutionTest {
     }
 
     @Test
-    fun setupViewModelWiredWithRestoreAndSourceResolver() {
+    fun setupViewModelWiredWithComponentTools() {
         val vmClazz = Class.forName("org.ide.lti.feature.setup.SetupViewModel").kotlin
         val vm = koin.get<Any>(vmClazz, qualifier = null, parameters = null)
         assertNotNull(vm, "SetupViewModel must resolve from DI")
     }
 
     private companion object {
-        val SCREEN_VIEW_MODELS = listOf(
-            "org.ide.lti.feature.setup.SetupViewModel",
-            "org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel",
-            "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
-            "org.ide.lti.feature.workspace.panels.run.BuildRunViewModel",
-            "org.ide.lti.feature.configuration.ConfigurationViewModel",
-            "org.ide.lti.feature.plugins.PluginManagerViewModel",
-        )
+        val SCREEN_VIEW_MODELS =
+            listOf(
+                "org.ide.lti.feature.setup.SetupViewModel",
+                "org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel",
+                "org.ide.lti.feature.workspace.creation.CreateWorkspaceViewModel",
+                "org.ide.lti.feature.workspace.panels.run.BuildRunViewModel",
+                "org.ide.lti.feature.configuration.ConfigurationViewModel",
+                "org.ide.lti.feature.plugins.PluginManagerViewModel",
+            )
     }
 }
