@@ -33,7 +33,6 @@ import org.ide.lti.core.domain.tools.RefListing
 import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.domain.tools.ResolvedSourceCheck
 import org.ide.lti.core.domain.tools.ToolManager
-import org.ide.lti.core.domain.tools.sameIdentityAs
 import org.ide.lti.core.model.setup.ToolRef
 
 public enum class PrimaryButtonAction {
@@ -228,12 +227,17 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         recomputePrimaryAction()
     }
 
+    /** While a change runs on the selected group, its version and source choices are frozen until it ends. */
+    private fun choicesLocked(): Boolean = isGroupInstalling(_selectedGroup.value)
+
     public fun selectInstalledVersion(versionId: String) {
+        if (choicesLocked()) return
         _selectedVersionId.value = versionId
         recomputePrimaryAction()
     }
 
     public fun selectTargetVersion(versionId: String?) {
+        if (choicesLocked()) return
         _selectedVersionId.value = versionId
         recomputePrimaryAction()
     }
@@ -303,7 +307,11 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
                     is OperationResult.Failed -> ToolsPresentationMapper.mapError(result.error).message
                     is OperationResult.Interrupted -> result.reason
                     is OperationResult.TrustRequired -> "Trust ${result.url} before using it"
-                    else -> null
+                    is OperationResult.Reused,
+                    is OperationResult.Installed,
+                    is OperationResult.Used,
+                    OperationResult.Cancelled,
+                    -> null
                 }
             if (message != null) _actionError.value = ToolActionError(group, message)
         }
@@ -379,7 +387,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     public val selectedRefType: StateFlow<RefType> = _selectedRefType.asStateFlow()
 
     public fun selectRefType(type: RefType) {
-        if (type == _selectedRefType.value) return
+        if (type == _selectedRefType.value || choicesLocked()) return
         _selectedRefType.value = type
         // What was resolved belongs to the other kind of ref.
         invalidateResolution()
@@ -387,6 +395,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
 
     /** The branch or commit text changed: the commit resolved for the old text must not be installed for the new. */
     public fun refInputChanged() {
+        if (choicesLocked()) return
         if (_resolvedSelection.value != null || _isResolving.value || _resolveError.value != null) {
             invalidateResolution()
         }
@@ -402,7 +411,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     public val customRepoUrl: StateFlow<String?> = _customRepoUrl.asStateFlow()
 
     public fun setCustomRepoUrl(url: String?) {
-        if (url == _customRepoUrl.value) return
+        if (url == _customRepoUrl.value || choicesLocked()) return
         _customRepoUrl.value = url
         invalidateResolution()
         // The tags listed belong to the old repository.
@@ -531,6 +540,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
 
     /** Resolves [ref]; the result is kept only if the group, repository and ref are still the ones asked for. */
     public fun resolveRef(ref: ToolRef, repoUrl: String? = null) {
+        if (choicesLocked()) return
         val group = _selectedGroup.value
         val targetUrl = repoUrl ?: customRepoUrl.value ?: recommendedUrl ?: ""
         val generation = ++resolveGeneration

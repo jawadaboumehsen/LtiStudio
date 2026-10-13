@@ -19,6 +19,31 @@ import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.setup.ToolGroupId
+import kotlin.jvm.JvmName
+
+@JvmName("ToolsTableWithId")
+@Composable
+public fun ToolsTable(
+    rows: List<ToolRowPresentation>,
+    selectedGroupId: ToolGroupId?,
+    onSelectGroup: (ToolGroupId) -> Unit,
+    modifier: Modifier = Modifier,
+    onMoveUp: () -> Unit = {},
+    onMoveDown: () -> Unit = {},
+    onOpenInspector: () -> Unit = {},
+    onCloseInspector: () -> Unit = {},
+) {
+    ToolsTable(
+        rows = rows,
+        selectedGroupId = selectedGroupId?.value,
+        onSelectGroup = onSelectGroup,
+        modifier = modifier,
+        onMoveUp = onMoveUp,
+        onMoveDown = onMoveDown,
+        onOpenInspector = onOpenInspector,
+        onCloseInspector = onCloseInspector,
+    )
+}
 
 @Composable
 public fun ToolsTable(

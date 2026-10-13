@@ -321,10 +321,29 @@ public class ToolManager(
         versionId: String,
         choice: ChoiceUpdate = ChoiceUpdate.Record,
     ): OperationResult {
-        if (state.value.activeOperations.containsKey(group)) {
+        // A switch is quick but not instant (it re-registers the tools); while it runs the page shows it and
+        // refuses another change to the group, exactly as for an install. It has no percentage to report.
+        val switching =
+            ToolOperation(
+                opId = "use-${group.value}",
+                group = group,
+                kind = OperationKind.Use,
+                phase = OperationPhase.Switching,
+            )
+        var claimed = false
+        _state.update { s ->
+            claimed = group !in s.activeOperations
+            if (claimed) s.copy(activeOperations = s.activeOperations + (group to switching)) else s
+        }
+        if (!claimed) {
             return OperationResult.Failed(ToolError.Busy("Operation in progress for group ${group.value}"), "Busy")
         }
-        val portRes = port.use(group, versionId, choice)
+        val portRes =
+            try {
+                port.use(group, versionId, choice)
+            } finally {
+                _state.update { s -> s.copy(activeOperations = s.activeOperations - group) }
+            }
         val res =
             if (portRes.isSuccess) {
                 OperationResult.Used(versionId)
@@ -581,6 +600,7 @@ public class ToolManager(
                 source = source,
                 phase = OperationPhase.Fetching,
                 serverRunId = opId,
+                percent = 0,
             )
         // Claimed atomically: auto-tools reaching a group the user is already installing (or a double click) used
         // to fail in the store and then, in `finally`, erase the running operation from the UI state.
@@ -606,15 +626,23 @@ public class ToolManager(
                                 source = source,
                                 phase = OperationPhase.Building,
                                 serverRunId = ev.runId,
+                                percent = 0,
                             )
                         _state.update { s -> s.copy(activeOperations = s.activeOperations + (group.id to op)) }
+                    }
+                    is InstallEvent.Phase -> {
+                        _state.update { state ->
+                            val operation = state.activeOperations[group.id] ?: return@update state
+                            val moved = OperationProgress.enter(operation, ev.phase)
+                            state.copy(activeOperations = state.activeOperations + (group.id to moved))
+                        }
                     }
                     is InstallEvent.Output -> {
                         _state.update { state ->
                             val operation = state.activeOperations[group.id] ?: return@update state
                             val newLines = ev.text.lineSequence().filter { it.isNotBlank() }.toList()
                             val lines = (operation.outputTail + newLines).takeLast(MAX_OPERATION_LOG_LINES)
-                            val updatedOp = operation.copy(outputTail = lines)
+                            val updatedOp = OperationProgress.onOutput(operation.copy(outputTail = lines), ev.text)
                             state.copy(activeOperations = state.activeOperations + (group.id to updatedOp))
                         }
                     }
@@ -655,15 +683,6 @@ public class ToolManager(
 }
 
 private val COMMIT_SHA = Regex("[0-9a-f]{40}")
-
-/** Whether [other] is the same code: same repository and commits (a ref is only a label), or same release entry. */
-public fun ResolvedSource.sameIdentityAs(other: ResolvedSource): Boolean = when {
-    this is ResolvedSource.Git && other is ResolvedSource.Git ->
-        repoUrl == other.repoUrl && commit == other.commit && submodules == other.submodules
-    this is ResolvedSource.Release && other is ResolvedSource.Release ->
-        version == other.version && url == other.url && sha256 == other.sha256 && member == other.member
-    else -> false
-}
 
 /** A commit is a 40-hex id; anything else (a branch name, "main") can change under the version that names it. */
 internal fun ResolvedSource.Git.hasImmutableCommits(): Boolean =

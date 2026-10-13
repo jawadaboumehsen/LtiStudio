@@ -17,15 +17,25 @@ public data class RecipeSummary(val type: String, val revision: Int)
 public data class InstalledOutput(val file: String, val size: Long, val mode: String)
 
 public sealed interface ResolvedSource {
+    /** Whether [other] is the same code: same repository and commits, or same release entry. */
+    public fun sameIdentityAs(other: ResolvedSource): Boolean
+
     public data class Git(
         val repoUrl: String,
         val ref: ToolRef,
         val commit: String,
         val submodules: Map<String, String> = emptyMap(),
-    ) : ResolvedSource
+    ) : ResolvedSource {
+        override fun sameIdentityAs(other: ResolvedSource): Boolean =
+            other is Git && repoUrl == other.repoUrl && commit == other.commit && submodules == other.submodules
+    }
 
     public data class Release(val version: String, val url: String, val sha256: String, val member: String) :
-        ResolvedSource
+        ResolvedSource {
+        override fun sameIdentityAs(other: ResolvedSource): Boolean =
+            other is Release && version == other.version && url == other.url && sha256 == other.sha256 &&
+                member == other.member
+    }
 }
 
 public data class InstalledVersion(
@@ -175,6 +185,8 @@ public data class ToolOperation(
     /** Bounded live output tail for the setup/tools console; never a fabricated progress message. */
     val outputTail: List<String> = emptyList(),
     val result: OperationResult? = null,
+    /** 0..100 from what the install really reported (see [OperationProgress]); null when it cannot be measured. */
+    val percent: Int? = null,
 )
 
 public data class GroupState(

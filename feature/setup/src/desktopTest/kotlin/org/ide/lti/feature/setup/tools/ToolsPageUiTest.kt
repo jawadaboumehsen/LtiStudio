@@ -24,10 +24,12 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
@@ -227,6 +229,41 @@ class ToolsPageUiTest {
     }
 
     @Test
+    fun pressingEscapeWhileInspectorIsFocusedClosesInspector() = runDesktopComposeUiTest {
+        val port = FakePort()
+        val vAndroid = installedVersion(ToolGroupId("android-tools"), "sixteen-f9bef94", "sixteen")
+        port.inventory =
+            ToolInventory(
+                mapOf(
+                    ToolGroupId("android-tools") to
+                        GroupState(ToolGroupId("android-tools"), vAndroid, null, listOf(vAndroid)),
+                ),
+            )
+        val manager = ToolManager(port)
+        runBlocking { manager.refresh() }
+        val state = ToolsPageState(manager, CoroutineScope(Dispatchers.Unconfined))
+
+        setContent {
+            LtiTheme {
+                val isInspectorOpen by state.isInspectorOpen.collectAsState()
+                if (isInspectorOpen) {
+                    ToolInspector(state = state)
+                }
+            }
+        }
+
+        assertTrue(state.isInspectorOpen.value)
+        val inspector = onNodeWithContentDescription("Inspector for android-tools")
+        inspector.assertIsDisplayed()
+        inspector.assertIsFocused()
+
+        inspector.performKeyInput {
+            pressKey(Key.Escape)
+        }
+        assertFalse(state.isInspectorOpen.value)
+    }
+
+    @Test
     fun inspectorIsBoundedSiblingWithoutInfiniteHeightCrashInScrollingPage() = runDesktopComposeUiTest {
         val port = FakePort()
         val vAndroid = installedVersion(ToolGroupId("android-tools"), "sixteen-f9bef94", "sixteen")
@@ -388,6 +425,7 @@ class ToolsPageUiTest {
                 group = group,
                 kind = OperationKind.Install,
                 phase = OperationPhase.Building,
+                percent = 46,
             )
         port.inventory =
             ToolInventory(
@@ -406,7 +444,9 @@ class ToolsPageUiTest {
             }
         }
 
-        onNodeWithText("Installing · Building").assertIsDisplayed()
+        onNodeWithText("Step 2 of 5 · Building").assertIsDisplayed()
+        onNodeWithText("46%").assertIsDisplayed()
+        onNodeWithText("Cancel").assertIsDisplayed()
         onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
     }
 }

@@ -520,6 +520,79 @@ class ToolsPageStateTest {
         assertEquals("Another change is running for this group", state.repairDisabledReason())
     }
 
+    @Test
+    fun `while a change runs the version and source choices are frozen until it ends`() = runTest {
+        val port = FakePort()
+        val group = ToolGroupId("erofs-utils")
+        val vCurrent = installedVersion(group, "v1.8.9", "v1.8.9")
+        val vOther = installedVersion(group, "v1.8.10", "v1.8.10")
+        val running =
+            ToolOperation(
+                opId = "op-build",
+                group = group,
+                kind = OperationKind.Install,
+                phase = OperationPhase.Building,
+                percent = 40,
+            )
+        port.inventory =
+            ToolInventory(
+                mapOf(group to GroupState(group, vCurrent, null, listOf(vCurrent, vOther), operation = running)),
+            )
+        val manager = ToolManager(port)
+        manager.refresh()
+        val state = ToolsPageState(manager, backgroundScope)
+        advanceUntilIdle()
+        state.selectGroup(group)
+
+        state.selectTargetVersion("v1.8.10")
+        state.selectInstalledVersion("v1.8.10")
+        state.selectRefType(RefType.Branch)
+        state.setCustomRepoUrl("https://fork.example/erofs-utils.git")
+        state.resolveRef(ToolRef.Tag("v1.8.10"))
+        advanceUntilIdle()
+
+        assertEquals("v1.8.9", state.selectedVersionId.value, "the target does not move")
+        assertEquals(RefType.Tag, state.selectedRefType.value)
+        assertNull(state.customRepoUrl.value)
+        assertFalse(state.isResolving.value)
+        assertNull(state.resolvedSelection.value)
+
+        port.inventory = ToolInventory(mapOf(group to GroupState(group, vCurrent, null, listOf(vCurrent, vOther))))
+        state.refresh()
+        advanceUntilIdle()
+        state.selectTargetVersion("v1.8.10")
+        assertEquals("v1.8.10", state.selectedVersionId.value, "free again once it has ended")
+    }
+
+    @Test
+    fun `the running change is shown with its step, percentage and latest line`() {
+        val install =
+            ToolOperation(
+                opId = "o",
+                group = erofs,
+                kind = OperationKind.Install,
+                phase = OperationPhase.Building,
+                outputTail = listOf("first", "[ 40%] Building CXX object a.o", ""),
+                percent = 46,
+            )
+
+        val shown = ToolsPresentationMapper.mapProgress(install)
+
+        assertEquals("Installing", shown.title)
+        assertEquals("Step 2 of 5 · Building", shown.stepLabel)
+        assertEquals(46, shown.percent)
+        assertEquals("46%", shown.percentLabel)
+        assertEquals("[ 40%] Building CXX object a.o", shown.latestLine)
+        assertTrue(shown.canCancel)
+
+        val switching = ToolsPresentationMapper.mapProgress(
+            ToolOperation("u", erofs, OperationKind.Use, null, OperationPhase.Switching),
+        )
+        assertEquals("Switching version", switching.title)
+        assertNull(switching.percent, "a switch has no percentage")
+        assertFalse(switching.canCancel, "a switch cannot be stopped half way")
+    }
+
     private val erofs = ToolGroupId("erofs-utils")
 
     private suspend fun kotlinx.coroutines.test.TestScope.pageWithInstalledV1(port: FakePort): ToolsPageState {

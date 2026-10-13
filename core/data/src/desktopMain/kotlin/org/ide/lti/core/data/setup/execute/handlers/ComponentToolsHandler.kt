@@ -118,6 +118,7 @@ public class ComponentToolsHandler(private val manager: ToolManager) :
     private fun ExecutionContext.reportEvent(event: InstallEvent) {
         when (event) {
             is InstallEvent.Started -> recordRunStarted(SetupStepStage.TOOLCHAIN_COMPILATION, event.runId)
+            is InstallEvent.Phase -> Unit
             is InstallEvent.Output -> appendLog(event.text)
             is InstallEvent.Finished -> appendLog("[Tools] ${event.result}")
         }

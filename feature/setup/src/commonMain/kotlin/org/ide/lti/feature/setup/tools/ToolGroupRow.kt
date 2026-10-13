@@ -161,7 +161,10 @@ public fun ToolGroupRow(
                     ToolRowStatusKind.Failed -> MaterialTheme.colorScheme.error
                     ToolRowStatusKind.NeedsRepair -> MaterialTheme.colorScheme.error
                     ToolRowStatusKind.Installing -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.outline
+                    ToolRowStatusKind.NotInstalled,
+                    ToolRowStatusKind.Unknown,
+                    ToolRowStatusKind.Interrupted,
+                    -> MaterialTheme.colorScheme.outline
                 },
                 modifier = Modifier.weight(1f),
                 maxLines = 1,

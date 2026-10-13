@@ -108,7 +108,7 @@ fun ToolsStepContent(
                 // Unified Tools Table (bounded LazyColumn)
                 ToolsTable(
                     rows = rows,
-                    selectedGroupId = selectedGroup.value,
+                    selectedGroupId = selectedGroup,
                     onSelectGroup = { toolsPageState.selectGroup(it) },
                     onMoveUp = { toolsPageState.selectPreviousGroup() },
                     onMoveDown = { toolsPageState.selectNextGroup() },

@@ -47,6 +47,9 @@ public data class InstallRequest(
 public sealed interface InstallEvent {
     public data class Started(val runId: String) : InstallEvent
 
+    /** The install moved on to [phase]; sent by the store as it really gets there. */
+    public data class Phase(val phase: OperationPhase) : InstallEvent
+
     public data class Output(val text: String, val isError: Boolean = false) : InstallEvent
 
     public data class Finished(val result: OperationResult) : InstallEvent

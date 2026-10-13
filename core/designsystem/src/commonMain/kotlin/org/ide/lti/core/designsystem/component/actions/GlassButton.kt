@@ -9,7 +9,9 @@
  */
 package org.ide.lti.core.designsystem.component.actions
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +53,7 @@ import org.ide.lti.core.designsystem.theme.HazeShape
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.LetterSpacing
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
 /**
@@ -117,6 +120,7 @@ fun GlassButton(
 ) {
     val colors = MaterialTheme.colorScheme
     val interactionSource = remember { MutableInteractionSource() }
+    val effectsEnabled = GlassTheme.effectsEnabled
 
     Row(
         modifier = modifier
@@ -124,7 +128,6 @@ fun GlassButton(
             .then(
                 if (variant != GlassButtonVariant.Text) {
                     val theme = GlassTheme.appTheme
-                    val effectsEnabled = GlassTheme.effectsEnabled
                     val surfaceColor = backgroundColor(variant, colors)
                     val buttonTint = tint(variant, colors, enabled)
                     if (effectsEnabled) {
@@ -157,7 +160,26 @@ fun GlassButton(
                             interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
                         )
                     } else {
-                        Modifier.background(surfaceColor, shape = shape)
+                        val solidBorder = if (enabled) {
+                            when (variant) {
+                                GlassButtonVariant.Primary ->
+                                    Modifier.border(StrokeWidth.Standard, colors.primary, shape)
+                                GlassButtonVariant.Secondary, GlassButtonVariant.Standard ->
+                                    Modifier.border(StrokeWidth.Standard, colors.outlineVariant, shape)
+                                GlassButtonVariant.Text -> Modifier
+                            }
+                        } else {
+                            when (variant) {
+                                GlassButtonVariant.Primary, GlassButtonVariant.Secondary, GlassButtonVariant.Standard ->
+                                    Modifier.border(
+                                        StrokeWidth.Standard,
+                                        colors.outlineVariant.copy(alpha = AlphaTokens.Glow),
+                                        shape,
+                                    )
+                                GlassButtonVariant.Text -> Modifier
+                            }
+                        }
+                        Modifier.background(surfaceColor, shape = shape).then(solidBorder)
                     }
                 } else {
                     Modifier
@@ -167,7 +189,7 @@ fun GlassButton(
             .clickable(
                 enabled = enabled,
                 interactionSource = interactionSource,
-                indication = null,
+                indication = if (effectsEnabled) null else LocalIndication.current,
                 role = Role.Button,
                 onClick = onClick,
             )

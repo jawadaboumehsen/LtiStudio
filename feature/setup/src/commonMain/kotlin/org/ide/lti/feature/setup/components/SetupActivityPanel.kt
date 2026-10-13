@@ -194,9 +194,17 @@ fun SetupActivityPanel(
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
+            .then(
+                if (!isExpanded) {
+                    Modifier
+                        .clip(GlassShapes.Card)
+                        .clickable(onClick = { isExpanded = true })
+                } else {
+                    Modifier
+                },
+            )
             .semantics { paneTitle = title },
-        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentPadding = Spacing.CardPadding,
+        contentPadding = if (isExpanded) Spacing.CardPadding else Spacing.Small,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium)) {
             ActivityPanelHeader(
@@ -276,9 +284,16 @@ private fun ActivityPanelHeader(
     FlowRow(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.Small)
-            .clickable(onClick = onToggleExpand)
-            .padding(vertical = Spacing.ExtraSmall),
+            .then(
+                if (isExpanded) {
+                    Modifier
+                        .clip(GlassShapes.Small)
+                        .clickable(onClick = onToggleExpand)
+                        .padding(vertical = Spacing.ExtraSmall)
+                } else {
+                    Modifier.padding(horizontal = Spacing.Medium, vertical = Spacing.Small)
+                },
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {

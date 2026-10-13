@@ -57,6 +57,7 @@ import org.ide.lti.core.domain.tools.InitInfo
 import org.ide.lti.core.domain.tools.InstallEvent
 import org.ide.lti.core.domain.tools.InstallRequest
 import org.ide.lti.core.domain.tools.InterruptedOp
+import org.ide.lti.core.domain.tools.OperationPhase
 import org.ide.lti.core.domain.tools.OperationResult
 import org.ide.lti.core.domain.tools.PinnedTools
 import org.ide.lti.core.domain.tools.RefListing
@@ -537,6 +538,7 @@ public class KotlinToolStoreAdapter(
         currentCoroutineContext()[Job]?.let { activeJobs[request.group] = it }
         try {
             emit(InstallEvent.Started(opId))
+            emit(InstallEvent.Phase(OperationPhase.Fetching))
             val reqSource = request.source
             if (reqSource is ResolvedSource.Git) {
                 validateRepoUrl(reqSource.repoUrl)
@@ -766,6 +768,7 @@ public class KotlinToolStoreAdapter(
 
             ensureNotCancelled(request.group)
             // Recipe execution
+            emit(InstallEvent.Phase(OperationPhase.Building))
             emit(InstallEvent.Output("Running build recipe: ${request.recipe::class.simpleName}..."))
             recipeRunner.executeRecipe(
                 srcDir = srcDir,
@@ -780,6 +783,7 @@ public class KotlinToolStoreAdapter(
 
             ensureNotCancelled(request.group)
             // Verification of outputs & probes
+            emit(InstallEvent.Phase(OperationPhase.Verifying))
             emit(InstallEvent.Output("Verifying build outputs..."))
             for (out in request.outputs) {
                 emit(InstallEvent.Output("Running probe for ${out.toolId}: ${out.probe.args.joinToString(" ")}"))
@@ -825,6 +829,7 @@ public class KotlinToolStoreAdapter(
             exec(listOf("sh", "-c", writeVerScript)).getOrThrow()
 
             // Publish out/ to bin/<group>/<versionId>
+            emit(InstallEvent.Phase(OperationPhase.Publishing))
             emit(InstallEvent.Output("Publishing version $versionId..."))
             val publishScript =
                 KotlinStoreLayout.buildPublishScript(
@@ -839,6 +844,7 @@ public class KotlinToolStoreAdapter(
                 exec(listOf("sh", "-c", publishScript)).getOrThrow()
                 if (request.select) {
                     ensureNotCancelled(request.group)
+                    emit(InstallEvent.Phase(OperationPhase.Switching))
                     useInternal(request.group, versionId, request.choice).getOrThrow()
                 }
             }

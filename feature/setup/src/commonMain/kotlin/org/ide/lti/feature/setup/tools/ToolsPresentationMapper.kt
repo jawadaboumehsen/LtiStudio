@@ -12,9 +12,11 @@ package org.ide.lti.feature.setup.tools
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.tools.GroupState
 import org.ide.lti.core.domain.tools.GroupStatus
+import org.ide.lti.core.domain.tools.OperationKind
 import org.ide.lti.core.domain.tools.OperationPhase
 import org.ide.lti.core.domain.tools.SetupToolsSummary
 import org.ide.lti.core.domain.tools.ToolError
+import org.ide.lti.core.domain.tools.ToolOperation
 
 public enum class ToolRowStatusKind {
     NotInstalled,
@@ -37,6 +39,17 @@ public data class ToolRowPresentation(
     val actionLabel: String? = null,
 )
 
+/** What the inspector shows while a change runs: where it is, how far, the latest line, and whether it can stop. */
+public data class OperationProgressPresentation(
+    val title: String,
+    val stepLabel: String?,
+    /** 0..100, or null when it cannot be measured (the bar then runs indeterminate). */
+    val percent: Int?,
+    val percentLabel: String?,
+    val latestLine: String?,
+    val canCancel: Boolean,
+)
+
 public data class ToolsSummaryPresentation(
     val summaryText: String,
     val isComplete: Boolean,
@@ -47,6 +60,39 @@ public data class ToolsSummaryPresentation(
 public data class ToolErrorPresentation(val message: String, val nextAction: String?)
 
 public object ToolsPresentationMapper {
+    private val installSteps = OperationPhase.entries
+
+    /** The running change [op] as the inspector shows it. An install has five phases; a switch has none to count. */
+    public fun mapProgress(op: ToolOperation): OperationProgressPresentation {
+        val isSwitch = op.kind == OperationKind.Use
+        val title =
+            when (op.kind) {
+                OperationKind.Use -> "Switching version"
+                OperationKind.Repair -> "Repairing"
+                OperationKind.Remove -> "Removing"
+                OperationKind.Install -> "Installing"
+            }
+        val phaseName =
+            when (op.phase) {
+                OperationPhase.Fetching -> "Fetching source"
+                OperationPhase.Building -> "Building"
+                OperationPhase.Verifying -> "Verifying"
+                OperationPhase.Publishing -> "Publishing"
+                OperationPhase.Switching -> "Switching"
+            }
+        val number = installSteps.indexOf(op.phase) + 1
+        val step = if (isSwitch) phaseName else "Step $number of ${installSteps.size} · $phaseName"
+        return OperationProgressPresentation(
+            title = title,
+            stepLabel = step,
+            percent = op.percent,
+            percentLabel = op.percent?.let { "$it%" },
+            latestLine = op.outputTail.lastOrNull { it.isNotBlank() }?.trim(),
+            // A switch re-points a link and re-registers the tools in one go; there is nothing to stop half way.
+            canCancel = !isSwitch,
+        )
+    }
+
     @Suppress("CyclomaticComplexMethod")
     public fun mapRow(state: GroupState, isConnected: Boolean = true): ToolRowPresentation {
         val groupDef = ToolGroupCatalog.group(state.group)
@@ -75,20 +121,28 @@ public object ToolsPresentationMapper {
                             OperationPhase.Publishing -> "Publishing…"
                             OperationPhase.Switching -> "Switching…"
                         }
-                    RowStatusInfo("Installing", ToolRowStatusKind.Installing, phase, true, null)
+                    val shown = op.percent?.let { "$phase $it%" } ?: phase
+                    RowStatusInfo("Installing", ToolRowStatusKind.Installing, shown, true, null)
                 }
-                state.interrupted != null || state.status == GroupStatus.Interrupted ->
+                state.interrupted != null ->
                     RowStatusInfo("Interrupted", ToolRowStatusKind.Interrupted, null, false, "Retry")
-                state.status == GroupStatus.Ready ->
-                    RowStatusInfo("Ready", ToolRowStatusKind.Ready, null, false, null)
-                state.status == GroupStatus.NeedsRepair ->
-                    RowStatusInfo("Needs repair", ToolRowStatusKind.NeedsRepair, null, false, "Repair")
-                state.status == GroupStatus.Failed ->
-                    RowStatusInfo("Failed", ToolRowStatusKind.Failed, null, false, null)
-                state.status == GroupStatus.NotInstalled ->
-                    RowStatusInfo("Not installed", ToolRowStatusKind.NotInstalled, null, false, null)
                 else ->
-                    RowStatusInfo("Unknown", ToolRowStatusKind.Unknown, null, false, "Reconnect")
+                    when (state.status) {
+                        GroupStatus.Ready ->
+                            RowStatusInfo("Ready", ToolRowStatusKind.Ready, null, false, null)
+                        GroupStatus.NeedsRepair ->
+                            RowStatusInfo("Needs repair", ToolRowStatusKind.NeedsRepair, null, false, "Repair")
+                        GroupStatus.Failed ->
+                            RowStatusInfo("Failed", ToolRowStatusKind.Failed, null, false, null)
+                        GroupStatus.NotInstalled ->
+                            RowStatusInfo("Not installed", ToolRowStatusKind.NotInstalled, null, false, null)
+                        GroupStatus.Interrupted ->
+                            RowStatusInfo("Interrupted", ToolRowStatusKind.Interrupted, null, false, "Retry")
+                        GroupStatus.Installing ->
+                            RowStatusInfo("Installing", ToolRowStatusKind.Installing, null, true, null)
+                        GroupStatus.Unknown ->
+                            RowStatusInfo("Unknown", ToolRowStatusKind.Unknown, null, false, "Reconnect")
+                    }
             }
 
         return ToolRowPresentation(
