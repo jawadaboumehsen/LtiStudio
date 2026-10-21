@@ -101,3 +101,4 @@ include(":tool:codegen")
 
 include(":sdk:patch-mod")
 include(":sdk:patch-mod-runtime")
+include(":sdk:patch-mod-hooks")

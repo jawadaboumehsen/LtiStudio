@@ -251,7 +251,7 @@ object PluginPlanValidator {
                 )
             }
             val picksNothing = match.name == null && match.parameters == null && match.returns == null &&
-                match.strings.isEmpty()
+                match.strings.isEmpty() && match.references.isEmpty() && match.opcodes.isEmpty()
             if (picksNothing) {
                 error(
                     operationId,

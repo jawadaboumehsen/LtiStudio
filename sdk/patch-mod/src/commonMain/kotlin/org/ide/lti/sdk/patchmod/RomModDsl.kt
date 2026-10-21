@@ -405,6 +405,8 @@ class ApkJarScope {
             parameters = signature?.substringAfter('(')?.substringBefore(')') ?: scope.parameters,
             returns = signature?.substringAfter(')') ?: scope.returns,
             strings = scope.strings,
+            references = scope.references,
+            opcodes = scope.opcodes,
         )
         edit(classDescriptor, "", scope.hunks.joinToString("\n"), match)
     }
@@ -472,17 +474,21 @@ open class TextChangeScope {
 /**
  * Changes inside one method. Its lines are compared trimmed, and blank lines and `.line` debug lines are ignored, so
  * only the instructions must match. An anchor must occur once in the method. `@{name}` in an anchor or replaced line
- * stands for any register (`v3`, `p1`); in inserted text it is written as the register it matched:
+ * stands for any register (`v3`, `p1`); in inserted text it is written as the register it matched. `@{*}` stands for
+ * any text and is not captured, and a `...` line skips any number of lines between two anchor lines:
  *
  * ```
  * insertAfter("invoke-virtual {@{app}, @{ctx}}, Landroid/app/Application;->attach(Landroid/content/Context;)V",
  *     "invoke-static {@{ctx}}, Lio/lti/Hooks;->onAttach(Landroid/content/Context;)V")
+ * insertAfter("const-string @{*}, \"ro.debuggable\"\n...\nmove-result @{res}", "const/4 @{res}, 0x0")
  * ```
  */
 class MethodScope internal constructor() : TextChangeScope() {
     internal var parameters: String? = null
     internal var returns: String? = null
     internal val strings = mutableListOf<String>()
+    internal val references = mutableListOf<String>()
+    internal val opcodes = mutableListOf<String>()
 
     /** The method's parameter types, as descriptors (`"I"`, `"Ljava/lang/String;"`); none for `()`. */
     fun parameters(vararg types: String) {
@@ -497,6 +503,19 @@ class MethodScope internal constructor() : TextChangeScope() {
     /** Strings the method loads with `const-string`, as written in smali (escaped). */
     fun strings(vararg values: String) {
         strings += values
+    }
+
+    /**
+     * Methods, fields or types the method's instructions use, whole or in part:
+     * `"Landroid/app/Instrumentation;->newApplication"`, `"Landroid/os/Build;->FINGERPRINT:"`.
+     */
+    fun references(vararg values: String) {
+        references += values
+    }
+
+    /** A run of consecutive instructions in the method, by opcode (`"const-string"`, `"*"` for any one). */
+    fun opcodes(vararg values: String) {
+        opcodes += values
     }
 }
 

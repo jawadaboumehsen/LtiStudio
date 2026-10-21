@@ -15,14 +15,9 @@ import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import org.ide.lti.core.domain.plugin.PayloadCompilationReceipt
-import org.ide.lti.core.domain.plugin.PayloadCompilationRequest
-import org.ide.lti.core.domain.plugin.PayloadCompilationResult
-import org.ide.lti.core.domain.plugin.PayloadCompilerPort
 import org.ide.lti.core.domain.plugin.PluginPackageCodec
 import org.ide.lti.core.domain.plugin.PluginPlanResolver
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
@@ -31,7 +26,6 @@ import org.ide.lti.core.domain.plugin.ResolutionResult
 import org.ide.lti.sdk.patchmod.ModCheck
 import org.ide.lti.sdk.patchmod.PackageWriter
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
-import org.ide.lti.sdk.patchmod.runtime.PayloadCompilerAdapter
 import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.File
 import java.nio.file.Path
@@ -46,7 +40,6 @@ class PatchModCli : CliktCommand(name = "patchmod") {
 
     init {
         subcommands(
-            CompileModPayloadCommand(),
             GenerateModPlanCommand(),
             ValidateModCommand(),
             TestModCommand(),
@@ -57,16 +50,6 @@ class PatchModCli : CliktCommand(name = "patchmod") {
     }
 
     override fun run() = Unit
-}
-
-class CompileModPayloadCommand : CliktCommand(name = "compileModPayload") {
-    override fun help(context: Context): String = "Compile author hook Kotlin sources into smali payloads"
-    private val project by option("--project", help = "Author project directory").default(".")
-
-    override fun run() {
-        val result = PatchModTool.compileModPayload(File(project))
-        handleResult(result)
-    }
 }
 
 class GenerateModPlanCommand : CliktCommand(name = "generateModPlan") {
@@ -181,13 +164,6 @@ data class ModScenario(
     val expectResolved: Boolean,
 )
 
-@Serializable
-data class PayloadConfig(
-    val minRuntimeApi: Int = 34,
-    val frameworkStubJars: List<String> = emptyList(),
-    val dependencyJars: List<String> = emptyList(),
-)
-
 @Suppress("ReturnCount")
 object PatchModTool {
 
@@ -195,97 +171,6 @@ object PatchModTool {
         prettyPrint = true
         encodeDefaults = true
         ignoreUnknownKeys = true
-    }
-
-    @Suppress("ReturnCount")
-    fun compileModPayload(projectDir: File, compiler: PayloadCompilerPort = PayloadCompilerAdapter()): CliResult {
-        val payloadFile = File(projectDir, "payload.json")
-        if (!payloadFile.exists()) {
-            return CliResult.Success("no payload to compile")
-        }
-
-        val config = try {
-            json.decodeFromString(PayloadConfig.serializer(), payloadFile.readText())
-        } catch (e: Exception) {
-            val buildDir = File(projectDir, "build").apply { mkdirs() }
-            val diag = listOf(
-                DiagnosticEntry(
-                    code = "INVALID_PAYLOAD_CONFIG",
-                    objectId = null,
-                    fieldPath = "payload.json",
-                    severity = "ERROR",
-                    message = e.message ?: "Failed to parse payload.json",
-                ),
-            )
-            writeDiagnostics(buildDir, diag)
-            return CliResult.Failure(
-                message = "ERROR compileModPayload failed to parse payload.json: ${e.message}",
-                errors = listOf("ERROR INVALID_PAYLOAD_CONFIG payload.json: ${e.message}"),
-            )
-        }
-
-        val hooksDir = File(projectDir, "hooks")
-        val sourceFiles = if (hooksDir.exists()) {
-            hooksDir.walkTopDown()
-                .filter { it.isFile && it.extension == "kt" }
-                .map { it.absolutePath }
-                .toList()
-        } else {
-            emptyList()
-        }
-
-        val outSmaliDir = File(projectDir, "assets/payload")
-        val request = PayloadCompilationRequest(
-            sourceFiles = sourceFiles,
-            frameworkStubJars = config.frameworkStubJars.map { resolveRel(projectDir, it) },
-            dependencyJars = config.dependencyJars.map { resolveRel(projectDir, it) },
-            minRuntimeApi = config.minRuntimeApi,
-            outputSmaliDir = outSmaliDir.absolutePath,
-        )
-
-        val result = runBlocking { compiler.compile(request) }
-        return when (result) {
-            is PayloadCompilationResult.Failed -> {
-                val buildDir = File(projectDir, "build").apply { mkdirs() }
-                val diagnostics = result.report.errors.map {
-                    DiagnosticEntry(
-                        code = it.code,
-                        objectId = it.objectId,
-                        fieldPath = it.fieldPath,
-                        severity = it.severity.name,
-                        message = it.message,
-                    )
-                }
-                writeDiagnostics(buildDir, diagnostics)
-                val errorLines = diagnostics.map {
-                    "ERROR ${it.code} ${it.objectId ?: ""}.${it.fieldPath}: ${it.message}"
-                }
-                val primaryCode = result.report.errors.firstOrNull()?.code ?: "COMPILATION_FAILED"
-                CliResult.Failure(
-                    message = "ERROR compileModPayload failed with $primaryCode",
-                    errors = errorLines,
-                )
-            }
-            is PayloadCompilationResult.Compiled -> {
-                val buildDir = File(projectDir, "build").apply { mkdirs() }
-                val receiptFile = File(buildDir, "payload-receipt.json")
-                receiptFile.writeText(
-                    json.encodeToString(PayloadCompilationReceipt.serializer(), result.receipt) + "\n",
-                )
-                CliResult.Success(
-                    message = "OK compileModPayload ${result.smaliFiles.size} smali file(s) generated",
-                    details = mapOf(
-                        "receipt" to result.receipt,
-                        "smaliFiles" to result.smaliFiles,
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun resolveRel(projectDir: File, path: String): String {
-        val f = File(path)
-        return if (f.isAbsolute) f.absolutePath else File(projectDir, path).absolutePath
     }
 
     @Suppress("ReturnCount")

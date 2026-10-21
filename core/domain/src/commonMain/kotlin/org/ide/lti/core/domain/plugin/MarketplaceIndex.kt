@@ -22,6 +22,8 @@ data class IndexEntry(
     val contentDigest: String,
     val signatureIdentity: String?,
     val revoked: Boolean = false,
+    /** The sha256 of the file at [packageUrl], when the source lists it (a GitHub release asset's digest). */
+    val fileSha256: String? = null,
 )
 
 @Serializable
@@ -44,6 +46,13 @@ sealed interface IndexFailure {
     data class ServerError(val code: Int) : IndexFailure
 }
 
+/**
+ * A marketplace source: an index document over HTTPS, or a GitHub repository (`https://github.com/owner/repo`) whose
+ * latest release's `.lti-mod.zip` assets are its entries.
+ */
 interface MarketplaceIndexPort {
     suspend fun fetch(source: IndexSource, allowCache: Boolean): IndexFetchResult
+
+    /** The source fetched last, so the marketplace opens on it again. */
+    suspend fun lastSource(): IndexSource? = null
 }

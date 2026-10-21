@@ -30,9 +30,9 @@ dependencies {
 val patchmodCliJar = providers.gradleProperty("patchmodCliJar")
     .orElse(layout.projectDirectory.file("libs/patchmod-cli.jar").asFile.absolutePath)
 
-// The seven reserved author task names registered as JavaExec wrappers shelling out to PatchMod CLI
+// The reserved author task names registered as JavaExec wrappers shelling out to PatchMod CLI (compileModPayload
+// is below: it runs the separate patch-mod-hooks jar)
 listOf(
-    "compileModPayload" to "Compile author hook Kotlin sources into smali payloads",
     "generateModPlan" to "Generate and validate the author mod plan",
     "validateMod" to "Validate the author mod plan and manifest",
     "testMod" to "Run the author scenarios against the resolved plan",
@@ -57,4 +57,18 @@ listOf(
             },
         )
     }
+}
+
+// Java hooks (hooks/**/*.java) compile with the separate patch-mod-hooks jar, so the SDK itself carries no
+// bytecode libraries.
+val patchmodHooksJar = providers.gradleProperty("patchmodHooksJar")
+    .orElse(layout.projectDirectory.file("libs/patchmod-hooks.jar").asFile.absolutePath)
+tasks.register<JavaExec>("compileModPayload") {
+    group = "patchmod"
+    description = "Compile the Java hooks under hooks/ into smali payloads"
+    classpath = files(patchmodHooksJar)
+    mainClass.set("org.ide.lti.sdk.patchmod.hooks.HookCompilerCliKt")
+    argumentProviders.add(
+        CommandLineArgumentProvider { listOf("compileModPayload", "--project", layout.projectDirectory.asFile.absolutePath) },
+    )
 }

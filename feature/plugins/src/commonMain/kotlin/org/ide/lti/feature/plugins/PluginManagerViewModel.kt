@@ -109,6 +109,13 @@ public class PluginManagerViewModel(
     init {
         refreshInstalled()
         observeCurrentWorkspace()
+        viewModelScope.launch {
+            val saved = marketplaceIndexPort.lastSource() ?: return@launch
+            if (_uiState.value.marketplaceSource == null) {
+                _uiState.update { it.copy(marketplaceSource = saved, marketplaceUrlInput = saved.url) }
+                fetchMarketplace(saved, allowCache = true)
+            }
+        }
     }
 
     private fun observeCurrentWorkspace() {
@@ -207,7 +214,7 @@ public class PluginManagerViewModel(
             }
             return
         }
-        val source = IndexSource(label = label.ifBlank { "Custom Repository" }, url = trimmed)
+        val source = IndexSource(label = sourceLabel(label, trimmed), url = trimmed)
         _uiState.update { it.copy(marketplaceSource = source, marketplaceUrlInput = trimmed) }
         fetchMarketplace(source = source, allowCache = true)
     }
@@ -242,8 +249,9 @@ public class PluginManagerViewModel(
             }
             val request = InstallRequest(
                 sourceLabel = entry.packageUrl,
-                expectedDigest = entry.contentDigest,
+                expectedDigest = entry.contentDigest.ifBlank { null },
                 trust = trust,
+                fileSha256 = entry.fileSha256,
             )
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
@@ -253,6 +261,9 @@ public class PluginManagerViewModel(
                     _uiState.update { it.copy(notificationMessage = "Installed '$label' ${state.record.version}$note") }
                 } else if (state is InstallState.Failed) {
                     val err = state.report.errors.firstOrNull()?.message ?: "Installation failed"
+                    _uiState.update { it.copy(errorMessage = err) }
+                } else if (state is InstallState.Cancelled) {
+                    val err = "Could not download ${entry.id} ${entry.version}, or it is not the file the source lists"
                     _uiState.update { it.copy(errorMessage = err) }
                 }
             }
@@ -448,4 +459,12 @@ public class PluginManagerViewModel(
             }
         }
     }
+}
+
+/** A source's name: the one given, else `owner/repo` for a GitHub repository, else the host. */
+internal fun sourceLabel(given: String, url: String): String {
+    if (given.isNotBlank() && given != "Custom") return given
+    val path = url.substringAfter("://").split('/')
+    val host = path.first().lowercase().removePrefix("www.")
+    return if (host == "github.com" && path.size >= 3) "${path[1]}/${path[2].removeSuffix(".git")}" else host
 }

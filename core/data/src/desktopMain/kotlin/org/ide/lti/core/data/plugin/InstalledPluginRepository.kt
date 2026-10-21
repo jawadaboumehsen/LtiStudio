@@ -16,18 +16,26 @@ import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PackageIdentity
 import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.PluginInstallPort
+import org.ide.lti.core.domain.plugin.PluginPackagePolicy
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
 import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.IOException
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URI
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.util.UUID
 
-class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort {
+class InstalledPluginRepository(
+    private val storeDir: Path,
+    private val connectionOpener: (URI) -> HttpURLConnection = { it.toURL().openConnection() as HttpURLConnection },
+) : PluginInstallPort {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -51,6 +59,72 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
         null
     } catch (_: IllegalArgumentException) {
         null
+    }
+
+    /**
+     * Follows HTTPS-only redirects (a GitHub asset redirects to its storage host), caps the size, and keeps the file
+     * only when its sha256 is [fileSha256] (`sha256:` prefix allowed), when one is given.
+     */
+    override suspend fun download(url: String, fileSha256: String?): Path? {
+        val quarantineDir = storeDir.resolve("quarantine").also { Files.createDirectories(it) }
+        val target = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
+        val actual = try {
+            openFollowingRedirects(URI(url))?.use { stream(it, target) }
+        } catch (_: IOException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+        val expected = fileSha256?.removePrefix("sha256:")?.lowercase()
+        if (actual == null || (expected != null && actual != expected)) {
+            Files.deleteIfExists(target)
+            return null
+        }
+        return target
+    }
+
+    @Suppress("ReturnCount")
+    private fun openFollowingRedirects(start: URI): InputStream? {
+        var uri = start
+        repeat(MAX_REDIRECTS + 1) {
+            if (uri.scheme?.lowercase() != "https" || !uri.userInfo.isNullOrBlank()) return null
+            val conn = connectionOpener(uri).apply {
+                instanceFollowRedirects = false
+                connectTimeout = CONNECT_TIMEOUT_MS
+                readTimeout = READ_TIMEOUT_MS
+            }
+            when (conn.responseCode) {
+                in 300..399 -> {
+                    val location = conn.getHeaderField("Location")
+                    conn.disconnect()
+                    uri = uri.resolve(location ?: return null)
+                }
+                in 200..299 -> return conn.inputStream
+                else -> {
+                    conn.disconnect()
+                    return null
+                }
+            }
+        }
+        return null
+    }
+
+    /** Writes [input] to [target] and returns its sha256, or null past the package size limit. */
+    private fun stream(input: InputStream, target: Path): String? {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(CHUNK_SIZE)
+        var total = 0L
+        Files.newOutputStream(target).use { output ->
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                total += read
+                if (total > PluginPackagePolicy.PACKAGE_MAX_COMPRESSED_BYTES) return null
+                digest.update(buffer, 0, read)
+                output.write(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
     override suspend fun inspect(quarantined: Path): PackageInspection =
@@ -224,6 +298,9 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
 
     companion object {
         private const val CHUNK_SIZE = 8 * 1024 * 1024
+        private const val MAX_REDIRECTS = 5
+        private const val CONNECT_TIMEOUT_MS = 15_000
+        private const val READ_TIMEOUT_MS = 60_000
     }
 }
 

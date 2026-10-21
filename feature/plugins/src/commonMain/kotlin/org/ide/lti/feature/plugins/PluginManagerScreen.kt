@@ -250,6 +250,7 @@ public fun PluginManagerContent(
                                     source = state.marketplaceSource,
                                     urlInput = state.marketplaceUrlInput,
                                     entries = state.marketplaceEntries,
+                                    installed = state.installedPackages,
                                     fetchResult = state.marketplaceFetchResult,
                                     isLoading = state.isMarketplaceLoading,
                                     installState = state.installState,

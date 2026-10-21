@@ -1,5 +1,4 @@
 {
   "minRuntimeApi": 34,
-  "frameworkStubJars": [],
-  "dependencyJars": []
+  "firmware": []
 }

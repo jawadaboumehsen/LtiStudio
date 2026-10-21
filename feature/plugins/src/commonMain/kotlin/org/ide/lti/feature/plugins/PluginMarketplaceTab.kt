@@ -70,7 +70,9 @@ import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.IndexFetchResult
 import org.ide.lti.core.domain.plugin.IndexSource
 import org.ide.lti.core.domain.plugin.InstallState
+import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.TrustDecision
+import org.ide.lti.core.domain.plugin.newestPerPlugin
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.jetbrains.compose.resources.painterResource
 
@@ -79,6 +81,7 @@ internal fun PluginMarketplaceTab(
     source: IndexSource?,
     urlInput: String,
     entries: List<IndexEntry>,
+    installed: List<InstalledRecord>,
     fetchResult: IndexFetchResult?,
     isLoading: Boolean,
     installState: InstallState?,
@@ -133,6 +136,7 @@ internal fun PluginMarketplaceTab(
                     filtered = filtered,
                     selectedEntry = selectedEntry,
                     searchQuery = searchQuery,
+                    installed = installed,
                     onSelectEntry = { selectedEntryId = it.id },
                     onNavigateToImport = onNavigateToImport,
                     modifier = Modifier.weight(1f),
@@ -140,6 +144,7 @@ internal fun PluginMarketplaceTab(
 
                 MarketplaceInspectorPanel(
                     entry = selectedEntry,
+                    status = selectedEntry?.let { installStatus(it, installed) },
                     fetchResult = fetchResult,
                     filteredEmpty = filtered.isEmpty(),
                     searchQuery = searchQuery,
@@ -339,6 +344,7 @@ private fun MarketplaceMasterTable(
     filtered: List<IndexEntry>,
     selectedEntry: IndexEntry?,
     searchQuery: String,
+    installed: List<InstalledRecord>,
     onSelectEntry: (IndexEntry) -> Unit,
     onNavigateToImport: () -> Unit,
     modifier: Modifier = Modifier,
@@ -394,6 +400,7 @@ private fun MarketplaceMasterTable(
                         val isSelected = entry.id == selectedEntry?.id
                         MarketplaceTableRow(
                             entry = entry,
+                            status = installStatus(entry, installed),
                             isSelected = isSelected,
                             onClick = { onSelectEntry(entry) },
                         )
@@ -428,7 +435,7 @@ private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
             modifier = Modifier.width(ComponentSize.ButtonMinWidth * 2),
         )
         Text(
-            text = "SDK compatibility",
+            text = "Version",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -450,6 +457,7 @@ private fun getMarketplaceRowIcon(id: String): Painter = when {
 @Composable
 private fun MarketplaceTableRow(
     entry: IndexEntry,
+    status: MarketplaceStatus?,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -482,7 +490,7 @@ private fun MarketplaceTableRow(
     }
 
     val rowIcon = getMarketplaceRowIcon(entry.id)
-    val sdkRange = entry.sdkApiRange.ifBlank { "Not declared" }
+    val versionText = entry.version + status?.let { " · ${it.label}" }.orEmpty()
 
     Row(
         modifier = modifier
@@ -539,7 +547,7 @@ private fun MarketplaceTableRow(
         )
 
         Text(
-            text = sdkRange,
+            text = versionText,
             style = MaterialTheme.typography.bodySmall,
             color = contentTint,
             maxLines = 1,
@@ -658,9 +666,11 @@ private fun MarketplaceUnverifiedWarningCard() {
     }
 }
 
+@Suppress("CyclomaticComplexMethod")
 @Composable
 private fun MarketplaceInspectorPanel(
     entry: IndexEntry?,
+    status: MarketplaceStatus?,
     fetchResult: IndexFetchResult?,
     filteredEmpty: Boolean,
     searchQuery: String,
@@ -716,13 +726,18 @@ private fun MarketplaceInspectorPanel(
 
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
                     MarketplacePropertyRow(
+                        label = "Version",
+                        value = entry.version + status?.let { " · ${it.label}" }.orEmpty(),
+                    )
+                    GlassHorizontalDivider(specular = true)
+                    MarketplacePropertyRow(
                         label = "SDK compatibility",
                         value = entry.sdkApiRange.ifBlank { "Not declared" },
                     )
                     GlassHorizontalDivider(specular = true)
                     MarketplacePropertyRow(
-                        label = "Content digest",
-                        value = entry.contentDigest.ifBlank { "Not declared" },
+                        label = if (entry.fileSha256 != null) "File SHA-256" else "Content digest",
+                        value = (entry.fileSha256 ?: entry.contentDigest).ifBlank { "Not declared" },
                     )
                     GlassHorizontalDivider(specular = true)
                     MarketplacePropertyRow(
@@ -745,13 +760,20 @@ private fun MarketplaceInspectorPanel(
 
                     GlassButton(
                         onClick = onInstallClick,
-                        enabled = !isInstalling,
+                        enabled = !isInstalling && status?.installedThis != true,
                         variant = GlassButtonVariant.Primary,
                         shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnHeight,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(if (isInstalling) "Installing..." else "Install package")
+                        Text(
+                            when {
+                                isInstalling -> "Installing..."
+                                status?.installedThis == true -> status.label
+                                status?.update == true -> "Update to ${entry.version}"
+                                else -> "Install package"
+                            },
+                        )
                     }
                 }
             }
@@ -808,14 +830,14 @@ private fun ConfigureSourceDialog(
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Text(
-                text = "Marketplace index repository must be a strictly secure HTTPS endpoint.",
+                text = "A GitHub repository (its latest release's .lti-mod.zip files) or an index JSON, over HTTPS.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             GlassTextField(
                 value = url,
                 onValueChange = onUrlChange,
-                placeholder = "https://example.com/plugins/index.json",
+                placeholder = "https://github.com/owner/repo",
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -879,5 +901,24 @@ private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onC
                 }
             }
         }
+    }
+}
+
+/** An entry against what is installed: this very version, or an update from the [label]'s older one. */
+internal data class MarketplaceStatus(val label: String, val installedThis: Boolean, val update: Boolean)
+
+/** Null when no version of the entry's plugin is installed. */
+internal fun installStatus(entry: IndexEntry, installed: List<InstalledRecord>): MarketplaceStatus? {
+    val versions = installed.filter {
+        it.identity.publisher == entry.publisher && it.identity.id == entry.id && !it.archived
+    }.map { it.identity.version }
+    val newestInstalled = versions.takeIf { it.isNotEmpty() }?.let { newestPerPlugin(it, { "" }) { v -> v }.single() }
+    val entryIsNewer = newestInstalled != null &&
+        newestPerPlugin(listOf(newestInstalled, entry.version), { "" }) { it }.single() == entry.version
+    return when {
+        newestInstalled == null -> null
+        entry.version in versions -> MarketplaceStatus("Installed", installedThis = true, update = false)
+        entryIsNewer -> MarketplaceStatus("Update from $newestInstalled", installedThis = false, update = true)
+        else -> MarketplaceStatus("$newestInstalled installed", installedThis = true, update = false)
     }
 }

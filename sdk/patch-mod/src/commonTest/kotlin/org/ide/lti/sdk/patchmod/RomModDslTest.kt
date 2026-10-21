@@ -296,6 +296,8 @@ class RomModDslTest {
                     method("Lcom/a/B;") {
                         returns("Z")
                         strings("getFocusedRootTaskInfo()")
+                        references("Landroid/os/Binder;->getCallingUid")
+                        opcodes("invoke-static", "move-result")
                         replace("    const/4 v0, 0x0", "    const/4 v0, 0x1")
                     }
                 }
@@ -304,7 +306,13 @@ class RomModDslTest {
         val edits = (template.operations.single() as Operation.ApkJarPatch).edits
         assertEquals(listOf("Lcom/a/B;", "Lcom/a/B;"), edits.map { it.memberDescriptor })
         assertEquals(MethodMatch(name = "run", parameters = "ILjava/lang/String;", returns = "V"), edits[0].method)
-        assertEquals(MethodMatch(returns = "Z", strings = listOf("getFocusedRootTaskInfo()")), edits[1].method)
+        val byFingerprint = MethodMatch(
+            returns = "Z",
+            strings = listOf("getFocusedRootTaskInfo()"),
+            references = listOf("Landroid/os/Binder;->getCallingUid"),
+            opcodes = listOf("invoke-static", "move-result"),
+        )
+        assertEquals(byFingerprint, edits[1].method)
         assertEquals("@@ @@\n     .locals 1\n+    nop", edits[0].unifiedDiff)
         assertEquals("", edits[0].expectedSha256, "a method edit is anchored by its method and lines, not a file hash")
     }

@@ -73,6 +73,45 @@ class SmaliMethodEditorTest {
     }
 
     @Test
+    fun theReferencesAndOpcodesAMethodUsesPickIt() {
+        val diff = "@@ @@\n+    nop\n     return-void"
+        // Both overloads call work(I)V; only one loads a string before it.
+        val byReference = MethodMatch(references = listOf("LFoo;->work"), opcodes = listOf("const-string", "*"))
+        val changed = assertIs<EditResult.Changed>(apply(byReference, diff))
+        assertEquals("LFoo;->run(Ljava/lang/String;)V", changed.changed)
+
+        val both = assertIs<EditResult.Failed>(apply(MethodMatch(references = listOf("LFoo;->work(I)V")), diff))
+        assertEquals(ComponentPatchCodes.ANCHOR_AMBIGUOUS, both.code)
+        // A string is not a reference.
+        val notAReference = assertIs<EditResult.Failed>(apply(MethodMatch(references = listOf("other")), diff))
+        assertEquals(ComponentPatchCodes.ANCHOR_NOT_FOUND, notAReference.code)
+    }
+
+    @Test
+    fun aGapSkipsLinesBetweenAnchorsAndAWildcardMatchesAnyText() {
+        // `...` keeps the lines it skips; @{*} matches the register list without capturing it.
+        val diff = "@@ @@\n     const-string @{*}, \"other\"\n     ...\n     return-void\n+    nop"
+        val changed = assertIs<EditResult.Changed>(apply(MethodMatch("run", "Ljava/lang/String;"), diff))
+        val method = changed.content.substringAfter("run(Ljava/lang/String;)V").substringBefore(".end method")
+        val kept = listOf(
+            ".locals 1",
+            "const-string v0, \"other\"",
+            "invoke-virtual {p0, v1}, LFoo;->work(I)V",
+            "return-void",
+            "nop",
+        )
+        assertEquals(kept, method.lines().map(String::trim).filter(String::isNotEmpty))
+
+        val removed = "@@ @@\n-    const-string v0, \"other\"\n-    ...\n     return-void"
+        val dropped = assertIs<EditResult.Changed>(apply(MethodMatch("run", "Ljava/lang/String;"), removed))
+        val rest = dropped.content.substringAfter("run(Ljava/lang/String;)V").substringBefore(".end method")
+        assertEquals(listOf(".locals 1", "return-void"), rest.lines().map(String::trim).filter(String::isNotEmpty))
+
+        val leading = assertIs<EditResult.Failed>(apply(MethodMatch("run", "I"), "@@ @@\n ...\n return-void\n+nop"))
+        assertEquals(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, leading.code)
+    }
+
+    @Test
     fun aMissingAnchorOrMethodSaysWhichAndWhere() {
         val noLine = assertIs<EditResult.Failed>(apply(MethodMatch("run", "I"), "@@ @@\n nope\n+x"))
         assertEquals(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, noLine.code)

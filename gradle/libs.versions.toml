@@ -80,6 +80,9 @@ composeNavigation = "2.9.1"
 jbCoreBundle = "1.0.1"
 jbSavedState = "1.2.2"
 clikt = "5.0.1"
+r8 = "9.5.28"
+baksmali = "3.0.10"
+dex2jar = "2.4.38"
 
 
 # Desktop Version
@@ -152,6 +155,9 @@ lint-tests = { group = "com.android.tools.lint", name = "lint-tests", version.re
 
 truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+r8 = { module = "com.android.tools:r8", version.ref = "r8" }
+baksmali = { module = "com.android.tools.smali:smali-baksmali", version.ref = "baksmali" }
+dex2jar = { module = "de.femtopedia.dex2jar:dex-translator", version.ref = "dex2jar" }
 
 # jb Compose
 jb-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }

@@ -256,6 +256,55 @@ class PluginIndexAdapterTest {
         assertIs<IndexFailure.Offline>(connectFailResult.reason)
     }
 
+    private val releaseJson = """
+        {"tag_name":"v1.3.0","assets":[
+          {"name":"io.ltirom-adb-1.3.0.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/io.ltirom-adb-1.3.0.lti-mod.zip","digest":"sha256:abc123"},
+          {"name":"io.ltirom-nubia-gameassist-1.3.0.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/n.zip"},
+          {"name":"notes.txt","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/notes.txt"}
+        ]}
+    """.trimIndent()
+
+    @Test
+    fun testAGithubRepositoryIsReadAsItsLatestReleasesPackages() = runTest {
+        val opened = mutableListOf<String>()
+        val adapter = PluginIndexAdapter(
+            cacheDir = tempDir,
+            connectionOpener = { uri ->
+                opened += uri.toString()
+                FakeHttpURLConnection(url = uri.toURL(), responseBodyToReturn = releaseJson)
+            },
+        )
+
+        val result = adapter.fetch(IndexSource("o/r", "https://github.com/o/r"), allowCache = false)
+
+        assertIs<IndexFetchResult.Fetched>(result)
+        assertEquals(listOf("https://api.github.com/repos/o/r/releases/latest"), opened)
+        val entries = result.doc.entries
+        assertEquals(listOf("adb", "nubia-gameassist"), entries.map { it.id })
+        assertEquals(listOf("io.ltirom", "io.ltirom"), entries.map { it.publisher })
+        assertEquals("1.3.0", entries.first().version)
+        // The asset's digest is the file's sha256; a release that lists none leaves it unchecked.
+        assertEquals("abc123", entries[0].fileSha256)
+        assertNull(entries[1].fileSha256)
+    }
+
+    @Test
+    fun testTheLastGoodSourceIsRememberedAndAFailedOneIsNot() = runTest {
+        var body = releaseJson
+        val adapter = PluginIndexAdapter(
+            cacheDir = tempDir,
+            connectionOpener = { uri -> FakeHttpURLConnection(url = uri.toURL(), responseBodyToReturn = body) },
+        )
+        assertNull(adapter.lastSource())
+
+        adapter.fetch(IndexSource("o/r", "https://github.com/o/r"), allowCache = false)
+        assertEquals(IndexSource("o/r", "https://github.com/o/r"), PluginIndexAdapter(tempDir).lastSource())
+
+        body = "not json"
+        adapter.fetch(IndexSource("x/y", "https://github.com/x/y"), allowCache = false)
+        assertEquals("o/r", adapter.lastSource()?.label)
+    }
+
     @Test
     fun testCacheRoundTripReturnsCachedWithOriginalObservedAt() = runTest {
         var currentTime = 1000L

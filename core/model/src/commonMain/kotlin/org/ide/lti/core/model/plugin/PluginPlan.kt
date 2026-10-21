@@ -162,7 +162,9 @@ data class XmlChange(val kind: XmlChangeKind, val match: XmlMatch? = null, val f
 /**
  * Picks one method of a class by what it is, not where it is: its [name], and when that is not enough (overloads,
  * obfuscated names) its [parameters] (the descriptors between the parentheses, e.g. `ILjava/lang/String;`),
- * [returns] type and [strings] it loads with `const-string`. Exactly one method must match.
+ * [returns] type, [strings] it loads with `const-string`, [references] its instructions use (a method, field or
+ * type, or part of one: `Landroid/app/Instrumentation;->newApplication`) and an [opcodes] run (consecutive
+ * instructions, `*` for any one). Exactly one method must match.
  */
 @Serializable
 data class MethodMatch(
@@ -170,6 +172,8 @@ data class MethodMatch(
     val parameters: String? = null,
     val returns: String? = null,
     val strings: List<String> = emptyList(),
+    val references: List<String> = emptyList(),
+    val opcodes: List<String> = emptyList(),
 )
 
 /** A device ([device] codename) a mod is made for, and its firmware versions ([firmwares]; empty means any). */

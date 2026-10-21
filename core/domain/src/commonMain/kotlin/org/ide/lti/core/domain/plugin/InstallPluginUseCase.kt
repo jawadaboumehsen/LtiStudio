@@ -27,7 +27,17 @@ enum class TrustDecision {
     UNTRUSTED,
 }
 
-data class InstallRequest(val sourceLabel: String, val expectedDigest: String?, val trust: TrustDecision)
+/**
+ * A package to install: a local path, or an `https://` URL that is downloaded first. [fileSha256] is the sha256 of the
+ * downloaded file (as a release lists it), checked before the package is read; [expectedDigest] is the package's own
+ * content digest.
+ */
+data class InstallRequest(
+    val sourceLabel: String,
+    val expectedDigest: String?,
+    val trust: TrustDecision,
+    val fileSha256: String? = null,
+)
 
 sealed interface InstallState {
     data object SourceSelected : InstallState
@@ -85,6 +95,9 @@ fun InstalledRecord.toInstalledPackage(): InstalledPackage = InstalledPackage(
 
 interface PluginInstallPort {
     suspend fun quarantine(sourceLabel: String): Path?
+
+    /** Downloads an `https://` package into quarantine; null when that fails or its sha256 is not [fileSha256]. */
+    suspend fun download(url: String, fileSha256: String?): Path? = null
     suspend fun inspect(quarantined: Path): PackageInspection
     suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean
     suspend fun installed(): List<InstalledRecord>
@@ -109,7 +122,11 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
         }
 
         emit(InstallState.Downloading)
-        val quarantined = port.quarantine(request.sourceLabel)
+        val quarantined = if (request.sourceLabel.startsWith("https://", ignoreCase = true)) {
+            port.download(request.sourceLabel, request.fileSha256)
+        } else {
+            port.quarantine(request.sourceLabel)
+        }
         if (quarantined == null) {
             emit(InstallState.Cancelled)
             return@flow

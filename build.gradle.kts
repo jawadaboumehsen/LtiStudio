@@ -562,7 +562,14 @@ allprojects {
 // The patch-mod SDK as a library for mod projects outside this repo (LtiRomMods): it and the modules its POM
 // names are published under one fixed version, not the per-build git version (`./gradlew publishSdkToMavenLocal`).
 val sdkVersion = "1.0.0-SNAPSHOT"
-val sdkModules = listOf(":core:common", ":core:model", ":core:domain", ":sdk:patch-mod-runtime", ":sdk:patch-mod")
+val sdkModules = listOf(
+    ":core:common",
+    ":core:model",
+    ":core:domain",
+    ":sdk:patch-mod-runtime",
+    ":sdk:patch-mod",
+    ":sdk:patch-mod-hooks",
+)
 subprojects {
     if (path in sdkModules) {
         version = sdkVersion

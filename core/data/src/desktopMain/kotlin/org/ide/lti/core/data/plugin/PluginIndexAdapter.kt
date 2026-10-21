@@ -9,9 +9,11 @@
  */
 package org.ide.lti.core.data.plugin
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.data.admission.atomicWrite
+import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.IndexFailure
 import org.ide.lti.core.domain.plugin.IndexFetchResult
 import org.ide.lti.core.domain.plugin.IndexSource
@@ -28,7 +30,9 @@ import java.nio.file.Path
 import java.security.MessageDigest
 
 /**
- * Adapter that fetches and caches marketplace index documents over HTTPS.
+ * Adapter that fetches and caches marketplace index documents over HTTPS. A GitHub repository URL
+ * (`https://github.com/owner/repo`) is read as its latest release instead: each
+ * `<publisher>-<id>-<version>.lti-mod.zip` asset is an entry, with the asset's sha256 as its file digest.
  *
  * Successful network fetches cache the document under `<cacheDir>/<sha256 of source.url>.json` alongside
  * the timestamp at which it was observed.
@@ -60,6 +64,29 @@ class PluginIndexAdapter(
     @Serializable
     private data class CachedIndexRecord(val observedAtEpochMs: Long, val document: MarketplaceIndexDocument)
 
+    @Serializable
+    private data class SavedSource(val label: String, val url: String)
+
+    @Serializable
+    private data class GithubRelease(
+        @SerialName("tag_name") val tag: String,
+        val assets: List<GithubAsset> = emptyList(),
+    )
+
+    @Serializable
+    private data class GithubAsset(
+        val name: String,
+        @SerialName("browser_download_url") val url: String,
+        val digest: String? = null,
+    )
+
+    override suspend fun lastSource(): IndexSource? = try {
+        json.decodeFromString(SavedSource.serializer(), Files.readString(cacheDir.resolve(SOURCE_FILE)))
+            .let { IndexSource(it.label, it.url) }
+    } catch (_: Exception) {
+        null
+    }
+
     override suspend fun fetch(source: IndexSource, allowCache: Boolean): IndexFetchResult {
         val uri = try {
             URI(source.url)
@@ -71,7 +98,10 @@ class PluginIndexAdapter(
             return IndexFetchResult.Failed(IndexFailure.InsecureSource)
         }
 
-        return when (val stepResult = fetchWithRedirects(uri)) {
+        val repo = githubRepo(uri)
+        val parse: (String) -> RemoteFetchResult = if (repo != null) ::parseGithubRelease else ::parseIndex
+        val target = repo?.let { URI("https://api.github.com/repos/$it/releases/latest") } ?: uri
+        val result = when (val stepResult = fetchWithRedirects(target, parse)) {
             is RemoteFetchResult.Success -> {
                 val now = timeProvider()
                 cacheSuccess(source.url, stepResult.doc, now)
@@ -90,14 +120,76 @@ class PluginIndexAdapter(
                 }
             }
         }
+        if (result !is IndexFetchResult.Failed) saveSource(source)
+        return result
     }
 
-    private fun fetchWithRedirects(initialUri: URI): RemoteFetchResult {
+    private fun saveSource(source: IndexSource) {
+        try {
+            Files.createDirectories(cacheDir)
+            atomicWrite(
+                cacheDir.resolve(SOURCE_FILE),
+                json.encodeToString(SavedSource.serializer(), SavedSource(source.label, source.url)),
+            )
+        } catch (_: Exception) {
+            // Remembering the source is a convenience; the fetch itself succeeded.
+        }
+    }
+
+    private fun parseIndex(text: String): RemoteFetchResult {
+        val doc = try {
+            json.decodeFromString(MarketplaceIndexDocument.serializer(), text)
+        } catch (e: Exception) {
+            return RemoteFetchResult.Failure(IndexFailure.Malformed("Invalid JSON: ${e.message}"))
+        }
+        if (doc.schemaVersion != 1) {
+            return RemoteFetchResult.Failure(IndexFailure.Malformed("Unsupported schemaVersion: ${doc.schemaVersion}"))
+        }
+        return RemoteFetchResult.Success(doc)
+    }
+
+    private fun parseGithubRelease(text: String): RemoteFetchResult {
+        val release = try {
+            json.decodeFromString(GithubRelease.serializer(), text)
+        } catch (e: Exception) {
+            return RemoteFetchResult.Failure(IndexFailure.Malformed("Not a GitHub release: ${e.message}"))
+        }
+        val entries = release.assets.mapNotNull { asset -> assetEntry(asset, release.tag) }
+        return RemoteFetchResult.Success(MarketplaceIndexDocument(entries = entries))
+    }
+
+    /** `<publisher>-<id>-<version>.lti-mod.zip` (the SDK's package name); other assets are not packages. */
+    private fun assetEntry(asset: GithubAsset, tag: String): IndexEntry? {
+        val base = asset.name.takeIf { it.endsWith(PACKAGE_SUFFIX) }?.removeSuffix(PACKAGE_SUFFIX) ?: return null
+        val id = base.substringAfter('-', "").substringBeforeLast('-', "")
+        if (id.isEmpty()) return null
+        return IndexEntry(
+            publisher = base.substringBefore('-'),
+            id = id,
+            version = base.substringAfterLast('-'),
+            sdkApiRange = "",
+            targetSummary = "Release $tag",
+            packageUrl = asset.url,
+            contentDigest = "",
+            signatureIdentity = null,
+            fileSha256 = asset.digest?.removePrefix("sha256:"),
+        )
+    }
+
+    /** `owner/repo` of a `https://github.com/owner/repo` URL, or null for any other source. */
+    private fun githubRepo(uri: URI): String? {
+        if (uri.host?.lowercase()?.removePrefix("www.") != "github.com") return null
+        val parts = uri.path.orEmpty().trim('/').split('/')
+        return parts.takeIf { it.size >= 2 && it[0].isNotEmpty() && it[1].isNotEmpty() }
+            ?.let { "${it[0]}/${it[1].removeSuffix(".git")}" }
+    }
+
+    private fun fetchWithRedirects(initialUri: URI, parse: (String) -> RemoteFetchResult): RemoteFetchResult {
         var currentUri = initialUri
         var redirects = 0
 
         while (redirects <= MAX_REDIRECTS) {
-            when (val step = stepConnection(currentUri)) {
+            when (val step = stepConnection(currentUri, parse)) {
                 is StepResult.Redirect -> {
                     redirects++
                     if (redirects > MAX_REDIRECTS) {
@@ -111,7 +203,7 @@ class PluginIndexAdapter(
         return RemoteFetchResult.Failure(IndexFailure.Malformed("Too many redirects"))
     }
 
-    private fun stepConnection(currentUri: URI): StepResult {
+    private fun stepConnection(currentUri: URI, parse: (String) -> RemoteFetchResult): StepResult {
         val conn = try {
             connectionOpener(currentUri).apply {
                 instanceFollowRedirects = false
@@ -128,7 +220,7 @@ class PluginIndexAdapter(
         return try {
             when (val code = conn.responseCode) {
                 in REDIRECT_RANGE -> handleRedirect(conn, currentUri)
-                in SUCCESS_RANGE -> StepResult.Done(handleSuccess(conn))
+                in SUCCESS_RANGE -> StepResult.Done(handleSuccess(conn, parse))
                 401, 403 -> {
                     conn.disconnect()
                     StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Unauthenticated))
@@ -180,7 +272,7 @@ class PluginIndexAdapter(
         }
     }
 
-    private fun handleSuccess(conn: HttpURLConnection): RemoteFetchResult {
+    private fun handleSuccess(conn: HttpURLConnection, parse: (String) -> RemoteFetchResult): RemoteFetchResult {
         try {
             val maxBytes = PluginPackagePolicy.MANIFEST_MAX_BYTES
             val reportedLength = conn.contentLengthLong
@@ -193,20 +285,7 @@ class PluginIndexAdapter(
                 ?: return RemoteFetchResult.Failure(
                     IndexFailure.Malformed("index exceeds $maxBytes bytes"),
                 )
-
-            val doc = try {
-                json.decodeFromString(MarketplaceIndexDocument.serializer(), text)
-            } catch (e: Exception) {
-                return RemoteFetchResult.Failure(IndexFailure.Malformed("Invalid JSON: ${e.message}"))
-            }
-
-            if (doc.schemaVersion != 1) {
-                return RemoteFetchResult.Failure(
-                    IndexFailure.Malformed("Unsupported schemaVersion: ${doc.schemaVersion}"),
-                )
-            }
-
-            return RemoteFetchResult.Success(doc)
+            return parse(text)
         } finally {
             conn.disconnect()
         }
@@ -273,6 +352,8 @@ class PluginIndexAdapter(
 
     companion object {
         private const val MAX_REDIRECTS = 5
+        private const val SOURCE_FILE = "source.json"
+        private const val PACKAGE_SUFFIX = ".lti-mod.zip"
         private const val CONNECT_TIMEOUT_MS = 15000
         private const val READ_TIMEOUT_MS = 30000
         private val REDIRECT_RANGE = 300..399

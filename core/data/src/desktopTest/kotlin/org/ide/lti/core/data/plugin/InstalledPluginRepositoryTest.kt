@@ -19,6 +19,11 @@ import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.plugin.PluginManifest
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.plugin.SettingDefinition
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URI
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -30,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class InstalledPluginRepositoryTest {
@@ -125,6 +131,65 @@ class InstalledPluginRepositoryTest {
         createZip(dest, entries)
         val contentDigest = PluginPackageCodec.contentIdentity(listOf(payloadEntry))
         return PackageIdentity(publisher, id, version, contentDigest)
+    }
+
+    private class FakeDownload(
+        url: URL,
+        private val code: Int,
+        private val body: ByteArray = ByteArray(0),
+        private val location: String? = null,
+    ) : HttpURLConnection(url) {
+        override fun connect() = Unit
+        override fun disconnect() = Unit
+        override fun usingProxy(): Boolean = false
+        override fun getResponseCode(): Int = code
+        override fun getHeaderField(name: String): String? = if (name == "Location") location else null
+        override fun getInputStream(): InputStream = ByteArrayInputStream(body)
+    }
+
+    private fun sha256(bytes: ByteArray) =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    private fun quarantined() = Files.list(tempStoreDir.resolve("quarantine")).use { it.count() }
+
+    @Test
+    fun testDownloadFollowsHttpsRedirectsAndKeepsOnlyTheFileWhoseSha256Matches() = runTest {
+        val zip = tempWorkDir.resolve("pkg.lti-mod.zip")
+        buildPackageZip(zip)
+        val bytes = Files.readAllBytes(zip)
+        val opened = mutableListOf<String>()
+        val repo = InstalledPluginRepository(tempStoreDir) { uri ->
+            opened += uri.toString()
+            when (uri.host) {
+                "github.com" -> FakeDownload(uri.toURL(), 302, location = "https://objects.example.com/pkg")
+                else -> FakeDownload(uri.toURL(), 200, bytes)
+            }
+        }
+        val url = "https://github.com/o/r/releases/download/v1/pkg.lti-mod.zip"
+
+        val path = repo.download(url, "sha256:" + sha256(bytes))
+        assertNotNull(path)
+        assertEquals(listOf("github.com", "objects.example.com"), opened.map { URI(it).host })
+        assertTrue(Files.readAllBytes(path).contentEquals(bytes))
+        // It is an ordinary quarantined package: it inspects like an imported one.
+        assertNotNull(repo.inspect(path).identity)
+
+        // A file that is not the one the source lists is deleted, not kept in quarantine.
+        val before = quarantined()
+        assertNull(repo.download(url, "0".repeat(64)))
+        assertEquals(before, quarantined())
+    }
+
+    @Test
+    fun testDownloadRefusesPlainHttpDowngradeRedirectsAndErrors() = runTest {
+        var next: (URI) -> HttpURLConnection = { FakeDownload(it.toURL(), 404) }
+        val repo = InstalledPluginRepository(tempStoreDir) { next(it) }
+
+        assertNull(repo.download("http://example.com/p.lti-mod.zip", null))
+        assertNull(repo.download("https://user:secret@example.com/p.lti-mod.zip", null))
+        assertNull(repo.download("https://example.com/p.lti-mod.zip", null))
+        next = { FakeDownload(it.toURL(), 302, location = "http://evil.example.com/p") }
+        assertNull(repo.download("https://example.com/p.lti-mod.zip", null))
     }
 
     @Test
