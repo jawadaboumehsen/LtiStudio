@@ -29,10 +29,11 @@ public class AssembleStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: AssembleViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val device by viewModel.device.collectAsState()
 
         AssembleEditor(
             settings = settings,
-            target = viewModel.targetDevice,
+            target = device ?: viewModel.targetDevice,
             onChange = { viewModel.updateSettings(it) },
             selectedObjectId = context.selectedObjectId?.value ?: "work-trees",
             onValidate = context.onValidationRequested,

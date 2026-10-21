@@ -38,4 +38,7 @@ object DialogUtils {
             null
         }
     }
+
+    /** [selectFile], as the picked file's path. */
+    suspend fun selectFilePath(title: String): String? = selectFile(title)?.path
 }

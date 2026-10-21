@@ -168,18 +168,20 @@ class StudioShellLayoutTest {
             composeTestRule.onNodeWithTag("RailItem_${stage.stageId.name}").assertExists()
         }
 
-        // Workspace Navigator & 5 sections
+        // Workspace Navigator & 4 sections
         composeTestRule.onNodeWithTag("WorkspaceNavigator").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_Overview").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_RomConfig").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_RunHistory").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_Artifacts").assertExists()
-        composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertExists()
+        // The device is edited in ROM configuration; there is no second tab for it.
+        composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertDoesNotExist()
 
         // Workspace Right Rail & items
         composeTestRule.onNodeWithTag("WorkspaceRightRail").assertExists()
-        composeTestRule.onNodeWithTag("RightRailItem_ai").assertExists()
-        composeTestRule.onNodeWithTag("RightRailItem_terminal").assertExists()
+        // No demo tool windows: nothing on the rail that does nothing.
+        composeTestRule.onNodeWithTag("RightRailItem_ai").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("RightRailItem_terminal").assertDoesNotExist()
 
         // Content, Status Bar (no separate breadcrumb region - each destination's own header
         // owns its breadcrumb; see StudioScreen.kt's isStageEditor-gated ContentHeader)
@@ -394,7 +396,8 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("NavigatorItem_RomConfig").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_RunHistory").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_Artifacts").assertExists()
-        composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertExists()
+        // The device is edited in ROM configuration; there is no second tab for it.
+        composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertDoesNotExist()
 
         composeTestRule.onNodeWithTag("WorkspaceNavigatorFooter").assertDoesNotExist()
     }
@@ -415,5 +418,34 @@ class StudioShellLayoutTest {
 
     private companion object {
         const val MIN_THEME_DIFF_PERCENT = 5.0
+    }
+
+    @Test
+    fun theDeviceEntryInTheRailOpensTheRomConfigurationPanel() {
+        var opened: WorkspaceSection? = null
+        val uiState = WorkspaceShellUiState(
+            globalDestination = GlobalDestination.Workspace,
+            pipelineItems = createDefaultPipelineRailItems(StageId.FIRMWARE_ACQUISITION),
+            selectedWorkspaceSection = null,
+        )
+        composeTestRule.setContent {
+            LtiTheme {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+                    StudioShellContent(
+                        uiState = uiState,
+                        onSelectGlobalDestination = {},
+                        onSelectWorkspaceSection = { opened = it },
+                        onSelectStage = {},
+                        onValidate = {},
+                        onSave = {},
+                        iconsOnly = true,
+                        content = { Box(Modifier.fillMaxSize()) },
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag("RailItem_device").assertExists().performClick()
+        assertEquals(WorkspaceSection.RomConfig, opened)
     }
 }

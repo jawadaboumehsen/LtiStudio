@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -36,7 +37,7 @@ import org.ide.lti.core.domain.ports.VendoredFile
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
@@ -139,15 +140,18 @@ class BuildRunReattachTest {
         }
     }
 
-    private class FakeTargetRepository(val targets: List<TargetDevice>) : TargetRepository {
-        private val selectedFlow = MutableStateFlow(targets.first())
-        override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(targets)
-        override fun getSelectedTarget(): Flow<TargetDevice> = selectedFlow
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> =
-            Result.success(targets.first { it.id == targetId })
-        override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
+    /** One device for any workspace id; saves are kept so a test can read them back. */
+    private class FakeWorkspaceDevices(private val device: TargetDevice? = null) : WorkspaceDeviceRepository {
+        private val saved = MutableStateFlow<Map<String, TargetDevice>>(emptyMap())
+
+        override fun observe(workspaceId: String): Flow<TargetDevice?> = saved.map { it[workspaceId] ?: device }
+
+        override suspend fun get(workspaceId: String): TargetDevice? = saved.value[workspaceId] ?: device
+
+        override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice {
+            saved.value = saved.value + (workspaceId to device)
+            return device
+        }
     }
 
     private class FakeReadinessPort : EnvironmentReadinessPort {
@@ -247,7 +251,6 @@ class BuildRunReattachTest {
             ),
         ),
         build = org.ide.lti.core.model.workspace.BuildSettings(
-            packagePolicy = testTarget.packagePolicy,
             signing = SigningPolicy(signImages = true, signPackage = true),
         ),
         assembly = org.ide.lti.core.model.workspace.AssemblySettings(
@@ -275,7 +278,7 @@ class BuildRunReattachTest {
     fun testAutoReattachOnWorkspaceOpen() = runTest(testDispatcher) {
         val workspaceRepo = FakeWorkspaceRepository().apply { saveWorkspace(testWorkspace) }
         val snapshotRepo = FakeSnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepository(listOf(testTarget))
+        val targetRepo = FakeWorkspaceDevices(testTarget)
         val runRepo = FakeRunRepository()
         val executionPort = FakePipelineExecutionPort()
 
@@ -344,7 +347,7 @@ class BuildRunReattachTest {
     fun testCancelTransitionsCancellingToCancelled() = runTest(testDispatcher) {
         val workspaceRepo = FakeWorkspaceRepository().apply { saveWorkspace(testWorkspace) }
         val snapshotRepo = FakeSnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepository(listOf(testTarget))
+        val targetRepo = FakeWorkspaceDevices(testTarget)
         val runRepo = FakeRunRepository()
         val executionPort = FakePipelineExecutionPort()
 
@@ -410,7 +413,7 @@ class BuildRunReattachTest {
     ) {
         val workspaceRepo = FakeWorkspaceRepository().apply { saveWorkspace(testWorkspace) }
         val snapshotRepo = FakeSnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepository(listOf(testTarget))
+        val targetRepo = FakeWorkspaceDevices(testTarget)
         val runRepo = FakeRunRepository()
         val executionPort = FakePipelineExecutionPort()
 
@@ -478,7 +481,7 @@ class BuildRunReattachTest {
         val startUseCase = StartPipelineRunUseCase(
             workspaceRepo,
             FakeSnapshotRepository(),
-            FakeTargetRepository(listOf(testTarget)),
+            FakeWorkspaceDevices(testTarget),
             FakeReadinessPort(),
             executionPort,
             runRepo,

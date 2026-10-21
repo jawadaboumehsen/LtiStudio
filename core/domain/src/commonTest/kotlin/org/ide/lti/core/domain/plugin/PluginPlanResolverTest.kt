@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.plugin
 
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.model.plugin.AssetRef
+import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.Condition
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -251,6 +252,32 @@ class PluginPlanResolverTest {
                     it.severity == Severity.ERROR
             },
         )
+    }
+
+    @Test
+    fun aModMadeForAnotherDeviceOrFirmwareIsRefused() {
+        val template = sampleTemplate(operations = emptyList()).copy(
+            compatibility = listOf(Compatibility("PQ84P01", listOf("OS10.5.15"))),
+        )
+        fun resolve(device: String, firmware: String) = PluginPlanResolver.resolve(
+            ResolutionInput(
+                template = template,
+                packageContentDigest = "sha256:pkg",
+                targetFacts = mapOf(
+                    PluginPlanResolver.DEVICE_CODENAME to device,
+                    PluginPlanResolver.FIRMWARE_VERSION to firmware,
+                ),
+                upstreamCheckpointDigest = "sha256:upstream",
+            ),
+        )
+
+        assertIs<ResolutionResult.Resolved>(resolve("PQ84P01", "OS10.5.15"))
+        for ((device, firmware) in listOf("NX769J" to "OS10.5.15", "PQ84P01" to "OS10.5.16")) {
+            val rejected = assertIs<ResolutionResult.Rejected>(resolve(device, firmware))
+            val error = rejected.report.errors.single()
+            assertEquals(PluginPlanResolver.INCOMPATIBLE_TARGET, error.code)
+            assertTrue("PQ84P01 (OS10.5.15)" in error.message && device in error.message, error.message)
+        }
     }
 
     @Test

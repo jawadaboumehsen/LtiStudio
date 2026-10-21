@@ -101,7 +101,7 @@ public class GenerateOtaManifestStage : StageDefinition {
         return PipelineStep.WriteFile(MANIFEST, manifest.encodeToByteArray())
     }
 
-    private companion object {
+    public companion object {
         const val MANIFEST = "out/manifest.json"
         const val BUILD_INFO = "package.build_info"
         const val CHANGELOG = "package.changelog"

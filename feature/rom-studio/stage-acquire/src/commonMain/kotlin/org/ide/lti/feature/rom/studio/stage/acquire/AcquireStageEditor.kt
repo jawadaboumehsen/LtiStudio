@@ -29,11 +29,23 @@ public class AcquireStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: AcquireViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        // Regions and firmwares come from the workspace's own device (device.json), the template until loaded.
+        val device by viewModel.device.collectAsState()
+        val archiveState by viewModel.archiveState.collectAsState()
+        val saveError by viewModel.saveError.collectAsState()
+        val integrity by viewModel.integrity.collectAsState()
 
         AcquireEditor(
             settings = settings,
-            target = viewModel.targetDevice,
+            target = device ?: viewModel.targetDevice,
             onChange = { viewModel.updateSettings(it) },
+            archiveState = archiveState,
+            onProbe = viewModel::probe,
+            onImport = viewModel::importArchive,
+            onSelectArchive = viewModel::selectArchive,
+            saveError = saveError,
+            integrity = integrity,
+            onRefreshIntegrity = viewModel::refreshIntegrity,
             selectedObjectId = context.selectedObjectId?.value ?: "source",
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,

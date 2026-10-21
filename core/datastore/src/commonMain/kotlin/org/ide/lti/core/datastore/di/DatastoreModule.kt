@@ -20,6 +20,7 @@ import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.datastore.ToolchainJournalStorage
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.datastore.WorkspacePreferencesDataSource
+import org.ide.lti.core.datastore.appSettings
 import org.ide.lti.core.datastore.defaultRunFileStorage
 import org.ide.lti.core.datastore.defaultToolchainJournalStorage
 import org.koin.dsl.bind
@@ -29,7 +30,7 @@ import org.koin.dsl.module
  * Koin module declaring persistent DataStore dependencies.
  */
 val DatastoreModule = module {
-    single<Settings> { Settings() }
+    single<Settings> { appSettings() }
     single<Json> { ToolchainPreferencesDataSource.defaultJson() }
     single<RunFileStorage> { defaultRunFileStorage() }
     single<ToolchainJournalStorage> { defaultToolchainJournalStorage() }

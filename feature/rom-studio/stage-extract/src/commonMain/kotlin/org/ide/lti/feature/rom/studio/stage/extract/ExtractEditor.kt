@@ -35,9 +35,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
-import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -49,6 +47,8 @@ import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ExtractionSettings
+import org.ide.lti.feature.rom.studio.api.formatBytes
+import org.ide.lti.feature.rom.studio.api.toggledSelection
 
 @Suppress("UnusedParameter")
 @Composable
@@ -59,6 +59,7 @@ public fun ExtractEditor(
     onChange: (ExtractionSettings) -> Unit,
     dirtyPaths: Set<String> = emptySet(),
     selectedObjectId: String = "archive-layout",
+    facts: ExtractFacts = ExtractFacts(),
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -85,11 +86,13 @@ public fun ExtractEditor(
                 "boot-partitions", "boot_partitions" -> item {
                     BootPartitionsCard(settings, target, errors, dirtyPaths, onChange)
                 }
-                "slot", "filesystem-handling", "filesystem_handling" -> item {
-                    SlotFilesystemCard(settings, target, dirtyPaths, onChange)
+                "slot" -> item { SlotCard(settings, target, dirtyPaths, onChange) }
+                "filesystem-handling", "filesystem_handling" -> item {
+                    FilesystemCard(settings, target, dirtyPaths, onChange)
                 }
-                else -> item {
-                    ArchiveLayoutCard(settings, errors, dirtyPaths, onChange)
+                else -> {
+                    item { ArchiveLayoutCard(settings, errors, dirtyPaths, onChange) }
+                    item { ArchiveContentsCard(facts) }
                 }
             }
             item { Diagnostics(errors) }
@@ -120,7 +123,7 @@ private fun ArchiveLayoutCard(
             fontFamily = ideFontFamily(),
         )
         Text(
-            text = "Source archive inspection is artifact-derived and read-only here.",
+            text = "How the firmware archive is unpacked. Auto picks the tool from what the archive holds.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
@@ -146,6 +149,77 @@ private fun ArchiveLayoutCard(
     }
 }
 
+/** The source archive's members and the images the last Extract produced: real files, or what to run first. */
+@Composable
+private fun ArchiveContentsCard(facts: ExtractFacts) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Text(
+            text = "Archive contents",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        val archive = facts.archive
+        when {
+            !facts.loaded -> Hint("Reading the workspace…")
+            archive == null -> Hint("No firmware archive yet. Acquire or import one first.")
+            facts.members.isEmpty() -> Hint("$archive could not be read.")
+            else -> {
+                Hint("$archive · ${facts.members.size} members")
+                facts.members.filterNot { it.startsWith("META-INF/") || it.endsWith("/") }.take(MAX_MEMBERS)
+                    .forEach { Mono(it) }
+            }
+        }
+        Text(
+            text = "Extracted images",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.Medium,
+            fontFamily = ideFontFamily(),
+        )
+        if (facts.extracted.isEmpty()) {
+            Hint(if (facts.loaded) "None yet. Run the build through Extract to unpack the archive." else "")
+        } else {
+            facts.extracted.forEach { image ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Mono(image.path)
+                    Mono(formatBytes(image.sizeBytes))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Hint(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = FontSize.BodySmall,
+        fontFamily = ideFontFamily(),
+    )
+}
+
+@Composable
+private fun Mono(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.Micro,
+        fontFamily = codeFontFamily(),
+    )
+}
+
+private const val MAX_MEMBERS = 12
+
 @Composable
 private fun DynamicPartitionsCard(
     settings: ExtractionSettings,
@@ -170,7 +244,7 @@ private fun DynamicPartitionsCard(
             fontFamily = ideFontFamily(),
         )
         Text(
-            text = "Select only partitions declared by the pinned target.",
+            text = "The device's partitions to unpack from the firmware. All are unpacked unless you narrow it.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
@@ -186,7 +260,7 @@ private fun DynamicPartitionsCard(
             path = "dynamicPartitions",
             dirty = dirtyPaths,
             source = "Target capability",
-            help = "Constrained to target.dynamicPartitions.",
+            help = "From the device configuration.",
         )
         Diagnostics(errors.filter { it.fieldPath.endsWith("dynamicPartitions") })
     }
@@ -226,41 +300,22 @@ private fun BootPartitionsCard(
             path = "bootPartitions",
             dirty = dirtyPaths,
             source = "Target capability",
-            help = "Pinned to target.bootPartitions.",
+            help = "From the device configuration.",
         )
         Diagnostics(errors.filter { it.fieldPath.endsWith("bootPartitions") })
     }
 }
 
 @Composable
-private fun SlotFilesystemCard(
+private fun SlotCard(
     settings: ExtractionSettings,
     target: TargetDevice,
     dirtyPaths: Set<String>,
     onChange: (ExtractionSettings) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Slot and filesystem handling",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
+    ExtractCard("Slot") {
         val bootSlots = target.packagePolicy.bootSlots.joinToString()
-        Text(
-            text = "Supported slots: $bootSlots · active ${target.activeSlotSuffix}",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-        )
+        Hint("Which A/B slot's images to unpack. Device slots: $bootSlots · active ${target.activeSlotSuffix}.")
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             listOf(null, *target.packagePolicy.bootSlots.toTypedArray()).forEach { slot ->
                 GlassChip(
@@ -270,12 +325,27 @@ private fun SlotFilesystemCard(
                 )
             }
         }
-        GlassTextField(
-            value = settings.slot.orEmpty(),
-            onValueChange = {},
-            label = "Derived extraction slot",
-            readOnly = true,
-            state = TextFieldState.Helper("Typed target capability; output paths are workspace-derived."),
+        Mono("Unpacks slot " + (settings.slot ?: "${target.activeSlotSuffix.removePrefix("_")} (the active one)"))
+        Meta(
+            path = "slot",
+            dirty = dirtyPaths,
+            source = "This workspace",
+            help = "Auto follows the device's active slot.",
+        )
+    }
+}
+
+@Composable
+private fun FilesystemCard(
+    settings: ExtractionSettings,
+    target: TargetDevice,
+    dirtyPaths: Set<String>,
+    onChange: (ExtractionSettings) -> Unit,
+) {
+    ExtractCard("Filesystem handling") {
+        Hint(
+            "Images are unpacked to firmware/extracted/ as raw ${target.filesystemType} images; " +
+                "Assemble copies their files into work/ with their owners, modes and SELinux labels.",
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -287,18 +357,39 @@ private fun SlotFilesystemCard(
                 activeColor = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "Reuse existing extraction only after verified digest",
+                text = "Reuse the last extraction when the archive's SHA-256 is unchanged",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
             )
         }
         Meta(
-            path = "slot / reuseVerifiedExtraction",
+            path = "reuseVerifiedExtraction",
             dirty = dirtyPaths,
-            source = "Workspace override",
-            help = "Reuse checks digest and sidecar.",
+            source = "This workspace",
+            help = "Off unpacks the archive again on every build.",
         )
+    }
+}
+
+@Composable
+private fun ExtractCard(title: String, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        content()
     }
 }
 
@@ -331,15 +422,16 @@ private fun PartitionChoices(
             )
         }
 
+        val effective = selected.ifEmpty { options }
         options.forEach { name ->
-            val isChecked = name in selected
+            val isChecked = name in effective
             IdeTableRow(
                 isSelected = isChecked,
-                onClick = { onChange(if (isChecked) selected - name else selected + name) },
+                onClick = { onChange(toggledSelection(options, selected, name)) },
             ) {
                 Checkbox(
                     checked = isChecked,
-                    onCheckedChange = { onChange(if (isChecked) selected - name else selected + name) },
+                    onCheckedChange = { onChange(toggledSelection(options, selected, name)) },
                     colors = CheckboxDefaults.colors(
                         checkedColor = MaterialTheme.colorScheme.primary,
                         uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -362,8 +454,12 @@ private fun PartitionChoices(
                     modifier = Modifier.weight(1.5f),
                 )
                 Text(
-                    text = "Target capability",
-                    color = GlassTheme.diagnosticColors.success,
+                    text = if (isChecked) "Unpacked" else "Skipped",
+                    color = if (isChecked) {
+                        GlassTheme.diagnosticColors.success
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     fontSize = FontSize.Micro,
                     fontWeight = FontWeight.Medium,
                     fontFamily = ideFontFamily(),

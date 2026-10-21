@@ -24,7 +24,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.navigation.compose.rememberNavController
 import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
+import org.ide.lti.core.designsystem.theme.AccentColor
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.Appearance
 import org.ide.lti.core.designsystem.theme.GlassSceneHost
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.ui.settings.AppSettingsState
@@ -48,6 +50,9 @@ fun LtiSharedApp(
             appTheme = appTheme,
             effectsEnabled = appSettingsState.effectsEnabled,
             reducedMotion = appSettingsState.reducedMotion,
+            appearance = appSettingsState.appearance.let {
+                Appearance(AccentColor.fromId(it.accent), it.compact, it.textScalePercent / PERCENT)
+            },
         ) {
             Box(
                 modifier = modifier.fillMaxSize(),
@@ -101,3 +106,5 @@ private fun SharedApp(openSettingsRequest: Long, modifier: Modifier = Modifier) 
         )
     }
 }
+
+private const val PERCENT = 100f

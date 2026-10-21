@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -123,7 +124,8 @@ public fun IdeTableRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(GlassDimens.TableBodyRowHeight)
+                // A minimum, not a fixed height: a row with a second line (a build id under a name) grows.
+                .heightIn(min = GlassDimens.TableBodyRowHeight)
                 .background(rowBg)
                 .then(clickableModifier)
                 .padding(horizontal = Spacing.Medium),

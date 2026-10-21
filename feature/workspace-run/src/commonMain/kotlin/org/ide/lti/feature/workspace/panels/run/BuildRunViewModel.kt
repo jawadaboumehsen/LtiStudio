@@ -11,14 +11,26 @@ package org.ide.lti.feature.workspace.panels.run
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
+import org.ide.lti.core.domain.pipeline.configuration.Severity
+import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
@@ -26,8 +38,10 @@ import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
 
 public data class BuildRunUiState(
@@ -41,12 +55,16 @@ public data class BuildRunUiState(
     val failingCheck: String? = null,
     val remediation: String? = null,
     val environmentReadiness: EnvironmentReadiness? = null,
+    /** Blocking problems with the device configuration of the workspace; a build cannot start until empty. */
+    val deviceIssues: List<ValidationError> = emptyList(),
+    /** The next run stops after this stage; null builds everything. */
+    val throughStage: StageId? = null,
 ) {
     val isRunning: Boolean
         get() = latestRun?.state?.isActive == true || isStartingRun
 
     val isRunDisabled: Boolean
-        get() = isRunning || currentWorkspace == null || !canStartRun
+        get() = isRunning || currentWorkspace == null || !canStartRun || deviceIssues.isNotEmpty()
 
     val canCancelRun: Boolean
         get() = latestRun?.state?.isActive == true && !isCancelling && latestRun.state != RunState.CANCELLING
@@ -66,6 +84,8 @@ public class BuildRunViewModel(
     private val reattachRunUseCase: ReattachRunUseCase? = null,
     private val runRepository: RunRepository? = null,
     private val readinessPort: EnvironmentReadinessPort? = null,
+    private val workspaceDeviceRepository: WorkspaceDeviceRepository? = null,
+    private val snapshotRepository: SnapshotRepository? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildRunUiState())
@@ -73,6 +93,7 @@ public class BuildRunViewModel(
     private val autoReattachedRuns = mutableSetOf<String>()
 
     init {
+        observeDeviceIssues()
         if (readinessPort != null) {
             viewModelScope.launch {
                 readinessPort.observe().collectLatest { readiness ->
@@ -135,7 +156,12 @@ public class BuildRunViewModel(
                             state.copy(
                                 latestRun = latest,
                                 isCancelling = latest?.state == RunState.CANCELLING,
-                                logs = if (cachedLogs.isNotEmpty()) cachedLogs else state.logs,
+                                // A new run starts with its own (empty) log, never the previous run's.
+                                logs = if (cachedLogs.isNotEmpty() || latest?.id != state.latestRun?.id) {
+                                    cachedLogs
+                                } else {
+                                    state.logs
+                                },
                                 canStartRun = currentIsReady && latest?.state?.isActive != true,
                             )
                         }
@@ -152,13 +178,50 @@ public class BuildRunViewModel(
         }
     }
 
+    /** The device configuration is part of the gate: its problems keep Start disabled and say why. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeDeviceIssues() {
+        val devices = workspaceDeviceRepository ?: return
+        viewModelScope.launch {
+            workspaceManager.currentWorkspace
+                .flatMapLatest { ws ->
+                    if (ws == null) {
+                        flowOf(emptyList())
+                    } else {
+                        // The opened workspace is a snapshot of the moment it was opened; a saved configuration
+                        // only shows up in the repository, so its snapshot id is followed from there.
+                        val latest = workspaceManager.getWorkspaces()
+                            .map { all -> all.firstOrNull { it.id == ws.id } ?: ws }
+                            .distinctUntilChanged()
+                        combine(devices.observe(ws.id), latest) { device, current -> deviceIssues(current, device) }
+                            .catch { error -> emit(listOf(unreadableDevice(error))) }
+                    }
+                }
+                .collect { issues -> _uiState.update { it.copy(deviceIssues = issues) } }
+        }
+    }
+
+    private suspend fun deviceIssues(ws: Workspace, device: TargetDevice?): List<ValidationError> {
+        val snapshot = ws.effectiveSnapshotId?.let { snapshotRepository?.getSnapshot(it) }
+        return when {
+            device == null -> listOf(MISSING_DEVICE)
+            snapshot == null -> emptyList()
+            else -> DeviceConfigReadiness.check(device, snapshot)
+        }
+    }
+
+    /** Chooses where the next run stops: after [stage], or (null) after the last stage. */
+    public fun selectThroughStage(stage: StageId?) {
+        _uiState.update { it.copy(throughStage = stage) }
+    }
+
     public fun startBuild() {
         val ws = _uiState.value.currentWorkspace ?: return
-        if (_uiState.value.isRunning || !_uiState.value.canStartRun) return
+        if (_uiState.value.isRunDisabled) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isStartingRun = true, errorMessage = null) }
-            val result = startPipelineRunUseCase(ws.id)
+            val result = startPipelineRunUseCase(ws.id, throughStage = _uiState.value.throughStage)
             result.fold(
                 onSuccess = { run ->
                     _uiState.update { it.copy(latestRun = run, isStartingRun = false) }
@@ -213,3 +276,22 @@ public class BuildRunViewModel(
         _uiState.update { it.copy(errorMessage = null) }
     }
 }
+
+private val MISSING_DEVICE = ValidationError(
+    stageId = null,
+    objectId = null,
+    fieldPath = "device",
+    code = "MISSING_DEVICE",
+    severity = Severity.ERROR,
+    message = "This workspace has no device configuration",
+)
+
+/** The device file exists but could not be read (or the service is down): blocking, and never "no device". */
+private fun unreadableDevice(error: Throwable) = ValidationError(
+    stageId = null,
+    objectId = null,
+    fieldPath = "device",
+    code = "UNREADABLE_DEVICE",
+    severity = Severity.ERROR,
+    message = "The device configuration could not be read: ${error.message ?: "unknown error"}",
+)

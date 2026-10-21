@@ -12,8 +12,9 @@ package org.ide.lti.core.data.remote
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -42,19 +43,16 @@ public class EnvironmentReadinessAdapter(
         public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
     }
 
-    private val readinessState =
-        MutableStateFlow(
-            EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT),
-        )
+    // Follows the live setup state (the one the Setup screen shows), not a value cached at the last refresh():
+    // a cache started as ENV_ABSENT and stayed so until something happened to call refresh(). A check in progress
+    // resets its steps before re-running them, so only settled results are reported; otherwise every re-check (the
+    // create-workspace flow runs two) flashes "not ready" and back.
+    override fun observe(): Flow<EnvironmentReadiness> = toolchainService.state
+        .filter { !it.isChecking }
+        .map(::mapToolchainStateToReadiness)
+        .distinctUntilChanged { old, new -> old.copy(observedAt = 0) == new.copy(observedAt = 0) }
 
-    override fun observe(): Flow<EnvironmentReadiness> = readinessState.asStateFlow()
-
-    override suspend fun refresh(): EnvironmentReadiness {
-        val toolchainState = toolchainService.checkStatus()
-        val result = mapToolchainStateToReadiness(toolchainState)
-        readinessState.value = result
-        return result
-    }
+    override suspend fun refresh(): EnvironmentReadiness = mapToolchainStateToReadiness(toolchainService.checkStatus())
 
     override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness {
         val env = refresh()

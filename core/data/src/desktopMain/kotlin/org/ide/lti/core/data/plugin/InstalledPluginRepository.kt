@@ -69,6 +69,9 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
                     report = ValidationReport(),
                     dependencies = pkg.manifest.dependencies,
                     conflicts = pkg.manifest.conflicts,
+                    displayName = pkg.manifest.displayName,
+                    summary = summaryOf(pkg.readme),
+                    compatibility = pkg.template.compatibility,
                 )
             }
             is PackageReadResult.Rejected -> {
@@ -141,6 +144,8 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
             archived = false,
             dependencies = inspection.dependencies,
             conflicts = inspection.conflicts,
+            displayName = inspection.displayName,
+            summary = inspection.summary,
         )
         val recordJson = json.encodeToString(InstalledRecord.serializer(), record)
         atomicWrite(recordFile, recordJson)
@@ -151,19 +156,26 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
         val packagesDir = storeDir.resolve("packages")
         if (!Files.exists(packagesDir)) return emptyList()
 
-        val records = mutableListOf<InstalledRecord>()
+        val records = mutableListOf<Pair<InstalledRecord, Path>>()
         Files.walk(packagesDir).use { stream ->
             stream.filter { it.fileName?.toString() == "record.json" && Files.isRegularFile(it) }
                 .forEach { path ->
                     runCatching {
                         val text = Files.readString(path)
                         json.decodeFromString(InstalledRecord.serializer(), text)
-                    }.getOrNull()?.let { records.add(it) }
+                    }.getOrNull()?.let { records.add(it to path.parent) }
                 }
         }
-        return records.sortedWith(
+        return records.map { (record, dir) -> withNames(record, dir) }.sortedWith(
             compareBy({ it.identity.publisher }, { it.identity.id }, { it.identity.version }),
         )
+    }
+
+    /** A record installed before names were kept gets them from its package. */
+    private suspend fun withNames(record: InstalledRecord, versionDir: Path): InstalledRecord {
+        if (record.displayName.isNotBlank()) return record
+        val inspection = inspect(versionDir.resolve("package.lti-mod.zip"))
+        return record.copy(displayName = inspection.displayName, summary = inspection.summary)
     }
 
     override suspend fun remove(identity: PackageIdentity): Boolean {
@@ -214,3 +226,10 @@ class InstalledPluginRepository(private val storeDir: Path) : PluginInstallPort 
         private const val CHUNK_SIZE = 8 * 1024 * 1024
     }
 }
+
+/** The README's first paragraph that is not a heading, on one line. */
+internal fun summaryOf(readme: String): String = readme.replace("\r\n", "\n").split(Regex("\n\\s*\n"))
+    .map { it.trim() }
+    .firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
+    ?.replace('\n', ' ')
+    .orEmpty()

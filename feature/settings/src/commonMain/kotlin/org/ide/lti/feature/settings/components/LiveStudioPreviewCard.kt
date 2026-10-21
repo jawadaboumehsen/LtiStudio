@@ -55,10 +55,12 @@ import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LocalAppearance
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StudioBackdropColors
 import org.ide.lti.core.designsystem.theme.WallpaperColors
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
+import org.ide.lti.core.designsystem.theme.withAccent
 
 /**
  * Live interactive Studio Preview card displaying a miniature project cockpit window over a scenic mountain backdrop.
@@ -72,7 +74,7 @@ fun LiveStudioPreviewCard(
 ) {
     val isBlueGlass = theme == AppTheme.Blue
     val isDark = theme == AppTheme.Dark
-    val previewScheme = colorSchemeFor(theme)
+    val previewScheme = colorSchemeFor(theme).withAccent(LocalAppearance.current.accent)
 
     val windowCanvasBg = when {
         reduceTransparency -> previewScheme.surfaceContainerHigh

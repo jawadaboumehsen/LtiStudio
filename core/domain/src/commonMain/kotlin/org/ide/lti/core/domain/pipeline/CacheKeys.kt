@@ -15,6 +15,12 @@ import org.ide.lti.core.model.workspace.ExtractionSettings
 import java.security.MessageDigest
 
 public object CacheKeys {
+    /**
+     * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
+     * so a run never reuses outputs an older pipeline made.
+     */
+    public const val PIPELINE_VERSION: String = "2026-10-19.1"
+
     public fun sha256(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")
         val hash = md.digest(text.toByteArray(Charsets.UTF_8))
@@ -70,20 +76,16 @@ public object CacheKeys {
         snapshot: ConfigurationSnapshot,
         avbPubkeySha1: String = "",
         platformCertSha1: String = "",
+        deviceDigest: String = "",
     ): String {
         val raw = listOf(
             stage4Key,
+            deviceDigest,
             snapshot.build.filesystem,
             snapshot.build.compression,
             snapshot.build.level?.toString().orEmpty(),
             snapshot.build.blockSize.toString(),
             snapshot.build.alignment?.toString().orEmpty(),
-            snapshot.build.packagePolicy.flashablePartitions.sorted().joinToString(","),
-            snapshot.build.packagePolicy.flashableBootPartitions.sorted().joinToString(","),
-            snapshot.build.packagePolicy.bootSlots.sorted().joinToString(","),
-            snapshot.build.packagePolicy.excludeVbmeta.toString(),
-            snapshot.build.packagePolicy.recoverySystemMountPoint,
-            snapshot.build.packagePolicy.metadataPolicy.name,
             snapshot.build.signing.signImages.toString(),
             snapshot.build.signing.signPackage.toString(),
             // The template names the produced zip, so it is part of this stage's identity: a different

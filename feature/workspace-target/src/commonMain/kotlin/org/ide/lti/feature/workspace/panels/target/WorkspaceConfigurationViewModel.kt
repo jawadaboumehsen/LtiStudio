@@ -11,26 +11,22 @@ package org.ide.lti.feature.workspace.panels.target
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
-import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
-import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
@@ -43,7 +39,6 @@ data class WorkspaceConfigurationUiState(
     val draft: ConfigurationDraft? = null,
     val isDirty: Boolean = false,
     val isSaving: Boolean = false,
-    val isUploadingArchive: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val availableRegions: List<TargetRegion> = listOf(TargetRegion.GLOBAL, TargetRegion.CHINA),
@@ -59,12 +54,9 @@ data class WorkspaceConfigurationUiState(
 class WorkspaceConfigurationViewModel(
     private val workspaceManager: WorkspaceManager,
     private val snapshotRepository: SnapshotRepository,
-    private val targetRepository: TargetRepository,
+    private val workspaceDeviceRepository: WorkspaceDeviceRepository,
     private val saveConfigurationSnapshotUseCase: SaveConfigurationSnapshotUseCase,
-    private val transport: RemoteFileUploaderPort? = null,
     private val readinessPort: EnvironmentReadinessPort? = null,
-    private val filePicker: (suspend () -> PlatformFile?)? = null,
-    private val fileReader: (suspend (PlatformFile) -> ByteArray) = { it.readBytes() },
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WorkspaceConfigurationUiState())
@@ -83,6 +75,21 @@ class WorkspaceConfigurationViewModel(
                     return@collectLatest
                 }
                 loadWorkspaceConfiguration(workspace)
+                followDevice(workspace.id)
+            }
+        }
+    }
+
+    /** The device card follows the workspace's device when it is created or changed (Start from template, Save). */
+    private suspend fun followDevice(workspaceId: String) {
+        workspaceDeviceRepository.observe(workspaceId).catch { }.collect { device ->
+            if (device == null) return@collect
+            _uiState.update { state ->
+                state.copy(
+                    currentTarget = device,
+                    availableRegions = device.availableRegions,
+                    availableFirmwares = device.availableFirmwares,
+                )
             }
         }
     }
@@ -100,9 +107,7 @@ class WorkspaceConfigurationViewModel(
     }
 
     private suspend fun loadWorkspaceConfiguration(workspace: Workspace) {
-        val target = workspace.targetBinding?.let { binding ->
-            targetRepository.getAvailableTargets().firstOrNull()?.find { it.id == binding.profileId }
-        }
+        val target = runCatching { workspaceDeviceRepository.get(workspace.id) }.getOrNull()
         val regions = target?.availableRegions ?: listOf(TargetRegion.GLOBAL, TargetRegion.CHINA)
         val firmwares = target?.availableFirmwares ?: emptyMap()
 
@@ -137,87 +142,6 @@ class WorkspaceConfigurationViewModel(
         }
     }
 
-    fun updateDraftRegion(region: TargetRegion) {
-        _uiState.update { state ->
-            val draft = state.draft ?: return@update state
-            if (region !in state.availableRegions) {
-                return@update state.copy(errorMessage = "The selected region is not supported by this workspace target")
-            }
-            val firmwares = state.availableFirmwares[region].orEmpty()
-            val newFirmware = firmwares.firstOrNull { it.isRecommended }
-                ?: firmwares.firstOrNull()
-                ?: return@update state.copy(
-                    errorMessage = "No compatible firmware is available for ${region.displayName}",
-                )
-            state.copy(
-                draft = draft.copy(region = region, firmware = newFirmware),
-                isDirty = true,
-                errorMessage = null,
-            )
-        }
-    }
-
-    fun updateDraftFirmware(firmware: TargetFirmware) {
-        _uiState.update { state ->
-            val draft = state.draft ?: return@update state
-            if (firmware !in state.availableFirmwares[draft.region].orEmpty()) {
-                return@update state.copy(
-                    errorMessage = "The selected firmware is not compatible with ${draft.region.displayName}",
-                )
-            }
-            state.copy(
-                draft = draft.copy(firmware = firmware),
-                isDirty = true,
-                errorMessage = null,
-            )
-        }
-    }
-
-    fun selectAcquisitionMode(mode: AcquisitionMode) {
-        _uiState.update { state ->
-            val draft = state.draft ?: return@update state
-            state.copy(
-                draft = draft.copy(acquisitionMode = mode),
-                isDirty = true,
-                errorMessage = null,
-            )
-        }
-    }
-
-    fun pickAndUploadArchive(injectedFile: PlatformFile? = null) {
-        viewModelScope.launch {
-            val file = injectedFile ?: filePicker?.invoke() ?: DialogUtils.selectFile()
-            if (file == null) return@launch
-
-            val ws = _uiState.value.currentWorkspace
-            val linuxPath = ws?.linuxPath
-            if (transport != null && !linuxPath.isNullOrBlank()) {
-                _uiState.update { it.copy(isUploadingArchive = true) }
-                val dest = "$linuxPath/firmware/downloaded/${file.name}"
-                val uploaded = transport.uploadFile(dest, fileReader(file))
-                if (!uploaded) {
-                    _uiState.update {
-                        it.copy(isUploadingArchive = false, errorMessage = "Failed to upload archive: ${file.name}")
-                    }
-                    return@launch
-                }
-            }
-
-            _uiState.update { state ->
-                val draft = state.draft ?: return@update state
-                state.copy(
-                    draft = draft.copy(
-                        acquisitionMode = AcquisitionMode.IMPORT_ARCHIVE,
-                        importedArchiveName = file.name,
-                    ),
-                    isDirty = true,
-                    isUploadingArchive = false,
-                    errorMessage = null,
-                )
-            }
-        }
-    }
-
     fun setBuildType(buildType: String) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
@@ -229,13 +153,6 @@ class WorkspaceConfigurationViewModel(
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
             state.copy(draft = draft.copy(romVersion = romVersion), isDirty = true)
-        }
-    }
-
-    fun setOtaBaseUrl(otaBaseUrl: String) {
-        _uiState.update { state ->
-            val draft = state.draft ?: return@update state
-            state.copy(draft = draft.copy(otaBaseUrl = otaBaseUrl), isDirty = true)
         }
     }
 
@@ -252,20 +169,24 @@ class WorkspaceConfigurationViewModel(
         val workspace = state.currentWorkspace
         if (draft == null || workspace == null) return
 
-        if (!draft.otaBaseUrl.startsWith("https://") || draft.otaBaseUrl.endsWith("/")) {
-            _uiState.update {
-                it.copy(errorMessage = "otaBaseUrl must start with https:// and not end with a trailing slash")
-            }
-        } else {
-            persist(workspace, draft)
-        }
+        persist(workspace, draft)
     }
 
     private fun persist(workspace: Workspace, draft: ConfigurationDraft) {
         val workspaceId = workspace.id
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-            val result = saveConfigurationSnapshotUseCase(workspaceId, draft)
+            // Only what this panel edits is written; the rest (firmware source, OTA URL, ...) belongs to the
+            // stage editors and is kept as they last saved it.
+            val result = if (_uiState.value.initialSnapshot == null) {
+                saveConfigurationSnapshotUseCase(workspaceId, draft)
+            } else {
+                saveConfigurationSnapshotUseCase.update(workspaceId) { current ->
+                    current.copy(
+                        assembly = current.assembly.copy(buildType = draft.buildType, romVersion = draft.romVersion),
+                    )
+                }
+            }
             result.onSuccess { snapshot ->
                 _uiState.update { s ->
                     // A completion for a workspace that is no longer active must never

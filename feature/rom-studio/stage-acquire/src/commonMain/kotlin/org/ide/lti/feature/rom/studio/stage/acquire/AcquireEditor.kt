@@ -17,12 +17,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.workspace.FirmwareArchive
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.feature.rom.studio.stage.acquire.panes.DownloadPolicyPane
@@ -37,6 +41,13 @@ public fun AcquireEditor(
     settings: AcquisitionSettings,
     target: TargetDevice,
     onChange: (AcquisitionSettings) -> Unit,
+    archiveState: ArchiveState = ArchiveState(),
+    onProbe: () -> Unit = {},
+    onImport: () -> Unit = {},
+    onSelectArchive: (FirmwareArchive) -> Unit = {},
+    saveError: String? = null,
+    integrity: IntegrityFacts = IntegrityFacts(),
+    onRefreshIntegrity: () -> Unit = {},
     selectedObjectId: String = "integrity",
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -57,12 +68,20 @@ public fun AcquireEditor(
                 .verticalScroll(scrollState)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
         ) {
+            saveError?.let {
+                Text(
+                    text = "Not saved: $it",
+                    color = GlassTheme.diagnosticColors.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = Spacing.Small).testTag("StageSaveError"),
+                )
+            }
             when (selectedObjectId.lowercase()) {
                 "integrity" -> IntegrityPane(
                     settings = settings,
-                    target = target,
-                    onValidate = onValidate,
-                    onSave = onSave,
+                    facts = integrity,
+                    onRefresh = onRefreshIntegrity,
+                    onExpectedChange = { onChange(settings.copy(expectedSha256 = it)) },
                 )
                 "download-policy", "download_policy", "download" -> DownloadPolicyPane(
                     settings = settings,
@@ -73,10 +92,10 @@ public fun AcquireEditor(
                 )
                 "existing-archives", "existing_archives", "archives" -> ExistingArchivesPane(
                     settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
+                    archiveState = archiveState,
+                    onProbe = onProbe,
+                    onImport = onImport,
+                    onSelect = onSelectArchive,
                 )
                 "firmware-baseline", "firmware_baseline", "baseline" -> FirmwareBaselinePane(
                     settings = settings,

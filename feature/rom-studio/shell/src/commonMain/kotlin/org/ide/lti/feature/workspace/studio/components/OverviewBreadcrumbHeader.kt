@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
@@ -60,6 +59,9 @@ public fun OverviewBreadcrumbHeader(
     onReload: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit = {},
     modifier: Modifier = Modifier,
+    /** `PQ84P01 / Internal`: the device and release channel; [targetDetail] its revision. */
+    targetLine: String = "",
+    targetDetail: String = "",
 ) {
     Column(
         modifier = modifier
@@ -77,7 +79,7 @@ public fun OverviewBreadcrumbHeader(
             subtitle.startsWith("Bound") ||
             subtitle == "No target profile bound"
         val displaySubtitle = if (isFallbackSubtitle) {
-            "Configure the next build for PQ84P01."
+            "Configure the next build for this device."
         } else {
             subtitle
         }
@@ -104,13 +106,18 @@ public fun OverviewBreadcrumbHeader(
                 )
             }
 
-            OverviewHeaderTargetAndActions(onReload = onReload, onAction = onAction)
+            OverviewHeaderTargetAndActions(targetLine, targetDetail, onReload = onReload, onAction = onAction)
         }
     }
 }
 
 @Composable
-private fun OverviewHeaderTargetAndActions(onReload: () -> Unit, onAction: (WorkspaceActionUi) -> Unit) {
+private fun OverviewHeaderTargetAndActions(
+    targetLine: String,
+    targetDetail: String,
+    onReload: () -> Unit,
+    onAction: (WorkspaceActionUi) -> Unit,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -120,14 +127,14 @@ private fun OverviewHeaderTargetAndActions(onReload: () -> Unit, onAction: (Work
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         ) {
             Text(
-                text = "PQ84P01 / Development",
+                text = targetLine,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = GlassFontFamily.ide(),
             )
             Text(
-                text = "Target revision 4 · Draft changes",
+                text = targetDetail,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = GlassFontFamily.ide(),
@@ -140,10 +147,7 @@ private fun OverviewHeaderTargetAndActions(onReload: () -> Unit, onAction: (Work
                 .testTag("OverviewValidateAndSave")
                 .background(MaterialTheme.colorScheme.primary, GlassShapes.ShellControl)
                 .clickable(
-                    onClick = {
-                        onAction(WorkspaceActionUi.Validate)
-                        onAction(WorkspaceActionUi.Save)
-                    },
+                    onClick = { onAction(WorkspaceActionUi.Validate) },
                 )
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
             contentAlignment = Alignment.Center,
@@ -159,39 +163,10 @@ private fun OverviewHeaderTargetAndActions(onReload: () -> Unit, onAction: (Work
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
-                    text = "Validate and Save",
+                    text = "Check readiness",
                     color = BrandColors.OnLogoBadge,
                     fontSize = FontSize.BodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-            }
-        }
-
-        // Outlined "Discard changes" button
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
-                .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outlineVariant, GlassShapes.ShellControl)
-                .clickable(onClick = {})
-                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Small),
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Cancel,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = "Discard changes",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Medium,
                     fontFamily = GlassFontFamily.ide(),
                 )
             }

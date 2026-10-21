@@ -18,6 +18,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -208,9 +210,20 @@ fun LtiTheme(
     appTheme: AppTheme = AppTheme.Blue,
     effectsEnabled: Boolean? = null,
     reducedMotion: Boolean? = null,
+    /** The user's [Appearance]; null keeps the enclosing one (and its density and text size, applied once). */
+    appearance: Appearance? = null,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = colorSchemeFor(appTheme)
+    val resolvedAppearance = appearance ?: LocalAppearance.current
+    val colorScheme = colorSchemeFor(appTheme).withAccent(resolvedAppearance.accent)
+    val baseDensity = LocalDensity.current
+    val density = if (appearance == null) {
+        baseDensity
+    } else {
+        val scale = if (appearance.compact) Appearance.COMPACT_SCALE else 1f
+        // Compact shrinks dp (spacing, controls); fontScale makes up for it so text stays at the chosen size.
+        Density(baseDensity.density * scale, baseDensity.fontScale * appearance.textScale / scale)
+    }
     val parentSceneHost = LocalGlassSceneHost.current
     val existingHazeState = LocalHazeState.current
     val hazeState = existingHazeState ?: rememberHazeState()
@@ -244,6 +257,8 @@ fun LtiTheme(
 
     CompositionLocalProvider(
         LocalAppTheme provides appTheme,
+        LocalAppearance provides resolvedAppearance,
+        LocalDensity provides density,
         LocalHazeState provides hazeState,
         LocalGlassEffectsEnabled provides resolvedEffectsEnabled,
         LocalGlassAccessibilitySettings provides accessibilitySettings,

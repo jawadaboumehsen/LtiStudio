@@ -17,7 +17,6 @@ import org.ide.lti.core.domain.pipeline.stages.GenerateOtaManifestStage
 import org.ide.lti.core.domain.pipeline.stages.ModuleApplicationStage
 import org.ide.lti.core.domain.pipeline.stages.WorkTreeAssemblyStage
 import org.ide.lti.core.model.target.FirmwareSourceKind
-import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -216,14 +215,11 @@ class StageSettingConsumerMatrixTest {
             mutate = { snap -> snap.copy(debloat = snap.debloat.copy(enabled = true)) },
         ),
         ConsumedFieldCase(
-            fieldName = "debloat.presetId",
-            stage = DebloatStage(),
-            mutate = { snap -> snap.copy(debloat = snap.debloat.copy(presetId = "preset_aggressive")) },
-        ),
-        ConsumedFieldCase(
             fieldName = "debloat.removeSelectors",
             stage = DebloatStage(),
-            mutate = { snap -> snap.copy(debloat = snap.debloat.copy(removeSelectors = listOf("system/app/Bloat"))) },
+            mutate = { snap ->
+                snap.copy(debloat = snap.debloat.copy(removeSelectors = listOf("system:system/app/Bloat")))
+            },
         ),
 
         // CustomizationSettings
@@ -284,60 +280,6 @@ class StageSettingConsumerMatrixTest {
             fieldName = "build.alignment",
             stage = BuildFlashableZipStage(),
             mutate = { snap -> snap.copy(build = snap.build.copy(alignment = 4096)) },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.flashablePartitions",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                snap.copy(
-                    build = snap.build.copy(
-                        packagePolicy = snap.build.packagePolicy.copy(flashablePartitions = listOf("system")),
-                    ),
-                )
-            },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.flashableBootPartitions",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                snap.copy(
-                    build = snap.build.copy(
-                        packagePolicy = snap.build.packagePolicy.copy(flashableBootPartitions = listOf("boot")),
-                    ),
-                )
-            },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.bootSlots",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                val policy = snap.build.packagePolicy.copy(bootSlots = listOf("a"))
-                snap.copy(build = snap.build.copy(packagePolicy = policy))
-            },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.excludeVbmeta",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                val policy = snap.build.packagePolicy.copy(excludeVbmeta = false)
-                snap.copy(build = snap.build.copy(packagePolicy = policy))
-            },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.recoverySystemMountPoint",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                val policy = snap.build.packagePolicy.copy(recoverySystemMountPoint = "/system")
-                snap.copy(build = snap.build.copy(packagePolicy = policy))
-            },
-        ),
-        ConsumedFieldCase(
-            fieldName = "build.packagePolicy.metadataPolicy",
-            stage = BuildFlashableZipStage(),
-            mutate = { snap ->
-                val policy = snap.build.packagePolicy.copy(metadataPolicy = MetadataPolicy.PACKAGE_ONLY)
-                snap.copy(build = snap.build.copy(packagePolicy = policy))
-            },
         ),
         ConsumedFieldCase(
             fieldName = "build.signing.signImages",

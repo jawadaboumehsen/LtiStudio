@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.repository.user.UserDataRepository
+import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.model.user.EditorSettings
 import org.ide.lti.core.model.user.NotificationSettings
 
@@ -32,6 +33,7 @@ class AppSettingsState(
     initialReducedMotion: Boolean = false,
     initialEditorSettings: EditorSettings = EditorSettings(),
     initialNotificationSettings: NotificationSettings = NotificationSettings(),
+    initialAppearance: AppearanceSettings = AppearanceSettings(),
     private val userDataRepository: UserDataRepository? = null,
     private val coroutineScope: CoroutineScope? = null,
 ) {
@@ -79,6 +81,16 @@ class AppSettingsState(
         set(value) {
             notificationSettingsState.value = value
             persist { setNotificationSettings(value) }
+        }
+
+    private val appearanceState = mutableStateOf(initialAppearance)
+
+    /** Accent colour, density and text size; saved, and applied to the whole app by its root theme. */
+    var appearance: AppearanceSettings
+        get() = appearanceState.value
+        set(value) {
+            appearanceState.value = value
+            persist { setAppearance(value) }
         }
 
     private fun persist(action: suspend UserDataRepository.() -> Unit) {

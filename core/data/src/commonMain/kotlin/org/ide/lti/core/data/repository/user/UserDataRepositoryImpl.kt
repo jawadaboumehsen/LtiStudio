@@ -12,6 +12,7 @@ package org.ide.lti.core.data.repository.user
 import kotlinx.coroutines.flow.Flow
 import org.ide.lti.core.datastore.LtiPreferencesDataSource
 import org.ide.lti.core.domain.repository.user.UserDataRepository
+import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.model.user.EditorSettings
 import org.ide.lti.core.model.user.NotificationSettings
 import org.ide.lti.core.model.user.UserData
@@ -38,4 +39,6 @@ public class UserDataRepositoryImpl(
 
     override suspend fun setNotificationSettings(notificationSettings: NotificationSettings) =
         preferencesDataSource.setNotificationSettings(notificationSettings)
+
+    override suspend fun setAppearance(appearance: AppearanceSettings) = preferencesDataSource.setAppearance(appearance)
 }

@@ -224,11 +224,10 @@ class SetupViewModelWorkspaceTest {
                 }
             testScheduler.advanceUntilIdle()
 
-            // On init, recents is clean and empty (no auto-seeding without user action)
+            // Without a ready build service, discovery adds nothing (DiscoverWorkdirWorkspacesUseCaseTest covers it)
             assertEquals(0, viewModel.recentProjects.value.size)
 
-            // Explicit discovery populates canonical workspaces
-            viewModel.discoverWorkspaces()
+            repo.discoverWorkspacesInWorkDir(null) // seeds two recents
             testScheduler.advanceUntilIdle()
 
             assertEquals(2, viewModel.recentProjects.value.size)

@@ -29,13 +29,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
@@ -64,7 +68,6 @@ import org.ide.lti.feature.plugins.components.PluginStepper
 @Composable
 internal fun PluginImportTab(
     importPath: String,
-    quarantinedPath: String?,
     inspection: PackageInspection?,
     isLegacyUnsupported: Boolean,
     legacyFormatName: String?,
@@ -85,8 +88,8 @@ internal fun PluginImportTab(
         else -> ImportStep.INSPECT
     }
 
-    val effectivePath = quarantinedPath ?: importPath
-    val displayFileName = effectivePath.substringAfterLast('/').substringAfterLast('\\').ifBlank {
+    // The file you picked; the quarantine copy has a generated name.
+    val displayFileName = importPath.trim().substringAfterLast('/').substringAfterLast('\\').ifBlank {
         "No package selected"
     }
 
@@ -145,7 +148,6 @@ internal fun PluginImportTab(
                         ImportLeftReviewColumn(
                             inspection = inspection,
                             displayFileName = displayFileName,
-                            importPath = importPath,
                             modifier = Modifier.weight(1f),
                         )
 
@@ -240,6 +242,20 @@ private fun ImportPackageHeader(
                     placeholder = "C:/path/to/my-plugin.lti-mod.zip or /path/to/pkg.lti-mod.zip",
                     modifier = Modifier.weight(1f),
                 )
+                val scope = rememberCoroutineScope()
+                GlassButton(
+                    onClick = {
+                        scope.launch {
+                            DialogUtils.selectFilePath(title = "Select a plugin package")?.let(onImportPathChange)
+                        }
+                    },
+                    variant = GlassButtonVariant.Standard,
+                    shape = GlassShapes.HazeMediumSmall,
+                    minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                    modifier = Modifier.testTag("PluginImportBrowse"),
+                ) {
+                    Text("Browse…")
+                }
                 GlassButton(
                     onClick = { onInspectPath(importPath) },
                     enabled = hasPath,
@@ -315,7 +331,9 @@ private fun ImportPackageIdentityCard(
     identityId: String?,
     identityVersion: String?,
     displayFileName: String,
-    importPath: String,
+    name: String,
+    summary: String,
+    madeFor: String,
 ) {
     Box(
         modifier = Modifier
@@ -340,13 +358,18 @@ private fun ImportPackageIdentityCard(
             )
             GlassHorizontalDivider(specular = true)
 
-            ImportDetailRow("Name", identityId ?: "Identity unavailable")
+            ImportDetailRow("Name", name.ifBlank { identityId ?: "Identity unavailable" })
+            ImportDetailRow("Package", identityId ?: "Unavailable")
             ImportDetailRow("Version", identityVersion ?: "Unavailable")
-            ImportDetailRow("Package type", "LtiRom package archive")
-            ImportDetailRow("File name", displayFileName)
-            ImportDetailRow("File size", "Not reported by inspection")
-            ImportDetailRow("Imported from", importPath)
-            ImportDetailRow("Import time", "Not recorded")
+            ImportDetailRow("File", displayFileName)
+            ImportDetailRow("Made for", madeFor)
+            if (summary.isNotBlank()) {
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -541,7 +564,6 @@ private fun ImportSignatureCard(isSigned: Boolean) {
 private fun ImportLeftReviewColumn(
     inspection: PackageInspection,
     displayFileName: String,
-    importPath: String,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -552,7 +574,11 @@ private fun ImportLeftReviewColumn(
             identityId = inspection.identity?.id,
             identityVersion = inspection.identity?.version,
             displayFileName = displayFileName,
-            importPath = importPath,
+            name = inspection.displayName,
+            summary = inspection.summary,
+            madeFor = inspection.compatibility.joinToString("; ") { c ->
+                c.device + c.firmwares.takeIf { it.isNotEmpty() }?.joinToString(", ", " (", ")").orEmpty()
+            }.ifEmpty { "Any device" },
         )
         val hasBlockingErrors = inspection.report.hasBlockingErrors()
         ImportSdkCompatibilityCard(hasBlockingErrors = hasBlockingErrors)
@@ -580,8 +606,6 @@ private fun ImportRightReviewColumn(
         if (!isSigned) {
             UnsignedSecurityAlertCard()
         }
-
-        PackageEffectsCard()
 
         DependencyResolutionCard(inspection = inspection)
 
@@ -704,51 +728,6 @@ private fun UnsignedSecurityAlertCard(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PackageEffectsCard(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
-            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-        ) {
-            Text(
-                text = "Declared effects",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            GlassHorizontalDivider(specular = true)
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Icon(
-                    painter = AppIcons.InfoPainterResource(),
-                    contentDescription = "Effects unavailable",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = "This inspection contract does not expose an operation/effect summary.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Modifier = Modifier) {
     val hasBlockingErrors = inspection.report.hasBlockingErrors()
     val dependencyCount = inspection.dependencies.size
@@ -808,7 +787,12 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
                 )
             }
             Text(
-                text = "$dependencyCount declared dependencies · $conflictCount declared conflicts.",
+                text = listOf(
+                    inspection.dependencies.joinToString { "${it.publisher}:${it.id}" }
+                        .let { if (it.isBlank()) "Needs nothing else" else "Needs $it" },
+                    inspection.conflicts.joinToString { "${it.publisher}:${it.id}" }
+                        .let { if (it.isBlank()) "no conflicts" else "conflicts with $it" },
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

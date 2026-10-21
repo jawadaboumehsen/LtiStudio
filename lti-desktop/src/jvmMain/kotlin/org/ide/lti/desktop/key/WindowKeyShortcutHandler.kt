@@ -101,7 +101,8 @@ object WindowKeyShortcutHandler {
             else -> null
         }
 
-        return if (action != null) {
+        // Only a shortcut something handles is taken: Ctrl+C/V/X/A/Z reach the focused text field otherwise.
+        return if (action != null && dispatcher.handles(action)) {
             dispatcher.dispatch(action)
             true
         } else {

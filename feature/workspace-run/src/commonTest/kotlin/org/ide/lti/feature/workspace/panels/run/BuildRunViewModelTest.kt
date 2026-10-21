@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -35,7 +36,7 @@ import org.ide.lti.core.domain.ports.VendoredFile
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
@@ -132,15 +133,18 @@ class BuildRunViewModelTest {
         override suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long) {}
     }
 
-    private class FakeTargetRepository(val targets: List<TargetDevice>) : TargetRepository {
-        private val selectedFlow = MutableStateFlow(targets.first())
-        override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(targets)
-        override fun getSelectedTarget(): Flow<TargetDevice> = selectedFlow
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> =
-            Result.success(targets.first { it.id == targetId })
-        override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
+    /** One device for any workspace id; saves are kept so a test can read them back. */
+    private class FakeWorkspaceDevices(private val device: TargetDevice? = null) : WorkspaceDeviceRepository {
+        private val saved = MutableStateFlow<Map<String, TargetDevice>>(emptyMap())
+
+        override fun observe(workspaceId: String): Flow<TargetDevice?> = saved.map { it[workspaceId] ?: device }
+
+        override suspend fun get(workspaceId: String): TargetDevice? = saved.value[workspaceId] ?: device
+
+        override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice {
+            saved.value = saved.value + (workspaceId to device)
+            return device
+        }
     }
 
     private class FakeReadinessPort(var readinessState: EnvironmentReadinessState = EnvironmentReadinessState.READY) :
@@ -223,7 +227,7 @@ class BuildRunViewModelTest {
             status = TargetStatus.QUALIFIED,
             description = "Official baseline",
         )
-        val targetRepo = FakeTargetRepository(listOf(target))
+        val targetRepo = FakeWorkspaceDevices(target)
 
         val orchestrator =
             PipelineOrchestrator(
@@ -235,7 +239,7 @@ class BuildRunViewModelTest {
         val startUseCase = StartPipelineRunUseCase(
             workspaceRepository = workspaceRepo,
             snapshotRepository = snapshotRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort,
             runRepository = runRepo,
@@ -252,9 +256,19 @@ class BuildRunViewModelTest {
             observeRunUseCase = observeUseCase,
             runRepository = runRepo,
         )
+        // Same, but with the device configuration as part of the Start gate.
+        val gatedViewModel = BuildRunViewModel(
+            workspaceManager = workspaceManager,
+            startPipelineRunUseCase = startUseCase,
+            observeRunUseCase = observeUseCase,
+            runRepository = runRepo,
+            workspaceDeviceRepository = targetRepo,
+            snapshotRepository = snapshotRepo,
+        )
 
         return Fixture(
             viewModel = viewModel,
+            gatedViewModel = gatedViewModel,
             workspaceManager = workspaceManager,
             workspaceRepo = workspaceRepo,
             snapshotRepo = snapshotRepo,
@@ -266,6 +280,7 @@ class BuildRunViewModelTest {
 
     private data class Fixture(
         val viewModel: BuildRunViewModel,
+        val gatedViewModel: BuildRunViewModel,
         val workspaceManager: WorkspaceManager,
         val workspaceRepo: FakeWorkspaceRepository,
         val snapshotRepo: FakeSnapshotRepository,
@@ -285,7 +300,6 @@ class BuildRunViewModelTest {
                 firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
             ),
             build = org.ide.lti.core.model.workspace.BuildSettings(
-                packagePolicy = target.packagePolicy!!,
                 signing = org.ide.lti.core.model.workspace.SigningPolicy(),
             ),
             assembly = org.ide.lti.core.model.workspace.AssemblySettings(
@@ -503,6 +517,46 @@ class BuildRunViewModelTest {
         val manifest = state.latestRun!!.artifacts[2]
         assertEquals(ArtifactKind.OTA_MANIFEST, manifest.kind)
         assertEquals(VerificationState.VERIFIED, manifest.verification)
+    }
+
+    @Test
+    fun an_incomplete_device_configuration_disables_start_and_lists_what_to_fix() = runTest {
+        val fixture = createFixture()
+        fixture.createAndOpenWorkspace()
+        advanceUntilIdle()
+
+        val state = fixture.gatedViewModel.uiState.value
+        assertTrue(state.deviceIssues.isNotEmpty(), "the fixture has no firmware download url")
+        assertTrue(state.isRunDisabled)
+
+        fixture.gatedViewModel.startBuild()
+        advanceUntilIdle()
+        assertNull(fixture.gatedViewModel.uiState.value.latestRun, "nothing starts while the device has problems")
+
+        val rows = deviceChecklist(state.deviceIssues)
+        assertEquals(9, rows.size, "device plus the eight stages")
+        assertEquals("Acquire firmware", rows[1].label)
+        assertTrue(rows[1].problem != null)
+        assertNull(rows.first { it.label == "Debloat" }.problem)
+    }
+
+    @Test
+    fun fixing_the_configuration_unblocks_start_without_reopening_the_workspace() = runTest {
+        val fixture = createFixture()
+        val (workspace, snapshot) = fixture.createAndOpenWorkspace()
+        advanceUntilIdle()
+        assertTrue(fixture.gatedViewModel.uiState.value.deviceIssues.isNotEmpty())
+
+        val firmware = snapshot.acquisition.firmware.copy(
+            acquisitionUrl = "https://example.com/fw.zip",
+            sha256 = "b".repeat(64),
+        )
+        val fixed = snapshot.copy(id = "snap-2", acquisition = snapshot.acquisition.copy(firmware = firmware))
+        fixture.snapshotRepo.saveSnapshot(fixed)
+        fixture.workspaceRepo.saveWorkspace(workspace.copy(effectiveSnapshotId = fixed.id))
+        advanceUntilIdle()
+
+        assertEquals(emptyList(), fixture.gatedViewModel.uiState.value.deviceIssues)
     }
 }
 

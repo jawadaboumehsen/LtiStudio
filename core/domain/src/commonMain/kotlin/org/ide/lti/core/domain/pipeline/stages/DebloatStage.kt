@@ -10,116 +10,101 @@
 package org.ide.lti.core.domain.pipeline.stages
 
 import kotlinx.serialization.encodeToString
+import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatDecision
+import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.debloat.DebloatResolution
+import org.ide.lti.core.domain.debloat.DebloatResolver
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
-import org.ide.lti.core.domain.pipeline.configuration.Severity
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
-import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.pipeline.stepCommand
+import org.ide.lti.core.domain.pipeline.text.SidecarEditor
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
-private val DEFAULT_DEBLOAT_PLANNER: (StageContext) -> DebloatResolution = { ctx ->
-    if (!ctx.snapshot.debloat.enabled) {
-        DebloatResolution.Resolved(
-            DebloatDecision(
-                removals = emptyList(),
-                kept = emptyList(),
-                logicalBytesFreed = 0L,
-            ),
-        )
-    } else {
-        DebloatResolution.Rejected(
-            ValidationReport(
-                errors = listOf(
-                    ValidationError(
-                        stageId = StageId.DEBLOAT,
-                        objectId = null,
-                        fieldPath = "debloat",
-                        code = "DEBLOAT_INVENTORY_UNAVAILABLE",
-                        severity = Severity.ERROR,
-                        message = "debloat inventory unavailable",
-                    ),
-                ),
-            ),
-        )
-    }
-}
-
 /**
- * Stage 4. Disabled debloat still materialises a digested no-removal result so downstream stages
- * consume a verified artifact rather than an absent one. Enabled debloat resolves candidate removals
- * through the injected [debloatPlanner], writes the decision to work/debloat/selection.json, and asserts
- * application success via a runtime check step.
+ * Stage 4. Lists the apps in the assembled work tree, resolves the user's picks against the protected list
+ * ([DebloatResolver], [DebloatInventory]), deletes the picked app folders and prunes their fs_config /
+ * file_context entries in one pass per partition, then records what it removed in `work/debloat/result.json`.
+ * Disabled debloat still writes a no-removal result, so later stages read a verified artifact.
  */
-public class DebloatStage(private val debloatPlanner: (StageContext) -> DebloatResolution = DEFAULT_DEBLOAT_PLANNER) :
-    StageDefinition {
+public class DebloatStage : StageDefinition {
     override val id: StageId = StageId.DEBLOAT
-    override val requiredToolIds: Set<String> = emptySet()
+    override val requiredToolIds: Set<String> = setOf("find", "rm")
 
-    override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String {
-        val settingsPayload = ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.debloat)
-        val decisionPayload = if (ctx.snapshot.debloat.enabled) {
-            when (val resolution = debloatPlanner(ctx)) {
-                is DebloatResolution.Resolved -> ConfigurationSnapshot.canonicalJson.encodeToString(resolution.decision)
-                is DebloatResolution.Rejected -> ""
-            }
-        } else {
-            ""
+    // The inventory is the previous stage's output (covered by its key); the picks are the settings.
+    override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String = CacheKeys.sha256(
+        previousStageCacheKey + ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.debloat),
+    )
+
+    override fun outputs(ctx: StageContext): List<String> = listOf(RESULT)
+
+    override fun plan(ctx: StageContext): List<PipelineStep> = when {
+        !ctx.snapshot.debloat.enabled ->
+            listOf(PipelineStep.WriteFile(RESULT, """{"enabled":false,"removed":[]}""".encodeToByteArray()))
+        else -> listOf(
+            PipelineStep.Tool(
+                command = stepCommand("find", DebloatInventory.listingArgs(ctx.abs("work")), ctx.wsPath),
+                label = "list apps",
+                resultKey = INVENTORY_KEY,
+            ),
+        ) + ctx.value(INVENTORY_KEY)?.let { stepsFor(ctx, DebloatInventory.parse(it)) }.orEmpty()
+    }
+
+    /** Once the inventory is read: refuse a bad pick, or remove the picked apps. */
+    private fun stepsFor(ctx: StageContext, inventory: List<DebloatCandidate>): List<PipelineStep> {
+        val resolution = DebloatResolver.resolve(
+            settings = ctx.snapshot.debloat,
+            inventory = inventory,
+            presetSelectors = emptyList(),
+            protectedSelectors = DebloatInventory.protectedSelectors(inventory),
+            targetPartitions = inventory.map { it.partition }.toSet(),
+        )
+        return when (resolution) {
+            is DebloatResolution.Rejected -> listOf(
+                PipelineStep.Check("debloat selection") {
+                    resolution.report.errors.joinToString("; ") { "${it.code}: ${it.message}" }
+                },
+            )
+            is DebloatResolution.Resolved -> removalSteps(ctx, resolution.decision)
         }
-        return CacheKeys.sha256(previousStageCacheKey + settingsPayload + decisionPayload)
     }
 
-    override fun outputs(ctx: StageContext): List<String> = if (!ctx.snapshot.debloat.enabled) {
-        listOf("work/debloat/result.json")
-    } else {
-        listOf("work/debloat/selection.json")
-    }
-
-    override fun plan(ctx: StageContext): List<PipelineStep> {
-        if (!ctx.snapshot.debloat.enabled) {
-            return listOf(
-                PipelineStep.WriteFile(
-                    relPath = "work/debloat/result.json",
-                    content = """{"enabled":false,"removed":[]}""".encodeToByteArray(),
-                ),
+    private fun removalSteps(ctx: StageContext, decision: DebloatDecision): List<PipelineStep> {
+        val steps = mutableListOf<PipelineStep>()
+        val byPartition = decision.removals.groupBy { it.partition }
+        if (decision.removals.isNotEmpty()) {
+            val paths = decision.removals.map { ctx.abs("work/${it.partition}/${it.relativePath}") }
+            steps += PipelineStep.Tool(stepCommand("rm", listOf("-rf", "--") + paths, ctx.wsPath), "remove apps")
+        }
+        byPartition.forEach { (partition, removals) ->
+            val paths = removals.map { it.relativePath }
+            steps += PipelineStep.EditFile(
+                "work/configs/fs_config-$partition",
+                { SidecarEditor.withoutFsConfig(it, partition, paths) },
+                "prune fs_config $partition",
+            )
+            steps += PipelineStep.EditFile(
+                "work/configs/file_context-$partition",
+                { SidecarEditor.withoutFileContext(it, partition, paths) },
+                "prune file_context $partition",
             )
         }
+        steps += PipelineStep.WriteFile(
+            RESULT,
+            ConfigurationSnapshot.canonicalJson.encodeToString(decision).encodeToByteArray(),
+        )
+        return steps
+    }
 
-        return when (val resolution = debloatPlanner(ctx)) {
-            is DebloatResolution.Rejected -> {
-                val firstCode = resolution.report.errors.firstOrNull()?.code ?: "DEBLOAT_INVENTORY_UNAVAILABLE"
-                val message = resolution.report.errors.firstOrNull()?.message.orEmpty()
-                listOf(
-                    PipelineStep.Check(
-                        label = "Debloat Checks",
-                        verify = { if (message.isNotEmpty()) "$firstCode: $message" else firstCode },
-                    ),
-                )
-            }
-            is DebloatResolution.Resolved -> {
-                val decisionJson = ConfigurationSnapshot.canonicalJson.encodeToString(resolution.decision)
-                listOf(
-                    PipelineStep.WriteFile(
-                        relPath = "work/debloat/selection.json",
-                        content = decisionJson.encodeToByteArray(),
-                    ),
-                    PipelineStep.Check(
-                        label = "debloat applied",
-                        verify = { runtimeValues ->
-                            val result = runtimeValues["debloat.apply.result"]
-                            if (result != "ok") {
-                                "Debloat application did not succeed: ${result ?: "no result recorded"}"
-                            } else {
-                                null
-                            }
-                        },
-                    ),
-                )
-            }
-        }
+    public companion object {
+        public const val RESULT: String = "work/debloat/result.json"
+        public const val INVENTORY_KEY: String = "debloat.inventory"
+
+        /** What a run removed, from [RESULT]; null for a disabled run's result or unreadable text. */
+        public fun parseResult(text: String): DebloatDecision? =
+            runCatching { ConfigurationSnapshot.canonicalJson.decodeFromString<DebloatDecision>(text) }.getOrNull()
     }
 }

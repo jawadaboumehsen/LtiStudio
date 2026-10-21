@@ -131,6 +131,8 @@ data class BuildRun(
     val pinnedTools: Map<String, String> = emptyMap(),
     /** Pinned tool version IDs captured at run creation (009 US5). */
     val toolVersions: Map<String, String> = emptyMap(),
+    /** When set, the run stops successfully after this stage ("run through"); null runs every stage. */
+    val throughStage: StageId? = null,
 )
 
 @Serializable

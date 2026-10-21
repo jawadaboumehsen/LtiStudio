@@ -182,7 +182,12 @@ class CreateWorkspaceViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo)
             advanceUntilIdle()
@@ -209,7 +214,12 @@ class CreateWorkspaceViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo)
             advanceUntilIdle()
@@ -236,7 +246,12 @@ class CreateWorkspaceViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo)
             advanceUntilIdle()
@@ -264,7 +279,12 @@ class CreateWorkspaceViewModelTest {
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
             val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo, workspaceManager)
             advanceUntilIdle()
@@ -323,7 +343,12 @@ class CreateWorkspaceViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo)
             advanceUntilIdle()
@@ -354,7 +379,12 @@ class CreateWorkspaceViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val provisioningPort = FakeProvisioningPort()
             val readinessPort = FakeReadinessPort(ready = true)
-            val useCase = CreateWorkspaceUseCase(readinessPort, provisioningPort, workspaceRepo, snapshotRepo)
+            val useCase = CreateWorkspaceUseCase(
+                readinessPort,
+                provisioningPort,
+                workspaceRepo,
+                snapshotRepo,
+            )
 
             val viewModel = CreateWorkspaceViewModel(useCase, targetRepo, workspaceRepo)
             advanceUntilIdle()

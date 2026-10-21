@@ -34,15 +34,12 @@ import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
 import org.ide.lti.core.domain.plugin.TrustApproval
 import org.ide.lti.core.domain.plugin.TrustCheck
-import org.ide.lti.core.domain.plugin.TrustDecision
 import java.nio.file.Path
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -99,55 +96,6 @@ class PluginManagerViewModelTest {
 
         viewModel.selectDestination(PluginDestination.AUTHOR_TOOLS)
         assertEquals(PluginDestination.AUTHOR_TOOLS, viewModel.uiState.value.destination)
-    }
-
-    @Test
-    fun enableAndDisableWorkspaceUpdatesInstalledRecord() = runTest(testDispatcher) {
-        val record = InstalledRecord(
-            identity = PackageIdentity("org.ide.lti", "sample-mod", "1.0.0", "digest123"),
-            trust = TrustDecision.TRUSTED_SIGNATURE,
-            enabledInWorkspaces = emptyList(),
-            revoked = false,
-            archived = false,
-            dependencies = emptyList(),
-            conflicts = emptyList(),
-        )
-        fakeInstallPort.records.add(record)
-        viewModel.refreshInstalled()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.enableForWorkspace(record, "ws-test")
-        testDispatcher.scheduler.advanceUntilIdle()
-        val updated = fakeInstallPort.records.first { it.identity == record.identity }
-        assertTrue(updated.enabledInWorkspaces.contains("ws-test"))
-
-        viewModel.disableForWorkspace(updated, "ws-test")
-        testDispatcher.scheduler.advanceUntilIdle()
-        val disabled = fakeInstallPort.records.first { it.identity == record.identity }
-        assertFalse(disabled.enabledInWorkspaces.contains("ws-test"))
-    }
-
-    @Test
-    fun uninstallRefusesWhenReferencedByWorkspace() = runTest(testDispatcher) {
-        val record = InstalledRecord(
-            identity = PackageIdentity("org.ide.lti", "sample-mod", "1.0.0", "digest123"),
-            trust = TrustDecision.TRUSTED_SIGNATURE,
-            enabledInWorkspaces = listOf("ws-test"),
-            revoked = false,
-            archived = false,
-            dependencies = emptyList(),
-            conflicts = emptyList(),
-        )
-        fakeInstallPort.records.add(record)
-        viewModel.refreshInstalled()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.uninstallPackage(record)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Should not be removed from repository because it is referenced by ws-test
-        assertEquals(1, fakeInstallPort.records.size)
-        assertNotNull(viewModel.uiState.value.errorMessage)
     }
 
     @Test

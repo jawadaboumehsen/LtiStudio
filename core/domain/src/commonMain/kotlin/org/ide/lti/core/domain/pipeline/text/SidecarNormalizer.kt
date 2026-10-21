@@ -58,25 +58,12 @@ public object SidecarNormalizer {
                 else -> rawPath.removePrefix(prefixNormalized).removePrefix("/")
             }
 
-            val targetFsPath = if (partition == "system") {
-                if (relPath.isEmpty()) "system" else "system/$relPath"
-            } else {
-                if (relPath.isEmpty()) partition else "$partition/$relPath"
-            }
-
+            val targetFsPath = fsConfigPath(partition, relPath)
             if (targetFsPath.endsWith("/bin/run-as") || targetFsPath.endsWith("/bin/simpleperf_app_runner")) {
                 caps = "capabilities=0xc0"
             }
-
-            val fsConfigPath = targetFsPath.removePrefix("/")
-            fsConfigLines.add("$fsConfigPath $uid $gid $mode $caps")
-
-            val fileContextPath = if (partition == "system") {
-                if (relPath.isEmpty()) "/" else "/system/$relPath"
-            } else {
-                if (relPath.isEmpty()) "/$partition" else "/$partition/$relPath"
-            }
-
+            fsConfigLines.add("$targetFsPath $uid $gid $mode $caps")
+            val fileContextPath = fileContextPath(partition, relPath)
             val escapedPath = escapeRegex(fileContextPath)
             fileContextLines.add("$escapedPath $selinuxLabel")
         }
@@ -85,6 +72,32 @@ public object SidecarNormalizer {
             fsConfigContent = fsConfigLines.sorted().joinToString("\n") + "\n",
             fileContextContent = fileContextLines.sorted().joinToString("\n") + "\n",
         )
+    }
+
+    /**
+     * The fs_config path of [path] (relative to the partition's work tree, `work/<partition>/`). system is
+     * built with `mkfs.erofs --mount-point /`, so its paths are relative to the image root (system-as-root:
+     * `system/app/Foo`, the root itself ""), exactly as LtiRom's extract_fw.sh writes them; every other
+     * partition is mounted at its name (`product/app/Foo`), and its root is looked up as `/` (mkfs.erofs
+     * fails with "failed to find  in canned fs_config" when the root line is the partition name).
+     */
+    public fun fsConfigPath(partition: String, path: String): String {
+        val rel = path.trim('/')
+        return when {
+            partition == "system" -> rel
+            rel.isEmpty() -> "/"
+            else -> "$partition/$rel"
+        }
+    }
+
+    /** The (unescaped) file_contexts path of [path]: its device path, `/system/app/Foo`, `/product/app/Foo`. */
+    public fun fileContextPath(partition: String, path: String): String {
+        val rel = path.trim('/')
+        return when {
+            partition == "system" -> "/$rel"
+            rel.isEmpty() -> "/$partition"
+            else -> "/$partition/$rel"
+        }
     }
 
     /**

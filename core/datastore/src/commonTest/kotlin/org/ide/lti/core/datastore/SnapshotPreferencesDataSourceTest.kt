@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.model.target.DefaultTargetCatalog
-import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -39,10 +38,6 @@ class SnapshotPreferencesDataSourceTest {
                 firmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first(),
             ),
             build = org.ide.lti.core.model.workspace.BuildSettings(
-                packagePolicy = PackagePolicy(
-                    flashablePartitions = listOf("system", "vendor"),
-                    flashableBootPartitions = listOf("boot"),
-                ),
                 signing = SigningPolicy(),
             ),
             assembly = org.ide.lti.core.model.workspace.AssemblySettings(

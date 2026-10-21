@@ -29,14 +29,16 @@ public class BuildStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: BuildViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val device by viewModel.device.collectAsState()
+        val facts by viewModel.facts.collectAsState()
 
         BuildEditor(
             settings = settings,
-            target = viewModel.targetDevice,
-            onChange = { viewModel.updateSettings(it) },
+            target = device ?: viewModel.targetDevice,
+            facts = facts,
+            onChange = viewModel::updateSettings,
+            onRefresh = viewModel::refresh,
             selectedObjectId = context.selectedObjectId?.value ?: "compression",
-            onValidate = context.onValidationRequested,
-            onSave = context.onSaveRequested,
             modifier = modifier,
         )
     }

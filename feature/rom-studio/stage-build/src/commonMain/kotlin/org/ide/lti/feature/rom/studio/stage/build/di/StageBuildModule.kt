@@ -23,6 +23,8 @@ public val stageBuildModule: Module = module {
     viewModel { params ->
         BuildViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            workspaceFacts = getOrNull(),
         )
     }
 }

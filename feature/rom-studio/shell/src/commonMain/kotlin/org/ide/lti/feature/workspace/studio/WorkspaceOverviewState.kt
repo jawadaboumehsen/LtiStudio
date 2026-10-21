@@ -66,6 +66,7 @@ public data class TargetSummaryUi(
     val androidTarget: DisplayValue,
     val partitionSlot: DisplayValue,
     val buildFlavor: DisplayValue,
+    val channel: DisplayValue = DisplayValue.Unavailable("Not set"),
 )
 
 /**

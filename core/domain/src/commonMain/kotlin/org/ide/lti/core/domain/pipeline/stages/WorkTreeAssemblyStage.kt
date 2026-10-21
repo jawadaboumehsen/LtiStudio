@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.pipeline.stages
 
+import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
@@ -17,6 +18,7 @@ import org.ide.lti.core.domain.pipeline.StageDefinition
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 /**
  * Stage 3 — assemble the editable `work/` tree from the extracted partitions (contract Stage 3):
@@ -28,8 +30,15 @@ public class WorkTreeAssemblyStage : StageDefinition {
 
     override val requiredToolIds: Set<String> = setOf("rsync", "avbtool", "find", "cp", "mkdir", "cat")
 
-    override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String =
-        CacheKeys.stage3AssemblyKey(previousStageCacheKey, ctx.target, ctx.snapshot)
+    /**
+     * Debloat and Patches & mods edit work/ in place, so a change to either needs a fresh tree: their inputs are
+     * part of this key, and a new tree makes every later stage run again (never on an already edited tree).
+     */
+    override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String = CacheKeys.sha256(
+        CacheKeys.stage3AssemblyKey(previousStageCacheKey, ctx.target, ctx.snapshot) +
+            ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.debloat) +
+            ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.customization),
+    )
 
     override fun outputs(ctx: StageContext): List<String> {
         val partitions = effectiveDynamicPartitions(ctx)
@@ -136,7 +145,10 @@ public class WorkTreeAssemblyStage : StageDefinition {
             steps += PipelineStep.Tool(
                 stepCommand(
                     "find",
-                    listOf(work, "-type", "f", "(") + AOT_NAME_ARGS + listOf(")", "-delete"),
+                    // Symlinks too: framework/<arch>/boot-*.vdex point at framework/boot-*.vdex (LtiRom aot_purge.sh).
+                    listOf(work, "(", "-type", "f", "-o", "-type", "l", ")", "(") +
+                        AOT_NAME_ARGS +
+                        listOf(")", "-delete"),
                     ws,
                 ),
                 "purge aot files",

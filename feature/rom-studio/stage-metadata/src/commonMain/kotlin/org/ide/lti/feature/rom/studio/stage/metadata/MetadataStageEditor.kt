@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.metadata
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,12 +30,16 @@ public class MetadataStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: MetadataViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val device by viewModel.device.collectAsState()
+        val manifest by viewModel.manifest.collectAsState()
+        LaunchedEffect(context.workspaceId) { viewModel.refreshManifest() }
 
         MetadataEditor(
             settings = settings,
-            target = viewModel.targetDevice,
+            target = device ?: viewModel.targetDevice,
             onChange = { viewModel.updateSettings(it) },
             selectedObjectId = context.selectedObjectId?.value ?: "release-identity",
+            manifest = manifest,
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
             modifier = modifier,

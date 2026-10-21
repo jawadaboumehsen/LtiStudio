@@ -69,10 +69,10 @@ public fun SourceModePane(
                 fontFamily = ideFontFamily(),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                AcquisitionMode.entries.forEach { mode ->
+                listOf(AcquisitionMode.DOWNLOAD, AcquisitionMode.IMPORT_ARCHIVE).forEach { mode ->
                     val enabled = mode == AcquisitionMode.DOWNLOAD || !settings.archiveRef.isNullOrBlank()
                     GlassChip(
-                        label = mode.name.replace('_', ' '),
+                        label = if (mode == AcquisitionMode.DOWNLOAD) "Download" else "Use an archive",
                         selected = settings.mode == mode,
                         enabled = enabled,
                         onClick = if (enabled) {
@@ -83,6 +83,21 @@ public fun SourceModePane(
                     )
                 }
             }
+            Text(
+                text = sourceModeHint(settings),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.BodySmall,
+                fontFamily = ideFontFamily(),
+            )
         }
     }
+}
+
+private fun sourceModeHint(settings: AcquisitionSettings): String {
+    val now = if (settings.mode == AcquisitionMode.DOWNLOAD) {
+        "The firmware is downloaded from its URL when the build runs."
+    } else {
+        "Using ${settings.archiveRef}."
+    }
+    return if (settings.archiveRef.isNullOrBlank()) "$now To use an archive, import it in Existing archives." else now
 }

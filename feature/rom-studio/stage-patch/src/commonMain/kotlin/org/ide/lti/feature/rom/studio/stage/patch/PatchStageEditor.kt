@@ -29,14 +29,15 @@ public class PatchStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: PatchViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val facts by viewModel.facts.collectAsState()
 
         PatchEditor(
             settings = settings,
-            target = viewModel.targetDevice,
-            onChange = { viewModel.updateSettings(it) },
+            facts = facts,
+            onToggle = viewModel::toggle,
+            onRefresh = viewModel::refresh,
+            onOpenPlugins = context.onOpenPlugins,
             selectedObjectId = context.selectedObjectId?.value ?: "module-catalog",
-            onValidate = context.onValidationRequested,
-            onSave = context.onSaveRequested,
             modifier = modifier,
         )
     }

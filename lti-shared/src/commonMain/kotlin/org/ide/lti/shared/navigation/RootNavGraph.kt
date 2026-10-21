@@ -31,7 +31,6 @@ import org.ide.lti.feature.configuration.navigateToEditConfiguration
 import org.ide.lti.feature.plugins.pluginsScreen
 import org.ide.lti.feature.settings.SETTINGS_ROUTE
 import org.ide.lti.feature.settings.navigateToSettings
-import org.ide.lti.feature.settings.notificationScreen
 import org.ide.lti.feature.settings.settingsScreen
 import org.ide.lti.feature.setup.SETUP_ROUTE
 import org.ide.lti.feature.setup.api.SetupTab
@@ -151,13 +150,6 @@ internal fun RootNavGraph(
                 }
             }
         }
-
-        // Notifications (reachable from the workspace top bar)
-        notificationScreen(
-            onBackClick = { navHostController.popBackStack() },
-            onNavigateToSetup = navigateToSetup,
-            onNavigateToWorkspace = navigateToWorkspace,
-        )
 
         settingsScreen(
             onBackClick = {

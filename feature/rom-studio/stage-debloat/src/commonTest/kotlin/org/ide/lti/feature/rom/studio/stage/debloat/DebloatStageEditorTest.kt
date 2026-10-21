@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.debloat
 
+import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import kotlin.test.Test
@@ -23,7 +24,7 @@ class DebloatStageEditorTest {
         val editor = DebloatStageEditor()
         assertEquals(StageId.DEBLOAT, editor.stageId)
         assertEquals(CanonicalStageDescriptors.DEBLOAT, editor.descriptor)
-        assertEquals(6, editor.descriptor.subobjects.size)
+        assertEquals(5, editor.descriptor.subobjects.size)
         assertNotNull(editor.descriptor.subobject(CanonicalStageDescriptors.DEBLOAT.subobjects.first().id))
     }
 
@@ -32,11 +33,18 @@ class DebloatStageEditorTest {
         val vm = DebloatViewModel(workspaceId = "test-ws")
         assertEquals("test-ws", vm.workspaceId)
         assertNotNull(vm.settings.value)
-        // Debloat is off and no preset is chosen until the user configures it - a workspace's
-        // debloat settings must never default to fabricated remove/keep selectors (see e42c3e3c).
+        // Debloat is off and nothing is picked until the user picks apps from the real inventory.
         assertTrue(!vm.settings.value.enabled)
-        assertEquals(null, vm.settings.value.presetId)
-        vm.updateSettings(vm.settings.value.copy(presetId = "aggressive"))
-        assertEquals("aggressive", vm.settings.value.presetId)
+        assertTrue(vm.settings.value.removeSelectors.isEmpty())
+
+        val app = DebloatCandidate("system", "system/app/Facebook", 10L, null)
+        vm.toggleRemoval(app)
+        assertEquals(listOf("system:system/app/Facebook"), vm.settings.value.removeSelectors)
+        assertTrue(vm.settings.value.enabled, "picking an app turns Debloat on")
+        vm.toggleRemoval(app)
+        assertTrue(vm.settings.value.removeSelectors.isEmpty())
+
+        vm.toggleRemoval(DebloatCandidate("system", "system/priv-app/SystemUI", 10L, null))
+        assertTrue(vm.settings.value.removeSelectors.isEmpty(), "a protected app is never picked")
     }
 }

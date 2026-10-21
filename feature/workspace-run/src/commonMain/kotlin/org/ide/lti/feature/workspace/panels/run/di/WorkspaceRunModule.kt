@@ -27,6 +27,8 @@ public val workspaceRunModule: Module = module {
             reattachRunUseCase = getOrNull(),
             runRepository = getOrNull(),
             readinessPort = getOrNull(),
+            workspaceDeviceRepository = getOrNull(),
+            snapshotRepository = getOrNull(),
         )
     }
 }

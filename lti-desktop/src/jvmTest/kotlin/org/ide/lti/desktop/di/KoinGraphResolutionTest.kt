@@ -73,6 +73,12 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<PipelineExecutionPort>())
         assertNotNull(koin.get<SnapshotRepository>())
         assertNotNull(koin.get<RunRepository>())
+        // One device configuration per workspace, and everything that reads it.
+        assertNotNull(koin.get<org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workspace.WorkspaceManager>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCase>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.usecase.build.ReattachRunUseCase>())
         assertNotNull(koin.get<ToolchainProvisioningService>())
         assertNotNull(koin.get<PluginInstallPort>())
         assertNotNull(koin.get<MarketplaceIndexPort>())

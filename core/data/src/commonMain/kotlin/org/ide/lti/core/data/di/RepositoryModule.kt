@@ -13,6 +13,7 @@ import org.ide.lti.core.data.repository.setup.ToolchainSelectionRepositoryImpl
 import org.ide.lti.core.data.repository.setup.ToolchainSetupRepositoryImpl
 import org.ide.lti.core.data.repository.snapshot.SnapshotRepositoryImpl
 import org.ide.lti.core.data.repository.target.TargetRepositoryImpl
+import org.ide.lti.core.data.repository.target.WorkspaceFolderDeviceRepository
 import org.ide.lti.core.data.repository.user.UserDataRepositoryImpl
 import org.ide.lti.core.data.repository.workspace.WorkDirDiscoveryService
 import org.ide.lti.core.data.repository.workspace.WorkspaceRepositoryImpl
@@ -23,6 +24,7 @@ import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.user.UserDataRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.koin.core.module.dsl.bind
@@ -48,6 +50,7 @@ val DataModule = module {
         )
     }
     singleOf(::TargetRepositoryImpl) { bind<TargetRepository>() }
+    single<WorkspaceDeviceRepository> { WorkspaceFolderDeviceRepository(workspaces = get(), files = get()) }
     single<ToolchainSelectionRepository> { ToolchainSelectionRepositoryImpl(preferencesDataSource = get()) }
     single<ToolchainSetupRepository> {
         ToolchainSetupRepositoryImpl(
@@ -55,7 +58,9 @@ val DataModule = module {
             selectionRepository = get(),
         )
     }
-    single<SnapshotRepository> { SnapshotRepositoryImpl(dataSource = get()) }
+    single<SnapshotRepository> {
+        SnapshotRepositoryImpl(dataSource = get(), workspaces = getOrNull(), folders = getOrNull())
+    }
 }
 
 internal expect val platformRepositoryModule: org.koin.core.module.Module

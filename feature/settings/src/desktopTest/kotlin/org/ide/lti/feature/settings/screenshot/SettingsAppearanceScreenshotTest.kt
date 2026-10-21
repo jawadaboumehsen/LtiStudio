@@ -115,15 +115,15 @@ class SettingsAppearanceScreenshotTest {
                         SettingsScreenContent(
                             onBackClick = {},
                             appSettingsState = settingsState,
-                            initialCategory = SettingsCategory.EditorPreferences,
+                            initialCategory = SettingsCategory.About,
                         )
                     }
                 }
             }
 
             waitForIdle()
-            // Verify we started on Editor Preferences in the navigator
-            onNodeWithTag("NavigatorItem_editor").assertIsDisplayed()
+            // Verify we started on About in the navigator
+            onNodeWithTag("NavigatorItem_about").assertIsDisplayed()
 
             // Click the real navigation item in IdeNavigatorPanel
             onNodeWithTag("NavigatorItem_appearance").performClick()

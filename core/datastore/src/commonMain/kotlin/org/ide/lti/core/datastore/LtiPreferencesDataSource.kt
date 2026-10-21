@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.model.user.EditorSettings
 import org.ide.lti.core.model.user.NotificationSettings
 import org.ide.lti.core.model.user.UserData
@@ -61,6 +62,8 @@ class LtiPreferencesDataSource(
 
     suspend fun setEditorSettings(editorSettings: EditorSettings) = updateUserData { it.copy(editorSettings = editorSettings) }
 
+    suspend fun setAppearance(appearance: AppearanceSettings) = updateUserData { it.copy(appearance = appearance) }
+
     suspend fun setNotificationSettings(notificationSettings: NotificationSettings) =
         updateUserData { it.copy(notificationSettings = notificationSettings) }
 
@@ -73,24 +76,27 @@ class LtiPreferencesDataSource(
         _userData.value = updated
     }
 
-    private fun readCurrentUserData(): UserData {
-        return UserData(
-            theme = settings.getString(KEY_THEME, UserData.DEFAULT_THEME),
-            effectsEnabled = settings.getBoolean(KEY_EFFECTS_ENABLED, true),
-            reducedMotion = settings.getBoolean(KEY_REDUCED_MOTION, false),
-            editorSettings = EditorSettings(
-                autoSave = settings.getBoolean(KEY_EDITOR_AUTO_SAVE, true),
-                lineNumbers = settings.getBoolean(KEY_EDITOR_LINE_NUMBERS, true),
-                bracketMatching = settings.getBoolean(KEY_EDITOR_BRACKET_MATCHING, true),
-                fontSize = settings.getInt(KEY_EDITOR_FONT_SIZE, EditorSettings.DEFAULT_FONT_SIZE),
-                tabSize = settings.getInt(KEY_EDITOR_TAB_SIZE, EditorSettings.DEFAULT_TAB_SIZE),
-            ),
-            notificationSettings = NotificationSettings(
-                pushEnabled = settings.getBoolean(KEY_NOTIF_PUSH_ENABLED, true),
-                soundEnabled = settings.getBoolean(KEY_NOTIF_SOUND_ENABLED, false),
-            ),
-        )
-    }
+    private fun readCurrentUserData(): UserData = UserData(
+        theme = settings.getString(KEY_THEME, UserData.DEFAULT_THEME),
+        effectsEnabled = settings.getBoolean(KEY_EFFECTS_ENABLED, true),
+        reducedMotion = settings.getBoolean(KEY_REDUCED_MOTION, false),
+        editorSettings = EditorSettings(
+            autoSave = settings.getBoolean(KEY_EDITOR_AUTO_SAVE, true),
+            lineNumbers = settings.getBoolean(KEY_EDITOR_LINE_NUMBERS, true),
+            bracketMatching = settings.getBoolean(KEY_EDITOR_BRACKET_MATCHING, true),
+            fontSize = settings.getInt(KEY_EDITOR_FONT_SIZE, EditorSettings.DEFAULT_FONT_SIZE),
+            tabSize = settings.getInt(KEY_EDITOR_TAB_SIZE, EditorSettings.DEFAULT_TAB_SIZE),
+        ),
+        notificationSettings = NotificationSettings(
+            pushEnabled = settings.getBoolean(KEY_NOTIF_PUSH_ENABLED, true),
+            soundEnabled = settings.getBoolean(KEY_NOTIF_SOUND_ENABLED, false),
+        ),
+        appearance = AppearanceSettings(
+            accent = settings.getString(KEY_ACCENT, AppearanceSettings.DEFAULT_ACCENT),
+            compact = settings.getBoolean(KEY_COMPACT, false),
+            textScalePercent = settings.getInt(KEY_TEXT_SCALE, AppearanceSettings.DEFAULT_TEXT_SCALE),
+        ),
+    )
 
     private fun persistUserData(data: UserData) {
         settings[KEY_THEME] = data.theme
@@ -103,6 +109,9 @@ class LtiPreferencesDataSource(
         settings[KEY_EDITOR_TAB_SIZE] = data.editorSettings.tabSize
         settings[KEY_NOTIF_PUSH_ENABLED] = data.notificationSettings.pushEnabled
         settings[KEY_NOTIF_SOUND_ENABLED] = data.notificationSettings.soundEnabled
+        settings[KEY_ACCENT] = data.appearance.accent
+        settings[KEY_COMPACT] = data.appearance.compact
+        settings[KEY_TEXT_SCALE] = data.appearance.textScalePercent
     }
 
     companion object {
@@ -116,5 +125,8 @@ class LtiPreferencesDataSource(
         const val KEY_EDITOR_TAB_SIZE = "pref_editor_tab_size"
         const val KEY_NOTIF_PUSH_ENABLED = "pref_notif_push_enabled"
         const val KEY_NOTIF_SOUND_ENABLED = "pref_notif_sound_enabled"
+        const val KEY_ACCENT = "pref_accent"
+        const val KEY_COMPACT = "pref_compact_density"
+        const val KEY_TEXT_SCALE = "pref_text_scale_percent"
     }
 }

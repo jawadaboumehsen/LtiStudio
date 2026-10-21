@@ -30,6 +30,9 @@ public val romStudioShellModule: Module = module {
             stageEditorRegistry = get(),
             initialWorkspaceId = params.getOrNull<String>() ?: "",
             workspaceManager = getOrNull(),
+            workspaceDeviceRepository = getOrNull(),
+            settingsStore = getOrNull(),
+            observeRuns = getOrNull(),
         )
     }
 }

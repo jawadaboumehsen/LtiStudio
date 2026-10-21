@@ -421,7 +421,7 @@ class KotlinToolStoreAdapterTest {
 
         val precheck =
             transport.requests.map { it.arguments.lastOrNull().orEmpty() }
-                .first { "realpath -m" in it && "timeout 3" in it }
+                .first { "realpath -m" in it && "timeout 10" in it }
         assertTrue("[ -e '/home/testuser/LtiRomTools/bin/android-tools/v1/gki/' ]" in precheck, precheck)
         assertTrue("grep -Eiq" in precheck, "probes must check what the tool prints, not only its exit code")
     }
@@ -598,7 +598,7 @@ class KotlinToolStoreAdapterTest {
             val script = req.arguments.lastOrNull().orEmpty()
             when {
                 req.toolId == "readlink" -> ToolExecutionResponse(0, "v1\n", "", 1L)
-                "timeout 3" in script -> {
+                "timeout 10" in script -> {
                     checks += script
                     // The support directory is deleted after setup passed.
                     val damaged = !supportPresent && "gki/" in script

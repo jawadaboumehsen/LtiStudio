@@ -1,21 +1,23 @@
 package org.ide.lti.core.domain.usecase.build
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.StageContext
+import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -25,17 +27,20 @@ import java.util.UUID
 public class StartPipelineRunUseCase(
     private val workspaceRepository: WorkspaceRepository,
     private val snapshotRepository: SnapshotRepository,
-    private val targetRepository: TargetRepository,
+    private val workspaceDeviceRepository: WorkspaceDeviceRepository,
     private val readinessPort: EnvironmentReadinessPort,
     private val executionPort: PipelineExecutionPort,
     private val runRepository: RunRepository,
     private val orchestrator: PipelineOrchestrator,
     private val scope: CoroutineScope? = null,
+    private val settingsStore: WorkspaceSettingsStore? = null,
 ) {
     public suspend operator fun invoke(
         workspaceId: String,
         driverInstanceId: String = "driver_${UUID.randomUUID()}",
+        throughStage: StageId? = null,
     ): Result<BuildRun> = runCatching {
+        settingsStore?.flush(workspaceId)?.getOrThrow()
         // 1. Fetch workspace
         val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
             "Workspace not found: $workspaceId"
@@ -60,13 +65,12 @@ public class StartPipelineRunUseCase(
         val snapshot = requireNotNull(snapshotRepository.getSnapshot(snapshotId)) {
             "Configuration snapshot not found: $snapshotId"
         }
-        val targetId = requireNotNull(workspace.targetBinding?.profileId) {
-            "Workspace has no target device binding"
+        val target = requireNotNull(workspaceDeviceRepository.get(workspaceId)) {
+            "Workspace has no device configuration"
         }
-        val target = requireNotNull(
-            targetRepository.getAvailableTargets().first().find { it.id == targetId },
-        ) {
-            "Target device profile not found: $targetId"
+        val issues = DeviceConfigReadiness.check(target, snapshot)
+        check(issues.isEmpty()) {
+            "Cannot start build: device configuration is incomplete (${issues.first().message})"
         }
 
         // 5. Disk pre-flight check (4x firmware archive size, or 40 GiB fallback)
@@ -112,6 +116,7 @@ public class StartPipelineRunUseCase(
             startedAt = now,
             driverInstanceId = driverInstanceId,
             driverHeartbeatEpochMs = nowEpoch,
+            throughStage = throughStage,
         )
         runRepository.upsert(queuedRun)
 

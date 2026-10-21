@@ -21,6 +21,7 @@ import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
+import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 @Serializable
@@ -32,7 +33,6 @@ private data class AcquisitionPolicy(val retries: Int, val resume: Boolean, val 
  * DOWNLOAD: resumable `curl` into `<name>.partial` (range fallback on exit 33), reject HTML
  * interstitials, verify the checksum when declared (else record UNVERIFIED), then promote with `mv`.
  * IMPORT_ARCHIVE: the archive was uploaded by the configuration panel; only its presence and checksum are checked.
- * EXISTING_ARCHIVE: verifies probe result was ok; no download or import steps are planned.
  */
 public class FirmwareAcquisitionStage : StageDefinition {
     override val id: StageId = StageId.FIRMWARE_ACQUISITION
@@ -47,7 +47,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
     override fun outputs(ctx: StageContext): List<String> = listOf(archiveRelPath(ctx.snapshot))
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
-        if (ctx.snapshot.acquisition.mode in setOf(AcquisitionMode.IMPORT_ARCHIVE, AcquisitionMode.EXISTING_ARCHIVE) &&
+        if (ctx.snapshot.acquisition.mode == AcquisitionMode.IMPORT_ARCHIVE &&
             ctx.snapshot.acquisition.archiveRef.isNullOrBlank()
         ) {
             return listOf(
@@ -71,16 +71,6 @@ public class FirmwareAcquisitionStage : StageDefinition {
             }
             AcquisitionMode.IMPORT_ARCHIVE -> {
                 steps += PipelineStep.Tool(stepCommand("test", listOf("-f", archive), ws), "imported archive present")
-            }
-            AcquisitionMode.EXISTING_ARCHIVE -> {
-                steps += PipelineStep.Check("verify existing archive probe") { values ->
-                    if (values["archive.probe.result"] != "ok") {
-                        "Existing archive probe failed: expected archive.probe.result=ok, " +
-                            "got ${values["archive.probe.result"]}"
-                    } else {
-                        null
-                    }
-                }
             }
         }
 
@@ -121,21 +111,23 @@ public class FirmwareAcquisitionStage : StageDefinition {
         val partial = "$archive.partial"
         val steps = mutableListOf<PipelineStep>()
 
-        // Resumable first; curl exits 33 when the server rejects the range → plain download.
-        steps += PipelineStep.Tool(
-            command = stepCommand("curl", listOf("-fL", "--retry", "3", "-C", "-", "-o", partial, url), ws),
-            label = "curl resume",
-            resultKey = RuntimeKeys.DOWNLOAD_RESUME,
-            allowFailure = true,
-        )
-        val resumeExit = ctx.exitOf(RuntimeKeys.DOWNLOAD_RESUME)
-        if (resumeExit == CURL_RANGE_NOT_SUPPORTED) {
+        val retry = listOf("-fL", "--retry", ctx.snapshot.acquisition.retries.toString())
+        if (!ctx.snapshot.acquisition.resume) {
+            steps += PipelineStep.Tool(stepCommand("curl", retry + listOf("-o", partial, url), ws), "curl plain")
+        } else {
+            // Resumable first; curl exits 33 when the server rejects the range → plain download.
             steps += PipelineStep.Tool(
-                stepCommand("curl", listOf("-fL", "--retry", "3", "-o", partial, url), ws),
-                "curl plain",
+                command = stepCommand("curl", retry + listOf("-C", "-", "-o", partial, url), ws),
+                label = "curl resume",
+                resultKey = RuntimeKeys.DOWNLOAD_RESUME,
+                allowFailure = true,
             )
-        } else if (resumeExit != null && resumeExit != 0) {
-            steps += PipelineStep.Check("download failed") { "curl exited with $resumeExit while downloading $url" }
+            val resumeExit = ctx.exitOf(RuntimeKeys.DOWNLOAD_RESUME)
+            if (resumeExit == CURL_RANGE_NOT_SUPPORTED) {
+                steps += PipelineStep.Tool(stepCommand("curl", retry + listOf("-o", partial, url), ws), "curl plain")
+            } else if (resumeExit != null && resumeExit != 0) {
+                steps += PipelineStep.Check("download failed") { "curl exited with $resumeExit while downloading $url" }
+            }
         }
 
         steps += PipelineStep.Tool(
@@ -168,23 +160,24 @@ public class FirmwareAcquisitionStage : StageDefinition {
     public companion object {
         private const val CURL_RANGE_NOT_SUPPORTED = 33
 
-        public fun archiveName(snapshot: ConfigurationSnapshot): String = when (snapshot.acquisition.mode) {
-            AcquisitionMode.IMPORT_ARCHIVE, AcquisitionMode.EXISTING_ARCHIVE ->
-                snapshot.acquisition.archiveRef?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
-                    ?: snapshot.acquisition.archiveRef.orEmpty()
+        public fun archiveName(snapshot: ConfigurationSnapshot): String = archiveName(snapshot.acquisition)
+
+        public fun archiveName(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
+            AcquisitionMode.IMPORT_ARCHIVE ->
+                acquisition.archiveRef?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
+                    ?: acquisition.archiveRef.orEmpty()
             AcquisitionMode.DOWNLOAD -> {
-                val fromUrl = snapshot.acquisition.firmware.acquisitionUrl?.substringAfterLast(
-                    '/',
-                )?.substringBefore('?')
-                fromUrl?.takeIf { it.isNotBlank() } ?: "${snapshot.acquisition.firmware.version}.zip"
+                val fromUrl = acquisition.firmware.acquisitionUrl?.substringAfterLast('/')?.substringBefore('?')
+                fromUrl?.takeIf { it.isNotBlank() } ?: "${acquisition.firmware.version}.zip"
             }
         }
 
-        public fun archiveRelPath(snapshot: ConfigurationSnapshot): String = when (snapshot.acquisition.mode) {
-            AcquisitionMode.IMPORT_ARCHIVE, AcquisitionMode.EXISTING_ARCHIVE ->
-                snapshot.acquisition.archiveRef.orEmpty()
-            AcquisitionMode.DOWNLOAD ->
-                "firmware/downloaded/${archiveName(snapshot)}"
+        public fun archiveRelPath(snapshot: ConfigurationSnapshot): String = archiveRelPath(snapshot.acquisition)
+
+        /** Where the archive the build uses lives in the workspace folder. */
+        public fun archiveRelPath(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
+            AcquisitionMode.IMPORT_ARCHIVE -> acquisition.archiveRef.orEmpty()
+            AcquisitionMode.DOWNLOAD -> "firmware/downloaded/${archiveName(acquisition)}"
         }
     }
 }

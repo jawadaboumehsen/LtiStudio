@@ -36,7 +36,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 class FileMutationAdapterTest {
 
     private lateinit var tempDir: Path
@@ -491,6 +491,35 @@ class FileMutationAdapterTest {
             digest = "d",
         )
         assertFailureLeavesTreeUntouched(plan, FileMutationCodes.OVERLAPPING_MUTATION)
+    }
+
+    @Test
+    fun severalPropertyAndContextEditsOfOneFileCompose() = runBlocking {
+        setupWorkTreeFixture()
+        val target = PartitionPath("system", "build.prop")
+        val plan = ConcreteMutationPlan(
+            publisher = "p",
+            id = "p",
+            version = "1",
+            operations = listOf(
+                ConcreteOperation.PropertyPatch(id = "a", target = target, key = "ro.build.version", value = "14"),
+                ConcreteOperation.PropertyPatch(id = "b", target = target, key = "ro.adb.secure", value = "0"),
+                // An empty expected hash: anchored by its unique context only, so it sees the edits before it.
+                ConcreteOperation.TextPatch(
+                    id = "c",
+                    target = target,
+                    context = "# Middle comment",
+                    replacement = "# Edited comment",
+                    expectedSha256 = "",
+                ),
+            ),
+            notApplicable = emptyList(),
+            digest = "d",
+        )
+        val outcome = adapter.apply(plan, ctx, assetRoot.toString())
+        assertTrue(outcome is MutationOutcome.Applied, "$outcome")
+        val text = Files.readString(workTree.resolve("system/build.prop"))
+        assertTrue("ro.build.version=14" in text && "ro.adb.secure=0" in text && "# Edited comment" in text, text)
     }
 
     @Test

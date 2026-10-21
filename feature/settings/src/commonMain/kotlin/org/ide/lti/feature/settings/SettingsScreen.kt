@@ -39,13 +39,13 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.ports.AppEnvironmentPort
+import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.components.AboutSettingsPane
 import org.ide.lti.feature.settings.components.AppearanceSettingsPane
-import org.ide.lti.feature.settings.components.EditorSettingsPane
-import org.ide.lti.feature.settings.components.GenericCategoryPane
-import org.ide.lti.feature.settings.components.NotificationsSettingsPane
 import org.ide.lti.feature.settings.model.SettingsCategory
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 
 @Composable
@@ -57,7 +57,9 @@ fun SettingsScreen(
     showHeader: Boolean = true,
     appSettingsState: AppSettingsState = koinInject(),
 ) {
+    val koin = getKoin()
     SettingsScreenContent(
+        environmentPort = remember(koin) { koin.getOrNull<AppEnvironmentPort>() },
         modifier = modifier.fillMaxSize(),
         onBackClick = onBackClick,
         onNavigateToSetup = onNavigateToSetup,
@@ -75,9 +77,12 @@ fun SettingsScreenContent(
     modifier: Modifier = Modifier,
     showHeader: Boolean = true,
     appSettingsState: AppSettingsState = koinInject(),
-    initialCategory: SettingsCategory = SettingsCategory.EditorPreferences,
+    initialCategory: SettingsCategory = SettingsCategory.Appearance,
+    /** What About shows about the running app; null in previews and tests. */
+    environmentPort: AppEnvironmentPort? = null,
 ) {
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
+    val environment = remember(environmentPort) { environmentPort?.environment() }
 
     LtiTheme(
         appTheme = currentTheme,
@@ -91,14 +96,7 @@ fun SettingsScreenContent(
 
         val settingsNavItems = remember {
             listOf(
-                IdeNavigatorItem(id = "general", label = "General"),
                 IdeNavigatorItem(id = "appearance", label = "Appearance"),
-                IdeNavigatorItem(id = "editor", label = "Editor"),
-                IdeNavigatorItem(id = "target_profiles", label = "Target profiles"),
-                IdeNavigatorItem(id = "build_environment", label = "Build environment"),
-                IdeNavigatorItem(id = "plugin_sources", label = "Plugin sources"),
-                IdeNavigatorItem(id = "credentials", label = "Credentials"),
-                IdeNavigatorItem(id = "notifications", label = "Notifications"),
                 IdeNavigatorItem(id = "about", label = "About"),
             )
         }
@@ -149,7 +147,8 @@ fun SettingsScreenContent(
                     },
                     trailingContent = {
                         Text(
-                            text = "LtiRom Studio v0.9.0 • Ready",
+                            text = environment?.version?.let { "LtiRom Studio $it" }
+                                ?: "LtiRom Studio · development build",
                             fontSize = FontSize.LabelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -173,9 +172,6 @@ fun SettingsScreenContent(
                         ),
                 ) {
                     when (selectedCategory) {
-                        SettingsCategory.EditorPreferences, SettingsCategory.Editor -> {
-                            EditorSettingsPane()
-                        }
                         SettingsCategory.Appearance -> {
                             AppearanceSettingsPane(
                                 appSettingsState = appSettingsState,
@@ -183,19 +179,14 @@ fun SettingsScreenContent(
                                     appSettingsState.theme = AppSettingsState.THEME_BLUE
                                     appSettingsState.effectsEnabled = true
                                     appSettingsState.reducedMotion = false
+                                    appSettingsState.appearance = AppearanceSettings()
                                 },
-                                onApplyChanges = {},
                             )
                         }
                         SettingsCategory.About -> {
-                            AboutSettingsPane()
-                        }
-                        SettingsCategory.Notifications -> {
-                            NotificationsSettingsPane()
-                        }
-                        else -> {
-                            GenericCategoryPane(
-                                category = selectedCategory,
+                            AboutSettingsPane(
+                                environment = environment,
+                                onOpenFolder = { environmentPort?.openFolder(it) },
                             )
                         }
                     }
@@ -206,38 +197,9 @@ fun SettingsScreenContent(
 }
 
 private fun categoryToNavId(category: SettingsCategory): String = when (category) {
-    SettingsCategory.General,
-    SettingsCategory.Workspace,
-    SettingsCategory.PrivacyAndData,
-    -> "general"
     SettingsCategory.Appearance -> "appearance"
-    SettingsCategory.Editor,
-    SettingsCategory.EditorPreferences,
-    -> "editor"
-    SettingsCategory.TargetProfiles -> "target_profiles"
-    SettingsCategory.BuildEnvironment,
-    SettingsCategory.BuildAndRun,
-    SettingsCategory.Paths,
-    -> "build_environment"
-    SettingsCategory.PluginSources -> "plugin_sources"
-    SettingsCategory.Credentials -> "credentials"
-    SettingsCategory.Notifications -> "notifications"
-    SettingsCategory.About,
-    SettingsCategory.Updates,
-    SettingsCategory.Diagnostics,
-    SettingsCategory.Network,
-    -> "about"
+    SettingsCategory.About -> "about"
 }
 
-private fun navIdToCategory(id: String): SettingsCategory = when (id) {
-    "general" -> SettingsCategory.General
-    "appearance" -> SettingsCategory.Appearance
-    "editor" -> SettingsCategory.EditorPreferences
-    "target_profiles" -> SettingsCategory.TargetProfiles
-    "build_environment" -> SettingsCategory.BuildEnvironment
-    "plugin_sources" -> SettingsCategory.PluginSources
-    "credentials" -> SettingsCategory.Credentials
-    "notifications" -> SettingsCategory.Notifications
-    "about" -> SettingsCategory.About
-    else -> SettingsCategory.General
-}
+private fun navIdToCategory(id: String): SettingsCategory =
+    if (id == "about") SettingsCategory.About else SettingsCategory.Appearance

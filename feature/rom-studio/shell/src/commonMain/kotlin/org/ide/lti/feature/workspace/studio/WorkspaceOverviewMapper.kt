@@ -32,6 +32,9 @@ private const val PRIORITY_PATCHES_WARNING = 70
 private const val PRIORITY_PUBLICATION_WARNING = 75
 private const val PRIORITY_DEFAULT_READY = 100
 
+private const val OWN_DEVICE = "This workspace"
+private const val RECENT_RUNS = 5
+
 /**
  * Pure mapper transforming domain entities and validation reports into [WorkspaceOverviewUiState].
  */
@@ -64,13 +67,14 @@ public object WorkspaceOverviewMapper {
         )
 
         val reviewCount = readinessItems.count { it.reviewRequired }
+        val buildState = resolveBuildState(runs)
         val nextAction = resolveNextAction(
             readinessItems = readinessItems,
             hasTargetBinding = workspace?.targetBinding != null || targetDevice != null,
             hasExplicitValidSource = hasExplicitValidSource,
+            built = buildState is BuildStateUi.Succeeded,
         )
 
-        val buildState = resolveBuildState(runs)
         val recentActivity = resolveRecentActivity(runs)
 
         return WorkspaceOverviewUiState(
@@ -90,7 +94,7 @@ public object WorkspaceOverviewMapper {
         val targetBinding = workspace?.targetBinding
         return when {
             targetDevice != null -> "Target: ${targetDevice.name} (${targetDevice.id})"
-            targetBinding != null -> "Bound to profile: ${targetBinding.profileId}"
+            targetBinding != null -> "Device configuration of this workspace"
             else -> "No target profile bound"
         }
     }
@@ -100,16 +104,32 @@ public object WorkspaceOverviewMapper {
         targetDevice: TargetDevice?,
         draft: WorkspacePipelineDraft?,
     ): TargetSummaryUi {
+        // A binding that points at the workspace itself is its own device, not a shared profile id.
         val targetBinding = workspace?.targetBinding
+        val ownDevice = targetBinding != null && targetBinding.profileId == workspace.id
         return TargetSummaryUi(
-            revision = resolveRevision(targetBinding, targetDevice),
-            binding = resolveBinding(targetBinding, targetDevice),
-            deviceId = resolveDeviceId(targetBinding, targetDevice),
+            revision = if (ownDevice && targetDevice != null) {
+                DisplayValue.Available("rev ${targetDevice.revision}")
+            } else {
+                resolveRevision(targetBinding, targetDevice)
+            },
+            binding = if (ownDevice) {
+                DisplayValue.Available(OWN_DEVICE)
+            } else {
+                resolveBinding(targetBinding, targetDevice)
+            },
+            deviceId = if (ownDevice) ownDeviceId(targetDevice) else resolveDeviceId(targetBinding, targetDevice),
             androidTarget = resolveAndroidTarget(draft, targetDevice),
             partitionSlot = resolvePartitionSlot(draft, targetDevice),
             buildFlavor = resolveBuildFlavor(draft),
+            channel = draft?.release?.channel?.takeIf { it.isNotBlank() }
+                ?.let { DisplayValue.Available(it.replaceFirstChar(Char::uppercase)) }
+                ?: DisplayValue.Unavailable("Not set"),
         )
     }
+
+    private fun ownDeviceId(targetDevice: TargetDevice?): DisplayValue =
+        targetDevice?.let { DisplayValue.Available(it.id) } ?: DisplayValue.Unavailable("No device ID")
 
     private fun resolveRevision(targetBinding: TargetBinding?, targetDevice: TargetDevice?): DisplayValue = when {
         targetBinding != null -> DisplayValue.Available("rev ${targetBinding.profileRevision}")
@@ -341,7 +361,7 @@ public object WorkspaceOverviewMapper {
                 contextLabel = "Pipeline step 05",
                 severity = ReadinessSeverity.Neutral,
                 statusLabel = "No modules enabled",
-                description = "0 of 3 available patch modules selected.",
+                description = "No plugins are enabled for this build.",
                 action = WorkspaceActionUi.OpenStage(StageId.MODULE_APPLICATION),
                 reviewRequired = false,
                 priority = PRIORITY_DEFAULT_READY,
@@ -364,7 +384,7 @@ public object WorkspaceOverviewMapper {
                 severity = ReadinessSeverity.Blocking,
                 statusLabel = "Key error",
                 description = firstError.message,
-                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP),
+                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
                 reviewRequired = true,
                 priority = PRIORITY_SIGNING_ERROR,
             )
@@ -375,7 +395,7 @@ public object WorkspaceOverviewMapper {
                 severity = ReadinessSeverity.Warning,
                 statusLabel = "Key required",
                 description = "Release and AVB keypair not verified for production.",
-                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP),
+                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
                 reviewRequired = true,
                 priority = PRIORITY_SIGNING_WARNING,
             )
@@ -386,7 +406,7 @@ public object WorkspaceOverviewMapper {
                 severity = ReadinessSeverity.Ready,
                 statusLabel = "Key verified",
                 description = "AVB and release signing keys are verified and ready for production packaging.",
-                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP),
+                action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
                 reviewRequired = false,
                 priority = PRIORITY_DEFAULT_READY,
             )
@@ -431,8 +451,15 @@ public object WorkspaceOverviewMapper {
                 title = "Publication",
                 contextLabel = "Pipeline step 08",
                 severity = ReadinessSeverity.Ready,
-                statusLabel = "Configured (${publish.provider.name})",
-                description = "Release channel and distribution targets are configured.",
+                statusLabel = if (publish.provider == PublishProvider.GITHUB_RELEASE) {
+                    "GitHub release"
+                } else {
+                    "Local export"
+                },
+                description = when (publish.provider) {
+                    PublishProvider.GITHUB_RELEASE -> "Publishes to github.com/${publish.repository.orEmpty()}."
+                    else -> "Exports to ${publish.localExportFolder.orEmpty()}."
+                },
                 action = WorkspaceActionUi.OpenStage(StageId.PUBLISH_RELEASE),
                 reviewRequired = false,
                 priority = PRIORITY_DEFAULT_READY,
@@ -443,7 +470,7 @@ public object WorkspaceOverviewMapper {
                 contextLabel = "Pipeline step 08",
                 severity = ReadinessSeverity.Neutral,
                 statusLabel = "Optional until build completes",
-                description = "Release target example-org/rom-releases.",
+                description = "Choose where to publish once a build is ready.",
                 action = WorkspaceActionUi.OpenStage(StageId.PUBLISH_RELEASE),
                 reviewRequired = false,
                 priority = PRIORITY_DEFAULT_READY,
@@ -455,6 +482,7 @@ public object WorkspaceOverviewMapper {
         readinessItems: List<ReadinessItemUi>,
         hasTargetBinding: Boolean,
         hasExplicitValidSource: Boolean,
+        built: Boolean = false,
     ): WorkspaceActionUi? {
         val unresolvedItem = readinessItems
             .filter { it.reviewRequired && it.action != null }
@@ -467,8 +495,9 @@ public object WorkspaceOverviewMapper {
                 WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.TargetProfile)
             unresolvedItem != null ->
                 unresolvedItem.action
-            else ->
-                WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP)
+            // Everything is set: build it, or publish what the last build produced.
+            built -> WorkspaceActionUi.OpenStage(StageId.PUBLISH_RELEASE, "publish-review-and-recovery")
+            else -> WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.RunHistory)
         }
     }
 
@@ -478,7 +507,7 @@ public object WorkspaceOverviewMapper {
             RunState.QUEUED, RunState.RUNNING, RunState.PAUSED_WAITING_FOR_APP ->
                 BuildStateUi.InProgress(
                     runId = latestRun.id,
-                    stageLabel = latestRun.stages.lastOrNull()?.stageId?.name ?: "Building",
+                    stageLabel = latestRun.stages.lastOrNull()?.stageId?.let(::stageTitle) ?: "Building",
                     progress = null,
                 )
             RunState.SUCCEEDED ->
@@ -491,7 +520,7 @@ public object WorkspaceOverviewMapper {
                 BuildStateUi.Failed(
                     runId = latestRun.id,
                     failedAt = latestRun.endedAt?.toString() ?: "",
-                    stageLabel = latestRun.stages.lastOrNull()?.stageId?.name ?: "Pipeline",
+                    stageLabel = latestRun.stages.lastOrNull()?.stageId?.let(::stageTitle) ?: "Pipeline",
                     errorMessage = latestRun.stages.lastOrNull()?.message ?: "Build failed",
                 )
             RunState.CANCELLING ->
@@ -503,12 +532,16 @@ public object WorkspaceOverviewMapper {
         }
     }
 
-    private fun resolveRecentActivity(runs: List<BuildRun>): List<ActivityItemUi> = runs.map { run ->
+    private fun stageTitle(id: StageId): String =
+        org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors.ALL.firstOrNull { it.stageId == id }?.title
+            ?: id.name
+
+    private fun resolveRecentActivity(runs: List<BuildRun>): List<ActivityItemUi> = runs.take(RECENT_RUNS).map { run ->
         ActivityItemUi(
             id = run.id,
-            title = "Build run ${run.id}",
-            timestamp = run.startedAt.toString(),
-            description = "Status: ${run.state.name}",
+            title = "Build ${run.state.name.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() }}",
+            timestamp = run.startedAt.toString().substringBefore('.').replace('T', ' ') + " UTC",
+            description = run.stages.lastOrNull()?.let { "Last stage: ${stageTitle(it.stageId)}" } ?: "No stage ran",
             action = WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.RunHistory),
         )
     }

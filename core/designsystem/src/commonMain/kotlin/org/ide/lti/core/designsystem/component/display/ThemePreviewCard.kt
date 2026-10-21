@@ -51,9 +51,11 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LocalAppearance
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
+import org.ide.lti.core.designsystem.theme.withAccent
 
 /**
  * Standardized Liquid Glass Theme Preview Card displaying an interactive miniature IDE mockup.
@@ -79,7 +81,7 @@ fun ThemePreviewCard(
     subtitle: String? = null,
 ) {
     var isHovered by remember { mutableStateOf(false) }
-    val previewScheme = colorSchemeFor(theme)
+    val previewScheme = colorSchemeFor(theme).withAccent(LocalAppearance.current.accent)
 
     val targetBorder = when {
         isSelected -> previewScheme.primary
@@ -193,7 +195,7 @@ private fun themeDisplayName(theme: AppTheme): String = when (theme) {
  */
 @Composable
 private fun MiniIdePreview(theme: AppTheme, modifier: Modifier = Modifier) {
-    val previewScheme = colorSchemeFor(theme)
+    val previewScheme = colorSchemeFor(theme).withAccent(LocalAppearance.current.accent)
     val windowCanvasColor = previewScheme.surface
     val windowBorderColor = previewScheme.outline
     val sidebarColor = previewScheme.surfaceContainer

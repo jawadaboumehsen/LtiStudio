@@ -31,12 +31,13 @@ public object StageSettingsValidator {
     public const val INCOMPATIBLE_FIRMWARE: String = "INCOMPATIBLE_FIRMWARE"
     public const val UNSUPPORTED_EXTRACTION_ADAPTER: String = "UNSUPPORTED_EXTRACTION_ADAPTER"
     public const val PARTITION_NOT_ON_TARGET: String = "PARTITION_NOT_ON_TARGET"
+    public const val INVALID_FILENAME: String = "INVALID_FILENAME"
+    private const val PATH_SEPARATORS = "/\\"
+
     public const val UNSUPPORTED_SLOT: String = "UNSUPPORTED_SLOT"
     public const val UNSUPPORTED_SYSTEM_EXT_MODE: String = "UNSUPPORTED_SYSTEM_EXT_MODE"
     public const val UNSUPPORTED_FOOTER_POLICY: String = "UNSUPPORTED_FOOTER_POLICY"
     public const val RESERVED_PROPERTY: String = "RESERVED_PROPERTY"
-    public const val INVALID_PRESET_REVISION: String = "INVALID_PRESET_REVISION"
-    public const val INVALID_POLICY_REVISION: String = "INVALID_POLICY_REVISION"
     public const val INVALID_SCHEMA_VERSION: String = "INVALID_SCHEMA_VERSION"
     public const val INVALID_DIGEST: String = "INVALID_DIGEST"
     public const val INVALID_BLOCK_SIZE: String = "INVALID_BLOCK_SIZE"
@@ -47,11 +48,12 @@ public object StageSettingsValidator {
     public const val INVALID_PART_SIZE: String = "INVALID_PART_SIZE"
     public const val INVALID_RETENTION: String = "INVALID_RETENTION"
 
+    private val DEBLOAT_SELECTOR = Regex("""^[A-Za-z0-9_-]+:[A-Za-z0-9._+@-]+(/[A-Za-z0-9._+@-]+)*$""")
     private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
     private val SUPPORTED_FOOTER_POLICIES = setOf("erase", "preserve")
     private val RESERVED_PROPERTIES = setOf("ro.build.version.release", "ro.build.version.security_patch")
 
-    // retries-in-0..5 and archiveRef-required-for-IMPORT/EXISTING_ARCHIVE are already enforced by
+    // retries-in-0..5 and archiveRef-required-for-IMPORT_ARCHIVE are already enforced by
     // AcquisitionSettings' own constructor (see ConfigurationSettings.kt's init block) - an instance
     // reaching this function can never violate either, so there is nothing to re-check here.
     public fun validateAcquisition(settings: AcquisitionSettings, target: TargetDevice? = null): ValidationReport {
@@ -201,43 +203,20 @@ public object StageSettingsValidator {
         return ValidationReport(errors = errors)
     }
 
+    /** Picks are `partition:path` app folders from the inventory; the stage checks they still exist. */
     public fun validateDebloat(settings: DebloatSettings): ValidationReport {
-        val errors = mutableListOf<ValidationError>()
-        if (settings.enabled) {
-            val presetRevision = settings.presetRevision
-            if (presetRevision != null && presetRevision < 1) {
-                errors += ValidationError(
-                    stageId = StageId.DEBLOAT,
-                    objectId = settings.presetId,
-                    fieldPath = "presetRevision",
-                    code = INVALID_PRESET_REVISION,
-                    severity = Severity.ERROR,
-                    message = "presetRevision must be >= 1, was $presetRevision",
-                )
-            }
-            val presetDigest = settings.presetDigest
-            if (presetDigest != null && !presetDigest.startsWith("sha256:")) {
-                errors += ValidationError(
-                    stageId = StageId.DEBLOAT,
-                    objectId = settings.presetId,
-                    fieldPath = "presetDigest",
-                    code = INVALID_DIGEST,
-                    severity = Severity.ERROR,
-                    message = "presetDigest must start with 'sha256:', was '$presetDigest'",
-                )
-            }
-            val protectedPolicyRevision = settings.protectedPolicyRevision
-            if (protectedPolicyRevision != null && protectedPolicyRevision < 1) {
-                errors += ValidationError(
+        val errors = (settings.removeSelectors + settings.keepSelectors)
+            .filterNot { DEBLOAT_SELECTOR.matches(it) && ".." !in it.substringAfter(':').split('/') }
+            .map { selector ->
+                ValidationError(
                     stageId = StageId.DEBLOAT,
                     objectId = null,
-                    fieldPath = "protectedPolicyRevision",
-                    code = INVALID_POLICY_REVISION,
+                    fieldPath = selector,
+                    code = org.ide.lti.core.domain.debloat.MALFORMED_SELECTOR,
                     severity = Severity.ERROR,
-                    message = "protectedPolicyRevision must be >= 1, was $protectedPolicyRevision",
+                    message = "'$selector' is not a partition:path app folder",
                 )
             }
-        }
         return ValidationReport(errors = errors)
     }
 
@@ -292,6 +271,18 @@ public object StageSettingsValidator {
 
     public fun validateBuild(settings: BuildSettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
+        val name = settings.filenameTemplate
+        val notAFileName = name.any { it in PATH_SEPARATORS } || name.removeSuffix(".zip").isBlank()
+        if (!name.endsWith(".zip") || notAFileName) {
+            errors += ValidationError(
+                stageId = StageId.BUILD_FLASHABLE_ZIP,
+                objectId = null,
+                fieldPath = "filenameTemplate",
+                code = INVALID_FILENAME,
+                severity = Severity.ERROR,
+                message = "The package name must be a file name ending in .zip, was '$name'",
+            )
+        }
         if (settings.blockSize <= 0 || (settings.blockSize and (settings.blockSize - 1)) != 0) {
             errors += ValidationError(
                 stageId = StageId.BUILD_FLASHABLE_ZIP,

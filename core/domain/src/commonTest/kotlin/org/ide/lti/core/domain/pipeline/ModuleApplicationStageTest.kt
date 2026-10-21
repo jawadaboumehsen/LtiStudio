@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.pipeline
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.stages.AppliedModulePlan
 import org.ide.lti.core.domain.pipeline.stages.ModuleApplicationStage
+import org.ide.lti.core.domain.plugin.ApplyModules
 import org.ide.lti.core.domain.plugin.EmptyPluginCatalog
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginPlanResolver
@@ -159,7 +160,7 @@ class ModuleApplicationStageTest {
         )
 
         val plan = stage.plan(ctx)
-        assertEquals(3, plan.size)
+        assertEquals(4, plan.size)
 
         val planFileStep = plan[0] as PipelineStep.WriteFile
         assertEquals("work/modules/plan.json", planFileStep.relPath)
@@ -178,7 +179,12 @@ class ModuleApplicationStageTest {
         assertEquals("Copy", decodedPlan.operations[1].kind)
         assertEquals("system/app/App/App.apk", decodedPlan.operations[1].target)
 
-        val checkStep = plan[1] as PipelineStep.Check
+        val host = plan[1] as PipelineStep.Host
+        assertEquals("modules.apply.result", host.resultKey)
+        val applied = (host.request as ApplyModules).plans.single()
+        assertEquals(listOf("op-delete-1", "op-copy-2"), applied.operations.map { it.id })
+
+        val checkStep = plan[2] as PipelineStep.Check
         assertEquals("modules applied", checkStep.label)
         assertNull(checkStep.verify(mapOf("modules.apply.result" to "ok")))
         val failedCheck = checkStep.verify(mapOf("modules.apply.result" to "checksum mismatch"))
@@ -186,7 +192,7 @@ class ModuleApplicationStageTest {
         assertTrue(failedCheck.contains("checksum mismatch"))
         assertNotNull(checkStep.verify(emptyMap()))
 
-        val summaryStep = plan[2] as PipelineStep.WriteFile
+        val summaryStep = plan[3] as PipelineStep.WriteFile
         assertEquals("work/modules/applied.json", summaryStep.relPath)
         assertEquals("""{"enabled":["org.ide:sample-mod"],"operations":2}""", summaryStep.content.decodeToString())
     }
@@ -299,8 +305,9 @@ class ModuleApplicationStageTest {
         assertEquals(write1.relPath, write2.relPath)
         assertEquals(write1.content.decodeToString(), write2.content.decodeToString())
 
-        val sum1 = plan1[2] as PipelineStep.WriteFile
-        val sum2 = plan2[2] as PipelineStep.WriteFile
+        assertEquals(plan1[1], plan2[1]) // the host request (resolved plans) is equal too
+        val sum1 = plan1[3] as PipelineStep.WriteFile
+        val sum2 = plan2[3] as PipelineStep.WriteFile
         assertEquals(sum1.relPath, sum2.relPath)
         assertEquals(sum1.content.decodeToString(), sum2.content.decodeToString())
     }

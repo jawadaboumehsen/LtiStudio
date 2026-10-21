@@ -445,6 +445,13 @@ private class ResolverRun(
         )
     }
 }
+
+/** Of each plugin ([key]) installed in several versions, the newest: the one [PluginDependencyResolver.lock] picks. */
+fun <T> newestPerPlugin(items: List<T>, key: (T) -> String, version: (T) -> String): List<T> {
+    fun parsed(item: T) = (parseVersion(version(item)) as? VersionParseResult.Success)?.version
+    return items.groupBy(key).values.map { versions -> versions.maxWith(compareBy(nullsFirst()) { parsed(it) }) }
+}
+
 private data class ParsedVersion(val segments: List<Long>) : Comparable<ParsedVersion> {
     override fun compareTo(other: ParsedVersion): Int {
         repeat(maxOf(segments.size, other.segments.size)) { i ->

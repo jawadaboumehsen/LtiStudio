@@ -152,11 +152,12 @@ class StageDefinitionsTest {
     @Test
     fun testSidecarNormalizer() {
         val rawStats = listOf(
+            // system-as-root: the image root holds system/
             "/mnt/system 0 0 755 capabilities=0x0",
-            "/mnt/system/bin 0 2000 755 capabilities=0x0",
-            "/mnt/system/bin/run-as 0 2000 750 capabilities=0x0",
-            "/mnt/system/bin/simpleperf_app_runner 0 2000 750 capabilities=0x0",
-            "/mnt/system/app[test]/v1.0+beta 0 0 644 capabilities=0x0",
+            "/mnt/system/system/bin 0 2000 755 capabilities=0x0",
+            "/mnt/system/system/bin/run-as 0 2000 750 capabilities=0x0",
+            "/mnt/system/system/bin/simpleperf_app_runner 0 2000 750 capabilities=0x0",
+            "/mnt/system/system/app[test]/v1.0+beta 0 0 644 capabilities=0x0",
         )
         val rawSelinux = listOf(
             "u:object_r:system_file:s0",
@@ -183,8 +184,9 @@ class StageDefinitionsTest {
             ),
         )
 
-        // Verify system-as-root root path
-        assertTrue(result.fsConfigContent.contains("system 0 0 755 capabilities=0x0"))
+        // Paths are relative to the image root (mkfs.erofs --mount-point /); the root itself is ""
+        assertTrue(result.fsConfigContent.lines().contains(" 0 0 755 capabilities=0x0"))
+        assertTrue(result.fsConfigContent.lines().none { it.startsWith("system/system/") })
         assertTrue(result.fileContextContent.contains("""/ u:object_r:system_file:s0"""))
 
         // Verify regex escaping
@@ -296,7 +298,14 @@ class StageDefinitionsTest {
         assertTrue(
             s2tools.any {
                 it.toolId == "cp" &&
-                    it.args == listOf("-a", "-T", "$ws/firmware/extracted/odm_mnt", "$ws/firmware/extracted/odm")
+                    it.args == listOf(
+                        "-r",
+                        "--no-dereference",
+                        "--preserve=links,timestamps",
+                        "-T",
+                        "$ws/firmware/extracted/odm_mnt",
+                        "$ws/firmware/extracted/odm",
+                    )
             },
         )
         assertTrue(s2.none { it is PipelineStep.WriteFile })
@@ -311,7 +320,8 @@ class StageDefinitionsTest {
         )
         val sidecar = withDumps.filterIsInstance<PipelineStep.WriteFile>().first()
         assertEquals("firmware/extracted/fs_config-odm", sidecar.relPath)
-        assertEquals("odm 0 0 755 capabilities=0x0\n", sidecar.content.decodeToString())
+        // A non-system root is "/" for mkfs.erofs --mount-point odm.
+        assertEquals("/ 0 0 755 capabilities=0x0\n", sidecar.content.decodeToString())
 
         // Stage 3: rsync + sidecars, conditional erase_footer, AOT purge, build.prop stamp.
         val s3 = WorkTreeAssemblyStage().plan(ctx)
@@ -443,9 +453,11 @@ class StageDefinitionsTest {
         val result = SidecarNormalizer.fromDumps(
             partition = "system",
             mountPrefix = mnt,
-            statDump = "0 0 755 $mnt\n0 2000 750 $mnt/bin/run-as\n0 0 644 $mnt/app/My App/x.apk\n",
-            getfattrDump = "# file: $mnt/app/My App/x.apk\nsecurity.selinux=\"u:object_r:app:s0\"\n\n" +
-                "# file: $mnt\nsecurity.selinux=\"u:object_r:rootfs:s0\"\n\n# file: $mnt/bin/run-as\nsecurity.selinux=\"u:object_r:runas_exec:s0\"\n",
+            // system-as-root: the image root holds system/
+            statDump = "0 0 755 $mnt\n0 2000 750 $mnt/system/bin/run-as\n0 0 644 $mnt/system/app/My App/x.apk\n",
+            getfattrDump = "# file: $mnt/system/app/My App/x.apk\nsecurity.selinux=\"u:object_r:app:s0\"\n\n" +
+                "# file: $mnt\nsecurity.selinux=\"u:object_r:rootfs:s0\"\n\n" +
+                "# file: $mnt/system/bin/run-as\nsecurity.selinux=\"u:object_r:runas_exec:s0\"\n",
         )
         assertTrue(
             result.fsConfigContent.contains("system/bin/run-as 0 2000 750 capabilities=0xc0"),

@@ -31,7 +31,6 @@ data class ConfigurationDraft(
         id: String,
         workspaceId: String,
         profileRevision: Int,
-        packagePolicy: org.ide.lti.core.model.target.PackagePolicy,
         createdAt: kotlinx.datetime.Instant,
     ): ConfigurationSnapshot = ConfigurationSnapshot.create(
         id = id,
@@ -46,9 +45,6 @@ data class ConfigurationDraft(
         assembly = AssemblySettings(
             buildType = buildType,
             romVersion = romVersion,
-        ),
-        build = BuildSettings(
-            packagePolicy = packagePolicy,
         ),
         release = ReleaseSettings(
             otaBaseUrl = otaBaseUrl,

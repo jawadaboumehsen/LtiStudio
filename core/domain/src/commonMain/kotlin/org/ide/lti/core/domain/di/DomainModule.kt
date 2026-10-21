@@ -16,6 +16,8 @@ import org.ide.lti.core.domain.ai.AIService
 import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
 import org.ide.lti.core.domain.panels.PanelManager
+import org.ide.lti.core.domain.pipeline.DefaultPipelineStages
+import org.ide.lti.core.domain.pipeline.PipelineDefinitionRegistry
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.session.DiscardPipelineDraftChangesUseCase
 import org.ide.lti.core.domain.pipeline.session.ObserveAcquisitionConfigUseCase
@@ -39,8 +41,11 @@ import org.ide.lti.core.domain.pipeline.session.UpdatePublishConfigUseCase
 import org.ide.lti.core.domain.pipeline.session.UpdateReleaseConfigUseCase
 import org.ide.lti.core.domain.pipeline.session.ValidatePipelineDraftUseCase
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
+import org.ide.lti.core.domain.plugin.EmptyPluginCatalog
 import org.ide.lti.core.domain.plugin.InstallPluginUseCase
+import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
+import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.terminal.TerminalManager
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
@@ -72,7 +77,9 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
+import org.ide.lti.core.domain.workspace.SnapshotSettingsStore
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -91,7 +98,7 @@ val DomainModule =
 
         // Workspace Use Cases
         singleOf(::GetRecentWorkspacesUseCase)
-        singleOf(::DiscoverWorkdirWorkspacesUseCase)
+        single { DiscoverWorkdirWorkspacesUseCase(get(), getOrNull(), getOrNull()) }
         singleOf(::OpenWorkspaceUseCase)
         singleOf(::OpenWorkspaceByPathUseCase)
         // Explicit: `singleOf` would try to resolve the defaulted `appVersion: String` from Koin.
@@ -115,6 +122,8 @@ val DomainModule =
         }
 
         singleOf(::RemoveRecentWorkspaceUseCase)
+        single<WorkspaceSettingsStore> { SnapshotSettingsStore(get(), get(), get(), get()) }
+        single { PluginWorkspaceUsage(get(), get()) }
 
         // Pipeline & Build Use Cases
         single {
@@ -124,18 +133,24 @@ val DomainModule =
                 vendoredFiles = get(),
                 toolStore = getOrNull(),
                 toolUsageCoordinator = getOrNull(),
+                registry = PipelineDefinitionRegistry(
+                    DefaultPipelineStages.with(getOrNull<PluginCatalogPort>() ?: EmptyPluginCatalog)
+                        .associateBy { it.id },
+                ),
+                hostSteps = getOrNull(),
             )
         }
         single {
             StartPipelineRunUseCase(
                 workspaceRepository = get(),
                 snapshotRepository = get(),
-                targetRepository = get(),
+                workspaceDeviceRepository = get(),
                 readinessPort = get(),
                 executionPort = get(),
                 runRepository = get(),
                 orchestrator = get(),
                 scope = getOrNull(),
+                settingsStore = get(),
             )
         }
         single {
@@ -149,7 +164,7 @@ val DomainModule =
             ReattachRunUseCase(
                 workspaceRepository = get(),
                 snapshotRepository = get(),
-                targetRepository = get(),
+                workspaceDeviceRepository = get(),
                 runRepository = get(),
                 orchestrator = get(),
                 scope = getOrNull(),

@@ -10,23 +10,40 @@
 package org.ide.lti.feature.rom.studio.stage.assemble
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import org.ide.lti.core.domain.workspace.StageSettingsSync
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 
-public class AssembleViewModel(public val workspaceId: String, initialSettings: AssemblySettings? = null) :
-    ViewModel() {
+public class AssembleViewModel(
+    public val workspaceId: String,
+    initialSettings: AssemblySettings? = null,
+    store: WorkspaceSettingsStore? = null,
+) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
-    private val _settings = MutableStateFlow(initialSettings ?: AssemblySettings())
-    public val settings: StateFlow<AssemblySettings> = _settings.asStateFlow()
+    private val sync = StageSettingsSync(
+        scope = viewModelScope,
+        workspaceId = workspaceId,
+        store = store,
+        initial = initialSettings ?: AssemblySettings(),
+        read = { it.assembly },
+        write = { snapshot, value -> snapshot.copy(assembly = value) },
+    )
+
+    public val settings: StateFlow<AssemblySettings> = sync.settings
+
+    /** Why the last automatic save failed (for example while a build runs), or null. */
+    public val saveError: StateFlow<String?> = sync.saveError
+
+    /** The workspace's own device once loaded; null until then. */
+    public val device: StateFlow<TargetDevice?> = sync.device
 
     public fun updateSettings(updated: AssemblySettings) {
-        _settings.update { updated }
+        sync.update(updated)
     }
 }

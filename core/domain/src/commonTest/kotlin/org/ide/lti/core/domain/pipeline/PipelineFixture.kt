@@ -100,7 +100,6 @@ class PipelineFixture {
         debloat = org.ide.lti.core.model.workspace.DebloatSettings(enabled = false),
         customization = org.ide.lti.core.model.workspace.CustomizationSettings(),
         build = org.ide.lti.core.model.workspace.BuildSettings(
-            packagePolicy = targetGlobal.packagePolicy,
             signing = org.ide.lti.core.model.workspace.SigningPolicy(signImages = true, signPackage = true),
         ),
         release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://ota.ltirom.org/updates"),
@@ -130,7 +129,6 @@ class PipelineFixture {
         debloat = org.ide.lti.core.model.workspace.DebloatSettings(enabled = false),
         customization = org.ide.lti.core.model.workspace.CustomizationSettings(),
         build = org.ide.lti.core.model.workspace.BuildSettings(
-            packagePolicy = targetChina.packagePolicy,
             signing = org.ide.lti.core.model.workspace.SigningPolicy(signImages = true, signPackage = true),
         ),
         release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://ota.ltirom.org/updates"),

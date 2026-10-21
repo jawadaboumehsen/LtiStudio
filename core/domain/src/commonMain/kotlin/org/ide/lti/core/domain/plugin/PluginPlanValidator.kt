@@ -18,7 +18,10 @@ import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.plugin.SettingDefinition
+import org.ide.lti.core.model.plugin.SmaliEdit
 import org.ide.lti.core.model.plugin.ValueRef
+import org.ide.lti.core.model.plugin.XmlChange
+import org.ide.lti.core.model.plugin.XmlChangeKind
 import org.ide.lti.core.model.run.StageId
 
 /**
@@ -46,9 +49,15 @@ object PluginPlanValidator {
     const val CODE_EMPTY_EDITS: String = "EMPTY_EDITS"
     const val CODE_EMPTY_CLASS_DESCRIPTORS: String = "EMPTY_CLASS_DESCRIPTORS"
     const val CODE_EMPTY_OPCODE_SEQUENCE: String = "EMPTY_OPCODE_SEQUENCE"
+    const val CODE_INVALID_METHOD_MATCH: String = "INVALID_METHOD_MATCH"
+    const val CODE_INVALID_COMPATIBILITY: String = "INVALID_COMPATIBILITY"
+    const val CODE_INVALID_XML_CHANGE: String = "INVALID_XML_CHANGE"
 
     private val SHA256_REGEX = Regex("^[0-9a-f]{64}$")
-    private val ALLOWED_PARTITIONS =
+    private val CLASS_DESCRIPTOR = Regex("""^L[^;\s]+;$""")
+
+    /** The partitions an operation may target. */
+    val ALLOWED_PARTITIONS: Set<String> =
         setOf("system", "vendor", "product", "system_ext", "odm", "vendor_dlkm", "odm_dlkm", "system_dlkm")
 
     fun validate(template: PluginPlanTemplate): ValidationReport = Run(template).report()
@@ -82,6 +91,14 @@ object PluginPlanValidator {
             }
             val seenOperations = mutableSetOf<String>()
             template.operations.forEach { operation(it, seenOperations) }
+            template.compatibility.filter { it.device.isBlank() || it.firmwares.any(String::isBlank) }.forEach {
+                error(
+                    template.id,
+                    "compatibility",
+                    CODE_INVALID_COMPATIBILITY,
+                    "A compatible device or firmware is blank",
+                )
+            }
             return ValidationReport(errors = errors)
         }
 
@@ -166,20 +183,10 @@ object PluginPlanValidator {
                 is Operation.TextPatch -> {
                     partitionPath(op.target, op.id)
                     valueRef(op.replacement, op.id, "replacement")
-                    sha256(op.expectedSha256, op.id, "expectedSha256")
+                    // Empty = anchored by its unique context alone (files several plugins edit, like sepolicy).
+                    sha256(op.expectedSha256, op.id, "expectedSha256", allowEmpty = true)
                 }
-                is Operation.ApkJarPatch -> {
-                    partitionPath(op.target, op.id)
-                    if (op.edits.isEmpty()) {
-                        error(
-                            op.id,
-                            "edits",
-                            CODE_EMPTY_EDITS,
-                            "ApkJarPatch must contain at least one edit",
-                        )
-                    }
-                    op.edits.forEach { sha256(it.expectedSha256, op.id, "expectedSha256") }
-                }
+                is Operation.ApkJarPatch -> apkJarPatch(op)
                 is Operation.CompiledClassMerge -> {
                     partitionPath(op.target, op.id)
                     asset(op.payload, op.id)
@@ -204,6 +211,54 @@ object PluginPlanValidator {
                         )
                     }
                 }
+            }
+        }
+
+        private fun apkJarPatch(op: Operation.ApkJarPatch) {
+            partitionPath(op.target, op.id)
+            if (op.edits.isEmpty()) {
+                error(
+                    op.id,
+                    "edits",
+                    CODE_EMPTY_EDITS,
+                    "ApkJarPatch must contain at least one edit",
+                )
+            }
+            // Empty: anchored by its hunks' unique context, as git apply.
+            op.edits.forEach { sha256(it.expectedSha256, op.id, "expectedSha256", allowEmpty = true) }
+            op.edits.forEach { methodEdit(it, op.id) }
+            op.edits.flatMap { it.xml }.forEach { xmlChange(it, op.id) }
+        }
+
+        private fun xmlChange(change: XmlChange, operationId: String) {
+            val problem = when {
+                change.match == null && change.kind != XmlChangeKind.APPEND -> "names no element to change"
+                change.fragment.isBlank() && change.kind != XmlChangeKind.REMOVE -> "has nothing to add"
+                change.fragment.isNotBlank() && change.kind == XmlChangeKind.REMOVE -> "removes, so it adds nothing"
+                else -> null
+            }
+            problem?.let { error(operationId, "xml", CODE_INVALID_XML_CHANGE, "An XML ${change.kind} change $it") }
+        }
+
+        private fun methodEdit(edit: SmaliEdit, operationId: String) {
+            val match = edit.method ?: return
+            if (!CLASS_DESCRIPTOR.matches(edit.memberDescriptor)) {
+                error(
+                    operationId,
+                    "memberDescriptor",
+                    CODE_INVALID_METHOD_MATCH,
+                    "A method edit names its class as Lpackage/Name;: '${edit.memberDescriptor}'",
+                )
+            }
+            val picksNothing = match.name == null && match.parameters == null && match.returns == null &&
+                match.strings.isEmpty()
+            if (picksNothing) {
+                error(
+                    operationId,
+                    "method",
+                    CODE_INVALID_METHOD_MATCH,
+                    "A method edit must say which method it changes",
+                )
             }
         }
 
@@ -322,8 +377,8 @@ object PluginPlanValidator {
             }
         }
 
-        private fun sha256(value: String, operationId: String, fieldPath: String) {
-            if (!SHA256_REGEX.matches(value)) {
+        private fun sha256(value: String, operationId: String, fieldPath: String, allowEmpty: Boolean = false) {
+            if (!(allowEmpty && value.isEmpty()) && !SHA256_REGEX.matches(value)) {
                 error(
                     operationId,
                     fieldPath,

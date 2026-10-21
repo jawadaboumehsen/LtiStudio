@@ -47,6 +47,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
+import org.ide.lti.feature.rom.studio.api.toggledSelection
 
 /**
  * Stage Assemble subobject pane for Work trees and partition selection.
@@ -116,22 +117,14 @@ public fun WorkTreesPane(
                     IdeTableRow(
                         isSelected = isIncluded,
                         onClick = {
-                            val updated = if (isIncluded) {
-                                settings.includedPartitions - name
-                            } else {
-                                settings.includedPartitions + name
-                            }
+                            val updated = toggledSelection(partitions, settings.includedPartitions, name)
                             onChange(settings.copy(includedPartitions = updated))
                         },
                     ) {
                         Checkbox(
                             checked = isIncluded,
-                            onCheckedChange = { checked ->
-                                val updated = if (checked) {
-                                    settings.includedPartitions + name
-                                } else {
-                                    settings.includedPartitions - name
-                                }
+                            onCheckedChange = {
+                                val updated = toggledSelection(partitions, settings.includedPartitions, name)
                                 onChange(settings.copy(includedPartitions = updated))
                             },
                             colors = CheckboxDefaults.colors(
@@ -208,7 +201,8 @@ public fun WorkTreesPane(
             }
 
             Text(
-                text = "Work tree staging root: D:\\ROM\\workspace\\staging",
+                text = "Each included partition is copied to work/<partition>/ in the workspace folder, with " +
+                    "its fs_config and file_contexts in work/configs/.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),

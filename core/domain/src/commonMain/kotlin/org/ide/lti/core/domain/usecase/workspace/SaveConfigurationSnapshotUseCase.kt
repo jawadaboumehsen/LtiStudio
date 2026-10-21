@@ -18,7 +18,6 @@ import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
-import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -45,17 +44,45 @@ class SaveConfigurationSnapshotUseCase(
     suspend operator fun invoke(
         workspaceId: String,
         draft: ConfigurationDraft,
-        packagePolicy: PackagePolicy? = null,
         expectedBaseSnapshotId: String? = null,
-    ): Result<ConfigurationSnapshot> = runCatching {
-        val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
-            "Workspace not found: $workspaceId"
-        }
-        val activeRun = runRepository.latestActive(workspaceId)
-        check(activeRun == null || !activeRun.state.isActive) {
-            "Cannot save configuration while a build run is active (${activeRun?.state})"
-        }
+    ): Result<ConfigurationSnapshot> = save(workspaceId, expectedBaseSnapshotId) { workspace ->
+        buildSnapshotToSave(workspace, workspaceId, draft)
+    }
 
+    /**
+     * Saves a new snapshot that is [change] applied to the workspace's current one. Each stage editor changes
+     * only its own settings group, so edits from different editors never overwrite each other: the change is
+     * applied to whatever was saved last, under the same lock as every other save.
+     */
+    suspend fun update(
+        workspaceId: String,
+        change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
+    ): Result<ConfigurationSnapshot> = save(workspaceId, expectedBaseSnapshotId = null) { workspace ->
+        val current = requireNotNull(workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }) {
+            "Workspace has no saved configuration to change"
+        }
+        val changed = change(current)
+        ConfigurationSnapshot.create(
+            id = UUID.randomUUID().toString(),
+            workspaceId = workspaceId,
+            profileRevision = workspace.targetBinding?.profileRevision ?: current.profileRevision,
+            acquisition = changed.acquisition,
+            extraction = changed.extraction,
+            assembly = changed.assembly,
+            debloat = changed.debloat,
+            customization = changed.customization,
+            build = changed.build,
+            release = changed.release,
+            publish = changed.publish,
+            createdAt = Clock.System.now(),
+        )
+    }
+
+    private suspend fun save(
+        workspaceId: String,
+        expectedBaseSnapshotId: String?,
+        build: suspend (Workspace) -> ConfigurationSnapshot,
+    ): Result<ConfigurationSnapshot> = runCatching {
         // expectedRevision/currentRevision are intentionally always equal here: the port's Int-typed
         // CAS compares snapshot identity via hashCode(), which risks a false-positive match on a
         // 32-bit hash collision between two different snapshot ids. The real base check below compares
@@ -76,6 +103,13 @@ class SaveConfigurationSnapshotUseCase(
             )
             is AdmissionResult.Admitted -> {
                 try {
+                    val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
+                        "Workspace not found: $workspaceId"
+                    }
+                    val activeRun = runRepository.latestActive(workspaceId)
+                    check(activeRun == null || !activeRun.state.isActive) {
+                        "Cannot save configuration while a build run is active (${activeRun?.state})"
+                    }
                     if (expectedBaseSnapshotId != null && expectedBaseSnapshotId != workspace.effectiveSnapshotId) {
                         error(
                             "Stale base: expected snapshot '$expectedBaseSnapshotId', workspace is " +
@@ -83,7 +117,7 @@ class SaveConfigurationSnapshotUseCase(
                         )
                     }
 
-                    val snapshot = buildSnapshotToSave(workspace, workspaceId, draft, packagePolicy)
+                    val snapshot = build(workspace)
 
                     // 1. Persist immutable snapshot
                     snapshotRepository.saveSnapshot(snapshot)
@@ -120,18 +154,13 @@ class SaveConfigurationSnapshotUseCase(
         workspace: Workspace,
         workspaceId: String,
         draft: ConfigurationDraft,
-        packagePolicy: PackagePolicy?,
     ): ConfigurationSnapshot {
         val previousSnapshot = workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }
 
-        val resolvedPackagePolicy = packagePolicy
-            ?: previousSnapshot?.build?.packagePolicy
-            ?: PackagePolicy()
         val resolvedExtraction = previousSnapshot?.extraction ?: ExtractionSettings()
         val resolvedDebloat = previousSnapshot?.debloat ?: DebloatSettings()
         val resolvedCustomization = previousSnapshot?.customization ?: CustomizationSettings()
-        val resolvedBuild = previousSnapshot?.build?.copy(packagePolicy = resolvedPackagePolicy)
-            ?: BuildSettings(packagePolicy = resolvedPackagePolicy)
+        val resolvedBuild = previousSnapshot?.build ?: BuildSettings()
         val resolvedPublish = previousSnapshot?.publish ?: PublishSettings()
 
         val profileRevision = workspace.targetBinding?.profileRevision ?: 1
@@ -139,7 +168,6 @@ class SaveConfigurationSnapshotUseCase(
             id = UUID.randomUUID().toString(),
             workspaceId = workspaceId,
             profileRevision = profileRevision,
-            packagePolicy = resolvedPackagePolicy,
             createdAt = Clock.System.now(),
         )
         val correctedDigest = ConfigurationSnapshot.computeDigest(

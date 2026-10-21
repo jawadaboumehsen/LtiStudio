@@ -174,8 +174,16 @@ To prevent design system drift and ensure strict token adherence, two automated 
 ## Haze Glass System
 
 All glass (blur, refraction, tint) is rendered by the vendored **Haze** library
-(`:haze`, `:haze-utils`, `:haze-blur`, `:haze-glass`, `:haze-materials`, plus the `-material3`
-variants). The old `:backdrop` module (`drawBackdrop`, `LayerBackdrop`, `BackdropEffectScope`) is
+under `core/designsystem/haze/`: `:core:designsystem:haze:core`,
+`:core:designsystem:haze:utils`, `:core:designsystem:haze:blur`,
+`:core:designsystem:haze:glass`, `:core:designsystem:haze:blur-material3`,
+`:core:designsystem:haze:glass-material3`, and `:core:designsystem:haze:materials`.
+These remain separate libraries; the `haze/` container has no implementation or aggregate
+dependency. Haze libraries depend only on each other and external libraries, never on
+design-system components or application modules. Packages remain `dev.chrisbanes.haze.*`.
+Application component guardrails scan `core/designsystem/src`, excluding vendored Haze.
+
+The old `:backdrop` module (`drawBackdrop`, `LayerBackdrop`, `BackdropEffectScope`) is
 gone - do not reintroduce it.
 
 ### How a frame is wired
@@ -772,6 +780,90 @@ per stage; a failed stage marks every later stage pending and stops.
 - Client watchdog & graceful shutdown:
   - `ClientWatchdog` on build service enforces authenticated heartbeats every 5 s; 30 s deadline cancels orphaned processes.
   - `AppShutdownCoordinator` intercepts all client exit surfaces, calls `/api/v1/client/stop` to terminate active jobs, and stops heartbeat last.
+
+## Device Configuration (one per workspace)
+
+- A workspace owns exactly one device configuration, stored **in the workspace folder** as `device.json` (next to `workspace.json` and `config.json`) and never in the app. `WorkspaceFolderDeviceRepository` reads/writes it through the build service, so it travels with the folder (discovered workspaces, reinstalls). Provisioning writes it from a *copy* of a catalog template (`DefaultTargetCatalog` / `TargetRepository`); the catalog is only a list of templates.
+- A missing `device.json` means "no device" (offer a template); an unreadable one, or an unreachable service, is an error and is never overwritten.
+- `Workspace.targetBinding.profileId` is the workspace's own id; `profileRevision` is that device's edit counter (bumped by `WorkspaceFolderDeviceRepository.save` when content changes).
+- The workspace configuration (`ConfigurationSnapshot`) is written to the folder's `config.json` on every save; the app's snapshot store is only a cache. `SnapshotRepositoryImpl.getSnapshot` reads `config.json` back when the app lacks the workspace's current snapshot (e.g. after a new install). Stage editors load/save their own group through `StageSettingsSync`.
+- App data (workspace records, recents, snapshot cache, studio state) is a properties file, `<LOCALAPPDATA>/LtiRomGui/settings.properties` (`appSettings()` in `core:datastore`), rewritten atomically on each change. Never Java Preferences/the registry: it refuses values over 8 KB.
+- `DiscoverWorkdirWorkspacesUseCase` runs when the Setup workspace list opens: once the service is READY with a WorkDir, it finds `workspaces/*/workspace.json` through the service and rebuilds any missing app record from the folder (id, binding with `device.json`'s revision, `effectiveSnapshotId` = `config.json` id, device name for the list).
+- Firmware archives live in `firmware/downloaded/`; `FirmwareArchives` (Acquire's Probe / Import archive) copies a picked file inside WSL from its `/mnt/<drive>` path and selects it as `IMPORT_ARCHIVE` with `archiveRef = firmware/downloaded/<name>`.
+- `DeviceConfigReadiness.check(device, snapshot)` (`core:domain`) is the single answer to "may a build start?": identity, firmware url + SHA-256, partition layout, super partition, boot-chain sizes, signing, plus `StageSettingsValidator`. It gates the Start button (`BuildRunViewModel`, with a per-stage checklist) and `StartPipelineRunUseCase` (defensive).
+- The device is edited in the Studio's Target panel (`WorkspaceDeviceSection`, `WorkspaceDeviceViewModel`). It is read-only while a run is active; edits apply to the next run.
+- Stages read hardware policy from `StageContext.target` (`target.packagePolicy`); the stage-5 cache key includes the device digest, so a device edit invalidates the build.
+- Not configured by the pipeline: bootloader lock state. Verified boot stays disabled by the one-time manual `fastboot --disable-verity --disable-verification` flash of stock vbmeta/vbmeta_system; the zip never packages vbmeta. Spoofing lives in the Patches/Mods stage (`prophide`), not in device config.
+
+## ROM Pipeline (stages 1–8)
+
+- `PipelineOrchestrator` (`core:domain`) drives `DefaultPipelineStages.with(catalog)` in order. A run can stop
+  after a stage (`BuildRun.throughStage`, the Run panel's "Run through" chips). Field map:
+  `specs/004-rom-stage-studio/contracts/stage-settings.md`.
+- Caching: each stage has a cache key (inputs, tool pins, `CacheKeys.PIPELINE_VERSION`). Bump that version when a
+  stage's commands change. Once a stage really runs, every later stage runs too: they share `work/`.
+- Captured values over 512 characters are not kept between runs. A stage that needs a long value (a whole
+  `build.prop`) reads it itself, never from an earlier stage that may come from cache.
+- One driver per run in the app (`PipelineOrchestrator.exclusive`). A step's exit code comes from its `Finished`
+  event, or from `status()` when the stream ended without one.
+- Sidecars: `work/configs/fs_config-<p>` and `file_context-<p>`. For system (`--mount-point /`), paths are
+  relative to the image root (`system/app/X`, root `""`). Other partitions use `<p>/…`, and their root entry is `/`.
+  Edit them only through `SidecarNormalizer` and `SidecarEditor`.
+- Stage order is enforced in the Studio rail (`lockStages`, `StudioViewModel.selectStage`): a stage opens only when
+  the device configuration and every stage before it have no validation ERROR (warnings do not lock). A locked rail
+  item says what to finish first; navigating to it opens that stage instead. Each saved stage edit
+  (`WorkspaceSettingsStore.changes`) re-validates, so the next stage unlocks right away.
+- The build check (`DeviceConfigReadiness.check`) runs every build stage's validator (Publish is checked only in the
+  Studio, never for a build). Device problems reported under a stage carry `objectId = DEVICE_OBJECT`
+  (`isDeviceIssue`), so they lock and are shown as device configuration, not as that stage.
+- A stage's cache file also records the run's values when it ran (`values=` JSON): a cached Build restores its run
+  date, zip hash and size, so the package keeps its name on a later day and the cache still hits.
+- Plugins: a version a workspace's lockfile uses cannot be uninstalled (`PluginWorkspaceUsage.usersOf`). Installing a
+  plugin's newest version moves workspaces onto it (`moveToNewest`) and removes older versions nothing uses.
+- Window shortcuts (`WindowKeyShortcutHandler`) are taken only when a handler is registered; otherwise the key
+  reaches the focused text field (Ctrl+C/V/X/A/Z).
+- Debloat: inventory = APK folders of the assembled `work/` (`DebloatInventory`); picks are `partition:path`;
+  protected apps can never be picked.
+- Patches/Mods: plugins installed in the app (`InstalledPluginCatalog`, `<LOCALAPPDATA>/LtiRomGui/plugins/installed`).
+  Their plans are applied in the app by `PipelineStep.Host` → `ModuleHostSteps` (`FileMutationAdapter` on
+  `\\wsl.localhost\<distro>\…\work`), which also writes the sidecar entries of added or deleted files.
+  `TextPatch` with an empty `expectedSha256` is anchored by its unique context only (for files several plugins
+  edit, like `plat_sepolicy.cil`).
+- First-party mods live outside this repo, in `../LtiRomMods` (a plain Kotlin project on the SDK, like any
+  third-party mod): `./gradlew publishSdkToMavenLocal` here, then `./gradlew packageMods` there writes
+  `build/mods/*.lti-mod.zip`; install them on the Plugins page. The SDK and the modules its POM names (core:common,
+  core:model, core:domain, sdk:patch-mod-runtime) are published as `1.0.0-SNAPSHOT`, not the git version.
+- Smali/resource edits are DSL only: `ApkJarScope.addFile(member, content)` and
+  `change(member, preimage) { replace / insertAfter / insertBefore }`. Texts are exact whole lines (a trailing newline
+  is an empty last line); each anchor must occur once. They compile to `SmaliEdit` hunks without line numbers
+  (`@@ @@`), which the engine places by their unique text; no git patches.
+- Prefer method edits for smali: `ApkJarScope.method(classDescriptor, name) { parameters / returns / strings; replace
+  / insertAfter / insertBefore }` → `SmaliEdit(method = MethodMatch)`, applied by `SmaliMethodEditor`. The class is
+  found in any `smali*` folder; exactly one method must match; hunks match inside it as trimmed lines, ignoring blank
+  and `.line` lines; `@{name}` captures a register in anchors and writes it in added lines. No file preimage.
+- XML resources: `ApkJarScope.xml(member) { append / insertBefore / insertAfter / replace / remove }` with
+  `element(tag, "android:key" to …)` → `SmaliEdit(xml = XmlChange…)`, applied as a document by `XmlResourceEditor`
+  (no DOCTYPE; an appended resource whose name or public id exists is refused).
+- One edit engine: `core:domain` `plugin/edit/` (`MemberEdits` → `SmaliTextEditor`, `SmaliMethodEditor`,
+  `XmlResourceEditor`). The build (`ApkJarMutationAdapter`) and the SDK's `ModCheck` (`patchmod checkMod`,
+  LtiRomMods `./gradlew checkMods -Pdecoded=<dir>`) both use it, so a mod checked against a decoded firmware
+  applies the same way in a build.
+- Compatibility: `romMod { compatibleWith(device, firmwares…) }` → `PluginPlanTemplate.compatibility`.
+  `incompatibility()` (core:domain) is the one rule: `PluginPlanResolver` refuses (`INCOMPATIBLE_TARGET`, facts
+  `device.codename`/`firmware.version`) and the Patches page marks such a plugin and will not enable it.
+  `PackageWriter` copies the devices into the manifest's `compatibleTargets`.
+- SDK typing: settings return `SettingRef<T>` (`val on = settings.boolean(…)`, `on.isOn`, `on.ref`), partitions are
+  the `Partition` enum (= `PluginPlanValidator.ALLOWED_PARTITIONS`), target facts are `Facts.*`.
+- Build values: `{{platform.certificate}}` (DER hex), `{{platform.certificate.pem}}`, `{{vbmeta.size}}`,
+  `{{vbmeta.publickey.offset}}`, `{{vbmeta.publickey.size}}` are filled by `ModuleHostSteps` in smali edits and in
+  copied/replaced text files (also text members of copied zips).
+- Build & Sign stamps `ro.lti.device/version/timestamp` into system `build.prop` with the same run timestamp as
+  `build_info.txt` (the updater compares them).
+- Publish (`PublishReleaseUseCase`) is never part of a run. It runs only after a confirmation dialog, keeps a
+  journal in `out/publish/journal.json` (publishing again resumes), and verifies every copy or upload. A local
+  export is "Exported", never "Live". GitHub uses `gh` signed in inside WSL.
+- `core/data/src/desktopMain/resources/updater/update-binary` is LtiRom's prebuilt updater
+  (`prebuilts/bootable/deprecated-ota/updater`), pinned by its `.sha256`.
 
 ## Build Layout & Multi-Repo Requirements
 

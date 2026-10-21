@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.publish.di
 
 import org.ide.lti.feature.rom.studio.api.StageEditor
+import org.ide.lti.feature.rom.studio.stage.publish.PublishSessions
 import org.ide.lti.feature.rom.studio.stage.publish.PublishStageEditor
 import org.ide.lti.feature.rom.studio.stage.publish.PublishViewModel
 import org.koin.core.module.Module
@@ -19,10 +20,13 @@ import org.koin.dsl.module
 
 public val stagePublishModule: Module = module {
     single<StageEditor>(named("publish")) { PublishStageEditor() }
+    single { PublishSessions(publisher = getOrNull()) }
 
     viewModel { params ->
         PublishViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            sessions = get(),
         )
     }
 }

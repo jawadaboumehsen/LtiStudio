@@ -18,9 +18,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +37,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -38,137 +46,100 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
-import org.ide.lti.core.domain.pipeline.configuration.Severity
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
-import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.domain.debloat.DebloatCandidate
+import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.model.workspace.DebloatSettings
+import org.ide.lti.feature.rom.studio.api.formatBytes
 
-@Suppress("LongParameterList", "UnusedParameter")
+/**
+ * Debloat: pick apps of the assembled work tree to remove. The inventory is the real tree (run the build
+ * through Assemble first); protected apps cannot be picked; the stage refuses picks that no longer exist.
+ */
+@Suppress("LongParameterList")
 @Composable
 public fun DebloatEditor(
     settings: DebloatSettings,
-    target: TargetDevice,
-    validationErrors: List<ValidationError> = emptyList(),
+    facts: DebloatFacts,
     onChange: (DebloatSettings) -> Unit,
-    dirtyPaths: Set<String> = emptySet(),
+    onToggle: (DebloatCandidate) -> Unit,
+    onUnpick: (String) -> Unit,
+    onRefresh: () -> Unit,
     selectedObjectId: String = "inventory",
-    onValidate: () -> Unit = {},
-    onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val errors = validationErrors.filter { it.fieldPath.startsWith("debloat.") || !it.fieldPath.contains('.') }
+    LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
+    var query by remember { mutableStateOf("") }
+    val picked = settings.removeSelectors.toSet()
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("DebloatEditor"),
-        contentAlignment = Alignment.TopCenter,
-    ) {
+    Box(modifier = modifier.fillMaxSize().testTag("DebloatEditor"), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
+            item { Header(settings, facts, onChange, onRefresh) }
             when (selectedObjectId.lowercase()) {
-                "presets" -> item { PresetsCard(settings, dirtyPaths, onChange) }
-                "remove-selections", "remove_selections" -> item {
-                    RemoveSelectionsCard(settings, dirtyPaths, onChange)
+                "remove-selections", "remove_selections" -> {
+                    item { Hint(if (picked.isEmpty()) "Nothing picked." else "${picked.size} app(s) will be removed.") }
+                    items(settings.removeSelectors) { selector -> PickRow(selector, onUnpick) }
                 }
-                "keep-rules", "keep_rules" -> item { KeepRulesCard(settings, dirtyPaths) }
-                "risk-review", "risk_review" -> item { RiskReviewCard(settings) }
-                "results" -> item { ResultsCard(settings) }
-                else -> item { InventoryCard(settings, onChange) }
-            }
-            item { Diagnostics(errors) }
-        }
-    }
-}
-
-@Suppress("UnusedParameter")
-@Composable
-private fun InventoryCard(settings: DebloatSettings, onChange: (DebloatSettings) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Package inventory",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GlassToggle(settings.enabled, {
-                onChange(settings.copy(enabled = it))
-            }, activeColor = MaterialTheme.colorScheme.primary)
-            Text(
-                text = "Enable debloat processing for this ROM build",
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        Text(
-            text = "Active inventory contains ${settings.removeSelectors.size} packages selected for removal " +
-                "and ${settings.keepSelectors.size} explicitly protected packages.",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun PresetsCard(settings: DebloatSettings, dirtyPaths: Set<String>, onChange: (DebloatSettings) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Debloat Presets",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Select a curated debloat aggressiveness level:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            listOf("minimal", "recommended", "aggressive").forEach { preset ->
-                GlassChip(
-                    label = preset.replaceFirstChar { it.uppercase() },
-                    selected = settings.presetId == preset,
-                    onClick = { onChange(settings.copy(presetId = preset)) },
-                )
+                "keep-rules", "keep_rules" -> {
+                    item { Hint("These apps are needed to boot, set up, call or install apps; they cannot be picked.") }
+                    items(facts.inventory.filter(DebloatInventory::isProtected)) { Line(label(it)) }
+                }
+                "risk-review", "risk_review" -> {
+                    val known = facts.inventory.map(DebloatViewModel::selectorOf).toSet()
+                    val missing = settings.removeSelectors.filter { facts.loaded && it !in known }
+                    item {
+                        Hint(
+                            if (missing.isEmpty()) {
+                                "No problems: every pick exists in the assembled tree and none is protected."
+                            } else {
+                                "These picks are not apps of this firmware; the build stops until you remove them:"
+                            },
+                        )
+                    }
+                    items(missing) { selector -> PickRow(selector, onUnpick, isProblem = true) }
+                }
+                "results" -> {
+                    val result = facts.lastResult
+                    item {
+                        Hint(
+                            result?.let {
+                                "The last run removed ${it.removals.size} app(s), " +
+                                    "freeing ${formatBytes(it.logicalBytesFreed)}."
+                            } ?: "Debloat has not removed anything yet.",
+                        )
+                    }
+                    items(result?.removals.orEmpty()) { Line("${it.partition}:${it.relativePath}") }
+                }
+                else -> {
+                    item {
+                        GlassTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            placeholder = "Search apps",
+                            modifier = Modifier.fillMaxWidth().testTag("DebloatSearch"),
+                        )
+                    }
+                    val shown = facts.inventory.filter { it.relativePath.contains(query, ignoreCase = true) }
+                    items(shown) { candidate ->
+                        InventoryRow(candidate, DebloatViewModel.selectorOf(candidate) in picked, onToggle)
+                    }
+                }
             }
         }
-        Meta("presets", dirtyPaths, "Debloat policy", "Recommended preset preserves all critical services.")
     }
 }
 
 @Composable
-private fun RemoveSelectionsCard(
+private fun Header(
     settings: DebloatSettings,
-    dirtyPaths: Set<String>,
+    facts: DebloatFacts,
     onChange: (DebloatSettings) -> Unit,
+    onRefresh: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -176,172 +147,101 @@ private fun RemoveSelectionsCard(
             .clip(GlassShapes.ShellCard)
             .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        Text(
-            text = "Remove Selections (Android Package IDs)",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        if (settings.removeSelectors.isEmpty()) {
-            Text(
-                text = "No packages selected for removal yet.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassToggle(
+                checked = settings.enabled,
+                onCheckedChange = { onChange(settings.copy(enabled = it)) },
+                activeColor = MaterialTheme.colorScheme.primary,
             )
-        }
-        settings.removeSelectors.forEach { selector ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = selector,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.Micro,
-                    fontFamily = codeFontFamily(),
-                )
-                GlassButton(
-                    onClick = { onChange(settings.copy(removeSelectors = settings.removeSelectors - selector)) },
-                    variant = GlassButtonVariant.Standard,
-                    shape = GlassShapes.ShellControl,
-                ) {
-                    Text("Remove", color = GlassTheme.diagnosticColors.error, fontSize = FontSize.Micro)
-                }
+            Text(
+                text = if (settings.enabled) "Debloat on" else "Debloat off (nothing is removed)",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = FontSize.BodySmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ideFontFamily(),
+                modifier = Modifier.weight(1f),
+            )
+            GlassButton(onClick = onRefresh, enabled = !facts.loading, variant = GlassButtonVariant.Standard) {
+                Text(if (facts.loading) "Reading…" else "Refresh", fontSize = FontSize.BodySmall)
             }
         }
-        Meta("removeSelectors", dirtyPaths, "Package list", "Packages stripped from system and product.")
-    }
-}
-
-@Composable
-private fun KeepRulesCard(settings: DebloatSettings, dirtyPaths: Set<String>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Keep Rules (Protected Packages)",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        if (settings.keepSelectors.isEmpty()) {
-            Text(
-                text = "No packages explicitly protected yet.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-            )
+        if (facts.loaded && facts.inventory.isEmpty()) {
+            Hint("No assembled work tree yet. In Run history, run through Assemble, then refresh.")
+        } else if (facts.loaded) {
+            Hint("${facts.inventory.size} apps in the assembled tree.")
         }
-        settings.keepSelectors.forEach { selector ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = selector,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.Micro,
-                    fontFamily = codeFontFamily(),
-                )
-                GlassChip(label = "Protected", selected = true, onClick = {})
-            }
-        }
-        Meta("keepSelectors", dirtyPaths, "Keep protection", "Explicit keep rules prevent OS breakage.")
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
-private fun RiskReviewCard(settings: DebloatSettings) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+private fun InventoryRow(candidate: DebloatCandidate, picked: Boolean, onToggle: (DebloatCandidate) -> Unit) {
+    val protected = DebloatInventory.isProtected(candidate)
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag("DebloatRow"),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Checkbox(checked = picked, onCheckedChange = { onToggle(candidate) }, enabled = !protected)
         Text(
-            text = "Risk Review",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
+            text = label(candidate),
             color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Risk analysis: LOW RISK. No core OS packages or carrier IMS dependencies are targeted for removal.",
-            color = GlassTheme.diagnosticColors.success,
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-        )
-    }
-}
-
-@Suppress("UnusedParameter")
-@Composable
-private fun ResultsCard(settings: DebloatSettings) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Results Preview",
             fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = codeFontFamily(),
+            modifier = Modifier.weight(1f),
         )
+        if (protected) GlassChip(label = "Protected", selected = false)
         Text(
-            text = "Projected size savings: ~450 MB across system and product partitions.",
+            text = formatBytes(candidate.sizeBytes),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
+            fontFamily = codeFontFamily(),
         )
     }
 }
 
 @Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
-    val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
+private fun PickRow(selector: String, onUnpick: (String) -> Unit, isProblem: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = selector,
+            color = if (isProblem) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontFamily = codeFontFamily(),
+            modifier = Modifier.weight(1f),
+        )
+        GlassButton(onClick = { onUnpick(selector) }, variant = GlassButtonVariant.Standard) {
+            Text("Remove pick", fontSize = FontSize.Micro)
+        }
+    }
+}
+
+@Composable
+private fun Line(text: String) {
     Text(
-        text = "$source${if (isDirty) " · Dirty" else ""} · $help",
-        fontSize = FontSize.Micro,
+        text = text,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.BodySmall,
         fontFamily = codeFontFamily(),
-        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>) {
-    if (errors.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-        errors.forEach {
-            Text(
-                text = "${it.severity}: ${it.message}",
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-                color = if (it.severity == Severity.ERROR) {
-                    GlassTheme.diagnosticColors.error
-                } else {
-                    GlassTheme.diagnosticColors.warning
-                },
-            )
-        }
-    }
+private fun Hint(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = FontSize.BodySmall,
+        fontFamily = ideFontFamily(),
+    )
 }
+
+private fun label(candidate: DebloatCandidate) = "${candidate.partition}/${candidate.relativePath}"

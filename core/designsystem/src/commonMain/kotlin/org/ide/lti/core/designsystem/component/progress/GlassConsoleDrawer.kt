@@ -100,7 +100,8 @@ fun GlassConsoleDrawer(logs: List<String>, isRunning: Boolean, modifier: Modifie
         }
     }
 
-    LaunchedEffect(logs.size) {
+    // Follow the newest line: when lines arrive, and when the drawer opens on a long log.
+    LaunchedEffect(logs.size, isExpanded) {
         if (logs.isNotEmpty() && isExpanded) {
             listState.animateScrollToItem(logs.size - 1)
         }
@@ -279,7 +280,9 @@ private fun ConsoleDrawerLogs(logs: List<String>, listState: LazyListState, modi
                 items(
                     items = logs,
                     contentType = { "log_line" },
-                ) { line ->
+                ) { raw ->
+                    // Tools draw progress bars with terminal control codes; a log shows only their text.
+                    val line = raw.replace(TERMINAL_CODES, "")
                     val lineTint = resolveLogLineTint(line, diagnostics, MaterialTheme.colorScheme)
                     Text(
                         text = line,
@@ -305,3 +308,6 @@ private fun resolveLogLineTint(line: String, diagnostics: DiagnosticColors, colo
     line.contains("Step", ignoreCase = true) || line.contains("Complete", ignoreCase = true) -> colors.primary
     else -> colors.onSurfaceVariant
 }
+
+/** ANSI escape sequences (cursor moves, colours, line clears) and stray carriage returns. */
+private val TERMINAL_CODES = Regex("\u001B\\[[0-9;?]*[A-Za-z]|\u001B[()][A-Za-z0-9]|\r")

@@ -23,6 +23,8 @@ public val stageDebloatModule: Module = module {
     viewModel { params ->
         DebloatViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            workspaceFacts = getOrNull(),
         )
     }
 }

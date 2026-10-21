@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
 import org.ide.lti.core.domain.pipeline.text.DynamicPartitionsOpListWriter
 import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
+import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.target.TargetDevice
@@ -46,7 +47,7 @@ public class BuildFlashableZipStage : StageDefinition {
 
     override val requiredToolIds: Set<String> = setOf(
         "mkfs.erofs", "avbtool", "lpmake", "img2sdat", "brotli", "zip", "unzip", "signapk",
-        "sha256sum", "sha1sum", "stat", "cp", "rm", "mkdir",
+        "sha256sum", "sha1sum", "stat", "cp", "rm", "mkdir", "cat",
     )
 
     // Key digests are captured inside the stage, so the input key uses the key *references*;
@@ -57,6 +58,7 @@ public class BuildFlashableZipStage : StageDefinition {
             ctx.snapshot,
             ctx.snapshot.build.signing.avbKeyRef,
             ctx.snapshot.build.signing.platformKeyRef,
+            computeTargetDigest(ctx.target),
         )
 
     override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
@@ -99,9 +101,24 @@ public class BuildFlashableZipStage : StageDefinition {
             label = "sha1 platform cert",
             resultKey = PLATFORM_CERT_SHA1,
         )
+        // The device reports this build as build_info.txt names it (the updater compares ro.lti.timestamp).
+        ctx.longValue(RuntimeKeys.RUN_TIMESTAMP)?.let { timestamp ->
+            steps += PipelineStep.EditFile(
+                WorkTreeAssemblyStage.BUILD_PROP,
+                { BuildPropStamper.stampRelease(it, ctx.target.id, ctx.snapshot.assembly.romVersion, timestamp) },
+                "stamp ro.lti.*",
+            )
+        }
+        // The package metadata comes from the built tree's build.prop (stamped by Assemble). It is read here, in
+        // this stage: a value this long is not kept across runs, so Extract's copy is gone when Extract is cached.
+        steps += PipelineStep.Tool(
+            command = stepCommand("cat", listOf(ctx.abs(WorkTreeAssemblyStage.BUILD_PROP)), ws),
+            label = "read build.prop",
+            resultKey = PACKAGE_BUILD_PROP,
+        )
         ctx.target.dynamicPartitions.forEach { p -> steps += imageSteps(ctx, p) }
         if (ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) {
-            ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
+            ctx.target.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
             steps += superSteps(ctx)
             ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
             steps += generatedMembers(ctx)
@@ -165,6 +182,9 @@ public class BuildFlashableZipStage : StageDefinition {
                     "add_hashtree_footer", "--image", img, "--partition_size", partitionSize.toString(),
                     "--partition_name", p, "--hash_algorithm", "sha256", "--algorithm", "SHA256_RSA4096",
                     "--key", key, "--salt", salt,
+                    // No FEC: avbtool would need the `fec` helper on PATH, and with stock vbmeta flashed with
+                    // verification off the hashtree is not checked anyway (LtiRom's bash build adds none).
+                    "--do_not_generate_fec",
                 ),
                 ws,
             ),
@@ -203,29 +223,55 @@ public class BuildFlashableZipStage : StageDefinition {
         return steps
     }
 
+    /**
+     * The boot-chain image Assemble prepared (`work/kernel/`, vendor footer erased or kept). With signing on it
+     * is re-signed with the workspace AVB key at the device's partition size, as LtiRom's resign_boot_chain.sh
+     * does; vbmeta is never packaged, so the device must run with stock vbmeta flashed with verification off.
+     */
     private fun bootSteps(ctx: StageContext, b: String): List<PipelineStep> {
         val ws = ctx.wsPath
         val staged = ctx.abs("$STAGE_DIR/$b.img")
         val expected = bootPartitionBytes(ctx.target, b)
-        return listOf(
+        val steps = mutableListOf<PipelineStep>(
             PipelineStep.Tool(
-                stepCommand("cp", listOf("-a", ctx.abs("${FirmwareExtractionStage.EXTRACTED}/$b.img"), staged), ws),
-                "stage stock $b",
-            ),
-            PipelineStep.Tool(
-                stepCommand("stat", listOf("-c", "%s", staged), ws),
-                "stat stock $b",
-                resultKey = stagedBootSize(b),
-            ),
-            PipelineStep.Check("stock $b size") { values ->
-                val size = values[stagedBootSize(b)]?.trim()?.toLongOrNull()
-                if (size == expected) null else "Stock $b.img is $size bytes; profile declares $expected"
-            },
-            PipelineStep.Tool(
-                stepCommand("avbtool", listOf("info_image", "--image", staged), ws),
-                "avbtool info stock $b",
+                stepCommand("cp", listOf(ctx.abs("work/kernel/$b.img"), staged), ws),
+                "stage $b",
             ),
         )
+        if (ctx.snapshot.build.signing.signImages) {
+            steps += PipelineStep.Tool(
+                stepCommand("avbtool", listOf("erase_footer", "--image", staged), ws),
+                label = "erase footer $b",
+                resultKey = "boot.$b.erase",
+                allowFailure = true,
+            )
+            steps += PipelineStep.Tool(
+                stepCommand(
+                    "avbtool",
+                    listOf(
+                        "add_hash_footer", "--image", staged, "--partition_size", expected.toString(),
+                        "--partition_name", b, "--hash_algorithm", "sha256", "--algorithm", "SHA256_RSA4096",
+                        "--key", ctx.abs(ctx.snapshot.build.signing.avbKeyRef),
+                    ),
+                    ws,
+                ),
+                "sign $b",
+            )
+        }
+        steps += PipelineStep.Tool(
+            stepCommand("stat", listOf("-c", "%s", staged), ws),
+            "stat $b",
+            resultKey = stagedBootSize(b),
+        )
+        steps += PipelineStep.Check("$b size") { values ->
+            val size = values[stagedBootSize(b)]?.trim()?.toLongOrNull()
+            if (size == expected) null else "$b.img is $size bytes; the device declares $expected"
+        }
+        steps += PipelineStep.Tool(
+            stepCommand("avbtool", listOf("info_image", "--image", staged), ws),
+            "avbtool info $b",
+        )
+        return steps
     }
 
     private fun superSteps(ctx: StageContext): List<PipelineStep> {
@@ -287,9 +333,12 @@ public class BuildFlashableZipStage : StageDefinition {
     }
 
     private fun generatedMembers(ctx: StageContext): List<PipelineStep> {
-        val buildProp = ctx.value(RuntimeKeys.BUILD_PROP)
+        val buildProp = ctx.value(PACKAGE_BUILD_PROP)
         val incremental = BuildPropStamper.prop(buildProp, "ro.build.version.incremental")
+        // Since Android 15 ro.build.fingerprint is derived at boot; build.prop carries the system one (as
+        // LtiRom's build_flashable_zip.sh uses for post-build).
         val fingerprint = BuildPropStamper.prop(buildProp, "ro.build.fingerprint")
+            ?: BuildPropStamper.prop(buildProp, "ro.system.build.fingerprint")
         val sdk = BuildPropStamper.prop(buildProp, "ro.build.version.sdk")
         val patch = BuildPropStamper.prop(buildProp, "ro.build.version.security_patch")
             ?: ctx.snapshot.acquisition.firmware.securityPatch
@@ -310,13 +359,13 @@ public class BuildFlashableZipStage : StageDefinition {
         }
         val rawScript = UpdaterScriptWriter.generate(
             ctx.target,
-            ctx.snapshot.build.packagePolicy,
+            ctx.target.packagePolicy,
             ctx.snapshot.assembly.romVersion,
         )
         val script = buildString {
             append(
-                "# package_policy: metadataPolicy=${ctx.snapshot.build.packagePolicy.metadataPolicy}, " +
-                    "excludeVbmeta=${ctx.snapshot.build.packagePolicy.excludeVbmeta}\n",
+                "# package_policy: metadataPolicy=${ctx.target.packagePolicy.metadataPolicy}, " +
+                    "excludeVbmeta=${ctx.target.packagePolicy.excludeVbmeta}\n",
             )
             append(rawScript)
         }
@@ -343,10 +392,10 @@ public class BuildFlashableZipStage : StageDefinition {
             "Built $date from ${ctx.snapshot.acquisition.firmware.version} (${ctx.snapshot.acquisition.region.name}).\n"
 
         val policy = PackagingPolicy(
-            excludeVbmeta = ctx.snapshot.build.packagePolicy.excludeVbmeta,
-            recoverySystemMountPoint = ctx.snapshot.build.packagePolicy.recoverySystemMountPoint,
-            metadataPolicy = ctx.snapshot.build.packagePolicy.metadataPolicy,
-            bootSlots = ctx.snapshot.build.packagePolicy.bootSlots,
+            excludeVbmeta = ctx.target.packagePolicy.excludeVbmeta,
+            recoverySystemMountPoint = ctx.target.packagePolicy.recoverySystemMountPoint,
+            metadataPolicy = ctx.target.packagePolicy.metadataPolicy,
+            bootSlots = ctx.target.packagePolicy.bootSlots,
         )
         val policyJson = ConfigurationSnapshot.canonicalJson.encodeToString(policy)
 
@@ -357,7 +406,7 @@ public class BuildFlashableZipStage : StageDefinition {
                     updates != ctx.target.dynamicPartitions.size ->
                         "updater-script has $updates block_image_update calls, " +
                             "expected ${ctx.target.dynamicPartitions.size}"
-                    ctx.snapshot.build.packagePolicy.excludeVbmeta && rawScript.contains("vbmeta") ->
+                    ctx.target.packagePolicy.excludeVbmeta && rawScript.contains("vbmeta") ->
                         "updater-script must not reference vbmeta"
                     else -> null
                 }
@@ -383,10 +432,15 @@ public class BuildFlashableZipStage : StageDefinition {
         val stage = ctx.abs(STAGE_DIR)
         val signed = ctx.abs(zipRelPath(ctx))
         val steps = mutableListOf<PipelineStep>()
+        // zip adds to an existing archive: start from none, or a failed run's members would stay in it.
+        steps += PipelineStep.Tool(stepCommand("rm", listOf("-f", "$stage/rom.zip"), ws), "remove old rom.zip")
         steps += PipelineStep.Tool(
             stepCommand(
                 "zip",
-                listOf("-0", "-r", "rom.zip", "META-INF/com/android", "*.new.dat.br", "*.patch.dat"),
+                // Named one by one: the service runs commands without a shell, so a glob would reach zip
+                // unexpanded and the block-dat members would be left out.
+                listOf("-0", "-r", "rom.zip", "META-INF/com/android") +
+                    ctx.target.dynamicPartitions.flatMap { listOf("$it.new.dat.br", "$it.patch.dat") },
                 stage,
             ),
             "zip stored members",
@@ -473,11 +527,11 @@ public class BuildFlashableZipStage : StageDefinition {
                 problems += "missing block-dat members for $p"
             }
         }
-        ctx.snapshot.build.packagePolicy.flashableBootPartitions.forEach { b ->
+        ctx.target.packagePolicy.flashableBootPartitions.forEach { b ->
             if ("$b.img" !in members) problems += "missing stock $b.img"
         }
         REQUIRED_MEMBERS.forEach { m -> if (m !in members) problems += "missing $m" }
-        if (ctx.snapshot.build.packagePolicy.excludeVbmeta) {
+        if (ctx.target.packagePolicy.excludeVbmeta) {
             members.filter { it.substringAfterLast('/').startsWith("vbmeta") }
                 .forEach { problems += "forbidden member $it" }
         }
@@ -499,6 +553,7 @@ public class BuildFlashableZipStage : StageDefinition {
     public companion object {
         public const val STAGE_DIR: String = "out/package/.stage"
         public const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
+        public const val PACKAGE_BUILD_PROP: String = "package.build.prop"
         public const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
         private const val EROFS_TIMESTAMP = "1640995200"
         private const val BLOCK = 4096L
@@ -518,11 +573,19 @@ public class BuildFlashableZipStage : StageDefinition {
 
         public fun zipName(ctx: StageContext): String {
             val date = requireNotNull(ctx.value(RuntimeKeys.RUN_DATE)) { "run date missing from runtime values" }
-            return ctx.snapshot.build.filenameTemplate
-                .replace("{version}", ctx.snapshot.assembly.romVersion)
-                .replace("{date}", date)
-                .replace("{device}", ctx.target.id)
+            return renderName(
+                template = ctx.snapshot.build.filenameTemplate,
+                version = ctx.snapshot.assembly.romVersion,
+                date = date,
+                device = ctx.target.id,
+            )
         }
+
+        /** The package name for [template]; the build and the Output naming preview both use this. */
+        public fun renderName(template: String, version: String, date: String, device: String): String = template
+            .replace("{version}", version)
+            .replace("{date}", date)
+            .replace("{device}", device)
 
         public fun zipRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"
 

@@ -23,6 +23,8 @@ public val stageMetadataModule: Module = module {
     viewModel { params ->
         MetadataViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            workspaceFacts = getOrNull(),
         )
     }
 }

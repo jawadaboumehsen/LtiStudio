@@ -107,6 +107,8 @@ fun GlassChip(
     Box(
         modifier = modifier
             .then(chipModifier)
+            // On glass the fill is the material's; a selected chip still needs its own tint to read as selected.
+            .then(if (effectsEnabled && selected) Modifier.background(backgroundColor, shape = shape) else Modifier)
             .clip(shape)
             .glassOutlineBorder(color = borderColor, width = StrokeWidth.Hairline, shape = shape)
             .onPointerEvent(PointerEventType.Enter) { if (enabled) isHovered = true }

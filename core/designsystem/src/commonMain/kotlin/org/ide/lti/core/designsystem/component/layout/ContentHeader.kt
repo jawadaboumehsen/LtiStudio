@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -105,17 +106,6 @@ fun ContentHeader(
                     )
                     statusBadge?.invoke()
                 }
-
-                if (!subtitle.isNullOrBlank()) {
-                    Text(
-                        text = subtitle,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = ideFontFamily(),
-                        fontSize = FontSize.BodyMedium,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.testTag("ContentHeaderSubtitle"),
-                    )
-                }
             }
 
             if (actions != null) {
@@ -127,6 +117,21 @@ fun ContentHeader(
                     actions()
                 }
             }
+        }
+
+        // Below the title row, at full width: it never wraps beside the actions, so the header (and the tabs under
+        // it) keep one height on every tab.
+        if (!subtitle.isNullOrBlank()) {
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = ideFontFamily(),
+                fontSize = FontSize.BodyMedium,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("ContentHeaderSubtitle"),
+            )
         }
     }
 }

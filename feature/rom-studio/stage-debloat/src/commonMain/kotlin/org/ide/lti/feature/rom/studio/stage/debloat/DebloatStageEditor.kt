@@ -29,14 +29,16 @@ public class DebloatStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: DebloatViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val facts by viewModel.facts.collectAsState()
 
         DebloatEditor(
             settings = settings,
-            target = viewModel.targetDevice,
-            onChange = { viewModel.updateSettings(it) },
+            facts = facts,
+            onChange = viewModel::updateSettings,
+            onToggle = viewModel::toggleRemoval,
+            onUnpick = viewModel::unpick,
+            onRefresh = viewModel::refresh,
             selectedObjectId = context.selectedObjectId?.value ?: "inventory",
-            onValidate = context.onValidationRequested,
-            onSave = context.onSaveRequested,
             modifier = modifier,
         )
     }

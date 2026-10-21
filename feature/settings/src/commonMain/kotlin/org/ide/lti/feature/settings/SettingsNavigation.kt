@@ -15,11 +15,8 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 
 const val SETTINGS_ROUTE = "settings_route"
-const val NOTIFICATION_ROUTE = "notification_route"
 
 fun NavController.navigateToSettings(navOptions: NavOptions? = null) = navigate(SETTINGS_ROUTE, navOptions)
-
-fun NavController.navigateToNotification(navOptions: NavOptions? = null) = navigate(NOTIFICATION_ROUTE, navOptions)
 
 fun NavGraphBuilder.settingsScreen(
     onBackClick: () -> Unit,
@@ -28,20 +25,6 @@ fun NavGraphBuilder.settingsScreen(
 ) {
     composable(route = SETTINGS_ROUTE) {
         SettingsScreen(
-            onBackClick = onBackClick,
-            onNavigateToSetup = onNavigateToSetup,
-            onNavigateToWorkspace = onNavigateToWorkspace,
-        )
-    }
-}
-
-fun NavGraphBuilder.notificationScreen(
-    onBackClick: () -> Unit,
-    onNavigateToSetup: () -> Unit,
-    onNavigateToWorkspace: () -> Unit,
-) {
-    composable(route = NOTIFICATION_ROUTE) {
-        NotificationScreen(
             onBackClick = onBackClick,
             onNavigateToSetup = onNavigateToSetup,
             onNavigateToWorkspace = onNavigateToWorkspace,

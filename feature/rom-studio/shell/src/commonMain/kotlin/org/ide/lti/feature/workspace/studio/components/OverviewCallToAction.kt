@@ -45,8 +45,10 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.workspace.studio.BuildStateUi
 import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
+import org.ide.lti.feature.workspace.studio.WorkspaceSection
 
 /**
  * Visual call-to-action banner between the readiness matrix and recent activity.
@@ -79,10 +81,7 @@ public fun OverviewCallToAction(
             else -> MaterialTheme.colorScheme.primary
         }
 
-        val buttonLabel = when (buildState) {
-            is BuildStateUi.InProgress -> "View build"
-            else -> "Configure firmware"
-        }
+        val buttonLabel = if (buildState is BuildStateUi.InProgress) "View build" else actionLabel(nextAction)
 
         Box(
             modifier = Modifier
@@ -141,7 +140,7 @@ public fun OverviewCallToAction(
             is BuildStateUi.InProgress -> "Active run is compiling firmware artifacts."
             is BuildStateUi.Succeeded -> "Artifacts are ready for review or publication."
             is BuildStateUi.Failed -> "Review build logs and diagnostic details to resolve."
-            BuildStateUi.NotStarted -> "Set up the items above, then configure firmware to continue."
+            BuildStateUi.NotStarted -> "Set up the items above, then run the build."
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -161,3 +160,22 @@ public fun OverviewCallToAction(
         }
     }
 }
+
+/** What the main button does, in words: the next step the overview leads to. */
+internal fun actionLabel(action: WorkspaceActionUi?): String = when (action) {
+    is WorkspaceActionUi.OpenStage -> when (action.stageId) {
+        StageId.FIRMWARE_ACQUISITION -> "Choose firmware"
+        StageId.PUBLISH_RELEASE -> "Publish release"
+        else -> "Open " + (stageTitle(action.stageId) ?: "stage")
+    }
+    is WorkspaceActionUi.OpenWorkspaceSection -> when (action.section) {
+        WorkspaceSection.RunHistory -> "Run the build"
+        WorkspaceSection.Artifacts -> "View artifacts"
+        WorkspaceSection.RomConfig, WorkspaceSection.TargetProfile -> "Set up the device"
+        WorkspaceSection.Overview -> "Overview"
+    }
+    else -> "Continue"
+}
+
+private fun stageTitle(id: StageId): String? =
+    org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors.ALL.firstOrNull { it.stageId == id }?.title

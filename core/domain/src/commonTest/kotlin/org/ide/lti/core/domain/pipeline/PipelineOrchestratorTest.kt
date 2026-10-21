@@ -9,10 +9,14 @@
  */
 package org.ide.lti.core.domain.pipeline
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
+import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StageState
@@ -40,6 +44,61 @@ class PipelineOrchestratorTest {
     private fun chinaPort() = SimulatedExecutionPort(ws).apply {
         archiveSha256 =
             fixture.snapshotChinaRaw.acquisition.firmware.sha256
+    }
+
+    @Test
+    fun cancellingAHostStepStopsItsWorkAndDoesNotResurrectTheRun() = runTest {
+        // Exercise both an in-progress request and CancelRunUseCase's already-terminal result.
+        for (completeCancellation in listOf(false, true)) {
+            val port = globalPort()
+            val repo = InMemoryRunRepository()
+            val entered = CompletableDeferred<Unit>()
+            val stopped = CompletableDeferred<Unit>()
+            val never = CompletableDeferred<String>()
+            val request = object : HostRequest {}
+            val original = DefaultPipelineStages.all.first()
+            val stage = object : StageDefinition by original {
+                override fun outputs(ctx: StageContext): List<String> = emptyList()
+                override fun plan(ctx: StageContext): List<PipelineStep> = listOf(
+                    PipelineStep.Host("Apply modules", "host-result", request),
+                    PipelineStep.WriteFile("after-cancel", byteArrayOf(1), "Must not run"),
+                )
+            }
+            val registry = PipelineDefinitionRegistry(
+                DefaultPipelineStages.all.associateBy { it.id } + (stage.id to stage),
+            )
+            val orchestrator = PipelineOrchestrator(
+                port,
+                repo,
+                FakeVendoredFiles(true),
+                registry = registry,
+                toolStore = PipelinePinnedToolStore(),
+                hostSteps = HostStepPort { _, _ ->
+                    entered.complete(Unit)
+                    try {
+                        never.await()
+                    } finally {
+                        stopped.complete(Unit)
+                    }
+                },
+            )
+            val running = async { orchestrator.drive("run-host", fixture.globalOtaContext(), "driver").toList() }
+            entered.await()
+            if (completeCancellation) {
+                CancelRunUseCase(repo, port)(fixture.workspace.id, "run-host").getOrThrow()
+            } else {
+                repo.upsert(assertNotNull(repo.getRun("run-host")).copy(state = RunState.CANCELLING))
+            }
+            val events = running.await()
+            assertTrue(stopped.isCompleted, "the host coroutine must be cancelled")
+            assertEquals(PipelineEvent.RunFinished(RunState.CANCELLED), events.last())
+            val run = assertNotNull(repo.getRun("run-host"))
+            assertEquals(RunState.CANCELLED, run.state)
+            assertTrue(run.artifacts.isEmpty())
+            assertFalse("host-result" in run.runtimeValues)
+            assertFalse(port.has("after-cancel"))
+            assertEquals(listOf(stage.id), events.filterIsInstance<PipelineEvent.StageStarted>().map { it.stageId })
+        }
     }
 
     @Test
@@ -99,6 +158,106 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun aStepWhoseStreamEndsWithoutItsResultTakesTheServicesRecord() = runTest {
+        val port = globalPort()
+        // Fast steps on the real service: the stream can close before the Finished event is read.
+        port.streamsWithoutResult += setOf("cp", "rm", "mkdir")
+        val orchestrator = orchestrator(port, InMemoryRunRepository())
+        val events = orchestrator.drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
+    }
+
+    @Test
+    fun aStepKilledByCancelEndsTheRunCancelledNotFailed() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        // What Cancel does while Build & Sign runs: mark the run CANCELLING, and the killed mkfs exits 130.
+        port.exitCodes["mkfs.erofs"] = 130
+        val events = orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").onEach { event ->
+            if (event is PipelineEvent.StageStarted && event.stageId == StageId.BUILD_FLASHABLE_ZIP) {
+                repo.upsert(repo.getRun("run-1")!!.copy(state = RunState.CANCELLING))
+            }
+        }.toList()
+
+        assertEquals(PipelineEvent.RunFinished(RunState.CANCELLED), events.last())
+        assertEquals(RunState.CANCELLED, repo.getRun("run-1")?.state)
+    }
+
+    @Test
+    fun resumingARunThatIsBeingDrivenDoesNothing() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        val orchestrator = orchestrator(port, repo)
+        var second: List<PipelineEvent>? = null
+        val events = orchestrator.drive("run-1", fixture.globalOtaContext(), "d1").onEach { event ->
+            if (second == null && event is PipelineEvent.StageStarted) {
+                // What the Run panel does when it sees its own new run as active.
+                second = orchestrator.resume(repo.getRun("run-1")!!, fixture.globalOtaContext(), "d2").toList()
+            }
+        }.toList()
+
+        assertEquals(emptyList(), second)
+        assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
+    }
+
+    @Test
+    fun aRunQueuedLikeStartDoesStopsAfterItsThroughStage() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        // StartPipelineRunUseCase persists the run as QUEUED (no tool pins yet) before driving it.
+        repo.upsert(
+            org.ide.lti.core.model.run.BuildRun(
+                id = "run-q",
+                workspaceId = fixture.workspace.id,
+                snapshotId = fixture.snapshotGlobalOta.id,
+                state = RunState.QUEUED,
+                startedAt = kotlinx.datetime.Clock.System.now(),
+                throughStage = StageId.WORK_TREE_ASSEMBLY,
+            ),
+        )
+
+        val events = orchestrator(port, repo).drive("run-q", fixture.globalOtaContext(), "d1").toList()
+
+        assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
+        assertEquals(
+            listOf(StageId.FIRMWARE_ACQUISITION, StageId.FIRMWARE_EXTRACTION, StageId.WORK_TREE_ASSEMBLY),
+            events.filterIsInstance<PipelineEvent.StageStarted>().map { it.stageId },
+        )
+        val run = assertNotNull(repo.getRun("run-q"))
+        assertEquals(3, run.stages.size)
+        assertTrue(run.pinnedTools.isNotEmpty(), "tool paths are pinned when the queued run starts")
+        assertFalse(port.durableSteps.any { it.toolId == "zip" }, "nothing after Assemble ran")
+        assertTrue(run.artifacts.isEmpty(), "a run stopped before Build & Sign lists no package")
+    }
+
+    @Test
+    fun aRunOnALaterDayReusesTheCachedPackageUnderItsOwnName() = runTest {
+        fun at(day: String) = object : kotlinx.datetime.Clock {
+            override fun now() = kotlinx.datetime.Instant.parse("${day}T10:00:00Z")
+        }
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        fun orchestratorOn(day: String) = PipelineOrchestrator(
+            port,
+            repo,
+            FakeVendoredFiles(true),
+            toolStore = PipelinePinnedToolStore(),
+            clock = at(day),
+        )
+        // The run date comes from the clock, not the fixture.
+        val base = fixture.globalOtaContext()
+        val context = base.copy(runtimeValues = base.runtimeValues - RuntimeKeys.RUN_DATE)
+        orchestratorOn("2026-10-18").drive("run-1", context, "d1").toList()
+
+        val events = orchestratorOn("2026-10-20").drive("run-2", context, "d2").toList()
+
+        assertEquals(7, events.count { it is PipelineEvent.StageSkipped }, "a new day alone rebuilds nothing")
+        val zip = repo.getRun("run-2")!!.artifacts.first()
+        assertEquals(repo.getRun("run-1")!!.artifacts.first(), zip)
+        assertTrue("20261018" in zip.linuxPath, "the cached package keeps the name it was built with")
+    }
+
+    @Test
     fun secondRunSkipsEveryStageWhenInputsAndOutputsMatch() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()
@@ -109,6 +268,7 @@ class PipelineOrchestratorTest {
         assertEquals(7, events.count { it is PipelineEvent.StageSkipped })
         assertEquals(executedBefore, port.durableSteps.size)
         assertTrue(repo.getRun("run-2")!!.stages.all { it.state == StageState.SKIPPED })
+        assertEquals(3, repo.getRun("run-2")!!.artifacts.size, "a fully cached build still lists its package")
     }
 
     @Test
@@ -122,6 +282,29 @@ class PipelineOrchestratorTest {
         val skipped = events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId }
         assertTrue(StageId.WORK_TREE_ASSEMBLY !in skipped)
         assertTrue(StageId.FIRMWARE_EXTRACTION in skipped)
+        // Assemble re-synced the shared work tree: nothing after it may come from cache (Debloat would be lost).
+        assertEquals(listOf(StageId.FIRMWARE_ACQUISITION, StageId.FIRMWARE_EXTRACTION), skipped)
+        // Later stages must not depend on long values captured by a cached stage (they are not kept).
+        assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
+    }
+
+    @Test
+    fun aStageThatFailedIsRunAgainNotSkippedOnItsOlderCache() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        val ctx = fixture.globalOtaContext()
+        orchestrator(port, repo).drive("run-1", ctx, "d1").toList()
+        // Run 2 changes a Build input, so Build really runs, and fails part way.
+        val changed = ctx.copy(snapshot = ctx.snapshot.copy(build = ctx.snapshot.build.copy(level = 5)))
+        port.exitCodes["mkfs.erofs"] = 2
+        orchestrator(port, repo).drive("run-2", changed, "d2").toList()
+        port.exitCodes.remove("mkfs.erofs")
+
+        // Back to run 1's inputs: run 1's cache record would match, but the tree is no longer what it describes.
+        val events = orchestrator(port, repo).drive("run-3", ctx, "d3").toList()
+        val skipped = events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId }
+        assertTrue(StageId.BUILD_FLASHABLE_ZIP !in skipped, "$skipped")
+        assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
     }
 
     @Test
@@ -139,7 +322,8 @@ class PipelineOrchestratorTest {
         assertEquals(StageState.FAILED, run.stages[5].state)
         assertEquals(StageState.NOT_RUN, run.stages[6].state)
         assertEquals(StageState.EXECUTED, run.stages[4].state)
-        assertFalse(port.has(".cache/BUILD_FLASHABLE_ZIP.key"))
+        // A failed stage has no valid cache record.
+        assertTrue(port.text(".cache/BUILD_FLASHABLE_ZIP.key").isNullOrEmpty())
     }
 
     @Test

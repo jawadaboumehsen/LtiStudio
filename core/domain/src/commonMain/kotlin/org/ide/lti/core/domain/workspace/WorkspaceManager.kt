@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -64,13 +65,16 @@ class WorkspaceManager(
             _currentWorkspace.value = workspace
             _currentSession.value = session
 
-            // Update recent projects
+            // Update recent projects, keeping what the entry already knew (its device name)
+            val previous = repository.getRecentProjects().first().firstOrNull { it.workspaceId == workspace.id }
             val recentProject = RecentProject(
                 workspaceId = workspace.id,
                 name = workspace.name,
                 path = workspace.path,
                 lastOpened = Clock.System.now(),
                 type = workspace.type,
+                targetBinding = workspace.targetBinding,
+                targetDisplayName = previous?.targetDisplayName,
             )
             repository.addRecentProject(recentProject)
 

@@ -37,6 +37,7 @@ class BuildEditorUiTest {
                 BuildEditor(
                     settings = settings,
                     target = target,
+                    facts = BuildFacts(loaded = true),
                     onChange = {},
                     selectedObjectId = selectedSubobject,
                 )

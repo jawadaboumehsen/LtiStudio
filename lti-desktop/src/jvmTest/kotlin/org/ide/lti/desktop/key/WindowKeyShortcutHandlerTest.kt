@@ -325,4 +325,15 @@ class WindowKeyShortcutHandlerTest {
 
         assertFalse(handled, "Expected KeyRelease events not to be handled by shortcut dispatcher")
     }
+
+    @Test
+    fun handleKeyEvent_ctrlV_withoutAHandler_reachesTheTextField() {
+        val handled = WindowKeyShortcutHandler.handleKeyEvent(
+            event = createKeyEvent(keyCode = AwtKeyEvent.VK_V, modifiers = InputEvent.CTRL_DOWN_MASK),
+            dispatcher = DefaultStudioActionDispatcher(),
+            isMacOs = false,
+        )
+
+        assertFalse(handled, "Ctrl+V with no PASTE handler must reach the focused text field")
+    }
 }

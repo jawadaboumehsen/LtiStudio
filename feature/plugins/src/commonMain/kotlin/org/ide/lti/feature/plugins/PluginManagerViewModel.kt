@@ -26,15 +26,18 @@ import org.ide.lti.core.domain.plugin.IndexSource
 import org.ide.lti.core.domain.plugin.InstallPluginUseCase
 import org.ide.lti.core.domain.plugin.InstallRequest
 import org.ide.lti.core.domain.plugin.InstallState
+import org.ide.lti.core.domain.plugin.InstalledPackage
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.LifecycleOutcome
 import org.ide.lti.core.domain.plugin.MarketplaceIndexPort
 import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
+import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.plugin.TrustCheck
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.core.domain.plugin.newestPerPlugin
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 
 public enum class PluginDestination(public val id: String, public val title: String) {
@@ -88,6 +91,7 @@ public class PluginManagerViewModel(
     private val marketplaceIndexPort: MarketplaceIndexPort,
     private val pluginInstallPort: PluginInstallPort,
     private val workspaceManager: WorkspaceManager? = null,
+    private val workspaceUsage: PluginWorkspaceUsage? = null,
     initialDestination: String = "installed",
     initialWorkspaceId: String? = null,
     initialPackageId: String? = null,
@@ -150,33 +154,10 @@ public class PluginManagerViewModel(
     public fun refreshInstalled() {
         viewModelScope.launch {
             val records = pluginInstallPort.installed()
-            val refs = computePackageReferences(records)
+            val refs = packageReferences(records, workspaceUsage?.usersOf().orEmpty())
             _uiState.update {
                 it.copy(installedPackages = records, packageReferences = refs)
             }
-        }
-    }
-
-    public fun enableForWorkspace(record: InstalledRecord, workspaceId: String) {
-        if (!pluginLifecycleUseCase.canEnable(record)) {
-            val msg = "Package '${record.identity.key}' cannot be enabled (revoked or archived)"
-            _uiState.update { it.copy(errorMessage = msg) }
-            return
-        }
-        viewModelScope.launch {
-            val updated = record.copy(enabledInWorkspaces = (record.enabledInWorkspaces + workspaceId).distinct())
-            pluginInstallPort.updateRecord(updated)
-            refreshInstalled()
-            _uiState.update { it.copy(notificationMessage = "Enabled '${record.identity.key}' for workspace") }
-        }
-    }
-
-    public fun disableForWorkspace(record: InstalledRecord, workspaceId: String) {
-        viewModelScope.launch {
-            val updated = record.copy(enabledInWorkspaces = record.enabledInWorkspaces - workspaceId)
-            pluginInstallPort.updateRecord(updated)
-            refreshInstalled()
-            _uiState.update { it.copy(notificationMessage = "Disabled '${record.identity.key}' for workspace") }
         }
     }
 
@@ -197,7 +178,7 @@ public class PluginManagerViewModel(
 
     public fun uninstallPackage(record: InstalledRecord) {
         viewModelScope.launch {
-            val references = _uiState.value.packageReferences[record.identity.key] ?: emptyList()
+            val references = _uiState.value.packageReferences[record.rowKey] ?: emptyList()
             when (val outcome = pluginLifecycleUseCase.uninstall(record.identity, references)) {
                 is LifecycleOutcome.Applied -> {
                     refreshInstalled()
@@ -267,15 +248,45 @@ public class PluginManagerViewModel(
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
                 if (state is InstallState.Installed) {
-                    refreshInstalled()
                     val label = "${state.record.publisher}:${state.record.id}"
-                    _uiState.update { it.copy(notificationMessage = "Installed '$label'") }
+                    val note = updateAfterInstall(state.record)
+                    _uiState.update { it.copy(notificationMessage = "Installed '$label' ${state.record.version}$note") }
                 } else if (state is InstallState.Failed) {
                     val err = state.report.errors.firstOrNull()?.message ?: "Installation failed"
                     _uiState.update { it.copy(errorMessage = err) }
                 }
             }
         }
+    }
+
+    /**
+     * An install of a plugin's newest version is an update: workspaces using an older version move to it, and the
+     * older versions nothing uses any more are removed. Returns what happened, as " · …" text (empty for nothing).
+     */
+    private suspend fun updateAfterInstall(installed: InstalledPackage): String {
+        val usage = workspaceUsage
+        val key = "${installed.publisher}:${installed.id}"
+        val all = pluginInstallPort.installed()
+        val newest = newestPerPlugin(all, { it.identity.key }) { it.identity.version }
+            .associate { it.identity.key to it.identity.version }
+        val isNewest = newest[key] == installed.version
+        val moved = if (usage != null && isNewest) usage.moveToNewest(all) else emptyList()
+        val refs = packageReferences(all, usage?.usersOf().orEmpty())
+        // Every older version nothing uses any more, not only this plugin's: plugins that depend on each other are
+        // updated one at a time, and the workspaces move only once the last of them is installed.
+        val replaced = if (!isNewest) {
+            emptyList()
+        } else {
+            all.filter { newest[it.identity.key] != it.identity.version }
+                .filter { refs[it.rowKey].isNullOrEmpty() }
+                .filter { pluginLifecycleUseCase.uninstall(it.identity, emptyList()) is LifecycleOutcome.Applied }
+                .map { if (it.identity.key == key) it.identity.version else "${it.identity.id} ${it.identity.version}" }
+        }
+        refreshInstalled()
+        return listOfNotNull(
+            replaced.takeIf { it.isNotEmpty() }?.let { "replaces ${it.joinToString()}" },
+            moved.takeIf { it.isNotEmpty() }?.let { "now used by ${it.joinToString()}" },
+        ).joinToString("") { " · $it" }
     }
 
     public fun setImportPathInput(path: String) {
@@ -350,13 +361,13 @@ public class PluginManagerViewModel(
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
                 if (state is InstallState.Installed) {
-                    refreshInstalled()
                     val pkgLabel = "${state.record.publisher}:${state.record.id}"
+                    val note = updateAfterInstall(state.record)
                     _uiState.update {
                         it.copy(
                             importQuarantinedPath = null,
                             importInspection = null,
-                            notificationMessage = "Successfully imported & installed '$pkgLabel'",
+                            notificationMessage = "Installed '$pkgLabel' ${state.record.version}$note",
                         )
                     }
                 } else if (state is InstallState.Failed) {
@@ -436,22 +447,5 @@ public class PluginManagerViewModel(
                 it.copy(isAuthorTaskRunning = false, authorTaskResult = result)
             }
         }
-    }
-
-    private fun computePackageReferences(records: List<InstalledRecord>): Map<String, List<String>> {
-        val map = mutableMapOf<String, MutableList<String>>()
-        for (record in records) {
-            val refs = map.getOrPut(record.identity.key) { mutableListOf() }
-            record.enabledInWorkspaces.forEach { wsId ->
-                refs.add("Workspace '$wsId'")
-            }
-        }
-        for (record in records) {
-            for (dep in record.dependencies) {
-                val depKey = "${dep.publisher}:${dep.id}"
-                map.getOrPut(depKey) { mutableListOf() }.add("Package '${record.identity.key}'")
-            }
-        }
-        return map
     }
 }

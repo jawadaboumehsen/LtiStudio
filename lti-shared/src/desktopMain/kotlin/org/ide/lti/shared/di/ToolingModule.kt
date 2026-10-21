@@ -39,7 +39,6 @@ import org.ide.lti.core.data.setup.execute.PlanExecutor
 import org.ide.lti.core.data.setup.execute.handlers.ComponentToolsHandler
 import org.ide.lti.core.data.tools.KotlinToolStoreAdapter
 import org.ide.lti.core.domain.ports.HostPrerequisitePort
-import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.core.domain.ports.ServerArtifactPort
 import org.ide.lti.core.domain.ports.TerminalLauncherPort
 import org.ide.lti.core.domain.ports.WslPresencePort
@@ -75,12 +74,6 @@ public val toolingModule =
         single<RemoteTransportPort> {
             val dm = get<WslDaemonManager>()
             KtorRemoteTransportAdapter(dm, dm.httpClient)
-        }
-        single<RemoteFileUploaderPort> {
-            val transport = get<RemoteTransportPort>()
-            RemoteFileUploaderPort { remotePath, content ->
-                transport.uploadFile(remotePath, content)
-            }
         }
         single { TransportCliExecutor(transport = get()) }
 

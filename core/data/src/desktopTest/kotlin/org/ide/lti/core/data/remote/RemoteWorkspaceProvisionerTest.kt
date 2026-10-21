@@ -80,7 +80,6 @@ class RemoteWorkspaceProvisionerTest {
             firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
         ),
         build = org.ide.lti.core.model.workspace.BuildSettings(
-            packagePolicy = target.packagePolicy!!,
             signing = org.ide.lti.core.model.workspace.SigningPolicy(),
         ),
         assembly = org.ide.lti.core.model.workspace.AssemblySettings(
@@ -180,6 +179,13 @@ class RemoteWorkspaceProvisionerTest {
         // 3. Uploaded workspace.json and config.json
         assertTrue(transport.uploadedFiles.containsKey("$tmp/workspace.json"))
         assertTrue(transport.uploadedFiles.containsKey("$tmp/config.json"))
+        // The device belongs to the workspace folder: a copy of the template, readable on its own.
+        val device = transport.uploadedFiles.getValue("$tmp/device.json").decodeToString()
+        assertEquals(
+            target,
+            org.ide.lti.core.data.repository.target.WorkspaceFolderDeviceRepository.DeviceJson
+                .decodeFromString<org.ide.lti.core.model.target.TargetDevice>(device),
+        )
 
         // 4. Key generation executed
         assertTrue(transport.executedRequests.any { it.toolId == "openssl" && it.arguments.contains("genpkey") })

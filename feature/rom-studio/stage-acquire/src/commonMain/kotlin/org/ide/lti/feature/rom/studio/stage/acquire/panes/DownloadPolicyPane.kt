@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,29 +23,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
-import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -70,15 +58,6 @@ public fun DownloadPolicyPane(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var sourceUrl by remember(settings) {
-        mutableStateOf("https://downloads.vendor-example.com/firmware/")
-    }
-    var retryCount by remember(settings) { mutableStateOf(settings.retries) }
-    var resumeDownloads by remember(settings) { mutableStateOf(settings.resume) }
-    var timeoutSeconds by remember { mutableStateOf(600) }
-    var userAgent by remember { mutableStateOf("LtiRomStudio/1.0 (+https://ltirom.example)") }
-    var isAdvancedOpen by remember { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -86,45 +65,22 @@ public fun DownloadPolicyPane(
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         PolicySettingsCard(
-            sourceUrl = sourceUrl,
-            onSourceUrlChange = { sourceUrl = it },
-            retryCount = retryCount,
-            onRetryCountChange = {
-                retryCount = it
-                onChange(settings.copy(retries = it))
-            },
-            resume = resumeDownloads,
-            onResumeChange = {
-                resumeDownloads = it
-                onChange(settings.copy(resume = it))
-            },
-            timeoutSeconds = timeoutSeconds,
-            onTimeoutChange = { timeoutSeconds = it },
-            userAgent = userAgent,
-            onUserAgentChange = { userAgent = it },
+            downloadUrl = settings.firmware.acquisitionUrl,
+            retryCount = settings.retries,
+            onRetryCountChange = { onChange(settings.copy(retries = it)) },
+            resume = settings.resume,
+            onResumeChange = { onChange(settings.copy(resume = it)) },
         )
-
-        AdvancedOptionsAccordion(
-            isOpen = isAdvancedOpen,
-            onToggle = { isAdvancedOpen = !isAdvancedOpen },
-        )
-
-        NeedHelpBanner()
     }
 }
 
 @Composable
 private fun PolicySettingsCard(
-    sourceUrl: String,
-    onSourceUrlChange: (String) -> Unit,
+    downloadUrl: String?,
     retryCount: Int,
     onRetryCountChange: (Int) -> Unit,
     resume: Boolean,
     onResumeChange: (Boolean) -> Unit,
-    timeoutSeconds: Int,
-    onTimeoutChange: (Int) -> Unit,
-    userAgent: String,
-    onUserAgentChange: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -134,74 +90,39 @@ private fun PolicySettingsCard(
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Policy settings",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.TitleSmall,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = ideFontFamily(),
-            )
-            Text(
-                text = "Applies to all downloads in this workspace.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-            )
-        }
+        Text(
+            text = "Download policy",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
 
         PolicyFieldRow(
-            label = "Source URL",
-            helperText = "Base URL for downloading source files.",
-            isOverride = false,
+            label = "Download URL",
+            helperText = "From the selected firmware (Firmware baseline). Used only in Download mode.",
+            onReset = null,
         ) {
-            GlassTextField(
-                value = sourceUrl,
-                onValueChange = onSourceUrlChange,
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = downloadUrl ?: "none — this firmware has no URL; import the archive instead",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = FontSize.BodySmall,
+                fontFamily = ideFontFamily(),
             )
         }
 
         PolicyFieldRow(
             label = "Retry count",
-            helperText = null,
-            isOverride = false,
+            helperText = "Retries for a failed download (curl --retry), 0 to 5.",
+            onReset = { onRetryCountChange(DEFAULT_RETRIES) }.takeIf { retryCount != DEFAULT_RETRIES },
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
-                NumberStepper(
-                    value = retryCount,
-                    onValueChange = onRetryCountChange,
-                    min = 0,
-                    max = 5,
-                )
-                Column {
-                    Text(
-                        text = "Range: 0 – 5",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = FontSize.Micro,
-                        fontFamily = ideFontFamily(),
-                    )
-                    Text(
-                        text = "Number of retry attempts for failed downloads.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = FontSize.Micro,
-                        fontFamily = ideFontFamily(),
-                    )
-                }
-            }
+            NumberStepper(value = retryCount, onValueChange = onRetryCountChange, min = 0, max = 5)
         }
 
         PolicyFieldRow(
             label = "Resume interrupted downloads",
-            helperText = "Resume partial files when supported by the server.",
-            isOverride = false,
+            helperText = "Continue a partial file when the server supports ranges; otherwise start over.",
+            onReset = { onResumeChange(true) }.takeIf { !resume },
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -220,34 +141,17 @@ private fun PolicySettingsCard(
                 )
             }
         }
-
-        PolicyFieldRow(
-            label = "Timeout per attempt (seconds)",
-            helperText = "Time to wait for a response before retrying.",
-            isOverride = true,
-        ) {
-            NumberSpinnerInput(
-                value = timeoutSeconds,
-                onValueChange = onTimeoutChange,
-            )
-        }
-
-        PolicyFieldRow(
-            label = "User agent (optional)",
-            helperText = "Identifies this application to the server.",
-            isOverride = false,
-        ) {
-            GlassTextField(
-                value = userAgent,
-                onValueChange = onUserAgentChange,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
     }
 }
 
 @Composable
-private fun PolicyFieldRow(label: String, helperText: String?, isOverride: Boolean, control: @Composable () -> Unit) {
+private fun PolicyFieldRow(
+    label: String,
+    helperText: String?,
+    /** Puts the default back; null when the value is the default (or not editable here). */
+    onReset: (() -> Unit)?,
+    control: @Composable () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
@@ -277,39 +181,30 @@ private fun PolicyFieldRow(label: String, helperText: String?, isOverride: Boole
 
         Spacer(Modifier.width(Spacing.Large))
 
-        StatusPillBadge(isOverride = isOverride)
+        if (onReset != null) ResetPill(onReset)
     }
 }
 
+/** Shown only for a changed value: says so, and puts the default back when clicked. */
 @Composable
-private fun StatusPillBadge(isOverride: Boolean) {
-    val bg = if (isOverride) {
-        GlassTheme.diagnosticColors.success.copy(
-            alpha = AlphaTokens.Glow,
-        )
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer
-    }
-    val borderColor = if (isOverride) {
-        GlassTheme.diagnosticColors.success.copy(
-            alpha = AlphaTokens.Muted,
-        )
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-    val textColor = if (isOverride) GlassTheme.diagnosticColors.success else MaterialTheme.colorScheme.onSurfaceVariant
-
+private fun ResetPill(onReset: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(GlassShapes.ShellControl)
-            .background(bg)
-            .border(GlassDimens.HairlineBorder, borderColor, GlassShapes.ShellControl)
+            .background(GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Glow))
+            .border(
+                GlassDimens.HairlineBorder,
+                GlassTheme.diagnosticColors.success.copy(alpha = AlphaTokens.Muted),
+                GlassShapes.ShellControl,
+            )
+            .clickable(onClick = onReset)
+            .testTag("ResetToDefault")
             .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = if (isOverride) "Override" else "Default",
-            color = textColor,
+            text = "Changed · Reset",
+            color = GlassTheme.diagnosticColors.success,
             fontSize = FontSize.Micro,
             fontWeight = FontWeight.Medium,
             fontFamily = ideFontFamily(),
@@ -377,176 +272,4 @@ private fun NumberStepper(value: Int, onValueChange: (Int) -> Unit, min: Int, ma
     }
 }
 
-@Composable
-private fun NumberSpinnerInput(value: Int, onValueChange: (Int) -> Unit) {
-    Row(
-        modifier = Modifier
-            .width(GlassDimens.AcquirePolicyInputWidth)
-            .clip(GlassShapes.ShellControl)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(GlassDimens.HairlineBorder, MaterialTheme.colorScheme.outline, GlassShapes.ShellControl)
-            .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = value.toString(),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-        )
-
-        Column {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Up",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(IconSize.ExtraSmall)
-                    .clickable { onValueChange(value + 30) },
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Down",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(IconSize.ExtraSmall)
-                    .clickable { if (value > 30) onValueChange(value - 30) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun AdvancedOptionsAccordion(isOpen: Boolean, onToggle: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .clickable(onClick = onToggle)
-            .padding(Spacing.Medium),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = if (isOpen) "Collapse" else "Expand",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(IconSize.Small)
-                        .rotate(if (isOpen) 90f else 0f),
-                )
-                Text(
-                    text = "Advanced options",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = ideFontFamily(),
-                )
-            }
-
-            Text(
-                text = "Proxy, headers and download limits",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-            )
-        }
-
-        AnimatedVisibility(visible = isOpen) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.Medium),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Text(
-                    text = "Configured proxy: Direct connection (no proxy configured)",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = ideFontFamily(),
-                )
-                Text(
-                    text = "Max parallel worker threads: 4",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = ideFontFamily(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun NeedHelpBanner() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
-            .border(
-                GlassDimens.HairlineBorder,
-                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
-                GlassShapes.ShellCard,
-            )
-            .padding(Spacing.Medium),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(IconSize.Medium),
-            )
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Need help?",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = ideFontFamily(),
-                )
-                Spacer(Modifier.height(Spacing.ExtraSmall))
-                Text(
-                    text = "Specify the base URL for source files and configure retry and resume behavior. " +
-                        "Use conservative settings for unstable networks. " +
-                        "You can validate the configuration before saving.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.Micro,
-                    fontFamily = ideFontFamily(),
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                modifier = Modifier.clickable {},
-            ) {
-                Text(
-                    text = "Open documentation",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = ideFontFamily(),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(IconSize.ExtraSmall),
-                )
-            }
-        }
-    }
-}
+private const val DEFAULT_RETRIES = 3

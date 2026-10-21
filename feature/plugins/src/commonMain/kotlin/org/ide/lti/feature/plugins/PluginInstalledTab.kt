@@ -48,13 +48,14 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.ideNodesPlugin
 import org.ide.lti.core.designsystem.icon.AppIcons
-import org.ide.lti.core.designsystem.icon.ideGeneralFilter
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -75,12 +76,9 @@ internal fun PluginInstalledTab(
     records: List<InstalledRecord>,
     references: Map<String, List<String>>,
     searchQuery: String,
-    activeWorkspaceId: String?,
     onSearchChange: (String) -> Unit = {},
     onNavigateToImport: () -> Unit = {},
     onOpenDetails: (InstalledRecord) -> Unit,
-    onEnableWorkspace: (InstalledRecord, String) -> Unit,
-    onDisableWorkspace: (InstalledRecord, String) -> Unit,
     onArchive: (InstalledRecord) -> Unit,
     onUninstall: (InstalledRecord) -> Unit,
     modifier: Modifier = Modifier,
@@ -89,6 +87,7 @@ internal fun PluginInstalledTab(
         searchQuery.isBlank() ||
             record.identity.publisher.contains(searchQuery, ignoreCase = true) ||
             record.identity.id.contains(searchQuery, ignoreCase = true) ||
+            record.displayName.contains(searchQuery, ignoreCase = true) ||
             record.identity.version.contains(searchQuery, ignoreCase = true)
     }
 
@@ -151,32 +150,6 @@ internal fun PluginInstalledTab(
                             modifier = Modifier.width(ComponentSize.PluginSearchFieldWidth),
                         )
 
-                        Row(
-                            modifier = Modifier
-                                .clip(GlassShapes.MediumSmall)
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                .glassOutlineBorder(
-                                    width = StrokeWidth.Hairline,
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
-                                    shape = GlassShapes.HazeMediumSmall,
-                                )
-                                .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
-                        ) {
-                            Icon(
-                                painter = AppIcons.ideGeneralFilter(),
-                                contentDescription = "Filter",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = "Compatible with ${activeWorkspaceId ?: "PQ84P01"} ▾",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-
                         GlassButton(
                             onClick = onNavigateToImport,
                             variant = GlassButtonVariant.Standard,
@@ -211,13 +184,10 @@ internal fun PluginInstalledTab(
                 // Right Column: Inspector Panel
                 InstalledInspectorPanel(
                     record = selectedRecord,
-                    refs = selectedRecord?.let { references[it.identity.key] }.orEmpty(),
-                    activeWorkspaceId = activeWorkspaceId,
+                    refs = selectedRecord?.let { references[it.rowKey] }.orEmpty(),
                     filteredEmpty = filtered.isEmpty(),
                     searchQuery = searchQuery,
                     onOpenDetails = { selectedRecord?.let(onOpenDetails) },
-                    onEnableWorkspace = { wsId -> selectedRecord?.let { onEnableWorkspace(it, wsId) } },
-                    onDisableWorkspace = { wsId -> selectedRecord?.let { onDisableWorkspace(it, wsId) } },
                     onArchive = { selectedRecord?.let(onArchive) },
                     onUninstall = { selectedRecord?.let(onUninstall) },
                     modifier = Modifier.width(ComponentSize.PluginInspectorWidth),
@@ -265,16 +235,16 @@ private fun InstalledMasterTable(
                 InstalledTableHeader()
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(filtered, key = { _, r -> r.identity.key }) { index, record ->
-                        val isSelected = record.identity.key == selectedRecord?.identity?.key
-                        val refs = references[record.identity.key].orEmpty()
+                    itemsIndexed(filtered, key = { _, r -> r.rowKey }) { index, record ->
+                        val isSelected = record.rowKey == selectedRecord?.rowKey
+                        val refs = references[record.rowKey].orEmpty()
 
                         InstalledTableRow(
                             index = index,
                             record = record,
                             isSelected = isSelected,
                             referencesCount = refs.size,
-                            onClick = { onSelectKey(record.identity.key) },
+                            onClick = { onSelectKey(record.rowKey) },
                         )
                     }
                 }
@@ -312,13 +282,6 @@ private fun InstalledTableHeader(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableVersionColWidth),
-        )
-        Text(
-            text = "Source",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(ComponentSize.PluginTableSourceColWidth),
         )
         Text(
             text = "Status",
@@ -393,7 +356,7 @@ private fun InstalledTableRow(
         )
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(end = Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
@@ -403,15 +366,17 @@ private fun InstalledTableRow(
                 tint = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(IconSize.Large),
             )
-            Text(
-                text = formatPluginDisplayName(record.identity.id),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // Long names wrap to a second line; the full name is in the tooltip and the details panel.
+            GlassTooltipArea(tooltipText = record.title) {
+                Text(
+                    text = record.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) BrandColors.OnLogoBadge else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         Text(
@@ -420,16 +385,6 @@ private fun InstalledTableRow(
             fontFamily = codeFontFamily(),
             color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(ComponentSize.PluginTableVersionColWidth),
-        )
-
-        Text(
-            text = "Local",
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(ComponentSize.PluginTableSourceColWidth),
         )
 
         Row(
@@ -464,12 +419,9 @@ private fun InstalledTableRow(
 private fun InstalledInspectorPanel(
     record: InstalledRecord?,
     refs: List<String>,
-    activeWorkspaceId: String?,
     filteredEmpty: Boolean,
     searchQuery: String,
     onOpenDetails: () -> Unit,
-    onEnableWorkspace: (String) -> Unit,
-    onDisableWorkspace: (String) -> Unit,
     onArchive: () -> Unit,
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
@@ -508,19 +460,13 @@ private fun InstalledInspectorPanel(
 
                 GlassHorizontalDivider(specular = true)
 
-                InstalledInspectorProperties(
-                    record = record,
-                    activeWorkspaceId = activeWorkspaceId,
-                )
+                InstalledInspectorProperties(record = record)
 
                 GlassHorizontalDivider(specular = true)
 
                 InstalledInspectorActions(
-                    record = record,
+                    label = "${record.title} ${record.identity.version}",
                     refs = refs,
-                    activeWorkspaceId = activeWorkspaceId,
-                    onEnableWorkspace = onEnableWorkspace,
-                    onDisableWorkspace = onDisableWorkspace,
                     onArchive = onArchive,
                     onUninstall = onUninstall,
                 )
@@ -549,12 +495,11 @@ private fun InstalledInspectorHeader(
 
         Column {
             Text(
-                text = formatPluginDisplayName(record.identity.id),
-                style = MaterialTheme.typography.headlineSmall,
+                text = record.title,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                softWrap = false,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
@@ -568,88 +513,78 @@ private fun InstalledInspectorHeader(
 }
 
 @Composable
-private fun InstalledInspectorProperties(
-    record: InstalledRecord,
-    activeWorkspaceId: String?,
-    modifier: Modifier = Modifier,
-) {
+private fun InstalledInspectorProperties(record: InstalledRecord, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
+        if (record.summary.isNotBlank()) {
+            Text(
+                text = record.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         InspectorRow(label = "Package identity", value = record.identity.key)
-        InspectorRow(label = "License", value = "Apache-2.0")
         InspectorRow(
-            label = "Scope",
-            value = "Property edits",
-            explanation = "Modify or inject system build properties during the build.",
+            label = "Needs",
+            value = record.dependencies.joinToString { "${it.publisher}:${it.id}" }.ifBlank { "Nothing else" },
         )
-
-        val isEnabled = activeWorkspaceId != null && record.enabledInWorkspaces.contains(activeWorkspaceId)
+        InspectorRow(label = "Trust", value = trustLabel(record.trust))
+        // Installed plugins are offered to every workspace; each turns them on in its own Patches stage.
         InspectorRow(
-            label = "Status",
-            value = if (isEnabled) {
-                "Installed — enabled in this workspace"
-            } else {
-                "Installed — not enabled in this workspace"
-            },
-            explanation = if (isEnabled) {
-                "The plugin is active for this workspace and will run in the next build."
-            } else {
-                "The plugin is available locally but is not active for this workspace. Enable it to include it in the next build."
-            },
+            label = "Use in a build",
+            value = "Patches & Mods stage",
+            explanation = "Turn it on in the workspace's Patches & Mods stage; that list is what the build applies.",
         )
     }
 }
 
+private fun trustLabel(trust: TrustDecision): String = when (trust) {
+    TrustDecision.TRUSTED_SIGNATURE -> "Signed by a verified publisher"
+    TrustDecision.TRUSTED_UNVERIFIED -> "Unsigned; you trusted it at install"
+    TrustDecision.UNTRUSTED -> "Not trusted"
+}
+
 @Composable
 private fun InstalledInspectorActions(
-    record: InstalledRecord,
+    label: String,
     refs: List<String>,
-    activeWorkspaceId: String?,
-    onEnableWorkspace: (String) -> Unit,
-    onDisableWorkspace: (String) -> Unit,
     onArchive: () -> Unit,
     onUninstall: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var pending by remember(label) { mutableStateOf<PendingRemoval?>(null) }
+    pending?.let { removal ->
+        GlassDialog(
+            title = if (removal == PendingRemoval.UNINSTALL) "Uninstall $label?" else "Archive $label?",
+            onDismissRequest = { pending = null },
+            confirmButton = {
+                GlassButton(
+                    onClick = {
+                        pending = null
+                        if (removal == PendingRemoval.UNINSTALL) onUninstall() else onArchive()
+                    },
+                    variant = GlassButtonVariant.Primary,
+                ) { Text(if (removal == PendingRemoval.UNINSTALL) "Uninstall" else "Archive") }
+            },
+            dismissButton = { GlassButton(onClick = { pending = null }) { Text("Cancel") } },
+        ) {
+            Text(
+                text = if (removal == PendingRemoval.UNINSTALL) {
+                    "The package is deleted from this computer. To use it again, import its .lti-mod.zip again."
+                } else {
+                    "The package stays on this computer but can no longer be turned on in a build. " +
+                        "Archived packages are kept for builds that already used them."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        val isEnabled = activeWorkspaceId != null && record.enabledInWorkspaces.contains(activeWorkspaceId)
-        GlassButton(
-            onClick = {
-                if (activeWorkspaceId != null) {
-                    if (isEnabled) {
-                        onDisableWorkspace(activeWorkspaceId)
-                    } else {
-                        onEnableWorkspace(activeWorkspaceId)
-                    }
-                }
-            },
-            enabled = !record.revoked && !record.archived,
-            variant = if (isEnabled) GlassButtonVariant.Secondary else GlassButtonVariant.Primary,
-            shape = GlassShapes.HazeMediumSmall,
-            modifier = Modifier.fillMaxWidth().height(ComponentSize.PluginActionBtnHeight),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Icon(
-                    painter = AppIcons.PlayPainterResource(),
-                    contentDescription = "Play",
-                    tint = BrandColors.OnLogoBadge,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = if (isEnabled) "Disable for workspace" else "Enable for next build",
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-
         if (refs.isNotEmpty()) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -690,7 +625,7 @@ private fun InstalledInspectorActions(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    text = "Referenced by saved snapshots (${refs.size})",
+                                    text = "Needed by ${refs.size} plugin(s) or workspace(s)",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -699,7 +634,7 @@ private fun InstalledInspectorActions(
 
                         Icon(
                             painter = AppIcons.InfoPainterResource(),
-                            contentDescription = "Snapshot constraint",
+                            contentDescription = "Uninstall blocked",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(IconSize.Small),
                         )
@@ -707,7 +642,7 @@ private fun InstalledInspectorActions(
                 }
 
                 Text(
-                    text = "This plugin is referenced by saved snapshots and cannot be uninstalled.",
+                    text = "Needed by: ${refs.joinToString()}. Disable or remove those first.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -718,7 +653,7 @@ private fun InstalledInspectorActions(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 GlassButton(
-                    onClick = onUninstall,
+                    onClick = { pending = PendingRemoval.UNINSTALL },
                     variant = GlassButtonVariant.Standard,
                     shape = GlassShapes.HazeMediumSmall,
                     modifier = Modifier.weight(1f),
@@ -726,7 +661,7 @@ private fun InstalledInspectorActions(
                     Text("Uninstall")
                 }
                 GlassButton(
-                    onClick = onArchive,
+                    onClick = { pending = PendingRemoval.ARCHIVE },
                     variant = GlassButtonVariant.Standard,
                     shape = GlassShapes.HazeMediumSmall,
                     modifier = Modifier.weight(1f),
@@ -774,3 +709,5 @@ private fun InspectorRow(label: String, value: String, explanation: String? = nu
         }
     }
 }
+
+private enum class PendingRemoval { UNINSTALL, ARCHIVE }

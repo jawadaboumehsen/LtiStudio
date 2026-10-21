@@ -42,7 +42,9 @@ object PackageWriter {
     ): PluginManifest {
         validateAssets(manifest, assets)
         val payloadEntries = measureAndHashAssets(assets)
-        val updatedManifest = manifest.copy(payloads = payloadEntries)
+        // The plan's compatibleWith(…) devices are the package's compatible targets (shown before it is installed).
+        val targets = template.compatibility.map { it.device }.distinct().ifEmpty { manifest.compatibleTargets }
+        val updatedManifest = manifest.copy(payloads = payloadEntries, compatibleTargets = targets)
         val textMembers = prepareTextMembers(updatedManifest, template, readme, license)
         writeZipFile(textMembers, assets, out)
         return updatedManifest

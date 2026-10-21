@@ -254,4 +254,13 @@ class PluginDependencyResolverTest {
         assertEquals(locked1.lockfile.entries, locked2.lockfile.entries)
         assertEquals(locked1.lockfile.edges, locked2.lockfile.edges)
     }
+
+    @Test
+    fun newestPerPluginKeepsTheHighestVersionOfEach() {
+        val installed = listOf("a" to "1.0.0", "a" to "1.10.0", "a" to "1.9.0", "b" to "2.0.0")
+        assertEquals(
+            listOf("a" to "1.10.0", "b" to "2.0.0"),
+            newestPerPlugin(installed, { it.first }) { it.second },
+        )
+    }
 }

@@ -21,6 +21,13 @@ data class AssetRef(val path: String)
 @Serializable
 data class PartitionPath(val partition: String, val relativePath: String)
 
+/**
+ * Owner, group, octal mode and SELinux label an added file gets in the image (its `fs_config` and
+ * `file_context` entries). Without it, a file is root-owned 0644 and labelled like its folder.
+ */
+@Serializable
+data class FileMetadata(val uid: Int = 0, val gid: Int = 0, val mode: String = "0644", val label: String? = null)
+
 @Serializable
 sealed interface ValueRef {
     @Serializable
@@ -120,8 +127,54 @@ sealed interface SettingDefinition {
     ) : SettingDefinition
 }
 
+/**
+ * A change to one member of a decoded APK/JAR. With [method], [memberDescriptor] is a class descriptor
+ * (`Lcom/example/Foo;`, found in whichever `smali*` folder holds it) and the hunks apply inside that one method.
+ */
 @Serializable
-data class SmaliEdit(val memberDescriptor: String, val expectedSha256: String, val unifiedDiff: String)
+data class SmaliEdit(
+    val memberDescriptor: String,
+    val expectedSha256: String,
+    val unifiedDiff: String,
+    val method: MethodMatch? = null,
+    /** Structured changes to an XML member (a resource), applied instead of [unifiedDiff] when not empty. */
+    val xml: List<XmlChange> = emptyList(),
+)
+
+/** Elements of an XML document with this [tag] (qualified or local name; any when null) and all these [attributes]. */
+@Serializable
+data class XmlMatch(val tag: String? = null, val attributes: Map<String, String> = emptyMap())
+
+@Serializable
+enum class XmlChangeKind {
+    /** Adds [XmlChange.fragment] as the last children of the matched element, or of the root without a match. */
+    APPEND,
+    INSERT_BEFORE,
+    INSERT_AFTER,
+    REPLACE,
+    REMOVE,
+}
+
+/** One change to an XML member; [match] must pick exactly one element (except APPEND into the root). */
+@Serializable
+data class XmlChange(val kind: XmlChangeKind, val match: XmlMatch? = null, val fragment: String = "")
+
+/**
+ * Picks one method of a class by what it is, not where it is: its [name], and when that is not enough (overloads,
+ * obfuscated names) its [parameters] (the descriptors between the parentheses, e.g. `ILjava/lang/String;`),
+ * [returns] type and [strings] it loads with `const-string`. Exactly one method must match.
+ */
+@Serializable
+data class MethodMatch(
+    val name: String? = null,
+    val parameters: String? = null,
+    val returns: String? = null,
+    val strings: List<String> = emptyList(),
+)
+
+/** A device ([device] codename) a mod is made for, and its firmware versions ([firmwares]; empty means any). */
+@Serializable
+data class Compatibility(val device: String, val firmwares: List<String> = emptyList())
 
 @Serializable
 enum class HookPlacement {
@@ -156,6 +209,7 @@ sealed interface Operation {
         val source: AssetRef,
         val destination: PartitionPath,
         override val condition: Condition = Condition.Always,
+        val metadata: FileMetadata? = null,
     ) : Operation
 
     @Serializable
@@ -261,6 +315,8 @@ data class PluginPlanTemplate(
     val version: String,
     val settings: List<SettingDefinition>,
     val operations: List<Operation>,
+    /** The devices and firmwares this mod is made for; empty means any. */
+    val compatibility: List<Compatibility> = emptyList(),
 ) {
     fun canonicalDigest(): String {
         val jsonString = canonicalJson.encodeToString(serializer(), this)

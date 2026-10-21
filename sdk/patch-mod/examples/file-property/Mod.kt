@@ -9,54 +9,53 @@
  */
 package org.ide.lti.sdk.patchmod.example
 
-import org.ide.lti.sdk.patchmod.eq
-import org.ide.lti.sdk.patchmod.literal
+import org.ide.lti.sdk.patchmod.Partition
+import org.ide.lti.sdk.patchmod.isOn
 import org.ide.lti.sdk.patchmod.romMod
-import org.ide.lti.sdk.patchmod.setting
 
 val exampleFilePropertyMod = romMod(
     publisher = "org.ide.lti",
     id = "example-file-property",
     version = "1.0.0",
 ) {
-    settings {
-        boolean(
-            id = "opt_custom_hosts",
-            label = "Install custom hosts file",
-            default = true,
-            help = "Copy custom hosts asset to /system/etc/hosts",
-        )
-        text(
-            id = "opt_custom_banner",
-            label = "Custom system banner",
-            default = "LtiRom Custom Build",
-            help = "Banner text inserted into system properties and notice file",
-        )
-    }
+    compatibleWith("PQ84P01")
+
+    val customHosts = settings.boolean(
+        id = "opt_custom_hosts",
+        label = "Install custom hosts file",
+        default = true,
+        help = "Copy custom hosts asset to /system/etc/hosts",
+    )
+    val banner = settings.text(
+        id = "opt_custom_banner",
+        label = "Custom system banner",
+        default = "LtiRom Custom Build",
+        help = "Banner text inserted into system properties and notice file",
+    )
 
     operations {
         copy(
             id = "op_copy_hosts",
             source = "assets/overlay/hosts",
-            partition = "system",
+            partition = Partition.SYSTEM,
             path = "etc/hosts",
-            condition = setting("opt_custom_hosts") eq literal("true"),
+            condition = customHosts.isOn,
         )
         propertyPatch(
             id = "op_prop_banner",
-            partition = "system",
+            partition = Partition.SYSTEM,
             path = "build.prop",
             key = "ro.lti.banner",
-            value = setting("opt_custom_banner"),
+            value = banner.ref,
         )
         textPatch(
             id = "op_patch_notice",
-            partition = "product",
+            partition = Partition.PRODUCT,
             path = "etc/notice.txt",
             context = "DEFAULT_BANNER",
-            replacement = setting("opt_custom_banner"),
+            replacement = banner.ref,
             expectedSha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-            condition = setting("opt_custom_hosts") eq literal("true"),
+            condition = customHosts.isOn,
         )
     }
 }

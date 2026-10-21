@@ -18,6 +18,7 @@ public data class UserData(
     val reducedMotion: Boolean = false,
     val editorSettings: EditorSettings = EditorSettings(),
     val notificationSettings: NotificationSettings = NotificationSettings(),
+    val appearance: AppearanceSettings = AppearanceSettings(),
 ) {
     public companion object {
         public const val DEFAULT_THEME: String = "blue"

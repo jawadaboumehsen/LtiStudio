@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +29,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -38,32 +38,32 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
-import org.ide.lti.core.domain.pipeline.configuration.Severity
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
-import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.core.model.plugin.Condition
+import org.ide.lti.core.model.plugin.Operation
+import org.ide.lti.core.model.plugin.ValueRef
 import org.ide.lti.core.model.workspace.CustomizationSettings
 
-@Suppress("LongParameterList", "UnusedParameter")
+/**
+ * Patches/Mods: the installed plugins (enable them here; dependencies come along) and what the enabled ones
+ * change, read from their plans. Plugins are installed on the Plugins page.
+ */
+@Suppress("LongParameterList")
 @Composable
 public fun PatchEditor(
     settings: CustomizationSettings,
-    target: TargetDevice,
-    validationErrors: List<ValidationError> = emptyList(),
-    onChange: (CustomizationSettings) -> Unit,
-    dirtyPaths: Set<String> = emptySet(),
+    facts: PatchFacts,
+    onToggle: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onOpenPlugins: () -> Unit = {},
     selectedObjectId: String = "module-catalog",
-    onValidate: () -> Unit = {},
-    onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val errors = validationErrors.filter { it.fieldPath.startsWith("customization.") || !it.fieldPath.contains('.') }
+    // Every time it is shown: plugins are installed or updated on the Plugins page in between.
+    LaunchedEffect(Unit) { onRefresh() }
+    val changes = facts.plans.flatMap { (mod, plan) -> plan.operations.map { mod to it } }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("PatchEditor"),
-        contentAlignment = Alignment.TopCenter,
-    ) {
+    Box(modifier = modifier.fillMaxSize().testTag("PatchEditor"), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,345 +71,201 @@ public fun PatchEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            when (selectedObjectId.lowercase()) {
-                "enabled-ordered-modules", "enabled_ordered_modules" -> item {
-                    EnabledModulesCard(settings, dirtyPaths, onChange)
-                }
-                "file-changes", "file_changes" -> item {
-                    FileChangesCard(settings)
-                }
-                "text-patches", "text_patches" -> item {
-                    TextPatchesCard(settings)
-                }
-                "property-patches", "property_patches" -> item {
-                    PropertyPatchesCard(settings, dirtyPaths)
-                }
-                "conflicts" -> item {
-                    ConflictsCard(settings)
-                }
-                else -> item {
-                    ModuleCatalogCard(settings, dirtyPaths, onChange)
+            item {
+                when (selectedObjectId.lowercase()) {
+                    "enabled-ordered-modules", "enabled_ordered_modules" -> EnabledCard(settings, facts, onToggle)
+                    "file-changes", "file_changes" -> ChangesCard(
+                        "File changes",
+                        changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch },
+                    )
+                    "text-patches", "text_patches" ->
+                        ChangesCard("Text patches", changes.filter { (_, op) -> op is Operation.TextPatch })
+                    "property-patches", "property_patches" ->
+                        ChangesCard("Property patches", changes.filter { (_, op) -> op is Operation.PropertyPatch })
+                    "conflicts" -> ConflictsCard(changes)
+                    else -> CatalogCard(settings, facts, onToggle, onOpenPlugins)
                 }
             }
-            item { Diagnostics(errors) }
         }
     }
 }
 
 @Composable
-private fun ModuleCatalogCard(
+private fun CatalogCard(
     settings: CustomizationSettings,
-    dirtyPaths: Set<String>,
-    onChange: (CustomizationSettings) -> Unit,
+    facts: PatchFacts,
+    onToggle: (String) -> Unit,
+    onOpenPlugins: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Module Catalog",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Installed and available plugin extensions in repository:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    Card("Installed plugins", "PatchCatalog") {
+        GlassButton(onClick = onOpenPlugins, variant = GlassButtonVariant.Standard) {
+            Text("Install plugins…", fontSize = FontSize.BodySmall)
+        }
+        // Next to what was clicked, not under the list: a refused toggle says why where you can see it.
+        facts.lockError?.let { Problem(it) }
+        if (facts.loaded && facts.installed.isEmpty()) {
+            Hint("No plugins installed. Install .lti-mod.zip packages on the Plugins page.")
+        }
+        facts.installed.forEach { record ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = record.displayName.ifBlank { record.identity.id },
+                        fontSize = FontSize.BodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = ideFontFamily(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    record.summary.takeIf { it.isNotBlank() }?.let { Hint(it) }
+                    facts.incompatible[record.key]?.let { Problem("This plugin $it") }
+                    Hint(
+                        "v${record.identity.version} by ${record.identity.publisher}" +
+                            record.dependencies.takeIf { it.isNotEmpty() }
+                                ?.joinToString(prefix = " · needs ") { it.id }.orEmpty(),
+                    )
+                }
+                val enabled = record.key in settings.enabledPackages
+                GlassToggle(
+                    checked = enabled,
+                    // An incompatible plugin can be switched off, never on.
+                    enabled = enabled || record.key !in facts.incompatible,
+                    onCheckedChange = { onToggle(record.key) },
+                    activeColor = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
 
-        settings.lockfile.entries.forEach { entry ->
-            val pkgKey = "${entry.publisher}:${entry.id}"
-            val isEnabled = settings.enabledPackages.contains(pkgKey)
+@Composable
+private fun EnabledCard(settings: CustomizationSettings, facts: PatchFacts, onToggle: (String) -> Unit) {
+    Card("Enabled plugins, in the order they apply", "PatchEnabled") {
+        if (settings.enabledPackages.isEmpty()) Hint("No plugins enabled.")
+        settings.enabledPackages.forEachIndexed { index, pkg ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = entry.id,
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = codeFontFamily(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = "v${entry.version} by ${entry.publisher}",
-                        fontSize = FontSize.Micro,
-                        fontFamily = ideFontFamily(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                GlassToggle(
-                    checked = isEnabled,
-                    onCheckedChange = { checked ->
-                        val updated = if (checked) {
-                            settings.enabledPackages + pkgKey
-                        } else {
-                            settings.enabledPackages - pkgKey
-                        }
-                        onChange(settings.copy(enabledPackages = updated))
-                    },
-                    activeColor = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-        Meta("lockfile", dirtyPaths, "Catalog", "${settings.lockfile.entries.size} packages in lockfile.")
-    }
-}
-
-@Composable
-private fun EnabledModulesCard(
-    settings: CustomizationSettings,
-    dirtyPaths: Set<String>,
-    onChange: (CustomizationSettings) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Enabled Ordered Modules",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Execution sequence for patch hooks during assembly:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        if (settings.enabledPackages.isEmpty()) {
-            Text(
-                text = "No modules enabled.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-            )
-        } else {
-            settings.enabledPackages.forEachIndexed { index, pkg ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "${index + 1}. $pkg",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = FontSize.Micro,
-                        fontFamily = codeFontFamily(),
-                    )
-                    GlassButton(
-                        onClick = { onChange(settings.copy(enabledPackages = settings.enabledPackages - pkg)) },
-                        variant = GlassButtonVariant.Standard,
-                        shape = GlassShapes.ShellControl,
-                    ) {
-                        Text("Disable", color = GlassTheme.diagnosticColors.error, fontSize = FontSize.Micro)
-                    }
+                val name = facts.installed.firstOrNull { it.key == pkg }?.displayName?.takeIf { it.isNotBlank() }
+                Mono("${index + 1}. ${name ?: pkg}")
+                GlassButton(onClick = { onToggle(pkg) }, variant = GlassButtonVariant.Standard) {
+                    Text("Disable", fontSize = FontSize.Micro)
                 }
             }
         }
-        Meta("enabledPackages", dirtyPaths, "Ordering", "Higher-indexed modules apply overrides.")
+        Hint("A plugin's dependencies always apply before it.")
     }
 }
 
-@Suppress("UnusedParameter")
 @Composable
-private fun FileChangesCard(settings: CustomizationSettings) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "File Changes",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Overlay files declared across enabled mods:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        listOf(
-            "/system/etc/permissions/privapp-permissions-microg.xml",
-            "/system/framework/services.jar (bytecode hook)",
-            "/product/overlay/CustomAccentOverlay.apk",
-        ).forEach { path ->
-            Text(
-                text = "• $path",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
-            )
+private fun ChangesCard(title: String, changes: List<Pair<String, Operation>>) {
+    Card(title, "PatchChanges") {
+        if (changes.isEmpty()) Hint("The enabled plugins make no changes of this kind.")
+        changes.forEach { (mod, op) ->
+            Mono(describe(op) + if (op.condition == Condition.Always) "" else "  (when its condition holds)")
+            Hint(mod.substringAfter(':') + " · " + op.id)
         }
     }
 }
 
-@Suppress("UnusedParameter")
+/** Whole-file changes (add, replace, delete, bytecode) to one path from two plugins: only the last one would win. */
 @Composable
-private fun TextPatchesCard(settings: CustomizationSettings) {
+private fun ConflictsCard(changes: List<Pair<String, Operation>>) {
+    val wholeFile = changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch }
+    val conflicts = wholeFile.groupBy { (_, op) -> targetOf(op) }
+        .filterValues { ops -> ops.map { it.first }.distinct().size > 1 }
+    Card("Conflicts", "PatchConflicts") {
+        if (conflicts.isEmpty()) Hint("No two enabled plugins replace the same file.")
+        conflicts.forEach { (path, ops) -> Problem("$path: ${ops.joinToString { it.first.substringAfter(':') }}") }
+    }
+}
+
+private fun targetOf(op: Operation): String = when (op) {
+    is Operation.Copy -> op.destination
+    is Operation.Replace -> op.destination
+    is Operation.Delete -> op.target
+    is Operation.PropertyPatch -> op.target
+    is Operation.TextPatch -> op.target
+    is Operation.ApkJarPatch -> op.target
+    is Operation.CompiledClassMerge -> op.target
+    is Operation.HookInjection -> op.target
+}.let { "${it.partition}/${it.relativePath}" }
+
+private fun describe(op: Operation): String = when (op) {
+    is Operation.Copy -> {
+        val meta = op.metadata?.let { " (${it.mode}, ${it.label ?: "folder label"})" }
+        "add ${targetOf(op)}${meta.orEmpty()}"
+    }
+    is Operation.Replace -> "replace ${targetOf(op)}"
+    is Operation.Delete -> "delete ${targetOf(op)}"
+    is Operation.PropertyPatch -> "${targetOf(op)}: ${op.key}=${valueOf(op.value)}"
+    is Operation.TextPatch -> "${targetOf(op)}: at \"${op.context.take(CONTEXT_PREVIEW)}…\""
+    is Operation.ApkJarPatch -> "smali ${targetOf(op)} (${op.edits.size} edits)"
+    is Operation.CompiledClassMerge -> "classes into ${targetOf(op)}"
+    is Operation.HookInjection -> "hook in ${targetOf(op)}"
+}
+
+private fun valueOf(value: ValueRef): String = when (value) {
+    is ValueRef.Literal -> value.value
+    is ValueRef.Setting -> "<setting ${value.settingId}>"
+    is ValueRef.TargetFact -> "<${value.factId}>"
+}
+
+@Composable
+private fun Card(title: String, tag: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(tag)
             .clip(GlassShapes.ShellCard)
             .ideCardSurface(shape = GlassShapes.ShellCard)
             .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Text(
-            text = "Text Patches",
+            text = title,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Text(
-            text = "Search & replace rule operations for init scripts and configs:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "• init.environ.rc: Injected BOOTCLASSPATH extension",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.Micro,
-            fontFamily = codeFontFamily(),
-        )
-        Text(
-            text = "• ueventd.rc: Device node permission grant",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.Micro,
-            fontFamily = codeFontFamily(),
-        )
+        content()
     }
 }
 
 @Composable
-private fun PropertyPatchesCard(settings: CustomizationSettings, dirtyPaths: Set<String>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Property Patches",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Custom build and runtime system properties:",
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        settings.settings.forEach { (mod, props) ->
-            Text(
-                text = mod,
-                fontSize = FontSize.Micro,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = ideFontFamily(),
-                color = MaterialTheme.colorScheme.primary,
-            )
-            props.forEach { (k, v) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = k,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = FontSize.Micro,
-                        fontFamily = codeFontFamily(),
-                    )
-                    GlassChip(label = v, selected = true, onClick = {})
-                }
-            }
-        }
-        Meta("settings", dirtyPaths, "Properties", "Appended to build.prop during assembly.")
-    }
-}
-
-@Suppress("UnusedParameter")
-@Composable
-private fun ConflictsCard(settings: CustomizationSettings) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        Text(
-            text = "Conflicts Analysis",
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "No conflicting file overlays or colliding property modifications detected.",
-            color = GlassTheme.diagnosticColors.success,
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-        )
-    }
-}
-
-@Composable
-private fun Meta(path: String, dirty: Set<String>, source: String, help: String) {
-    val isDirty = dirty.any { it.startsWith(path.substringBefore('/')) }
+private fun Mono(text: String) {
     Text(
-        text = "$source${if (isDirty) " · Dirty" else ""} · $help",
-        fontSize = FontSize.Micro,
+        text = text,
+        fontSize = FontSize.BodySmall,
         fontFamily = codeFontFamily(),
-        color = if (isDirty) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
 @Composable
-private fun Diagnostics(errors: List<ValidationError>) {
-    if (errors.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-        errors.forEach {
-            Text(
-                text = "${it.severity}: ${it.message}",
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-                color = if (it.severity == Severity.ERROR) {
-                    GlassTheme.diagnosticColors.error
-                } else {
-                    GlassTheme.diagnosticColors.warning
-                },
-            )
-        }
-    }
+private fun Hint(text: String) {
+    Text(
+        text = text,
+        fontSize = FontSize.Micro,
+        fontFamily = ideFontFamily(),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
+
+@Composable
+private fun Problem(text: String) {
+    Text(
+        text = text,
+        fontSize = FontSize.Micro,
+        fontFamily = ideFontFamily(),
+        color = GlassTheme.diagnosticColors.error,
+    )
+}
+
+private const val CONTEXT_PREVIEW = 48

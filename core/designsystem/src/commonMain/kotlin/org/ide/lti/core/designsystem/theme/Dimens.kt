@@ -70,7 +70,6 @@ object IconSize {
     val ExtraSmall: Dp = 10.dp
     val Small: Dp = 12.dp
     val WindowControl: Dp = 13.dp
-    val Search: Dp = 14.dp
     val Segmented: Dp = 15.dp
     val Medium: Dp = 16.dp
     val SidePanelRail: Dp = 18.dp
@@ -147,16 +146,13 @@ object ComponentSize {
     val ToggleButtonEndPadding: Dp = 8.dp
     val ToggleButtonSpacing: Dp = 4.dp
     val DividerWidth: Dp = 8.dp
-    val SettingsSidebarWidth: Dp = 210.dp
     val ConfigurationSidebarWidth: Dp = 260.dp
     val ThemeCardMinWidth: Dp = 156.dp
     val ThemePreviewHeight: Dp = 84.dp
     val ActionCardHeight: Dp = 120.dp
     val EmptyStateBadgeSize: Dp = 56.dp
-    val StatusDotSize: Dp = 8.dp
     val StepNodeMinWidth: Dp = 96.dp
     val PanelHeaderStackBreakpoint: Dp = 280.dp
-    val SettingsMaxWidth: Dp = 760.dp
     val CommandPaletteMinWidth: Dp = 200.dp
     val CommandPaletteMaxWidth: Dp = 320.dp
     val CommandPaletteHeight: Dp = 28.dp
@@ -169,7 +165,6 @@ object ComponentSize {
     val PluginStepperConnectorWidth: Dp = 120.dp
     val PluginTableIndexColWidth: Dp = 40.dp
     val PluginTableVersionColWidth: Dp = 80.dp
-    val PluginTableSourceColWidth: Dp = 80.dp
     val PluginTableStatusColWidth: Dp = 110.dp
     val PluginTableRefsColWidth: Dp = 80.dp
     val PluginPipelineBoxWidth: Dp = 180.dp
@@ -180,10 +175,7 @@ object ComponentSize {
     val PluginActionBtnHeight: Dp = 40.dp
     val PluginActionBtnCompactHeight: Dp = 34.dp
     val PluginActionBtnCompactWidth: Dp = 104.dp
-    val SettingsSearchFieldHeight: Dp = 34.dp
-    val SettingsCategoryRowHeight: Dp = 38.dp
     val AboutLogoBoxSize: Dp = 68.dp
-    val AboutLinkCardHeight: Dp = 72.dp
     val AppearanceLivePreviewHeight: Dp = 360.dp
 }
 
@@ -232,16 +224,10 @@ object GlassDimens {
     val OverviewStageIconBoxSize: Dp = 32.dp
     val OverviewEmptyStateHeight: Dp = 136.dp
     val OverviewTargetCardWidth: Dp = 340.dp
-    val OverviewDockStripHeight: Dp = 32.dp
     val AcquirePolicyLabelWidth: Dp = 220.dp
-    val AcquirePolicyInputWidth: Dp = 140.dp
-    val AcquireTableSelectColWidth: Dp = 44.dp
-    val AcquireTableActionColWidth: Dp = 90.dp
+    val AcquireTableActionColWidth: Dp = 120.dp
     val AcquireTableIconColWidth: Dp = 36.dp
-    val AcquirePreviewBadgeSize: Dp = 44.dp
-    val AcquireStatusBannerIconSize: Dp = 36.dp
     val TableHeaderRowHeight: Dp = 36.dp
     val TableBodyRowHeight: Dp = 40.dp
     val TableSelectionIndicatorSize: Dp = 18.dp
-    val DetailsGridLabelColWidth: Dp = 140.dp
 }

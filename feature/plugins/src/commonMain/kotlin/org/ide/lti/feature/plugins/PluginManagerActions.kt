@@ -20,8 +20,6 @@ public data class PluginManagerActions(
     val onSearchQueryChange: (String) -> Unit = {},
     val onOpenDetails: (InstalledRecord) -> Unit = {},
     val onCloseDetails: () -> Unit = {},
-    val onEnableWorkspace: (InstalledRecord, String) -> Unit = { _, _ -> },
-    val onDisableWorkspace: (InstalledRecord, String) -> Unit = { _, _ -> },
     val onArchivePackage: (InstalledRecord) -> Unit = {},
     val onUninstallPackage: (InstalledRecord) -> Unit = {},
     val onMarketplaceUrlChange: (String) -> Unit = {},

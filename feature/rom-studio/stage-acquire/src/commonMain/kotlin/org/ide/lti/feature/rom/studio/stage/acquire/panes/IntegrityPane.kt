@@ -9,382 +9,179 @@
  */
 package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
-import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
-import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
-import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.model.workspace.AcquisitionSettings
+import org.ide.lti.feature.rom.studio.stage.acquire.IntegrityFacts
 
-@Suppress("UnusedParameter")
+/** The archive the build uses and whether its measured SHA-256 matches the expected one. */
 @Composable
 public fun IntegrityPane(
     settings: AcquisitionSettings,
-    target: TargetDevice,
-    onValidate: () -> Unit = {},
-    onSave: () -> Unit = {},
+    facts: IntegrityFacts,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Sets (or clears, with null) the SHA-256 the archive must have. */
+    onExpectedChange: (String?) -> Unit = {},
 ) {
+    LaunchedEffect(settings.archiveRef, settings.mode) { onRefresh() }
+    val expected = settings.expectedSha256?.takeIf { it.isNotBlank() }
+        ?: settings.firmware.sha256?.takeIf { it.isNotBlank() }
+    val measured = facts.measuredSha256
+    val (title, detail, color) = when {
+        measured == null -> Triple(
+            "Not measured yet",
+            "The SHA-256 is measured when the Acquire stage runs. Run the build through Acquire.",
+            MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        expected == null -> Triple(
+            "Measured, nothing to compare",
+            "No expected SHA-256 is set (the vendor publishes none). Set one below to verify future runs.",
+            GlassTheme.diagnosticColors.warning,
+        )
+        measured.equals(expected, ignoreCase = true) -> Triple(
+            "Verified",
+            "The archive matches the expected SHA-256.",
+            GlassTheme.diagnosticColors.success,
+        )
+        else -> Triple(
+            "Mismatch",
+            "The archive does not match the expected SHA-256; the Acquire stage fails until they agree.",
+            GlassTheme.diagnosticColors.error,
+        )
+    }
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("IntegrityPane"),
+        modifier = modifier.fillMaxWidth().testTag("IntegrityPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        VerifiedBanner()
-
-        SourceFileCard(settings = settings, target = target)
-
-        VerificationCard()
-
-        IntegrityInfoBanner()
-    }
-}
-
-@Composable
-private fun VerifiedBanner() {
-    val green = GlassTheme.diagnosticColors.success
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(green.copy(alpha = AlphaTokens.Glow), GlassShapes.ShellCard)
-            .border(
-                width = GlassDimens.HairlineBorder,
-                color = green.copy(alpha = AlphaTokens.Medium),
-                shape = GlassShapes.ShellCard,
-            )
-            .padding(Spacing.Medium),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-        ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = "Verified",
-                tint = green,
-                modifier = Modifier.size(GlassDimens.AcquireStatusBannerIconSize),
-            )
-            Column {
-                Text(
-                    text = "Verified",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.TitleMedium,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Text(
-                    text = "The downloaded file matches the expected SHA-256 hash.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceFileCard(settings: AcquisitionSettings, target: TargetDevice) {
-    val clipboardManager = LocalClipboardManager.current
-    val fileName = settings.archiveRef?.substringAfterLast('/')
-        ?: "${target.codename}_4.0.0_factory.zip"
-    val fullHash = settings.expectedSha256
-        ?: "3f2a9c4d8e1f0a2b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b"
-    val truncatedHash = if (fullHash.length > 20) {
-        "${fullHash.take(8)}...${fullHash.takeLast(8)}"
-    } else {
-        fullHash
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = "Source file",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = GlassFontFamily.ide(),
-        )
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "File name") {
+        Card {
             Text(
-                text = fileName,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.BodySmall,
-                fontFamily = GlassFontFamily.code(),
-            )
-        }
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Source URL") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                val url = settings.firmware.acquisitionUrl
-                    ?: "https://example.com/firmware/$fileName"
-                Text(
-                    text = url,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = FontSize.BodySmall,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                    contentDescription = "Open link",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(IconSize.ExtraSmall),
-                )
-            }
-        }
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Source provenance", value = "Vendor official release")
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "File size", value = "2.48 GB (2,662,609,920 bytes)")
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Downloaded", value = "2024-05-14 10:21:37")
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Expected SHA-256") {
-            HashCopyRow(
-                hash = truncatedHash,
-                onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-            )
-        }
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Measured SHA-256") {
-            HashCopyRow(
-                hash = truncatedHash,
-                onCopy = { clipboardManager.setText(AnnotatedString(fullHash)) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun VerificationCard() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Verification",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.TitleSmall,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = GlassFontFamily.ide(),
-            )
-
-            GlassButton(
-                onClick = {},
-                variant = GlassButtonVariant.Standard,
-                shape = GlassShapes.ShellControl,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Verify",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(IconSize.ExtraSmall),
-                    )
-                    Text("Verify", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
-                }
-            }
-        }
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Status") {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Verified",
-                    tint = GlassTheme.diagnosticColors.success,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = "Verified",
-                    color = GlassTheme.diagnosticColors.success,
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-            }
-        }
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Method", value = "SHA-256 (local computation)")
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(label = "Checked at", value = "2024-05-14 10:21:45")
-
-        HorizontalDivider(thickness = GlassDimens.HairlineBorder, color = MaterialTheme.colorScheme.outlineVariant)
-
-        PropertyRow(
-            label = "Result",
-            value = "The file integrity is confirmed. The measured hash matches the expected hash.",
-        )
-    }
-}
-
-@Composable
-private fun IntegrityInfoBanner() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle), GlassShapes.ShellCard)
-            .border(
-                GlassDimens.HairlineBorder,
-                MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Ambient),
-                GlassShapes.ShellCard,
-            )
-            .padding(Spacing.SmallMedium),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(IconSize.Small),
+                text = title,
+                color = color,
+                fontSize = FontSize.TitleMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = ideFontFamily(),
+                modifier = Modifier.testTag("IntegrityStatus"),
             )
             Text(
-                text = "Integrity verification ensures the downloaded file has not been corrupted or tampered with.",
+                text = detail,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.BodySmall,
-                fontFamily = GlassFontFamily.ide(),
+                fontFamily = ideFontFamily(),
             )
         }
+        Card {
+            Detail("Archive", facts.archivePath ?: "not in the workspace yet")
+            Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
+            Detail("Source URL", settings.firmware.acquisitionUrl ?: "none (imported archive)")
+            Detail("Expected SHA-256", expected ?: "not set")
+            Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
+            GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, shape = GlassShapes.ShellControl) {
+                Text("Refresh", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
+            }
+        }
+        ExpectedCard(settings.expectedSha256.orEmpty(), measured, onExpectedChange)
     }
 }
 
 @Composable
-internal fun PropertyRow(label: String, value: String) {
-    PropertyRow(label = label) {
-        Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = GlassFontFamily.ide(),
-        )
-    }
+private fun Card(content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) { content() }
 }
 
 @Composable
-internal fun PropertyRow(label: String, content: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+private fun Detail(label: String, value: String, valueColor: Color? = null) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         Text(
             text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
-            fontFamily = GlassFontFamily.ide(),
-            modifier = Modifier.width(GlassDimens.DetailsGridLabelColWidth),
+            fontFamily = ideFontFamily(),
+            modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
         )
-        Box(modifier = Modifier.weight(1f)) {
-            content()
+        Text(
+            text = value,
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontFamily = codeFontFamily(),
+        )
+    }
+}
+
+/** The SHA-256 the archive must have: typed, or the measured one adopted; the build stops on a mismatch. */
+@Composable
+private fun ExpectedCard(current: String, measured: String?, onExpectedChange: (String?) -> Unit) {
+    var text by remember(current) { mutableStateOf(current) }
+    val valid = text.isEmpty() || SHA256.matches(text.trim())
+    Card {
+        Text(
+            text = "Expected SHA-256",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        GlassTextField(
+            value = text,
+            onValueChange = { value ->
+                text = value
+                val trimmed = value.trim().lowercase()
+                when {
+                    trimmed.isEmpty() -> onExpectedChange(null)
+                    SHA256.matches(trimmed) -> onExpectedChange(trimmed)
+                }
+            },
+            placeholder = "64 hex characters; empty = don't check",
+            state = if (valid) TextFieldState.Default else TextFieldState.Error("Not a SHA-256 (64 hex characters)."),
+            modifier = Modifier.fillMaxWidth().testTag("ExpectedSha256"),
+        )
+        if (measured != null && measured != current) {
+            GlassButton(
+                onClick = { onExpectedChange(measured) },
+                variant = GlassButtonVariant.Standard,
+                shape = GlassShapes.ShellControl,
+                modifier = Modifier.testTag("UseMeasuredSha"),
+            ) {
+                Text("Use the measured one", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
+            }
         }
     }
 }
 
-@Composable
-internal fun HashCopyRow(hash: String, onCopy: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = hash,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = GlassFontFamily.code(),
-        )
-        Icon(
-            imageVector = Icons.Default.ContentCopy,
-            contentDescription = "Copy hash",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(IconSize.ExtraSmall)
-                .clickable(onClick = onCopy),
-        )
-    }
-}
+private val SHA256 = Regex("[0-9a-fA-F]{64}")

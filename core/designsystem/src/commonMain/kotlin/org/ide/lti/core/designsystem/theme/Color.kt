@@ -380,9 +380,9 @@ object GlassControlColors {
     val ThumbResting = Color.White
 }
 
-/** Centralized token colors for theme accent color selection. */
+/** Accent colours offered in Settings › Appearance ([AccentColor]). */
 object AccentPresetColors {
-    val Blue = Color(0xFF2563EB)
+    val Cobalt = Color(0xFF2563EB)
     val Cyan = Color(0xFF06B6D4)
     val Emerald = Color(0xFF10B981)
     val Purple = Color(0xFF8B5CF6)

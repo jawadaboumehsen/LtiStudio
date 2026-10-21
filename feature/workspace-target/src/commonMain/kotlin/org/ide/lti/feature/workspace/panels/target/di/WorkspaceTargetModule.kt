@@ -9,22 +9,29 @@
  */
 package org.ide.lti.feature.workspace.panels.target.di
 
-import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
+import org.ide.lti.feature.workspace.panels.target.WorkspaceDeviceViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 public val workspaceTargetModule: Module = module {
-    // Explicit: the defaulted file-picker/reader lambdas must not be resolved through Koin.
     viewModel {
         WorkspaceConfigurationViewModel(
             workspaceManager = get(),
             snapshotRepository = get(),
-            targetRepository = get(),
+            workspaceDeviceRepository = get(),
             saveConfigurationSnapshotUseCase = get(),
-            transport = getOrNull<RemoteFileUploaderPort>(),
             readinessPort = getOrNull(),
+        )
+    }
+    viewModel {
+        WorkspaceDeviceViewModel(
+            workspaceManager = get(),
+            workspaceDeviceRepository = get(),
+            snapshotRepository = get(),
+            observeRunUseCase = getOrNull(),
+            targetRepository = getOrNull(),
         )
     }
 }

@@ -67,11 +67,16 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     val statuses = mutableMapOf<String, StepStatus>()
     val observedFlows = mutableMapOf<String, (Long) -> Flow<StepEvent>>()
 
+    /** Tool ids whose output stream ends without its Finished event (the service still records the result). */
+    val streamsWithoutResult = mutableSetOf<String>()
+    private val toolOf = mutableMapOf<String, String>()
+
     override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
         val simulated = simulatedCommand(step)
         durableSteps += simulated
         val id = "srv-${++handleCounter}"
         pending[id] = simulate(simulated)
+        toolOf[id] = simulated.toolId
         return RunHandle(id, "RUNNING", 0L)
     }
 
@@ -81,7 +86,14 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
             return custom(fromSeq)
         }
         val result = pending.remove(serverRunId) ?: return flowOf(StepEvent.Finished(-1))
-        return flowOf(StepEvent.Output(1L, result.stdout), StepEvent.Heartbeat, StepEvent.Finished(result.exitCode))
+        // Like the real service: one event per line, the line ending stripped.
+        val lines = result.stdout.lines().let { if (it.lastOrNull()?.isEmpty() == true) it.dropLast(1) else it }
+        val outputs = lines.mapIndexed { i, line -> StepEvent.Output(i + 1L, line) }
+        if (toolOf[serverRunId] in streamsWithoutResult) {
+            statuses[serverRunId] = StepStatus(serverRunId, "COMPLETED", exitCode = result.exitCode)
+            return flowOf(*outputs.toTypedArray())
+        }
+        return flowOf(*(outputs + StepEvent.Heartbeat + StepEvent.Finished(result.exitCode)).toTypedArray())
     }
 
     override suspend fun status(serverRunId: String): StepStatus? = statuses[serverRunId]
@@ -114,6 +126,13 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         val key = "${cmd.toolId} ${cmd.args.joinToString(" ")}"
         val forced = exitCodes.entries.firstOrNull { key.startsWith(it.key) }?.value
         val override = stdoutOverrides.entries.firstOrNull { key.startsWith(it.key) }?.value
+        // Like the real service: no shell, so a glob reaches the tool as-is (only zip -x / find -name match them).
+        val unexpanded = cmd.args.withIndex().any { (i, a) ->
+            '*' in a && cmd.args.getOrNull(i - 1) !in setOf("-x", "-name", "-path")
+        }
+        if (cmd.toolId == "zip" && unexpanded) {
+            return ToolResult(ZIP_NOTHING_MATCHED, "", "zip warning: name not matched")
+        }
         val stdout = override ?: defaultStdout(cmd)
         return ToolResult(forced ?: 0, stdout)
     }
@@ -207,10 +226,22 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         else -> ""
     }
 
-    private fun statDump(mnt: String): String = "0 0 755 $mnt\n0 0 644 $mnt/build.prop\n0 2000 755 $mnt/bin/run-as\n"
+    /** The system image is system-as-root (its files live under `system/`), like the real device's. */
+    private fun mountedFiles(mnt: String): List<String> {
+        val base = if (mnt.endsWith("/system_mnt")) "$mnt/system" else mnt
+        return listOfNotNull(mnt, base.takeIf { it != mnt }, "$base/build.prop", "$base/bin/run-as")
+    }
+
+    private fun statDump(mnt: String): String = mountedFiles(mnt).joinToString("") { path ->
+        when {
+            path.endsWith("/run-as") -> "0 2000 755 $path\n"
+            path.endsWith("/build.prop") -> "0 0 644 $path\n"
+            else -> "0 0 755 $path\n"
+        }
+    }
 
     private fun getfattrDump(mnt: String): String =
-        listOf(mnt, "$mnt/build.prop", "$mnt/bin/run-as").joinToString("\n") {
+        mountedFiles(mnt).joinToString("\n") {
             "# file: $it\nsecurity.selinux=\"u:object_r:system_file:s0\"\n"
         }
 
@@ -233,8 +264,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         const val AVB_OVERHEAD = 4096L * 32
         val DYNAMIC = listOf("odm", "product", "system", "system_dlkm", "system_ext", "vendor", "vendor_dlkm")
         val BOOT = listOf("boot", "init_boot", "vendor_boot", "dtbo")
+        const val ZIP_NOTHING_MATCHED = 12
         const val STOCK_BUILD_PROP =
-            "ro.build.type=user\nro.build.fingerprint=nubia/NX_PQ84P01:15/AQ3A.240812.002/20260311:user/release-keys\n" +
+            "ro.build.type=user\nro.system.build.fingerprint=nubia/NX_PQ84P01:15/AQ3A.240812.002/20260311:user/release-keys\n" +
                 "ro.build.version.incremental=20260311.222527\nro.build.version.sdk=35\nro.build.version.security_patch=2026-02-01\n"
 
         fun bootBytes(image: String): Int = when (image) {

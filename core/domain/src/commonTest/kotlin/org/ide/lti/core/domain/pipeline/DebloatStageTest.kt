@@ -10,185 +10,155 @@
 package org.ide.lti.core.domain.pipeline
 
 import kotlinx.datetime.Instant
-import org.ide.lti.core.domain.debloat.DebloatDecision
-import org.ide.lti.core.domain.debloat.DebloatResolution
-import org.ide.lti.core.domain.debloat.DebloatResolvedRemoval
-import org.ide.lti.core.domain.debloat.RemovalReason
-import org.ide.lti.core.domain.pipeline.configuration.Severity
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
-import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
-import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.domain.pipeline.text.SidecarEditor
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DebloatSettings
+import org.ide.lti.core.model.workspace.Workspace
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DebloatStageTest {
+    private val listing = """
+        41000000	system/system/app/Facebook/Facebook.apk
+        2000	system/system/app/Facebook/split_config.arm64_v8a.apk
+        9000	system/system/priv-app/SystemUI/SystemUI.apk
+        5000	product/app/YouTube/YouTube.apk
+        100	configs/fs_config-system.apk
+    """.trimIndent()
 
-    private fun createSnapshot(enabled: Boolean): ConfigurationSnapshot = ConfigurationSnapshot.create(
-        id = "id",
-        workspaceId = "ws",
-        profileRevision = 1,
-        acquisition = AcquisitionSettings(
-            region = TargetRegion.GLOBAL,
-            firmware = TargetFirmware("v1", "test-url", "test-sha", "2023-01"),
+    private fun ctx(settings: DebloatSettings, values: Map<String, String> = emptyMap()) = StageContext(
+        workspace = Workspace("ws", "name", "/w", linuxPath = "/w"),
+        target = TargetDevice.EMPTY,
+        snapshot = ConfigurationSnapshot.create(
+            id = "id",
+            workspaceId = "ws",
+            profileRevision = 1,
+            acquisition = AcquisitionSettings(
+                region = TargetRegion.GLOBAL,
+                firmware = TargetFirmware("v1", "b1"),
+            ),
+            debloat = settings,
+            createdAt = Instant.parse("2023-01-01T00:00:00Z"),
         ),
-        debloat = DebloatSettings(enabled = enabled),
-        createdAt = Instant.parse("2023-01-01T00:00:00Z"),
-    )
-
-    private fun createContext(enabled: Boolean): StageContext = StageContext(
-        workspace = org.ide.lti.core.model.workspace.Workspace("ws", "name", "dir"),
-        target = org.ide.lti.core.model.target.TargetDevice.EMPTY,
-        snapshot = createSnapshot(enabled),
-        runtimeValues = emptyMap(),
+        runtimeValues = values,
     )
 
     @Test
-    fun `disabled plan is exactly one WriteFile of the pass-through JSON and outputs lists the result path`() {
-        val stage = DebloatStage()
-        val ctx = createContext(enabled = false)
-        val plan = stage.plan(ctx)
+    fun `the inventory groups APKs by app folder and skips the config folders`() {
+        val inventory = DebloatInventory.parse(listing)
+        assertEquals(
+            listOf("product:app/YouTube", "system:system/app/Facebook", "system:system/priv-app/SystemUI"),
+            inventory.map { "${it.partition}:${it.relativePath}" },
+        )
+        assertEquals(41_002_000L, inventory.first { it.relativePath.endsWith("Facebook") }.sizeBytes)
+        assertTrue(DebloatInventory.isProtected(inventory.first { it.relativePath.endsWith("SystemUI") }))
+    }
 
+    @Test
+    fun `disabled debloat writes a no-removal result and touches nothing`() {
+        val plan = DebloatStage().plan(ctx(DebloatSettings(enabled = false)))
         assertEquals(1, plan.size)
-        val step = plan.first() as PipelineStep.WriteFile
-        assertEquals("work/debloat/result.json", step.relPath)
-        assertEquals("""{"enabled":false,"removed":[]}""", step.content.decodeToString())
-
-        val outputs = stage.outputs(ctx)
-        assertEquals(listOf("work/debloat/result.json"), outputs)
+        assertEquals(DebloatStage.RESULT, (plan.single() as PipelineStep.WriteFile).relPath)
     }
 
     @Test
-    fun `default enabled plan is one Check that returns a non-null failure naming inventory unavailable`() {
+    fun `picked apps are deleted and their sidecar entries pruned once per partition`() {
+        val settings = DebloatSettings(
+            enabled = true,
+            removeSelectors = listOf("system:system/app/Facebook", "product:app/YouTube"),
+        )
         val stage = DebloatStage()
-        val ctx = createContext(enabled = true)
-        val plan = stage.plan(ctx)
 
-        assertEquals(1, plan.size)
-        val step = plan.first() as PipelineStep.Check
-        val error = step.verify(emptyMap())
-        assertNotNull(error)
-        assertTrue(error.contains("DEBLOAT_INVENTORY_UNAVAILABLE"))
-    }
+        val first = stage.plan(ctx(settings))
+        assertEquals(listOf("list apps"), first.map { it.label }, "nothing is removed before the inventory is read")
 
-    @Test
-    fun `enabled with a Resolved decision plans the selection json and Check`() {
-        val resolvedDecision = DebloatDecision(
-            removals = listOf(
-                DebloatResolvedRemoval(
-                    partition = "system",
-                    relativePath = "app/YouTube/YouTube.apk",
-                    sizeBytes = 1000L,
-                    packageId = "com.google.android.youtube",
-                    reason = RemovalReason.EXPLICIT_SELECTOR,
-                    sidecarEntries = emptyList(),
-                ),
+        val plan = stage.plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing)))
+        val rm = plan.filterIsInstance<PipelineStep.Tool>().single { it.command.toolId == "rm" }
+        assertEquals(
+            listOf("-rf", "--", "/w/work/product/app/YouTube", "/w/work/system/system/app/Facebook"),
+            rm.command.args,
+        )
+        val edits = plan.filterIsInstance<PipelineStep.EditFile>().map { it.relPath }
+        assertEquals(
+            listOf(
+                "work/configs/fs_config-product",
+                "work/configs/file_context-product",
+                "work/configs/fs_config-system",
+                "work/configs/file_context-system",
             ),
-            kept = emptyList(),
-            logicalBytesFreed = 1000L,
+            edits,
         )
-        val stage = DebloatStage(
-            debloatPlanner = { DebloatResolution.Resolved(resolvedDecision) },
+        val fsConfig = plan.filterIsInstance<PipelineStep.EditFile>()
+            .single { it.relPath == "work/configs/fs_config-system" }
+        val pruned = fsConfig.transform(
+            "system/app/Facebook 0 0 755 capabilities=0x0\n" +
+                "system/app/Facebook/Facebook.apk 0 0 644 capabilities=0x0\n" +
+                "system/app/FacebookLite 0 0 755 capabilities=0x0\n",
         )
-        val ctx = createContext(enabled = true)
-        val plan = stage.plan(ctx)
-
-        assertEquals(2, plan.size)
-        val writeStep = plan[0] as PipelineStep.WriteFile
-        assertEquals("work/debloat/selection.json", writeStep.relPath)
-        assertTrue(writeStep.content.decodeToString().contains("com.google.android.youtube"))
-
-        val checkStep = plan[1] as PipelineStep.Check
-        assertEquals("debloat applied", checkStep.label)
-
-        // Fails if runtime value is missing or not ok
-        val failMsg = checkStep.verify(emptyMap())
-        assertNotNull(failMsg)
-
-        // Succeeds if runtime value is ok
-        val okMsg = checkStep.verify(mapOf("debloat.apply.result" to "ok"))
-        assertNull(okMsg)
-
-        val outputs = stage.outputs(ctx)
-        assertEquals(listOf("work/debloat/selection.json"), outputs)
+        // system is system-as-root: its fs_config paths are relative to the image root.
+        assertEquals("system/app/FacebookLite 0 0 755 capabilities=0x0\n", pruned, "only that folder, not a prefix")
+        assertTrue(plan.last() is PipelineStep.WriteFile)
     }
 
     @Test
-    fun `enabled with a Rejected resolution plans a failing Check naming the code`() {
-        val rejectionCode = "PROTECTED_ENTRY"
-        val stage = DebloatStage(
-            debloatPlanner = {
-                DebloatResolution.Rejected(
-                    ValidationReport(
-                        errors = listOf(
-                            ValidationError(
-                                stageId = StageId.DEBLOAT,
-                                objectId = null,
-                                fieldPath = "system:etc/hosts",
-                                code = rejectionCode,
-                                severity = Severity.ERROR,
-                                message = "Protected entry cannot be removed",
-                            ),
-                        ),
-                    ),
-                )
-            },
-        )
-        val ctx = createContext(enabled = true)
-        val plan = stage.plan(ctx)
-
-        assertEquals(1, plan.size)
-        val checkStep = plan.first() as PipelineStep.Check
-        val error = checkStep.verify(emptyMap())
-        assertNotNull(error)
-        assertTrue(error.contains(rejectionCode))
+    fun `picking a protected app fails the stage instead of removing it`() {
+        val settings = DebloatSettings(enabled = true, removeSelectors = listOf("system:system/priv-app/SystemUI"))
+        val plan = DebloatStage().plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing)))
+        val check = plan.filterIsInstance<PipelineStep.Check>().single()
+        assertTrue(check.verify(emptyMap())!!.contains("PROTECTED_ENTRY"))
+        assertTrue(plan.none { it is PipelineStep.Tool && it.command.toolId == "rm" })
     }
 
     @Test
-    fun `cache key changes when debloat settings change`() {
+    fun `file_context entries are matched as escaped regex paths`() {
+        val text = "/system/app/Face\\.book u:object_r:system_file:s0\n/system/app/Other u:object_r:system_file:s0\n"
+        assertEquals(
+            "/system/app/Other u:object_r:system_file:s0\n",
+            SidecarEditor.withoutFileContext(text, "system", listOf("system/app/Face.book")),
+        )
+        assertEquals(
+            "",
+            SidecarEditor.withoutFileContext("/product/app/X u:object_r:system_file:s0\n", "product", listOf("app/X")),
+        )
+    }
+
+    @Test
+    fun `changing the picks changes the cache key`() {
         val stage = DebloatStage()
-        val ctxDisabled = createContext(enabled = false)
-        val ctxEnabled = createContext(enabled = true)
-
-        val keyDisabled = stage.computeCacheKey(ctxDisabled, "prev")
-        val keyEnabled = stage.computeCacheKey(ctxEnabled, "prev")
-
-        assertNotEquals(keyDisabled, keyEnabled)
+        fun picks(app: String) =
+            ctx(DebloatSettings(enabled = true, removeSelectors = listOf("system:system/app/$app")))
+        val a = stage.computeCacheKey(picks("A"), "p")
+        val b = stage.computeCacheKey(picks("B"), "p")
+        assertNotEquals(a, b)
     }
 
     @Test
-    fun `cache key changes with the decision`() {
-        val decision1 = DebloatDecision(
-            removals = listOf(
-                DebloatResolvedRemoval("system", "app/A.apk", 100L, null, RemovalReason.PRESET, emptyList()),
-            ),
-            kept = emptyList(),
-            logicalBytesFreed = 100L,
+    fun vendorRenamedCoreAppsAreProtectedButLookalikesAreNot() {
+        fun app(path: String) = org.ide.lti.core.domain.debloat.DebloatCandidate("system", path, 1, null)
+        val inventory = org.ide.lti.core.domain.debloat.DebloatInventory
+        val core = listOf(
+            "priv-app/SystemUI_MFV_tablet_abroad",
+            "priv-app/SettingsProvider_MFV",
+            "priv-app/Telecom_MFV",
+            "app/WebViewGoogle64",
+            "priv-app/DocumentsUIGoogle",
+            "priv-app/MediaProviderLegacy",
+            "priv-app/Shell",
         )
-        val decision2 = DebloatDecision(
-            removals = listOf(
-                DebloatResolvedRemoval("system", "app/B.apk", 200L, null, RemovalReason.PRESET, emptyList()),
-            ),
-            kept = emptyList(),
-            logicalBytesFreed = 200L,
-        )
-
-        val stage1 = DebloatStage(debloatPlanner = { DebloatResolution.Resolved(decision1) })
-        val stage2 = DebloatStage(debloatPlanner = { DebloatResolution.Resolved(decision2) })
-
-        val ctx = createContext(enabled = true)
-        val key1 = stage1.computeCacheKey(ctx, "prev")
-        val key2 = stage2.computeCacheKey(ctx, "prev")
-
-        assertNotEquals(key1, key2)
+        for (core in core) {
+            assertTrue(inventory.isProtected(app(core)), core)
+        }
+        for (other in listOf("app/ShellExtras", "app/PhoneticKeyboard", "app/YouTube")) {
+            assertFalse(inventory.isProtected(app(other)), other)
+        }
     }
 }

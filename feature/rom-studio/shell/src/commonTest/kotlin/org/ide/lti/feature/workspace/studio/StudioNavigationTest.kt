@@ -9,17 +9,21 @@
  */
 package org.ide.lti.feature.workspace.studio
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.domain.ports.InMemoryStudioPresentationStore
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.studio.ScrollAnchor
 import org.ide.lti.core.model.studio.StudioPresentation
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 import kotlin.test.AfterTest
@@ -48,6 +52,44 @@ class StudioNavigationTest {
     }
 
     @Test
+    fun saveWaitsForPendingEditsAndReportsFailures() = runTest(testDispatcher) {
+        for (fail in listOf(false, true)) {
+            val gate = CompletableDeferred<Unit>()
+            val store = object : WorkspaceSettingsStore {
+                override suspend fun current(workspaceId: String): ConfigurationSnapshot? = null
+                override suspend fun device(workspaceId: String) = null
+                override suspend fun update(
+                    workspaceId: String,
+                    change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
+                ): Result<ConfigurationSnapshot> = error("not used")
+                override suspend fun flush(workspaceId: String): Result<Unit> {
+                    gate.await()
+                    return if (fail) Result.failure(IllegalStateException("Save failed")) else Result.success(Unit)
+                }
+            }
+            val vm = StudioViewModel(
+                InMemoryStudioPresentationStore(),
+                initialWorkspaceId = "ws",
+                settingsStore = store,
+            )
+            vm.markDirty()
+            vm.saveWorkspace()
+            runCurrent()
+            assertTrue(vm.shellState.value.saveOperation is OperationUiState.Running)
+            assertTrue(vm.shellState.value.hasUnsavedChanges)
+            gate.complete(Unit)
+            runCurrent()
+            if (fail) {
+                assertTrue(vm.shellState.value.saveOperation is OperationUiState.Failed)
+                assertTrue(vm.shellState.value.hasUnsavedChanges)
+            } else {
+                assertTrue(vm.shellState.value.saveOperation is OperationUiState.Succeeded)
+                assertFalse(vm.shellState.value.hasUnsavedChanges)
+            }
+        }
+    }
+
+    @Test
     fun catalogHasExactlyEightStagesInContractOrderWithExactSubobjectCounts() {
         val stages = CanonicalStageDescriptors.ALL
         assertEquals(8, stages.size)
@@ -56,7 +98,7 @@ class StudioNavigationTest {
             StageId.FIRMWARE_ACQUISITION to 5,
             StageId.FIRMWARE_EXTRACTION to 5,
             StageId.WORK_TREE_ASSEMBLY to 5,
-            StageId.DEBLOAT to 6,
+            StageId.DEBLOAT to 5,
             StageId.MODULE_APPLICATION to 6,
             StageId.BUILD_FLASHABLE_ZIP to 7,
             StageId.GENERATE_OTA_MANIFEST to 5,
@@ -81,7 +123,7 @@ class StudioNavigationTest {
         val uniqueIds = allIds.toSet()
 
         assertEquals(allIds.size, uniqueIds.size, "Duplicate subobject IDs found: ${allIds - uniqueIds}")
-        assertEquals(47, allSubobjects.size)
+        assertEquals(46, allSubobjects.size)
     }
 
     @Test

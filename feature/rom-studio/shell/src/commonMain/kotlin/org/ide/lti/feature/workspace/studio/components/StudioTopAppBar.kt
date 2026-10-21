@@ -110,28 +110,15 @@ internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Mod
             is DisplayValue.Available -> target.text
             is DisplayValue.Unavailable -> target.reason
         }
-        val targetText = if (rawTargetText.contains("_")) {
-            rawTargetText.substringBefore("_")
-        } else if (rawTargetText.isBlank() || rawTargetText.startsWith("No active")) {
-            "PQ84P01"
-        } else {
-            rawTargetText
-        }
+        val targetText = rawTargetText.ifBlank { "No workspace" }
         val rawProfileText = when (val p = targetContext.profile) {
             is DisplayValue.Available -> p.text
             is DisplayValue.Unavailable -> p.reason
         }
-        val profileText = if (rawProfileText.isBlank() ||
-            rawProfileText.startsWith("Environment") ||
-            rawProfileText == "Default"
-        ) {
-            "Development"
-        } else {
-            rawProfileText
-        }
+        val profileText = rawProfileText.ifBlank { "No device" }
         val revText = when (val rev = targetContext.revision) {
             is DisplayValue.Available -> rev.text
-            is DisplayValue.Unavailable -> "rev 4"
+            is DisplayValue.Unavailable -> null
         }
 
         // Target Specifier Badge Pill
@@ -183,13 +170,16 @@ internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Mod
                 .background(MaterialTheme.colorScheme.outline),
         )
 
-        Text(
-            text = "Target $revText",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.Micro,
-            fontFamily = ideFontFamily(),
-        )
+        if (revText != null) {
+            Text(
+                text = "Device $revText",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+            )
+        }
 
+        val badge = targetContext.draftBadge ?: return@Row
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
@@ -203,7 +193,7 @@ internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Mod
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = targetContext.draftBadge ?: "Draft changes",
+                text = badge,
                 color = GlassTheme.diagnosticColors.warning,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),

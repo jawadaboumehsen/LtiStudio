@@ -16,12 +16,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.data.repository.target.WorkspaceFolderDeviceRepository.Companion.DeviceJson
 import org.ide.lti.core.domain.ports.DestinationExistsException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.ports.ProvisioningSpec
 import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceKeys
@@ -43,6 +46,7 @@ public class RemoteWorkspaceProvisioner(
     private val cancelledSpecs = ConcurrentHashMap.newKeySet<String>()
 
     private companion object {
+        const val DEVICE_FILE = WorkspaceDeviceRepository.FILE_NAME
         const val GLOBAL_AVB_KEY_RELATIVE_PATH = "security/avb/lti_rsa4096.pem"
         val LAYOUT_DIRS = listOf("firmware", "work", "modules", "keys", "out/images", "out/package", "runs", ".cache")
     }
@@ -53,11 +57,13 @@ public class RemoteWorkspaceProvisioner(
     override fun provision(spec: ProvisioningSpec): Flow<ProvisioningEvent> = flow {
         val dest = spec.destinationLinuxPath
         require(dest.startsWith("/")) { "Destination must be an absolute Linux path: $dest" }
-        val parentDir = dest.substringBeforeLast('/').ifEmpty { "/" }
+        // Every path below is absolute, so commands run from "/": the folder that will hold the workspace does not
+        // exist before the first workspace on a machine, and the service refuses a missing working directory.
+        val cwd = "/"
         val tmp = "$dest.tmp-${spec.manifest.id}"
 
         // Destination collision is a hard error the use case maps to DestinationExists (FR-007).
-        if (run(parentDir, "test", "-e", dest).exitCode == 0) {
+        if (run(cwd, "test", "-e", dest).exitCode == 0) {
             val msg = "Destination already exists: $dest"
             emit(ProvisioningEvent.Failed("check_destination", msg))
             throw DestinationExistsException(msg)
@@ -66,12 +72,14 @@ public class RemoteWorkspaceProvisioner(
         try {
             checkNotCancelled(spec, dest)
             emit(ProvisioningEvent.Step("layout", "Creating workspace directory layout"))
-            createLayout(parentDir, tmp)
+            createLayout(cwd, tmp)
             checkNotCancelled(spec, dest)
 
             emit(ProvisioningEvent.Step("config", "Writing workspace configuration"))
             upload("$tmp/workspace.json", json.encodeToString(spec.manifest), "config")
             upload("$tmp/config.json", json.encodeToString(spec.snapshot), "config")
+            // The workspace owns a copy of the template device, kept in its own folder.
+            upload("$tmp/$DEVICE_FILE", DeviceJson.encodeToString(spec.target), "config")
             checkNotCancelled(spec, dest)
 
             emit(ProvisioningEvent.Step("key", "Provisioning workspace security keys"))
@@ -79,16 +87,16 @@ public class RemoteWorkspaceProvisioner(
             checkNotCancelled(spec, dest)
 
             emit(ProvisioningEvent.Step("validate", "Validating workspace readiness"))
-            validate(spec, parentDir, tmp)
+            validate(spec, cwd, tmp)
             checkNotCancelled(spec, dest)
 
             emit(ProvisioningEvent.Step("promote", "Promoting workspace to final destination"))
-            val mvRes = run(parentDir, "mv", tmp, dest)
+            val mvRes = run(cwd, "mv", tmp, dest)
             if (mvRes.exitCode != 0) throw StepFailure("promote", "Failed to promote workspace: ${mvRes.stderr}")
 
             emit(ProvisioningEvent.Completed(keys))
         } catch (failure: StepFailure) {
-            run(parentDir, "rm", "-rf", tmp)
+            run(cwd, "rm", "-rf", tmp)
             emit(ProvisioningEvent.Failed(failure.step, failure.message.orEmpty()))
         } finally {
             cancelledSpecs.remove(spec.manifest.id)
@@ -113,8 +121,8 @@ public class RemoteWorkspaceProvisioner(
         }
     }
 
-    private suspend fun createLayout(parentDir: String, tmp: String) {
-        val mkdirRes = run(parentDir, "mkdir", listOf("-p") + LAYOUT_DIRS.map { "$tmp/$it" })
+    private suspend fun createLayout(cwd: String, tmp: String) {
+        val mkdirRes = run(cwd, "mkdir", listOf("-p") + LAYOUT_DIRS.map { "$tmp/$it" })
         if (mkdirRes.exitCode != 0) throw StepFailure("layout", "Failed to create directories: ${mkdirRes.stderr}")
     }
 
@@ -136,11 +144,12 @@ public class RemoteWorkspaceProvisioner(
         throw StepFailure("key", "Key provisioning failed: ${e.message}")
     }
 
-    private suspend fun validate(spec: ProvisioningSpec, parentDir: String, tmp: String) {
+    private suspend fun validate(spec: ProvisioningSpec, cwd: String, tmp: String) {
         readBack<WorkspaceManifest>("$tmp/workspace.json")
         readBack<ConfigurationSnapshot>("$tmp/config.json")
+        readBack<TargetDevice>("$tmp/$DEVICE_FILE", DeviceJson)
         LAYOUT_DIRS.map { "$tmp/$it" }.forEach { dir ->
-            if (run(parentDir, "test", "-d", dir).exitCode != 0) {
+            if (run(cwd, "test", "-d", dir).exitCode != 0) {
                 throw StepFailure("validate", "Missing layout directory: $dir")
             }
         }
@@ -160,10 +169,10 @@ public class RemoteWorkspaceProvisioner(
         }
     }
 
-    private suspend inline fun <reified T> readBack(remotePath: String) {
+    private suspend inline fun <reified T> readBack(remotePath: String, format: Json = json) {
         val name = remotePath.substringAfterLast('/')
         val bytes = transport.downloadFile(remotePath)
-        val decoded = bytes?.let { runCatching { json.decodeFromString<T>(it.decodeToString()) } }
+        val decoded = bytes?.let { runCatching { format.decodeFromString<T>(it.decodeToString()) } }
         val failure = when {
             decoded == null -> "Failed to read back $name"
             decoded.isFailure -> "$name is corrupt: ${decoded.exceptionOrNull()?.message}"

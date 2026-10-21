@@ -180,7 +180,7 @@ class PluginPresentationStateTest {
         )
 
         // User selected item B
-        val selectedKey = "pubB:modB"
+        val selectedKey = "pubB:modB@1.0"
 
         // Filter for "mod" (matches both) -> selection remains item B
         val query = "mod"
@@ -213,7 +213,7 @@ class PluginPresentationStateTest {
             ),
         )
 
-        val selectedKey = "pubB:modB"
+        val selectedKey = "pubB:modB@1.0"
 
         // Filter for "modA" (excludes item B) -> selection falls back to first matching (item A)
         val query = "modA"
@@ -239,9 +239,65 @@ class PluginPresentationStateTest {
 
         val query = "nonexistent"
         val filtered = records.filter { it.identity.id.contains(query) }
-        val resolved = resolveInstalledSelection(filtered, "pubA:modA")
+        val resolved = resolveInstalledSelection(filtered, "pubA:modA@1.0")
 
         assertNull(resolved)
+    }
+
+    @Test
+    fun anOlderVersionNothingUsesIsFreeToUninstall() {
+        fun record(id: String, version: String, deps: List<String> = emptyList()) = InstalledRecord(
+            identity = PackageIdentity("p", id, version, "sha$id$version"),
+            trust = TrustDecision.TRUSTED_SIGNATURE,
+            enabledInWorkspaces = emptyList(),
+            revoked = false,
+            archived = false,
+            dependencies = deps.map { org.ide.lti.core.model.plugin.DependencyRef("p", it, "1.0.0") },
+            conflicts = emptyList(),
+        )
+        val refs = packageReferences(
+            listOf(
+                record("keybox", "1.0.0"),
+                record("keybox", "1.1.0"),
+                record("pif", "1.0.0", listOf("keybox")),
+                record("pif", "1.1.0", listOf("keybox")),
+            ),
+        )
+
+        assertEquals(listOf("Package 'p:pif'"), refs["p:keybox@1.1.0"])
+        assertEquals(emptyList(), refs["p:keybox@1.0.0"].orEmpty())
+    }
+
+    @Test
+    fun aVersionAWorkspaceBuildsWithCannotBeUninstalled() {
+        val record = InstalledRecord(
+            identity = PackageIdentity("p", "adb", "1.1.0", "sha"),
+            trust = TrustDecision.TRUSTED_UNVERIFIED,
+            enabledInWorkspaces = emptyList(),
+            revoked = false,
+            archived = false,
+            dependencies = emptyList(),
+            conflicts = emptyList(),
+        )
+        val refs = packageReferences(listOf(record), mapOf("p:adb@1.1.0" to listOf("fw-baseline")))
+        assertEquals(listOf("Workspace 'fw-baseline'"), refs["p:adb@1.1.0"])
+    }
+
+    @Test
+    fun twoVersionsOfOnePluginAreTwoRows() {
+        fun record(version: String) = InstalledRecord(
+            identity = PackageIdentity("pubA", "modA", version, "sha$version"),
+            trust = TrustDecision.TRUSTED_SIGNATURE,
+            enabledInWorkspaces = emptyList(),
+            revoked = false,
+            archived = false,
+            dependencies = emptyList(),
+            conflicts = emptyList(),
+        )
+        val records = listOf(record("1.0.0"), record("1.1.0"))
+
+        assertEquals(listOf("pubA:modA@1.0.0", "pubA:modA@1.1.0"), records.map { it.rowKey })
+        assertEquals("1.1.0", resolveInstalledSelection(records, "pubA:modA@1.1.0")?.identity?.version)
     }
 
     @Test

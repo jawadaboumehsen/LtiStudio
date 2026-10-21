@@ -42,6 +42,18 @@ class LtiPreferencesDataSourceTest {
     }
 
     @Test
+    fun testAppearanceIsSavedAndReadBack() = runTest {
+        val settings = MapSettings()
+        val dataSource = LtiPreferencesDataSource(settings, Dispatchers.Unconfined)
+        assertEquals(org.ide.lti.core.model.user.AppearanceSettings(), dataSource.userData.first().appearance)
+
+        val chosen = org.ide.lti.core.model.user.AppearanceSettings("emerald", compact = true, textScalePercent = 125)
+        dataSource.setAppearance(chosen)
+
+        assertEquals(chosen, LtiPreferencesDataSource(settings, Dispatchers.Unconfined).userData.first().appearance)
+    }
+
+    @Test
     fun testSetThemeUpdatesFlowAndSettings() = runTest {
         val settings = MapSettings()
         val dataSource = LtiPreferencesDataSource(settings, Dispatchers.Unconfined)

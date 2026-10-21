@@ -70,11 +70,6 @@ public fun WorkspaceNavigator(
             label = "Artifacts",
             icon = "archive",
         ),
-        IdeNavigatorItem(
-            id = WorkspaceSection.TargetProfile.name,
-            label = "Target profile",
-            icon = "phone",
-        ),
     )
 
     val revisionSubtitle = when (val rev = uiState.targetContext?.revision) {

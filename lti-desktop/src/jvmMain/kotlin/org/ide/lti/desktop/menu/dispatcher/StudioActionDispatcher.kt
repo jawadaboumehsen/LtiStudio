@@ -18,6 +18,9 @@ fun interface StudioActionDispatcher {
      * Dispatches the specified [StudioAction] to its registered handler.
      */
     fun dispatch(action: StudioAction)
+
+    /** Whether [action] has a handler: a shortcut without one is left to the focused control (a text field). */
+    fun handles(action: StudioAction): Boolean = true
 }
 
 /**
@@ -48,4 +51,6 @@ class DefaultStudioActionDispatcher(
     override fun dispatch(action: StudioAction) {
         handlers[action]?.invoke()
     }
+
+    override fun handles(action: StudioAction): Boolean = action in handlers
 }

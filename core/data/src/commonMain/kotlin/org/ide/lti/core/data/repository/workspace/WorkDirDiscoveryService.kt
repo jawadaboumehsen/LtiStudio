@@ -68,7 +68,9 @@ public class WorkDirDiscoveryService(
                                     lastOpened = now,
                                     type = WorkspaceType.REMOTE_WSL,
                                     targetBinding = manifest.targetBinding,
-                                    targetDisplayName = manifest.targetBinding.profileId,
+                                    // A workspace bound to itself owns its device; its id is not a device name.
+                                    targetDisplayName = manifest.targetBinding.profileId
+                                        .takeIf { it != manifest.id },
                                 ),
                             )
                         } catch (_: Exception) {

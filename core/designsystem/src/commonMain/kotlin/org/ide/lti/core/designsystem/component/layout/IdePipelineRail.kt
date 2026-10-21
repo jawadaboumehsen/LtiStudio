@@ -28,10 +28,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material3.ColorScheme
@@ -79,7 +81,15 @@ data class IdePipelineStageItem(
     val icon: String,
     val enabled: Boolean = true,
     val disabledReason: String? = null,
+    val status: RailStageStatus = RailStageStatus.NONE,
 )
+
+/** What a stage's dot on the rail says: configured (no errors), has errors, or nothing to show. */
+enum class RailStageStatus(val label: String?) {
+    NONE(null),
+    DONE("Configured"),
+    ERROR("Has errors"),
+}
 
 /**
  * Persistent pipeline rail exposing ROM workflow stages.
@@ -152,7 +162,8 @@ private fun PipelineRailItem(
     )
 
     if (iconsOnly) {
-        val tooltip = stage.label + (stage.disabledReason?.let { " ($it)" } ?: "")
+        val tooltip = stage.label + listOfNotNull(stage.status.label, stage.disabledReason)
+            .joinToString("; ").let { if (it.isEmpty()) "" else " ($it)" }
         GlassTooltipArea(
             tooltipText = tooltip,
             tooltipPlacement = GlassTooltipPlacement.End,
@@ -228,6 +239,7 @@ private fun PipelineRailItemBox(
     ) {
         if (iconsOnly) {
             RenderRailIcon(stageId = stage.id, contentColor = visuals.contentColor)
+            StatusDot(stage.status, Modifier.align(Alignment.TopEnd).padding(Spacing.ExtraSmall))
         } else {
             Row(
                 modifier = Modifier
@@ -244,10 +256,23 @@ private fun PipelineRailItemBox(
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     fontFamily = GlassFontFamily.ide(),
                     maxLines = 1,
+                    modifier = Modifier.weight(1f),
                 )
+                StatusDot(stage.status)
             }
         }
     }
+}
+
+/** A small dot in the item's corner: green when the stage is configured, red when it has errors. */
+@Composable
+private fun StatusDot(status: RailStageStatus, modifier: Modifier = Modifier) {
+    val color = when (status) {
+        RailStageStatus.NONE -> return
+        RailStageStatus.DONE -> GlassTheme.diagnosticColors.success
+        RailStageStatus.ERROR -> GlassTheme.diagnosticColors.error
+    }
+    Box(modifier = modifier.size(IconSize.Indicator).background(color, CircleShape))
 }
 
 private data class RailItemVisuals(val bg: Color, val contentColor: Color, val borderColor: Color?)
@@ -350,5 +375,6 @@ private fun resolveRailIcon(stageId: String): ImageVector = when (stageId.lowerc
     "wsl_runtime", "projects", "workspaces" -> Icons.Default.Folder
     "build_service", "tools" -> Icons.Default.Build
     "recovery" -> Icons.Default.Restore
+    "device" -> Icons.Default.PhoneAndroid
     else -> Icons.Default.Construction
 }

@@ -30,7 +30,7 @@ class BuildFlashableZipStageTest {
             BuildFlashableZipStage.PLATFORM_CERT_SHA1 to "plat123  cert",
             RuntimeKeys.RUN_TIMESTAMP to "1726056000",
             RuntimeKeys.RUN_DATE to "20260914",
-            RuntimeKeys.BUILD_PROP to SimulatedExecutionPort.STOCK_BUILD_PROP,
+            BuildFlashableZipStage.PACKAGE_BUILD_PROP to SimulatedExecutionPort.STOCK_BUILD_PROP,
             RuntimeKeys.ZIP_SHA256 to "zipsha256  rom.zip",
             RuntimeKeys.ZIP_SIZE to "1000000",
         )
@@ -112,17 +112,15 @@ class BuildFlashableZipStageTest {
     @Test
     fun `packagePolicy fields reach the updater script`() {
         val ctx = fullContext()
-        val customPolicySnap = ctx.snapshot.copy(
-            build = ctx.snapshot.build.copy(
-                packagePolicy = ctx.snapshot.build.packagePolicy.copy(
-                    excludeVbmeta = false,
-                    recoverySystemMountPoint = "/custom_root",
-                    metadataPolicy = MetadataPolicy.PACKAGE_ONLY,
-                    bootSlots = listOf("a"),
-                ),
+        val customPolicy = ctx.target.copy(
+            packagePolicy = ctx.target.packagePolicy.copy(
+                excludeVbmeta = false,
+                recoverySystemMountPoint = "/custom_root",
+                metadataPolicy = MetadataPolicy.PACKAGE_ONLY,
+                bootSlots = listOf("a"),
             ),
         )
-        val steps = stage.plan(ctx.copy(snapshot = customPolicySnap))
+        val steps = stage.plan(ctx.copy(target = customPolicy))
         val scriptStep = steps.filterIsInstance<PipelineStep.WriteFile>().first {
             it.relPath.endsWith("updater-script")
         }
@@ -166,37 +164,25 @@ class BuildFlashableZipStageTest {
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedAlign, prevKey))
 
         val mutatedBootSlots = ctx.copy(
-            snapshot = ctx.snapshot.copy(
-                build = ctx.snapshot.build.copy(
-                    packagePolicy = ctx.snapshot.build.packagePolicy.copy(bootSlots = listOf("a")),
-                ),
-            ),
+            target = ctx.target.copy(packagePolicy = ctx.target.packagePolicy.copy(bootSlots = listOf("a"))),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedBootSlots, prevKey))
 
         val mutatedExcludeVbmeta = ctx.copy(
-            snapshot = ctx.snapshot.copy(
-                build = ctx.snapshot.build.copy(
-                    packagePolicy = ctx.snapshot.build.packagePolicy.copy(excludeVbmeta = false),
-                ),
-            ),
+            target = ctx.target.copy(packagePolicy = ctx.target.packagePolicy.copy(excludeVbmeta = false)),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedExcludeVbmeta, prevKey))
 
         val mutatedMountPoint = ctx.copy(
-            snapshot = ctx.snapshot.copy(
-                build = ctx.snapshot.build.copy(
-                    packagePolicy = ctx.snapshot.build.packagePolicy.copy(recoverySystemMountPoint = "/system"),
-                ),
+            target = ctx.target.copy(
+                packagePolicy = ctx.target.packagePolicy.copy(recoverySystemMountPoint = "/system"),
             ),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedMountPoint, prevKey))
 
         val mutatedMetadataPolicy = ctx.copy(
-            snapshot = ctx.snapshot.copy(
-                build = ctx.snapshot.build.copy(
-                    packagePolicy = ctx.snapshot.build.packagePolicy.copy(metadataPolicy = MetadataPolicy.PACKAGE_ONLY),
-                ),
+            target = ctx.target.copy(
+                packagePolicy = ctx.target.packagePolicy.copy(metadataPolicy = MetadataPolicy.PACKAGE_ONLY),
             ),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedMetadataPolicy, prevKey))

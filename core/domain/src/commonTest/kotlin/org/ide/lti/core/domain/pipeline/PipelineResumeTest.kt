@@ -19,7 +19,7 @@ import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.StepStatus
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
 import org.ide.lti.core.domain.repository.snapshot.InMemorySnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.InMemoryWorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
@@ -69,20 +69,6 @@ class PipelineResumeTest {
         override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
 
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
-    }
-
-    private class FakeTargetRepo(private val target: TargetDevice) : TargetRepository {
-        override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(listOf(target))
-
-        override fun getSelectedTarget(): Flow<TargetDevice> = flowOf(target)
-
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(target)
-
-        override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-
-        override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
     }
 
     @Test
@@ -448,7 +434,7 @@ class PipelineResumeTest {
 
         val snapshotRepo = InMemorySnapshotRepository()
         snapshotRepo.saveSnapshot(ctx.snapshot)
-        val targetRepo = FakeTargetRepo(fixture.targetGlobal)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf(ctx.workspace.id to fixture.targetGlobal))
         val workspaceRepo = FakeWorkspaceRepo(ctx.workspace)
 
         val run =
@@ -468,7 +454,7 @@ class PipelineResumeTest {
             ReattachRunUseCase(
                 workspaceRepository = workspaceRepo,
                 snapshotRepository = snapshotRepo,
-                targetRepository = targetRepo,
+                workspaceDeviceRepository = targetRepo,
                 runRepository = repo,
                 orchestrator = orch,
             )

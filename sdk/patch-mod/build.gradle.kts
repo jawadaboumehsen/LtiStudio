@@ -27,7 +27,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core.domain)
-            implementation(projects.core.model)
+            // api: a mod's code uses the model types (FileMetadata, Condition, PluginManifest) the DSL takes.
+            api(projects.core.model)
             implementation(libs.kotlinx.serialization.json)
         }
         desktopMain.dependencies {
@@ -52,6 +53,7 @@ listOf(
     "generateModPlan" to "Generate and validate the author mod plan",
     "validateMod" to "Validate the author mod plan and manifest",
     "testMod" to "Run the author scenarios against the resolved plan",
+    "checkMod" to "Apply the mod's APK/JAR edits to a decoded firmware (-PmodDecoded=<dir>), without building",
     "packageMod" to "Package the author mod into a .lti-mod.zip",
     "inspectMod" to "Inspect a packaged .lti-mod.zip without executing it",
 ).forEach { (taskName, taskDescription) ->
@@ -62,11 +64,14 @@ listOf(
         mainClass.set("org.ide.lti.sdk.patchmod.cli.PatchModCliKt")
         val modProject = providers.gradleProperty("modProject").orElse(defaultModProject)
         val modPackage = providers.gradleProperty("modPackage")
+        val modDecoded = providers.gradleProperty("modDecoded")
         argumentProviders.add(
             CommandLineArgumentProvider {
                 val pkg = modPackage.orNull
                 if (taskName == "inspectMod" && pkg != null) {
                     listOf(taskName, "--package", pkg)
+                } else if (taskName == "checkMod") {
+                    listOf(taskName, "--project", modProject.get(), "--decoded", modDecoded.getOrElse("."))
                 } else {
                     listOf(taskName, "--project", modProject.get())
                 }

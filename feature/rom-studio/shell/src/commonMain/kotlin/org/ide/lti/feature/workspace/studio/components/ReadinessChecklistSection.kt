@@ -214,11 +214,7 @@ private fun ReadinessRowItem(
             text = item.description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
-            fontFamily = if (item.id == ReadinessId.PUBLICATION) {
-                GlassFontFamily.code()
-            } else {
-                GlassFontFamily.ide()
-            },
+            fontFamily = GlassFontFamily.ide(),
             modifier = Modifier.weight(1f),
             maxLines = 2,
         )
@@ -245,7 +241,8 @@ private fun ReadinessActionButton(item: ReadinessItemUi, onAction: (WorkspaceAct
         isPrimary = item.reviewRequired && item.id == ReadinessId.SOURCE,
         isHovered = isBtnHovered,
         isPressed = isBtnPressed,
-        isPublication = item.id == ReadinessId.PUBLICATION,
+        // Only an unset publication is the quiet "later" item; set up, it reads like the others.
+        isPublication = item.id == ReadinessId.PUBLICATION && item.severity != ReadinessSeverity.Ready,
     )
 
     Box(
@@ -326,9 +323,9 @@ private fun mapReadinessSeverity(item: ReadinessItemUi): IdeStatusSeverity = whe
 }
 
 private fun resolveActionLabel(item: ReadinessItemUi): String = when (item.id) {
-    ReadinessId.SOURCE -> "Choose source"
+    ReadinessId.SOURCE -> if (item.severity == ReadinessSeverity.Ready) "Review" else "Choose source"
     ReadinessId.DEBLOAT -> "Review"
     ReadinessId.PATCHES -> "Manage"
     ReadinessId.SIGNING -> "Configure"
-    ReadinessId.PUBLICATION -> "Set up later"
+    ReadinessId.PUBLICATION -> if (item.severity == ReadinessSeverity.Ready) "Review" else "Set up"
 }

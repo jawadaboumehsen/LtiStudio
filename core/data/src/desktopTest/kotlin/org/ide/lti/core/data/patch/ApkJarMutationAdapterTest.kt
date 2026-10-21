@@ -22,6 +22,7 @@ import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
 import org.ide.lti.core.model.plugin.BytecodeMatchSpec
 import org.ide.lti.core.model.plugin.HookPlacement
+import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
 import java.nio.file.Files
@@ -118,6 +119,116 @@ class ApkJarMutationAdapterTest {
     @AfterTest
     fun tearDown() {
         deleteRecursively(tempDir)
+    }
+
+    @Test
+    fun aGitPatchWithSeveralHunksAndANewFileApplies() = runBlocking {
+        val existing = "a\nb\nc\nd\ne\nf\n"
+        fakePort.members["smali/X.smali"] = existing
+        val twoHunks = """
+            diff --git a/smali/X.smali b/smali/X.smali
+            --- a/smali/X.smali
+            +++ b/smali/X.smali
+            @@ -1,2 +1,2 @@
+            -a
+            +A
+             b
+            @@ -5,2 +5,3 @@
+             e
+            +E
+             f
+        """.trimIndent() + "\n"
+        val created = """
+            diff --git a/smali/Y.smali b/smali/Y.smali
+            new file mode 100644
+            --- /dev/null
+            +++ b/smali/Y.smali
+            @@ -0,0 +1,2 @@
+            +.class public LY;
+            +.super Ljava/lang/Object;
+        """.trimIndent() + "\n"
+        val op = ConcreteOperation.ApkJarPatch(
+            id = "op_git",
+            target = PartitionPath("system", "framework/framework.jar"),
+            edits = listOf(
+                SmaliEdit("smali/X.smali", sha256Of(existing), twoHunks),
+                // A created member is pinned as empty; an empty pin would anchor by context only.
+                SmaliEdit("smali/Y.smali", sha256Of(""), created),
+            ),
+        )
+
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertEquals("A\nb\nc\nd\ne\nE\nf\n", fakePort.members["smali/X.smali"])
+        assertEquals(".class public LY;\n.super Ljava/lang/Object;\n", fakePort.members["smali/Y.smali"])
+    }
+
+    @Test
+    fun aMethodEditFindsItsClassInWhicheverDexFolderHoldsIt() = runBlocking {
+        // The firmware moved the class from smali_classes2 to smali_classes3; the edit names only the class.
+        fakePort.members["smali_classes3/com/x/Y.smali"] = ".class LY;\n.method a()V\n    return-void\n.end method\n"
+        val op = ConcreteOperation.ApkJarPatch(
+            id = "op_method",
+            target = PartitionPath("system", "framework/framework.jar"),
+            edits = listOf(
+                SmaliEdit("Lcom/x/Y;", "", "@@ @@\n+    nop\n     return-void", MethodMatch(name = "a")),
+            ),
+        )
+
+        val outcome = adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false)
+
+        assertIs<ApkJarOutcome.Applied>(outcome, outcome.toString())
+        assertEquals(
+            ".class LY;\n.method a()V\n    nop\n    return-void\n.end method\n",
+            fakePort.members["smali_classes3/com/x/Y.smali"],
+        )
+        assertEquals(listOf("Lcom/x/Y;->a()V"), outcome.receipts.single().changedMethods)
+    }
+
+    @Test
+    fun fragmentsInsertNextToTheirAnchorLineAndReplaceSwapsTheFile() = runBlocking {
+        fakePort.members["res/values/strings.xml"] = "<resources>\n    <string name=\"a\">A</string>\n</resources>\n"
+        fakePort.members["res/xml/top.xml"] = "<x>\n    <p android:key=\"featured\"/>\n</x>\n"
+        fakePort.members["smali/R.smali"] = "old\n"
+        val op = ConcreteOperation.ApkJarPatch(
+            id = "op_raw",
+            target = PartitionPath("system", "framework/framework.jar"),
+            edits = listOf(
+                SmaliEdit(
+                    "res/values/strings.xml",
+                    "",
+                    "@@ before: </resources> @@\n+    <string name=\"b\">B</string>",
+                ),
+                SmaliEdit("res/xml/top.xml", "", "@@ after: key=\"featured\" @@\n+    <p android:key=\"lti\"/>"),
+                SmaliEdit("smali/R.smali", "", "@@ replace @@\n+new"),
+            ),
+        )
+
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertEquals(
+            "<resources>\n    <string name=\"a\">A</string>\n    <string name=\"b\">B</string>\n</resources>\n",
+            fakePort.members["res/values/strings.xml"],
+        )
+        assertEquals(
+            "<x>\n    <p android:key=\"featured\"/>\n    <p android:key=\"lti\"/>\n</x>\n",
+            fakePort.members["res/xml/top.xml"],
+        )
+        assertEquals("new\n", fakePort.members["smali/R.smali"])
+    }
+
+    @Test
+    fun identicalContextIsToldApartByTheHunkLineAsGitApplyDoes() = runBlocking {
+        // The same method body twice (generated binder proxies repeat like this); the hunk targets the second.
+        val existing = "m1\nbody\nend\nm2\nbody\nend\n"
+        fakePort.members["smali/P.smali"] = existing
+        val patch = "@@ -5,2 +5,3 @@\n body\n+hooked\n end\n"
+        val op = ConcreteOperation.ApkJarPatch(
+            id = "op_line",
+            target = PartitionPath("system", "framework/framework.jar"),
+            edits = listOf(SmaliEdit("smali/P.smali", "", patch)),
+        )
+
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertEquals("m1\nbody\nend\nm2\nbody\nhooked\nend\n", fakePort.members["smali/P.smali"])
     }
 
     @Test
@@ -359,8 +470,8 @@ class ApkJarMutationAdapterTest {
         val content = "dup\nline\ndup\nline"
         fakePort.members[member] = content
 
+        // No `@@ -line` to tell the two occurrences apart (with one, the nearest is taken, as git apply).
         val diff = """
-            @@ -1,2 +1,2 @@
             -dup
             +replaced
              line

@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,22 +30,26 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
+import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.core.domain.plugin.InstallState
 import org.ide.lti.feature.plugins.components.PluginSidebar
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,27 +84,48 @@ public fun PluginManagerScreen(
         }
     }
 
+    // Typed text lives in Compose state, which updates in the same frame as the key: fed back from the view
+    // model's StateFlow (a frame later) it lagged behind fast typing and drifted from what the field showed.
+    val importPath = remember { mutableStateOf(viewModel.uiState.value.importPathInput) }
+    val marketplaceUrl = remember { mutableStateOf(viewModel.uiState.value.marketplaceUrlInput) }
+    val authorProjectPath = remember { mutableStateOf(viewModel.uiState.value.authorProjectPathInput) }
+    val searchQuery = remember { mutableStateOf(viewModel.uiState.value.searchQuery) }
+    // An installed package is done with: the next import starts from an empty path.
+    LaunchedEffect(uiState.installState is InstallState.Installed) {
+        if (uiState.installState is InstallState.Installed) importPath.value = ""
+    }
+
     val actions = remember(viewModel, onNavigateBack, onOpenSettings) {
         PluginManagerActions(
             onNavigateBack = onNavigateBack,
             onOpenSettings = onOpenSettings,
             onSelectDestination = { viewModel.selectDestination(it) },
-            onSearchQueryChange = { viewModel.setSearchQuery(it) },
+            onSearchQueryChange = {
+                searchQuery.value = it
+                viewModel.setSearchQuery(it)
+            },
             onOpenDetails = { viewModel.openDetails(it) },
             onCloseDetails = { viewModel.closeDetails() },
-            onEnableWorkspace = { record, wsId -> viewModel.enableForWorkspace(record, wsId) },
-            onDisableWorkspace = { record, wsId -> viewModel.disableForWorkspace(record, wsId) },
             onArchivePackage = { viewModel.archivePackage(it) },
             onUninstallPackage = { viewModel.uninstallPackage(it) },
-            onMarketplaceUrlChange = { viewModel.setMarketplaceUrlInput(it) },
+            onMarketplaceUrlChange = {
+                marketplaceUrl.value = it
+                viewModel.setMarketplaceUrlInput(it)
+            },
             onConfigureMarketplaceSource = { label, url -> viewModel.configureMarketplaceSource(label, url) },
             onRefreshMarketplace = { viewModel.fetchMarketplace(allowCache = false) },
             onInstallMarketplace = { entry, trust -> viewModel.startInstallFromMarketplace(entry, trust) },
-            onImportPathChange = { viewModel.setImportPathInput(it) },
+            onImportPathChange = {
+                importPath.value = it
+                viewModel.setImportPathInput(it)
+            },
             onInspectImportPath = { viewModel.inspectImportPath(it) },
             onDismissLegacyWarning = { viewModel.dismissLegacyFormatWarning() },
             onConfirmImportInstall = { viewModel.confirmImportInstall(it) },
-            onAuthorProjectPathChange = { viewModel.setAuthorProjectPathInput(it) },
+            onAuthorProjectPathChange = {
+                authorProjectPath.value = it
+                viewModel.setAuthorProjectPathInput(it)
+            },
             onCheckAuthorProject = { viewModel.checkAuthorProject(it) },
             onApproveAuthorProject = { viewModel.approveAuthorProject() },
             onRevokeAuthorProject = { viewModel.revokeAuthorProject() },
@@ -107,7 +136,12 @@ public fun PluginManagerScreen(
     }
 
     PluginManagerContent(
-        state = uiState,
+        state = uiState.copy(
+            importPathInput = importPath.value,
+            marketplaceUrlInput = marketplaceUrl.value,
+            authorProjectPathInput = authorProjectPath.value,
+            searchQuery = searchQuery.value,
+        ),
         actions = actions,
         onNavigateToSetup = onNavigateToSetup,
         modifier = modifier,
@@ -144,6 +178,20 @@ public fun PluginManagerContent(
                     onSelectDestination = onSelectGlobalDestination,
                     tagPrefix = "TopBar",
                 )
+
+                // The manager is a page of the workspace; its top-bar tab is already selected, so this is the way back.
+                GlassButton(
+                    onClick = actions.onNavigateBack,
+                    variant = GlassButtonVariant.Text,
+                    modifier = Modifier.padding(horizontal = Spacing.Small).testTag("PluginManagerBack"),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Medium),
+                    )
+                    Text("Back to workspace", fontSize = FontSize.BodySmall)
+                }
 
                 // Optional Notification or Error Status Banner
                 state.notificationMessage?.let { msg ->
@@ -190,12 +238,9 @@ public fun PluginManagerContent(
                                     records = state.installedPackages,
                                     references = state.packageReferences,
                                     searchQuery = state.searchQuery,
-                                    activeWorkspaceId = state.activeWorkspaceId,
                                     onSearchChange = actions.onSearchQueryChange,
                                     onNavigateToImport = { actions.onSelectDestination(PluginDestination.IMPORT) },
                                     onOpenDetails = actions.onOpenDetails,
-                                    onEnableWorkspace = actions.onEnableWorkspace,
-                                    onDisableWorkspace = actions.onDisableWorkspace,
                                     onArchive = actions.onArchivePackage,
                                     onUninstall = actions.onUninstallPackage,
                                 )
@@ -220,7 +265,6 @@ public fun PluginManagerContent(
                             PluginDestination.IMPORT -> {
                                 PluginImportTab(
                                     importPath = state.importPathInput,
-                                    quarantinedPath = state.importQuarantinedPath,
                                     inspection = state.importInspection,
                                     isLegacyUnsupported = state.isLegacyUnsupportedFormat,
                                     legacyFormatName = state.legacyFormatName,
@@ -256,7 +300,7 @@ public fun PluginManagerContent(
                 val rec = state.detailsRecord
                 PluginDetailsDialog(
                     record = rec,
-                    references = state.packageReferences[rec.identity.key] ?: emptyList(),
+                    references = state.packageReferences[rec.rowKey] ?: emptyList(),
                     onDismiss = actions.onCloseDetails,
                 )
             }
@@ -295,10 +339,12 @@ private fun PluginStatusBanner(message: String, isError: Boolean, onDismiss: () 
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // weight: a long message wraps instead of pushing Dismiss out of the row.
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isError) GlassTheme.diagnosticColors.error else GlassTheme.diagnosticColors.success,
+                modifier = Modifier.weight(1f),
             )
             GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Text) {
                 Text("Dismiss")

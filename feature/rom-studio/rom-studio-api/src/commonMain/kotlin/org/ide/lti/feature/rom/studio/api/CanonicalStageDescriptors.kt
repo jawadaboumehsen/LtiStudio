@@ -61,7 +61,6 @@ public object CanonicalStageDescriptors {
         iconKey = StudioIconKey.DEBLOAT,
         subobjects = listOf(
             StudioSubobject(StudioSubobjectId("inventory"), "Inventory"),
-            StudioSubobject(StudioSubobjectId("presets"), "Presets"),
             StudioSubobject(StudioSubobjectId("remove-selections"), "Remove selections"),
             StudioSubobject(StudioSubobjectId("keep-rules"), "Keep rules"),
             StudioSubobject(StudioSubobjectId("risk-review"), "Risk review"),
@@ -123,7 +122,7 @@ public object CanonicalStageDescriptors {
             StudioSubobject(StudioSubobjectId("ota-manifest"), "OTA manifest"),
             StudioSubobject(StudioSubobjectId("retention"), "Retention"),
             StudioSubobject(StudioSubobjectId("verification"), "Verification"),
-            StudioSubobject(StudioSubobjectId("publish-review-and-recovery"), "Publish review and recovery"),
+            StudioSubobject(StudioSubobjectId("publish-review-and-recovery"), "Review and publish"),
         ),
     )
 

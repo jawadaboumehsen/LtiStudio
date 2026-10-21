@@ -350,7 +350,7 @@ class WorkspaceOverviewMapperTest {
         assertEquals(ReadinessSeverity.Warning, signingItem.severity)
         assertTrue(signingItem.reviewRequired)
         assertEquals(
-            WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP),
+            WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
             state.nextAction,
         )
     }
@@ -367,7 +367,7 @@ class WorkspaceOverviewMapperTest {
 
         assertEquals(0, state.reviewCount)
         assertEquals(
-            WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP),
+            WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.RunHistory),
             state.nextAction,
         )
     }
@@ -451,5 +451,20 @@ class WorkspaceOverviewMapperTest {
         )
         assertIs<BuildStateUi.Failed>(failedState.buildState)
         assertEquals("Signing key rejected", failedState.buildState.errorMessage)
+    }
+
+    @Test
+    fun theDeviceOfTheWorkspaceItselfIsShownByNameNotByWorkspaceId() {
+        val own = testWorkspace.copy(targetBinding = TargetBinding(profileId = testWorkspace.id, profileRevision = 3))
+
+        val state = WorkspaceOverviewMapper.map(workspace = own, targetDevice = testTargetDevice)
+
+        assertEquals("Target: REDMAGIC 9 Pro (NX729J)", state.subtitle)
+        assertEquals(DisplayValue.Available("This workspace"), state.targetSummary.binding)
+        assertEquals(DisplayValue.Available("NX729J"), state.targetSummary.deviceId)
+
+        val noDevice = WorkspaceOverviewMapper.map(workspace = own)
+        assertEquals("Device configuration of this workspace", noDevice.subtitle)
+        assertTrue(!noDevice.subtitle.contains(own.id), "a workspace id is never shown as a profile")
     }
 }

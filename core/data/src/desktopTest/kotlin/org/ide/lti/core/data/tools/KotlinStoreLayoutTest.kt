@@ -99,7 +99,7 @@ class KotlinStoreLayoutTest {
         assertTrue(!intact(passes = false), "a failing check must make the version not intact")
         val script = scripts.first()
         group.outputs.forEach { out ->
-            assertTrue("/v1/${out.file}'" in script && "timeout 3" in script, "no probe for ${out.file}")
+            assertTrue("/v1/${out.file}'" in script && "timeout 10" in script, "no probe for ${out.file}")
         }
         assertTrue(script.contains("case \$rc in"), "exit codes are checked against the accepted set")
         assertTrue(script.contains("grep -Eiq"), "the output must identify the tool, not just the exit code")
@@ -107,7 +107,7 @@ class KotlinStoreLayoutTest {
 
         scripts.clear()
         intact(passes = true, probeVersion = "v2")
-        assertTrue("timeout 3" !in scripts.single(), "only the version in use is probed during a status check")
+        assertTrue("timeout 10" !in scripts.single(), "only the version in use is probed during a status check")
     }
 
     @Test

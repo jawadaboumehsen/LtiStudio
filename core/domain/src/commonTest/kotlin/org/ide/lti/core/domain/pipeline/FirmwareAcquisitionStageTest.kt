@@ -95,39 +95,11 @@ class FirmwareAcquisitionStageTest {
         assertFalse("curl" in importTools)
         assertFalse("mkdir" in importTools)
         assertFalse("mv" in importTools)
-
-        // 3. EXISTING_ARCHIVE mode
-        val existingSnap = baseContext.snapshot.copy(
-            acquisition = baseContext.snapshot.acquisition.copy(
-                mode = AcquisitionMode.EXISTING_ARCHIVE,
-                archiveRef = "fw/existing_archive.zip",
-            ),
-        )
-        val existingCtx = baseContext.copy(snapshot = existingSnap)
-        val existingOutputs = stage.outputs(existingCtx)
-        assertEquals(listOf("fw/existing_archive.zip"), existingOutputs)
-
-        val existingSteps = stage.plan(existingCtx)
-        val existingWriteFile = existingSteps.filterIsInstance<PipelineStep.WriteFile>().single()
-        assertEquals("work/acquire/policy.json", existingWriteFile.relPath)
-
-        val existingProbeCheck = existingSteps.filterIsInstance<PipelineStep.Check>()
-            .single { it.label == "verify existing archive probe" }
-        assertNull(existingProbeCheck.verify(mapOf("archive.probe.result" to "ok")))
-        assertNotNull(existingProbeCheck.verify(mapOf("archive.probe.result" to "corrupt")))
-        assertNotNull(existingProbeCheck.verify(emptyMap()))
-
-        val existingTools = existingSteps.filterIsInstance<PipelineStep.Tool>().map { it.command.toolId }
-        assertTrue("sha256sum" in existingTools)
-        assertFalse("test" in existingTools, "EXISTING_ARCHIVE must not plan import steps")
-        assertFalse("curl" in existingTools, "EXISTING_ARCHIVE must not plan download steps")
-        assertFalse("mkdir" in existingTools, "EXISTING_ARCHIVE must not plan download steps")
-        assertFalse("mv" in existingTools, "EXISTING_ARCHIVE must not plan download steps")
     }
 
     @Test
-    fun `a blank archiveRef in IMPORT_ARCHIVE and EXISTING_ARCHIVE fails with ARCHIVE_REF_MISSING`() {
-        for (mode in listOf(AcquisitionMode.IMPORT_ARCHIVE, AcquisitionMode.EXISTING_ARCHIVE)) {
+    fun `a blank archiveRef in IMPORT_ARCHIVE fails with ARCHIVE_REF_MISSING`() {
+        for (mode in listOf(AcquisitionMode.IMPORT_ARCHIVE)) {
             val blankAcquisition = unsafeAcquisitionSettings(
                 base = baseContext.snapshot.acquisition,
                 mode = mode,

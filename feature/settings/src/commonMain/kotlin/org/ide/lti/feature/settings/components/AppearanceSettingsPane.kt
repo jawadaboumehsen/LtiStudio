@@ -16,57 +16,43 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
-import org.ide.lti.core.designsystem.theme.AccentPresetColors
-import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.AccentColor
 import org.ide.lti.core.designsystem.theme.AppTheme
-import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.Appearance
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.ui.settings.AppSettingsState
+import kotlin.math.roundToInt
 
 /**
  * High-fidelity Appearance Settings Pane matching the Stitch & Fleet design standards.
  *
- * Implements:
- * - App style selection (Light, Dark, Blue Glass) with miniature window illustrations & check badges
- * - Accent color dropdown with live preview color dot
- * - Interface density segmented toggle (Comfortable vs Compact)
- * - Text size scaling dropdown (100%, 110%, 125%)
- * - Glass & motion switches (Glass effects, Fluid animations, Focus indicators)
- * - Live interactive Studio Preview Card reacting dynamically to theme, density, and transparency
- * - Action footer bar (Restore defaults, Cancel, Apply changes)
+ * Every control changes the app at once and is saved: app style (theme), glass effects and fluid animations.
+ * The preview reacts to them; Restore defaults puts them back.
  */
 // LongMethod suppressed on @Composable screen pane for appearance settings.
 @Suppress("LongMethod")
@@ -74,14 +60,9 @@ import org.ide.lti.core.ui.settings.AppSettingsState
 fun AppearanceSettingsPane(
     appSettingsState: AppSettingsState,
     onRestoreDefaults: () -> Unit,
-    onApplyChanges: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val reduceTransparency = !appSettingsState.effectsEnabled
-    var showFocusIndicators by remember { mutableStateOf(true) }
-    var isComfortable by remember { mutableStateOf(true) }
-    var selectedAccentName by remember { mutableStateOf("Cobalt Blue") }
-    var selectedTextSize by remember { mutableStateOf("100%") }
 
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
 
@@ -152,28 +133,7 @@ fun AppearanceSettingsPane(
                         }
 
                         GlassHorizontalDivider()
-
-                        // Accent Color Row
-                        AccentColorRow(
-                            selectedAccent = selectedAccentName,
-                            onSelectAccent = { selectedAccentName = it },
-                        )
-
-                        GlassHorizontalDivider()
-
-                        // Interface Density Row
-                        InterfaceDensityRow(
-                            isComfortable = isComfortable,
-                            onDensityChange = { isComfortable = it },
-                        )
-
-                        GlassHorizontalDivider()
-
-                        // Text Size Row
-                        TextSizeRow(
-                            selectedSize = selectedTextSize,
-                            onSelectSize = { selectedTextSize = it },
-                        )
+                        AppearanceChoices(appSettingsState)
                     }
                 }
 
@@ -217,17 +177,6 @@ fun AppearanceSettingsPane(
                             onCheckedChange = { appSettingsState.fluidAnimations = it },
                             toggleTestTag = "FluidAnimationsSwitch",
                         )
-
-                        GlassHorizontalDivider()
-
-                        // Focus Indicators Switch
-                        SettingsSwitchRow(
-                            title = "Focus indicators",
-                            description = "Show keyboard focus ring for navigation visibility.",
-                            checked = showFocusIndicators,
-                            onCheckedChange = { showFocusIndicators = it },
-                            toggleTestTag = "FocusIndicatorsSwitch",
-                        )
                     }
                 }
             }
@@ -254,7 +203,7 @@ fun AppearanceSettingsPane(
                 LiveStudioPreviewCard(
                     theme = currentTheme,
                     reduceTransparency = reduceTransparency,
-                    isComfortable = isComfortable,
+                    isComfortable = !appSettingsState.appearance.compact,
                 )
             }
         }
@@ -283,13 +232,7 @@ fun AppearanceSettingsPane(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = {
-                            showFocusIndicators = true
-                            isComfortable = true
-                            selectedAccentName = "Cobalt Blue"
-                            selectedTextSize = "100%"
-                            onRestoreDefaults()
-                        },
+                        onClick = onRestoreDefaults,
                     )
                     .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                 contentAlignment = Alignment.Center,
@@ -302,320 +245,12 @@ fun AppearanceSettingsPane(
                 )
             }
 
-            // Right Action Cluster: Hint + Cancel + Apply changes + Design concept
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-            ) {
-                Text(
-                    text = "Changes apply to this app only.",
-                    fontSize = FontSize.LabelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                // Cancel Button
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Small)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .border(
-                            width = GlassDimens.HairlineBorder,
-                            color = MaterialTheme.colorScheme.outline,
-                            shape = GlassShapes.Small,
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onRestoreDefaults,
-                        )
-                        .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Cancel",
-                        fontSize = FontSize.BodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-
-                // Apply Changes Button
-                Box(
-                    modifier = Modifier
-                        .clip(GlassShapes.Small)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .border(
-                            width = GlassDimens.HairlineBorder,
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = GlassShapes.Small,
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onApplyChanges,
-                        )
-                        .padding(horizontal = Spacing.Large, vertical = Spacing.Small),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Apply changes",
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = BrandColors.OnLogoBadge,
-                    )
-                }
-
-                Text(
-                    text = "Design concept",
-                    fontSize = FontSize.LabelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AccentColorRow(selectedAccent: String, onSelectAccent: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val accents = listOf("Cobalt Blue", "Cyan", "Emerald", "Purple", "Amber", "Crimson")
-
-    val accentColor = when (selectedAccent) {
-        "Cyan" -> AccentPresetColors.Cyan
-        "Emerald" -> AccentPresetColors.Emerald
-        "Purple" -> AccentPresetColors.Purple
-        "Amber" -> AccentPresetColors.Amber
-        "Crimson" -> AccentPresetColors.Crimson
-        else -> AccentPresetColors.Blue
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-        ) {
+            // Changes are live and saved; there is nothing to apply or cancel.
             Text(
-                text = "Accent color",
-                fontSize = FontSize.BodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Used for highlights, selections and interactive elements.",
-                fontSize = FontSize.BodySmall,
+                text = "Changes apply at once and are saved for this app.",
+                fontSize = FontSize.LabelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-
-        Box {
-            Row(
-                modifier = Modifier
-                    .clip(GlassShapes.Small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(
-                        width = GlassDimens.HairlineBorder,
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = GlassShapes.Small,
-                    )
-                    .clickable { expanded = true }
-                    .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(Spacing.SmallMedium)
-                        .clip(GlassShapes.Circle)
-                        .background(accentColor),
-                )
-                Text(
-                    text = selectedAccent,
-                    fontSize = FontSize.BodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                accents.forEach { name ->
-                    DropdownMenuItem(
-                        text = { Text(name) },
-                        onClick = {
-                            onSelectAccent(name)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun InterfaceDensityRow(isComfortable: Boolean, onDensityChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = "Interface density",
-                fontSize = FontSize.BodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Controls the spacing of UI elements.",
-                fontSize = FontSize.BodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        // Segmented Toggle: [Comfortable | Compact]
-        Row(
-            modifier = Modifier
-                .clip(GlassShapes.Small)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                .border(
-                    width = GlassDimens.HairlineBorder,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = GlassShapes.Small,
-                )
-                .padding(Spacing.ExtraExtraSmall),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DensitySegmentItem(
-                label = "Comfortable",
-                isSelected = isComfortable,
-                onClick = { onDensityChange(true) },
-            )
-            DensitySegmentItem(
-                label = "Compact",
-                isSelected = !isComfortable,
-                onClick = { onDensityChange(false) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun DensitySegmentItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    val activeBg = MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
-    val activeBorder = MaterialTheme.colorScheme.primary
-
-    Box(
-        modifier = Modifier
-            .clip(GlassShapes.ExtraSmall)
-            .background(if (isSelected) activeBg else Color.Transparent)
-            .border(
-                width = if (isSelected) GlassDimens.HairlineBorder else Spacing.None,
-                color = if (isSelected) activeBorder else Color.Transparent,
-                shape = GlassShapes.ExtraSmall,
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            fontSize = FontSize.BodySmall,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun TextSizeRow(selectedSize: String, onSelectSize: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val sizes = listOf("90%", "100%", "110%", "125%")
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f).padding(end = Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = "Text size",
-                fontSize = FontSize.BodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Scales text throughout the app.",
-                fontSize = FontSize.BodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        Box {
-            Row(
-                modifier = Modifier
-                    .clip(GlassShapes.Small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(
-                        width = GlassDimens.HairlineBorder,
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = GlassShapes.Small,
-                    )
-                    .clickable { expanded = true }
-                    .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.ExtraSmall),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Text(
-                    text = selectedSize,
-                    fontSize = FontSize.BodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                sizes.forEach { size ->
-                    DropdownMenuItem(
-                        text = { Text(size) },
-                        onClick = {
-                            onSelectSize(size)
-                            expanded = false
-                        },
-                    )
-                }
-            }
         }
     }
 }
@@ -658,3 +293,65 @@ private fun SettingsSwitchRow(
         )
     }
 }
+
+/** Accent colour, density and text size: saved, and applied to every screen at once. */
+@Composable
+private fun AppearanceChoices(appSettingsState: AppSettingsState) {
+    val appearance = appSettingsState.appearance
+    ChoiceRow("Accent color", "Buttons, selections and highlights.") {
+        AccentColor.entries.forEach { accent ->
+            GlassChip(
+                label = accent.label,
+                selected = appearance.accent == accent.id,
+                onClick = { appSettingsState.appearance = appearance.copy(accent = accent.id) },
+                leadingIcon = accent.color?.let { color ->
+                    { Box(Modifier.size(Spacing.Small).clip(GlassShapes.Circle).background(color)) }
+                },
+                modifier = Modifier.testTag("Accent_${accent.id}"),
+            )
+        }
+    }
+    GlassHorizontalDivider()
+    ChoiceRow("Interface density", "Compact tightens spacing and controls so more fits; text keeps its size.") {
+        listOf(false to "Comfortable", true to "Compact").forEach { (compact, label) ->
+            GlassChip(
+                label = label,
+                selected = appearance.compact == compact,
+                onClick = { appSettingsState.appearance = appearance.copy(compact = compact) },
+                modifier = Modifier.testTag("Density_$label"),
+            )
+        }
+    }
+    GlassHorizontalDivider()
+    ChoiceRow("Text size", "Scales text throughout the app.") {
+        Appearance.TextScales.forEach { scale ->
+            val percent = (scale * PERCENT).roundToInt()
+            GlassChip(
+                label = "$percent%",
+                selected = appearance.textScalePercent == percent,
+                onClick = { appSettingsState.appearance = appearance.copy(textScalePercent = percent) },
+                modifier = Modifier.testTag("TextScale_$percent"),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChoiceRow(title: String, description: String, choices: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = title,
+            fontSize = FontSize.BodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(text = description, fontSize = FontSize.BodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) { choices() }
+    }
+}
+
+private const val PERCENT = 100f

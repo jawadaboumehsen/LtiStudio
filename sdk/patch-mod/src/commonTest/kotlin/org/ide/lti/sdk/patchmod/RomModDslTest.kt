@@ -11,13 +11,16 @@ package org.ide.lti.sdk.patchmod
 
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.PluginPlanResolver
+import org.ide.lti.core.domain.plugin.PluginPlanValidator
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
 import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
 import org.ide.lti.core.model.plugin.BytecodeMatchSpec
+import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.Condition
 import org.ide.lti.core.model.plugin.HookPlacement
+import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
@@ -104,7 +107,7 @@ class RomModDslTest {
                 Operation.ApkJarPatch(
                     id = "op_apk",
                     target = PartitionPath("vendor_dlkm", "etc/test.apk"),
-                    edits = listOf(SmaliEdit("Ltest/Class;->method()V", validSha, "diff")),
+                    edits = listOf(SmaliEdit("smali/test/A.smali", validSha, "@@ @@\n-x\n+y")),
                     condition = Condition.Always,
                 ),
                 Operation.CompiledClassMerge(
@@ -147,24 +150,30 @@ class RomModDslTest {
                 enum("opt_enum", "Flavor", default = "vanilla", options = listOf("vanilla", "chocolate"))
             }
             operations {
-                copy("op_copy", "assets/bin/test", "system", "bin/test")
-                replace("op_replace", "assets/lib/test.so", "vendor", "lib64/test.so", expectedSha256 = validSha)
-                delete("op_delete", "product", "app/TestApp")
-                propertyPatch("op_prop", "system_ext", "build.prop", "ro.test", setting("opt_text"))
-                textPatch("op_text", "odm", "etc/conf", "ctx", literal("val"), expectedSha256 = validSha)
-                apkJarPatch("op_apk", "vendor_dlkm", "etc/test.apk") {
-                    edit("Ltest/Class;->method()V", validSha, "diff")
+                copy("op_copy", "assets/bin/test", Partition.SYSTEM, "bin/test")
+                replace(
+                    "op_replace",
+                    "assets/lib/test.so",
+                    Partition.VENDOR,
+                    "lib64/test.so",
+                    expectedSha256 = validSha,
+                )
+                delete("op_delete", Partition.PRODUCT, "app/TestApp")
+                propertyPatch("op_prop", Partition.SYSTEM_EXT, "build.prop", "ro.test", setting("opt_text"))
+                textPatch("op_text", Partition.ODM, "etc/conf", "ctx", literal("val"), expectedSha256 = validSha)
+                apkJarPatch("op_apk", Partition.VENDOR_DLKM, "etc/test.apk") {
+                    change("smali/test/A.smali", preimage = validSha) { replace("x", "y") }
                 }
                 compiledClassMerge(
                     "op_merge",
-                    "odm_dlkm",
+                    Partition.ODM_DLKM,
                     "etc/classes.jar",
                     "assets/dex/patch.dex",
                     listOf("Ltest/Helper;"),
                 )
                 hookInjection(
                     id = "op_hook",
-                    partition = "system_dlkm",
+                    partition = Partition.SYSTEM_DLKM,
                     path = "etc/kernel.jar",
                     classDescriptor = "Ltest/Target;",
                     methodDescriptor = "run()V",
@@ -188,8 +197,8 @@ class RomModDslTest {
                 version = "1.0.0",
             ) {
                 operations {
-                    copy("op_dup", "assets/bin/test1", "system", "bin/test1")
-                    copy("op_dup", "assets/bin/test2", "system", "bin/test2")
+                    copy("op_dup", "assets/bin/test1", Partition.SYSTEM, "bin/test1")
+                    copy("op_dup", "assets/bin/test2", Partition.SYSTEM, "bin/test2")
                 }
             }
         }
@@ -207,25 +216,23 @@ class RomModDslTest {
             id = "e2e-plugin",
             version = "1.0.0",
         ) {
-            settings {
-                boolean("opt_bool", "Enable feature", default = true)
-                text("opt_val", "Value", default = "val_default")
-            }
+            val enabled = settings.boolean("opt_bool", "Enable feature", default = true)
+            val value = settings.text("opt_val", "Value", default = "val_default")
             operations {
-                copy("op_copy", "assets/bin/test", "system", "bin/test")
+                copy("op_copy", "assets/bin/test", Partition.SYSTEM, "bin/test")
                 propertyPatch(
                     id = "op_prop",
-                    partition = "system_ext",
+                    partition = Partition.SYSTEM_EXT,
                     path = "build.prop",
                     key = "ro.prop",
-                    value = setting("opt_val"),
-                    condition = setting("opt_bool") eq literal("true"),
+                    value = value.ref,
+                    condition = enabled.isOn,
                 )
                 delete(
                     id = "op_del",
-                    partition = "product",
+                    partition = Partition.PRODUCT,
                     path = "app/Unwanted",
-                    condition = setting("opt_bool") eq literal("false"),
+                    condition = enabled eq false,
                 )
             }
         }
@@ -248,5 +255,74 @@ class RomModDslTest {
         val propOp = plan.operations[1]
         assertIs<ConcreteOperation.PropertyPatch>(propOp)
         assertEquals("val_custom", propOp.value)
+    }
+
+    @Test
+    fun textChangesBecomeHunksPlacedByTheirText() {
+        val template = romMod("p", "m", "1.0.0") {
+            operations {
+                apkJarPatch("op", Partition.SYSTEM, "system/framework/services.jar") {
+                    change("smali/A.smali") {
+                        replace("    const/4 v0, 0x0", "    const/4 v0, 0x1")
+                        insertAfter(".method public run()V\n    .locals 1\n", "    nop")
+                        insertBefore("</resources>", "    <s/>\n    <t/>")
+                    }
+                    addFile("smali/B.smali", ".class public LB;\n")
+                }
+            }
+        }
+        val edits = (template.operations.single() as org.ide.lti.core.model.plugin.Operation.ApkJarPatch).edits
+        assertEquals(listOf("smali/A.smali", "smali/B.smali"), edits.map { it.memberDescriptor })
+        assertEquals("", edits[0].expectedSha256, "no preimage: placed by text alone")
+        assertEquals(
+            listOf(
+                "@@ @@", "-    const/4 v0, 0x0", "+    const/4 v0, 0x1",
+                // A trailing newline is an empty last line of the anchor.
+                "@@ @@", " .method public run()V", "     .locals 1", " ", "+    nop",
+                "@@ @@", "+    <s/>", "+    <t/>", " </resources>",
+            ).joinToString("\n"),
+            edits[0].unifiedDiff,
+        )
+        assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", edits[1].expectedSha256)
+        assertEquals("@@ -0,0 +1 @@\n+.class public LB;", edits[1].unifiedDiff)
+    }
+
+    @Test
+    fun aMethodEditNamesItsClassAndPicksTheMethodBySignatureOrFingerprint() {
+        val template = romMod("p", "m", "1.0.0") {
+            operations {
+                apkJarPatch("op", Partition.SYSTEM, "system/framework/services.jar") {
+                    method("Lcom/a/B;", "run(ILjava/lang/String;)V") { insertAfter("    .locals 1", "    nop") }
+                    method("Lcom/a/B;") {
+                        returns("Z")
+                        strings("getFocusedRootTaskInfo()")
+                        replace("    const/4 v0, 0x0", "    const/4 v0, 0x1")
+                    }
+                }
+            }
+        }
+        val edits = (template.operations.single() as Operation.ApkJarPatch).edits
+        assertEquals(listOf("Lcom/a/B;", "Lcom/a/B;"), edits.map { it.memberDescriptor })
+        assertEquals(MethodMatch(name = "run", parameters = "ILjava/lang/String;", returns = "V"), edits[0].method)
+        assertEquals(MethodMatch(returns = "Z", strings = listOf("getFocusedRootTaskInfo()")), edits[1].method)
+        assertEquals("@@ @@\n     .locals 1\n+    nop", edits[0].unifiedDiff)
+        assertEquals("", edits[0].expectedSha256, "a method edit is anchored by its method and lines, not a file hash")
+    }
+
+    @Test
+    fun compatibleDevicesAndFirmwaresGoIntoThePlan() {
+        val template = romMod("p", "m", "1.0.0") {
+            compatibleWith("PQ84P01", "REDMAGICOS10.5.15_NP05J_GB")
+            compatibleWith("NX769J")
+        }
+        assertEquals(
+            listOf(Compatibility("PQ84P01", listOf("REDMAGICOS10.5.15_NP05J_GB")), Compatibility("NX769J")),
+            template.compatibility,
+        )
+    }
+
+    @Test
+    fun theSdkOffersExactlyThePartitionsAPlanMayTarget() {
+        assertEquals(PluginPlanValidator.ALLOWED_PARTITIONS, Partition.entries.map { it.id }.toSet())
     }
 }

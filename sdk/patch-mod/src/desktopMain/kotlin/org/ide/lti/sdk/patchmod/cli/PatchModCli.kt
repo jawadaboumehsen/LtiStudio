@@ -28,6 +28,7 @@ import org.ide.lti.core.domain.plugin.PluginPlanResolver
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
+import org.ide.lti.sdk.patchmod.ModCheck
 import org.ide.lti.sdk.patchmod.PackageWriter
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
 import org.ide.lti.sdk.patchmod.runtime.PayloadCompilerAdapter
@@ -49,6 +50,7 @@ class PatchModCli : CliktCommand(name = "patchmod") {
             GenerateModPlanCommand(),
             ValidateModCommand(),
             TestModCommand(),
+            CheckModCommand(),
             PackageModCommand(),
             InspectModCommand(),
         )
@@ -93,6 +95,21 @@ class TestModCommand : CliktCommand(name = "testMod") {
 
     override fun run() {
         val result = PatchModTool.testMod(File(project))
+        handleResult(result)
+    }
+}
+
+class CheckModCommand : CliktCommand(name = "checkMod") {
+    override fun help(context: Context): String =
+        "Apply the mod's APK/JAR edits in memory to a decoded firmware, without building it"
+    private val project by option("--project", help = "Author project directory").default(".")
+    private val decoded by option(
+        "--decoded",
+        help = "Folder holding each component as `apktool d` decoded it, named like the component (services.jar)",
+    ).default(".")
+
+    override fun run() {
+        val result = PatchModTool.checkMod(File(project), File(decoded))
         handleResult(result)
     }
 }
@@ -423,6 +440,26 @@ object PatchModTool {
         }
 
         return CliResult.Success("OK validateMod ${projectDir.path}")
+    }
+
+    /** [ModCheck] of the project's plan against `<decodedRoot>/<component file name>/`. */
+    fun checkMod(projectDir: File, decodedRoot: File): CliResult {
+        val planFile = File(projectDir, PluginPackageCodec.PLAN)
+        val template = runCatching { PluginPackageCodec.decodePlan(planFile.readText()) }.getOrElse {
+            return CliResult.Failure("ERROR checkMod cannot read ${planFile.path}: ${it.message}")
+        }
+        val checks = ModCheck.check(listOf(template)) { target ->
+            File(decodedRoot, target.relativePath.substringAfterLast('/')).takeIf { it.isDirectory }
+        }
+        val failed = checks.filter { it.failure != null }
+        val lines = checks.joinToString("\n") { c ->
+            (if (c.failure == null) "ok   " else "FAIL ") + "${c.changed}  ${c.failure.orEmpty()}"
+        }
+        return if (failed.isEmpty()) {
+            CliResult.Success("$lines\nOK checkMod ${checks.size} edits apply")
+        } else {
+            CliResult.Failure("$lines\nERROR checkMod ${failed.size}/${checks.size} edits do not apply")
+        }
     }
 
     @Suppress("ReturnCount")

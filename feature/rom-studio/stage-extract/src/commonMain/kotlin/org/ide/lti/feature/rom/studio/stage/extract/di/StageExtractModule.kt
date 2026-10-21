@@ -23,6 +23,8 @@ public val stageExtractModule: Module = module {
     viewModel { params ->
         ExtractViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            workspaceFacts = getOrNull(),
         )
     }
 }

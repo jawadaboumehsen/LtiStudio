@@ -301,8 +301,14 @@ public class FirmwareExtractionStage : StageDefinition {
             stepCommand("rm", listOf("-rf", "$extracted/$partition"), ws),
             "clear tree $partition",
         )
+        // Owner, mode and SELinux label are in the sidecars just written (mkfs.erofs applies them), so only
+        // content and links are copied: `cp -a` also copies ACLs, which erofsfuse does not serve (ENODATA).
         steps += PipelineStep.Tool(
-            stepCommand("cp", listOf("-a", "-T", mnt, "$extracted/$partition"), ws),
+            stepCommand(
+                "cp",
+                listOf("-r", "--no-dereference", "--preserve=links,timestamps", "-T", mnt, "$extracted/$partition"),
+                ws,
+            ),
             "copy tree $partition",
         )
         steps += PipelineStep.Tool(

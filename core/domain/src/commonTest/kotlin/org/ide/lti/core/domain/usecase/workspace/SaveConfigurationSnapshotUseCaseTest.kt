@@ -33,13 +33,11 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
-import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
-import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.ConfigurationDraft
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.DecodeWarning
@@ -92,7 +90,8 @@ class SaveConfigurationSnapshotUseCaseTest {
         override fun observeDecodeWarnings(): Flow<DecodeWarning> = flowOf()
     }
 
-    private class FakeWorkspaceAdmissionPort : WorkspaceAdmissionPort {
+    private class FakeWorkspaceAdmissionPort(private val beforeAcquire: suspend () -> Unit = {}) :
+        WorkspaceAdmissionPort {
         override suspend fun tryAcquire(
             workspaceId: String,
             kind: MutationKind,
@@ -100,6 +99,7 @@ class SaveConfigurationSnapshotUseCaseTest {
             expectedRevision: Int?,
             currentRevision: Int?,
         ): AdmissionResult {
+            beforeAcquire()
             if (expectedRevision != null && currentRevision != null && expectedRevision != currentRevision) {
                 return AdmissionResult.RevisionMismatch(expected = expectedRevision, actual = currentRevision)
             }
@@ -177,9 +177,6 @@ class SaveConfigurationSnapshotUseCaseTest {
             acquisition = AcquisitionSettings(
                 region = TargetRegion.GLOBAL,
                 firmware = firmwareGlobal,
-            ),
-            build = BuildSettings(
-                packagePolicy = PackagePolicy(listOf("system"), listOf("boot")),
             ),
             createdAt = Clock.System.now(),
         )
@@ -448,5 +445,90 @@ class SaveConfigurationSnapshotUseCaseTest {
         // pointer-commit step that would have cleared it never ran.
         assertEquals(1, materializerPort.intents.size)
         assertEquals("ws-1", materializerPort.intents.first().workspaceId)
+    }
+
+    @Test
+    fun anUpdateChangesOnlyItsGroupAndKeepsWhatOtherEditorsSaved() = runTest {
+        val workspaceRepo = FakeWorkspaceRepo()
+        val snapshotRepo = InMemorySnapshotRepository()
+        val useCase = SaveConfigurationSnapshotUseCase(
+            workspaceRepository = workspaceRepo,
+            snapshotRepository = snapshotRepo,
+            runRepository = InMemoryRunRepository(),
+            provisioningPort = FakeProvisioningPort(),
+            admissionPort = FakeWorkspaceAdmissionPort(),
+            materializerPort = FakeSnapshotMaterializerPort(),
+        )
+        snapshotRepo.saveSnapshot(
+            ConfigurationSnapshot.create(
+                id = "snap-initial",
+                workspaceId = "ws-1",
+                profileRevision = 1,
+                acquisition = AcquisitionSettings(region = TargetRegion.GLOBAL, firmware = firmwareGlobal),
+                createdAt = Clock.System.now(),
+            ),
+        )
+        workspaceRepo.saveWorkspace(
+            Workspace(
+                id = "ws-1",
+                name = "W",
+                path = "/p",
+                linuxPath = "/p",
+                targetBinding = TargetBinding("ws-1", 3),
+                effectiveSnapshotId = "snap-initial",
+            ),
+        )
+
+        // Two stage editors each save their own group, one after the other.
+        useCase.update("ws-1") { it.copy(release = it.release.copy(otaBaseUrl = "https://ota.example.org")) }
+            .getOrThrow()
+        val second = useCase.update("ws-1") { it.copy(assembly = it.assembly.copy(romVersion = "2.0.0")) }
+            .getOrThrow()
+
+        assertEquals("https://ota.example.org", second.release.otaBaseUrl, "the first editor's save is kept")
+        assertEquals("2.0.0", second.assembly.romVersion)
+        assertEquals(TargetRegion.GLOBAL, second.acquisition.region)
+        assertEquals(3, second.profileRevision, "the device revision of the workspace is recorded")
+        assertEquals(second.id, workspaceRepo.getWorkspace("ws-1")?.effectiveSnapshotId)
+    }
+
+    @Test
+    fun aWriterThatCommitsBeforeAdmissionIsIncludedAndStaleBasesAreRejected() = runTest {
+        for (checkBase in listOf(false, true)) {
+            val fixture = org.ide.lti.core.domain.pipeline.PipelineFixture()
+            val initial = fixture.snapshotGlobalOta
+            val newest = initial.copy(
+                id = "newest",
+                release = initial.release.copy(otaBaseUrl = "https://new.example.org"),
+            )
+            val workspaces = FakeWorkspaceRepo()
+            workspaces.saveWorkspace(fixture.workspace.copy(effectiveSnapshotId = initial.id))
+            val snapshots = InMemorySnapshotRepository()
+            snapshots.saveSnapshot(initial)
+            snapshots.saveSnapshot(newest)
+            val provisioner = FakeProvisioningPort()
+            val useCase = SaveConfigurationSnapshotUseCase(
+                workspaces,
+                snapshots,
+                InMemoryRunRepository(),
+                provisioner,
+                FakeWorkspaceAdmissionPort {
+                    workspaces.saveWorkspace(fixture.workspace.copy(effectiveSnapshotId = newest.id))
+                },
+                FakeSnapshotMaterializerPort(),
+            )
+            if (checkBase) {
+                val draft = ConfigurationDraft(region = TargetRegion.GLOBAL, firmware = firmwareGlobal)
+                val result = useCase(fixture.workspace.id, draft, expectedBaseSnapshotId = initial.id)
+                assertTrue(result.isFailure)
+                assertTrue(provisioner.writtenConfigs.isEmpty())
+            } else {
+                val saved = useCase.update(fixture.workspace.id) {
+                    it.copy(assembly = it.assembly.copy(romVersion = "2.0.0"))
+                }.getOrThrow()
+                assertEquals("https://new.example.org", saved.release.otaBaseUrl)
+                assertEquals("2.0.0", saved.assembly.romVersion)
+            }
+        }
     }
 }

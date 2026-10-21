@@ -15,6 +15,7 @@ import kotlinx.serialization.Serializable
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.Path
@@ -50,6 +51,11 @@ data class PackageInspection(
     val report: ValidationReport,
     val dependencies: List<DependencyRef> = emptyList(),
     val conflicts: List<DependencyRef> = emptyList(),
+    /** The manifest's name and the README's first paragraph, as people see the plugin. */
+    val displayName: String = "",
+    val summary: String = "",
+    /** The devices (and firmwares) the plan is made for; empty means any. */
+    val compatibility: List<Compatibility> = emptyList(),
 )
 
 @Serializable
@@ -61,6 +67,8 @@ data class InstalledRecord(
     val archived: Boolean,
     val dependencies: List<DependencyRef>,
     val conflicts: List<DependencyRef>,
+    val displayName: String = "",
+    val summary: String = "",
 )
 
 val InstalledRecord.key: String

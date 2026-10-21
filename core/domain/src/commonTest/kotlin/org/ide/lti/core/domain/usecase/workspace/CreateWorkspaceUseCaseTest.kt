@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.ports.DestinationExistsException
 import org.ide.lti.core.domain.ports.EnvironmentNotReadyException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -28,6 +29,7 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
+import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
@@ -197,8 +199,9 @@ class CreateWorkspaceUseCaseTest {
         assertEquals(WorkspaceType.REMOTE_WSL, ws.type)
         assertEquals(1, ws.layoutVersion)
         assertNotNull(ws.targetBinding)
-        assertEquals("PQ84P01", ws.targetBinding?.profileId)
+        assertEquals(ws.id, ws.targetBinding?.profileId, "the binding points at the workspace's own device")
         assertEquals(2, ws.targetBinding?.profileRevision)
+        assertEquals(target, provisioning.provisionedSpecs.single().target, "the folder gets a copy of the template")
         assertNotNull(ws.effectiveSnapshotId)
 
         // Verify Snapshot registered
@@ -303,5 +306,20 @@ class CreateWorkspaceUseCaseTest {
         assertFailsWith<EnvironmentNotReadyException> { useCase(params).toList() }
         assertEquals(0, repo.savedWorkspaces.size)
         assertEquals(0, provisioning.provisionedSpecs.size)
+    }
+
+    @Test
+    fun aWorkspaceCreatedFromTheDefaultTemplateCanStartABuild() = runTest {
+        val repo = FakeWorkspaceRepo()
+        val snapshotRepo = InMemorySnapshotRepository()
+        val provisioning = FakeProvisioningPort()
+        val useCase = CreateWorkspaceUseCase(FakeReadinessPort(), provisioning, repo, snapshotRepo)
+
+        useCase(CreateWorkspaceParams(name = "Fresh", target = DefaultTargetCatalog.PQ84P01_DEFAULT)).toList()
+
+        val ws = repo.savedWorkspaces.single()
+        val device = provisioning.provisionedSpecs.single().target
+        val snapshot = assertNotNull(snapshotRepo.getSnapshot(ws.effectiveSnapshotId!!))
+        assertEquals(emptyList(), DeviceConfigReadiness.check(device, snapshot).map { it.fieldPath to it.message })
     }
 }

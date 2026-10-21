@@ -604,7 +604,9 @@ public object KotlinStoreLayout {
         // version would multiply the cost of each status check by the number of folders kept.
         val supportFiles = catGroup?.allSupportFiles().orEmpty()
         val script = versionCheck("$groupDir/$verId", outputs, supportFiles, probe && catGroup != null)
-        return exec(listOf("sh", "-c", script)).isSuccess
+        // A version is broken only when the check fails twice: one slow probe on a busy machine, or one lost
+        // connection, must not mark a working tool for repair (and block every build until the next check).
+        return exec(listOf("sh", "-c", script)).isSuccess || exec(listOf("sh", "-c", script)).isSuccess
     }
 
     /**
@@ -647,7 +649,8 @@ public object KotlinStoreLayout {
                 val args = out.probe.args.joinToString(" ") { shellQuote(it) }
                 val accepted = out.probe.acceptedExitCodes.joinToString("|")
                 val signature = shellQuote(out.probe.signature ?: defaultSignature(out))
-                append("(t=\$(mktemp) || exit 1; timeout 3 $launcher $args </dev/null >\"\$t\" 2>&1; rc=\$?; ok=1; ")
+                append("(t=\$(mktemp) || exit 1; ")
+                append("timeout $PROBE_SECONDS $launcher $args </dev/null >\"\$t\" 2>&1; rc=\$?; ok=1; ")
                 append("case \$rc in $accepted) head -c 16384 \"\$t\" | grep -Eiq $signature && ok=0;; esac; ")
                 append("rm -f \"\$t\"; exit \$ok) & ")
                 append("pids=\"\$pids \$!\"; ")
@@ -655,6 +658,9 @@ public object KotlinStoreLayout {
             append("ok=0; for pid in \$pids; do wait \$pid || ok=1; done; [ \$ok = 0 ]; }")
         }
     }
+
+    /** Long enough for a JVM tool (apktool, signapk) to start on a busy machine; the probes run in parallel. */
+    private const val PROBE_SECONDS = 10
 
     private fun defaultSignature(out: ToolOutput): String =
         "usage|version|help|options|" + out.toolId.replace(Regex("[^A-Za-z0-9_]"), ".")

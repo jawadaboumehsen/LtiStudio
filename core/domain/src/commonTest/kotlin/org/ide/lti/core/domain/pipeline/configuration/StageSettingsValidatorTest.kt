@@ -49,7 +49,7 @@ class StageSettingsValidatorTest {
 
     @Test
     fun validateAcquisitionDetectsTargetIncompatibilities() {
-        // retries-in-0..5 and archiveRef-required-for-IMPORT/EXISTING_ARCHIVE are AcquisitionSettings'
+        // retries-in-0..5 and archiveRef-required-for-IMPORT_ARCHIVE are AcquisitionSettings'
         // own constructor invariants (see its init block) - no instance can ever violate them, so
         // StageSettingsValidator does not re-check them and there is nothing to test here for those
         // two rules. Only the target-dependent checks (region/firmware membership) apply.
@@ -149,31 +149,17 @@ class StageSettingsValidatorTest {
     }
 
     @Test
-    fun validateDebloatEnforcesPresetAndPolicyInvariants() {
+    fun validateDebloatAcceptsOnlyPartitionPathSelectors() {
         val valid = DebloatSettings(
             enabled = true,
-            presetId = "mifos_minimal",
-            presetRevision = 1,
-            presetDigest = "sha256:0123456789abcdef",
-            protectedPolicyRevision = 2,
+            removeSelectors = listOf("system:system/app/Foo", "product:app/Bar"),
         )
-        val validReport = StageSettingsValidator.validateDebloat(valid)
-        assertFalse(validReport.hasBlockingErrors())
+        assertFalse(StageSettingsValidator.validateDebloat(valid).hasBlockingErrors())
 
-        // Invalid preset revision (< 1)
-        val badRev = valid.copy(presetRevision = 0)
-        val revReport = StageSettingsValidator.validateDebloat(badRev)
-        assertTrue(revReport.errors.any { it.code == StageSettingsValidator.INVALID_PRESET_REVISION })
-
-        // Invalid preset digest (missing sha256: prefix)
-        val badDigest = valid.copy(presetDigest = "raw-hash-value")
-        val digestReport = StageSettingsValidator.validateDebloat(badDigest)
-        assertTrue(digestReport.errors.any { it.code == StageSettingsValidator.INVALID_DIGEST })
-
-        // Invalid policy revision (< 1)
-        val badPolicy = valid.copy(protectedPolicyRevision = 0)
-        val policyReport = StageSettingsValidator.validateDebloat(badPolicy)
-        assertTrue(policyReport.errors.any { it.code == StageSettingsValidator.INVALID_POLICY_REVISION })
+        listOf("system/app/Foo", "system:../etc", "system:app/*", "pkg:").forEach { bad ->
+            val report = StageSettingsValidator.validateDebloat(valid.copy(removeSelectors = listOf(bad)))
+            assertTrue(report.hasBlockingErrors(), "'$bad' must be rejected")
+        }
     }
 
     @Test

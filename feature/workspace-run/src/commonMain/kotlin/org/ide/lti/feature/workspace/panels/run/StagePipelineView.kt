@@ -18,6 +18,7 @@ import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
 import org.ide.lti.core.designsystem.component.progress.GlassStepperOrientation
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StageOutcome
@@ -30,22 +31,17 @@ public fun StagePipelineView(
     modifier: Modifier = Modifier,
     orientation: GlassStepperOrientation = GlassStepperOrientation.Horizontal,
 ) {
-    val stageDefs = listOf(
-        StageId.FIRMWARE_ACQUISITION to "Acquire",
-        StageId.FIRMWARE_EXTRACTION to "Extract",
-        StageId.WORK_TREE_ASSEMBLY to "Assemble",
-        StageId.MODULE_APPLICATION to "Modules",
-        StageId.BUILD_FLASHABLE_ZIP to "Package",
-        StageId.GENERATE_OTA_MANIFEST to "Manifest",
-    )
-
-    val stepInfos = stageDefs.map { (stageId, title) ->
+    // Every stage the pipeline executes (Publish is not one of them), from the pipeline's own order.
+    val stages = PipelineStageSequence.ORDER.filter { it != StageId.PUBLISH_RELEASE }
+    val through = latestRun?.throughStage?.let(stages::indexOf)
+    val stepInfos = stages.mapIndexed { index, stageId ->
         val outcome = latestRun?.stages?.find { it.stageId == stageId }
+        val outsideRun = through != null && index > through
         GlassStepInfo(
             id = stageId.name,
-            shortTitle = title,
-            status = resolveStepStatus(outcome?.state),
-            statusLabel = resolveStepLabel(outcome),
+            shortTitle = stageLabel(stageId),
+            status = if (outsideRun) GlassStepStatus.SKIPPED else resolveStepStatus(outcome?.state),
+            statusLabel = if (outsideRun) "Not in this run" else resolveStepLabel(outcome),
         )
     }
 

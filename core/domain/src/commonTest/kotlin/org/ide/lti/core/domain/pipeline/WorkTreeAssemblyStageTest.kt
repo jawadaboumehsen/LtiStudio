@@ -304,4 +304,24 @@ class WorkTreeAssemblyStageTest {
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedProps, prevKey))
     }
+
+    @Test
+    fun changingDebloatPicksOrPluginsNeedsAFreshWorkTree() {
+        val stage = WorkTreeAssemblyStage()
+        val base = fx.globalOtaContext()
+        val key = stage.computeCacheKey(base, "prev")
+        val debloated = base.copy(
+            snapshot = base.snapshot.copy(
+                debloat = base.snapshot.debloat.copy(enabled = true, removeSelectors = listOf("product:app/YouTube")),
+            ),
+        )
+        val patched = base.copy(
+            snapshot = base.snapshot.copy(
+                customization = base.snapshot.customization.copy(enabledPackages = listOf("io.ltirom:adb")),
+            ),
+        )
+        assertNotEquals(key, stage.computeCacheKey(debloated, "prev"))
+        assertNotEquals(key, stage.computeCacheKey(patched, "prev"))
+        assertEquals(key, stage.computeCacheKey(fx.globalOtaContext(), "prev"))
+    }
 }

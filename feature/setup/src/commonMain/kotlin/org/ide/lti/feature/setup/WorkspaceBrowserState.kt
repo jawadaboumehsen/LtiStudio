@@ -92,6 +92,9 @@ class WorkspaceBrowserState(
     private var pendingCallback: ((Workspace) -> Unit)? = null
 
     init {
+        // Workspaces live in their folders: once the service is ready, the WorkDir is scanned so a workspace
+        // the app has no record of (new install, cleared app data) shows up and opens with its configuration.
+        discoverWorkspaces()
         scope.launch {
             toolchainSetupState
                 .map { it.isChecking to it.canLaunchWorkspace }
@@ -365,7 +368,12 @@ class WorkspaceBrowserState(
 
     fun discoverWorkspaces() {
         scope.launch {
-            discoverWorkdirWorkspacesUseCase?.invoke()
+            // Best effort: an unreachable service leaves the recent list as it is.
+            runCatching { discoverWorkdirWorkspacesUseCase?.invoke() }
+                .onFailure {
+                    if (it is kotlinx.coroutines.CancellationException) throw it
+                    co.touchlab.kermit.Logger.w(it) { "Workspace discovery failed" }
+                }
         }
     }
 

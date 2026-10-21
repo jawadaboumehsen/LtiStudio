@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.plugin
 
 import org.ide.lti.core.model.plugin.AssetRef
 import org.ide.lti.core.model.plugin.BytecodeMatchSpec
+import org.ide.lti.core.model.plugin.FileMetadata
 import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
@@ -34,7 +35,12 @@ data class NotApplicable(val operationId: String, val reason: String)
 sealed interface ConcreteOperation {
     val id: String
 
-    data class Copy(override val id: String, val source: AssetRef, val destination: PartitionPath) : ConcreteOperation
+    data class Copy(
+        override val id: String,
+        val source: AssetRef,
+        val destination: PartitionPath,
+        val metadata: FileMetadata? = null,
+    ) : ConcreteOperation
 
     data class Replace(
         override val id: String,

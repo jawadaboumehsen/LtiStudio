@@ -345,8 +345,11 @@ private fun ConnectedDeviceSegment(
             } else {
                 connectedDevices.forEach { dev ->
                     val isSelected = dev.serial == selectedConnectedDevice?.serial
-                    val statusNote = "${dev.serial} • ${dev.connectionType.displayName} • " +
-                        "Android ${dev.androidVersion ?: "15"}"
+                    val statusNote = listOfNotNull(
+                        dev.serial,
+                        dev.connectionType.displayName,
+                        dev.androidVersion?.let { "Android $it" },
+                    ).joinToString(" • ")
 
                     GlassDropdownMenuItem(
                         text = "${dev.modelName} [${dev.stateBadge}]",

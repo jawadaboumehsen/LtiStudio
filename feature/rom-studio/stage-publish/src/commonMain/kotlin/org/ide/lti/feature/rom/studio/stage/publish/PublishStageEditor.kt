@@ -29,12 +29,18 @@ public class PublishStageEditor : StageEditor {
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: PublishViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
+        val device by viewModel.device.collectAsState()
+        val state by viewModel.state.collectAsState()
 
         PublishEditor(
             settings = settings,
-            target = viewModel.targetDevice,
+            target = device ?: viewModel.targetDevice,
             onChange = { viewModel.updateSettings(it) },
             selectedObjectId = context.selectedObjectId?.value ?: "provider",
+            state = state,
+            onRefresh = viewModel::refresh,
+            onPublish = viewModel::publish,
+            onCancelPublish = viewModel::cancel,
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
             modifier = modifier,

@@ -10,6 +10,9 @@
 package org.ide.lti.feature.workspace.studio
 
 import androidx.compose.runtime.Immutable
+import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
+import org.ide.lti.core.domain.pipeline.configuration.Severity
+import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
@@ -252,6 +255,8 @@ public data class WorkspaceShellUiState(
     val problemCount: Int = 0,
     val activity: ActivityUiState = ActivityUiState.Idle,
     val pipelineItems: List<PipelineRailItemUi> = createDefaultPipelineRailItems(),
+    /** The device configuration has errors (it gates every stage). Null until the first check. */
+    val deviceHasError: Boolean? = null,
     val selectedWorkspaceSection: WorkspaceSection? = WorkspaceSection.Overview,
 ) {
     init {
@@ -293,3 +298,26 @@ public fun createDefaultPipelineRailItems(
         accessibleDescription = stage.accessibleLabel,
     )
 }
+
+/** An error in [stage]'s settings, or in the device configuration when [stage] is null. */
+internal fun ValidationReport.blocks(stage: StageId?): Boolean = errors.any { error ->
+    val owner = if (DeviceConfigReadiness.isDeviceIssue(error)) null else error.stageId
+    owner == stage && error.severity == Severity.ERROR
+}
+
+/**
+ * Stages open in pipeline order: Acquire once the device configuration has no errors, and every later stage once
+ * the stage just before it is configured (and open itself). A locked stage says what to finish first.
+ */
+public fun lockStages(items: List<PipelineRailItemUi>, report: ValidationReport): List<PipelineRailItemUi> {
+    var blocker: String? = "the device configuration".takeIf { report.blocks(null) }
+    return items.map { item ->
+        val gated = item.copy(isEnabled = blocker == null, disabledReason = blocker?.let { "Finish $it first" })
+        if (blocker == null && report.blocks(item.stageId)) blocker = "the ${item.label} stage"
+        gated
+    }
+}
+
+/** The first stage before [target] (in [order]) whose settings have errors: the one to finish first; null when none. */
+internal fun stageBlocking(target: StageId, order: List<StageId>, report: ValidationReport): StageId? =
+    order.takeWhile { it != target }.firstOrNull { report.blocks(it) }

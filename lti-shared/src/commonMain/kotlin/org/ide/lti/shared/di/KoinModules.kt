@@ -71,6 +71,7 @@ object KoinModules {
                 initialReducedMotion = initialData.reducedMotion,
                 initialEditorSettings = initialData.editorSettings,
                 initialNotificationSettings = initialData.notificationSettings,
+                initialAppearance = initialData.appearance,
                 userDataRepository = repo,
                 coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
             )

@@ -15,6 +15,7 @@ import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
+import org.ide.lti.core.domain.plugin.ApplyModules
 import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.EmptyPluginCatalog
@@ -60,7 +61,13 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
 
         val outcome = resolveAllPackages(ctx, enabledPackages)
         return outcome.failureStep?.let { listOf(it) }
-            ?: buildPlanSteps(enabledPackages, outcome.resolvedEntries, outcome.resolvedPlans)
+            ?: buildPlanSteps(
+                enabledPackages = enabledPackages,
+                resolvedEntries = outcome.resolvedEntries,
+                resolvedPlans = outcome.resolvedPlans,
+                partitions = ctx.target.dynamicPartitions,
+                platformKeyRef = ctx.snapshot.build.signing.platformKeyRef,
+            )
     }
 
     private sealed interface PackageOutcome {
@@ -118,9 +125,10 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
     ): PackageOutcome {
         val targetFacts = mapOf(
             "device.id" to ctx.target.id,
-            "device.codename" to ctx.target.codename,
+            PluginPlanResolver.DEVICE_CODENAME to ctx.target.codename,
             "android.version" to ctx.snapshot.acquisition.firmware.androidVersion,
-            "firmware.version" to ctx.snapshot.acquisition.firmware.version,
+            PluginPlanResolver.FIRMWARE_VERSION to ctx.snapshot.acquisition.firmware.version,
+            "build.type" to ctx.snapshot.assembly.buildType,
         )
 
         // previousStageCacheKey is not passed to plan(ctx), so upstreamCheckpointDigest falls back to
@@ -166,6 +174,8 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
         enabledPackages: List<String>,
         resolvedEntries: List<PluginLockfileEntry>,
         resolvedPlans: List<ConcreteMutationPlan>,
+        partitions: List<String>,
+        platformKeyRef: String,
     ): List<PipelineStep> {
         val allOperations = resolvedPlans.flatMap { it.operations }
         val appliedPlan = AppliedModulePlan(
@@ -188,11 +198,24 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
                 relPath = PLAN_PATH,
                 content = planJson.encodeToByteArray(),
             ),
+            PipelineStep.Host(
+                label = "apply modules",
+                resultKey = APPLY_RESULT_KEY,
+                request = ApplyModules(
+                    plans = resolvedPlans,
+                    assetRoots = resolvedEntries.mapNotNull { e ->
+                        val root = catalog.assetRootFor(e.publisher, e.id, e.version) ?: return@mapNotNull null
+                        "${e.publisher}:${e.id}:${e.version}" to root
+                    }.toMap(),
+                    partitions = partitions,
+                    platformKeyRef = platformKeyRef,
+                ),
+            ),
             PipelineStep.Check(
                 label = "modules applied",
                 verify = { runtimeValues ->
-                    val applyResult = runtimeValues["modules.apply.result"]
-                    if (applyResult == "ok") {
+                    val applyResult = runtimeValues[APPLY_RESULT_KEY]
+                    if (applyResult?.startsWith("ok") == true) {
                         null
                     } else {
                         "Module application did not succeed: ${applyResult ?: "no result recorded"}"
@@ -208,6 +231,7 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
 
     private companion object {
         const val APPLIED_PATH = "work/modules/applied.json"
+        const val APPLY_RESULT_KEY = "modules.apply.result"
         const val PLAN_PATH = "work/modules/plan.json"
         const val EMPTY_APPLIED_JSON = """{"enabled":[],"operations":0}"""
 

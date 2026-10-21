@@ -10,6 +10,7 @@
 package org.ide.lti.sdk.patchmod.example
 
 import org.ide.lti.core.model.plugin.HookPlacement
+import org.ide.lti.sdk.patchmod.Partition
 import org.ide.lti.sdk.patchmod.romMod
 
 val exampleCompiledHookMod = romMod(
@@ -20,14 +21,14 @@ val exampleCompiledHookMod = romMod(
     operations {
         compiledClassMerge(
             id = "op_merge_hook",
-            partition = "system",
+            partition = Partition.SYSTEM,
             path = "framework/services.jar",
             payload = "assets/payload",
             classDescriptors = listOf("Lorg/ide/lti/example/hook/ExampleHook;"),
         )
         hookInjection(
             id = "op_inject_hook",
-            partition = "system",
+            partition = Partition.SYSTEM,
             path = "framework/services.jar",
             classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
             methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",

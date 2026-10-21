@@ -16,9 +16,9 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(projects.hazeGlassMaterial3)
-            api(projects.hazeBlurMaterial3)
-            api(projects.hazeMaterials)
+            api(projects.core.designsystem.haze.glassMaterial3)
+            api(projects.core.designsystem.haze.blurMaterial3)
+            api(projects.core.designsystem.haze.materials)
             implementation(libs.coil.kt.compose)
             implementation(compose.runtime)
             implementation(compose.foundation)

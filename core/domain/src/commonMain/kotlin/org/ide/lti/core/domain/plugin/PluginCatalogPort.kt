@@ -20,6 +20,9 @@ public interface PluginCatalogPort {
 
     /** Returns the verified package content digest, or null if uninstalled or missing. */
     public fun contentDigestFor(publisher: String, id: String, version: String): String?
+
+    /** Where the installed package's assets (files its plan copies) are, on this computer; null if unknown. */
+    public fun assetRootFor(publisher: String, id: String, version: String): String? = null
 }
 
 /**

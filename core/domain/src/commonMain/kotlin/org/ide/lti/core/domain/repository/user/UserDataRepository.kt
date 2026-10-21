@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.repository.user
 
 import kotlinx.coroutines.flow.Flow
+import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.model.user.EditorSettings
 import org.ide.lti.core.model.user.NotificationSettings
 import org.ide.lti.core.model.user.UserData
@@ -31,4 +32,6 @@ public interface UserDataRepository {
     public suspend fun setEditorSettings(editorSettings: EditorSettings)
 
     public suspend fun setNotificationSettings(notificationSettings: NotificationSettings)
+
+    public suspend fun setAppearance(appearance: AppearanceSettings)
 }

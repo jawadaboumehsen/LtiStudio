@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
@@ -45,9 +48,11 @@ import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.koin.compose.viewmodel.koinViewModel
@@ -192,6 +197,26 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
     }
 }
 
+/** Where the next run stops: the whole build, or after one stage (to inspect or configure what it produced). */
+@Composable
+private fun RunThroughSelector(selected: StageId?, onSelect: (StageId?) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("RunThroughSelector"),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Run through",
+            style = GlassTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        GlassChip(label = "Whole build", selected = selected == null, onClick = { onSelect(null) })
+        PipelineStageSequence.ORDER.filter { it != StageId.PUBLISH_RELEASE }.forEach { stage ->
+            GlassChip(label = stageLabel(stage), selected = selected == stage, onClick = { onSelect(stage) })
+        }
+    }
+}
+
 /** Status and state banner alerts for the active build run. */
 @Composable
 private fun RunStateBanners(uiState: BuildRunUiState, onNavigateToSetup: (() -> Unit)?, onReattach: () -> Unit) {
@@ -253,6 +278,7 @@ private fun ActiveRunContent(
         uiState = uiState,
         onCancel = { viewModel.cancelBuild() },
         onStart = { viewModel.startBuild() },
+        onSelectThroughStage = viewModel::selectThroughStage,
         onClearError = { viewModel.clearError() },
         onReattach = { viewModel.reattachBuild() },
         onNavigateToSetup = onNavigateToSetup,
@@ -265,6 +291,7 @@ public fun ActiveRunContent(
     uiState: BuildRunUiState,
     onCancel: () -> Unit = {},
     onStart: () -> Unit = {},
+    onSelectThroughStage: (StageId?) -> Unit = {},
     onClearError: () -> Unit = {},
     onReattach: () -> Unit = {},
     onNavigateToSetup: (() -> Unit)? = null,
@@ -282,11 +309,19 @@ public fun ActiveRunContent(
             onStart = onStart,
         )
 
+        if (!uiState.isRunning) {
+            RunThroughSelector(selected = uiState.throughStage, onSelect = onSelectThroughStage)
+        }
+
         RunStateBanners(
             uiState = uiState,
             onNavigateToSetup = onNavigateToSetup,
             onReattach = onReattach,
         )
+
+        if (uiState.deviceIssues.isNotEmpty() && !uiState.isRunning) {
+            DeviceReadinessChecklist(issues = uiState.deviceIssues)
+        }
 
         // Error message banner
         if (uiState.errorMessage != null) {
@@ -342,7 +377,7 @@ public fun ActiveRunContent(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false),
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 items(artifacts) { artifact ->
@@ -351,7 +386,8 @@ public fun ActiveRunContent(
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        // With no artifacts the list is absent: keep the console at the bottom.
+        if (artifacts.isEmpty()) Spacer(modifier = Modifier.weight(1f))
 
         // Console log drawer
         GlassConsoleDrawer(
@@ -363,7 +399,7 @@ public fun ActiveRunContent(
 }
 
 @Composable
-private fun ArtifactItem(artifact: Artifact) {
+internal fun ArtifactItem(artifact: Artifact) {
     val typography = GlassTheme.typography
 
     GlassCard(
@@ -399,8 +435,7 @@ private fun ArtifactItem(artifact: Artifact) {
             ) {
                 val size = artifact.sizeBytes
                 if (size != null) {
-                    val sizeMb = size / (1024 * 1024)
-                    GlassChip(label = "$sizeMb MB")
+                    GlassChip(label = sizeLabel(size))
                 }
                 val sha = artifact.sha256
                 if (sha != null) {
@@ -418,3 +453,15 @@ private fun ArtifactItem(artifact: Artifact) {
         }
     }
 }
+
+/** `6.7 GB`, `512 MB`, `840 KB`: the artifact's size at a glance. */
+internal fun sizeLabel(bytes: Long): String = when {
+    bytes >= GIB -> "${(bytes * TENTHS / GIB) / TENTHS.toDouble()} GB"
+    bytes >= MIB -> "${bytes / MIB} MB"
+    else -> "${(bytes + KIB - 1) / KIB} KB"
+}
+
+private const val KIB = 1024L
+private const val MIB = KIB * KIB
+private const val GIB = MIB * KIB
+private const val TENTHS = 10L

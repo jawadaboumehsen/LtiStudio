@@ -69,18 +69,6 @@ public fun StudioStatusBar(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 StatusBarConnection(connection = uiState.connection)
-                Text(
-                    text = "|",
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    fontFamily = ideFontFamily(),
-                    fontSize = FontSize.Micro,
-                )
-                Text(
-                    text = "Design concept · Sample data",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = ideFontFamily(),
-                    fontSize = FontSize.Micro,
-                )
             }
         },
     )

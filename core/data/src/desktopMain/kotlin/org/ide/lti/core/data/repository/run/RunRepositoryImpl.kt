@@ -51,6 +51,7 @@ public class RunRepositoryImpl(
 
     private val runs = MutableStateFlow<Map<String, BuildRun>>(emptyMap())
     private val events = mutableMapOf<String, MutableList<String>>()
+    private val lastLogMirror = mutableMapOf<String, Long>()
 
     init {
         scope.launch(ioDispatcher) {
@@ -93,13 +94,20 @@ public class RunRepositoryImpl(
         runs.update { it + (run.id to run) }
         runRecordDataSource.saveRun(run)
         mirrorRunToRemoteWorkspace(run)
+        // Step and stage boundaries always bring the mirrored log up to date.
+        if (events[run.id] != null) mirrorStageLogsToRemoteWorkspace(run.id)
     }
 
     override suspend fun appendEvents(runId: String, events: List<String>): Unit = withContext(ioDispatcher) {
         if (events.isEmpty()) return@withContext
         this@RunRepositoryImpl.events.getOrPut(runId) { mutableListOf() }.addAll(events)
         runRecordDataSource.appendEvents(runId, events)
-        mirrorStageLogsToRemoteWorkspace(runId)
+        // The mirror uploads the whole stage log, so it runs at most every few seconds, not per output batch.
+        val now = System.currentTimeMillis()
+        if (now - (lastLogMirror[runId] ?: 0L) >= LOG_MIRROR_INTERVAL_MS) {
+            lastLogMirror[runId] = now
+            mirrorStageLogsToRemoteWorkspace(runId)
+        }
     }
 
     override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> = withContext(ioDispatcher) {
@@ -210,5 +218,9 @@ public class RunRepositoryImpl(
         } catch (_: Exception) {
             // Non-critical mirror operation
         }
+    }
+
+    private companion object {
+        const val LOG_MIRROR_INTERVAL_MS = 5_000L
     }
 }

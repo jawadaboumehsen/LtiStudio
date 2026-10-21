@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.workspace.panels.target
 
-import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +17,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,7 +32,6 @@ import org.ide.lti.core.domain.ports.LeaseReconciliation
 import org.ide.lti.core.domain.ports.MutationKind
 import org.ide.lti.core.domain.ports.ProvisioningEvent
 import org.ide.lti.core.domain.ports.ProvisioningSpec
-import org.ide.lti.core.domain.ports.RemoteFileUploaderPort
 import org.ide.lti.core.domain.ports.SnapshotMaterializationIntent
 import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
 import org.ide.lti.core.domain.ports.WorkspaceAdmissionPort
@@ -40,11 +39,13 @@ import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.ports.WorkspaceWriteLease
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.setup.WorkspaceReadiness
@@ -61,11 +62,11 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.core.model.workspace.WorkspaceType
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,34 +106,17 @@ class WorkspaceConfigurationViewModelTest {
         description = "Official baseline",
     )
 
-    private class FakeTargetRepository(val targets: List<TargetDevice>) : TargetRepository {
-        val targetsFlow = MutableStateFlow(targets)
-        val selectedTargetFlow = MutableStateFlow(targets.first())
+    /** One device for any workspace id; saves are kept so a test can read them back. */
+    private class FakeWorkspaceDevices(private val device: TargetDevice? = null) : WorkspaceDeviceRepository {
+        private val saved = MutableStateFlow<Map<String, TargetDevice>>(emptyMap())
 
-        override fun getAvailableTargets(): Flow<List<TargetDevice>> = targetsFlow.asStateFlow()
-        override fun getSelectedTarget(): Flow<TargetDevice> = selectedTargetFlow.asStateFlow()
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> {
-            val found = targetsFlow.value.find { it.id == targetId }
-            return if (found != null) {
-                selectedTargetFlow.value = found
-                Result.success(found)
-            } else {
-                Result.failure(IllegalArgumentException("Target not found: $targetId"))
-            }
-        }
-        override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> {
-            val list = targetsFlow.value.toMutableList()
-            list.removeAll { it.id == target.id }
-            list.add(target)
-            targetsFlow.value = list
-            return Result.success(target)
-        }
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = addTarget(target)
-        override suspend fun deleteTarget(targetId: String): Result<Unit> {
-            val list = targetsFlow.value.toMutableList()
-            list.removeAll { it.id == targetId }
-            targetsFlow.value = list
-            return Result.success(Unit)
+        override fun observe(workspaceId: String): Flow<TargetDevice?> = saved.map { it[workspaceId] ?: device }
+
+        override suspend fun get(workspaceId: String): TargetDevice? = saved.value[workspaceId] ?: device
+
+        override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice {
+            saved.value = saved.value + (workspaceId to device)
+            return device
         }
     }
 
@@ -228,14 +212,6 @@ class WorkspaceConfigurationViewModelTest {
         override suspend fun findIncompleteMaterializations(): List<SnapshotMaterializationIntent> = emptyList()
     }
 
-    private class FakeTransport : RemoteFileUploaderPort {
-        val uploadedFiles = mutableMapOf<String, ByteArray>()
-        override suspend fun uploadFile(remotePath: String, content: ByteArray): Boolean {
-            uploadedFiles[remotePath] = content
-            return true
-        }
-    }
-
     private class DynamicReadinessPort : EnvironmentReadinessPort {
         val flow = MutableSharedFlow<EnvironmentReadiness>(replay = 1)
         override fun observe(): Flow<EnvironmentReadiness> = flow
@@ -253,7 +229,7 @@ class WorkspaceConfigurationViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val runRepo = FakeRunRepository()
             val provisioningPort = FakeProvisioningPort()
-            val targetRepo = FakeTargetRepository(listOf(target))
+            val targetRepo = FakeWorkspaceDevices(target)
             val saveUseCase = SaveConfigurationSnapshotUseCase(
                 workspaceRepo,
                 snapshotRepo,
@@ -274,7 +250,6 @@ class WorkspaceConfigurationViewModelTest {
                     firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first(),
                 ),
                 build = org.ide.lti.core.model.workspace.BuildSettings(
-                    packagePolicy = target.packagePolicy!!,
                     signing = org.ide.lti.core.model.workspace.SigningPolicy(),
                 ),
                 assembly = org.ide.lti.core.model.workspace.AssemblySettings(buildType = "user", romVersion = "1.0"),
@@ -299,7 +274,7 @@ class WorkspaceConfigurationViewModelTest {
             val viewModel = WorkspaceConfigurationViewModel(
                 workspaceManager = workspaceManager,
                 snapshotRepository = snapshotRepo,
-                targetRepository = targetRepo,
+                workspaceDeviceRepository = targetRepo,
                 saveConfigurationSnapshotUseCase = saveUseCase,
             )
 
@@ -310,83 +285,22 @@ class WorkspaceConfigurationViewModelTest {
             assertEquals(TargetRegion.GLOBAL, state.draft?.region)
             assertFalse(state.isDirty)
 
-            // Local edit: switch to CN
-            viewModel.updateDraftRegion(TargetRegion.CHINA)
+            // Local edit of something this panel owns
+            viewModel.setBuildType("userdebug")
             assertTrue(viewModel.uiState.value.isDirty)
-            assertEquals(TargetRegion.CHINA, viewModel.uiState.value.draft?.region)
-            // initial snapshot is still GLOBAL
-            assertEquals(TargetRegion.GLOBAL, viewModel.uiState.value.initialSnapshot?.acquisition?.region)
+            assertEquals("user", viewModel.uiState.value.initialSnapshot?.assembly?.buildType)
 
             // Save
             viewModel.saveConfiguration()
             advanceUntilIdle()
 
+            val saved = viewModel.uiState.value.initialSnapshot
             assertFalse(viewModel.uiState.value.isDirty)
-            assertEquals(TargetRegion.CHINA, viewModel.uiState.value.initialSnapshot?.acquisition?.region)
+            assertEquals("userdebug", saved?.assembly?.buildType)
+            // What the stages own is kept as they saved it, not rewritten from this panel's draft
+            assertEquals(TargetRegion.GLOBAL, saved?.acquisition?.region)
+            assertEquals("https://example.com", saved?.release?.otaBaseUrl)
             assertEquals(1, provisioningPort.uploadedConfigs.size)
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
-    fun importArchiveModeUploadsFileViaTransport() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
-        try {
-            val workspaceRepo = FakeWorkspaceRepo()
-            val snapshotRepo = FakeSnapshotRepository()
-            val runRepo = FakeRunRepository()
-            val provisioningPort = FakeProvisioningPort()
-            val targetRepo = FakeTargetRepository(listOf(target))
-            val transport = FakeTransport()
-            val saveUseCase = SaveConfigurationSnapshotUseCase(
-                workspaceRepo,
-                snapshotRepo,
-                runRepo,
-                provisioningPort,
-                FakeWorkspaceAdmissionPort(),
-                FakeSnapshotMaterializerPort(),
-            )
-            val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
-
-            val ws = Workspace(
-                id = "ws-import",
-                name = "Import WS",
-                path = "/home/lti/LtiRomWorkDir/workspaces/import-ws",
-                linuxPath = "/home/lti/LtiRomWorkDir/workspaces/import-ws",
-                targetBinding = TargetBinding("PQ84P01", 1),
-            )
-            workspaceRepo.saveWorkspace(ws)
-            workspaceManager.setCurrentWorkspace(ws)
-
-            val tempFile = File.createTempFile("test_firmware", ".zip").apply {
-                writeBytes("firmware content".toByteArray())
-                deleteOnExit()
-            }
-            val platformFile = PlatformFile(tempFile)
-
-            val viewModel = WorkspaceConfigurationViewModel(
-                workspaceManager = workspaceManager,
-                snapshotRepository = snapshotRepo,
-                targetRepository = targetRepo,
-                saveConfigurationSnapshotUseCase = saveUseCase,
-                transport = transport,
-                fileReader = { tempFile.readBytes() },
-            )
-
-            advanceUntilIdle()
-
-            viewModel.pickAndUploadArchive(platformFile)
-            advanceUntilIdle()
-
-            assertTrue(viewModel.uiState.value.isDirty)
-            assertEquals(AcquisitionMode.IMPORT_ARCHIVE, viewModel.uiState.value.draft?.acquisitionMode)
-            assertEquals(platformFile.name, viewModel.uiState.value.draft?.importedArchiveName)
-
-            val expectedRemotePath =
-                "/home/lti/LtiRomWorkDir/workspaces/import-ws/firmware/downloaded/${platformFile.name}"
-            assertTrue(transport.uploadedFiles.containsKey(expectedRemotePath))
         } finally {
             Dispatchers.resetMain()
         }
@@ -401,7 +315,7 @@ class WorkspaceConfigurationViewModelTest {
             val snapshotRepo = FakeSnapshotRepository()
             val runRepo = FakeRunRepository()
             val provisioningPort = FakeProvisioningPort()
-            val targetRepo = FakeTargetRepository(listOf(target))
+            val targetRepo = FakeWorkspaceDevices(target)
             val readinessPort = DynamicReadinessPort()
             val saveUseCase = SaveConfigurationSnapshotUseCase(
                 workspaceRepo,
@@ -428,7 +342,7 @@ class WorkspaceConfigurationViewModelTest {
             val viewModel = WorkspaceConfigurationViewModel(
                 workspaceManager = workspaceManager,
                 snapshotRepository = snapshotRepo,
-                targetRepository = targetRepo,
+                workspaceDeviceRepository = targetRepo,
                 saveConfigurationSnapshotUseCase = saveUseCase,
                 readinessPort = readinessPort,
             )
@@ -453,60 +367,221 @@ class WorkspaceConfigurationViewModelTest {
         }
     }
 
+    private val deviceSnapshots = FakeSnapshotRepository()
+
+    private suspend fun deviceFixture(
+        runs: FakeRunRepository = FakeRunRepository(),
+        withDevice: Boolean = true,
+    ): Triple<WorkspaceDeviceViewModel, FakeWorkspaceRepo, FakeWorkspaceDevices> {
+        val workspaceRepo = FakeWorkspaceRepo()
+        val snapshotRepo = deviceSnapshots
+        val firmware = target.availableFirmwares[TargetRegion.GLOBAL]!!.first().copy(
+            acquisitionUrl = "https://example.com/fw.zip",
+            sha256 = "a".repeat(64),
+        )
+        snapshotRepo.saveSnapshot(
+            ConfigurationSnapshot.create(
+                id = "snap-1",
+                workspaceId = "ws-1",
+                profileRevision = 1,
+                acquisition = org.ide.lti.core.model.workspace.AcquisitionSettings(
+                    region = TargetRegion.GLOBAL,
+                    firmware = firmware,
+                ),
+                assembly = org.ide.lti.core.model.workspace.AssemblySettings(buildType = "user", romVersion = "1.0"),
+                release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://example.com"),
+                createdAt = Clock.System.now(),
+            ),
+        )
+        val ws = Workspace(
+            id = "ws-1",
+            name = "Test Workspace",
+            path = "/w",
+            linuxPath = "/w",
+            type = WorkspaceType.REMOTE_WSL,
+            targetBinding = TargetBinding("ws-1", 1),
+            effectiveSnapshotId = "snap-1",
+        )
+        workspaceRepo.saveWorkspace(ws)
+        val manager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
+        manager.setCurrentWorkspace(ws)
+        val devices = FakeWorkspaceDevices(if (withDevice) target else null)
+        val viewModel = WorkspaceDeviceViewModel(manager, devices, snapshotRepo, ObserveRunUseCase(runs))
+        return Triple(viewModel, workspaceRepo, devices)
+    }
+
     @Test
-    fun invalidOtaBaseUrlBlocksSaveWithMessage() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(testDispatcher)
+    fun deviceEditsShowTheirProblemAndSaveStoresThemForThisWorkspace() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val (viewModel, workspaceRepo, devices) = deviceFixture()
+            advanceUntilIdle()
+            assertEquals(emptyList(), viewModel.uiState.value.issues, "the starting device is ready")
+
+            viewModel.update { it.copy(superGroupBytes = it.superPartitionBytes + 1) }
+            assertEquals(listOf("superGroupBytes"), viewModel.uiState.value.issues.map { it.fieldPath })
+            assertTrue(viewModel.uiState.value.isDirty)
+
+            viewModel.update { it.copy(superGroupBytes = it.superPartitionBytes, fastbootProduct = "sun2") }
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals("sun2", devices.get("ws-1")?.fastbootProduct)
+            assertEquals(false, viewModel.uiState.value.isDirty)
+            assertEquals("ws-1", workspaceRepo.workspaces["ws-1"]?.targetBinding?.profileId)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun theDeviceIsReadOnlyWhileARunIsActive() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val runs = FakeRunRepository()
+            runs.upsert(
+                BuildRun(
+                    id = "run-1",
+                    workspaceId = "ws-1",
+                    snapshotId = "snap-1",
+                    state = RunState.RUNNING,
+                    startedAt = Clock.System.now(),
+                ),
+            )
+            val (viewModel, _, devices) = deviceFixture(runs)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.locked)
+
+            viewModel.update { it.copy(name = "changed while running") }
+            viewModel.save()
+            advanceUntilIdle()
+
+            assertEquals(target.name, viewModel.uiState.value.draft?.name, "edits are ignored")
+            assertNull(devices.get("ws-1")?.takeIf { it.name == "changed while running" })
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun discardReturnsToTheSavedDeviceAndResyncsTheFields() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val (viewModel, _, _) = deviceFixture()
+            advanceUntilIdle()
+            val before = viewModel.uiState.value.resetCount
+
+            viewModel.update { it.copy(name = "draft") }
+            viewModel.discard()
+
+            assertEquals(target.name, viewModel.uiState.value.draft?.name)
+            assertEquals(false, viewModel.uiState.value.isDirty)
+            assertTrue(viewModel.uiState.value.resetCount > before)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun aWorkspaceWithoutADeviceStartsFromACopyOfATemplate() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val (viewModel, workspaceRepo, devices) = deviceFixture(withDevice = false)
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.draft, "no device yet")
+
+            viewModel.startFromTemplate(target)
+            advanceUntilIdle()
+
+            assertEquals(target, devices.get("ws-1"))
+            assertEquals(target, viewModel.uiState.value.draft)
+            assertEquals("ws-1", workspaceRepo.workspaces["ws-1"]?.targetBinding?.profileId)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun aNewlySavedConfigurationIsCheckedWithoutReopeningTheWorkspace() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val (viewModel, workspaceRepo, _) = deviceFixture()
+            advanceUntilIdle()
+            assertEquals(emptyList(), viewModel.uiState.value.issues)
+
+            val saved = deviceSnapshots.getSnapshot("snap-1")!!
+            val noUrl = saved.acquisition.firmware.copy(acquisitionUrl = null)
+            val broken = saved.copy(id = "snap-2", acquisition = saved.acquisition.copy(firmware = noUrl))
+            deviceSnapshots.saveSnapshot(broken)
+            workspaceRepo.saveWorkspace(workspaceRepo.workspaces.getValue("ws-1").copy(effectiveSnapshotId = "snap-2"))
+            advanceUntilIdle()
+
+            assertEquals(listOf("firmware.acquisitionUrl"), viewModel.uiState.value.issues.map { it.fieldPath })
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun anUnreadableDeviceFileIsReportedAndNeverReplacedByATemplate() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val workspaceRepo = FakeWorkspaceRepo()
+            val ws = Workspace(id = "ws-1", name = "W", path = "/w", linuxPath = "/w", type = WorkspaceType.REMOTE_WSL)
+            workspaceRepo.saveWorkspace(ws)
+            val manager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
+            manager.setCurrentWorkspace(ws)
+            var writes = 0
+            val unreadable = object : WorkspaceDeviceRepository {
+                override fun observe(workspaceId: String): Flow<TargetDevice?> = flow { error("service down") }
+                override suspend fun get(workspaceId: String): TargetDevice? = error("service down")
+                override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice {
+                    writes++
+                    return device
+                }
+            }
+            val viewModel = WorkspaceDeviceViewModel(manager, unreadable, FakeSnapshotRepository())
+            advanceUntilIdle()
+
+            assertEquals("service down", viewModel.uiState.value.loadError)
+            viewModel.startFromTemplate(target)
+            advanceUntilIdle()
+            assertEquals(0, writes, "an existing but unreadable device.json is never overwritten")
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun theTargetCardFollowsADeviceCreatedFromATemplate() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val workspaceRepo = FakeWorkspaceRepo()
             val snapshotRepo = FakeSnapshotRepository()
-            val runRepo = FakeRunRepository()
-            val provisioningPort = FakeProvisioningPort()
-            val targetRepo = FakeTargetRepository(listOf(target))
+            val ws = Workspace(id = "ws-1", name = "W", path = "/w", linuxPath = "/w", type = WorkspaceType.REMOTE_WSL)
+            workspaceRepo.saveWorkspace(ws)
+            val manager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
+            manager.setCurrentWorkspace(ws)
+            val devices = FakeWorkspaceDevices(null)
             val saveUseCase = SaveConfigurationSnapshotUseCase(
                 workspaceRepo,
                 snapshotRepo,
-                runRepo,
-                provisioningPort,
+                FakeRunRepository(),
+                FakeProvisioningPort(),
                 FakeWorkspaceAdmissionPort(),
                 FakeSnapshotMaterializerPort(),
             )
-            val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
+            val viewModel = WorkspaceConfigurationViewModel(manager, snapshotRepo, devices, saveUseCase)
+            advanceUntilIdle()
+            assertEquals(emptyMap(), viewModel.uiState.value.availableFirmwares, "no device, nothing to offer")
 
-            val ws = Workspace(
-                id = "ws-invalid",
-                name = "Invalid URL WS",
-                path = "/path",
-                linuxPath = "/path",
-                targetBinding = TargetBinding("PQ84P01", 1),
-            )
-            workspaceRepo.saveWorkspace(ws)
-            workspaceManager.setCurrentWorkspace(ws)
-
-            val viewModel = WorkspaceConfigurationViewModel(
-                workspaceManager = workspaceManager,
-                snapshotRepository = snapshotRepo,
-                targetRepository = targetRepo,
-                saveConfigurationSnapshotUseCase = saveUseCase,
-            )
-
+            devices.save("ws-1", target)
             advanceUntilIdle()
 
-            // Insecure HTTP URL
-            viewModel.setOtaBaseUrl("http://insecure.com/updates")
-            viewModel.saveConfiguration()
-            advanceUntilIdle()
-
-            assertNotNull(viewModel.uiState.value.errorMessage)
-            assertEquals(0, provisioningPort.uploadedConfigs.size)
-
-            // Trailing slash URL
-            viewModel.setOtaBaseUrl("https://secure.com/updates/")
-            viewModel.saveConfiguration()
-            advanceUntilIdle()
-
-            assertNotNull(viewModel.uiState.value.errorMessage)
-            assertEquals(0, provisioningPort.uploadedConfigs.size)
+            val state = viewModel.uiState.value
+            assertEquals(target, state.currentTarget)
+            assertEquals(target.availableFirmwares, state.availableFirmwares)
+            assertFalse(state.isDirty, "firmware is chosen in the Acquire stage, never changed here")
         } finally {
             Dispatchers.resetMain()
         }

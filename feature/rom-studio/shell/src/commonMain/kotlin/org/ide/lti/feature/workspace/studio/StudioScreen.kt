@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,12 +41,13 @@ import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeRightRail
-import org.ide.lti.core.designsystem.component.layout.IdeRightRailItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
+import org.ide.lti.core.designsystem.component.layout.RailStageStatus
 import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
@@ -66,6 +64,7 @@ import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.StudioIconKey
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 import org.ide.lti.feature.rom.studio.api.descriptorFor
+import org.ide.lti.feature.workspace.panels.run.ArtifactsPanel
 import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.run.RunPanel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
@@ -108,8 +107,6 @@ public fun StudioScreen(
     val uiState by viewModel.uiState.collectAsState()
     val shellState by viewModel.shellState.collectAsState()
     val stageEditorRegistry = viewModel.stageEditorRegistry
-    val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
-    val boundProfileId = currentWorkspace?.targetBinding?.profileId
 
     LaunchedEffect(workspaceId, initialStageId, initialObjectId) {
         viewModel.onEntry(
@@ -142,11 +139,9 @@ public fun StudioScreen(
             }
         },
         onSelectWorkspaceSection = { section ->
-            if (section == WorkspaceSection.TargetProfile && boundProfileId != null) {
-                onOpenEditConfiguration(boundProfileId)
-            } else {
-                viewModel.selectWorkspaceSection(section)
-            }
+            // The device belongs to the workspace and is edited in its own configuration panel.
+            val target = if (section == WorkspaceSection.TargetProfile) WorkspaceSection.RomConfig else section
+            viewModel.selectWorkspaceSection(target)
         },
         onSelectStage = { stageId ->
             viewModel.selectStage(stageId)
@@ -168,8 +163,7 @@ public fun StudioScreen(
                 selectedObjectId = selectedObjectId,
                 onNavigateToSetup = onNavigateToSetup,
                 onOpenSettings = onOpenSettings,
-                boundProfileId = boundProfileId,
-                onOpenEditConfiguration = onOpenEditConfiguration,
+                onOpenPlugins = { onNavigateToPlugins(workspaceId, null, "import") },
             )
         },
     )
@@ -187,8 +181,7 @@ private fun StudioContent(
     selectedObjectId: String?,
     onNavigateToSetup: () -> Unit,
     onOpenSettings: () -> Unit,
-    boundProfileId: String?,
-    onOpenEditConfiguration: (targetId: String) -> Unit,
+    onOpenPlugins: () -> Unit,
 ) {
     if (selectedStageId != null && uiState.entry is StudioEntry.Editor) {
         val editor = stageEditorRegistry.editorFor(selectedStageId)
@@ -204,6 +197,7 @@ private fun StudioContent(
                 onSelectedObjectChange = { objId -> viewModel.selectObject(selectedStageId, objId.value) },
                 onSaveRequested = { viewModel.saveWorkspace() },
                 onValidationRequested = { viewModel.validateWorkspace() },
+                onOpenPlugins = onOpenPlugins,
             )
             editor.Content(context = context, modifier = Modifier.fillMaxSize())
         } else {
@@ -216,6 +210,8 @@ private fun StudioContent(
                 onSave = { viewModel.saveWorkspace() },
             )
         }
+    } else if (shellState.selectedWorkspaceSection == WorkspaceSection.Artifacts) {
+        ArtifactsPanel(runs = uiState.runs, modifier = Modifier.fillMaxSize())
     } else if (shellState.selectedWorkspaceSection == WorkspaceSection.RomConfig) {
         WorkspaceConfigurationPanel(modifier = Modifier.fillMaxSize())
     } else if (shellState.selectedWorkspaceSection == WorkspaceSection.RunHistory) {
@@ -225,8 +221,6 @@ private fun StudioContent(
             modifier = Modifier.fillMaxSize(),
         )
     } else {
-        // Overview, Artifacts, and TargetProfile have no dedicated panel yet - the overview
-        // stays the fallback for them, matching prior behavior.
         WorkspaceOverview(
             state = uiState.overviewState,
             onAction = { action ->
@@ -239,13 +233,7 @@ private fun StudioContent(
                 )
             },
             onReload = { viewModel.onEntry(workspaceId) },
-            onEditProfile = {
-                if (boundProfileId != null) {
-                    onOpenEditConfiguration(boundProfileId)
-                } else {
-                    viewModel.selectWorkspaceSection(WorkspaceSection.TargetProfile)
-                }
-            },
+            onEditProfile = { viewModel.selectWorkspaceSection(WorkspaceSection.RomConfig) },
             onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         )
     }
@@ -259,7 +247,8 @@ private fun dispatchOverviewAction(
     onOpenSettings: () -> Unit,
 ) {
     when (action) {
-        is WorkspaceActionUi.OpenStage -> viewModel.selectStage(action.stageId)
+        is WorkspaceActionUi.OpenStage -> action.objectId?.let { viewModel.selectObject(action.stageId, it) }
+            ?: viewModel.selectStage(action.stageId)
         is WorkspaceActionUi.OpenWorkspaceSection -> viewModel.selectWorkspaceSection(action.section)
         WorkspaceActionUi.Reload -> viewModel.onEntry(workspaceId)
         WorkspaceActionUi.Validate -> viewModel.validateWorkspace()
@@ -320,13 +309,17 @@ public fun StudioShellContent(
         }
     }
 
-    val stages = remember(uiState.pipelineItems) {
-        uiState.pipelineItems.map { item ->
+    val stages = remember(uiState.pipelineItems, uiState.deviceHasError) {
+        // The device configuration comes first: every stage needs it, and the build cannot start without it.
+        val device = DEVICE_RAIL_ITEM.copy(status = railStatus(open = true, hasError = uiState.deviceHasError))
+        listOf(device) + uiState.pipelineItems.map { item ->
             IdePipelineStageItem(
                 id = item.stageId.name,
                 label = item.label,
                 icon = item.iconKey,
                 enabled = item.isEnabled,
+                disabledReason = item.disabledReason,
+                status = railStatus(open = item.isEnabled, hasError = uiState.deviceHasError?.let { item.hasError }),
             )
         }
     }
@@ -380,11 +373,14 @@ public fun StudioShellContent(
         pipelineRail = {
             IdePipelineRail(
                 stages = stages,
-                selectedStageId = selectedStageId,
+                selectedStageId = selectedStageId ?: DEVICE_RAIL_ITEM.id.takeIf {
+                    uiState.selectedWorkspaceSection == WorkspaceSection.RomConfig
+                },
                 onSelectStage = { stageName ->
                     val stageId = StageId.entries.firstOrNull { it.name == stageName }
-                    if (stageId != null) {
-                        onSelectStage(stageId)
+                    when {
+                        stageName == DEVICE_RAIL_ITEM.id -> onSelectWorkspaceSection(WorkspaceSection.RomConfig)
+                        stageId != null -> onSelectStage(stageId)
                     }
                 },
                 modifier = Modifier.testTag("IdePipelineRail"),
@@ -418,16 +414,6 @@ public fun StudioShellContent(
                                 onClick = onValidate,
                                 testTag = "TopBar_Validate",
                             )
-
-                            val isSaving = uiState.saveOperation is OperationUiState.Running
-                            TopBarActionButton(
-                                label = "Save",
-                                isLoading = isSaving,
-                                isEnabled = !isSaving,
-                                isPrimary = true,
-                                onClick = onSave,
-                                testTag = "TopBar_Save",
-                            )
                         },
                     )
 
@@ -455,9 +441,30 @@ public fun StudioShellContent(
                             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                     )
                 }
+                // The result of Validate / Check readiness, until the next one.
+                (uiState.validateOperation as? OperationUiState.Succeeded)?.message?.let { message ->
+                    Text(
+                        text = message,
+                        color = if (message.startsWith(READY)) {
+                            GlassTheme.diagnosticColors.success
+                        } else {
+                            GlassTheme.diagnosticColors.warning
+                        },
+                        fontSize = FontSize.BodySmall,
+                        modifier = Modifier
+                            .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.ExtraSmall)
+                            .testTag("ValidationResult"),
+                    )
+                }
 
                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     content()
+                }
+                if (isStageEditor) {
+                    val items = uiState.pipelineItems
+                    items.getOrNull(items.indexOfFirst { it.isSelected } + 1)?.let { next ->
+                        StageContinueBar(next = next, onContinue = { onSelectStage(next.stageId) })
+                    }
                 }
             }
         },
@@ -471,26 +478,30 @@ public fun StudioShellContent(
     )
 }
 
+/** The way forward through the pipeline: the next stage, or what to finish before it opens. */
+@Composable
+private fun StageContinueBar(next: PipelineRailItemUi, onContinue: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Small)
+            .testTag("StageContinueBar"),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium, Alignment.End),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        next.disabledReason?.takeIf { !next.isEnabled }?.let {
+            Text(text = it, color = GlassTheme.diagnosticColors.warning, fontSize = FontSize.BodySmall)
+        }
+        GlassButton(onClick = onContinue, enabled = next.isEnabled, variant = GlassButtonVariant.Primary) {
+            Text("Continue to ${next.label} →")
+        }
+    }
+}
+
 @Composable
 private fun WorkspaceRightRail(modifier: Modifier = Modifier) {
-    val items = remember {
-        listOf(
-            IdeRightRailItem(
-                id = "ai",
-                label = "AI Assistant (Demo)",
-                icon = Icons.Default.AutoAwesome,
-            ),
-            IdeRightRailItem(
-                id = "terminal",
-                label = "Terminal (Demo)",
-                icon = Icons.Default.Terminal,
-            ),
-        )
-    }
-    IdeRightRail(
-        items = items,
-        modifier = modifier.testTag("WorkspaceRightRail"),
-    )
+    // No tool windows yet: the rail keeps the frame's shape without offering actions that do nothing.
+    IdeRightRail(items = emptyList(), modifier = modifier.testTag("WorkspaceRightRail"))
 }
 
 @Composable
@@ -548,11 +559,6 @@ private fun WorkspaceSubMenuTabBar(
                 id = WorkspaceSection.Artifacts.name,
                 label = "Artifacts",
                 icon = resolveNavIcon("archive"),
-            ),
-            IdeSubMenuItem(
-                id = WorkspaceSection.TargetProfile.name,
-                label = "Target profile",
-                icon = resolveNavIcon("phone"),
             ),
         )
     }
@@ -765,10 +771,9 @@ private fun resolveExtractSubtitle(subobjectId: String?): String = when (subobje
     "dynamic-partitions", "dynamic_partitions" ->
         "Choose what to extract from the verified source."
     "boot-partitions", "boot_partitions" ->
-        "Configure boot, recovery, and vendor_boot extraction parameters."
-    "slot" -> "Select active A/B slot and payload partition mapping."
-    "filesystem-handling", "filesystem_handling" ->
-        "Configure filesystem extraction adapters and sparsing options."
+        "Choose which boot images to unpack (boot, init_boot, vendor_boot, dtbo)."
+    "slot" -> "Choose which A/B slot's images to unpack."
+    "filesystem-handling", "filesystem_handling" -> "How unpacked images are kept between builds."
     else -> "Extract and unpack partition images from verified firmware."
 }
 
@@ -785,3 +790,15 @@ private fun resolveAssembleSubtitle(subobjectId: String?): String = when (subobj
         "Configure build properties and fingerprint overrides."
     else -> "Assemble work trees and staging structures for customization."
 }
+
+/** A locked stage shows no dot (it is greyed); an open one is green when configured, red with errors. */
+private fun railStatus(open: Boolean, hasError: Boolean?): RailStageStatus = when {
+    !open || hasError == null -> RailStageStatus.NONE
+    hasError -> RailStageStatus.ERROR
+    else -> RailStageStatus.DONE
+}
+
+/** Rail entry for the device configuration of the workspace (opens the ROM configuration panel). */
+private val DEVICE_RAIL_ITEM = IdePipelineStageItem(id = "device", label = "Device configuration", icon = "device")
+
+internal const val READY = "Ready to build"

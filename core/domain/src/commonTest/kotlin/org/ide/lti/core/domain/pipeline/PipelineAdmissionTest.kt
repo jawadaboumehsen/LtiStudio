@@ -191,9 +191,8 @@ class PipelineAdmissionTest {
             )
         val original = launch { orchestrator.drive("duplicate", fixture.globalOtaContext(), "one").toList() }
         entered.await()
-        assertFailsWith<IllegalStateException> {
-            orchestrator.drive("duplicate", fixture.globalOtaContext(), "two").toList()
-        }
+        // A second driver of a run this app is driving does nothing at all.
+        assertEquals(emptyList(), orchestrator.drive("duplicate", fixture.globalOtaContext(), "two").toList())
         assertTrue(coordinator.isJobActive)
         assertTrue(coordinator.withToolMutationAdmission { Unit }.isFailure)
         original.cancel()

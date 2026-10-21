@@ -10,12 +10,11 @@
 package org.ide.lti.core.model.workspace
 
 import kotlinx.serialization.Serializable
-import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 
 @Serializable
-public enum class AcquisitionMode { DOWNLOAD, IMPORT_ARCHIVE, EXISTING_ARCHIVE }
+public enum class AcquisitionMode { DOWNLOAD, IMPORT_ARCHIVE }
 
 @Serializable
 public data class AcquisitionSettings(
@@ -29,9 +28,9 @@ public data class AcquisitionSettings(
 ) {
     init {
         require(retries in 0..5) { "retries must be in 0..5, was $retries" }
-        if (mode == AcquisitionMode.IMPORT_ARCHIVE || mode == AcquisitionMode.EXISTING_ARCHIVE) {
+        if (mode == AcquisitionMode.IMPORT_ARCHIVE) {
             require(!archiveRef.isNullOrBlank()) {
-                "archiveRef is required for IMPORT_ARCHIVE and EXISTING_ARCHIVE modes"
+                "archiveRef is required for IMPORT_ARCHIVE mode"
             }
         }
     }
@@ -71,12 +70,9 @@ public data class AssemblySettings(
 @Serializable
 public data class DebloatSettings(
     val enabled: Boolean = false,
-    val presetId: String? = null,
-    val presetRevision: Int? = null,
-    val presetDigest: String? = null,
+    /** App folders to remove, as `partition:path` (e.g. `system:system/app/Foo`), picked from the inventory. */
     val removeSelectors: List<String> = emptyList(),
     val keepSelectors: List<String> = emptyList(),
-    val protectedPolicyRevision: Int? = null,
 )
 
 @Serializable
@@ -110,7 +106,6 @@ public data class BuildSettings(
     val level: Int? = null,
     val blockSize: Int = 4096,
     val alignment: Int? = null,
-    val packagePolicy: PackagePolicy = PackagePolicy(),
     val signing: SigningPolicy = SigningPolicy(),
     val filenameTemplate: String = "Lti_{version}_{date}_{device}-sign.zip",
 )

@@ -71,6 +71,13 @@ public sealed interface PipelineStep {
         override val label: String,
     ) : PipelineStep
 
+    /**
+     * Work the app itself does, through [HostStepPort] (applying plugin mutation plans to the work tree). Its
+     * result is stored under [resultKey]; a result already recorded there (a resumed run) is not redone.
+     */
+    public data class Host(override val label: String, val resultKey: String, val request: HostRequest) :
+        PipelineStep
+
     /** Pure assertion over the current runtime values; returns a failure message or null. */
     public class Check(
         override val label: String,
@@ -112,3 +119,12 @@ public object RuntimeKeys {
 
 /** First whitespace-separated token of a `sha256sum`/`sha1sum` line. */
 public fun String.digestToken(): String = trim().split(Regex("\\s+")).firstOrNull().orEmpty()
+
+/** What a [PipelineStep.Host] asks the app to do; each kind has one executor behind [HostStepPort]. */
+public interface HostRequest
+
+/** Runs [PipelineStep.Host] requests against a workspace. */
+public fun interface HostStepPort {
+    /** Returns the text stored under the step's result key; throws when the work could not be done. */
+    public suspend fun run(workspace: org.ide.lti.core.model.workspace.Workspace, request: HostRequest): String
+}

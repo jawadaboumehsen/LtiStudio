@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
@@ -86,6 +88,10 @@ class EnvironmentReadinessAdapterTest {
     ) : ToolchainProvisioningService {
         private val _state = MutableStateFlow(stateResult)
         override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
+
+        fun push(next: ToolchainSetupState) {
+            _state.value = next
+        }
 
         override suspend fun checkStatus(): ToolchainSetupState {
             _state.value = stateResult
@@ -164,7 +170,8 @@ class EnvironmentReadinessAdapterTest {
         assertEquals(EnvironmentReadinessState.ENV_ABSENT, readiness.state)
         assertNotNull(readiness.failingCheck)
         assertNotNull(readiness.remediation)
-        assertEquals(readiness, adapter.observe().first())
+        // observedAt is stamped per read, so compare what was observed, not when.
+        assertEquals(readiness.copy(observedAt = 0), adapter.observe().first().copy(observedAt = 0))
     }
 
     @Test
@@ -473,5 +480,36 @@ class EnvironmentReadinessAdapterTest {
 
         assertFalse(readiness.state == EnvironmentReadinessState.READY, "Empty inventory must never be READY")
         assertEquals(EnvironmentReadinessState.TOOLS_MISSING, readiness.state)
+    }
+
+    @Test
+    fun observedReadinessIsTheLiveSetupStateWithoutARefresh() = runTest {
+        // The Setup screen showed "ready" while the Studio still said "not ready": observe() used to start at
+        // ENV_ABSENT and only change when something called refresh().
+        val adapter = EnvironmentReadinessAdapter(FakeToolchainProvisioningService(), FakeRemoteTransport())
+
+        assertEquals(EnvironmentReadinessState.READY, adapter.observe().first().state)
+    }
+
+    @Test
+    fun aCheckInProgressNeverFlashesNotReady() = runTest {
+        // Creating a workspace re-runs the check twice; each run resets the steps before filling them in again.
+        // The create screen showed "Environment verification incomplete" appear and disappear while that ran.
+        val service = FakeToolchainProvisioningService()
+        val ready = service.stateResult
+        val adapter = EnvironmentReadinessAdapter(service, FakeRemoteTransport())
+        val seen = mutableListOf<EnvironmentReadinessState>()
+        val job = launch { adapter.observe().collect { seen += it.state } }
+        runCurrent()
+
+        repeat(2) {
+            service.push(ToolchainSetupState(isChecking = true)) // steps reset: not launchable mid-check
+            runCurrent()
+            service.push(ready.copy(isChecking = false))
+            runCurrent()
+        }
+        job.cancel()
+
+        assertEquals(listOf(EnvironmentReadinessState.READY), seen)
     }
 }

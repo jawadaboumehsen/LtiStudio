@@ -21,6 +21,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +56,8 @@ public fun MetadataEditor(
     onChange: (ReleaseSettings) -> Unit,
     dirtyPaths: Set<String> = emptySet(),
     selectedObjectId: String = "release-identity",
+    /** The manifest the last build wrote, or null. */
+    manifest: String? = null,
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -82,7 +88,7 @@ public fun MetadataEditor(
                     CompatibilityCard(target, dirtyPaths)
                 }
                 "manifest-preview", "manifest_preview" -> item {
-                    ManifestCard(settings, target)
+                    ManifestCard(manifest)
                 }
                 else -> item {
                     IdentityCard(settings, target, dirtyPaths, onChange)
@@ -116,17 +122,17 @@ private fun IdentityCard(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "Pinned target provides device identity; select distribution channel:",
+            text = "The device the update is for, and the channel it is published on.",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         GlassTextField(
-            target.codename,
+            target.id,
             {},
-            label = "Manifest device",
+            label = "Device",
             readOnly = true,
-            state = TextFieldState.Helper("Derived from pinned target device."),
+            state = TextFieldState.Helper("From this workspace's device configuration."),
         )
         Text(
             text = "Channel",
@@ -144,7 +150,7 @@ private fun IdentityCard(
                 )
             }
         }
-        Meta("channel", dirtyPaths, "Release channel", "Distribution channel ring.")
+        Meta("channel", dirtyPaths, "Release channel", "Devices follow one channel; the manifest records it.")
     }
 }
 
@@ -176,15 +182,21 @@ private fun OtaCard(
             fontFamily = ideFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // What is typed stays in the field while it is not a valid URL yet; only a valid one is saved.
+        var text by remember(settings.otaBaseUrl) { mutableStateOf(settings.otaBaseUrl) }
+        val invalid = runCatching { settings.copy(otaBaseUrl = text) }.exceptionOrNull()
         GlassTextField(
-            settings.otaBaseUrl,
+            text,
             { value ->
+                text = value
                 runCatching { settings.copy(otaBaseUrl = value) }.onSuccess(onChange)
             },
             label = "HTTPS distribution base URL",
-            state = fieldState(errors, "otaBaseUrl"),
+            state = invalid?.let {
+                TextFieldState.Error("Not saved: it must start with https:// and not end with /.")
+            } ?: fieldState(errors, "otaBaseUrl"),
         )
-        Meta("otaBaseUrl", dirtyPaths, "OTA endpoint", "Server endpoint hosting delta/full payloads.")
+        Meta("otaBaseUrl", dirtyPaths, "OTA download", "Where devices download the package from: <url>/<zip name>.")
     }
 }
 
@@ -223,7 +235,7 @@ private fun ChangelogCard(
             config = TextFieldConfig(singleLine = false, maxLines = 10),
             state = fieldState(errors, "changelog"),
         )
-        Meta("changelog", dirtyPaths, "Changelog", "Rendered in system updater UI on client devices.")
+        Meta("changelog", dirtyPaths, "Changelog", "Shown by the updater on the device. Empty: a generated summary.")
     }
 }
 
@@ -249,30 +261,23 @@ private fun CompatibilityCard(target: TargetDevice, dirtyPaths: Set<String>) {
             {},
             label = "Supported device",
             readOnly = true,
-            state = TextFieldState.Helper("Pinned target hardware."),
+            state = TextFieldState.Helper("From this workspace's device configuration."),
         )
         GlassTextField(
-            "Target revision ${target.revision} · ${target.status}",
+            "Android ${target.availableFirmwares.values.flatten().firstOrNull()?.androidVersion ?: "?"} · " +
+                "slots ${target.packagePolicy.bootSlots.joinToString()}",
             {},
-            label = "Target revision",
+            label = "Firmware",
             readOnly = true,
-            state = TextFieldState.Helper("Rebind through target catalog."),
+            state = TextFieldState.Helper("The update installs only on this device (the package checks its id)."),
         )
-        Meta("target", dirtyPaths, "Pinned target", "Governed by hardware security policy.")
+        Meta("target", dirtyPaths, "This workspace", "Edit the device in ROM configuration.")
     }
 }
 
+/** The manifest the last build wrote, as devices will read it; before a build, what to run first. */
 @Composable
-private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice) {
-    val manifest = buildString {
-        appendLine("{")
-        appendLine("  \"device\": \"${target.codename}\",")
-        appendLine("  \"channel\": \"${settings.channel}\",")
-        appendLine("  \"ota_base_url\": \"${settings.otaBaseUrl}\",")
-        appendLine("  \"target_revision\": ${target.revision},")
-        appendLine("  \"status\": \"candidate\"")
-        append("}")
-    }
+private fun ManifestCard(manifest: String?) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -282,20 +287,34 @@ private fun ManifestCard(settings: ReleaseSettings, target: TargetDevice) {
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         Text(
-            text = "Manifest Preview",
+            text = "Manifest preview",
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
             color = MaterialTheme.colorScheme.onSurface,
         )
-        GlassTextField(
-            manifest,
-            {},
-            label = "Generated manifest JSON",
-            readOnly = true,
-            config = TextFieldConfig(singleLine = false, maxLines = 10),
-            state = TextFieldState.Helper("Final build hashes and timestamps are injected at build completion."),
-        )
+        if (manifest == null) {
+            Text(
+                text = "No manifest yet. Run the build through Release metadata to generate out/manifest.json.",
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Text(
+                text = "out/manifest.json from the last build. It changes when you build again.",
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = manifest.trim(),
+                fontSize = FontSize.Micro,
+                fontFamily = codeFontFamily(),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.testTag("ManifestJson"),
+            )
+        }
     }
 }
 

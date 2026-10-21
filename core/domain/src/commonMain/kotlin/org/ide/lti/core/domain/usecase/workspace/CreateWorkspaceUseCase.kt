@@ -23,7 +23,6 @@ import org.ide.lti.core.domain.ports.WorkspaceProvisioningPort
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
-import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
@@ -97,7 +96,7 @@ class CreateWorkspaceUseCase(
         val manifest = WorkspaceManifest(
             id = workspaceId,
             layoutVersion = 1,
-            targetBinding = TargetBinding(target.id, profileRevision),
+            targetBinding = TargetBinding(workspaceId, profileRevision),
             createdAt = Clock.System.now().toString(),
             appVersion = appVersion,
         )
@@ -135,10 +134,6 @@ class CreateWorkspaceUseCase(
                 buildId = "${target.codename}:15/AQ3A.240812.002/20260101.000000",
                 isOfficial = false,
             )
-        val packagePolicy = target.packagePolicy ?: PackagePolicy(
-            flashablePartitions = target.dynamicPartitions,
-            flashableBootPartitions = target.bootPartitions,
-        )
         return ConfigurationSnapshot.create(
             id = snapshotId,
             workspaceId = workspaceId,
@@ -147,9 +142,6 @@ class CreateWorkspaceUseCase(
                 mode = AcquisitionMode.DOWNLOAD,
                 region = region,
                 firmware = firmware,
-            ),
-            build = org.ide.lti.core.model.workspace.BuildSettings(
-                packagePolicy = packagePolicy,
             ),
             assembly = org.ide.lti.core.model.workspace.AssemblySettings(
                 buildType = "user",
@@ -170,7 +162,7 @@ class CreateWorkspaceUseCase(
         workspaceId: String,
         snapshot: ConfigurationSnapshot,
     ) {
-        val binding = TargetBinding(target.id, target.revision)
+        val binding = TargetBinding(workspaceId, target.revision)
         val now = Clock.System.now()
         snapshotRepository.saveSnapshot(snapshot)
         workspaceRepository.saveWorkspace(

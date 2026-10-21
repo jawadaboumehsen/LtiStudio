@@ -23,6 +23,9 @@ public val stagePatchModule: Module = module {
     viewModel { params ->
         PatchViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            plugins = getOrNull(),
+            catalog = getOrNull(),
         )
     }
 }

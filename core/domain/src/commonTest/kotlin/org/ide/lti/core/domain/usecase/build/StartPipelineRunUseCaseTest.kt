@@ -1,7 +1,10 @@
 package org.ide.lti.core.domain.usecase.build
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
@@ -11,8 +14,9 @@ import org.ide.lti.core.domain.ports.VendoredFile
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
 import org.ide.lti.core.domain.repository.snapshot.InMemorySnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.InMemoryWorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -80,15 +84,6 @@ class StartPipelineRunUseCaseTest {
         override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
     }
 
-    private class FakeTargetRepo(private val target: TargetDevice) : TargetRepository {
-        override fun getAvailableTargets(): Flow<List<TargetDevice>> = flowOf(listOf(target))
-        override fun getSelectedTarget(): Flow<TargetDevice> = flowOf(target)
-        override suspend fun selectTarget(targetId: String): Result<TargetDevice> = Result.success(target)
-        override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = Result.success(target)
-        override suspend fun deleteTarget(targetId: String): Result<Unit> = Result.success(Unit)
-    }
-
     private val testTarget = TargetDevice(
         id = "PQ84P01",
         name = "REDMAGIC Astra Gaming Tablet",
@@ -150,7 +145,6 @@ class StartPipelineRunUseCaseTest {
         debloat = org.ide.lti.core.model.workspace.DebloatSettings(),
         customization = org.ide.lti.core.model.workspace.CustomizationSettings(),
         build = org.ide.lti.core.model.workspace.BuildSettings(
-            packagePolicy = testTarget.packagePolicy,
             signing = SigningPolicy(signImages = true, signPackage = true),
         ),
         release = org.ide.lti.core.model.workspace.ReleaseSettings(otaBaseUrl = "https://ota.ltirom.org/updates"),
@@ -159,10 +153,60 @@ class StartPipelineRunUseCaseTest {
     )
 
     @Test
+    fun runWaitsForPendingEditsAndDoesNotStartWhenSavingFails() = runTest {
+        for (fail in listOf(false, true)) {
+            val workspaces = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
+            val snapshots = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
+            val flushedSnapshot = testSnapshot.copy(id = "snap-flushed")
+            snapshots.saveSnapshot(flushedSnapshot)
+            val execution = FakePipelineExecutionPort()
+            val runs = InMemoryRunRepository()
+            val gate = CompletableDeferred<Unit>()
+            val store = object : WorkspaceSettingsStore {
+                override suspend fun current(workspaceId: String) = testSnapshot
+                override suspend fun device(workspaceId: String) = testTarget
+                override suspend fun update(
+                    workspaceId: String,
+                    change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
+                ): Result<ConfigurationSnapshot> = error("not used")
+                override suspend fun flush(workspaceId: String): Result<Unit> {
+                    gate.await()
+                    if (fail) return Result.failure(IllegalStateException("Save failed"))
+                    workspaces.saveWorkspace(testWorkspace.copy(effectiveSnapshotId = flushedSnapshot.id))
+                    return Result.success(Unit)
+                }
+            }
+            val useCase = StartPipelineRunUseCase(
+                workspaces,
+                snapshots,
+                InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget)),
+                FakeReadinessPort(),
+                execution,
+                runs,
+                PipelineOrchestrator(execution, runs, NoVendoredFiles),
+                settingsStore = store,
+            )
+            val starting = async { useCase("ws-1") }
+            runCurrent()
+            assertFalse(starting.isCompleted)
+            assertTrue(execution.uploadedFiles.isEmpty())
+            gate.complete(Unit)
+            val result = starting.await()
+            if (fail) {
+                assertTrue(result.isFailure)
+                assertTrue(execution.uploadedFiles.isEmpty())
+                assertNull(runs.latestActive("ws-1"))
+            } else {
+                assertEquals(flushedSnapshot.id, result.getOrThrow().snapshotId)
+            }
+        }
+    }
+
+    @Test
     fun testSnapshotFrozenBeforeStartAndPersistedQueued() = runTest {
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepo(testTarget)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget))
         val readinessPort = FakeReadinessPort()
         val executionPort = FakePipelineExecutionPort()
         val runRepo = InMemoryRunRepository()
@@ -171,7 +215,7 @@ class StartPipelineRunUseCaseTest {
         val useCase = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort,
             runRepository = runRepo,
@@ -201,7 +245,7 @@ class StartPipelineRunUseCaseTest {
     fun testSecondStartInSameWorkspaceRefused() = runTest {
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepo(testTarget)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget))
         val readinessPort = FakeReadinessPort()
         val executionPort = FakePipelineExecutionPort()
         val runRepo = InMemoryRunRepository()
@@ -210,7 +254,7 @@ class StartPipelineRunUseCaseTest {
         val useCase = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort,
             runRepository = runRepo,
@@ -230,7 +274,7 @@ class StartPipelineRunUseCaseTest {
     fun testReadinessGateRefusesIfNotReady() = runTest {
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepo(testTarget)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget))
         val readinessPort = FakeReadinessPort(
             EnvironmentReadiness(state = EnvironmentReadinessState.ENV_ABSENT),
         )
@@ -241,7 +285,7 @@ class StartPipelineRunUseCaseTest {
         val useCase = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort,
             runRepository = runRepo,
@@ -254,10 +298,36 @@ class StartPipelineRunUseCaseTest {
     }
 
     @Test
+    fun testIncompleteDeviceConfigurationRefusedAndNothingIsStarted() = runTest {
+        val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
+        val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
+        val incomplete = testTarget.copy(fastbootProduct = "", superGroupBytes = testTarget.superPartitionBytes + 1)
+        val devices = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to incomplete))
+        val executionPort = FakePipelineExecutionPort()
+        val runRepo = InMemoryRunRepository()
+
+        val useCase = StartPipelineRunUseCase(
+            workspaceRepository = wsRepo,
+            snapshotRepository = snapRepo,
+            workspaceDeviceRepository = devices,
+            readinessPort = FakeReadinessPort(),
+            executionPort = executionPort,
+            runRepository = runRepo,
+            orchestrator = PipelineOrchestrator(executionPort, runRepo, NoVendoredFiles),
+        )
+
+        val result = useCase("ws-1")
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("device configuration is incomplete") == true)
+        assertTrue(executionPort.uploadedFiles.isEmpty(), "no config is frozen for a build that cannot start")
+        assertNull(runRepo.latestActive("ws-1"))
+    }
+
+    @Test
     fun testInsufficientDiskSpaceRefused() = runTest {
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(testSnapshot) }
-        val targetRepo = FakeTargetRepo(testTarget)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget))
         val readinessPort = FakeReadinessPort()
         val executionPort = FakePipelineExecutionPort().apply {
             availableDiskBytes = 10_000_000_000L // 10 GB < 40 GB min
@@ -268,7 +338,7 @@ class StartPipelineRunUseCaseTest {
         val useCase = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort,
             runRepository = runRepo,
@@ -289,7 +359,7 @@ class StartPipelineRunUseCaseTest {
         )
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(snapshotWithKnownSize) }
-        val targetRepo = FakeTargetRepo(testTarget)
+        val targetRepo = InMemoryWorkspaceDeviceRepository(mapOf("ws-1" to testTarget))
         val readinessPort = FakeReadinessPort()
         val runRepo = InMemoryRunRepository()
 
@@ -301,7 +371,7 @@ class StartPipelineRunUseCaseTest {
         val useCase1 = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort1,
             runRepository = runRepo,
@@ -319,7 +389,7 @@ class StartPipelineRunUseCaseTest {
         val useCase2 = StartPipelineRunUseCase(
             workspaceRepository = wsRepo,
             snapshotRepository = snapRepo,
-            targetRepository = targetRepo,
+            workspaceDeviceRepository = targetRepo,
             readinessPort = readinessPort,
             executionPort = executionPort2,
             runRepository = runRepo,

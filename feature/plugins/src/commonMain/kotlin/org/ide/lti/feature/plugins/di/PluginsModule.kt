@@ -22,6 +22,7 @@ val pluginsModule = module {
             marketplaceIndexPort = get(),
             pluginInstallPort = get(),
             workspaceManager = getOrNull(),
+            workspaceUsage = getOrNull(),
         )
     }
 }

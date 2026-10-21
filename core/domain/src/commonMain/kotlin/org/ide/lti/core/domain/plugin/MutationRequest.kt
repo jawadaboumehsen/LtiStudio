@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.plugin
 
+import org.ide.lti.core.domain.pipeline.HostRequest
+import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 
 /**
@@ -69,3 +71,16 @@ object FileMutationCodes {
     const val OVERLAPPING_MUTATION: String = "OVERLAPPING_MUTATION"
     const val UNSUPPORTED_OPERATION: String = "UNSUPPORTED_OPERATION"
 }
+
+/**
+ * Apply these resolved plugin plans to the workspace work tree, in order (a [PipelineStep.Host] request).
+ * [assetRoots] maps `publisher:id:version` to the installed package's asset folder; [partitions] are the
+ * device's partitions, each a folder of `work/`.
+ */
+public data class ApplyModules(
+    val plans: List<ConcreteMutationPlan>,
+    val assetRoots: Map<String, String>,
+    val partitions: List<String>,
+    /** The key pair rebuilt APKs are signed with (the workspace's platform key). */
+    val platformKeyRef: String = "keys/platform",
+) : HostRequest

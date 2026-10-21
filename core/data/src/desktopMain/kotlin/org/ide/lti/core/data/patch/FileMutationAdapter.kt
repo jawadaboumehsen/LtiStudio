@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.yield
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -56,12 +57,14 @@ class FileMutationAdapter : FileMutationPort {
      * checkpoint and discard that copy on refusal - nothing mutates an upstream tree.
      */
     override suspend fun apply(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome {
+        yield()
         val ready = when (val checked = check(plan, ctx, assetRoot)) {
             is CheckedPlan.Refused -> return MutationOutcome.Refused(checked.report)
             is CheckedPlan.Ready -> checked.operations
         }
         val effects = mutableListOf<MutationEffect>()
         val recheckFailure = ready.firstNotNullOfOrNull { op ->
+            yield()
             val recheck = validateOperation(op.operation, ctx, assetRoot)
             if (recheck.isNotEmpty()) {
                 recheck
@@ -76,6 +79,9 @@ class FileMutationAdapter : FileMutationPort {
             ?: MutationOutcome.Applied(effects)
     }
 
+    private fun ConcreteOperation.isInPlaceEdit() =
+        this is ConcreteOperation.PropertyPatch || this is ConcreteOperation.TextPatch
+
     private data class PlannedOperation(val operation: ConcreteOperation, val path: Path, val partitionRoot: Path)
 
     private sealed interface CheckedPlan {
@@ -87,22 +93,23 @@ class FileMutationAdapter : FileMutationPort {
     private fun check(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): CheckedPlan {
         val errors = mutableListOf<ValidationError>()
         val planned = mutableListOf<PlannedOperation>()
-        val seenPaths = mutableMapOf<Path, String>()
+        val seenPaths = mutableMapOf<Path, ConcreteOperation>()
 
         for (op in plan.operations) {
             errors += validateOperation(op, ctx, assetRoot)
             when (val resolved = resolveOperationPath(op, ctx)) {
                 is ResolvedTarget.Invalid -> Unit // already reported by validateOperation
                 is ResolvedTarget.Valid -> {
-                    val owner = seenPaths.put(resolved.path, op.id)
-                    if (owner != null) {
+                    val owner = seenPaths.put(resolved.path, op)
+                    // Several property/text edits of one file compose (each is re-checked right before it writes).
+                    if (owner != null && !(owner.isInPlaceEdit() && op.isInPlaceEdit())) {
                         errors += ValidationError(
                             stageId = StageId.MODULE_APPLICATION,
                             objectId = op.id,
                             fieldPath = op.targetPartitionPath().relativePath,
                             code = FileMutationCodes.OVERLAPPING_MUTATION,
                             severity = Severity.ERROR,
-                            message = "Operation '${op.id}' targets same path '${resolved.path}' as '$owner'",
+                            message = "Operation '${op.id}' targets same path '${resolved.path}' as '${owner.id}'",
                         )
                     }
                     planned += PlannedOperation(op, resolved.path, resolved.partitionRoot)
@@ -321,7 +328,8 @@ class FileMutationAdapter : FileMutationPort {
                     ),
                 )
             } else {
-                val actualSha = sha256Of(targetPath)
+                // An empty expected hash means the edit is anchored by its unique context alone.
+                val actualSha = if (op.expectedSha256.isEmpty()) "" else sha256Of(targetPath)
                 if (!actualSha.equals(op.expectedSha256, ignoreCase = true)) {
                     errors.add(
                         ValidationError(

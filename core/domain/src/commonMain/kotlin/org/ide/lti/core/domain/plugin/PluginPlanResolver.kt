@@ -46,6 +46,11 @@ object PluginPlanResolver {
     const val ILLEGAL_SETTING_VALUE: String = "ILLEGAL_SETTING_VALUE"
     const val MISSING_TARGET_FACT: String = "MISSING_TARGET_FACT"
     const val UNSUPPORTED_CAPABILITY: String = "UNSUPPORTED_CAPABILITY"
+    const val INCOMPATIBLE_TARGET: String = "INCOMPATIBLE_TARGET"
+
+    /** The target facts a mod's compatibility is checked against. */
+    const val DEVICE_CODENAME: String = "device.codename"
+    const val FIRMWARE_VERSION: String = "firmware.version"
 
     fun resolve(input: ResolutionInput): ResolutionResult {
         val validatorReport = PluginPlanValidator.validate(input.template)
@@ -67,6 +72,7 @@ object PluginPlanResolver {
         }
 
         fun execute(): ResolutionResult {
+            checkCompatibility()
             checkCapabilities()
             checkSettings()
             val (operations, notApplicable) = processOperations()
@@ -84,6 +90,14 @@ object PluginPlanResolver {
                         digest = digest,
                     ),
                 )
+            }
+        }
+
+        private fun checkCompatibility() {
+            val device = input.targetFacts[DEVICE_CODENAME].orEmpty()
+            val firmware = input.targetFacts[FIRMWARE_VERSION].orEmpty()
+            incompatibility(input.template, device, firmware)?.let {
+                error(input.template.id, "compatibility", INCOMPATIBLE_TARGET, "'${input.template.id}' $it")
             }
         }
 
@@ -188,6 +202,7 @@ object PluginPlanResolver {
                 id = op.id,
                 source = op.source,
                 destination = op.destination,
+                metadata = op.metadata,
             )
             is Operation.Replace -> ConcreteOperation.Replace(
                 id = op.id,
@@ -257,4 +272,19 @@ object PluginPlanResolver {
             return "sha256:" + hashBytes.joinToString("") { "%02x".format(it) }
         }
     }
+}
+
+/**
+ * Why [template] cannot be used on [device] (codename) with [firmware] (version), as "is made for …, not …", or
+ * null when it can. A plan that names no compatible device fits any.
+ */
+fun incompatibility(template: PluginPlanTemplate, device: String, firmware: String): String? {
+    val supported = template.compatibility
+    val fits = supported.isEmpty() ||
+        supported.any { it.device == device && (it.firmwares.isEmpty() || firmware in it.firmwares) }
+    if (fits) return null
+    val made = supported.joinToString("; ") { c ->
+        c.device + c.firmwares.takeIf { it.isNotEmpty() }?.joinToString(", ", " (", ")").orEmpty()
+    }
+    return "is made for $made, not $device ($firmware)"
 }

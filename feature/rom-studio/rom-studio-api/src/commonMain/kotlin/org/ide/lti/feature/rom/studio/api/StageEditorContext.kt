@@ -18,4 +18,6 @@ public data class StageEditorContext(
     val onSelectedObjectChange: (StudioSubobjectId) -> Unit,
     val onSaveRequested: () -> Unit = {},
     val onValidationRequested: () -> Unit = {},
+    /** Opens the Plugins page on its Import tab (installing `.lti-mod.zip` packages). */
+    val onOpenPlugins: () -> Unit = {},
 )

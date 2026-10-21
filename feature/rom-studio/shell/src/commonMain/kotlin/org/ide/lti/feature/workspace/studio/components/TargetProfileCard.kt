@@ -142,11 +142,11 @@ private fun TargetProfileHeader(onEditProfile: () -> Unit, modifier: Modifier = 
 private fun TargetProfileSubheader(summary: TargetSummaryUi, modifier: Modifier = Modifier) {
     val revText = when (val rev = summary.revision) {
         is DisplayValue.Available -> rev.text.replace("rev ", "").replace("rev-", "")
-        is DisplayValue.Unavailable -> "4"
+        is DisplayValue.Unavailable -> "—"
     }
     val bindingText = when (val b = summary.binding) {
         is DisplayValue.Available -> b.text
-        is DisplayValue.Unavailable -> "Bound to this workspace"
+        is DisplayValue.Unavailable -> b.reason
     }
 
     Column(
@@ -154,7 +154,7 @@ private fun TargetProfileSubheader(summary: TargetSummaryUi, modifier: Modifier 
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
     ) {
         Text(
-            text = "Target revision $revText",
+            text = "Device revision $revText",
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodyMedium,
             fontWeight = FontWeight.SemiBold,
@@ -171,26 +171,26 @@ private fun TargetProfileSubheader(summary: TargetSummaryUi, modifier: Modifier 
 
 @Composable
 private fun TargetProfileParams(summary: TargetSummaryUi, modifier: Modifier = Modifier) {
-    val deviceIdValue = resolveValue(summary.deviceId, "PQ84P01")
-    val androidTargetValue = resolveValue(summary.androidTarget, "Android 14 (UPS1A)")
-    val partitionSlotValue = resolveValue(summary.partitionSlot, "A/B (Seamless)")
-    val buildFlavorValue = resolveValue(summary.buildFlavor, "Userdebug")
+    val deviceIdValue = resolveValue(summary.deviceId)
+    val androidTargetValue = resolveValue(summary.androidTarget)
+    val partitionSlotValue = resolveValue(summary.partitionSlot)
+    val buildFlavorValue = resolveValue(summary.buildFlavor).replaceFirstChar(Char::uppercase)
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
     ) {
         TargetParamRow(label = "Device", value = deviceIdValue)
-        TargetParamRow(label = "Channel", value = "Development")
+        TargetParamRow(label = "Channel", value = resolveValue(summary.channel))
         TargetParamRow(label = "Android base", value = androidTargetValue)
         TargetParamRow(label = "Partition slot", value = partitionSlotValue)
         TargetParamRow(label = "Build type", value = buildFlavorValue)
     }
 }
 
-private fun resolveValue(displayValue: DisplayValue, fallback: String): String = when (displayValue) {
+private fun resolveValue(displayValue: DisplayValue): String = when (displayValue) {
     is DisplayValue.Available -> displayValue.text
-    is DisplayValue.Unavailable -> fallback
+    is DisplayValue.Unavailable -> displayValue.reason
 }
 
 @Composable

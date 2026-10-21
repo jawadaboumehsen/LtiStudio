@@ -11,14 +11,13 @@ package org.ide.lti.core.domain.usecase.build
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.PipelineEvent
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
-import org.ide.lti.core.domain.repository.target.TargetRepository
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import java.util.UUID
 
@@ -29,7 +28,7 @@ import java.util.UUID
 public open class ReattachRunUseCase(
     private val workspaceRepository: WorkspaceRepository,
     private val snapshotRepository: SnapshotRepository,
-    private val targetRepository: TargetRepository,
+    private val workspaceDeviceRepository: WorkspaceDeviceRepository,
     private val runRepository: RunRepository,
     private val orchestrator: PipelineOrchestrator,
     private val scope: CoroutineScope? = null,
@@ -48,8 +47,7 @@ public open class ReattachRunUseCase(
 
         val workspace = workspaceRepository.getWorkspace(workspaceId) ?: return null
         val snapshot = snapshotRepository.getSnapshot(run.snapshotId) ?: return null
-        val targetId = workspace.targetBinding?.profileId ?: return null
-        val target = targetRepository.getAvailableTargets().first().find { it.id == targetId } ?: return null
+        val target = runCatching { workspaceDeviceRepository.get(workspaceId) }.getOrNull() ?: return null
 
         val stageContext = StageContext(workspace, snapshot, target, run.runtimeValues)
         val eventFlow = orchestrator.resume(run, stageContext, driverInstanceId)

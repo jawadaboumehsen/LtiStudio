@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.yield
 import org.ide.lti.core.data.patch.BytecodeMatcher.MatchOutcome
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
@@ -23,12 +24,13 @@ import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.FileMutationCodes
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
+import org.ide.lti.core.domain.plugin.edit.EditResult
+import org.ide.lti.core.domain.plugin.edit.MemberEdits
 import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.SmaliEdit
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 
 /**
  * Adapter executing APK and JAR bytecode mutations, hook injections, and compiled class merges.
@@ -104,6 +106,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         val allReceipts = mutableListOf<ComponentPatchReceipt>()
 
         for ((componentPath, ops) in componentOperations) {
+            yield()
             val outcome = processComponent(componentPath, ops, assetRoot, preview)
             when (outcome) {
                 is ComponentProcessResult.Refused -> return ApkJarOutcome.Refused(outcome.report)
@@ -141,6 +144,9 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         val addedClasses = mutableListOf<String>()
         val changedMethods = mutableListOf<String>()
         val memberBuffer = mutableMapOf<String, String>()
+        // Listed once, when a method edit first has to find its class among the dex folders.
+        var listed: List<String>? = null
+        val members: suspend () -> List<String> = { listed ?: patchPort.listMembers(decoded, "").also { listed = it } }
 
         try {
             for (op in ops) {
@@ -151,6 +157,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
                         memberBuffer = memberBuffer,
                         changedMethods = changedMethods,
                         preview = preview,
+                        members = members,
                     )
                     is ConcreteOperation.CompiledClassMerge -> applyCompiledClassMerge(
                         op = op,
@@ -186,6 +193,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
             }
 
             if (!preview) {
+                yield()
                 val rebuildSuccess = patchPort.rebuild(decoded, componentPath.toString())
                 if (!rebuildSuccess) {
                     return ComponentProcessResult.Refused(
@@ -234,10 +242,11 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         memberBuffer: MutableMap<String, String>,
         changedMethods: MutableList<String>,
         preview: Boolean,
+        members: suspend () -> List<String>,
     ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
         for (edit in op.edits) {
-            val editErrors = applySmaliEdit(op.id, edit, decoded, memberBuffer, changedMethods, preview)
+            val editErrors = applyEdit(op.id, edit, decoded, memberBuffer, changedMethods, preview, members)
             if (editErrors.isNotEmpty()) {
                 errors.addAll(editErrors)
                 break
@@ -246,73 +255,40 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         return errors
     }
 
-    private suspend fun applySmaliEdit(
+    /**
+     * Applies one edit with the shared engine ([MemberEdits]): finds its member (a method edit's class in whichever
+     * `smali*` folder holds it), applies it to the member as earlier edits left it, and writes the result.
+     */
+    @Suppress("LongParameterList")
+    private suspend fun applyEdit(
         opId: String,
         edit: SmaliEdit,
         decoded: DecodedComponent,
         memberBuffer: MutableMap<String, String>,
-        changedMethods: MutableList<String>,
+        changed: MutableList<String>,
         preview: Boolean,
+        members: suspend () -> List<String>,
     ): List<ValidationError> {
-        val originalContent = memberBuffer[edit.memberDescriptor]
-            ?: patchPort.readMember(decoded, edit.memberDescriptor)
-            ?: return listOf(
-                patchError(
-                    opId,
-                    edit.memberDescriptor,
-                    ComponentPatchCodes.SMALI_MEMBER_MISSING,
-                    "Smali member '${edit.memberDescriptor}' not found in decoded component",
-                ),
-            )
-
-        val actualSha = sha256Of(originalContent)
-        if (!actualSha.equals(edit.expectedSha256, ignoreCase = true)) {
-            return listOf(
-                patchError(
-                    opId,
-                    edit.memberDescriptor,
-                    ComponentPatchCodes.SMALI_PREIMAGE_MISMATCH,
-                    "Preimage mismatch for '${edit.memberDescriptor}': " +
-                        "expected ${edit.expectedSha256}, actual $actualSha",
-                ),
-            )
+        fun fail(failed: EditResult.Failed) =
+            listOf(patchError(opId, edit.memberDescriptor, failed.code, failed.message))
+        val member = if (edit.method == null) {
+            edit.memberDescriptor
+        } else {
+            when (val found = MemberEdits.classMember(edit.memberDescriptor, memberBuffer.keys + members())) {
+                is EditResult.Failed -> return fail(found)
+                is EditResult.Changed -> found.content
+            }
         }
-
-        val hunk = parseSingleHunk(edit.unifiedDiff)
-        val normalizedContent = originalContent.replace("\r\n", "\n")
-        val count = countOccurrences(normalizedContent, hunk.contextAndRemoved)
-        if (count == 0) {
-            return listOf(
-                patchError(
-                    opId,
-                    edit.memberDescriptor,
-                    ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
-                    "Patch context anchor not found in '${edit.memberDescriptor}'",
-                ),
-            )
+        val existing = memberBuffer[member] ?: patchPort.readMember(decoded, member)
+        return when (val result = MemberEdits.apply(existing, edit)) {
+            is EditResult.Failed -> fail(result)
+            is EditResult.Changed -> {
+                memberBuffer[member] = result.content
+                if (!preview) patchPort.writeMember(decoded, member, result.content)
+                changed += result.changed
+                emptyList()
+            }
         }
-        if (count > 1) {
-            return listOf(
-                patchError(
-                    opId,
-                    edit.memberDescriptor,
-                    ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
-                    "Patch context anchor is ambiguous (found $count times) " + "in '${edit.memberDescriptor}'",
-                ),
-            )
-        }
-
-        val idx = normalizedContent.indexOf(hunk.contextAndRemoved)
-        val replacedContent = normalizedContent.substring(0, idx) +
-            hunk.contextAndAdded +
-            normalizedContent.substring(idx + hunk.contextAndRemoved.length)
-
-        memberBuffer[edit.memberDescriptor] = replacedContent
-        if (!preview) {
-            patchPort.writeMember(decoded, edit.memberDescriptor, replacedContent)
-        }
-        changedMethods.add(edit.memberDescriptor)
-        return emptyList()
     }
 
     private suspend fun applyCompiledClassMerge(
@@ -594,71 +570,9 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         else -> null
     }
 
-    private data class ParsedHunk(val contextAndRemoved: String, val contextAndAdded: String)
-
-    private fun parseSingleHunk(diffText: String): ParsedHunk {
-        val lines = diffText.replace("\r\n", "\n").lines()
-        val hunkLines = extractHunkLines(lines)
-        val removedList = mutableListOf<String>()
-        val addedList = mutableListOf<String>()
-
-        for (line in hunkLines) {
-            when {
-                line.startsWith("-") && !line.startsWith("---") -> removedList.add(line.substring(1))
-                line.startsWith("+") && !line.startsWith("+++") -> addedList.add(line.substring(1))
-                line.startsWith(" ") -> {
-                    val context = line.substring(1)
-                    removedList.add(context)
-                    addedList.add(context)
-                }
-                line.isEmpty() -> {
-                    removedList.add("")
-                    addedList.add("")
-                }
-            }
-        }
-
-        return ParsedHunk(
-            contextAndRemoved = removedList.joinToString("\n"),
-            contextAndAdded = addedList.joinToString("\n"),
-        )
-    }
-
-    private fun extractHunkLines(lines: List<String>): List<String> {
-        val startIndex = lines.indexOfFirst {
-            it.startsWith("@@") || it.startsWith(" ") || it.startsWith("-") || it.startsWith("+")
-        }
-        if (startIndex == -1) return emptyList()
-        val candidateLines = if (lines[startIndex].startsWith("@@")) {
-            lines.drop(startIndex + 1)
-        } else {
-            lines.drop(startIndex)
-        }
-        return candidateLines.filter { !it.startsWith("---") && !it.startsWith("+++") }
-    }
-
     private fun descriptorToRelPath(descriptor: String): String {
         val trimmed = descriptor.removePrefix("L").removeSuffix(";")
         return "$trimmed.smali"
-    }
-
-    private fun sha256Of(text: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(text.toByteArray(Charsets.UTF_8))
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
-    private fun countOccurrences(text: String, context: String): Int {
-        if (context.isEmpty()) return 0
-        var count = 0
-        var idx = 0
-        while (idx < text.length) {
-            val found = text.indexOf(context, idx)
-            if (found == -1) break
-            count++
-            idx = found + context.length
-        }
-        return count
     }
 
     private sealed interface ComponentProcessResult {

@@ -23,6 +23,9 @@ public val stageAcquireModule: Module = module {
     viewModel { params ->
         AcquireViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
+            store = getOrNull(),
+            archives = getOrNull(),
+            facts = getOrNull(),
         )
     }
 }

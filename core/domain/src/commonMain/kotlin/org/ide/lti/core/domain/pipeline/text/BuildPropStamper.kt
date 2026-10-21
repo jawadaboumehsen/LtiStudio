@@ -49,6 +49,17 @@ public object BuildPropStamper {
         return (kept + appended).joinToString("\n", postfix = "\n")
     }
 
+    /** Replaces the `ro.lti.*` keys LtiRom's updater reads with this build's (the same as `build_info.txt`). */
+    public fun stampRelease(original: String, device: String, version: String, timestamp: Long): String {
+        val keys = listOf("ro.lti.device", "ro.lti.version", "ro.lti.timestamp")
+        val kept = original.lineSequence()
+            .filterNot { line -> keys.any { line.startsWith("$it=") } }
+            .toList()
+            .dropLastWhile { it.isBlank() }
+        val appended = listOf("ro.lti.device=$device", "ro.lti.version=$version", "ro.lti.timestamp=$timestamp")
+        return (kept + appended).joinToString("\n", postfix = "\n")
+    }
+
     /** Reads a key from stock `build.prop` text captured at extraction time. */
     public fun prop(buildProp: String?, key: String): String? =
         buildProp?.lineSequence()?.firstOrNull { it.startsWith("$key=") }
