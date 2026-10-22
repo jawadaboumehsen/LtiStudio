@@ -862,9 +862,14 @@ per stage; a failed stage marks every later stage pending and stops.
   `element(tag, "android:key" to …)` → `SmaliEdit(xml = XmlChange…)`, applied as a document by `XmlResourceEditor`
   (no DOCTYPE; an appended resource whose name or public id exists is refused).
 - One edit engine: `core:domain` `plugin/edit/` (`MemberEdits` → `SmaliTextEditor`, `SmaliMethodEditor`,
-  `XmlResourceEditor`). The build (`ApkJarMutationAdapter`) and the SDK's `ModCheck` (`patchmod checkMod`,
-  LtiRomMods `./gradlew checkMods -Pdecoded=<dir>`) both use it, so a mod checked against a decoded firmware
-  applies the same way in a build.
+  `XmlResourceEditor`; `FileEdits` for the text and property patches of a work-tree file). The build
+  (`ApkJarMutationAdapter`, `FileMutationAdapter`) and the SDK's `ModCheck` (`patchmod checkMod --decoded <dir>
+  [--tree <work dir>]`, LtiRomMods `./gradlew checkMods -Pdecoded=<dir> [-Ptree=<work dir>]`) both use it, so a mod
+  checked against a decoded firmware applies the same way in a build. `--tree` is an assembled work tree (a folder
+  per partition): the file operations (copy, replace, delete, property and text patches) are applied to it in
+  memory, in order, with the build's rules (target exists, preimage hash, unique anchor, one writer per path, no
+  link on the way). Run the Studio through Assemble to get a stock one; `work/` after a Patches run is already
+  patched. Edits whose firmware part is not given are reported `skip`, not failed.
 - Compatibility: `romMod { compatibleWith(device, firmwares…) }` → `PluginPlanTemplate.compatibility`.
   `incompatibility()` (core:domain) is the one rule: `PluginPlanResolver` refuses (`INCOMPATIBLE_TARGET`, facts
   `device.codename`/`firmware.version`) and the Patches page marks such a plugin and will not enable it.

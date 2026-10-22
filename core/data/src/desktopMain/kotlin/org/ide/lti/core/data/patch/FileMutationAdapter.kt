@@ -22,6 +22,8 @@ import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.plugin.PluginPackagePolicy
+import org.ide.lti.core.domain.plugin.edit.EditResult
+import org.ide.lti.core.domain.plugin.edit.FileEdits
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
@@ -266,7 +268,7 @@ class FileMutationAdapter : FileMutationPort {
         ctx: MutationContext,
     ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
-        if (op.key.isEmpty() || op.key.indexOfAny(INVALID_PROP_KEY_CHARS) != -1) {
+        FileEdits.propertyKeyProblem(op.key)?.let { problem ->
             errors.add(
                 ValidationError(
                     stageId = StageId.MODULE_APPLICATION,
@@ -274,7 +276,7 @@ class FileMutationAdapter : FileMutationPort {
                     fieldPath = op.key,
                     code = FileMutationCodes.PROPERTY_KEY_INVALID,
                     severity = Severity.ERROR,
-                    message = "Invalid property key '${op.key}': must not be empty or contain '=', newline, or NUL",
+                    message = problem,
                 ),
             )
         }
@@ -330,43 +332,25 @@ class FileMutationAdapter : FileMutationPort {
             } else {
                 // An empty expected hash means the edit is anchored by its unique context alone.
                 val actualSha = if (op.expectedSha256.isEmpty()) "" else sha256Of(targetPath)
-                if (!actualSha.equals(op.expectedSha256, ignoreCase = true)) {
-                    errors.add(
-                        ValidationError(
-                            stageId = StageId.MODULE_APPLICATION,
-                            objectId = op.id,
-                            fieldPath = op.target.relativePath,
-                            code = FileMutationCodes.PREIMAGE_MISMATCH,
-                            severity = Severity.ERROR,
-                            message = "Preimage mismatch for '${op.target.relativePath}': " +
-                                "expected ${op.expectedSha256}, actual $actualSha",
-                        ),
-                    )
-                }
-
                 val text = Files.readString(targetPath, Charsets.UTF_8)
-                val count = countOccurrences(text, op.context)
-                if (count == 0) {
+                val relative = op.target.relativePath
+                val result = FileEdits.textPatch(
+                    text,
+                    op.context,
+                    op.replacement,
+                    op.expectedSha256,
+                    actualSha,
+                    relative,
+                )
+                if (result is EditResult.Failed) {
                     errors.add(
                         ValidationError(
                             stageId = StageId.MODULE_APPLICATION,
                             objectId = op.id,
-                            fieldPath = op.target.relativePath,
-                            code = FileMutationCodes.TEXT_CONTEXT_NOT_FOUND,
+                            fieldPath = relative,
+                            code = result.code,
                             severity = Severity.ERROR,
-                            message = "Context anchor '${op.context}' not found in '${op.target.relativePath}'",
-                        ),
-                    )
-                } else if (count > 1) {
-                    errors.add(
-                        ValidationError(
-                            stageId = StageId.MODULE_APPLICATION,
-                            objectId = op.id,
-                            fieldPath = op.target.relativePath,
-                            code = FileMutationCodes.TEXT_CONTEXT_AMBIGUOUS,
-                            severity = Severity.ERROR,
-                            message = "Context anchor '${op.context}' is ambiguous (found $count times) " +
-                                "in '${op.target.relativePath}'",
+                            message = result.message,
                         ),
                     )
                 }
@@ -462,52 +446,26 @@ class FileMutationAdapter : FileMutationPort {
     }
 
     private fun applyPropertyPatch(targetPath: Path, key: String, value: String) {
-        val lines = Files.readAllLines(targetPath, Charsets.UTF_8)
-        var keyFound = false
-        val newLines = mutableListOf<String>()
-        for (line in lines) {
-            if (!keyFound && isPropKeyMatch(line, key)) {
-                newLines.add("$key=$value")
-                keyFound = true
-            } else {
-                newLines.add(line)
-            }
-        }
-        if (!keyFound) {
-            newLines.add("$key=$value")
-        }
-
-        val parentDir = targetPath.parent ?: Path.of(".")
-        val tempFile = Files.createTempFile(parentDir, "prop-patch-", ".tmp")
-        try {
-            Files.newBufferedWriter(tempFile, Charsets.UTF_8).use { writer ->
-                for (line in newLines) {
-                    writer.write(line)
-                    writer.write("\n")
-                }
-            }
-            moveAtomically(tempFile, targetPath)
-        } finally {
-            Files.deleteIfExists(tempFile)
-        }
-    }
-
-    private fun isPropKeyMatch(line: String, key: String): Boolean {
-        val trimmed = line.trimStart()
-        val eqIdx = line.indexOf('=')
-        return !trimmed.startsWith("#") && eqIdx != -1 && line.substring(0, eqIdx).trim() == key
+        val existing = Files.readString(targetPath, Charsets.UTF_8)
+        writeAtomically(targetPath, "prop-patch-", changedContent(FileEdits.propertyPatch(existing, key, value)))
     }
 
     private fun applyTextPatch(targetPath: Path, context: String, replacement: String) {
-        val content = Files.readString(targetPath, Charsets.UTF_8)
-        val idx = content.indexOf(context)
-        check(idx != -1) { "Context anchor not found during apply: '$context'" }
-        val newContent = content.substring(0, idx) + replacement + content.substring(idx + context.length)
+        val existing = Files.readString(targetPath, Charsets.UTF_8)
+        // Re-checked by validateOperation right before this: only the anchor decides here.
+        val result = FileEdits.textPatch(existing, context, replacement, "", "", targetPath.fileName.toString())
+        writeAtomically(targetPath, "text-patch-", changedContent(result))
+    }
 
-        val parentDir = targetPath.parent ?: Path.of(".")
-        val tempFile = Files.createTempFile(parentDir, "text-patch-", ".tmp")
+    private fun changedContent(result: EditResult): String = when (result) {
+        is EditResult.Changed -> result.content
+        is EditResult.Failed -> error(result.message)
+    }
+
+    private fun writeAtomically(targetPath: Path, prefix: String, content: String) {
+        val tempFile = Files.createTempFile(targetPath.parent ?: Path.of("."), prefix, ".tmp")
         try {
-            Files.writeString(tempFile, newContent, Charsets.UTF_8)
+            Files.writeString(tempFile, content, Charsets.UTF_8)
             moveAtomically(tempFile, targetPath)
         } finally {
             Files.deleteIfExists(tempFile)
@@ -553,22 +511,5 @@ class FileMutationAdapter : FileMutationPort {
             }
         }
         return md.digest().joinToString("") { "%02x".format(it) }
-    }
-
-    private fun countOccurrences(text: String, context: String): Int {
-        if (context.isEmpty()) return 0
-        var count = 0
-        var idx = 0
-        while (idx < text.length) {
-            val found = text.indexOf(context, idx)
-            if (found == -1) break
-            count++
-            idx = found + context.length
-        }
-        return count
-    }
-
-    private companion object {
-        val INVALID_PROP_KEY_CHARS = charArrayOf('=', '\n', '\r', '\u0000')
     }
 }

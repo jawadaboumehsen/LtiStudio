@@ -84,15 +84,19 @@ class TestModCommand : CliktCommand(name = "testMod") {
 
 class CheckModCommand : CliktCommand(name = "checkMod") {
     override fun help(context: Context): String =
-        "Apply the mod's APK/JAR edits in memory to a decoded firmware, without building it"
+        "Apply the mod's edits in memory to a decoded firmware and a work tree, without building it"
     private val project by option("--project", help = "Author project directory").default(".")
     private val decoded by option(
         "--decoded",
         help = "Folder holding each component as `apktool d` decoded it, named like the component (services.jar)",
     ).default(".")
+    private val tree by option(
+        "--tree",
+        help = "The assembled work tree (a folder per partition) the file operations are checked against",
+    )
 
     override fun run() {
-        val result = PatchModTool.checkMod(File(project), File(decoded))
+        val result = PatchModTool.checkMod(File(project), File(decoded), tree?.let(::File))
         handleResult(result)
     }
 }
@@ -327,21 +331,35 @@ object PatchModTool {
         return CliResult.Success("OK validateMod ${projectDir.path}")
     }
 
-    /** [ModCheck] of the project's plan against `<decodedRoot>/<component file name>/`. */
-    fun checkMod(projectDir: File, decodedRoot: File): CliResult {
+    /**
+     * [ModCheck] of the project's plan: APK/JAR edits against `<decodedRoot>/<component file name>/`, file operations
+     * against the work tree [treeRoot] (when given). Edits whose firmware part is not given are listed as skipped.
+     */
+    fun checkMod(projectDir: File, decodedRoot: File, treeRoot: File? = null): CliResult {
         val planFile = File(projectDir, PluginPackageCodec.PLAN)
         val template = runCatching { PluginPackageCodec.decodePlan(planFile.readText()) }.getOrElse {
             return CliResult.Failure("ERROR checkMod cannot read ${planFile.path}: ${it.message}")
         }
-        val checks = ModCheck.check(listOf(template)) { target ->
-            File(decodedRoot, target.relativePath.substringAfterLast('/')).takeIf { it.isDirectory }
-        }
-        val failed = checks.filter { it.failure != null }
+        val checks = ModCheck.check(
+            listOf(template),
+            tree = treeRoot,
+            assetExists = { _, asset -> File(projectDir, asset.path).isFile },
+            decoded = { target ->
+                File(decodedRoot, target.relativePath.substringAfterLast('/')).takeIf { it.isDirectory }
+            },
+        )
+        val failed = checks.filter { it.failed }
         val lines = checks.joinToString("\n") { c ->
-            (if (c.failure == null) "ok   " else "FAIL ") + "${c.changed}  ${c.failure.orEmpty()}"
+            val mark = when {
+                c.failed -> "FAIL "
+                c.notChecked -> "skip "
+                else -> "ok   "
+            }
+            mark + "${c.changed}  ${c.failure.orEmpty()}"
         }
         return if (failed.isEmpty()) {
-            CliResult.Success("$lines\nOK checkMod ${checks.size} edits apply")
+            val skipped = checks.count { it.notChecked }
+            CliResult.Success("$lines\nOK checkMod ${checks.size - skipped} edits apply, $skipped not checked")
         } else {
             CliResult.Failure("$lines\nERROR checkMod ${failed.size}/${checks.size} edits do not apply")
         }
