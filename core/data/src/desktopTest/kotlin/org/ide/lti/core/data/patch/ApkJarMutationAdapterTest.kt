@@ -18,10 +18,6 @@ import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.DecodedComponent
 import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.MutationContext
-import org.ide.lti.core.model.plugin.AnchorPattern
-import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
@@ -33,7 +29,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -42,7 +37,6 @@ class ApkJarMutationAdapterTest {
 
     private lateinit var tempDir: Path
     private lateinit var workTree: Path
-    private lateinit var assetRoot: Path
     private lateinit var fakePort: FakeComponentPatchPort
     private lateinit var adapter: ApkJarMutationAdapter
     private lateinit var ctx: MutationContext
@@ -97,9 +91,7 @@ class ApkJarMutationAdapterTest {
     fun setUp() {
         tempDir = Files.createTempDirectory("apk-jar-mutation-test-")
         workTree = tempDir.resolve("work")
-        assetRoot = tempDir.resolve("assets")
         Files.createDirectories(workTree)
-        Files.createDirectories(assetRoot)
 
         val systemFramework = workTree.resolve("system/framework")
         Files.createDirectories(systemFramework)
@@ -107,7 +99,7 @@ class ApkJarMutationAdapterTest {
         Files.writeString(frameworkJar, "DEX_CONTAINER_PLACEHOLDER")
 
         fakePort = FakeComponentPatchPort()
-        adapter = ApkJarMutationAdapter(fakePort, defaultAssetRoot = assetRoot.toString())
+        adapter = ApkJarMutationAdapter(fakePort)
         ctx = MutationContext(
             workTreeRelPath = workTree.toString(),
             partitionRoots = mapOf(
@@ -157,7 +149,7 @@ class ApkJarMutationAdapterTest {
             ),
         )
 
-        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, preview = false))
         assertEquals("A\nb\nc\nd\ne\nE\nf\n", fakePort.members["smali/X.smali"])
         assertEquals(".class public LY;\n.super Ljava/lang/Object;\n", fakePort.members["smali/Y.smali"])
     }
@@ -174,7 +166,7 @@ class ApkJarMutationAdapterTest {
             ),
         )
 
-        val outcome = adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false)
+        val outcome = adapter.apply(listOf(op), ctx, preview = false)
 
         assertIs<ApkJarOutcome.Applied>(outcome, outcome.toString())
         assertEquals(
@@ -203,7 +195,7 @@ class ApkJarMutationAdapterTest {
             ),
         )
 
-        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, preview = false))
         assertEquals(
             "<resources>\n    <string name=\"a\">A</string>\n    <string name=\"b\">B</string>\n</resources>\n",
             fakePort.members["res/values/strings.xml"],
@@ -227,7 +219,7 @@ class ApkJarMutationAdapterTest {
             edits = listOf(SmaliEdit("smali/P.smali", "", patch)),
         )
 
-        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = false))
+        assertIs<ApkJarOutcome.Applied>(adapter.apply(listOf(op), ctx, preview = false))
         assertEquals("m1\nbody\nend\nm2\nbody\nhooked\nend\n", fakePort.members["smali/P.smali"])
     }
 
@@ -275,7 +267,7 @@ class ApkJarMutationAdapterTest {
             edits = listOf(SmaliEdit(memberPath, sha2, diff2)),
         )
 
-        val outcome = adapter.apply(listOf(op1, op2), ctx, assetRoot.toString(), preview = false)
+        val outcome = adapter.apply(listOf(op1, op2), ctx, preview = false)
         val applied = assertIs<ApkJarOutcome.Applied>(outcome)
 
         assertEquals(2, applied.effects.size)
@@ -314,7 +306,7 @@ class ApkJarMutationAdapterTest {
             edits = listOf(SmaliEdit(memberPath, sha, diff)),
         )
 
-        val outcome = adapter.apply(listOf(op), ctx, assetRoot.toString(), preview = true)
+        val outcome = adapter.apply(listOf(op), ctx, preview = true)
         val applied = assertIs<ApkJarOutcome.Applied>(outcome)
 
         assertEquals(1, applied.effects.size)
@@ -494,204 +486,6 @@ class ApkJarMutationAdapterTest {
     }
 
     @Test
-    fun failureDuplicateClassReturnsDuplicateClass() = runBlocking {
-        val payload = assetRoot.resolve("NewClass.smali")
-        Files.writeString(payload, ".class public Lcom/example/ExistingClass;\n")
-
-        fakePort.members["smali/com/example/ExistingClass.smali"] = ".class public Lcom/example/ExistingClass;\n"
-
-        val op = ConcreteOperation.CompiledClassMerge(
-            id = "op_dup_class",
-            target = PartitionPath("system", "framework/framework.jar"),
-            payload = AssetRef("NewClass.smali"),
-            classDescriptors = listOf("Lcom/example/ExistingClass;"),
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.DUPLICATE_CLASS, refused.report.errors.first().code)
-    }
-
-    @Test
-    fun failurePlatformClassCollisionReturnsPlatformClassCollision() = runBlocking {
-        val payload = assetRoot.resolve("PlatformClass.smali")
-        Files.writeString(payload, ".class public Landroid/widget/MyWidget;\n")
-
-        val op = ConcreteOperation.CompiledClassMerge(
-            id = "op_plat_col",
-            target = PartitionPath("system", "framework/framework.jar"),
-            payload = AssetRef("PlatformClass.smali"),
-            classDescriptors = listOf("Landroid/widget/MyWidget;"),
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.PLATFORM_CLASS_COLLISION, refused.report.errors.first().code)
-    }
-
-    @Test
-    fun failureUnresolvedDependencyReturnsUnresolvedDependency() = runBlocking {
-        val payload = assetRoot.resolve("ClassWithDep.smali")
-        Files.writeString(payload, ".class public Lcom/example/ClassWithDep;\n")
-
-        val op = ConcreteOperation.CompiledClassMerge(
-            id = "op_unresolved_dep",
-            target = PartitionPath("system", "framework/framework.jar"),
-            payload = AssetRef("ClassWithDep.smali"),
-            classDescriptors = listOf("Lcom/example/ClassWithDep;"),
-            dependencies = listOf("Lcom/example/MissingDep;"),
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.UNRESOLVED_DEPENDENCY, refused.report.errors.first().code)
-    }
-
-    @Test
-    fun failureMissingPayloadReturnsPayloadMissing() = runBlocking {
-        val op = ConcreteOperation.CompiledClassMerge(
-            id = "op_missing_payload",
-            target = PartitionPath("system", "framework/framework.jar"),
-            payload = AssetRef("non_existent_payload.smali"),
-            classDescriptors = listOf("Lcom/example/Foo;"),
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.PAYLOAD_MISSING, refused.report.errors.first().code)
-    }
-
-    @Test
-    fun failureBadHookDescriptorReturnsHookSignatureMismatch() = runBlocking {
-        val spec = BytecodeMatchSpec(
-            classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
-            methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-            anchor = AnchorPattern(opcodeSequence = listOf("return-void")),
-            expectedPreimageSha256 = "dummy",
-        )
-        val op = ConcreteOperation.HookInjection(
-            id = "op_bad_hook",
-            target = PartitionPath("system", "framework/framework.jar"),
-            match = spec,
-            placement = HookPlacement.BEFORE,
-            hookDescriptor = "not_a_valid_hook_descriptor",
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.HOOK_SIGNATURE_MISMATCH, refused.report.errors.first().code)
-    }
-
-    @Test
-    fun hookInjectionInsertsInvokeStaticBeforeAndAfter() = runBlocking {
-        val classRel = "smali/com/android/server/pm/InstallPackageHelper.smali"
-        fakePort.members[classRel] = fixtureSmali
-
-        val preimage = BytecodeMatcher.methodPreimage(
-            fixtureSmali,
-            "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-        )
-        assertFalse(preimage.isNullOrEmpty())
-
-        val beforeSpec = BytecodeMatchSpec(
-            classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
-            methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-            anchor = AnchorPattern(
-                opcodeSequence = listOf("const-string", "move-result-object"),
-                stringConstants = listOf("LTI_CPS"),
-            ),
-            expectedPreimageSha256 = preimage,
-        )
-
-        val beforeOp = ConcreteOperation.HookInjection(
-            id = "op_hook_before",
-            target = PartitionPath("system", "framework/framework.jar"),
-            match = beforeSpec,
-            placement = HookPlacement.BEFORE,
-            hookDescriptor = "Lcom/example/Hook;->beforeHook()V",
-        )
-
-        val beforeOutcome = adapter.apply(listOf(beforeOp), ctx, preview = false)
-        val beforeApplied = assertIs<ApkJarOutcome.Applied>(beforeOutcome)
-        assertEquals(1, beforeApplied.effects.size)
-
-        val smaliAfterBefore = fakePort.members[classRel]!!
-        val beforeLines = smaliAfterBefore.lines()
-        val beforeHookIdx = beforeLines.indexOfFirst { it.contains("Lcom/example/Hook;->beforeHook()V") }
-        assertTrue(beforeHookIdx != -1)
-        assertTrue(beforeLines[beforeHookIdx + 1].contains("const-string"))
-
-        // Now test AFTER placement
-        fakePort.members[classRel] = fixtureSmali
-        val afterOp = ConcreteOperation.HookInjection(
-            id = "op_hook_after",
-            target = PartitionPath("system", "framework/framework.jar"),
-            match = beforeSpec,
-            placement = HookPlacement.AFTER,
-            hookDescriptor = "Lcom/example/Hook;->afterHook()V",
-        )
-
-        val afterOutcome = adapter.apply(listOf(afterOp), ctx, preview = false)
-        val afterApplied = assertIs<ApkJarOutcome.Applied>(afterOutcome)
-        assertEquals(1, afterApplied.effects.size)
-
-        val smaliAfterAfter = fakePort.members[classRel]!!
-        val afterLines = smaliAfterAfter.lines()
-        val afterHookIdx = afterLines.indexOfFirst { it.contains("Lcom/example/Hook;->afterHook()V") }
-        assertTrue(afterHookIdx != -1)
-        assertTrue(afterLines[afterHookIdx - 1].contains("move-result-object"))
-    }
-
-    @Test
-    fun failureAmbiguousAnchorRefused() = runBlocking {
-        val classRel = "smali/com/android/server/pm/InstallPackageHelper.smali"
-        fakePort.members[classRel] = fixtureSmali
-
-        val preimage = BytecodeMatcher.methodPreimage(
-            fixtureSmali,
-            "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-        )
-        assertFalse(preimage.isNullOrEmpty())
-
-        val ambiguousSpec = BytecodeMatchSpec(
-            classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
-            methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-            anchor = AnchorPattern(
-                opcodeSequence = listOf("const-string", "move-result-object"),
-                stringConstants = emptyList(),
-            ),
-            expectedPreimageSha256 = preimage,
-        )
-
-        val op = ConcreteOperation.HookInjection(
-            id = "op_ambiguous_anchor",
-            target = PartitionPath("system", "framework/framework.jar"),
-            match = ambiguousSpec,
-            placement = HookPlacement.BEFORE,
-            hookDescriptor = "Lcom/example/Hook;->onHook()V",
-        )
-
-        val outcome = adapter.apply(listOf(op), ctx, preview = false)
-        val refused = assertIs<ApkJarOutcome.Refused>(outcome)
-
-        assertEquals(1, refused.report.errors.size)
-        assertEquals(ComponentPatchCodes.ANCHOR_AMBIGUOUS, refused.report.errors.first().code)
-        assertEquals(1, fakePort.decodeCount)
-        assertEquals(0, fakePort.rebuildCount)
-        assertEquals(1, fakePort.discardCount)
-    }
-
-    @Test
     fun refusalInSecondOfThreeOperationsRebuildsNothingAndDiscards() = runBlocking {
         val member = "smali/com/example/Test.smali"
         val content = "line 1\nline 2\nline 3"
@@ -747,60 +541,28 @@ class ApkJarMutationAdapterTest {
     }
 
     @Test
-    fun receiptsListAddedClassesChangedMethodsAndAotArtifactPaths() = runBlocking {
-        val payload = assetRoot.resolve("NewClass.smali")
-        Files.writeString(payload, ".class public Lcom/example/NewClass;\n")
-
-        val classRel = "smali/com/android/server/pm/InstallPackageHelper.smali"
-        fakePort.members[classRel] = fixtureSmali
-
-        val preimage = BytecodeMatcher.methodPreimage(
-            fixtureSmali,
-            "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
+    fun receiptsListChangedMethodsAndAotArtifactPaths() = runBlocking {
+        fakePort.members["smali/com/android/server/pm/InstallPackageHelper.smali"] = fixtureSmali
+        // Picked by the call it makes; @{*} stands for the register range.
+        val edit = SmaliEdit(
+            memberDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
+            expectedSha256 = "",
+            unifiedDiff = "@@ @@\n+    nop\n " +
+                "invoke-static/range {@{*}}, Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI(...)V",
+            method = MethodMatch(references = listOf("Lcom/android/server/pm/ScanPackageUtils;->collectCertificates")),
         )
-        assertFalse(preimage.isNullOrEmpty())
+        val jar = PartitionPath("system", "framework/framework.jar")
+        val op = ConcreteOperation.ApkJarPatch("op_hook", jar, listOf(edit))
 
-        val mergeOp = ConcreteOperation.CompiledClassMerge(
-            id = "op_merge",
-            target = PartitionPath("system", "framework/framework.jar"),
-            payload = AssetRef("NewClass.smali"),
-            classDescriptors = listOf("Lcom/example/NewClass;"),
-            dependencies = emptyList(),
-        )
-
-        val hookSpec = BytecodeMatchSpec(
-            classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
-            methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-            anchor = AnchorPattern(
-                opcodeSequence = listOf("const-string", "move-result-object"),
-                stringConstants = listOf("LTI_CPS"),
-            ),
-            expectedPreimageSha256 = preimage,
-        )
-
-        val hookOp = ConcreteOperation.HookInjection(
-            id = "op_hook",
-            target = PartitionPath("system", "framework/framework.jar"),
-            match = hookSpec,
-            placement = HookPlacement.BEFORE,
-            hookDescriptor = "Lcom/example/Hook;->beforeHook()V",
-        )
-
-        val outcome = adapter.apply(listOf(mergeOp, hookOp), ctx, preview = false)
+        val outcome = adapter.apply(listOf(op), ctx, preview = false)
         val applied = assertIs<ApkJarOutcome.Applied>(outcome)
 
-        assertEquals(1, applied.receipts.size)
-        val receipt = applied.receipts.first()
-
+        val receipt = applied.receipts.single()
         assertTrue(receipt.decodedOnce)
-        assertEquals(listOf("op_merge", "op_hook"), receipt.operationIds)
-        assertEquals(listOf("Lcom/example/NewClass;"), receipt.addedClasses)
+        assertEquals(listOf("op_hook"), receipt.operationIds)
         val expectedMethod = "Lcom/android/server/pm/InstallPackageHelper;->" +
             "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V"
-        assertEquals(
-            listOf(expectedMethod),
-            receipt.changedMethods,
-        )
+        assertEquals(listOf(expectedMethod), receipt.changedMethods)
 
         val expectedAot = listOf(
             workTree.resolve("system/framework/oat/framework.odex").normalize().toString().replace('\\', '/'),

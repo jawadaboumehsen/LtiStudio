@@ -73,7 +73,7 @@ class ModuleHostSteps(
                 emptyList()
             } else {
                 val values = buildValues(work, request)
-                when (val outcome = bytecode.apply(componentOps.map { it.withValues(values) }, ctx, assets)) {
+                when (val outcome = bytecode.apply(componentOps.map { it.withValues(values) }, ctx)) {
                     is ApkJarOutcome.Applied -> outcome.effects
                     is ApkJarOutcome.Refused -> refused(key, outcome.report.errors)
                 }
@@ -170,8 +170,7 @@ class ModuleHostSteps(
     private fun refused(key: String, errors: List<ValidationError>): Nothing =
         error("$key refused: " + errors.joinToString("; ") { "${it.code}: ${it.message}" })
 
-    private fun ConcreteOperation.isComponentEdit() = this is ConcreteOperation.ApkJarPatch ||
-        this is ConcreteOperation.CompiledClassMerge || this is ConcreteOperation.HookInjection
+    private fun ConcreteOperation.isComponentEdit() = this is ConcreteOperation.ApkJarPatch
 
     /** apktool on the build service; the framework tag is the firmware's incremental, as LtiRom's apktool.sh. */
     private fun bytecodeAdapter(workspace: Workspace, work: Path, platformKeyRef: String): ApkJarMutationAdapter {

@@ -33,9 +33,13 @@ object SmaliMethodEditor {
 
     fun apply(classSmali: String, match: MethodMatch, unifiedDiff: String, cls: String): EditResult {
         val lines = classSmali.replace("\r\n", "\n").split("\n").toMutableList()
-        val candidates = methods(lines).filter { matches(it, match, lines) }
+        val all = methods(lines)
+        val candidates = all.filter { mismatch(it, match, lines) == null }
         val method = when (candidates.size) {
-            0 -> return EditResult.Failed(ComponentPatchCodes.ANCHOR_NOT_FOUND, "No method matches ${describe(match)}")
+            0 -> return EditResult.Failed(
+                ComponentPatchCodes.ANCHOR_NOT_FOUND,
+                "No method matches ${describe(match)}" + whyNot(all, match, lines),
+            )
             1 -> candidates.single()
             else -> return EditResult.Failed(
                 ComponentPatchCodes.ANCHOR_AMBIGUOUS,
@@ -78,7 +82,11 @@ object SmaliMethodEditor {
         val anchor = old.first().text.trim()
         val hit = when (hits.size) {
             0 -> return HunkResult.Failed(
-                EditResult.Failed(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, "'$anchor' not found in $signature"),
+                EditResult.Failed(
+                    ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
+                    "'$anchor' not found in $signature" +
+                        nearest(body, significant, patterns, old.map { it.text.trim() }),
+                ),
             )
             1 -> hits.single()
             else -> return HunkResult.Failed(
@@ -186,18 +194,88 @@ object SmaliMethodEditor {
         return found
     }
 
-    private fun matches(method: Method, match: MethodMatch, lines: List<String>): Boolean {
+    /** Why [method] is not the one [match] picks, or null when it is. */
+    private fun mismatch(method: Method, match: MethodMatch, lines: List<String>): String? {
         val sig = method.signature
-        val name = sig.substringBefore('(')
         val parameters = sig.substringAfter('(').substringBefore(')')
         val returns = sig.substringAfter(')')
         val body by lazy { lines.subList(method.start, method.end + 1).map(String::trim) }
-        return (match.name == null || match.name == name) &&
-            (match.parameters == null || match.parameters == parameters) &&
-            (match.returns == null || match.returns == returns) &&
-            match.strings.all { s -> body.any { it.startsWith("const-string") && it.endsWith(", \"$s\"") } } &&
-            match.references.all { r -> instructions(body).any { r in reference(it) } } &&
-            hasRun(instructions(body).map { it.substringBefore(' ') }, match.opcodes)
+        val missingString = match.strings.firstOrNull { s ->
+            body.none { it.startsWith("const-string") && it.endsWith(", \"$s\"") }
+        }
+        val missingReference = match.references.firstOrNull { r -> instructions(body).none { r in reference(it) } }
+        return when {
+            match.name != null && match.name != sig.substringBefore('(') -> "another name"
+            match.parameters != null && match.parameters != parameters -> "parameters ($parameters)"
+            match.returns != null && match.returns != returns -> "returns $returns"
+            missingString != null -> "no string \"$missingString\""
+            missingReference != null -> "no reference to $missingReference"
+            !hasRun(instructions(body).map { it.substringBefore(' ') }, match.opcodes) -> "no run of ${match.opcodes}"
+            else -> null
+        }
+    }
+
+    /**
+     * Why no method matched: the methods of that name (or, when none has it, every method) with what ruled each
+     * out, so a firmware that renamed or changed a method shows what it has instead.
+     */
+    private fun whyNot(all: List<Method>, match: MethodMatch, lines: List<String>): String {
+        val named = all.filter { match.name == null || it.signature.substringBefore('(') == match.name }
+        val shown = named.ifEmpty { all }.take(MAX_LISTED)
+        val more = named.ifEmpty { all }.size - shown.size
+        val header = if (named.isEmpty() && match.name != null) {
+            "; no method is named ${match.name}, the class has"
+        } else {
+            ";"
+        }
+        return header + shown.joinToString("") { m ->
+            val why = mismatch(m, match, lines)?.takeIf { named.isNotEmpty() }?.let { " ($it)" }.orEmpty()
+            "\n  ${m.signature}$why"
+        } + (if (more > 0) "\n  … and $more more" else "")
+    }
+
+    /**
+     * Where an anchor came closest: how many of its lines match in a row and the line that breaks it, with the
+     * method's lines of that instruction (same opcode), so a changed register or operand is easy to see.
+     */
+    private fun nearest(
+        body: List<String>,
+        significant: List<Int>,
+        patterns: List<LinePattern?>,
+        texts: List<String>,
+    ): String {
+        val best = significant.indices.maxOfOrNull { p -> matchedPrefix(body, significant, patterns, p) } ?: 0
+        val failing = texts.getOrNull(best) ?: return ""
+        val opcode = failing.substringBefore(' ')
+        val similar = significant.map { body[it].trim() }.filter { it.substringBefore(' ') == opcode }.distinct()
+            .take(MAX_LISTED)
+        val progress = if (best > 0) {
+            "; the first $best of ${texts.size} anchor lines match, then '$failing' does not"
+        } else {
+            ""
+        }
+        val lines = similar.joinToString("") { "\n  $it" }
+        return progress + if (similar.isEmpty()) "; the method has no $opcode" else "; its $opcode lines:$lines"
+    }
+
+    /** How many of [patterns] match in a row from the [p]th significant line (a gap matches as in [matchAt]). */
+    private fun matchedPrefix(body: List<String>, significant: List<Int>, patterns: List<LinePattern?>, p: Int): Int {
+        val captures = mutableMapOf<String, String>()
+        var next = p
+        var afterGap = false
+        patterns.forEachIndexed { k, pattern ->
+            if (pattern == null) {
+                afterGap = true
+                return@forEachIndexed
+            }
+            val candidates = if (afterGap) next until significant.size else next..next
+            val found = candidates.firstOrNull {
+                it < significant.size && pattern.matchLine(body[significant[it]].trim(), captures)
+            } ?: return k
+            next = found + 1
+            afterGap = false
+        }
+        return patterns.size
     }
 
     private fun instructions(body: List<String>) = body.filter { it.isNotEmpty() && it[0] !in ".:#" }
@@ -234,6 +312,7 @@ object SmaliMethodEditor {
     private val CAPTURE = Regex("""@\{(\w+|\*)\}""")
     private const val REGISTER = "([vp]\\d+)"
     private const val ANY = "*"
+    private const val MAX_LISTED = 8
     private const val GAP_LINE = "..."
     private const val GAP = -1
 }

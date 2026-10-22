@@ -56,8 +56,9 @@ Packages are unsigned; this template does not provide a signing task.
 
 ## Optional Java hooks
 
-Add `hooks/**/*.java` and a `payload.json` naming the target firmware JARs (see
-the SDK's `examples/compiled-hook` project), then run these as separate commands:
+Put each hook class under the component's smali folder, `hooks/<smali dir>/…/*.java`
+(`hooks/smali_classes2/org/example/Hook.java`), and add a `payload.json` naming the target firmware JARs (see the
+SDK's `examples/compiled-hook` project). Then:
 
 ```sh
 ./gradlew compileModPayload
@@ -65,9 +66,17 @@ the SDK's `examples/compiled-hook` project), then run these as separate commands
 ./gradlew packageMod
 ```
 
-The hook compiler is resolved separately through Maven and writes smali assets
-to `assets/payload/`, which the next generation stages for packaging. Hooks use
-Java because the framework process has no Kotlin runtime. Check the generated
-package, install it through Studio's Plugins page in your ROM workspace, build
+`compileModPayload` writes the smali to `files/<smali dir>/…`. In `Mod.kt`, add it to the component and call it
+from a method edit:
+
+```kotlin
+apkJarPatch("op_hook", Partition.SYSTEM, "framework/services.jar") {
+    addSmali(File("files"))
+    method("Lcom/android/server/Foo;", "bar") { insertBefore("return-void", "invoke-static {}, Lorg/example/Hook;->run()V") }
+}
+```
+
+The hook compiler is resolved separately through Maven. Hooks use Java because the framework process has no
+Kotlin runtime. Check the generated package, install it through Studio's Plugins page in your ROM workspace, build
 and flash through your usual workflow, then verify boot and hook behavior on the
 target phone. Successful packaging or edit checks do not establish device behavior.

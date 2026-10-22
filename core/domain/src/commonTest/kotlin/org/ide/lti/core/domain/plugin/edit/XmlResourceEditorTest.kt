@@ -78,6 +78,12 @@ class XmlResourceEditorTest {
         val none = failed(screen, change(XmlChangeKind.REMOVE, XmlMatch("intent", mapOf("x" to "y"))))
         assertEquals(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, none.code)
 
+        // A changed key is shown next to the one asked for.
+        val typo = XmlMatch("Preference", mapOf("android:key" to "featurd"))
+        val renamed = failed(screen, change(XmlChangeKind.REMOVE, typo))
+        assertTrue("similar elements:" in renamed.message, renamed.message)
+        assertTrue("<Preference android:key=\"featured\">" in renamed.message, renamed.message)
+
         val two = failed(screen, change(XmlChangeKind.REMOVE, XmlMatch("Preference")))
         assertEquals(ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS, two.code)
     }

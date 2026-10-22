@@ -266,16 +266,6 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
                 kind = "ApkJarPatch",
                 target = "${target.partition}/${target.relativePath}",
             )
-            is ConcreteOperation.CompiledClassMerge -> AppliedOperationSummary(
-                id = id,
-                kind = "CompiledClassMerge",
-                target = "${target.partition}/${target.relativePath}",
-            )
-            is ConcreteOperation.HookInjection -> AppliedOperationSummary(
-                id = id,
-                kind = "HookInjection",
-                target = "${target.partition}/${target.relativePath}",
-            )
         }
     }
 }

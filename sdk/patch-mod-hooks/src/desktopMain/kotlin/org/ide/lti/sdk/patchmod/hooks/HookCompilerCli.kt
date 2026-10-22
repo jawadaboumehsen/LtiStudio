@@ -14,8 +14,10 @@ import java.io.File
 import kotlin.system.exitProcess
 
 /**
- * Compiles the `.java` files under `<project>/hooks` against the firmware `payload.json` names into
- * `<project>/assets/payload/` smali. Returns the problems found (empty when it compiled, or with no `payload.json`).
+ * Compiles a project's Java hooks against the firmware `payload.json` names: the `.java` files under
+ * `hooks/<smali dir>` (`hooks/smali_classes2/org/example/Hook.java`) become smali under `files/<smali dir>`, which
+ * the mod adds with `addSmali(File("files"))`. Returns the problems found (empty when it compiled, or with no
+ * `payload.json`).
  */
 fun compileModPayload(project: File): List<String> {
     val payload = project.resolve("payload.json")
@@ -27,7 +29,9 @@ fun compileModPayload(project: File): List<String> {
         parsed == null -> emptyList()
         config == null -> listOf("payload.json: ${parsed.exceptionOrNull()?.message}")
         else -> HookCompiler.compile(
-            roots = listOf(HookCompiler.Root(project.resolve("hooks"), project.resolve("assets/payload"))),
+            roots = project.resolve("hooks").listFiles().orEmpty().filter { it.isDirectory }.map {
+                HookCompiler.Root(it, project.resolve("files").resolve(it.name))
+            },
             firmware = config.firmware.map { File(it).takeIf(File::isAbsolute) ?: project.resolve(it) },
             work = project.resolve("build/hooks"),
             minApi = config.minRuntimeApi,

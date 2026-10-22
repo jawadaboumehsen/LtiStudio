@@ -129,34 +129,6 @@ class PluginPlanSerializationTest {
                     ),
                 ),
             ),
-            Operation.CompiledClassMerge(
-                id = "op_merge",
-                target = PartitionPath("system", "framework/framework.jar"),
-                payload = AssetRef("assets/classes/patch.dex"),
-                classDescriptors = listOf(
-                    "Lcom/android/internal/util/CustomHelper;",
-                    "Lcom/android/internal/util/CustomHelper\$Inner;",
-                ),
-                dependencies = listOf("ext.jar"),
-                condition = Condition.Always,
-            ),
-            Operation.HookInjection(
-                id = "op_hook",
-                target = PartitionPath("system", "framework/services.jar"),
-                match = BytecodeMatchSpec(
-                    classDescriptor = "Lcom/android/server/pm/PackageManagerService;",
-                    methodDescriptor = "installPackage()V",
-                    anchor = AnchorPattern(
-                        opcodeSequence = listOf("invoke-virtual", "return-void"),
-                        stringConstants = listOf("installing"),
-                        invokeSignature = "Lcom/android/server/pm/PackageManagerService;->verify()Z",
-                    ),
-                    expectedPreimageSha256 = sampleSha256,
-                ),
-                placement = HookPlacement.BEFORE,
-                hookDescriptor = "Lorg/ide/lti/hook/HookHandler;->onInstall()V",
-                condition = Condition.Always,
-            ),
         ),
     )
 

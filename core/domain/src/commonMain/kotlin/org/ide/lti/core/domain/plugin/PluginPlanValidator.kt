@@ -47,8 +47,6 @@ object PluginPlanValidator {
     const val CODE_INVALID_ASSET_PATH: String = "INVALID_ASSET_PATH"
     const val CODE_INVALID_SHA256: String = "INVALID_SHA256"
     const val CODE_EMPTY_EDITS: String = "EMPTY_EDITS"
-    const val CODE_EMPTY_CLASS_DESCRIPTORS: String = "EMPTY_CLASS_DESCRIPTORS"
-    const val CODE_EMPTY_OPCODE_SEQUENCE: String = "EMPTY_OPCODE_SEQUENCE"
     const val CODE_INVALID_METHOD_MATCH: String = "INVALID_METHOD_MATCH"
     const val CODE_INVALID_COMPATIBILITY: String = "INVALID_COMPATIBILITY"
     const val CODE_INVALID_XML_CHANGE: String = "INVALID_XML_CHANGE"
@@ -187,30 +185,6 @@ object PluginPlanValidator {
                     sha256(op.expectedSha256, op.id, "expectedSha256", allowEmpty = true)
                 }
                 is Operation.ApkJarPatch -> apkJarPatch(op)
-                is Operation.CompiledClassMerge -> {
-                    partitionPath(op.target, op.id)
-                    asset(op.payload, op.id)
-                    if (op.classDescriptors.isEmpty()) {
-                        error(
-                            op.id,
-                            "classDescriptors",
-                            CODE_EMPTY_CLASS_DESCRIPTORS,
-                            "CompiledClassMerge must contain at least one class descriptor",
-                        )
-                    }
-                }
-                is Operation.HookInjection -> {
-                    partitionPath(op.target, op.id)
-                    sha256(op.match.expectedPreimageSha256, op.id, "expectedPreimageSha256")
-                    if (op.match.anchor.opcodeSequence.isEmpty()) {
-                        error(
-                            op.id,
-                            "opcodeSequence",
-                            CODE_EMPTY_OPCODE_SEQUENCE,
-                            "HookInjection anchor opcodeSequence must not be empty",
-                        )
-                    }
-                }
             }
         }
 

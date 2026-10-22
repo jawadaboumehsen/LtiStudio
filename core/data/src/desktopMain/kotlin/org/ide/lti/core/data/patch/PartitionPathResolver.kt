@@ -31,8 +31,6 @@ internal fun ConcreteOperation.targetPartitionPath(): PartitionPath = when (this
     is ConcreteOperation.PropertyPatch -> target
     is ConcreteOperation.TextPatch -> target
     is ConcreteOperation.ApkJarPatch -> target
-    is ConcreteOperation.CompiledClassMerge -> target
-    is ConcreteOperation.HookInjection -> target
 }
 
 internal object PartitionPathResolver {

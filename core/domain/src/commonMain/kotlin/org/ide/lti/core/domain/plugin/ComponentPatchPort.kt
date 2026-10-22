@@ -40,15 +40,13 @@ interface ComponentPatchPort {
  * @property componentPath Filesystem path to the patched component.
  * @property decodedOnce Confirmation that decode-once contract was satisfied for this component.
  * @property operationIds List of mutation operation identifiers executed on this component.
- * @property addedClasses Descriptors of all new classes merged into the component.
- * @property changedMethods Descriptors of all methods modified via smali diffs or hook injections.
+ * @property changedMethods Descriptors of all methods modified by method edits.
  * @property aotArtifactsInvalidated Sibling AOT compilation artifacts that downstream build stages must purge.
  */
 data class ComponentPatchReceipt(
     val componentPath: String,
     val decodedOnce: Boolean,
     val operationIds: List<String>,
-    val addedClasses: List<String>,
     val changedMethods: List<String>,
     val aotArtifactsInvalidated: List<String>,
 )

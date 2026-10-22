@@ -10,13 +10,10 @@
 package org.ide.lti.sdk.patchmod
 
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
-import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
 import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.Condition
 import org.ide.lti.core.model.plugin.FileMetadata
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -307,62 +304,6 @@ class OperationsScope internal constructor(private val operations: MutableList<O
                 id = id,
                 target = PartitionPath(partition.id, path),
                 edits = edits,
-                condition = condition,
-            ),
-        )
-    }
-
-    fun compiledClassMerge(
-        id: String,
-        partition: Partition,
-        path: String,
-        payload: String,
-        classDescriptors: List<String>,
-        dependencies: List<String> = emptyList(),
-        condition: Condition = Always,
-    ) {
-        operations.add(
-            Operation.CompiledClassMerge(
-                id = id,
-                target = PartitionPath(partition.id, path),
-                payload = AssetRef(payload),
-                classDescriptors = classDescriptors,
-                dependencies = dependencies,
-                condition = condition,
-            ),
-        )
-    }
-
-    fun hookInjection(
-        id: String,
-        partition: Partition,
-        path: String,
-        classDescriptor: String,
-        methodDescriptor: String,
-        opcodeSequence: List<String>,
-        expectedPreimageSha256: String,
-        hookDescriptor: String,
-        placement: HookPlacement = HookPlacement.BEFORE,
-        stringConstants: List<String> = emptyList(),
-        invokeSignature: String? = null,
-        condition: Condition = Always,
-    ) {
-        operations.add(
-            Operation.HookInjection(
-                id = id,
-                target = PartitionPath(partition.id, path),
-                match = BytecodeMatchSpec(
-                    classDescriptor = classDescriptor,
-                    methodDescriptor = methodDescriptor,
-                    anchor = AnchorPattern(
-                        opcodeSequence = opcodeSequence,
-                        stringConstants = stringConstants,
-                        invokeSignature = invokeSignature,
-                    ),
-                    expectedPreimageSha256 = expectedPreimageSha256,
-                ),
-                placement = placement,
-                hookDescriptor = hookDescriptor,
                 condition = condition,
             ),
         )

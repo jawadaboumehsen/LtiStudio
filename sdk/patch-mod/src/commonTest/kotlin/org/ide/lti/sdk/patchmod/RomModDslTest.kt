@@ -14,12 +14,9 @@ import org.ide.lti.core.domain.plugin.PluginPlanResolver
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
-import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
 import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.Condition
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -110,31 +107,6 @@ class RomModDslTest {
                     edits = listOf(SmaliEdit("smali/test/A.smali", validSha, "@@ @@\n-x\n+y")),
                     condition = Condition.Always,
                 ),
-                Operation.CompiledClassMerge(
-                    id = "op_merge",
-                    target = PartitionPath("odm_dlkm", "etc/classes.jar"),
-                    payload = AssetRef("assets/dex/patch.dex"),
-                    classDescriptors = listOf("Ltest/Helper;"),
-                    dependencies = emptyList(),
-                    condition = Condition.Always,
-                ),
-                Operation.HookInjection(
-                    id = "op_hook",
-                    target = PartitionPath("system_dlkm", "etc/kernel.jar"),
-                    match = BytecodeMatchSpec(
-                        classDescriptor = "Ltest/Target;",
-                        methodDescriptor = "run()V",
-                        anchor = AnchorPattern(
-                            opcodeSequence = listOf("nop"),
-                            stringConstants = emptyList(),
-                            invokeSignature = null,
-                        ),
-                        expectedPreimageSha256 = validSha,
-                    ),
-                    placement = HookPlacement.AFTER,
-                    hookDescriptor = "Ltest/Hook;->onRun()V",
-                    condition = Condition.Always,
-                ),
             ),
         )
 
@@ -164,24 +136,6 @@ class RomModDslTest {
                 apkJarPatch("op_apk", Partition.VENDOR_DLKM, "etc/test.apk") {
                     change("smali/test/A.smali", preimage = validSha) { replace("x", "y") }
                 }
-                compiledClassMerge(
-                    "op_merge",
-                    Partition.ODM_DLKM,
-                    "etc/classes.jar",
-                    "assets/dex/patch.dex",
-                    listOf("Ltest/Helper;"),
-                )
-                hookInjection(
-                    id = "op_hook",
-                    partition = Partition.SYSTEM_DLKM,
-                    path = "etc/kernel.jar",
-                    classDescriptor = "Ltest/Target;",
-                    methodDescriptor = "run()V",
-                    opcodeSequence = listOf("nop"),
-                    expectedPreimageSha256 = validSha,
-                    hookDescriptor = "Ltest/Hook;->onRun()V",
-                    placement = HookPlacement.AFTER,
-                )
             }
         }
 

@@ -181,27 +181,6 @@ data class MethodMatch(
 data class Compatibility(val device: String, val firmwares: List<String> = emptyList())
 
 @Serializable
-enum class HookPlacement {
-    BEFORE,
-    AFTER,
-}
-
-@Serializable
-data class AnchorPattern(
-    val opcodeSequence: List<String>,
-    val stringConstants: List<String> = emptyList(),
-    val invokeSignature: String? = null,
-)
-
-@Serializable
-data class BytecodeMatchSpec(
-    val classDescriptor: String,
-    val methodDescriptor: String,
-    val anchor: AnchorPattern,
-    val expectedPreimageSha256: String,
-)
-
-@Serializable
 sealed interface Operation {
     val id: String
     val condition: Condition
@@ -261,28 +240,6 @@ sealed interface Operation {
         override val id: String,
         val target: PartitionPath,
         val edits: List<SmaliEdit>,
-        override val condition: Condition = Condition.Always,
-    ) : Operation
-
-    @Serializable
-    @SerialName("CompiledClassMerge")
-    data class CompiledClassMerge(
-        override val id: String,
-        val target: PartitionPath,
-        val payload: AssetRef,
-        val classDescriptors: List<String>,
-        val dependencies: List<String> = emptyList(),
-        override val condition: Condition = Condition.Always,
-    ) : Operation
-
-    @Serializable
-    @SerialName("HookInjection")
-    data class HookInjection(
-        override val id: String,
-        val target: PartitionPath,
-        val match: BytecodeMatchSpec,
-        val placement: HookPlacement,
-        val hookDescriptor: String,
         override val condition: Condition = Condition.Always,
     ) : Operation
 }

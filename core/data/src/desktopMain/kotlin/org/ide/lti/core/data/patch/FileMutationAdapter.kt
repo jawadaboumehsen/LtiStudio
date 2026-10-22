@@ -127,9 +127,6 @@ class FileMutationAdapter : FileMutationPort {
         assetRoot: String,
     ): List<ValidationError> = when (op) {
         is ConcreteOperation.ApkJarPatch -> unsupported(op.id, op.target.relativePath, "ApkJarPatch", "T059")
-        is ConcreteOperation.CompiledClassMerge ->
-            unsupported(op.id, op.target.relativePath, "CompiledClassMerge", "T060")
-        is ConcreteOperation.HookInjection -> unsupported(op.id, op.target.relativePath, "HookInjection", "T060")
         is ConcreteOperation.Copy -> validateCopy(op, ctx, assetRoot)
         is ConcreteOperation.Replace -> validateReplace(op, ctx, assetRoot)
         is ConcreteOperation.Delete -> validateDelete(op, ctx)
@@ -380,12 +377,7 @@ class FileMutationAdapter : FileMutationPort {
             is ConcreteOperation.TextPatch -> {
                 applyTextPatch(targetPath, op.context, op.replacement)
             }
-            is ConcreteOperation.ApkJarPatch,
-            is ConcreteOperation.CompiledClassMerge,
-            is ConcreteOperation.HookInjection,
-            -> {
-                error("Cannot execute unsupported operation: ${op.id}")
-            }
+            is ConcreteOperation.ApkJarPatch -> error("Cannot execute unsupported operation: ${op.id}")
         }
     }
 
@@ -397,10 +389,7 @@ class FileMutationAdapter : FileMutationPort {
             is ConcreteOperation.Delete -> EffectKind.DELETED
             is ConcreteOperation.PropertyPatch -> EffectKind.PROPERTY_SET
             is ConcreteOperation.TextPatch -> EffectKind.TEXT_PATCHED
-            is ConcreteOperation.ApkJarPatch,
-            is ConcreteOperation.CompiledClassMerge,
-            is ConcreteOperation.HookInjection,
-            -> error("Unsupported operation cannot produce an effect: ${op.id}")
+            is ConcreteOperation.ApkJarPatch -> error("Unsupported operation cannot produce an effect: ${op.id}")
         }
         val sidecars = when (op) {
             is ConcreteOperation.Copy,
@@ -410,8 +399,6 @@ class FileMutationAdapter : FileMutationPort {
             is ConcreteOperation.PropertyPatch,
             is ConcreteOperation.TextPatch,
             is ConcreteOperation.ApkJarPatch,
-            is ConcreteOperation.CompiledClassMerge,
-            is ConcreteOperation.HookInjection,
             -> emptyList()
         }
         return MutationEffect(

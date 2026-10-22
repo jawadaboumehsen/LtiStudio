@@ -6,46 +6,25 @@
   "settings": [],
   "operations": [
     {
-      "type": "CompiledClassMerge",
-      "id": "op_merge_hook",
+      "type": "ApkJarPatch",
+      "id": "op_hook",
       "target": {
         "partition": "system",
         "relativePath": "framework/services.jar"
       },
-      "payload": {
-        "path": "assets/payload"
-      },
-      "classDescriptors": [
-        "Lorg/ide/lti/example/hook/ExampleHook;"
+      "edits": [
+        {
+          "memberDescriptor": "Lcom/android/server/pm/InstallPackageHelper;",
+          "expectedSha256": "",
+          "unifiedDiff": "@@ @@\n+    invoke-static {@{setting}}, Lorg/ide/lti/example/hook/ExampleHook;->onCollectCertificates(Ljava/lang/Object;)V\n invoke-static/range {@{setting}@{*}}, Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI@{*}",
+          "method": {
+            "name": "scanSystemPackageLI",
+            "references": [
+              "Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI"
+            ]
+          }
+        }
       ],
-      "dependencies": [],
-      "condition": {
-        "type": "Always"
-      }
-    },
-    {
-      "type": "HookInjection",
-      "id": "op_inject_hook",
-      "target": {
-        "partition": "system",
-        "relativePath": "framework/services.jar"
-      },
-      "match": {
-        "classDescriptor": "Lcom/android/server/pm/InstallPackageHelper;",
-        "methodDescriptor": "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-        "anchor": {
-          "opcodeSequence": [
-            "sget-object",
-            "invoke-static",
-            "const-string"
-          ],
-          "stringConstants": [],
-          "invokeSignature": "Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI(...)V"
-        },
-        "expectedPreimageSha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-      },
-      "placement": "BEFORE",
-      "hookDescriptor": "Lorg/ide/lti/example/hook/ExampleHook;->onSignatureCheck(Ljava/lang/String;Ljava/lang/String;)V",
       "condition": {
         "type": "Always"
       }

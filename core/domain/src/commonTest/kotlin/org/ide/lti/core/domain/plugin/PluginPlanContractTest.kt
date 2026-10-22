@@ -11,11 +11,8 @@ package org.ide.lti.core.domain.plugin
 
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
-import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
 import org.ide.lti.core.model.plugin.Condition
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
@@ -79,24 +76,6 @@ class PluginPlanContractTest {
                 id = "op_apk",
                 target = PartitionPath("vendor_dlkm", "etc/test.apk"),
                 edits = listOf(SmaliEdit("Ltest/Class;->method()V", validSha, "diff")),
-            ),
-            Operation.CompiledClassMerge(
-                id = "op_merge",
-                target = PartitionPath("odm_dlkm", "etc/classes.jar"),
-                payload = AssetRef("assets/dex/patch.dex"),
-                classDescriptors = listOf("Ltest/Helper;"),
-            ),
-            Operation.HookInjection(
-                id = "op_hook",
-                target = PartitionPath("system_dlkm", "etc/kernel.jar"),
-                match = BytecodeMatchSpec(
-                    classDescriptor = "Ltest/Target;",
-                    methodDescriptor = "run()V",
-                    anchor = AnchorPattern(listOf("nop")),
-                    expectedPreimageSha256 = validSha,
-                ),
-                placement = HookPlacement.AFTER,
-                hookDescriptor = "Ltest/Hook;->onRun()V",
             ),
         ),
     )
@@ -481,29 +460,6 @@ class PluginPlanContractTest {
     }
 
     @Test
-    fun bytecodeMatchSpecExpectedPreimageSha256Not64LowercaseHexRejected() {
-        val invalid = withOp(
-            Operation.HookInjection(
-                id = "op_bad_hook_sha",
-                target = PartitionPath("system", "framework/test.jar"),
-                match = BytecodeMatchSpec(
-                    classDescriptor = "Ltest/Target;",
-                    methodDescriptor = "run()V",
-                    anchor = AnchorPattern(listOf("nop")),
-                    expectedPreimageSha256 = "12345",
-                ),
-                placement = HookPlacement.BEFORE,
-                hookDescriptor = "Ltest/Hook;->run()V",
-            ),
-        )
-        val report = PluginPlanValidator.validate(invalid)
-        val err = report.errors.first()
-        assertEquals(PluginPlanValidator.CODE_INVALID_SHA256, err.code)
-        assertEquals("op_bad_hook_sha", err.objectId)
-        assertEquals("expectedPreimageSha256", err.fieldPath)
-    }
-
-    @Test
     fun apkJarPatchZeroEditsRejected() {
         val invalid = withOp(
             Operation.ApkJarPatch(
@@ -517,46 +473,6 @@ class PluginPlanContractTest {
         assertEquals(PluginPlanValidator.CODE_EMPTY_EDITS, err.code)
         assertEquals("op_empty_edits", err.objectId)
         assertEquals("edits", err.fieldPath)
-    }
-
-    @Test
-    fun compiledClassMergeZeroClassDescriptorsRejected() {
-        val invalid = withOp(
-            Operation.CompiledClassMerge(
-                id = "op_empty_classes",
-                target = PartitionPath("system", "framework/test.jar"),
-                payload = AssetRef("assets/classes.dex"),
-                classDescriptors = emptyList(),
-            ),
-        )
-        val report = PluginPlanValidator.validate(invalid)
-        val err = report.errors.first()
-        assertEquals(PluginPlanValidator.CODE_EMPTY_CLASS_DESCRIPTORS, err.code)
-        assertEquals("op_empty_classes", err.objectId)
-        assertEquals("classDescriptors", err.fieldPath)
-    }
-
-    @Test
-    fun hookInjectionEmptyOpcodeSequenceRejected() {
-        val invalid = withOp(
-            Operation.HookInjection(
-                id = "op_empty_opcodes",
-                target = PartitionPath("system", "framework/test.jar"),
-                match = BytecodeMatchSpec(
-                    classDescriptor = "Ltest/Target;",
-                    methodDescriptor = "run()V",
-                    anchor = AnchorPattern(emptyList()),
-                    expectedPreimageSha256 = validSha,
-                ),
-                placement = HookPlacement.BEFORE,
-                hookDescriptor = "Ltest/Hook;->run()V",
-            ),
-        )
-        val report = PluginPlanValidator.validate(invalid)
-        val err = report.errors.first()
-        assertEquals(PluginPlanValidator.CODE_EMPTY_OPCODE_SEQUENCE, err.code)
-        assertEquals("op_empty_opcodes", err.objectId)
-        assertEquals("opcodeSequence", err.fieldPath)
     }
 
     @Test

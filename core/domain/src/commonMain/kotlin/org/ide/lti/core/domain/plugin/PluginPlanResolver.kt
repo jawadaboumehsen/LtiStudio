@@ -232,20 +232,6 @@ object PluginPlanResolver {
                 target = op.target,
                 edits = op.edits,
             )
-            is Operation.CompiledClassMerge -> ConcreteOperation.CompiledClassMerge(
-                id = op.id,
-                target = op.target,
-                payload = op.payload,
-                classDescriptors = op.classDescriptors,
-                dependencies = op.dependencies,
-            )
-            is Operation.HookInjection -> ConcreteOperation.HookInjection(
-                id = op.id,
-                target = op.target,
-                match = op.match,
-                placement = op.placement,
-                hookDescriptor = op.hookDescriptor,
-            )
         }
 
         private fun computeDigest(concreteOperations: List<ConcreteOperation>): String {

@@ -82,7 +82,7 @@ listOf(
 
 tasks.register<JavaExec>("compileModPayload") {
     group = "patchmod"
-    description = "Compile Java hooks under hooks/ into assets/payload/ using payload.json"
+    description = "Compile Java hooks under hooks/<smali dir>/ into files/<smali dir>/ using payload.json"
     classpath = hooksCompiler
     mainClass.set("org.ide.lti.sdk.patchmod.hooks.HookCompilerCliKt")
     args("compileModPayload", "--project", layout.projectDirectory.asFile.absolutePath)

@@ -313,6 +313,7 @@ public class PipelineOrchestrator(
                         continue
                     }
 
+                    invalidateLaterStages(driver, stage)
                     val failure =
                         runCatching { executeStage(driver, stage, isResumeStage = false) }.exceptionOrNull()
                             ?.also { if (it is CancellationException) throw it }
@@ -468,6 +469,7 @@ public class PipelineOrchestrator(
                         continue
                     }
 
+                    invalidateLaterStages(driver, stage)
                     val failure =
                         runCatching {
                             executeStage(driver, stage, isResumeStage = (index == startStageIndex))
@@ -1077,6 +1079,18 @@ public class PipelineOrchestrator(
     }
 
     private fun cacheFile(stage: StageDefinition) = ".cache/${stage.id.name}.key"
+
+    /**
+     * A stage that runs rewrites the shared work tree, so what the stages after it left there is gone, whether or not
+     * this run reaches them (`throughStage` stops it early): their cached results are cleared, or a later run would
+     * skip them and build on a tree without their changes. An empty record never matches a key.
+     */
+    private suspend fun invalidateLaterStages(driver: Driver, stage: StageDefinition) {
+        val all = registry.executableStages()
+        all.drop(all.indexOfFirst { it.id == stage.id } + 1).forEach { later ->
+            executionPort.uploadFile(driver.ws, cacheFile(later), ByteArray(0))
+        }
+    }
 
     private companion object {
         const val PERSISTED_VALUE_LIMIT = 512

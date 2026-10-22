@@ -76,7 +76,10 @@ object XmlResourceEditor {
         val hits = (listOf(root) + (0 until all.length).map { all.item(it) as Element }).filter { matches(it, match) }
         return when (hits.size) {
             1 -> hits.single()
-            0 -> throw Refused(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, "No element ${describe(match)}")
+            0 -> throw Refused(
+                ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
+                "No element ${describe(match)}" + near(root, match),
+            )
             else -> throw Refused(
                 ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
                 "${hits.size} elements ${describe(match)}",
@@ -87,6 +90,31 @@ object XmlResourceEditor {
     private fun matches(e: Element, match: XmlMatch): Boolean =
         (match.tag == null || match.tag == e.nodeName || match.tag == e.localName) &&
             match.attributes.all { (name, value) -> e.hasAttribute(name) && e.getAttribute(name) == value }
+
+    /**
+     * The elements of the tag [match] asks for (or, for any tag, those that have its first attribute), shown with
+     * the attributes it names, so a renamed key or a changed value is easy to spot.
+     */
+    private fun near(root: Element, match: XmlMatch): String {
+        val all = root.getElementsByTagName("*").let { list -> (0 until list.length).map { list.item(it) as Element } }
+        val firstAttribute = match.attributes.keys.firstOrNull()
+        val similar = all.filter { e ->
+            if (match.tag != null) {
+                match.tag == e.nodeName || match.tag == e.localName
+            } else {
+                firstAttribute?.let(e::hasAttribute) == true
+            }
+        }
+        if (similar.isEmpty()) return "; the document has no such element"
+        val shown = similar.take(MAX_LISTED).joinToString("") { e ->
+            "\n  <${e.nodeName}" + match.attributes.keys.filter(e::hasAttribute)
+                .joinToString("") { " $it=\"${e.getAttribute(it)}\"" } + ">"
+        }
+        val more = (similar.size - MAX_LISTED).takeIf { it > 0 }?.let { "\n  … and $it more" }.orEmpty()
+        return "; similar elements:$shown$more"
+    }
+
+    private const val MAX_LISTED = 8
 
     private fun describe(match: XmlMatch): String =
         "<${match.tag ?: "*"}" + match.attributes.entries.joinToString("") { " ${it.key}=\"${it.value}\"" } + ">"

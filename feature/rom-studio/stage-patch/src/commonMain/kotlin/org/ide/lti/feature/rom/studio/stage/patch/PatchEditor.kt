@@ -192,8 +192,6 @@ private fun targetOf(op: Operation): String = when (op) {
     is Operation.PropertyPatch -> op.target
     is Operation.TextPatch -> op.target
     is Operation.ApkJarPatch -> op.target
-    is Operation.CompiledClassMerge -> op.target
-    is Operation.HookInjection -> op.target
 }.let { "${it.partition}/${it.relativePath}" }
 
 private fun describe(op: Operation): String = when (op) {
@@ -206,8 +204,6 @@ private fun describe(op: Operation): String = when (op) {
     is Operation.PropertyPatch -> "${targetOf(op)}: ${op.key}=${valueOf(op.value)}"
     is Operation.TextPatch -> "${targetOf(op)}: at \"${op.context.take(CONTEXT_PREVIEW)}…\""
     is Operation.ApkJarPatch -> "smali ${targetOf(op)} (${op.edits.size} edits)"
-    is Operation.CompiledClassMerge -> "classes into ${targetOf(op)}"
-    is Operation.HookInjection -> "hook in ${targetOf(op)}"
 }
 
 private fun valueOf(value: ValueRef): String = when (value) {

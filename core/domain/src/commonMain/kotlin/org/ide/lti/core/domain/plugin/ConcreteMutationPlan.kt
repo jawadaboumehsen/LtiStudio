@@ -10,9 +10,7 @@
 package org.ide.lti.core.domain.plugin
 
 import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
 import org.ide.lti.core.model.plugin.FileMetadata
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
 
@@ -64,20 +62,4 @@ sealed interface ConcreteOperation {
 
     data class ApkJarPatch(override val id: String, val target: PartitionPath, val edits: List<SmaliEdit>) :
         ConcreteOperation
-
-    data class CompiledClassMerge(
-        override val id: String,
-        val target: PartitionPath,
-        val payload: AssetRef,
-        val classDescriptors: List<String>,
-        val dependencies: List<String> = emptyList(),
-    ) : ConcreteOperation
-
-    data class HookInjection(
-        override val id: String,
-        val target: PartitionPath,
-        val match: BytecodeMatchSpec,
-        val placement: HookPlacement,
-        val hookDescriptor: String,
-    ) : ConcreteOperation
 }

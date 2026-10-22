@@ -10,7 +10,6 @@
 package org.ide.lti.core.data.patch
 
 import kotlinx.coroutines.yield
-import org.ide.lti.core.data.patch.BytecodeMatcher.MatchOutcome
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -26,14 +25,13 @@ import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.edit.EditResult
 import org.ide.lti.core.domain.plugin.edit.MemberEdits
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.SmaliEdit
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * Adapter executing APK and JAR bytecode mutations, hook injections, and compiled class merges.
+ * Adapter executing the smali and resource edits of APK and JAR components.
  *
  * Operations targeting the same component archive are grouped and executed under a strict decode-once
  * lifecycle: the component archive is decoded once, its operations are applied in plan order, the component
@@ -41,7 +39,7 @@ import java.nio.file.Path
  * rebuilding and discards the decoded tree, leaving the container intact.
  */
 @Suppress("LargeClass", "TooManyFunctions", "ReturnCount")
-class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private val defaultAssetRoot: String = "") {
+class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
 
     private fun patchError(objectId: String, fieldPath: String, code: String, message: String) =
         ValidationError(StageId.MODULE_APPLICATION, objectId, fieldPath, code, Severity.ERROR, message)
@@ -49,7 +47,6 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
     suspend fun apply(
         operations: List<ConcreteOperation>,
         ctx: MutationContext,
-        assetRoot: String = defaultAssetRoot,
         preview: Boolean = false,
     ): ApkJarOutcome {
         val resolutionErrors = mutableListOf<ValidationError>()
@@ -57,10 +54,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
 
         for (op in operations) {
             when (op) {
-                is ConcreteOperation.ApkJarPatch,
-                is ConcreteOperation.CompiledClassMerge,
-                is ConcreteOperation.HookInjection,
-                -> {
+                is ConcreteOperation.ApkJarPatch -> {
                     when (val resolved = PartitionPathResolver.resolve(op.targetPartitionPath(), op.id, ctx)) {
                         is ResolvedTarget.Invalid -> resolutionErrors.add(resolved.error)
                         is ResolvedTarget.Valid -> {
@@ -107,7 +101,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
 
         for ((componentPath, ops) in componentOperations) {
             yield()
-            val outcome = processComponent(componentPath, ops, assetRoot, preview)
+            val outcome = processComponent(componentPath, ops, preview)
             when (outcome) {
                 is ComponentProcessResult.Refused -> return ApkJarOutcome.Refused(outcome.report)
                 is ComponentProcessResult.Applied -> {
@@ -123,7 +117,6 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
     private suspend fun processComponent(
         componentPath: Path,
         ops: List<ConcreteOperation>,
-        assetRoot: String,
         preview: Boolean,
     ): ComponentProcessResult {
         val decoded = patchPort.decode(componentPath.toString())
@@ -141,7 +134,6 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
             )
 
         val componentErrors = mutableListOf<ValidationError>()
-        val addedClasses = mutableListOf<String>()
         val changedMethods = mutableListOf<String>()
         val memberBuffer = mutableMapOf<String, String>()
         // Listed once, when a method edit first has to find its class among the dex folders.
@@ -158,21 +150,6 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
                         changedMethods = changedMethods,
                         preview = preview,
                         members = members,
-                    )
-                    is ConcreteOperation.CompiledClassMerge -> applyCompiledClassMerge(
-                        op = op,
-                        decoded = decoded,
-                        assetRoot = assetRoot,
-                        memberBuffer = memberBuffer,
-                        addedClasses = addedClasses,
-                        preview = preview,
-                    )
-                    is ConcreteOperation.HookInjection -> applyHookInjection(
-                        op = op,
-                        decoded = decoded,
-                        memberBuffer = memberBuffer,
-                        changedMethods = changedMethods,
-                        preview = preview,
                     )
                     is ConcreteOperation.Copy,
                     is ConcreteOperation.Replace,
@@ -215,7 +192,6 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
                 componentPath = componentPath.toString().replace('\\', '/'),
                 decodedOnce = true,
                 operationIds = ops.map { it.id },
-                addedClasses = addedClasses.distinct(),
                 changedMethods = changedMethods.distinct(),
                 aotArtifactsInvalidated = computeAotArtifacts(componentPath),
             )
@@ -291,298 +267,10 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort, private v
         }
     }
 
-    private suspend fun applyCompiledClassMerge(
-        op: ConcreteOperation.CompiledClassMerge,
-        decoded: DecodedComponent,
-        assetRoot: String,
-        memberBuffer: MutableMap<String, String>,
-        addedClasses: MutableList<String>,
-        preview: Boolean,
-    ): List<ValidationError> {
-        val errors = mutableListOf<ValidationError>()
-        val payloadPath = Path.of(assetRoot).resolve(op.payload.path).normalize()
-        if (!Files.exists(payloadPath) || !Files.isRegularFile(payloadPath)) {
-            errors.add(
-                patchError(
-                    op.id,
-                    op.payload.path,
-                    ComponentPatchCodes.PAYLOAD_MISSING,
-                    "Payload asset '${op.payload.path}' not found at '$payloadPath'",
-                ),
-            )
-        }
-
-        val allExistingMembers = patchPort.listMembers(decoded, "").toSet()
-        errors.addAll(validateClassDescriptors(op.id, op.classDescriptors, decoded, allExistingMembers, addedClasses))
-        errors.addAll(
-            validateDependencies(
-                op.id,
-                op.dependencies,
-                op.classDescriptors,
-                decoded,
-                allExistingMembers,
-                addedClasses,
-            ),
-        )
-
-        if (errors.isNotEmpty()) return errors
-
-        val payloadContent = Files.readString(payloadPath, Charsets.UTF_8)
-        val primaryDescriptor = op.classDescriptors.first()
-        val targetRelPath = "smali_classes2/${descriptorToRelPath(primaryDescriptor)}"
-
-        memberBuffer[targetRelPath] = payloadContent
-        if (!preview) {
-            patchPort.writeMember(decoded, targetRelPath, payloadContent)
-        }
-        addedClasses.addAll(op.classDescriptors)
-        return emptyList()
-    }
-
-    private suspend fun validateClassDescriptors(
-        opId: String,
-        classDescriptors: List<String>,
-        decoded: DecodedComponent,
-        allExistingMembers: Set<String>,
-        addedClasses: List<String>,
-    ): List<ValidationError> {
-        val errors = mutableListOf<ValidationError>()
-        for (desc in classDescriptors) {
-            if (desc.startsWith("Landroid/") || desc.startsWith("Ljava/")) {
-                errors.add(
-                    patchError(
-                        opId,
-                        desc,
-                        ComponentPatchCodes.PLATFORM_CLASS_COLLISION,
-                        "Class descriptor '$desc' collides with platform package",
-                    ),
-                )
-            }
-
-            val relPath = descriptorToRelPath(desc)
-            val classAlreadyExists = desc in addedClasses ||
-                allExistingMembers.any { it == relPath || it.endsWith("/$relPath") } ||
-                patchPort.readMember(decoded, relPath) != null ||
-                patchPort.readMember(decoded, "smali/$relPath") != null
-
-            if (classAlreadyExists) {
-                errors.add(
-                    patchError(
-                        opId,
-                        desc,
-                        ComponentPatchCodes.DUPLICATE_CLASS,
-                        "Class descriptor '$desc' already exists in component",
-                    ),
-                )
-            }
-        }
-        return errors
-    }
-
-    private suspend fun validateDependencies(
-        opId: String,
-        dependencies: List<String>,
-        classDescriptors: List<String>,
-        decoded: DecodedComponent,
-        allExistingMembers: Set<String>,
-        addedClasses: List<String>,
-    ): List<ValidationError> {
-        val errors = mutableListOf<ValidationError>()
-        for (dep in dependencies) {
-            val depRelPath = descriptorToRelPath(dep)
-            val depResolved = dep in classDescriptors ||
-                dep in addedClasses ||
-                allExistingMembers.any { it == depRelPath || it.endsWith("/$depRelPath") } ||
-                patchPort.readMember(decoded, depRelPath) != null ||
-                patchPort.readMember(decoded, "smali/$depRelPath") != null
-
-            if (!depResolved) {
-                errors.add(
-                    patchError(
-                        opId,
-                        dep,
-                        ComponentPatchCodes.UNRESOLVED_DEPENDENCY,
-                        "Dependency '$dep' is unresolved in component",
-                    ),
-                )
-            }
-        }
-        return errors
-    }
-
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
-    private suspend fun applyHookInjection(
-        op: ConcreteOperation.HookInjection,
-        decoded: DecodedComponent,
-        memberBuffer: MutableMap<String, String>,
-        changedMethods: MutableList<String>,
-        preview: Boolean,
-    ): List<ValidationError> {
-        val errors = mutableListOf<ValidationError>()
-
-        if (!HOOK_DESCRIPTOR_REGEX.matches(op.hookDescriptor)) {
-            errors.add(
-                patchError(
-                    op.id,
-                    op.hookDescriptor,
-                    ComponentPatchCodes.HOOK_SIGNATURE_MISMATCH,
-                    "Hook descriptor '${op.hookDescriptor}' does not match expected format",
-                ),
-            )
-            return errors
-        }
-
-        val allExistingMembers = patchPort.listMembers(decoded, "")
-        val classRelPath = descriptorToRelPath(op.match.classDescriptor)
-        val targetRelPath = memberBuffer.keys.firstOrNull { it == classRelPath || it.endsWith("/$classRelPath") }
-            ?: allExistingMembers.firstOrNull { it == classRelPath || it.endsWith("/$classRelPath") }
-            ?: resolveFallbackClassMember(decoded, classRelPath)
-
-        if (targetRelPath == null) {
-            errors.add(
-                patchError(
-                    op.id,
-                    op.match.classDescriptor,
-                    ComponentPatchCodes.SMALI_MEMBER_MISSING,
-                    "Class member for '${op.match.classDescriptor}' not found in decoded component",
-                ),
-            )
-            return errors
-        }
-
-        val classSmali = memberBuffer[targetRelPath] ?: patchPort.readMember(decoded, targetRelPath)
-        if (classSmali == null) {
-            errors.add(
-                patchError(
-                    op.id,
-                    op.match.classDescriptor,
-                    ComponentPatchCodes.SMALI_MEMBER_MISSING,
-                    "Smali content for '${op.match.classDescriptor}' could not be read",
-                ),
-            )
-            return errors
-        }
-
-        val matchOutcome = BytecodeMatcher.match(classSmali, op.match)
-        when (matchOutcome) {
-            is MatchOutcome.Matched -> {
-                val lines = classSmali.lines().toMutableList()
-                val refIndex = if (op.placement == HookPlacement.BEFORE) {
-                    matchOutcome.anchorStartLine
-                } else {
-                    matchOutcome.anchorEndLine
-                }
-                val indent = if (refIndex in lines.indices) {
-                    lines[refIndex].takeWhile { it.isWhitespace() }
-                } else {
-                    "    "
-                }
-                val effectiveIndent = if (indent.isEmpty()) "    " else indent
-                val hookLine = "${effectiveIndent}invoke-static {}, ${op.hookDescriptor}"
-
-                val insertIndex = if (op.placement == HookPlacement.BEFORE) {
-                    matchOutcome.anchorStartLine
-                } else {
-                    matchOutcome.anchorEndLine + 1
-                }
-                lines.add(insertIndex, hookLine)
-                val newSmali = lines.joinToString("\n")
-
-                memberBuffer[targetRelPath] = newSmali
-                if (!preview) {
-                    patchPort.writeMember(decoded, targetRelPath, newSmali)
-                }
-                changedMethods.add("${op.match.classDescriptor}->${op.match.methodDescriptor}")
-            }
-            is MatchOutcome.Ambiguous -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.methodDescriptor,
-                        ComponentPatchCodes.ANCHOR_AMBIGUOUS,
-                        "Anchor is ambiguous in '${op.match.methodDescriptor}' " +
-                            "(candidates at: ${matchOutcome.candidateStartLines})",
-                    ),
-                )
-            }
-            is MatchOutcome.NearMiss -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.methodDescriptor,
-                        ComponentPatchCodes.ANCHOR_NOT_FOUND,
-                        "Anchor not found (near-miss score=${matchOutcome.score}, " +
-                            "diverging opcode at index ${matchOutcome.divergingOpcodeIndex}: " +
-                            "expected '${matchOutcome.expected}', actual '${matchOutcome.actual}')",
-                    ),
-                )
-            }
-            MatchOutcome.NoCandidate -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.methodDescriptor,
-                        ComponentPatchCodes.ANCHOR_NOT_FOUND,
-                        "Anchor pattern candidate not found for method '${op.match.methodDescriptor}'",
-                    ),
-                )
-            }
-            is MatchOutcome.MethodNotFound -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.methodDescriptor,
-                        ComponentPatchCodes.ANCHOR_NOT_FOUND,
-                        "Method '${matchOutcome.methodDescriptor}' not found in class " +
-                            "'${op.match.classDescriptor}'",
-                    ),
-                )
-            }
-            is MatchOutcome.PreimageMismatch -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.methodDescriptor,
-                        ComponentPatchCodes.ANCHOR_PREIMAGE_MISMATCH,
-                        "Preimage mismatch for method '${op.match.methodDescriptor}': " +
-                            "expected ${matchOutcome.expected}, actual ${matchOutcome.actual}",
-                    ),
-                )
-            }
-            is MatchOutcome.ClassMismatch -> {
-                errors.add(
-                    patchError(
-                        op.id,
-                        op.match.classDescriptor,
-                        ComponentPatchCodes.SMALI_MEMBER_MISSING,
-                        "Class mismatch: expected ${matchOutcome.expected}, actual ${matchOutcome.actual}",
-                    ),
-                )
-            }
-        }
-
-        return errors
-    }
-
-    private suspend fun resolveFallbackClassMember(decoded: DecodedComponent, classRelPath: String): String? = when {
-        patchPort.readMember(decoded, "smali/$classRelPath") != null -> "smali/$classRelPath"
-        patchPort.readMember(decoded, classRelPath) != null -> classRelPath
-        else -> null
-    }
-
-    private fun descriptorToRelPath(descriptor: String): String {
-        val trimmed = descriptor.removePrefix("L").removeSuffix(";")
-        return "$trimmed.smali"
-    }
-
     private sealed interface ComponentProcessResult {
         data class Applied(val effects: List<MutationEffect>, val receipt: ComponentPatchReceipt) :
             ComponentProcessResult
         data class Refused(val report: ValidationReport) : ComponentProcessResult
-    }
-
-    private companion object {
-        val HOOK_DESCRIPTOR_REGEX = Regex("""^L[^\s;]+;->[^\s(]+\([^)\s]*\)[^\s]+$""")
     }
 }
 

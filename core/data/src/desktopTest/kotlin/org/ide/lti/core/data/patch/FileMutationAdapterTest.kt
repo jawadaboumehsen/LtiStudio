@@ -17,10 +17,7 @@ import org.ide.lti.core.domain.plugin.FileMutationCodes
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.plugin.PluginPackagePolicy
-import org.ide.lti.core.model.plugin.AnchorPattern
 import org.ide.lti.core.model.plugin.AssetRef
-import org.ide.lti.core.model.plugin.BytecodeMatchSpec
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
 import java.nio.file.Files
@@ -549,34 +546,6 @@ class FileMutationAdapterTest {
 
         val treeAfter = hashTree(workTree)
         assertEquals(treeBefore, treeAfter)
-
-        // Also test HookInjection names T060
-        val hookPlan = ConcreteMutationPlan(
-            publisher = "p",
-            id = "op_hook",
-            version = "1",
-            operations = listOf(
-                ConcreteOperation.HookInjection(
-                    id = "op_hook",
-                    target = PartitionPath("system", "framework/framework.jar"),
-                    match = BytecodeMatchSpec(
-                        classDescriptor = "Lcom/pkg/Cls;",
-                        methodDescriptor = "m()V",
-                        anchor = AnchorPattern(listOf("nop")),
-                        expectedPreimageSha256 = "sha",
-                    ),
-                    placement = HookPlacement.BEFORE,
-                    hookDescriptor = "Lcom/pkg/Hook;->h()V",
-                ),
-            ),
-            notApplicable = emptyList(),
-            digest = "d",
-        )
-        val hookOutcome = adapter.apply(hookPlan, ctx, assetRoot.toString())
-        assertIs<MutationOutcome.Refused>(hookOutcome)
-        val hookErr = hookOutcome.report.errors.first { it.code == FileMutationCodes.UNSUPPORTED_OPERATION }
-        assertEquals("op_hook", hookErr.objectId)
-        assertTrue(hookErr.message.contains("T060"))
     }
 
     @Test

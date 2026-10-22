@@ -9,38 +9,33 @@
  */
 package org.ide.lti.sdk.patchmod.example
 
-import org.ide.lti.core.model.plugin.HookPlacement
 import org.ide.lti.sdk.patchmod.Partition
+import org.ide.lti.sdk.patchmod.addSmali
 import org.ide.lti.sdk.patchmod.romMod
+import java.io.File
 
+/**
+ * A hook in two parts: the Java class (`hooks/smali_classes2/…/ExampleHook.java`, compiled by `compileModPayload`
+ * into `files/smali_classes2/…`) is added to services.jar, and a method edit calls it.
+ */
 val exampleCompiledHookMod = romMod(
     publisher = "org.ide.lti",
     id = "example-compiled-hook",
     version = "1.0.0",
 ) {
     operations {
-        compiledClassMerge(
-            id = "op_merge_hook",
-            partition = Partition.SYSTEM,
-            path = "framework/services.jar",
-            payload = "assets/payload",
-            classDescriptors = listOf("Lorg/ide/lti/example/hook/ExampleHook;"),
-        )
-        hookInjection(
-            id = "op_inject_hook",
-            partition = Partition.SYSTEM,
-            path = "framework/services.jar",
-            classDescriptor = "Lcom/android/server/pm/InstallPackageHelper;",
-            methodDescriptor = "scanPackageTracedLI(Lcom/android/server/pm/ParsedPackage;)V",
-            opcodeSequence = listOf(
-                "sget-object",
-                "invoke-static",
-                "const-string",
-            ),
-            expectedPreimageSha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-            hookDescriptor = "Lorg/ide/lti/example/hook/ExampleHook;->onSignatureCheck(Ljava/lang/String;Ljava/lang/String;)V",
-            placement = HookPlacement.BEFORE,
-            invokeSignature = "Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI(...)V",
-        )
+        apkJarPatch("op_hook", Partition.SYSTEM, "framework/services.jar") {
+            addSmali(File("files"))
+            method("Lcom/android/server/pm/InstallPackageHelper;", "scanSystemPackageLI") {
+                references("Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI")
+                // @{setting} captures the call's first register (the package setting) and passes it to the hook.
+                insertBefore(
+                    "invoke-static/range {@{setting}@{*}}, " +
+                        "Lcom/android/server/pm/ScanPackageUtils;->collectCertificatesLI@{*}",
+                    "    invoke-static {@{setting}}, " +
+                        "Lorg/ide/lti/example/hook/ExampleHook;->onCollectCertificates(Ljava/lang/Object;)V",
+                )
+            }
+        }
     }
 }

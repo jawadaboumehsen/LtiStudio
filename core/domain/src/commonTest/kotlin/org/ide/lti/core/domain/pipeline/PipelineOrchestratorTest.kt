@@ -272,6 +272,38 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun aRunStoppedAfterAnEarlierStageClearsTheLaterStagesCachedResults() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        // The work tree changes under Assemble, and a run through Assemble re-syncs it (as the Run panel's chips do).
+        port.stdoutOverrides["sha256sum $ws/work/system/system/build.prop"] = "deadbeef  build.prop"
+        repo.upsert(
+            org.ide.lti.core.model.run.BuildRun(
+                id = "run-2",
+                workspaceId = fixture.workspace.id,
+                snapshotId = fixture.snapshotGlobalOta.id,
+                state = RunState.QUEUED,
+                startedAt = kotlinx.datetime.Clock.System.now(),
+                throughStage = StageId.WORK_TREE_ASSEMBLY,
+            ),
+        )
+        val partial = orchestrator(port, repo).drive("run-2", fixture.globalOtaContext(), "d2").toList()
+        val completed = partial.filterIsInstance<PipelineEvent.StageCompleted>().map { it.stageId }
+        assertTrue(StageId.WORK_TREE_ASSEMBLY in completed)
+
+        // The next full run finds Assemble's own record valid, but nothing after it may come from the old tree.
+        val events = orchestrator(port, repo).drive("run-3", fixture.globalOtaContext(), "d3").toList()
+
+        val skipped = events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId }
+        assertEquals(
+            listOf(StageId.FIRMWARE_ACQUISITION, StageId.FIRMWARE_EXTRACTION, StageId.WORK_TREE_ASSEMBLY),
+            skipped,
+        )
+        assertEquals(4, events.filterIsInstance<PipelineEvent.StageCompleted>().size)
+    }
+
+    @Test
     fun editedOutputInvalidatesTheCacheEvenWhenInputsMatch() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()

@@ -13,8 +13,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import org.ide.lti.core.domain.plugin.PluginPackageCodec
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
-import org.ide.lti.sdk.patchmod.Partition
-import org.ide.lti.sdk.patchmod.romMod
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
 import org.ide.lti.sdk.patchmod.runtime.PluginPackageReader
 import java.io.File
@@ -27,39 +25,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class PatchModCliTest {
-
-    @Test
-    fun checkReportsUnsupportedOperationsAsSkippedRatherThanApplied() {
-        val project = createTempDirectory("patchmod-hooks-check-").toFile()
-        val plan = romMod("p", "hooks", "1.0.0") {
-            operations {
-                compiledClassMerge(
-                    "merge",
-                    Partition.SYSTEM,
-                    "framework/services.jar",
-                    "assets/payload",
-                    listOf("Lcom/x/Hook;"),
-                )
-                hookInjection(
-                    "inject",
-                    Partition.SYSTEM,
-                    "framework/services.jar",
-                    "Lcom/x/Y;",
-                    "run()V",
-                    listOf("return-void"),
-                    "ab".repeat(32),
-                    "Lcom/x/Hook;->run()V",
-                )
-            }
-        }
-        project.resolve("plan.json").writeText(PluginPackageCodec.encodePlan(plan))
-
-        val result = PatchModTool.checkMod(project, project)
-
-        assertIs<CliResult.Success>(result)
-        assertTrue(result.message.contains("0 edits apply, 2 not checked"), result.message)
-        assertEquals(2, result.message.lineSequence().count { it.startsWith("skip ") })
-    }
 
     private fun locateExampleDir(): File {
         var dir = File(System.getProperty("user.dir"))

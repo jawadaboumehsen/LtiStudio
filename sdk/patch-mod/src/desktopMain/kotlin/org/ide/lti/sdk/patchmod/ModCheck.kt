@@ -66,12 +66,6 @@ object ModCheck {
             mod.operations.flatMap { op ->
                 when (op) {
                     is Operation.ApkJarPatch -> checkComponent(mod, op, decoded, buffers, listings)
-                    is Operation.CompiledClassMerge -> listOf(
-                        skipped(mod, op, op.target.relativePath, "compiled-class merge dry run is not supported"),
-                    )
-                    is Operation.HookInjection -> listOf(
-                        skipped(mod, op, op.target.relativePath, "hook injection dry run is not supported"),
-                    )
                     else -> listOf(checkFile(mod, op, files, touched, assetExists))
                 }
             }
@@ -177,8 +171,6 @@ object ModCheck {
         is Operation.PropertyPatch -> op.target
         is Operation.TextPatch -> op.target
         is Operation.ApkJarPatch -> op.target
-        is Operation.CompiledClassMerge -> op.target
-        is Operation.HookInjection -> op.target
     }
 
     private fun inPlace(op: Operation) = op is Operation.PropertyPatch || op is Operation.TextPatch

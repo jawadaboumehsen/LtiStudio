@@ -112,6 +112,34 @@ class SmaliMethodEditorTest {
     }
 
     @Test
+    fun noMatchingMethodListsTheCandidatesAndWhatRuledEachOut() {
+        val anyEdit = "@@ @@\n x\n+y"
+        val wrongParams = assertIs<EditResult.Failed>(apply(MethodMatch("run", parameters = "J"), anyEdit)).message
+        assertTrue("run(I)V (parameters (I))" in wrongParams, wrongParams)
+        assertTrue("run(Ljava/lang/String;)V (parameters (Ljava/lang/String;))" in wrongParams, wrongParams)
+
+        val renamed = assertIs<EditResult.Failed>(apply(MethodMatch("start"), anyEdit)).message
+        assertTrue("no method is named start, the class has" in renamed, renamed)
+        assertTrue("\n  run(I)V" in renamed, renamed)
+
+        val byReference = MethodMatch("run", references = listOf("LBar;"))
+        val noReference = assertIs<EditResult.Failed>(apply(byReference, anyEdit)).message
+        assertTrue("(no reference to LBar;)" in noReference, noReference)
+    }
+
+    @Test
+    fun aMissingAnchorShowsHowFarItMatchedAndTheMethodsLinesOfThatInstruction() {
+        // The first line matches; the second has a register the firmware does not use.
+        val diff = "@@ @@\n     const-string v0, \"other\"\n     invoke-virtual {p0, v9}, LFoo;->work(I)V\n+    nop"
+        val failed = assertIs<EditResult.Failed>(apply(MethodMatch("run", "Ljava/lang/String;"), diff)).message
+        assertTrue("the first 1 of 2 anchor lines match" in failed, failed)
+        assertTrue("its invoke-virtual lines:\n  invoke-virtual {p0, v1}, LFoo;->work(I)V" in failed, failed)
+
+        val none = assertIs<EditResult.Failed>(apply(MethodMatch("run", "I"), "@@ @@\n     goto :x\n+    nop")).message
+        assertTrue("the method has no goto" in none, none)
+    }
+
+    @Test
     fun aMissingAnchorOrMethodSaysWhichAndWhere() {
         val noLine = assertIs<EditResult.Failed>(apply(MethodMatch("run", "I"), "@@ @@\n nope\n+x"))
         assertEquals(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, noLine.code)
