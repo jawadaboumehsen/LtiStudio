@@ -1,0 +1,5 @@
+[
+  {"name": "default-settings", "expectResolved": true},
+  {"name": "disabled", "settings": {"opt_enabled": "false"}, "expectResolved": true},
+  {"name": "invalid-setting", "settings": {"opt_enabled": "invalid"}, "expectResolved": false}
+]

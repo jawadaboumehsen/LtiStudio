@@ -10,65 +10,80 @@
 import org.gradle.process.CommandLineArgumentProvider
 
 plugins {
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm") version "2.4.10"
 }
 
-repositories {
-    mavenCentral()
-    flatDir {
-        dirs("libs")
+kotlin {
+    jvmToolchain(21)
+}
+
+val patchmodVersion = providers.gradleProperty("patchmodVersion").get()
+// Hooks are resolved only for compileModPayload; the SDK author classpath stays free of bytecode tools.
+val hooksCompiler by configurations.creating
+
+dependencies {
+    implementation("org.ide.lti:patch-mod-sdk:$patchmodVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    hooksCompiler("org.ide.lti:patch-mod-hooks:$patchmodVersion")
+}
+
+val modProject = layout.buildDirectory.dir("mod-project")
+val stageModFiles by tasks.registering(Sync::class) {
+    from(layout.projectDirectory) {
+        include("README.md", "LICENSE", "scenarios.json", "assets/**")
+    }
+    into(modProject)
+    // Keep packages and diagnostics when authors regenerate or recheck an existing project.
+    preserve {
+        include("build/**")
     }
 }
 
-dependencies {
-    // Documented placeholder: place patchmod-sdk.jar in libs/ or configure your repository
-    // for full IntelliJ code completion when editing Mod.kt.
-    compileOnly(fileTree("libs") { include("*.jar") })
+val generateModPlan by tasks.registering(JavaExec::class) {
+    group = "patchmod"
+    description = "Compile Mod.kt and generate the mod manifest, plan and settings schema"
+    dependsOn(stageModFiles)
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("org.example.mod.MainKt")
+    argumentProviders.add(CommandLineArgumentProvider { listOf(modProject.get().asFile.absolutePath) })
 }
 
-// Documented placeholder path for the PatchMod CLI jar
-val patchmodCliJar = providers.gradleProperty("patchmodCliJar")
-    .orElse(layout.projectDirectory.file("libs/patchmod-cli.jar").asFile.absolutePath)
-
-// The reserved author task names registered as JavaExec wrappers shelling out to PatchMod CLI (compileModPayload
-// is below: it runs the separate patch-mod-hooks jar)
 listOf(
-    "generateModPlan" to "Generate and validate the author mod plan",
-    "validateMod" to "Validate the author mod plan and manifest",
-    "testMod" to "Run the author scenarios against the resolved plan",
-    "packageMod" to "Package the author mod into a .lti-mod.zip",
+    "validateMod" to "Validate the generated mod plan and manifest",
+    "testMod" to "Run the author scenarios against the generated plan",
+    "checkMod" to "Check edits against -PmodDecoded=<dir> and optionally -PmodTree=<dir>",
+    "packageMod" to "Package the mod into build/mod-project/build/*.lti-mod.zip",
     "inspectMod" to "Inspect a packaged .lti-mod.zip without executing it",
-    "signMod" to "Sign the author mod package",
 ).forEach { (taskName, taskDescription) ->
     tasks.register<JavaExec>(taskName) {
         group = "patchmod"
         description = taskDescription
-        classpath = files(patchmodCliJar)
+        // Inspection consumes an existing archive without compiling or exporting the current sources.
+        if (taskName != "inspectMod") dependsOn(generateModPlan)
+        classpath = sourceSets.main.get().runtimeClasspath
         mainClass.set("org.ide.lti.sdk.patchmod.cli.PatchModCliKt")
         val modPackage = providers.gradleProperty("modPackage")
-        argumentProviders.add(
-            CommandLineArgumentProvider {
-                val pkg = modPackage.orNull
-                if (taskName == "inspectMod" && pkg != null) {
-                    listOf(taskName, "--package", pkg)
-                } else {
-                    listOf(taskName, "--project", layout.projectDirectory.asFile.absolutePath)
-                }
-            },
-        )
+        val modDecoded = providers.gradleProperty("modDecoded")
+        val modTree = providers.gradleProperty("modTree")
+        argumentProviders.add(CommandLineArgumentProvider {
+            when {
+                taskName == "inspectMod" && modPackage.isPresent ->
+                    listOf(taskName, "--package", modPackage.get())
+                taskName == "checkMod" -> listOfNotNull(
+                    taskName, "--project", modProject.get().asFile.absolutePath,
+                    "--decoded", modDecoded.get(),
+                    "--tree".takeIf { modTree.isPresent }, modTree.orNull,
+                )
+                else -> listOf(taskName, "--project", modProject.get().asFile.absolutePath)
+            }
+        })
     }
 }
 
-// Java hooks (hooks/**/*.java) compile with the separate patch-mod-hooks jar, so the SDK itself carries no
-// bytecode libraries.
-val patchmodHooksJar = providers.gradleProperty("patchmodHooksJar")
-    .orElse(layout.projectDirectory.file("libs/patchmod-hooks.jar").asFile.absolutePath)
 tasks.register<JavaExec>("compileModPayload") {
     group = "patchmod"
-    description = "Compile the Java hooks under hooks/ into smali payloads"
-    classpath = files(patchmodHooksJar)
+    description = "Compile Java hooks under hooks/ into assets/payload/ using payload.json"
+    classpath = hooksCompiler
     mainClass.set("org.ide.lti.sdk.patchmod.hooks.HookCompilerCliKt")
-    argumentProviders.add(
-        CommandLineArgumentProvider { listOf("compileModPayload", "--project", layout.projectDirectory.asFile.absolutePath) },
-    )
+    args("compileModPayload", "--project", layout.projectDirectory.asFile.absolutePath)
 }

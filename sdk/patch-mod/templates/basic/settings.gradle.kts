@@ -8,3 +8,11 @@
  * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 rootProject.name = "basic-mod"
+
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+}

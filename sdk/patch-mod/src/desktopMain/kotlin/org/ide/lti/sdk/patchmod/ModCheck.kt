@@ -27,7 +27,7 @@ import java.security.MessageDigest
 
 /** One edit of a mod checked against a firmware: [failure] is null when it applies. */
 data class EditCheck(val mod: String, val operationId: String, val changed: String, val failure: String?) {
-    /** The firmware part it needs (a decoded component, the work tree) was not given: it says nothing either way. */
+    /** Required firmware input is missing, or the operation is unsupported: it says nothing either way. */
     val notChecked: Boolean get() = failure?.startsWith(NOT_CHECKED) == true
 
     /** It does not apply. */
@@ -50,7 +50,7 @@ object ModCheck {
      * Applies [mods]' operations in order (a later mod sees what an earlier one changed, as in a build). [decoded]
      * gives the folder an operation's component was decoded into, or null when it was not; [tree] is the work tree
      * (null: file operations are reported as not checked); [assetExists] says whether a package asset is there
-     * (it defaults to yes). Every operation is checked, whatever its condition.
+     * (it defaults to yes). Conditions are ignored. Unsupported operations are reported as not checked.
      */
     fun check(
         mods: List<PluginPlanTemplate>,
@@ -66,7 +66,12 @@ object ModCheck {
             mod.operations.flatMap { op ->
                 when (op) {
                     is Operation.ApkJarPatch -> checkComponent(mod, op, decoded, buffers, listings)
-                    is Operation.CompiledClassMerge, is Operation.HookInjection -> emptyList()
+                    is Operation.CompiledClassMerge -> listOf(
+                        skipped(mod, op, op.target.relativePath, "compiled-class merge dry run is not supported"),
+                    )
+                    is Operation.HookInjection -> listOf(
+                        skipped(mod, op, op.target.relativePath, "hook injection dry run is not supported"),
+                    )
                     else -> listOf(checkFile(mod, op, files, touched, assetExists))
                 }
             }

@@ -15,6 +15,37 @@ import kotlin.test.assertTrue
 class ModCheckTest {
     private val services = "system/framework/services.jar"
 
+    @Test
+    fun compiledMergesAndHooksAreExplicitlySkippedEvenWithFirmwareInputs() {
+        val mod = romMod("p", "hooks", "1.0.0") {
+            operations {
+                compiledClassMerge("merge", Partition.SYSTEM, services, "assets/payload", listOf("Lcom/x/Hook;"))
+                hookInjection(
+                    "inject",
+                    Partition.SYSTEM,
+                    services,
+                    "Lcom/x/Y;",
+                    "run()V",
+                    listOf("return-void"),
+                    "ab".repeat(32),
+                    "Lcom/x/Hook;->run()V",
+                )
+            }
+        }
+        val decoded = decodedServices()
+        val tree = workTree()
+
+        for (withInputs in listOf(false, true)) {
+            val checks = ModCheck.check(listOf(mod), tree = tree.takeIf { withInputs }) {
+                decoded.takeIf { withInputs }
+            }
+            assertEquals(listOf("merge", "inject"), checks.map { it.operationId })
+            assertTrue(checks.all { it.notChecked && !it.failed }, checks.toString())
+            assertTrue(checks[0].failure!!.contains("compiled-class merge"))
+            assertTrue(checks[1].failure!!.contains("hook injection"))
+        }
+    }
+
     private fun decodedServices(): File = Files.createTempDirectory("decoded-services").toFile().apply {
         resolve("smali_classes3/com/x").mkdirs()
         resolve("smali_classes3/com/x/Y.smali").writeText(".class LY;\n.method run()V\n    return-void\n.end method\n")

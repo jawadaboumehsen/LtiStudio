@@ -9,6 +9,8 @@
  */
 package org.example.mod
 
+import org.ide.lti.sdk.patchmod.Partition
+import org.ide.lti.sdk.patchmod.isOn
 import org.ide.lti.sdk.patchmod.romMod
 
 val basicMod = romMod(
@@ -25,9 +27,8 @@ val basicMod = romMod(
         help = "Enable or disable this mod feature",
     )
     operations {
-        // Add mod operations here, e.g.:
-        // copy("op_copy", "assets/my_asset", Partition.SYSTEM, "etc/my_file", condition = enabled.isOn)
-        // propertyPatch("op_prop", Partition.SYSTEM, "build.prop", "ro.example.flag", literal("true"))
+        // Demonstration only: replace this with your mod's operations before installing it.
+        copy("op_copy", "assets/example.conf", Partition.SYSTEM, "etc/basic-mod.conf", condition = enabled.isOn)
         // apkJarPatch("op_jar", Partition.SYSTEM, "system/framework/services.jar") {
         //     method("Lcom/android/server/Foo;", "bar") { insertAfter("    .locals 2", "    nop") }
         // }
