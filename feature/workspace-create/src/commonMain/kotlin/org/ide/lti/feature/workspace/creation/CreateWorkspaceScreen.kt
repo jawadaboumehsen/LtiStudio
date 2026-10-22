@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -37,7 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,6 +52,11 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
+import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
+import org.ide.lti.core.designsystem.component.layout.IdeBreadcrumbBar
+import org.ide.lti.core.designsystem.component.layout.IdeStatusBar
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
@@ -61,10 +67,10 @@ import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.SetupTokens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.ports.KeySource
@@ -89,6 +95,7 @@ fun CreateWorkspaceScreen(
     onBackClick: () -> Unit,
     onWorkspaceCreated: (Workspace) -> Unit,
     onNavigateToSetup: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: CreateWorkspaceViewModel = koinViewModel(),
 ) {
@@ -104,6 +111,7 @@ fun CreateWorkspaceScreen(
         uiState = uiState,
         onBackClick = onBackClick,
         onNavigateToSetup = onNavigateToSetup,
+        onOpenSettings = onOpenSettings,
         onSelectTarget = viewModel::selectTarget,
         onNameChange = viewModel::setName,
         onKeySourceChange = viewModel::setKeySource,
@@ -113,11 +121,21 @@ fun CreateWorkspaceScreen(
     )
 }
 
+private fun workspaceStatusText(uiState: CreateWorkspaceUiState): String = when {
+    uiState.isProvisioning -> "Provisioning workspace • ${uiState.currentStage.label}"
+    uiState.createdWorkspace != null -> "Workspace created successfully"
+    uiState.errorMessage != null -> "Provisioning failed"
+    else -> "Ready • Configure new target workspace"
+}
+
+private fun TargetDevice?.targetLabel(): String = this?.let { "${it.name} (${it.codename})" } ?: "No target selected"
+
 @Composable
 fun CreateWorkspaceContent(
     uiState: CreateWorkspaceUiState,
     onBackClick: () -> Unit,
     onNavigateToSetup: (() -> Unit)? = null,
+    onOpenSettings: (() -> Unit)? = null,
     onSelectTarget: (TargetDevice) -> Unit,
     onNameChange: (String) -> Unit,
     onKeySourceChange: (KeySource) -> Unit,
@@ -125,67 +143,113 @@ fun CreateWorkspaceContent(
     onCreate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isBlueGlass = GlassTheme.appTheme == AppTheme.Blue
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(if (isBlueGlass) Color.Transparent else MaterialTheme.colorScheme.surface)
-            .padding(Spacing.Large),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-    ) {
-        CreateWorkspaceHeader(onBackClick = onBackClick, enabled = !uiState.isProvisioning)
-        GlassHorizontalDivider()
-        AnimatedVisibility(
-            visible =
-            uiState.environmentReadiness != null &&
-                uiState.environmentReadiness?.state != EnvironmentReadinessState.READY,
-        ) {
-            GlassBanner(
-                severity = GlassBannerSeverity.WARNING,
-                title = uiState.failingCheck ?: "Environment Unavailable",
-                description = uiState.remediation
-                    ?: "The build environment or service daemon is currently unreachable.",
-                primaryAction = GlassBannerAction("Go to Setup") {
-                    if (onNavigateToSetup != null) onNavigateToSetup() else onBackClick()
+    IdeAppFrame(
+        modifier = modifier.testTag("CreateWorkspaceScreen"),
+        topBar = {
+            GlobalAppTopBar(
+                selectedDestination = GlobalAppDestination.Workspace,
+                onSelectDestination = { destination ->
+                    when (destination) {
+                        GlobalAppDestination.Setup -> onNavigateToSetup?.invoke() ?: onBackClick()
+                        GlobalAppDestination.Workspace -> onBackClick()
+                        GlobalAppDestination.Settings -> onOpenSettings?.invoke()
+                    }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                contextLabel = "New Workspace",
+                contextIcon = AppIcons.Add,
             )
-        }
-        AnimatedVisibility(visible = uiState.errorMessage != null) {
-            uiState.errorMessage?.let { errorMsg ->
-                GlassBanner(
-                    severity = GlassBannerSeverity.ERROR,
-                    title = "Provisioning Error",
-                    description = errorMsg,
-                )
-            }
-        }
+        },
+        breadcrumb = {
+            IdeBreadcrumbBar(
+                segments = listOf("Workspaces", "New Target Workspace"),
+                onSegmentClick = { index ->
+                    if (index == 0) onBackClick()
+                },
+            )
+        },
+        statusBar = {
+            IdeStatusBar(
+                leadingContent = {
+                    Text(
+                        text = workspaceStatusText(uiState),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                trailingContent = {
+                    Text(
+                        text = uiState.selectedTarget.targetLabel(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+            )
+        },
+        content = {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = SetupTokens.ContentMaxWidth)
+                        .padding(Spacing.Large),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                ) {
+                    CreateWorkspaceHeader(onBackClick = onBackClick, enabled = !uiState.isProvisioning)
+                    GlassHorizontalDivider()
+                    AnimatedVisibility(
+                        visible =
+                        uiState.environmentReadiness != null &&
+                            uiState.environmentReadiness.state != EnvironmentReadinessState.READY,
+                    ) {
+                        GlassBanner(
+                            severity = GlassBannerSeverity.WARNING,
+                            title = uiState.failingCheck ?: "Environment Unavailable",
+                            description = uiState.remediation
+                                ?: "The build environment or service daemon is currently unreachable.",
+                            primaryAction = GlassBannerAction("Go to Setup") {
+                                if (onNavigateToSetup != null) onNavigateToSetup() else onBackClick()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    AnimatedVisibility(visible = uiState.errorMessage != null) {
+                        uiState.errorMessage?.let { errorMsg ->
+                            GlassBanner(
+                                severity = GlassBannerSeverity.ERROR,
+                                title = "Provisioning Error",
+                                description = errorMsg,
+                            )
+                        }
+                    }
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Large),
-        ) {
-            TargetPickerSection(uiState, onSelectTarget)
-            WorkspaceNameSection(uiState, onNameChange)
-            KeySourceSection(uiState, onKeySourceChange)
-            AnimatedVisibility(visible = uiState.isProvisioning || uiState.logs.isNotEmpty()) {
-                ProvisioningProgressCard(uiState)
-            }
-            AnimatedVisibility(visible = uiState.logs.isNotEmpty()) {
-                GlassConsoleDrawer(
-                    logs = uiState.logs,
-                    isRunning = uiState.isProvisioning,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+                    ) {
+                        TargetPickerSection(uiState, onSelectTarget)
+                        WorkspaceNameSection(uiState, onNameChange)
+                        KeySourceSection(uiState, onKeySourceChange)
+                        AnimatedVisibility(visible = uiState.isProvisioning || uiState.logs.isNotEmpty()) {
+                            ProvisioningProgressCard(uiState)
+                        }
+                        AnimatedVisibility(visible = uiState.logs.isNotEmpty()) {
+                            GlassConsoleDrawer(
+                                logs = uiState.logs,
+                                isRunning = uiState.isProvisioning,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
 
-        GlassHorizontalDivider()
-        CreateWorkspaceActions(uiState, onCancel, onCreate)
-    }
+                    GlassHorizontalDivider()
+                    CreateWorkspaceActions(uiState, onCancel, onCreate)
+                }
+            }
+        },
+    )
 }
 
 @Composable

@@ -274,6 +274,7 @@ class CreateWorkspaceScreenshotTest {
             }
         }
 
+        if (state.isProvisioning) mainClock.autoAdvance = false
         onRoot().assertIsDisplayed()
         onRoot().captureToImage().also { image ->
             assertEquals(width, image.width)

@@ -129,6 +129,7 @@ internal fun RootNavGraph(
                 }
             },
             onNavigateToSetup = navigateToSetup,
+            onOpenSettings = navigateToSettings,
         )
 
         // Workspace Route (redirects cleanly to StudioScreen)
