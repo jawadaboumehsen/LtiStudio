@@ -57,7 +57,9 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
+import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.ui.toolkit.RefusalView
 import org.ide.lti.feature.rom.studio.api.formatBytes
@@ -121,10 +123,26 @@ public fun ImageBrowserPane(
             }
             state.tree?.let {
                 val where = if (state.partition == ImagePaneModel.ALL) "every partition" else it.source
-                Hint("${it.tree.entries.size} entries from $where")
+                Hint("${it.tree.entries.size} entries from $where. Click rows to select several.")
+            }
+            if (state.selected.isNotEmpty()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GlassButton(
+                        onClick = actions.extractSelected,
+                        enabled = state.busy == null,
+                        modifier = Modifier.testTag("ExtractSelectedButton"),
+                    ) { Text("Copy out ${state.selected.size} selected", fontSize = FontSize.BodySmall) }
+                    GlassButton(onClick = actions.clearSelection, variant = GlassButtonVariant.Secondary) {
+                        Text("Clear selection", fontSize = FontSize.BodySmall)
+                    }
+                }
             }
             Feedback(state, actions)
         }
+        state.imageInfo?.takeIf { it.stock != null || it.built != null }?.let { SuperblockPanel(it) }
 
         Column(
             modifier = Modifier
@@ -162,7 +180,9 @@ public fun ImageBrowserPane(
                     contentPadding = PaddingValues(vertical = Spacing.ExtraSmall),
                     verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                 ) {
-                    items(items = entries, key = { it.path }) { entry -> EntryRow(entry, actions) }
+                    items(items = entries, key = { it.path }) { entry ->
+                        EntryRow(entry, entry.path in state.selected, actions)
+                    }
                 }
             }
         }
@@ -170,9 +190,13 @@ public fun ImageBrowserPane(
 }
 
 @Composable
-private fun EntryRow(entry: ImageTreeEntry, actions: ImagePaneActions) {
+private fun EntryRow(entry: ImageTreeEntry, selected: Boolean, actions: ImagePaneActions) {
     val isDirectory = entry.path.endsWith("/")
-    IdeTableRow(isSelected = false, onClick = {}, modifier = Modifier.testTag("ImageTreeRow_${entry.path}")) {
+    IdeTableRow(
+        isSelected = selected,
+        onClick = { actions.toggleSelected(entry) },
+        modifier = Modifier.testTag("ImageTreeRow_${entry.path}"),
+    ) {
         Row(
             modifier = Modifier.weight(PATH_WEIGHT),
             verticalAlignment = Alignment.CenterVertically,
@@ -199,6 +223,38 @@ private fun EntryRow(entry: ImageTreeEntry, actions: ImagePaneActions) {
                 Text(text = "Copy out", fontSize = FontSize.Micro)
             }
         }
+    }
+}
+
+/** The partition's stock image and last built one side by side, as their own tools read the superblock. */
+@Composable
+private fun SuperblockPanel(info: ImageInfo) {
+    Panel {
+        Title("Superblock")
+        val keys = (info.stock?.fields.orEmpty() + info.built?.fields.orEmpty()).map { it.first }.distinct()
+        Row(Modifier.fillMaxWidth().testTag("SuperblockPanel")) {
+            Cell("", Modifier.weight(SB_KEY_WEIGHT))
+            Cell("Stock (firmware/extracted)", Modifier.weight(1f))
+            Cell("Built (out/images)", Modifier.weight(1f))
+        }
+        fun describe(sb: Superblock?) = sb?.let { "${it.fs.name.lowercase()}, ${formatBytes(it.sizeBytes)}" } ?: "none"
+        SuperblockRow("Image", describe(info.stock), describe(info.built))
+        keys.forEach { key ->
+            SuperblockRow(
+                key,
+                info.stock?.fields?.firstOrNull { it.first == key }?.second ?: "",
+                info.built?.fields?.firstOrNull { it.first == key }?.second ?: "",
+            )
+        }
+    }
+}
+
+@Composable
+private fun SuperblockRow(key: String, stock: String, built: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Cell(key, Modifier.weight(SB_KEY_WEIGHT))
+        Cell(stock, Modifier.weight(1f))
+        Cell(built, Modifier.weight(1f))
     }
 }
 
@@ -337,6 +393,7 @@ private fun Cell(text: String, modifier: Modifier = Modifier) {
     )
 }
 
+private const val SB_KEY_WEIGHT = 1.2f
 private const val PATH_WEIGHT = 3.5f
 private const val SIZE_WEIGHT = 1.2f
 private const val LABEL_WEIGHT = 2.5f

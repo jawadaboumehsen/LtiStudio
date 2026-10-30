@@ -14,7 +14,6 @@ import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
-import org.ide.lti.core.domain.pipeline.pinnedToolArg
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
@@ -383,7 +382,7 @@ public class FirmwareExtractionStage : StageDefinition {
                         "-c",
                         F2fsImage.READBACK_SCRIPT,
                         "sh",
-                        pinnedToolArg("dump.f2fs"),
+                        ctx.toolPaths["dump.f2fs"] ?: "dump.f2fs",
                         "$extracted/$partition.img",
                         tree,
                         "keep",

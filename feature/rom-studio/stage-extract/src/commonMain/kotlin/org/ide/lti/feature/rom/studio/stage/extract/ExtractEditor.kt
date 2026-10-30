@@ -24,6 +24,10 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +40,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -66,6 +71,7 @@ public fun ExtractEditor(
     onSave: () -> Unit = {},
     onReplace: (String) -> Unit = {},
     onUseStock: (String) -> Unit = {},
+    onReextract: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("extraction.") || !it.fieldPath.contains('.') }
@@ -91,7 +97,7 @@ public fun ExtractEditor(
             when (selectedObjectId.lowercase()) {
                 "dynamic-partitions", "dynamic_partitions" -> {
                     item { DynamicPartitionsCard(settings, target, errors, dirtyPaths, onChange) }
-                    item { ReplacementsCard(settings, target, facts, onReplace, onUseStock) }
+                    item { ReplacementsCard(settings, target, facts, onReplace, onUseStock, onReextract) }
                 }
 
                 "boot-partitions", "boot_partitions" -> item {
@@ -254,15 +260,40 @@ private fun ReplacementsCard(
     facts: ExtractFacts,
     onReplace: (String) -> Unit,
     onUseStock: (String) -> Unit,
+    onReextract: (String) -> Unit,
 ) {
+    var confirm by remember { mutableStateOf<String?>(null) }
+    confirm?.let { p ->
+        GlassDialog(
+            onDismissRequest = { confirm = null },
+            title = "Re-extract $p?",
+            confirmButton = {
+                GlassButton(onClick = {
+                    confirm = null
+                    onReextract(p)
+                }) { Text("Re-extract", fontSize = FontSize.BodySmall) }
+            },
+            dismissButton = {
+                GlassButton(onClick = { confirm = null }) { Text("Cancel", fontSize = FontSize.BodySmall) }
+            },
+        ) {
+            Hint(
+                "firmware/extracted/$p and its permission lists are made again from $p.img" +
+                    (if (settings.replacementImages[p] != null) " (your own image)" else "") +
+                    ". Anything changed there by hand is lost; work/ is assembled from it at the next build.",
+            )
+        }
+    }
     ExtractCard("Your own partition images") {
         Hint(
             "Extract uses an image you pick instead of the firmware's: EROFS, ext4 or F2FS (a sparse one is " +
                 "expanded; Build & Sign rebuilds it as the filesystem you choose there). The build stops if the " +
-                "file changes outside the Studio.",
+                "file changes outside the Studio. Re-extract unpacks one partition again without a whole Extract run.",
         )
         facts.replaceRefusal?.let { RefusalView(refusal = it) }
+        facts.reextractMessage?.let { Hint(it) }
         val partitions = settings.dynamicPartitions.ifEmpty { target.dynamicPartitions }
+        val idle = facts.replacing == null && facts.reextracting == null
         partitions.forEach { p ->
             val replaced = settings.replacementImages[p]
             Row(
@@ -274,13 +305,20 @@ private fun ReplacementsCard(
                 Box(Modifier.weight(1f)) {
                     Hint(replaced?.let { "Your image (sha256 ${it.take(SHA_SHOWN)}…)" } ?: "Stock image")
                 }
-                GlassButton(onClick = { onReplace(p) }, enabled = facts.replacing == null) {
+                GlassButton(onClick = { onReplace(p) }, enabled = idle) {
                     Text(if (facts.replacing == p) "Importing…" else "Use my image…", fontSize = FontSize.BodySmall)
                 }
                 if (replaced != null) {
-                    GlassButton(onClick = { onUseStock(p) }, enabled = facts.replacing == null) {
+                    GlassButton(onClick = { onUseStock(p) }, enabled = idle) {
                         Text("Use the stock image", fontSize = FontSize.BodySmall)
                     }
+                }
+                GlassButton(
+                    onClick = { confirm = p },
+                    enabled = idle && facts.extracted.any { it.path == "$p.img" },
+                    modifier = Modifier.testTag("Reextract_$p"),
+                ) {
+                    Text(if (facts.reextracting == p) "Extracting…" else "Re-extract", fontSize = FontSize.BodySmall)
                 }
             }
         }

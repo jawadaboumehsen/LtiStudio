@@ -421,7 +421,7 @@ class FirmwareExtractionStageTest {
         val f2fsSteps = stage.plan(ctx.copy(runtimeValues = withF2fs))
         val dump = f2fsSteps.filterIsInstance<PipelineStep.Tool>().single { it.label == "dump $first" }.command
         assertEquals("fakeroot", dump.toolId)
-        assertEquals(listOf(pinnedToolArg("dump.f2fs"), img, tree, "keep"), dump.args.takeLast(4))
+        assertEquals(listOf("dump.f2fs", img, tree, "keep"), dump.args.takeLast(4))
         assertTrue(f2fsSteps.none { it.label == "mount $first" || it.label == "check filesystems" })
 
         // The readback becomes the sidecars; a symlink has no mode on Linux, so it is written as 777.

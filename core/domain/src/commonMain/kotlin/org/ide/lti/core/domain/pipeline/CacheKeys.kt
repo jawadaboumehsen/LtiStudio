@@ -19,7 +19,7 @@ public object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-10-30.1"
+    public const val PIPELINE_VERSION: String = "2026-10-30.2"
 
     public fun sha256(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")

@@ -45,6 +45,9 @@ public data class ExtractFacts(
     /** The partition whose own image is being imported, and why the last import was refused. */
     val replacing: String? = null,
     val replaceRefusal: Refusal? = null,
+    /** The partition being unpacked again, and what the last re-extract did. */
+    val reextracting: String? = null,
+    val reextractMessage: String? = null,
 )
 
 public class ExtractViewModel(
@@ -101,6 +104,25 @@ public class ExtractViewModel(
                 _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
             } finally {
                 _facts.value = _facts.value.copy(replacing = null)
+            }
+        }
+    }
+
+    /**
+     * Unpacks [partition]'s image into `firmware/extracted/<p>` and its sidecars again, the
+     * user's own image when one is set, without a whole Extract run.
+     */
+    public fun reextract(partition: String) {
+        val workbench = images ?: return
+        viewModelScope.launch {
+            _facts.value = _facts.value.copy(reextracting = partition, replaceRefusal = null, reextractMessage = null)
+            try {
+                workbench.reextract(workspaceId, partition, settings.value.replacementImages[partition])
+                _facts.value = _facts.value.copy(reextractMessage = "$partition was extracted again.")
+            } catch (e: RefusalException) {
+                _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
+            } finally {
+                _facts.value = _facts.value.copy(reextracting = null)
             }
         }
     }

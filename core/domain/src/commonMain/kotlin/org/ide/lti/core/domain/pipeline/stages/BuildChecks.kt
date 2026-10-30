@@ -11,7 +11,6 @@ package org.ide.lti.core.domain.pipeline.stages
 
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.StageContext
-import org.ide.lti.core.domain.pipeline.pinnedToolArg
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.COVERAGE_RESULT_KEY
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.EXTRA_DIR
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.STAGE_DIR
@@ -26,6 +25,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.DeviceLink
 import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
 import org.ide.lti.core.domain.pipeline.toolkit.ImageVerify
+import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
 import org.ide.lti.core.domain.pipeline.toolkit.LinkCheck
 import org.ide.lti.core.domain.pipeline.toolkit.MountTable
 import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
@@ -36,6 +36,7 @@ internal object BuildChecks {
     private const val COVERAGE_SHOWN = 20
     private const val LINKS_SHOWN = 20
     private const val MOUNT_TABLES_KEY = "build.mount.tables"
+    private const val KERNEL_KEY = "build.kernel.config"
 
     /** The build tree first, then the stock one it is compared with. */
     private val LINK_TREES = listOf("work", FirmwareExtractionStage.EXTRACTED)
@@ -94,6 +95,44 @@ internal object BuildChecks {
                         "not ${it.filesystem}"
                 } + ". Add the mount lines in Assemble > Mount table, or build those partitions as " +
                     inImages.first().declared.first() + "."
+            }
+        }
+        return steps
+    }
+
+    /**
+     * The boot kernel must mount every dynamic partition as the filesystem it is built as (`CONFIG_<FS>_FS`, built
+     * in or a module, from the kernel's embedded config). A kernel without a config, or no boot image, says nothing.
+     */
+    fun kernelFilesystemSteps(ctx: StageContext): List<PipelineStep> {
+        val steps = mutableListOf<PipelineStep>(
+            PipelineStep.Tool(
+                stepCommand(
+                    "sh",
+                    listOf(
+                        "-c",
+                        KernelFacts.SCRIPT,
+                        "sh",
+                        ctx.abs("work/kernel/boot.img"),
+                        ctx.toolPaths["unpack_bootimg"] ?: "unpack_bootimg",
+                    ),
+                    ctx.wsPath,
+                ),
+                "read boot kernel config",
+                KERNEL_KEY,
+            ),
+        )
+        // An output with no CONFIG_ line at all (not the boot kernel's config) says nothing either.
+        val facts = ctx.value(KERNEL_KEY)?.let(KernelFacts::parse)?.takeUnless { it.config.isNullOrEmpty() }
+        val built = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
+        val unmountable = built.filterValues { facts?.mounts(it) == false }
+        if (facts != null && unmountable.isNotEmpty()) {
+            val mountable = BuildFilesystems.SUPPORTED.filter { facts.mounts(it) == true }
+            steps += PipelineStep.Check("kernel filesystems") {
+                "KERNEL_FILESYSTEM: the boot kernel${facts.version?.let { " $it" }.orEmpty()} cannot mount " +
+                    unmountable.entries.joinToString { "${it.key} as ${it.value}" } +
+                    " (CONFIG_${unmountable.values.first().uppercase()}_FS is off). Build them as " +
+                    mountable.joinToString(" or ") + "."
             }
         }
         return steps
@@ -159,7 +198,15 @@ internal object BuildChecks {
             steps += PipelineStep.Tool(
                 command = stepCommand(
                     "fakeroot",
-                    listOf("sh", "-c", F2fsImage.READBACK_SCRIPT, "sh", pinnedToolArg("dump.f2fs"), img, mnt),
+                    listOf(
+                        "sh",
+                        "-c",
+                        F2fsImage.READBACK_SCRIPT,
+                        "sh",
+                        ctx.toolPaths["dump.f2fs"] ?: "dump.f2fs",
+                        img,
+                        mnt,
+                    ),
                     ws,
                 ),
                 label = "read back built $p",

@@ -957,7 +957,17 @@ nothing is shown as done before its job finished.
   value". A footer size is what the stock image was signed for; confirm with `fastboot getvar partition-size`.
 - Kernel facts (Assemble > Boot preparation, `BootWorkbench.kernelFacts`/`KernelFacts`): version and, from the
   embedded config, the EROFS compressions and ramdisk formats the boot kernel reads.
-- Image browser "Search all partitions" (`ImageWorkbench.search`): names across every partition tree.
+- Image browser "Search all partitions" (`ImageWorkbench.search`): names across every partition tree. Rows can be
+  selected and copied out together (`ImageWorkbench.extractMany`). Picking a partition shows its stock and built
+  superblocks side by side (`ImageWorkbench.imageInfo`, `Superblock.fields` of dump.erofs / dumpe2fs -h /
+  dump.f2fs).
+- Re-extract (Extract > Your own partition images, `ImageWorkbench.reextract`): unpacks one
+  `firmware/extracted/<p>.img` into its tree and sidecars again, as Extract does (the user's own image first,
+  sha256 checked); no whole Extract run. Its mounter's output goes to stderr (erofsfuse prints a banner).
+- Build checks: `BuildChecks.kernelFilesystemSteps` refuses (`KERNEL_FILESYSTEM`) a partition built as a filesystem
+  the boot kernel (`work/kernel/boot.img`, `KernelFacts.SCRIPT`) has no `CONFIG_<FS>_FS` for; a kernel without an
+  embedded config is not judged. Super overflow is `SUPER_FULL` with each image's size (`SuperBudget.overflow`);
+  Build & Sign > Partition layout shows the budget (built sizes, else the stock image as an estimate).
 - Kernel facts also show dm-verity (with FEC) and fs-verity from the embedded config.
 - Link check (Build, `BuildChecks.linkSteps` + `LinkCheck`): every symlink of `work/` and of the stock trees is
   resolved as the phone would (system is `/`, another partition mounted on `/<p>` hides system's folder of that
@@ -979,8 +989,8 @@ nothing is shown as done before its job finished.
   + `sload_f2fs`, not `-g android`, which forces the root to 0:0; sized by a trial's "Max image size" + 1% + 16 MiB,
   at least 32 MiB; sload labels the root by `<mount point><mount point>`, so a sidecar copy in `out/f2fs/<p>` adds
   that line; `fsck.f2fs --dry-run -f`; read back by f2fs-tools' `dump.f2fs -r -P -L` inside one `fakeroot` session,
-  symlinks compared without a mode). A catalog tool used as an argument (`fakeroot sh -c … <dump.f2fs>`) is written
-  `pinnedToolArg(id)` and resolved to the run's pin. Other filesystems are refused (`UNSUPPORTED_FILESYSTEM`). Mount table (`MountTable`, `BuildChecks.mountTableSteps`): every fstab declaring a dynamic
+  symlinks compared without a mode). A catalog tool used as an argument (`fakeroot sh -c … <dump.f2fs>`) takes its
+  pinned path from `StageContext.toolPaths`. Other filesystems are refused (`UNSUPPORTED_FILESYSTEM`). Mount table (`MountTable`, `BuildChecks.mountTableSteps`): every fstab declaring a dynamic
   partition must also declare it as its built filesystem; the build adds lines to `work/vendor|odm/etc/fstab.*`
   (`FstabEditor.withFilesystems`) and refuses (`MOUNT_TABLE`) a gap in a boot image's first-stage fstab, which
   Assemble > Mount table fixes (`BootWorkbench.addMountLines`: EROFS, ext4 and F2FS lines for every logical partition,

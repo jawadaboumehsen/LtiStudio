@@ -1041,10 +1041,7 @@ public class PipelineOrchestrator(
                 "Required tool '${cmd.toolId}' has no immutable pin in run ${driver.runId}"
             }
         }
-        val args = cmd.args.map { arg ->
-            arg.removePrefix(PINNED_TOOL_ARG).takeIf { it != arg }?.let { driver.run.pinnedTools[it] ?: it } ?: arg
-        }
-        return cmd.copy(toolId = pinned ?: cmd.toolId, args = args)
+        return if (pinned != null) cmd.copy(toolId = pinned) else cmd
     }
 
     private suspend fun collectArtifacts(driver: Driver): List<Artifact> {

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -33,6 +34,8 @@ import org.ide.lti.core.model.workspace.BuildSettings
 public data class BuildFacts(
     val loaded: Boolean = false,
     val images: List<WorkspaceFile> = emptyList(),
+    /** The stock images Extract unpacked, the size estimate of a partition not built yet. */
+    val stockImages: List<WorkspaceFile> = emptyList(),
     val packages: List<WorkspaceFile> = emptyList(),
     /** Member names of the newest package. */
     val zipMembers: List<String> = emptyList(),
@@ -131,6 +134,7 @@ public class BuildViewModel(
             _facts.value = BuildFacts(
                 loaded = true,
                 images = facts.list(workspaceId, "out/images", name = "*.img"),
+                stockImages = facts.list(workspaceId, FirmwareExtractionStage.EXTRACTED, name = "*.img"),
                 packages = packages,
                 zipMembers = packages.lastOrNull()?.let { facts.zipMembers(workspaceId, "out/package/${it.path}") }
                     .orEmpty(),

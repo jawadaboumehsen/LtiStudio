@@ -24,6 +24,7 @@ import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
+import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
 import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.MetadataPolicy
@@ -98,6 +99,7 @@ public class BuildFlashableZipStage : StageDefinition {
         val steps = mutableListOf(coverage)
         steps += BuildChecks.linkSteps(ctx)
         steps += BuildChecks.mountTableSteps(ctx)
+        steps += BuildChecks.kernelFilesystemSteps(ctx)
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
         steps += PipelineStep.Tool(
@@ -154,7 +156,9 @@ public class BuildFlashableZipStage : StageDefinition {
         val steps = mutableListOf<PipelineStep>()
         val built = when (BuildFilesystems.of(ctx.snapshot.build, p)) {
             BuildFilesystems.EXT4 -> FilesystemImageSteps.ext4(ctx, p, steps)
+
             BuildFilesystems.F2FS -> FilesystemImageSteps.f2fs(ctx, p, steps)
+
             else -> {
                 steps += erofsSteps(ctx, p)
                 true
@@ -336,12 +340,11 @@ public class BuildFlashableZipStage : StageDefinition {
         lpmakeArgs += listOf("--output", ctx.abs("$STAGE_DIR/unsparse_super_empty.img"))
         return listOf(
             PipelineStep.Check("images fit super group") {
-                val total = infos.sumOf { it.sizeBytes }
-                if (total <= target.superGroupBytes) {
-                    null
-                } else {
-                    "Images total $total bytes exceed super group ${target.superGroupBytes}"
-                }
+                SuperBudget.overflow(
+                    infos.associate { it.partitionName to it.sizeBytes },
+                    group,
+                    target.superGroupBytes,
+                )
             },
             PipelineStep.Tool(stepCommand("lpmake", lpmakeArgs, ws), "lpmake"),
             PipelineStep.WriteFile(

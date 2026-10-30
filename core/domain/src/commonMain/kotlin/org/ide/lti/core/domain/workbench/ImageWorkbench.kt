@@ -11,15 +11,18 @@ package org.ide.lti.core.domain.workbench
 
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
 import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
 import org.ide.lti.core.domain.pipeline.toolkit.FsType
 import org.ide.lti.core.domain.pipeline.toolkit.FsTypes
+import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTree
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.SuperLayout
 import org.ide.lti.core.domain.pipeline.toolkit.SuperTool
+import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 
 /** A browsed partition: its entries and where its files are, as Windows sees them (to open in Explorer). */
 public data class PartitionTree(val tree: ImageTree, val source: String, val hostFolder: String?)
@@ -47,16 +50,7 @@ public class ImageWorkbench(
             run("mkdir", "-p", abs(FirmwareExtractionStage.REPLACEMENTS))
             val sparse = run("xxd", "-p", "-l", "4", source).trim() == SPARSE_MAGIC_LE
             if (sparse) run("simg2img", source, abs(partial)) else run("cp", "-f", source, abs(partial))
-            val superblock = run(
-                "xxd",
-                "-p",
-                "-s",
-                "${FsTypes.SUPERBLOCK_OFFSET}",
-                "-l",
-                "${FsTypes.SUPERBLOCK_BYTES}",
-                abs(partial),
-            )
-            val fs = FsTypes.fromSuperblock(FormatDetector.fromHex(superblock))
+            val fs = fsOf(this, partial)
             if (fs !in listOf(FsType.Erofs, FsType.Ext4, FsType.F2fs)) {
                 run("rm", "-f", abs(partial))
                 throw RefusalException(
@@ -127,16 +121,111 @@ public class ImageWorkbench(
 
     /** Copies [path] of [partition]'s tree to `out/toolkit/<partition>/<path>`; returns it as Windows sees it. */
     public suspend fun extract(workspaceId: String, partition: String, path: String): String =
+        extractMany(workspaceId, partition, listOf(path))
+
+    /**
+     * Copies each of [paths] of [partition]'s tree to `out/toolkit/<partition>/<path>`; returns
+     * the copy of a single path, else the `out/toolkit/<partition>` folder, as Windows sees it.
+     */
+    public suspend fun extractMany(workspaceId: String, partition: String, paths: List<String>): String =
         runner.job(workspaceId, "Extract $partition") {
             val source = tree(workspaceId, partition).source
-            val dest = "out/toolkit/$partition/${path.trimEnd('/')}"
-            sh(
-                "mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"",
-                abs("$source/${path.trimEnd('/')}"),
-                abs(dest),
-            )
+            val rels = paths.map { it.trimEnd('/') }.distinct()
+            rels.forEach { rel ->
+                sh(
+                    "mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"",
+                    abs("$source/$rel"),
+                    abs("out/toolkit/$partition/$rel"),
+                )
+            }
+            val dest = "out/toolkit/$partition" + (rels.singleOrNull()?.let { "/$it" } ?: "")
             hostPath(dest) ?: abs(dest)
         }
+
+    /**
+     * Unpacks `firmware/extracted/<partition>.img` into its tree and sidecars again, as Extract
+     * does: the user's own image first when Extract uses one for [partition] ([replacementSha256], checked).
+     */
+    public suspend fun reextract(workspaceId: String, partition: String, replacementSha256: String? = null): Unit =
+        runner.job(workspaceId, "Re-extract $partition") {
+            val extracted = FirmwareExtractionStage.EXTRACTED
+            val image = "$extracted/$partition.img"
+            replacementSha256?.let { expected ->
+                val own = FirmwareExtractionStage.replacementPath(partition)
+                val actual = run("sha256sum", abs(own)).trim().substringBefore(' ')
+                if (actual != expected) {
+                    throw RefusalException(
+                        Refusal("$own is not the image imported for $partition.", own, "Import it again in Extract."),
+                    )
+                }
+                run("cp", "-f", abs(own), abs(image))
+            }
+            if (!exists(image)) {
+                throw RefusalException(
+                    Refusal("$partition.img is not extracted yet.", image, "Run the build through Extract first."),
+                )
+            }
+            val tree = abs("$extracted/$partition")
+            val (prefix, stat, labels) = when (val fs = fsOf(this, image)) {
+                FsType.F2fs -> {
+                    val dump = toolPath("dump.f2fs")
+                    val script = F2fsImage.READBACK_SCRIPT
+                    val out = run("fakeroot", "sh", "-c", script, "sh", dump, abs(image), tree, "keep")
+                    val (s, l) = F2fsImage.splitReadback(out, partition, tree, expectedFsConfig = "")
+                    Triple(tree, s, l)
+                }
+
+                FsType.Erofs, FsType.Ext4 -> {
+                    val mounter = if (fs == FsType.Ext4) "fuse2fs" else "erofsfuse"
+                    val out = sh(UNPACK_SCRIPT, toolPath(mounter), abs(image), tree, fs.name.lowercase())
+                    Triple("$tree.mnt", out.substringBefore("\n#--"), out.substringAfter("#--\n", ""))
+                }
+
+                else -> throw RefusalException(
+                    Refusal(
+                        "$partition.img is ${fs.name.lowercase()}, which Extract cannot read.",
+                        image,
+                        "Use an EROFS, ext4 or F2FS image.",
+                    ),
+                )
+            }
+            val sidecars = SidecarNormalizer.fromDumps(partition, prefix, stat, labels)
+            writeText("$extracted/fs_config-$partition", sidecars.fsConfigContent)
+            writeText("$extracted/file_context-$partition", sidecars.fileContextContent)
+        }
+
+    /** The superblock of [partition]'s stock image and of its last built one. */
+    public suspend fun imageInfo(workspaceId: String, partition: String): ImageInfo = runner.read(workspaceId) {
+        suspend fun of(rel: String): Superblock? {
+            if (!exists(rel)) return null
+            val fs = fsOf(this, rel)
+            val dump = when (fs) {
+                FsType.Erofs -> tryRun("dump.erofs", abs(rel)).stdout
+                FsType.Ext4 -> tryRun("dumpe2fs", "-h", abs(rel)).stdout
+                FsType.F2fs -> tryRun("dump.f2fs", abs(rel)).stdout
+                else -> ""
+            }
+            return Superblock(fs, run("stat", "-c", "%s", abs(rel)).trim().toLong(), Superblock.fields(fs, dump))
+        }
+        ImageInfo(
+            stock = of("${FirmwareExtractionStage.EXTRACTED}/$partition.img"),
+            built = of("out/images/$partition.img"),
+        )
+    }
+
+    private suspend fun fsOf(job: WorkbenchRunner.Job, rel: String): FsType = FsTypes.fromSuperblock(
+        FormatDetector.fromHex(
+            job.run(
+                "xxd",
+                "-p",
+                "-s",
+                "${FsTypes.SUPERBLOCK_OFFSET}",
+                "-l",
+                "${FsTypes.SUPERBLOCK_BYTES}",
+                job.abs(rel),
+            ),
+        ),
+    )
 
     /** Converts a sparse image to raw, or raw to sparse, into `out/toolkit/` (FR-010). */
     public suspend fun convert(workspaceId: String, image: String, toSparse: Boolean): String =
@@ -178,6 +267,25 @@ public class ImageWorkbench(
     }
 
     private companion object {
+        /**
+         * `sh -c UNPACK_SCRIPT sh <erofsfuse|fuse2fs> <image> <tree> <erofs|ext4>`: mounts the image on `<tree>.mnt`,
+         * prints Extract's stat dump, `#--` and the getfattr labels, then copies it to `<tree>` (as Extract does:
+         * content, links and times; owners and labels live in the sidecars) and unmounts.
+         */
+        const val UNPACK_SCRIPT = """
+            set -e
+            m="$1"; img="$2"; tree="$3"; mnt="$3.mnt"
+            mkdir -p "${'$'}mnt"
+            # The mounter's own output (erofsfuse prints its version) goes to stderr: stdout is the dump.
+            if [ "$4" = ext4 ]; then "${'$'}m" "${'$'}img" "${'$'}mnt" -o ro,fakeroot >&2; else "${'$'}m" "${'$'}img" "${'$'}mnt" >&2; fi
+            trap 'fusermount3 -u "${'$'}mnt" 2>/dev/null; rmdir "${'$'}mnt" 2>/dev/null' EXIT
+            find "${'$'}mnt" -exec stat -c '%u %g %a %n' {} +
+            echo '#--'
+            getfattr -R -h -n security.selinux --absolute-names "${'$'}mnt"
+            rm -rf "${'$'}tree"
+            cp -r --no-dereference --preserve=links,timestamps -T "${'$'}mnt" "${'$'}tree"
+            rm -rf "${'$'}tree/lost+found"
+        """
         const val NO_LABEL = "(no label)"
         const val SEARCH_LIMIT = 2000
         const val SPARSE_MAGIC_LE = "3aff26ed"

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -31,6 +32,10 @@ public data class ImagePaneState(
     val tree: PartitionTree? = null,
     val filter: String = "",
     val superLayout: SuperLayout? = null,
+    /** Paths picked for "Copy out selected" (as the tree lists them). */
+    val selected: Set<String> = emptySet(),
+    /** The partition's stock and built superblocks. */
+    val imageInfo: ImageInfo? = null,
     val busy: String? = null,
     val message: String? = null,
     val refusal: Refusal? = null,
@@ -53,6 +58,10 @@ public class ImagePaneActions(
     public val cancel: () -> Unit = {},
     /** Searches every partition for the current filter text (names only). */
     public val searchAll: () -> Unit = {},
+    public val toggleSelected: (ImageTreeEntry) -> Unit = {},
+    public val clearSelection: () -> Unit = {},
+    /** Copies every selected entry out at once. */
+    public val extractSelected: () -> Unit = {},
 )
 
 /** The image browser's state and jobs; only the latest job runs (a new one cancels the last). */
@@ -76,8 +85,18 @@ public class ImagePaneModel(
 
     public val actions: ImagePaneActions = ImagePaneActions(
         selectPartition = { partition ->
-            mutableState.update { it.copy(partition = partition, tree = null, refusal = null, message = null) }
+            mutableState.update {
+                it.copy(
+                    partition = partition,
+                    tree = null,
+                    selected = emptySet(),
+                    imageInfo = null,
+                    refusal = null,
+                    message = null,
+                )
+            }
             task("Reading $partition") { images ->
+                mutableState.update { it.copy(imageInfo = images.imageInfo(workspaceId, partition)) }
                 val tree = images.tree(workspaceId, partition)
                 mutableState.update { it.copy(tree = tree) }
             }
@@ -105,25 +124,53 @@ public class ImagePaneModel(
         },
         cancel = { job?.cancel() },
         searchAll = ::searchAll,
+        toggleSelected = { entry ->
+            mutableState.update {
+                it.copy(
+                    selected = if (entry.path in it.selected) it.selected - entry.path else it.selected + entry.path,
+                )
+            }
+        },
+        clearSelection = { mutableState.update { it.copy(selected = emptySet()) } },
+        extractSelected = ::extractSelected,
     )
+
+    /** Copies the selected entries out, per partition (a search hit names its partition first). */
+    private fun extractSelected() {
+        val picked = state.value.selected.toList()
+        task("Extracting ${picked.size} item(s)") { images ->
+            val byPartition = picked.groupBy({ partitionAndPath(it).first }, { partitionAndPath(it).second })
+            val dests = byPartition.map { (partition, paths) -> images.extractMany(workspaceId, partition, paths) }
+            mutableState.update { it.copy(message = "Copied ${picked.size} item(s) to ${dests.joinToString()}") }
+            dests.singleOrNull()?.let { environment?.openFolder(it) }
+        }
+    }
+
+    private fun partitionAndPath(path: String): Pair<String, String> = if (state.value.partition == ALL) {
+        path.substringBefore('/') to path.substringAfter('/')
+    } else {
+        state.value.partition to path
+    }
 
     /** Every partition's entries named like the filter, in one list (`<partition>/<path>`). */
     private fun searchAll() {
         val query = state.value.filter
         task("Searching all partitions for '$query'") { images ->
             val hits = images.search(workspaceId, partitions(), query)
-            mutableState.update { it.copy(partition = ALL, tree = PartitionTree(hits, "work", null)) }
+            mutableState.update {
+                it.copy(
+                    partition = ALL,
+                    tree = PartitionTree(hits, "work", null),
+                    selected = emptySet(),
+                    imageInfo = null,
+                )
+            }
         }
     }
 
     /** Copies [entry] out of the tree to `out/toolkit/` and opens the folder it landed in. */
     private fun extract(entry: ImageTreeEntry) = task("Extracting ${entry.path}") { images ->
-        // A search hit names its partition first.
-        val (partition, path) = if (state.value.partition == ALL) {
-            entry.path.substringBefore('/') to entry.path.substringAfter('/')
-        } else {
-            state.value.partition to entry.path
-        }
+        val (partition, path) = partitionAndPath(entry.path)
         val dest = images.extract(workspaceId, partition, path)
         mutableState.update { it.copy(message = "Copied to $dest") }
         environment?.openFolder(dest.substringBeforeLast('\\').substringBeforeLast('/'))

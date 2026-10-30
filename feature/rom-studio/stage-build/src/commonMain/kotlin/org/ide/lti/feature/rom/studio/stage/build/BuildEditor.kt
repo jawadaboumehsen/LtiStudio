@@ -54,7 +54,7 @@ public fun BuildEditor(
             when (selectedObjectId.lowercase().replace('_', '-').replace(' ', '-')) {
                 "images" -> ImagesPane(target, facts)
 
-                "partition-layout" -> PartitionLayoutPane(target, facts)
+                "partition-layout" -> PartitionLayoutPane(target, settings, facts)
 
                 "flashable-members" -> FlashableMembersPane(target, facts)
 

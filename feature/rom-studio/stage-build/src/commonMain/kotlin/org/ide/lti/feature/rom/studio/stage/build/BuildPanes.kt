@@ -38,6 +38,7 @@ import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
+import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.feature.rom.studio.api.formatBytes
@@ -101,20 +102,49 @@ internal fun ImagesPane(target: TargetDevice, facts: BuildFacts) {
     }
 }
 
-/** The super partition the package flashes, from the device, with the last build's image sizes. */
+/**
+ * The super partition the package flashes, from the device, and how the partitions fill its group:
+ * the last build's images, or the stock ones as the estimate for a partition not built yet.
+ */
 @Composable
-internal fun PartitionLayoutPane(target: TargetDevice, facts: BuildFacts) {
-    val used = target.dynamicPartitions.sumOf { p -> facts.images.firstOrNull { it.path == "$p.img" }?.sizeBytes ?: 0L }
+internal fun PartitionLayoutPane(target: TargetDevice, settings: BuildSettings, facts: BuildFacts) {
+    val budget = SuperBudget.of(
+        partitions = target.dynamicPartitions,
+        filesystems = target.dynamicPartitions.associateWith { BuildFilesystems.of(settings, it) },
+        built = facts.images.associate { it.path.removeSuffix(".img") to it.sizeBytes },
+        stock = facts.stockImages.associate { it.path.removeSuffix(".img") to it.sizeBytes },
+        groupBytes = target.superGroupBytes,
+    )
+    val error = GlassTheme.diagnosticColors.error
     Card("Super partition", tag = "PartitionLayoutPane") {
         Detail("Super size", mb(target.superPartitionBytes))
         Detail("Group", "${target.superGroupName}, ${mb(target.superGroupBytes)}")
         Detail("Metadata slots", target.superMetadataSlots.toString())
         Detail("Virtual A/B", if (target.virtualAb) "yes" else "no")
+    }
+    Card("Space in the super group", tag = "SuperBudgetPane") {
+        budget.rows.forEach { row ->
+            val bytes = row.bytes
+            val size = when {
+                bytes == null -> "extract or build first"
+                row.estimated -> "${mb(bytes)} (stock)"
+                else -> mb(bytes)
+            }
+            Detail("${row.partition} (${row.filesystem})", size)
+        }
+        Detail("Used", "${mb(budget.usedBytes)} of ${mb(budget.groupBytes)}", error.takeUnless { budget.fits })
         Detail(
-            "Images in the group",
-            if (used == 0L) "build first" else "${mb(used)} of ${mb(target.superGroupBytes)}",
-            if (used > target.superGroupBytes) GlassTheme.diagnosticColors.error else null,
+            if (budget.fits) "Free" else "Over by",
+            mb(if (budget.fits) budget.freeBytes else -budget.freeBytes),
+            error.takeUnless { budget.fits },
         )
+        if (budget.estimated) {
+            Hint(
+                "A (stock) size is the firmware's image: the build's can differ, more so when the partition is " +
+                    "built as another filesystem or with other compression. Build & Sign stops if the images do " +
+                    "not fit.",
+            )
+        }
     }
     Card("Boot chain (flashed directly)") {
         target.packagePolicy.flashableBootPartitions.forEach { b ->

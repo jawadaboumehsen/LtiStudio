@@ -44,6 +44,7 @@ public class ExtractStageEditor : StageEditor {
             onSave = context.onSaveRequested,
             onReplace = viewModel::replacePartition,
             onUseStock = viewModel::useStockImage,
+            onReextract = viewModel::reextract,
             modifier = modifier,
         )
     }

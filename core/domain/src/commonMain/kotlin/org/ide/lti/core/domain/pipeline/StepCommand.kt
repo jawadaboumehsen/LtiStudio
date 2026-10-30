@@ -11,12 +11,6 @@ package org.ide.lti.core.domain.pipeline
 
 public typealias StepCommand = org.ide.lti.core.model.run.StepCommand
 
-/** An argument the orchestrator replaces with the run's pinned path of a catalog tool. */
-public const val PINNED_TOOL_ARG: String = "@tool:"
-
-/** [toolId] as an argument of another command (`fakeroot sh -c … sh <dump.f2fs>`), resolved like a step's tool. */
-public fun pinnedToolArg(toolId: String): String = PINNED_TOOL_ARG + toolId
-
 public fun stepCommand(toolId: String, args: List<String>, workingDir: String, timeoutMs: Long = 0L): StepCommand =
     StepCommand(
         toolId = toolId,

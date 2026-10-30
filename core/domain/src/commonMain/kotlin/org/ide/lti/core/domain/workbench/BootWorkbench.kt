@@ -105,7 +105,7 @@ public class BootWorkbench(
      * ramdisk formats), from its embedded config. Null when the image carries no kernel (init_boot, vendor_boot).
      */
     public suspend fun kernelFacts(workspaceId: String): KernelFacts? = runner.read(workspaceId) {
-        KernelFacts.parse(sh(KERNEL_SCRIPT, abs(sourceOf(this, KERNEL_IMAGE)), toolPath("unpack_bootimg")))
+        KernelFacts.parse(sh(KernelFacts.SCRIPT, abs(sourceOf(this, KERNEL_IMAGE)), toolPath("unpack_bootimg")))
     }
 
     /** The ramdisk folder as Windows sees it (to open in Explorer); refuses when the image has none (FR-021). */
@@ -396,27 +396,6 @@ public class BootWorkbench(
         public const val TOOL: String = "boot"
         private const val KERNEL_IMAGE = "boot"
 
-        /** `sh -c KERNEL_SCRIPT sh <boot image> <unpack_bootimg>`: the lines [KernelFacts.parse] reads. */
-        private const val KERNEL_SCRIPT: String = """
-            set -e
-            img="$1"; u="$2"
-            t=$(mktemp -d)
-            trap 'rm -rf "${'$'}t"' EXIT
-            "${'$'}u" --boot_img "${'$'}img" --out "${'$'}t" >/dev/null
-            k="${'$'}t/kernel"
-            [ -s "${'$'}k" ] || { echo "nokernel"; exit 0; }
-            case $(xxd -p -l 4 "${'$'}k") in
-              1f8b*) gzip -dc "${'$'}k" > "${'$'}t/k" 2>/dev/null || true; k="${'$'}t/k" ;;
-              02214c18|04224d18) lz4 -dc "${'$'}k" > "${'$'}t/k"; k="${'$'}t/k" ;;
-            esac
-            echo "version $(grep -aoE 'Linux version [^ ]+' "${'$'}k" | head -n1 | cut -d' ' -f3)"
-            o=$(grep -abo IKCFG_ST "${'$'}k" | head -n1 | cut -d: -f1)
-            if [ -n "${'$'}o" ]; then
-              tail -c +$((o + 9)) "${'$'}k" | gzip -dc 2>/dev/null | grep -E '^CONFIG_(EROFS_FS|RD_|F2FS_FS|FS_VERITY|DM_VERITY)[A-Z0-9_]*=' || true
-            else
-              echo "noconfig"
-            fi
-        """
         public const val VBMETA: String = "firmware/extracted/vbmeta.img"
         public const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
         private const val ARGS = "mkbootimg.args"

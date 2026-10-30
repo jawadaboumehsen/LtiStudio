@@ -322,7 +322,26 @@ class BuildFlashableZipStageTest {
         assertEquals(listOf("--dry-run", "-f", img), tools.single { it.label == "fsck.f2fs vendor" }.command.args)
         val readback = tools.single { it.label == "read back built vendor" }.command
         assertEquals("fakeroot", readback.toolId)
-        assertTrue(pinnedToolArg("dump.f2fs") in readback.args)
+        assertTrue("dump.f2fs" in readback.args, "the pinned path when the run has one")
         assertTrue(tools.none { it.label == "mkfs.erofs vendor" || it.label == "mount built vendor" })
+    }
+
+    @Test
+    fun `a partition built as a filesystem the boot kernel cannot mount is refused`() {
+        val base = fullContext()
+        val vendorF2fs = base.snapshot.copy(
+            build = base.snapshot.build.copy(partitionFilesystem = mapOf("vendor" to "f2fs")),
+        )
+        fun refusal(config: String) = stage.plan(
+            base.copy(snapshot = vendorF2fs, runtimeValues = base.runtimeValues + ("build.kernel.config" to config)),
+        ).filterIsInstance<PipelineStep.Check>().singleOrNull { it.label == "kernel filesystems" }
+
+        // PQ84P01's 6.6 GKI kernel mounts all three; a kernel without F2FS cannot mount vendor.
+        val gki = "version 6.6.92-android15-8\nCONFIG_EROFS_FS=y\nCONFIG_EXT4_FS=y\nCONFIG_F2FS_FS=y\n"
+        assertEquals(null, refusal(gki))
+        val noF2fs = refusal("version 5.10.1\nCONFIG_EROFS_FS=y\nCONFIG_EXT4_FS=y\n")!!.verify(emptyMap())!!
+        assertTrue(noF2fs.startsWith("KERNEL_FILESYSTEM: the boot kernel 5.10.1 cannot mount vendor as f2fs"), noF2fs)
+        assertTrue(noF2fs.endsWith("Build them as erofs or ext4."), noF2fs)
+        assertEquals(null, refusal("version 5.10.1\nnoconfig\n"), "no embedded config: nothing is known")
     }
 }
