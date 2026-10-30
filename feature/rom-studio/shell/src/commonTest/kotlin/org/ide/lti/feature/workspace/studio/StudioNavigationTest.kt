@@ -12,18 +12,42 @@ package org.ide.lti.feature.workspace.studio
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.ide.lti.core.domain.pipeline.ToolResult
+import org.ide.lti.core.domain.pipeline.toolkit.AckStore
+import org.ide.lti.core.domain.pipeline.toolkit.Acknowledgements
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
+import org.ide.lti.core.domain.pipeline.toolkit.JobLockHandle
+import org.ide.lti.core.domain.pipeline.toolkit.LockResult
+import org.ide.lti.core.domain.pipeline.toolkit.RestoreIndex
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
+import org.ide.lti.core.domain.ports.FileStat
 import org.ide.lti.core.domain.ports.InMemoryStudioPresentationStore
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.RunHandle
+import org.ide.lti.core.domain.ports.StepEvent
+import org.ide.lti.core.domain.ports.StepStatus
+import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.workbench.RestoreWorkbench
+import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.studio.ScrollAnchor
 import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.RecentProject
+import org.ide.lti.core.model.workspace.Workspace
+import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 import kotlin.test.AfterTest
@@ -97,10 +121,10 @@ class StudioNavigationTest {
         val expectedStages = listOf(
             StageId.FIRMWARE_ACQUISITION to 5,
             StageId.FIRMWARE_EXTRACTION to 5,
-            StageId.WORK_TREE_ASSEMBLY to 5,
+            StageId.WORK_TREE_ASSEMBLY to 8,
             StageId.DEBLOAT to 5,
-            StageId.MODULE_APPLICATION to 6,
-            StageId.BUILD_FLASHABLE_ZIP to 7,
+            StageId.MODULE_APPLICATION to 13,
+            StageId.BUILD_FLASHABLE_ZIP to 9,
             StageId.GENERATE_OTA_MANIFEST to 5,
             StageId.PUBLISH_RELEASE to 8,
         )
@@ -123,7 +147,7 @@ class StudioNavigationTest {
         val uniqueIds = allIds.toSet()
 
         assertEquals(allIds.size, uniqueIds.size, "Duplicate subobject IDs found: ${allIds - uniqueIds}")
-        assertEquals(46, allSubobjects.size)
+        assertEquals(58, allSubobjects.size)
     }
 
     @Test
@@ -511,5 +535,110 @@ class StudioNavigationTest {
                 "Subobject accessible labels must never contain '$term': $subobjectLabels",
             )
         }
+    }
+
+    @Test
+    fun restoringAPointCopiesTheBackupBackAndMarksItRestored() = runTest(testDispatcher) {
+        val point = RestorePoint(
+            id = "debloat:system:system/app/SampleApp",
+            tool = "debloat",
+            itemPath = "system/system/app/SampleApp",
+            createdAt = "2026-10-25T12:00:00Z",
+            backupPath = "restore/debloat/system/system/app/SampleApp",
+        )
+        val stores = RestoreStores(RestoreIndex(listOf(point)))
+        val service = RestoreService()
+        val restore = RestoreWorkbench(WorkbenchRunner(OneWorkspace, service, stores, stores, stores), stores)
+        val viewModel = StudioViewModel(
+            studioPresentationStore = InMemoryStudioPresentationStore(),
+            initialWorkspaceId = OneWorkspace.ID,
+            restore = restore,
+        )
+        advanceUntilIdle()
+
+        viewModel.selectWorkspaceSection(WorkspaceSection.RestorePoints)
+        advanceUntilIdle()
+        assertEquals(RestorePointState.Available, viewModel.uiState.value.restoreIndex.items.single().state)
+
+        viewModel.restorePoint(point.id)
+        advanceUntilIdle()
+
+        // The backup is copied over the item in work/ (a debloat item lives under work/<partition>/).
+        val copy = service.ran.single { it.toolId == "sh" }.args
+        assertEquals(
+            listOf("/ws/restore/debloat/system/system/app/SampleApp", "/ws/work/system/system/app/SampleApp"),
+            copy.takeLast(2),
+        )
+        assertEquals(RestorePointState.Restored, viewModel.uiState.value.restoreIndex.items.single().state)
+        assertEquals("Restored system/system/app/SampleApp", viewModel.uiState.value.restoreMessage)
+    }
+
+    /** The build service of the restore test: every file exists and every command succeeds. */
+    private class RestoreService : PipelineExecutionPort {
+        val ran = mutableListOf<StepCommand>()
+
+        override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
+            ran += step
+            return RunHandle("run-${ran.size}", "RUNNING", 0L)
+        }
+
+        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flowOf(StepEvent.Finished(0))
+        override suspend fun status(serverRunId: String): StepStatus? = null
+        override suspend fun cancel(serverRunId: String): Boolean = true
+        override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean = true
+        override suspend fun readFile(ws: Workspace, relPath: String): String? = null
+        override suspend fun stat(ws: Workspace, relPath: String) = FileStat(relPath, exists = true)
+        override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult = ToolResult(0, "")
+        override suspend fun checkAvailableDiskSpace(ws: Workspace): Long? = null
+    }
+
+    private object OneWorkspace : WorkspaceRepository {
+        const val ID = "ws-restore-test"
+        private val ws = Workspace(id = ID, name = ID, path = "/ws", linuxPath = "/ws")
+        override fun getWorkspaces(): Flow<List<Workspace>> = flowOf(listOf(ws))
+        override suspend fun getWorkspace(id: String): Workspace? = ws.takeIf { it.id == id }
+        override suspend fun saveWorkspace(workspace: Workspace) {}
+        override suspend fun deleteWorkspace(id: String) {}
+        override fun getRecentProjects(): Flow<List<RecentProject>> = flowOf(emptyList())
+        override suspend fun addRecentProject(project: RecentProject) {}
+        override suspend fun removeRecentProject(workspaceId: String) {}
+        override suspend fun clearRecentProjects() {}
+        override suspend fun discoverWorkspacesInWorkDir(basePath: String?): List<RecentProject> = emptyList()
+        override suspend fun getWorkspaceSession(workspaceId: String): WorkspaceSession? = null
+        override suspend fun saveWorkspaceSession(session: WorkspaceSession) {}
+    }
+
+    private class RestoreStores(var index: RestoreIndex) :
+        JobLock,
+        RestorePointStore,
+        AckStore {
+        override suspend fun acquire(workspace: Workspace, holderName: String): LockResult = LockResult.Acquired(
+            object : JobLockHandle {
+                override val holderName = holderName
+                override val workspace = workspace
+                override suspend fun release() {}
+                override fun close() {}
+            },
+        )
+
+        override suspend fun currentHolder(workspace: Workspace): String? = null
+        override suspend fun release(workspace: Workspace, holderName: String?) {}
+        override suspend fun readIndex(workspace: Workspace) = index
+        override suspend fun writeIndex(workspace: Workspace, index: RestoreIndex) {
+            this.index = index
+        }
+
+        override suspend fun addRestorePoint(workspace: Workspace, point: RestorePoint) {
+            index = index.add(point)
+        }
+
+        override suspend fun updateRestorePointState(workspace: Workspace, id: String, state: RestorePointState) {
+            index = index.withState(id, state)
+        }
+
+        override suspend fun readAcknowledgements(workspace: Workspace) = Acknowledgements.Empty
+        override suspend fun acknowledge(workspace: Workspace, featureId: String, acceptedAt: String) =
+            Acknowledgements.Empty
+        override suspend fun isAcknowledged(workspace: Workspace, featureId: String) = true
     }
 }

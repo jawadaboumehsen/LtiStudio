@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -97,6 +98,29 @@ public fun ExistingArchivesPane(
             }
             status?.let {
                 Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
+            }
+        }
+
+        archiveState.lastDetectedFormat?.let { format ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("DetectedFormatChip"),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Detected format:",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = FontSize.BodySmall,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = ideFontFamily(),
+                )
+                GlassChip(
+                    label = format.name,
+                    selected = true,
+                    onClick = {},
+                )
             }
         }
 
@@ -180,6 +204,7 @@ private fun ArchivesTable(archives: List<FirmwareArchive>, selectedRef: String?,
     IdeTable(modifier = Modifier.fillMaxWidth()) {
         IdeTableHeader {
             IdeTableHeaderCell(text = "Archive", modifier = Modifier.weight(2f))
+            IdeTableHeaderCell(text = "Format", modifier = Modifier.weight(1f))
             IdeTableHeaderCell(text = "Size", modifier = Modifier.weight(0.8f))
             IdeTableHeaderCell(text = "Action", modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth))
         }
@@ -205,6 +230,13 @@ private fun ArchivesTable(archives: List<FirmwareArchive>, selectedRef: String?,
                         fontFamily = codeFontFamily(),
                     )
                 }
+                Text(
+                    text = archive.detectedFormat?.name ?: "Unknown",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = FontSize.BodySmall,
+                    fontFamily = ideFontFamily(),
+                    modifier = Modifier.weight(1f),
+                )
                 Text(
                     text = formatBytes(archive.sizeBytes),
                     color = MaterialTheme.colorScheme.onSurface,

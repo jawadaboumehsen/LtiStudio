@@ -12,6 +12,7 @@ package org.ide.lti.feature.workspace.studio.di
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.shell.registry.DefaultStageEditorRegistry
 import org.ide.lti.feature.workspace.studio.StudioViewModel
+import org.ide.lti.feature.workspace.studio.components.WorkspaceStorageViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -25,6 +26,9 @@ public val romStudioShellModule: Module = module {
     }
 
     viewModel { params ->
+        WorkspaceStorageViewModel(workspaceId = params.getOrNull<String>() ?: "", storage = getOrNull())
+    }
+    viewModel { params ->
         StudioViewModel(
             studioPresentationStore = get(),
             stageEditorRegistry = get(),
@@ -33,6 +37,7 @@ public val romStudioShellModule: Module = module {
             workspaceDeviceRepository = getOrNull(),
             settingsStore = getOrNull(),
             observeRuns = getOrNull(),
+            restore = getOrNull(),
         )
     }
 }

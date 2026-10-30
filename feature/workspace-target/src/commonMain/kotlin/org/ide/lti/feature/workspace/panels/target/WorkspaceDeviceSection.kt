@@ -58,6 +58,7 @@ fun WorkspaceDeviceSection(viewModel: WorkspaceDeviceViewModel, modifier: Modifi
         DeviceLayout(state, device, viewModel)
         DeviceSuperPartition(state, device, viewModel)
         DeviceBootChain(state, device, viewModel)
+        DeviceFirmwareCard(state, viewModel)
         DeviceActions(state, viewModel)
     }
 }

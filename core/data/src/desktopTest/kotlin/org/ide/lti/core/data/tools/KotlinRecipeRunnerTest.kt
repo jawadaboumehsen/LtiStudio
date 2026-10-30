@@ -67,6 +67,7 @@ class KotlinRecipeRunnerTest {
             listOf(
                 RecipeConfig.AndroidTools(patchVendor = false),
                 RecipeConfig.CMake(),
+                RecipeConfig.Autotools(),
                 RecipeConfig.GradleJar(task = "jar", outputPath = "build/libs/tool.jar"),
             )
         for (recipe in recipes) {
@@ -90,6 +91,32 @@ class KotlinRecipeRunnerTest {
             assertTrue(script.contains(KotlinStoreLayout.shellQuote(destination)))
             assertFalse(script.contains("/o'ut/'tool'\""))
         }
+    }
+
+    @Test
+    fun `autotools configures with clang and runs each make in the source root`() = runTest {
+        val transport = RecordingTransport()
+        val result =
+            KotlinRecipeRunner(transport).executeRecipe(
+                srcDir = "/home/user/src",
+                outDir = "/home/user/out",
+                source = ResolvedSource.Git("https://example.test/e2fsprogs", ToolRef.Commit(COMMIT), COMMIT),
+                recipe = RecipeConfig.Autotools(listOf("--disable-nls"), listOf("libs", "-C misc fuse2fs")),
+                outputs = listOf(ToolOutput("fuse2fs", "fuse2fs", ToolOutputKind.NATIVE, ToolProbe(emptyList()))),
+                supportFiles = emptyList(),
+                onLog = {},
+            )
+        assertTrue(result.isSuccess)
+        val build = transport.streamRequests.single()
+        assertEquals("/home/user/src", build.workingDirectory)
+        assertTrue(
+            build.arguments.last().contains(
+                "'./configure' 'CC=clang' '--disable-nls' && make -j\$(nproc) libs && make -j\$(nproc) -C misc fuse2fs",
+            ),
+            build.arguments.toString(),
+        )
+        val copy = transport.requests.last { it.toolId == "sh" }.arguments.last()
+        assertTrue(copy.contains("find '/home/user/src' -type f -name 'fuse2fs'"), copy)
     }
 
     @Test

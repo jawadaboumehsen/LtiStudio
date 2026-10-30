@@ -1,0 +1,323 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.feature.rom.studio.stage.build
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
+import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
+import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
+import org.ide.lti.core.domain.pipeline.toolkit.Refusal
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.workspace.BuildSettings
+import org.ide.lti.core.ui.toolkit.RefusalView
+
+/** Per-partition `mkfs.erofs -z` choices; absent from the map means the stage-wide setting (FR-014). */
+internal val PARTITION_COMPRESSION = listOf(
+    "lz4" to "Fast (lz4)",
+    "lz4hc,12" to "Smallest (lz4hc 12)",
+    "none" to "None",
+)
+
+/** One row per dynamic partition: the stage-wide compression, or its own (FR-014). */
+@Composable
+internal fun PartitionCompressionPane(
+    settings: BuildSettings,
+    target: TargetDevice,
+    onChange: (BuildSettings) -> Unit,
+) {
+    ToolCard("Per-partition compression", tag = "PartitionCompressionPane") {
+        Note("Each choice is passed to mkfs.erofs for that partition and recorded in the build's cache key.")
+        target.dynamicPartitions.forEach { p ->
+            val own = settings.partitionCompression[p]
+            val fs = BuildFilesystems.of(settings, p)
+            if (fs != BuildFilesystems.EROFS) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                    Mono(p)
+                    Note("built as $fs: not compressed")
+                }
+                return@forEach
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Mono(p)
+                GlassChip(
+                    label = "Stage setting (${settings.compression})",
+                    selected = own == null,
+                    onClick = { onChange(settings.copy(partitionCompression = settings.partitionCompression - p)) },
+                )
+                PARTITION_COMPRESSION.forEach { (value, label) ->
+                    GlassChip(
+                        label = label,
+                        selected = own == value,
+                        onClick = {
+                            onChange(
+                                settings.copy(partitionCompression = settings.partitionCompression + (p to value)),
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The filesystem each dynamic partition is built as: the stage's choice, or
+ * EROFS, ext4 or F2FS for that partition.
+ */
+@Composable
+internal fun PartitionFilesystemPane(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
+    ToolCard("Per-partition filesystem", tag = "PartitionFilesystemPane") {
+        Note(
+            "EROFS is smaller and is what stock uses; ext4 suits a GSI or a partition you want writable later; " +
+                "F2FS is built read-only (the kernel must mount F2FS). " +
+                "The phone needs an fstab line for the filesystem: the build adds it to vendor/etc/fstab.*, and " +
+                "Assemble > Mount table adds it to the first-stage fstab in vendor_boot.",
+        )
+        target.dynamicPartitions.forEach { p ->
+            val own = settings.partitionFilesystem[p]
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Mono(p)
+                GlassChip(
+                    label = "Stage setting (${settings.filesystem})",
+                    selected = own == null,
+                    onClick = { onChange(settings.copy(partitionFilesystem = settings.partitionFilesystem - p)) },
+                )
+                BuildFilesystems.SUPPORTED.forEach { fs ->
+                    GlassChip(
+                        label = fs,
+                        selected = own == fs,
+                        onClick = {
+                            onChange(
+                                settings.copy(partitionFilesystem = settings.partitionFilesystem + (p to fs)),
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Packages built besides the flashable zip (FR-013): a fastboot images zip and a Samsung Odin AP. A dynamic
+ * partition added as a standalone image is also inside super.img, which needs an explicit acceptance (FR-017).
+ */
+@Composable
+internal fun ExtraPackagesPane(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
+    ToolCard("Extra packages", tag = "ExtraPackagesPane") {
+        Note("The flashable zip (block-based OTA) is always built; these are built next to it in out/package/.")
+        EXTRA_PACKAGES.forEach { (kind, text) ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassToggle(
+                    checked = kind.name in settings.extraPackages,
+                    onCheckedChange = { on ->
+                        val next = if (on) settings.extraPackages + kind.name else settings.extraPackages - kind.name
+                        onChange(settings.copy(extraPackages = next))
+                    },
+                )
+                Mono(text)
+            }
+        }
+        Note(
+            "Seamless (A/B payload) OTA is not offered: it needs delta_generator from AOSP update_engine, which no " +
+                "tool group installs.",
+        )
+        if (PackageKind.FullPackage.name in settings.extraPackages) {
+            Note("Standalone images in the fastboot zip (besides super.img and the boot images):")
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                target.dynamicPartitions.forEach { p ->
+                    GlassChip(
+                        label = p,
+                        selected = p in settings.standaloneImages,
+                        onClick = {
+                            val next = if (p in
+                                settings.standaloneImages
+                            ) {
+                                settings.standaloneImages - p
+                            } else {
+                                settings.standaloneImages +
+                                    p
+                            }
+                            onChange(settings.copy(standaloneImages = next))
+                        },
+                    )
+                }
+            }
+            val overlap = settings.standaloneImages.filter { it in target.dynamicPartitions }
+            if (overlap.isNotEmpty()) {
+                val accepted = BuildWarningKind.SuperOverlap.name in settings.acknowledgedWarnings
+                GlassBanner(
+                    severity = if (accepted) GlassBannerSeverity.INFO else GlassBannerSeverity.WARNING,
+                    title = "${overlap.joinToString()} are also inside super.img",
+                    description = "Flashing both writes the partition twice; the build stops until this is accepted.",
+                )
+                GlassChip(
+                    label = "I accept: flash them separately",
+                    selected = accepted,
+                    onClick = {
+                        val name = BuildWarningKind.SuperOverlap.name
+                        val next = if (accepted) {
+                            settings.acknowledgedWarnings - name
+                        } else {
+                            settings.acknowledgedWarnings +
+                                name
+                        }
+                        onChange(settings.copy(acknowledgedWarnings = next))
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** The build's link check (`BuildChecks.linkSteps`) and accepting what it finds. */
+@Composable
+internal fun LinkCheckPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
+    ToolCard("Symbolic links", tag = "LinkCheckPane") {
+        Note(
+            "Every build resolves the links of the assembled tree as the phone would. A link that points at " +
+                "nothing although it works in the stock firmware (an app or library removed, a file moved) stops " +
+                "the build, and the build log lists them. Links into /apex, /data and other run-time folders " +
+                "are not checked.",
+        )
+        val name = BuildWarningKind.BrokenLinks.name
+        val accepted = name in settings.acknowledgedWarnings
+        GlassChip(
+            label = "Build even if links are broken",
+            selected = accepted,
+            onClick = {
+                val next = if (accepted) settings.acknowledgedWarnings - name else settings.acknowledgedWarnings + name
+                onChange(settings.copy(acknowledgedWarnings = next))
+            },
+        )
+    }
+}
+
+/** Files of the work tree without an fs_config or file_contexts entry, and adding them (FR-015, FR-016). */
+@Composable
+internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -> Unit) {
+    ToolCard("Permission and label coverage", tag = "CoveragePane") {
+        Note(
+            "Every file of the assembled tree needs an fs_config line and a file_contexts line, or the image does " +
+                "not boot; the build refuses a tree with gaps. Adding entries gives a file the owner, mode and " +
+                "label of its closest listed folder, in every build (the Patches stage does it last).",
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            GlassButton(
+                onClick = onCheck,
+                enabled = state.busy == null,
+            ) { Text("Check the work tree", fontSize = FontSize.BodySmall) }
+        }
+        state.busy?.let { Mono("$it…") }
+        state.refusal?.let { RefusalView(refusal = it) }
+        state.result?.let { result ->
+            val missing = (result.uncoveredFsConfig + result.uncoveredContexts).distinct().sorted()
+            if (missing.isEmpty()) {
+                GlassBanner(severity = GlassBannerSeverity.INFO, title = "Every file is covered.")
+            } else {
+                RefusalView(
+                    refusal = Refusal(
+                        cause = "${missing.size} file(s) have no permission or SELinux label entry.",
+                        item = "work/configs",
+                        nextStep = if (state.fillInEveryBuild) {
+                            "Every build now adds them; run the build again."
+                        } else {
+                            "Add the missing entries in every build, or remove the files."
+                        },
+                    ),
+                    actionLabel = if (state.fillInEveryBuild) null else "Add entries in every build",
+                    onAction = onFix.takeUnless { state.fillInEveryBuild },
+                )
+                missing.take(MAX_SHOWN).forEach { Mono(it) }
+                if (missing.size > MAX_SHOWN) Note("…and ${missing.size - MAX_SHOWN} more")
+            }
+        }
+    }
+}
+
+private val EXTRA_PACKAGES = listOf(
+    PackageKind.FullPackage to "Fastboot images zip (super.img + boot images)",
+    PackageKind.Odin to "Samsung Odin AP (.tar.md5 with super.img.lz4 and the boot images)",
+)
+private const val MAX_SHOWN = 200
+
+@Composable
+private fun ToolCard(title: String, tag: String, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium)
+            .testTag(tag),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        content()
+    }
+}
+
+@Composable
+private fun Note(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = FontSize.BodySmall,
+        fontFamily = ideFontFamily(),
+    )
+}
+
+@Composable
+private fun Mono(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.BodySmall,
+        fontFamily = codeFontFamily(),
+    )
+}

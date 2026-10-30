@@ -26,7 +26,11 @@ import org.ide.lti.core.data.remote.WorkspaceKeyProvisioner
 import org.ide.lti.core.data.repository.device.ConnectedDeviceRepositoryImpl
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
 import org.ide.lti.core.data.repository.run.RunRepositoryImpl
+import org.ide.lti.core.data.toolkit.WorkspaceToolkitStores
 import org.ide.lti.core.domain.pipeline.HostStepPort
+import org.ide.lti.core.domain.pipeline.toolkit.AckStore
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
 import org.ide.lti.core.domain.plugin.MarketplaceIndexPort
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
@@ -43,6 +47,14 @@ import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
+import org.ide.lti.core.domain.workbench.BootWorkbench
+import org.ide.lti.core.domain.workbench.CompareWorkbench
+import org.ide.lti.core.domain.workbench.ContentWorkbench
+import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
+import org.ide.lti.core.domain.workbench.ImageWorkbench
+import org.ide.lti.core.domain.workbench.RestoreWorkbench
+import org.ide.lti.core.domain.workbench.WorkbenchRunner
+import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.koin.core.module.dsl.bind
@@ -106,4 +118,28 @@ internal actual val platformRepositoryModule =
         single<SnapshotMaterializerPort> {
             SnapshotMaterializer(storageDir = resolveAppDataDir("snapshot-intents"))
         }
+
+        single { WorkspaceToolkitStores(execution = get()) }
+        single<RestorePointStore> { get<WorkspaceToolkitStores>() }
+        single<AckStore> { get<WorkspaceToolkitStores>() }
+        single<JobLock> { get<WorkspaceToolkitStores>() }
+        single {
+            WorkbenchRunner(
+                workspaces = get(),
+                port = get(),
+                lock = get(),
+                restorePoints = get(),
+                acknowledgements = get(),
+            )
+        }
+        single { RestoreWorkbench(runner = get(), store = get()) }
+        single {
+            val paths = io.ltirom.tooling.client.WslPathTranslator()
+            BootWorkbench(runner = get(), toLinuxPath = paths::toWslPath)
+        }
+        single { ImageWorkbench(runner = get(), toLinuxPath = io.ltirom.tooling.client.WslPathTranslator()::toWslPath) }
+        single { ContentWorkbench(runner = get()) }
+        single { CompareWorkbench(runner = get()) }
+        single { WorkspaceStorage(runner = get(), runs = get()) }
+        single { DeviceFirmwareCheck(runner = get()) }
     }

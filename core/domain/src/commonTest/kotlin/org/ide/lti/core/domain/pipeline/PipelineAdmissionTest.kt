@@ -69,6 +69,7 @@ class PipelineAdmissionTest {
                     InMemoryRunRepository(),
                     FakeVendoredFiles(true),
                     toolStore = PipelinePinnedToolStore(pins),
+                    hostSteps = CoveredWorkTree,
                 )
             assertFailsWith<IllegalStateException> {
                 orchestrator.drive("invalid-pin", fixture.globalOtaContext(), "driver").toList()
@@ -87,6 +88,7 @@ class PipelineAdmissionTest {
                 InMemoryRunRepository(),
                 FakeVendoredFiles(true),
                 toolStore = PipelinePinnedToolStore(),
+                hostSteps = CoveredWorkTree,
             ).drive("pinned", fixture.globalOtaContext(), "driver").toList()
         assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events.last())
         assertTrue(
@@ -148,6 +150,7 @@ class PipelineAdmissionTest {
                             repo,
                             FakeVendoredFiles(true),
                             toolStore = PipelinePinnedToolStore(),
+                            hostSteps = CoveredWorkTree,
                             toolUsageCoordinator = coordinator,
                         )
                     val error =
@@ -187,6 +190,7 @@ class PipelineAdmissionTest {
                 repo,
                 FakeVendoredFiles(true),
                 toolStore = PipelinePinnedToolStore(),
+                hostSteps = CoveredWorkTree,
                 toolUsageCoordinator = coordinator,
             )
         val original = launch { orchestrator.drive("duplicate", fixture.globalOtaContext(), "one").toList() }
@@ -215,6 +219,7 @@ class PipelineAdmissionTest {
                 repo1,
                 FakeVendoredFiles(true),
                 toolStore = PipelinePinnedToolStore(pins1),
+                hostSteps = CoveredWorkTree,
             )
         val events1 = orch1.drive("run-v1", fixture.globalOtaContext(), "driver-1").toList()
         assertEquals(PipelineEvent.RunFinished(RunState.SUCCEEDED), events1.last())
@@ -229,6 +234,7 @@ class PipelineAdmissionTest {
                 repo2,
                 FakeVendoredFiles(true),
                 toolStore = PipelinePinnedToolStore(pins2),
+                hostSteps = CoveredWorkTree,
             )
         val events2 = orch2.drive("run-v2", fixture.globalOtaContext(), "driver-2").toList()
         val failed2 = events2.filterIsInstance<PipelineEvent.StageFailed>().firstOrNull()

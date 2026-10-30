@@ -172,6 +172,8 @@ internal fun actionLabel(action: WorkspaceActionUi?): String = when (action) {
         WorkspaceSection.RunHistory -> "Run the build"
         WorkspaceSection.Artifacts -> "View artifacts"
         WorkspaceSection.RomConfig, WorkspaceSection.TargetProfile -> "Set up the device"
+        WorkspaceSection.RestorePoints -> "View restore points"
+        WorkspaceSection.Storage -> "See disk usage"
         WorkspaceSection.Overview -> "Overview"
     }
     else -> "Continue"

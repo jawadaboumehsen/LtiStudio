@@ -13,6 +13,8 @@ import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
+import org.ide.lti.core.domain.pipeline.toolkit.RestoreIndex
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
@@ -81,13 +83,17 @@ class DebloatStageTest {
         val first = stage.plan(ctx(settings))
         assertEquals(listOf("list apps"), first.map { it.label }, "nothing is removed before the inventory is read")
 
-        val plan = stage.plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing)))
-        val rm = plan.filterIsInstance<PipelineStep.Tool>().single { it.command.toolId == "rm" }
+        val plan = stage.plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to "")))
+        val rm = plan.filterIsInstance<PipelineStep.Tool>().single { it.label == "remove apps" }
         assertEquals(
             listOf("-rf", "--", "/w/work/product/app/YouTube", "/w/work/system/system/app/Facebook"),
             rm.command.args,
         )
-        val edits = plan.filterIsInstance<PipelineStep.EditFile>().map { it.relPath }
+        val edits = plan.filterIsInstance<PipelineStep.EditFile>().map { it.relPath }.filter {
+            it.startsWith(
+                "work/configs/",
+            )
+        }
         assertEquals(
             listOf(
                 "work/configs/fs_config-product",
@@ -110,9 +116,59 @@ class DebloatStageTest {
     }
 
     @Test
+    fun `picked apps and their sidecars are backed up before removal and recorded in the workspace restore index`() {
+        val settings = DebloatSettings(enabled = true, removeSelectors = listOf("system:system/app/Facebook"))
+        val values = mapOf(
+            DebloatStage.INVENTORY_KEY to listing,
+            DebloatStage.APPS_KEY to "",
+            RuntimeKeys.RUN_TIMESTAMP to "1761400000",
+        )
+        val plan = DebloatStage().plan(ctx(settings, values))
+        val labels = plan.map { it.label }
+
+        val backup = plan.filterIsInstance<PipelineStep.Tool>().single {
+            it.label == "backup system:system/app/Facebook"
+        }
+        assertEquals(
+            listOf("-a", "-T", "/w/work/system/system/app/Facebook", "/w/restore/debloat/system/system/app/Facebook"),
+            backup.command.args,
+        )
+        assertTrue(
+            labels.indexOf("backup sidecars system") < labels.indexOf("prune fs_config system"),
+            "sidecars are copied before pruning",
+        )
+        assertTrue(
+            labels.indexOf(backup.label) < labels.indexOf("remove apps"),
+            "the app is copied before it is removed",
+        )
+
+        // One workspace index: this run's debloat points replace the last run's, other tools' points stay.
+        val record = plan.filterIsInstance<PipelineStep.EditFile>().single { it.relPath == RestoreIndex.FILE }
+        val other = RestorePoint("boot:1:x", "boot", "overrides/kernel/boot.img", "t", "restore/boot/1/x")
+        val stale = RestorePoint(
+            "debloat:system:system/app/Old",
+            "debloat",
+            "system/system/app/Old",
+            "t",
+            "restore/debloat/old",
+        )
+        val index = RestoreIndex.fromJson(record.transform(RestoreIndex(listOf(other, stale)).toJson()))
+        assertEquals(listOf(other.id, "debloat:system:system/app/Facebook"), index.items.map { it.id })
+        val point = index.items.last()
+        assertEquals("restore/debloat/system/system/app/Facebook", point.backupPath)
+        assertEquals("2025-10-25T13:46:40Z", point.createdAt)
+        assertEquals(
+            listOf("debloat:system:system/app/Facebook"),
+            RestoreIndex.fromJson(record.transform("")).items.map { it.id },
+        )
+    }
+
+    @Test
     fun `picking a protected app fails the stage instead of removing it`() {
         val settings = DebloatSettings(enabled = true, removeSelectors = listOf("system:system/priv-app/SystemUI"))
-        val plan = DebloatStage().plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing)))
+        val plan = DebloatStage().plan(
+            ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to "")),
+        )
         val check = plan.filterIsInstance<PipelineStep.Check>().single()
         assertTrue(check.verify(emptyMap())!!.contains("PROTECTED_ENTRY"))
         assertTrue(plan.none { it is PipelineStep.Tool && it.command.toolId == "rm" })
@@ -160,5 +216,17 @@ class DebloatStageTest {
         for (other in listOf("app/ShellExtras", "app/PhoneticKeyboard", "app/YouTube")) {
             assertFalse(inventory.isProtected(app(other)), other)
         }
+    }
+
+    @Test
+    fun aPickWhoseRemovalBreaksTheDeviceIsRefusedWithItsReason() {
+        val listing = "1000\tproduct/app/LatinImeGoogle/LatinImeGoogle.apk\n1000\tproduct/app/Maps/Maps.apk"
+        val apps = "@ product/app/LatinImeGoogle/LatinImeGoogle.apk\nime\npkg com.google.android.inputmethod.latin\n" +
+            "@ product/app/Maps/Maps.apk\npkg com.google.android.apps.maps"
+        val settings = DebloatSettings(enabled = true, removeSelectors = listOf("product:app/LatinImeGoogle"))
+        val values = mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to apps)
+        val check = DebloatStage().plan(ctx(settings, values)).filterIsInstance<PipelineStep.Check>().single()
+        val message = check.verify(emptyMap())
+        assertTrue(message != null && "DEBLOAT_BREAKS_DEVICE" in message && "last keyboard" in message, message)
     }
 }

@@ -39,6 +39,13 @@ public class DebloatStageEditor : StageEditor {
             onUnpick = viewModel::unpick,
             onRefresh = viewModel::refresh,
             selectedObjectId = context.selectedObjectId?.value ?: "inventory",
+            actions = DebloatActions(
+                restore = viewModel::restore,
+                restoreAll = viewModel::restoreAll,
+                importList = viewModel::importList,
+                exportList = viewModel::exportList,
+                dismiss = viewModel::dismissMessage,
+            ),
             modifier = modifier,
         )
     }

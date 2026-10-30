@@ -151,6 +151,18 @@ public fun ToolGroupRow(
                 overflow = TextOverflow.Ellipsis,
             )
 
+            // Licence
+            if (row.licenceLabel != null) {
+                Text(
+                    text = row.licenceLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
             // Status
             Text(
                 text = statusText,

@@ -37,6 +37,7 @@ public data class ToolRowPresentation(
     val phaseLabel: String? = null,
     val canCancel: Boolean = false,
     val actionLabel: String? = null,
+    val licenceLabel: String? = null,
 )
 
 /** What the inspector shows while a change runs: where it is, how far, the latest line, and whether it can stop. */
@@ -145,6 +146,8 @@ public object ToolsPresentationMapper {
                     }
             }
 
+        val licence = groupDef?.outputs?.mapNotNull { it.licence }?.distinct()?.joinToString(", ")?.ifBlank { null }
+
         return ToolRowPresentation(
             groupId = state.group.value,
             displayName = displayName,
@@ -154,6 +157,7 @@ public object ToolsPresentationMapper {
             phaseLabel = statusInfo.phaseLabel,
             canCancel = statusInfo.canCancel,
             actionLabel = statusInfo.actionLabel,
+            licenceLabel = licence,
         )
     }
 

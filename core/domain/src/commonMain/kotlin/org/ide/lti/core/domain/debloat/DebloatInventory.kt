@@ -20,12 +20,14 @@ public object DebloatInventory {
 
     /**
      * One candidate per app folder: the folder holding the APKs, as `partition` + path inside that partition
-     * (work-tree `system/system/app/Foo/Foo.apk` → partition `system`, path `system/app/Foo`).
+     * (work-tree `system/system/app/Foo/Foo.apk` → partition `system`, path `system/app/Foo`). An APK lying loose in
+     * a folder of many (`overlay/`, `framework/`) is a candidate of its own: that folder is not one app.
      */
     public fun parse(listing: String): List<DebloatCandidate> = listing.lineSequence()
         .mapNotNull { line ->
             val (size, path) = line.trim().split('\t', limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
-            val dir = path.substringBeforeLast('/', "")
+            val folder = path.substringBeforeLast('/', "")
+            val dir = if (folder.substringAfterLast('/') in SHARED_FOLDERS) path else folder
             val partition = dir.substringBefore('/')
             val inside = dir.substringAfter('/', "")
             if (partition.isEmpty() || inside.isEmpty() || partition in NOT_PARTITIONS) return@mapNotNull null
@@ -41,7 +43,8 @@ public object DebloatInventory {
         // Vendor builds rename them (SystemUI_MFV_tablet_abroad, Telecom_MFV, WebViewGoogle64,
         // DocumentsUIGoogle): a protected name also covers its variants with a suffix.
         return PROTECTED_NAMES.any { protectedName -> variantOf(name, protectedName) } ||
-            PROTECTED_PREFIXES.any { name.startsWith(it, ignoreCase = true) }
+            PROTECTED_PREFIXES.any { name.startsWith(it, ignoreCase = true) } ||
+            "framework" in candidate.relativePath.split('/')
     }
 
     /** `partition:path` selectors of the protected apps in [inventory], for [DebloatResolver]. */
@@ -59,6 +62,9 @@ public object DebloatInventory {
     private val VARIANT_SUFFIXES = listOf("Google", "Legacy")
 
     private val NOT_PARTITIONS = setOf("configs", "kernel")
+
+    /** Folders holding many APKs side by side, not one app each. */
+    private val SHARED_FOLDERS = setOf("app", "priv-app", "overlay", "framework")
 
     private val PROTECTED_NAMES = setOf(
         "SystemUI", "SettingsProvider", "PermissionController", "GooglePermissionController",

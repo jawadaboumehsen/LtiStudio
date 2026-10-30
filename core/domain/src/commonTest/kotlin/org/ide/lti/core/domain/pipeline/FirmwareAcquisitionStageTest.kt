@@ -15,6 +15,9 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.domain.pipeline.toolkit.ChecksumResult
+import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
+import org.ide.lti.core.domain.pipeline.toolkit.PackageManifest
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -231,5 +234,81 @@ class FirmwareAcquisitionStageTest {
             ),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedSha, prevKey), "expectedSha256 must change cache key")
+    }
+
+    @Test
+    fun md5ExpectedChecksumPlansMd5sumAndSetsPackageChecksumResult() {
+        val expectedMd5 = "d41d8cd98f00b204e9800998ecf8427e"
+        val ctx = baseContext.copy(
+            snapshot = baseContext.snapshot.copy(
+                acquisition = baseContext.snapshot.acquisition.copy(expectedSha256 = expectedMd5),
+            ),
+            runtimeValues = mapOf(RuntimeKeys.ARCHIVE_MD5 to "$expectedMd5  archive.zip"),
+        )
+
+        val steps = stage.plan(ctx)
+        val toolIds = steps.filterIsInstance<PipelineStep.Tool>().map { it.command.toolId }
+        assertTrue("md5sum" in toolIds, "Expected md5sum tool for 32-char digest")
+        assertFalse("sha256sum" in toolIds, "sha256sum should not be planned when MD5 is specified")
+
+        val checksumResultStep = steps.filterIsInstance<PipelineStep.Tool>()
+            .firstOrNull { it.resultKey == RuntimeKeys.PACKAGE_CHECKSUM_RESULT }
+        assertNotNull(checksumResultStep)
+        val decoded = ChecksumResult.decode(checksumResultStep.command.args[0])
+        assertTrue(decoded.ok)
+        assertEquals(expectedMd5, decoded.expected)
+        assertEquals(expectedMd5, decoded.actual)
+    }
+
+    @Test
+    fun detectStepReadsHeaderAndRecordsPackageManifestWhenHexIsPresent() {
+        val ctxWithChecksum = baseContext.copy(
+            runtimeValues = mapOf(RuntimeKeys.ARCHIVE_SHA256 to "abc"),
+        )
+        val initialSteps = stage.plan(ctxWithChecksum)
+        val headerStep = initialSteps.filterIsInstance<PipelineStep.Tool>()
+            .firstOrNull { it.resultKey == RuntimeKeys.PACKAGE_HEADER_HEX }
+        assertNotNull(headerStep, "Header read step must be planned after checksum")
+        assertEquals("xxd", headerStep.command.toolId)
+
+        val ctxWithZipHex = baseContext.copy(
+            runtimeValues = mapOf(
+                RuntimeKeys.ARCHIVE_SHA256 to "abc",
+                RuntimeKeys.PACKAGE_HEADER_HEX to "504b0304",
+            ),
+        )
+        val replannedSteps = stage.plan(ctxWithZipHex)
+        val manifestStep = replannedSteps.filterIsInstance<PipelineStep.Tool>()
+            .firstOrNull { it.resultKey == RuntimeKeys.PACKAGE_MANIFEST }
+        assertNotNull(manifestStep, "Manifest step must be planned when header hex is present")
+        val manifest = PackageManifest.decode(manifestStep.command.args[0])
+        assertEquals(PackageFormat.Zip, manifest.format)
+        assertNull(manifest.refusal)
+        assertNull(manifest.refusal)
+    }
+
+    @Test
+    fun unknownFormatHeaderRecordsRefusalManifestAndAddsFailingFormatCheck() {
+        val ctxWithUnknownHex = baseContext.copy(
+            runtimeValues = mapOf(
+                RuntimeKeys.ARCHIVE_SHA256 to "abc",
+                RuntimeKeys.PACKAGE_HEADER_HEX to "0011223344",
+            ),
+        )
+        val steps = stage.plan(ctxWithUnknownHex)
+        val manifestStep = steps.filterIsInstance<PipelineStep.Tool>()
+            .firstOrNull { it.resultKey == RuntimeKeys.PACKAGE_MANIFEST }
+        assertNotNull(manifestStep)
+        val manifest = PackageManifest.decode(manifestStep.command.args[0])
+        assertEquals(PackageFormat.Unknown, manifest.format)
+        assertNotNull(manifest.refusal)
+        assertNotNull(manifest.refusal)
+
+        val formatCheck = steps.filterIsInstance<PipelineStep.Check>()
+            .firstOrNull { it.label == "verify package format" }
+        assertNotNull(formatCheck, "Failing format Check must be planned on refusal")
+        val error = formatCheck.verify(emptyMap())
+        assertNotNull(error)
+        assertTrue(error.contains("The package format was not recognized"))
     }
 }

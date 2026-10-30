@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
 import org.ide.lti.core.domain.workspace.FirmwareArchive
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.StageSettingsSync
@@ -103,7 +104,9 @@ public class AcquireViewModel(
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
             archiveJob { store ->
-                selectArchive(store.import(workspaceId, path))
+                val imported = store.import(workspaceId, path)
+                selectArchive(imported)
+                _archiveState.update { it.copy(lastDetectedFormat = imported.detectedFormat) }
                 store.list(workspaceId)
             }
         }
@@ -112,6 +115,9 @@ public class AcquireViewModel(
     /** Uses [archive] for the build: the Acquire stage then checks it exists instead of downloading. */
     public fun selectArchive(archive: FirmwareArchive) {
         updateSettings(settings.value.copy(mode = AcquisitionMode.IMPORT_ARCHIVE, archiveRef = archive.ref))
+        if (archive.detectedFormat != null) {
+            _archiveState.update { it.copy(lastDetectedFormat = archive.detectedFormat) }
+        }
     }
 
     private suspend fun archiveJob(block: suspend (FirmwareArchives) -> List<FirmwareArchive>) {
@@ -130,7 +136,13 @@ public class AcquireViewModel(
         }
         _archiveState.update { state ->
             result.fold(
-                onSuccess = { ArchiveState(archives = it, probed = true) },
+                onSuccess = {
+                    ArchiveState(
+                        archives = it,
+                        probed = true,
+                        lastDetectedFormat = state.lastDetectedFormat,
+                    )
+                },
                 onFailure = { state.copy(busy = false, error = it.message ?: "Could not read the archives") },
             )
         }
@@ -143,6 +155,7 @@ public data class ArchiveState(
     val probed: Boolean = false,
     val busy: Boolean = false,
     val error: String? = null,
+    val lastDetectedFormat: PackageFormat? = null,
 )
 
 /** What the Integrity pane shows: the archive in the workspace and the hash its last run measured. */

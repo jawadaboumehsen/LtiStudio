@@ -1,0 +1,527 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.domain.workbench
+
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.ide.lti.core.domain.pipeline.digestToken
+import org.ide.lti.core.domain.pipeline.text.FstabEditor
+import org.ide.lti.core.domain.pipeline.toolkit.AvbFooterInfo
+import org.ide.lti.core.domain.pipeline.toolkit.BootFlagDiff
+import org.ide.lti.core.domain.pipeline.toolkit.BootHeaderFacts
+import org.ide.lti.core.domain.pipeline.toolkit.BootParts
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
+import org.ide.lti.core.domain.pipeline.toolkit.DeviceTreeDiff
+import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
+import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
+import org.ide.lti.core.domain.pipeline.toolkit.KernelOverrides
+import org.ide.lti.core.domain.pipeline.toolkit.RamdiskCheck
+import org.ide.lti.core.domain.pipeline.toolkit.RamdiskCheckResult
+import org.ide.lti.core.domain.pipeline.toolkit.RamdiskEntry
+import org.ide.lti.core.domain.pipeline.toolkit.Refusal
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.pipeline.toolkit.RootPatcherType
+import org.ide.lti.core.domain.pipeline.toolkit.RootStatus
+import org.ide.lti.core.domain.pipeline.toolkit.SigningPlan
+import org.ide.lti.core.domain.pipeline.toolkit.VerityRemovalResult
+
+/** A repacked image saved as the partition's override, with the SHA-256 the Assemble settings record. */
+public data class SavedOverride(val partition: String, val sha256: String, val check: RamdiskCheckResult)
+
+/**
+ * Boot, vendor_boot and init_boot work in WSL with the AOSP tools: `unpack_bootimg` / `mkbootimg` (the
+ * `--format mkbootimg` arguments make the round trip exact), `cpio` / `mkbootfs` for the ramdisk folder,
+ * `dtc`, `avbtool`; APatch with KernelPatch's `kptools`.
+ */
+public class BootWorkbench(
+    private val runner: WorkbenchRunner,
+    /** A Windows path as WSL sees it (`C:\boot.img` -> `/mnt/c/boot.img`). */
+    private val toLinuxPath: (String) -> String,
+) {
+
+    /** Unpacks [partition]'s current image (override, assembled, or extracted) into `workbench/boot/<p>/`. */
+    public suspend fun unpack(workspaceId: String, partition: String): BootParts =
+        runner.job(workspaceId, "Unpack $partition") {
+            val source = sourceOf(this, partition)
+            val dir = dir(partition)
+            sh("rm -rf \"$1\" && mkdir -p \"$1/unpacked\"", abs(dir))
+            val info = run(
+                "unpack_bootimg",
+                "--boot_img",
+                abs(source),
+                "--out",
+                abs("$dir/unpacked"),
+                "--format",
+                "info",
+            )
+            val args = run(
+                "unpack_bootimg",
+                "--boot_img",
+                abs(source),
+                "--out",
+                abs("$dir/unpacked"),
+                "--format",
+                "mkbootimg",
+                "-0",
+            )
+            writeText("$dir/$ARGS", args)
+
+            val ramdisk = RAMDISK_NAMES.firstOrNull { tryRun("test", "-s", abs("$dir/unpacked/$it")).exitCode == 0 }
+            val compression = ramdisk?.let { name ->
+                val magic = run("xxd", "-p", "-l", "6", abs("$dir/unpacked/$name")).trim()
+                RamdiskCompression.of(FormatDetector.fromHex(magic)).also { c ->
+                    sh(c.decompress, abs("$dir/unpacked/$name"), abs("$dir/ramdisk.cpio"))
+                    sh(
+                        "mkdir -p \"$1\" && cd \"$1\" && cpio -idmu --no-absolute-filenames --quiet < \"$2\"",
+                        abs("$dir/$RAMDISK_DIR"),
+                        abs("$dir/ramdisk.cpio"),
+                    )
+                }
+            }
+            val hasDtb = tryRun("test", "-s", abs("$dir/unpacked/dtb")).exitCode == 0
+            if (hasDtb) run("dtc", "-q", "-I", "dtb", "-O", "dts", "-o", abs("$dir/$DTS"), abs("$dir/unpacked/dtb"))
+            val footer = footerOf(this, source)
+            val state = BootState(source, ramdisk, compression, footer?.imageSize)
+            writeText("$dir/$STATE", json.encodeToString(BootState.serializer(), state))
+            BootParts(
+                imageName = partition,
+                kernelPath = "$dir/unpacked/kernel".takeIf { exists(it) },
+                ramdiskFolderPath = ramdisk?.let { "$dir/$RAMDISK_DIR" },
+                dtbPath = "$dir/$DTS".takeIf { hasDtb },
+                header = parseHeader(info),
+                footer = footer,
+            )
+        }
+
+    /**
+     * The kernel of the boot image the next build uses: its version and what it can read (EROFS compression,
+     * ramdisk formats), from its embedded config. Null when the image carries no kernel (init_boot, vendor_boot).
+     */
+    public suspend fun kernelFacts(workspaceId: String): KernelFacts? = runner.read(workspaceId) {
+        KernelFacts.parse(sh(KERNEL_SCRIPT, abs(sourceOf(this, KERNEL_IMAGE)), toolPath("unpack_bootimg")))
+    }
+
+    /** The ramdisk folder as Windows sees it (to open in Explorer); refuses when the image has none (FR-021). */
+    public suspend fun ramdiskFolder(workspaceId: String, partition: String): String = runner.read(workspaceId) {
+        val folder = "${dir(partition)}/$RAMDISK_DIR"
+        if (!exists(folder)) {
+            throw RefusalException(
+                Refusal("This image has no ramdisk.", "$partition.img", "It may live in vendor_boot or init_boot."),
+            )
+        }
+        hostPath(folder) ?: abs(folder)
+    }
+
+    /** Removes the dm-verity keys from the unpacked ramdisk, nothing else (FR-025). */
+    public suspend fun removeVerityKeys(workspaceId: String, partition: String): VerityRemovalResult =
+        runner.job(workspaceId, "Remove verity keys") {
+            val folder = abs("${dir(partition)}/$RAMDISK_DIR")
+            val found = run("find", folder, "-type", "f", "(", "-name", "verity_key", "-o", "-name", "*.avbpubkey", ")")
+                .lines().filter { it.isNotBlank() }
+            found.forEach { run("rm", "-f", it) }
+            VerityRemovalResult(removedKeys = found.map { it.removePrefix("$folder/") }, restorePointId = null)
+        }
+
+    /**
+     * Lets every dynamic partition of the unpacked image's fstabs (the first-stage mount table in vendor_boot) mount
+     * as ext4 and as EROFS: a line is added for whichever is missing, after the existing ones, so the stock one is
+     * still tried first. Returns the fstab files changed; repack to keep the change.
+     */
+    public suspend fun addMountLines(workspaceId: String, partition: String): List<String> =
+        runner.job(workspaceId, "Add mount lines") {
+            val folder = "${dir(partition)}/$RAMDISK_DIR"
+            if (!exists(folder)) {
+                throw RefusalException(Refusal("$partition.img is not unpacked.", "$partition.img", "Unpack it first."))
+            }
+            run(
+                "find",
+                abs(folder),
+                "-type",
+                "f",
+                "-name",
+                "fstab.*",
+            ).lines().filter { it.isNotBlank() }.mapNotNull { f ->
+                val rel = "$folder/${f.removePrefix(abs(folder) + "/")}"
+                val text = readText(rel) ?: return@mapNotNull null
+                val points = FstabEditor.logicalMountPoints(text)
+                val edited = BuildFilesystems.SUPPORTED.fold(text) { t, fs ->
+                    FstabEditor.withFilesystems(t, points.associateWith { fs })
+                }
+                rel.takeIf { edited != text }?.also { writeText(it, edited) }
+            }
+        }
+
+    /** The device tree source of the unpacked image, for editing (FR-022). */
+    public suspend fun deviceTree(workspaceId: String, partition: String): String? =
+        runner.read(workspaceId) { readText("${dir(partition)}/$DTS") }
+
+    /** Shows what saving [newDts] would change, without saving. */
+    public suspend fun previewDeviceTree(workspaceId: String, partition: String, newDts: String): DeviceTreeDiff {
+        val old = deviceTree(workspaceId, partition).orEmpty()
+        return DeviceTreeDiff(old, newDts, lineChanges(old, newDts))
+    }
+
+    public suspend fun saveDeviceTree(workspaceId: String, partition: String, newDts: String) {
+        runner.job(workspaceId, "Edit device tree") {
+            writeText("${dir(partition)}/$DTS", newDts)
+            run("dtc", "-q", "-I", "dts", "-O", "dts", "-o", "/dev/null", abs("${dir(partition)}/$DTS"))
+        }
+    }
+
+    /**
+     * Rebuilds the image from the unpacked parts and saves it as the partition's override. The new ramdisk is
+     * read back and compared with the folder first; a mismatch blocks the result (FR-021). When [plan] is given
+     * the AVB footer is re-signed with it; an image that had a footer gets an unsigned one otherwise (FR-024).
+     */
+    public suspend fun repack(workspaceId: String, partition: String, plan: SigningPlan? = null): SavedOverride =
+        runner.job(workspaceId, "Repack $partition") {
+            val dir = dir(partition)
+            val state = readText("$dir/$STATE")?.let { json.decodeFromString(BootState.serializer(), it) }
+                ?: throw RefusalException(Refusal("The image is not unpacked.", "$partition.img", "Unpack it first."))
+            var check = RamdiskCheckResult(ok = true)
+            if (state.ramdisk != null && state.compression != null) {
+                val folder = abs("$dir/$RAMDISK_DIR")
+                sh("\"$3\" \"$1\" > \"$2\"", folder, abs("$dir/ramdisk.new.cpio"), toolPath("mkbootfs"))
+                val archived = sh("cpio -it --quiet < \"$1\"", abs("$dir/ramdisk.new.cpio")).lines()
+                val listed = run("find", folder, "-mindepth", "1", "-printf", "%P\\n").lines()
+                RamdiskCheck.missingInit(partition, listed)?.let { throw RefusalException(it) }
+                check = RamdiskCheck.compare(entries(archived), entries(listed))
+                if (!check.ok) return@job SavedOverride(partition, "", check)
+                sh(state.compression.compress, abs("$dir/ramdisk.new.cpio"), abs("$dir/unpacked/${state.ramdisk}"))
+            }
+            if (exists(
+                    "$dir/$DTS",
+                )
+            ) {
+                run("dtc", "-q", "-I", "dts", "-O", "dtb", "-o", abs("$dir/unpacked/dtb"), abs("$dir/$DTS"))
+            }
+            val args = readText("$dir/$ARGS").orEmpty().split('\u0000').filter { it.isNotEmpty() }
+            run("mkbootimg", *args.toTypedArray(), "--output", abs("$dir/new.img"))
+            val partitionSize = plan?.partitionSize ?: state.footerImageSize
+            if (partitionSize != null) {
+                val sign = plan?.let { listOf("--key", abs(it.keyPath), "--algorithm", it.algorithmName) }
+                    ?: listOf("--algorithm", "NONE")
+                run(
+                    "avbtool", "add_hash_footer", "--image", abs("$dir/new.img"),
+                    "--partition_size", partitionSize.toString(), "--partition_name", partition, *sign.toTypedArray(),
+                )
+            }
+            run("unpack_bootimg", "--boot_img", abs("$dir/new.img"), "--out", abs("$dir/verify"), "--format", "info")
+            saveOverride(this, partition, "$dir/new.img").copy(check = check)
+        }
+
+    /** Copies a boot image patched elsewhere (the Magisk app) from [windowsPath] into the partition's override. */
+    public suspend fun importPatched(workspaceId: String, partition: String, windowsPath: String): SavedOverride =
+        runner.job(workspaceId, "Import $partition") {
+            val linuxSource = toLinuxPath(windowsPath)
+            val head = run("xxd", "-p", "-l", "8", linuxSource).trim()
+            if (head != BOOT_MAGIC_HEX && head != VENDOR_BOOT_MAGIC_HEX) {
+                throw RefusalException(
+                    Refusal(
+                        "The file is not a boot image.",
+                        linuxSource.substringAfterLast('/'),
+                        "Pick the patched .img file.",
+                    ),
+                )
+            }
+            saveOverride(this, partition, linuxSource)
+        }
+
+    /** Whether the unpacked image already carries Magisk (ramdisk) or APatch (kernel) (FR-026). */
+    public suspend fun rootStatus(workspaceId: String, partition: String): RootStatus = runner.read(workspaceId) {
+        val dir = dir(partition)
+        when {
+            exists("$dir/$RAMDISK_DIR/.backup/.magisk") || exists("$dir/$RAMDISK_DIR/overlay.d/sbin") ->
+                RootStatus.AlreadyPatched(RootPatcherType.MAGISK, "Magisk files in the ramdisk")
+
+            exists("$dir/unpacked/kernel") && kpatchInfo(this, "$dir/unpacked/kernel")?.contains("[kpimg]") == true ->
+                RootStatus.AlreadyPatched(RootPatcherType.APATCH, "KernelPatch in the kernel")
+
+            else -> RootStatus.NotPatched
+        }
+    }
+
+    /**
+     * Patches the unpacked kernel with KernelPatch (APatch) and [superKey]. The key reaches `kptools` through
+     * a file descriptor, never the command line, and the file is removed afterwards. Repack to save.
+     */
+    public suspend fun patchApatch(workspaceId: String, partition: String, superKey: String) {
+        require(superKey.length >= MIN_SUPERKEY) { "The superkey needs at least $MIN_SUPERKEY characters." }
+        runner.job(workspaceId, "APatch $partition") {
+            val kernel = "${dir(partition)}/unpacked/kernel"
+            if (!exists(kernel)) {
+                throw RefusalException(
+                    Refusal("This image has no kernel.", "$partition.img", "Patch boot.img instead."),
+                )
+            }
+            if (kpatchInfo(this, kernel)?.contains("[kpimg]") == true) {
+                throw RefusalException(
+                    Refusal("The kernel is already patched with APatch.", "$partition.img", "Nothing to do."),
+                )
+            }
+            val kptools = toolPath("kptools")
+            // kpimg is the kernel-side half of the same KernelPatch release; fetched once, checked by SHA-256.
+            sh(
+                "[ -f \"$1\" ] && echo \"$2  $1\" | sha256sum -c --status && exit 0; " +
+                    "mkdir -p \"$(dirname \"$1\")\" && curl -fsSL --retry 3 \"$3\" -o \"$1.partial\" && " +
+                    "echo \"$2  $1.partial\" | sha256sum -c --status && mv -f \"$1.partial\" \"$1\"",
+                abs(KPIMG),
+                KPIMG_SHA256,
+                KPIMG_URL,
+            )
+            val keyFile = "${dir(partition)}/.skey"
+            writeText(keyFile, superKey)
+            try {
+                sh(
+                    "\"$3\" -p -i \"$1\" -k \"$4\" --skey-fd 3 -o \"$1.new\" 3< \"$2\" && mv -f \"$1.new\" \"$1\"",
+                    abs(kernel),
+                    abs(keyFile),
+                    kptools,
+                    abs(KPIMG),
+                )
+            } finally {
+                tryRun("rm", "-f", abs(keyFile))
+            }
+        }
+    }
+
+    /** The AVB flags of the workspace's `vbmeta` image (FR-023). */
+    public suspend fun vbmetaFlags(workspaceId: String, image: String = VBMETA): Int = runner.read(workspaceId) {
+        readVbmetaFlags(this, image)
+    }
+
+    /**
+     * Writes a copy of [image] with [newFlags] to `out/toolkit/` (vbmeta is flashed by hand, never packaged) and
+     * returns the change and the copy's path.
+     */
+    public suspend fun writeVbmetaFlags(
+        workspaceId: String,
+        newFlags: Int,
+        image: String = VBMETA,
+    ): Pair<BootFlagDiff, String> = runner.job(workspaceId, "Edit vbmeta flags") {
+        val old = readVbmetaFlags(this, image)
+        val out = "out/toolkit/${image.substringAfterLast('/')}"
+        sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs(image), abs(out))
+        val bytes = (0 until INT_BYTES).joinToString("") { i ->
+            "\\" + ((newFlags ushr (BITS_PER_BYTE * (INT_BYTES - 1 - i))) and BYTE_MASK).toString(
+                OCTAL,
+            ).padStart(3, '0')
+        }
+        sh("printf '$bytes' | dd of=\"$1\" bs=1 seek=$VBMETA_FLAGS_OFFSET conv=notrunc status=none", abs(out))
+        BootFlagDiff.compute(old, newFlags) to out
+    }
+
+    /** The signing plan for [partition]: the workspace AVB key and the image's partition size (FR-024). */
+    public suspend fun signingPlan(
+        workspaceId: String,
+        partition: String,
+        keyRef: String,
+        algorithm: String = DEFAULT_ALGORITHM,
+    ): SigningPlan = runner.read(workspaceId) {
+        if (!exists(keyRef)) {
+            throw RefusalException(Refusal("The AVB key is missing.", keyRef, "Set the AVB key in Build & Sign."))
+        }
+        val size = footerOf(this, sourceOf(this, partition))?.imageSize
+            ?: run("stat", "-c", "%s", abs(sourceOf(this, partition))).trim().toLong()
+        SigningPlan(partitionName = partition, algorithmName = algorithm, keyPath = keyRef, partitionSize = size)
+    }
+
+    private suspend fun saveOverride(job: WorkbenchRunner.Job, partition: String, image: String): SavedOverride = with(
+        job,
+    ) {
+        val target = KernelOverrides.path(partition)
+        if (exists(target)) backup(TOOL, target)
+        sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs(image), abs(target))
+        SavedOverride(partition, run("sha256sum", abs(target)).digestToken(), RamdiskCheckResult(ok = true))
+    }
+
+    private suspend fun sourceOf(job: WorkbenchRunner.Job, partition: String): String =
+        listOf(KernelOverrides.path(partition), "work/kernel/$partition.img", "firmware/extracted/$partition.img")
+            .firstOrNull { job.exists(it) }
+            ?: throw RefusalException(
+                Refusal(
+                    "No $partition.img in the workspace.",
+                    "$partition.img",
+                    "Run the build through Extract first.",
+                ),
+            )
+
+    private suspend fun footerOf(job: WorkbenchRunner.Job, image: String): AvbFooterInfo? {
+        val info = job.tryRun("avbtool", "info_image", "--image", job.abs(image))
+        if (info.exitCode != 0 || "Footer version" !in info.stdout) return null
+        fun field(name: String) = Regex(
+            """^\s*$name:\s*(.+)$""",
+            RegexOption.MULTILINE,
+        ).find(info.stdout)?.groupValues?.get(1)?.trim()
+        return AvbFooterInfo(
+            algorithmName = field("Algorithm").orEmpty(),
+            keyId = field("Public key \\(sha1\\)").orEmpty(),
+            partitionName = field("Partition Name").orEmpty(),
+            imageSize = field("Image size")?.substringBefore(' ')?.toLongOrNull() ?: 0L,
+            originalFooterSize = field("Original image size")?.substringBefore(' ')?.toLongOrNull() ?: 0L,
+        )
+    }
+
+    private suspend fun readVbmetaFlags(job: WorkbenchRunner.Job, image: String): Int {
+        if (!job.exists(image)) {
+            throw RefusalException(
+                Refusal("No vbmeta image in the workspace.", image, "Run the build through Extract first."),
+            )
+        }
+        val magic = job.run("xxd", "-p", "-l", "4", job.abs(image)).trim()
+        if (magic != AVB_MAGIC_HEX) {
+            throw RefusalException(Refusal("The file is not a vbmeta image.", image, "Pick the stock vbmeta.img."))
+        }
+        return job.run(
+            "xxd",
+            "-p",
+            "-s",
+            "$VBMETA_FLAGS_OFFSET",
+            "-l",
+            "$INT_BYTES",
+            job.abs(image),
+        ).trim().toLong(HEX).toInt()
+    }
+
+    private fun dir(partition: String): String = "workbench/boot/$partition"
+
+    public companion object {
+        public const val TOOL: String = "boot"
+        private const val KERNEL_IMAGE = "boot"
+
+        /** `sh -c KERNEL_SCRIPT sh <boot image> <unpack_bootimg>`: the lines [KernelFacts.parse] reads. */
+        private const val KERNEL_SCRIPT: String = """
+            set -e
+            img="$1"; u="$2"
+            t=$(mktemp -d)
+            trap 'rm -rf "${'$'}t"' EXIT
+            "${'$'}u" --boot_img "${'$'}img" --out "${'$'}t" >/dev/null
+            k="${'$'}t/kernel"
+            [ -s "${'$'}k" ] || { echo "nokernel"; exit 0; }
+            case $(xxd -p -l 4 "${'$'}k") in
+              1f8b*) gzip -dc "${'$'}k" > "${'$'}t/k" 2>/dev/null || true; k="${'$'}t/k" ;;
+              02214c18|04224d18) lz4 -dc "${'$'}k" > "${'$'}t/k"; k="${'$'}t/k" ;;
+            esac
+            echo "version $(grep -aoE 'Linux version [^ ]+' "${'$'}k" | head -n1 | cut -d' ' -f3)"
+            o=$(grep -abo IKCFG_ST "${'$'}k" | head -n1 | cut -d: -f1)
+            if [ -n "${'$'}o" ]; then
+              tail -c +$((o + 9)) "${'$'}k" | gzip -dc 2>/dev/null | grep -E '^CONFIG_(EROFS_FS|RD_|F2FS_FS|FS_VERITY|DM_VERITY)[A-Z0-9_]*=' || true
+            else
+              echo "noconfig"
+            fi
+        """
+        public const val VBMETA: String = "firmware/extracted/vbmeta.img"
+        public const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
+        private const val ARGS = "mkbootimg.args"
+        private const val STATE = "state.json"
+        private const val DTS = "dtb.dts"
+        private const val RAMDISK_DIR = "ramdisk"
+        private val RAMDISK_NAMES = listOf("ramdisk", "vendor_ramdisk00", "vendor_ramdisk")
+        private const val BOOT_MAGIC_HEX = "414e44524f494421" // ANDROID!
+        private const val VENDOR_BOOT_MAGIC_HEX = "564e4452424f4f54" // VNDRBOOT
+        private const val AVB_MAGIC_HEX = "41564230" // AVB0
+        private const val VBMETA_FLAGS_OFFSET = 120 // AvbVBMetaImageHeader.flags, big-endian uint32
+        private const val INT_BYTES = 4
+        private const val BITS_PER_BYTE = 8
+        private const val BYTE_MASK = 0xFF
+        private const val OCTAL = 8
+        private const val HEX = 16
+        private const val MIN_SUPERKEY = 8
+
+        /** KernelPatch 0.13.9's kpimg, matching the pinned kptools (`ToolGroupCatalog.KPTOOLS`). */
+        private const val KPIMG = "workbench/kernelpatch/0.13.9/kpimg-android"
+        private const val KPIMG_URL = "https://github.com/bmax121/KernelPatch/releases/download/0.13.9/kpimg-android"
+        private const val KPIMG_SHA256 = "eb2e3d16fe69410150efcf6f9425baf8cad9ac0c39f051fc8b40ce57c7143adb"
+        private val json = Json { ignoreUnknownKeys = true }
+
+        /** `unpack_bootimg --format info` lines (`key: value`) as header facts. */
+        public fun parseHeader(info: String): BootHeaderFacts {
+            val fields = info.lines().mapNotNull { line ->
+                line.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim().lowercase() to it[1].trim() }
+            }.toMap()
+            fun long(vararg keys: String) = keys.firstNotNullOfOrNull {
+                fields[it]?.substringBefore(
+                    ' ',
+                )?.toLongOrNull()
+            } ?: 0L
+            return BootHeaderFacts(
+                headerVersion = long(
+                    "boot image header version",
+                    "header version",
+                    "vendor boot image header version",
+                ).toInt(),
+                osVersion = fields["os version"].orEmpty(),
+                osPatchLevel = fields["os patch level"].orEmpty(),
+                pageSize = long("page size").toInt().takeIf { it > 0 } ?: BootHeaderFacts().pageSize,
+                cmdline = fields["command line args"] ?: fields["vendor command line args"].orEmpty(),
+                kernelSize = long("kernel_size", "kernel size"),
+                ramdiskSize = long("ramdisk size", "vendor ramdisk total size"),
+                dtbSize = long("dtb size"),
+                recoveryDtboSize = long("recovery dtbo size"),
+            )
+        }
+
+        /** kptools' listing of [kernel]'s KernelPatch parts, or null when it has none. */
+        private suspend fun kpatchInfo(job: WorkbenchRunner.Job, kernel: String): String? =
+            job.tryRun("kptools", "-l", "-i", job.abs(kernel)).takeIf { it.exitCode == 0 }?.stdout
+
+        private fun entries(paths: List<String>): List<RamdiskEntry> =
+            paths.map { it.trim().removePrefix("./") }.filter { it.isNotEmpty() && it != "." }
+                .map { RamdiskEntry(path = it, sizeBytes = 0L, isDirectory = false) }
+
+        private fun lineChanges(old: String, new: String): List<String> {
+            val a = old.lines()
+            val b = new.lines()
+            return (0 until maxOf(a.size, b.size)).mapNotNull { i ->
+                val was = a.getOrNull(i)
+                val now = b.getOrNull(i)
+                when {
+                    was == now -> null
+                    was == null -> "Line ${i + 1}: + $now"
+                    now == null -> "Line ${i + 1}: - $was"
+                    else -> "Line ${i + 1}: - $was | + $now"
+                }
+            }
+        }
+    }
+}
+
+/** How the unpacked image was laid out, kept in `workbench/boot/<p>/state.json` for the repack. */
+@Serializable
+private data class BootState(
+    val source: String,
+    val ramdisk: String?,
+    val compression: RamdiskCompression?,
+    val footerImageSize: Long?,
+)
+
+/** A ramdisk's compression, from its first bytes; the scripts take the input as `$1` and the output as `$2`. */
+@Serializable
+public enum class RamdiskCompression(public val decompress: String, public val compress: String) {
+    GZIP("gzip -dc \"$1\" > \"$2\"", "gzip -9nc \"$1\" > \"$2\""),
+    LZ4_LEGACY("lz4 -dc \"$1\" > \"$2\"", "lz4 -l -12 --favor-decSpeed -c \"$1\" > \"$2\""),
+    LZ4_FRAME("lz4 -dc \"$1\" > \"$2\"", "lz4 -12 -c \"$1\" > \"$2\""),
+    XZ("xz -dc \"$1\" > \"$2\"", "xz --check=crc32 -c \"$1\" > \"$2\""),
+    NONE("cp -f \"$1\" \"$2\"", "cp -f \"$1\" \"$2\""),
+    ;
+
+    public companion object {
+        public fun of(head: ByteArray): RamdiskCompression {
+            fun starts(vararg b: Int) = head.size >= b.size && b.indices.all { head[it] == b[it].toByte() }
+            return when {
+                starts(0x1f, 0x8b) -> GZIP
+                starts(0x02, 0x21, 0x4c, 0x18) -> LZ4_LEGACY
+                starts(0x04, 0x22, 0x4d, 0x18) -> LZ4_FRAME
+                starts(0xfd, 0x37, 0x7a, 0x58, 0x5a) -> XZ
+                else -> NONE
+            }
+        }
+    }
+}

@@ -107,16 +107,20 @@ private fun resolveRestorationOrFallback(
         presentation == null || !presentation.hasOpened -> {
             StudioEntry.Overview(StudioEntryReason.NEW_WORKSPACE)
         }
+
         presentation.inOverview -> {
             StudioEntry.Overview(StudioEntryReason.RESTORED)
         }
+
         // No editor was ever opened in this workspace: restoring genuinely means the overview.
         presentation.editorStageId == null -> {
             StudioEntry.Overview(StudioEntryReason.RESTORED)
         }
+
         storedStage == null -> {
             StudioEntry.Overview(StudioEntryReason.STAGE_NOT_FOUND)
         }
+
         else -> {
             val storedSubobject = storedStage.subobjects.firstOrNull { it.id.value == presentation.editorObjectId }
             if (storedSubobject != null) {
@@ -188,6 +192,8 @@ public enum class WorkspaceSection {
     RunHistory,
     Artifacts,
     TargetProfile,
+    RestorePoints,
+    Storage,
 }
 
 @Immutable

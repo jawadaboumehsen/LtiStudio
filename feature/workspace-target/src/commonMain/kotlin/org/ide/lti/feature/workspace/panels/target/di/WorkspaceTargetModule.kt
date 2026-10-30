@@ -32,6 +32,7 @@ public val workspaceTargetModule: Module = module {
             snapshotRepository = get(),
             observeRunUseCase = getOrNull(),
             targetRepository = getOrNull(),
+            firmwareCheck = getOrNull(),
         )
     }
 }

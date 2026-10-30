@@ -22,6 +22,8 @@ import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
 import org.ide.lti.core.domain.pipeline.text.DynamicPartitionsOpListWriter
 import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
 import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.MetadataPolicy
@@ -46,7 +48,9 @@ public class BuildFlashableZipStage : StageDefinition {
     override val id: StageId = StageId.BUILD_FLASHABLE_ZIP
 
     override val requiredToolIds: Set<String> = setOf(
-        "mkfs.erofs", "avbtool", "lpmake", "img2sdat", "brotli", "zip", "unzip", "signapk",
+        "mkfs.erofs", "fsck.erofs", "avbtool", "lpmake", "img2sdat", "brotli", "zip", "unzip", "signapk", "erofsfuse",
+        "fusermount3",
+        "find", "getfattr",
         "sha256sum", "sha1sum", "stat", "cp", "rm", "mkdir", "cat",
     )
 
@@ -66,18 +70,36 @@ public class BuildFlashableZipStage : StageDefinition {
         if (!ctx.snapshot.build.signing.signPackage) listOf("out/package/UNSIGNED") else emptyList()
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
-        if (!ctx.snapshot.build.filesystem.equals("erofs", ignoreCase = true)) {
-            return listOf(
+        val coverage = PipelineStep.Host(
+            label = "check coverage",
+            resultKey = COVERAGE_RESULT_KEY,
+            request = CoverageCheckRequest(ctx.target.dynamicPartitions),
+        )
+        val refusal = BuildChecks.coverageRefusal(ctx)
+        val unsupported = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
+            .filterValues { it !in BuildFilesystems.SUPPORTED }
+        return when {
+            unsupported.isNotEmpty() -> listOf(
                 PipelineStep.Check("verify filesystem") {
-                    "UNSUPPORTED_FILESYSTEM: Filesystem '${ctx.snapshot.build.filesystem}' is not supported; " +
-                        "only 'erofs' is supported"
+                    "UNSUPPORTED_FILESYSTEM: ${unsupported.entries.joinToString {
+                        "${it.key} as ${it.value}"
+                    }} cannot " +
+                        "be built; choose ${BuildFilesystems.SUPPORTED.joinToString(" or ")}"
                 },
             )
-        }
 
+            refusal != null -> listOf(coverage, refusal)
+
+            else -> buildSteps(ctx, coverage)
+        }
+    }
+
+    private fun buildSteps(ctx: StageContext, coverage: PipelineStep): List<PipelineStep> {
+        val steps = mutableListOf(coverage)
+        steps += BuildChecks.linkSteps(ctx)
+        steps += BuildChecks.mountTableSteps(ctx)
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
-        val steps = mutableListOf<PipelineStep>()
         steps += PipelineStep.Tool(
             stepCommand(
                 "mkdir",
@@ -123,34 +145,25 @@ public class BuildFlashableZipStage : StageDefinition {
             ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
             steps += generatedMembers(ctx)
             steps += packageSteps(ctx)
+            steps += BuildChecks.extraPackageSteps(ctx)
         }
         return steps
     }
 
     private fun imageSteps(ctx: StageContext, p: String): List<PipelineStep> {
+        val steps = mutableListOf<PipelineStep>()
+        val built = when (BuildFilesystems.of(ctx.snapshot.build, p)) {
+            BuildFilesystems.EXT4 -> FilesystemImageSteps.ext4(ctx, p, steps)
+            BuildFilesystems.F2FS -> FilesystemImageSteps.f2fs(ctx, p, steps)
+            else -> {
+                steps += erofsSteps(ctx, p)
+                true
+            }
+        }
+        if (!built) return steps
         val ws = ctx.wsPath
         val img = ctx.abs("out/images/$p.img")
-        val steps = mutableListOf<PipelineStep>()
-        val compressionArg = if (ctx.snapshot.build.level != null) {
-            "${ctx.snapshot.build.compression.substringBefore(',')},${ctx.snapshot.build.level}"
-        } else {
-            ctx.snapshot.build.compression
-        }
-        steps += PipelineStep.Tool(
-            stepCommand(
-                "mkfs.erofs",
-                listOf(
-                    "--quiet", "-z", compressionArg, "-b", ctx.snapshot.build.blockSize.toString(),
-                    "--mount-point", if (p == "system") "/" else p,
-                    "--fs-config-file", ctx.abs("work/configs/fs_config-$p"),
-                    "--file-contexts", ctx.abs("work/configs/file_context-$p"),
-                    "-T", EROFS_TIMESTAMP,
-                    img, ctx.abs("work/$p"),
-                ),
-                ws,
-            ),
-            "mkfs.erofs $p",
-        )
+        steps += BuildChecks.verifySteps(ctx, p)
         steps += PipelineStep.Tool(
             stepCommand("sha256sum", listOf(img), ws),
             "sha256 $p",
@@ -167,6 +180,36 @@ public class BuildFlashableZipStage : StageDefinition {
             steps += PipelineStep.AvbSizeSearch(imageSize, RuntimeKeys.partitionSize(p), "avb size search $p")
             ctx.longValue(RuntimeKeys.partitionSize(p))?.let { steps += footerSteps(ctx, p, salt, it) }
         }
+        return steps
+    }
+
+    private fun erofsSteps(ctx: StageContext, p: String): List<PipelineStep> {
+        val ws = ctx.wsPath
+        val img = ctx.abs("out/images/$p.img")
+        val steps = mutableListOf<PipelineStep>()
+        val compressionArg = ctx.snapshot.build.partitionCompression[p] ?: if (ctx.snapshot.build.level != null) {
+            "${ctx.snapshot.build.compression.substringBefore(',')},${ctx.snapshot.build.level}"
+        } else {
+            ctx.snapshot.build.compression
+        }
+        val compressionArgs = if (compressionArg == NO_COMPRESSION) emptyList() else listOf("-z", compressionArg)
+        steps += PipelineStep.Tool(
+            stepCommand(
+                "mkfs.erofs",
+                listOf("--quiet") + compressionArgs + listOf(
+                    "-b", ctx.snapshot.build.blockSize.toString(),
+                    "--mount-point", if (p == "system") "/" else p,
+                    "--fs-config-file", ctx.abs("work/configs/fs_config-$p"),
+                    "--file-contexts", ctx.abs("work/configs/file_context-$p"),
+                    "-T", EROFS_TIMESTAMP,
+                    img, ctx.abs("work/$p"),
+                ),
+                ws,
+            ),
+            "mkfs.erofs $p",
+        )
+        // The filesystem's own consistency check: a corrupt image is caught here, not at the next boot.
+        steps += PipelineStep.Tool(stepCommand("fsck.erofs", listOf(img), ws), "fsck.erofs $p")
         return steps
     }
 
@@ -406,8 +449,10 @@ public class BuildFlashableZipStage : StageDefinition {
                     updates != ctx.target.dynamicPartitions.size ->
                         "updater-script has $updates block_image_update calls, " +
                             "expected ${ctx.target.dynamicPartitions.size}"
+
                     ctx.target.packagePolicy.excludeVbmeta && rawScript.contains("vbmeta") ->
                         "updater-script must not reference vbmeta"
+
                     else -> null
                 }
             },
@@ -552,10 +597,13 @@ public class BuildFlashableZipStage : StageDefinition {
 
     public companion object {
         public const val STAGE_DIR: String = "out/package/.stage"
+        public const val COVERAGE_RESULT_KEY: String = RuntimeKeys.BUILD_COVERAGE
         public const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
         public const val PACKAGE_BUILD_PROP: String = "package.build.prop"
         public const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
         private const val EROFS_TIMESTAMP = "1640995200"
+        private const val NO_COMPRESSION = "none"
+        public const val EXTRA_DIR: String = "out/extra"
         private const val BLOCK = 4096L
         private val REQUIRED_MEMBERS = listOf(
             "META-INF/com/android/otacert",
@@ -569,6 +617,14 @@ public class BuildFlashableZipStage : StageDefinition {
         )
 
         public fun footeredSize(p: String): String = "image.$p.footeredSize"
+
+        public fun ext4MeasureKey(p: String): String = "image.$p.ext4.measure"
+
+        public fun ext4TrialKey(p: String): String = "image.$p.ext4.trial"
+
+        public fun f2fsPrepareKey(p: String): String = "image.$p.f2fs.prepare"
+
+        public fun f2fsTrialKey(p: String): String = "image.$p.f2fs.trial"
         public fun stagedBootSize(b: String): String = "package.boot.$b.size"
 
         public fun zipName(ctx: StageContext): String {

@@ -26,6 +26,9 @@ import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
+import org.ide.lti.core.domain.workbench.FirmwareFact
+import org.ide.lti.core.domain.workbench.FirmwareFacts
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
@@ -47,7 +50,15 @@ data class WorkspaceDeviceUiState(
     val templates: List<TargetDevice> = emptyList(),
     /** Bumped whenever the draft is replaced from outside (load, discard, save) so text fields resync. */
     val resetCount: Int = 0,
+    /** What the workspace's extracted firmware says, once checked; compared with [draft] as it is edited. */
+    val firmware: FirmwareFacts? = null,
+    val firmwareChecking: Boolean = false,
+    val firmwareError: String? = null,
 ) {
+    /** [draft] next to the firmware's facts (empty before a check). */
+    val firmwareFacts: List<FirmwareFact>
+        get() = draft?.let { d -> firmware?.let { DeviceFirmwareCheck.compare(d, it) } }.orEmpty()
+
     val isDirty: Boolean get() = draft != null && draft != saved
 
     val canSave: Boolean get() = isDirty && !locked && !isSaving
@@ -71,6 +82,7 @@ class WorkspaceDeviceViewModel(
     private val snapshotRepository: SnapshotRepository,
     private val observeRunUseCase: ObserveRunUseCase? = null,
     private val targetRepository: TargetRepository? = null,
+    private val firmwareCheck: DeviceFirmwareCheck? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WorkspaceDeviceUiState())
     val uiState: StateFlow<WorkspaceDeviceUiState> = _uiState.asStateFlow()
@@ -176,6 +188,31 @@ class WorkspaceDeviceViewModel(
                 )
             }
         }
+    }
+
+    /** Reads the extracted firmware's own facts (build.prop, boot image footers, super table) to compare with. */
+    fun checkFirmware() {
+        val check = firmwareCheck
+        val state = _uiState.value
+        val workspaceId = state.workspaceId
+        val device = state.draft
+        if (check == null || workspaceId == null || device == null) return
+        _uiState.update { it.copy(firmwareChecking = true, firmwareError = null) }
+        viewModelScope.launch {
+            val read = runCatching { check.read(workspaceId, device.bootPartitions) }
+            _uiState.update {
+                it.copy(
+                    firmware = read.getOrNull() ?: it.firmware,
+                    firmwareChecking = false,
+                    firmwareError = read.exceptionOrNull()?.let { e -> e.message ?: "The firmware could not be read" },
+                )
+            }
+        }
+    }
+
+    /** Puts [fact]'s firmware value into the draft; saving keeps it. */
+    fun useFirmwareValue(fact: FirmwareFact) {
+        update { DeviceFirmwareCheck.apply(it, fact) }
     }
 
     fun discard() {

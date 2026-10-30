@@ -30,12 +30,18 @@ public class AssembleStageEditor : StageEditor {
         val viewModel: AssembleViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
         val device by viewModel.device.collectAsState()
+        val imageState by viewModel.imagePane.state.collectAsState()
+        val bootState by viewModel.bootPane.state.collectAsState()
 
         AssembleEditor(
             settings = settings,
             target = device ?: viewModel.targetDevice,
             onChange = { viewModel.updateSettings(it) },
             selectedObjectId = context.selectedObjectId?.value ?: "work-trees",
+            imageState = imageState,
+            imageActions = viewModel.imagePane.actions,
+            bootState = bootState,
+            bootActions = viewModel.bootPane.actions,
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
             modifier = modifier,

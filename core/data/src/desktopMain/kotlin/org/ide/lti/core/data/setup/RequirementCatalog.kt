@@ -123,6 +123,57 @@ public object RequirementCatalog {
                 aptPackages = listOf("brotli"),
                 neededBy = Need.BUILD,
             ),
+            // BUILD: firmware containers (lz4/zstd single files, Odin *.img.lz4) and boot images (ramdisk, dtb).
+            SystemRequirement(
+                id = "lz4",
+                check = RequirementCheck.Command("lz4"),
+                aptPackages = listOf("lz4"),
+                neededBy = Need.BUILD,
+            ),
+            SystemRequirement(
+                id = "zstd",
+                check = RequirementCheck.Command("zstd"),
+                aptPackages = listOf("zstd"),
+                neededBy = Need.BUILD,
+            ),
+            SystemRequirement(
+                id = "cpio",
+                check = RequirementCheck.Command("cpio"),
+                aptPackages = listOf("cpio"),
+                neededBy = Need.BUILD,
+            ),
+            SystemRequirement(
+                id = "dtc",
+                check = RequirementCheck.Command("dtc"),
+                aptPackages = listOf("device-tree-compiler"),
+                neededBy = Need.BUILD,
+            ),
+            // An F2FS image is read back by dump.f2fs into a folder; fakeroot keeps the owners and labels it sets.
+            SystemRequirement(
+                id = "fakeroot",
+                check = RequirementCheck.Command("fakeroot"),
+                aptPackages = listOf("fakeroot"),
+                neededBy = Need.BUILD,
+            ),
+            // f2fs-tools comes from git without a generated configure: ./autogen.sh needs autoconf, automake, libtool.
+            SystemRequirement(
+                id = "autoconf",
+                check = RequirementCheck.Command("autoreconf"),
+                aptPackages = listOf("autoconf"),
+                neededBy = Need.BUILD,
+            ),
+            SystemRequirement(
+                id = "automake",
+                check = RequirementCheck.Command("automake"),
+                aptPackages = listOf("automake"),
+                neededBy = Need.BUILD,
+            ),
+            SystemRequirement(
+                id = "libtool",
+                check = RequirementCheck.Package("libtool"),
+                aptPackages = listOf("libtool"),
+                neededBy = Need.BUILD,
+            ),
             // RUNTIME: Filesystem & Kernel Tools
             SystemRequirement(
                 id = "fuse3",
@@ -194,12 +245,21 @@ public object RequirementCatalog {
 
     public val APPROVED_APT_PACKAGES: Map<String, List<String>> =
         mapOf(
-            "host_compilers" to listOf("build-essential", "cmake", "make", "clang"),
+            "host_compilers" to listOf("build-essential", "cmake", "make", "clang", "autoconf", "automake", "libtool"),
             "host_libraries" to HOST_LIBRARY_PACKAGES,
             "python_crypto" to listOf("python3", "python3-cryptography", "python3-pyasn1"),
             "jdk_dual" to listOf("openjdk-17-jdk", "openjdk-21-jdk"),
             "selinux_attr" to listOf("attr"),
-            "archive_tools" to listOf("zip", "unzip", "brotli"),
+            "archive_tools" to listOf(
+                "zip",
+                "unzip",
+                "brotli",
+                "lz4",
+                "zstd",
+                "cpio",
+                "device-tree-compiler",
+                "fakeroot",
+            ),
             "transfer_tools" to listOf("curl", "git", "rsync", "tar", "file", "xxd"),
             "dev_fuse" to listOf("fuse3", "libfuse3-dev"),
             "openssl_tools" to listOf("openssl"),

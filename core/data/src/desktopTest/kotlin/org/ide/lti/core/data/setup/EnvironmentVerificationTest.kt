@@ -128,7 +128,7 @@ class EnvironmentVerificationTest {
                     val tools =
                         listOf(
                             "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
-                            "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
+                            "erofsfuse", "mkfs.erofs", "fsck.erofs", "avbtool", "unpack_bootimg",
                             "img2sdat", "signapk", "adb", "fastboot", "mke2fs", "dump.erofs",
                         )
                     val listing =
@@ -567,6 +567,7 @@ class EnvironmentVerificationTest {
                 projectTool("simg2img"),
                 projectTool("erofsfuse"),
                 projectTool("mkfs.erofs"),
+                projectTool("fsck.erofs"),
                 projectTool("avbtool"),
                 projectTool("unpack_bootimg"),
                 projectTool("img2sdat"),
@@ -685,6 +686,7 @@ class EnvironmentVerificationTest {
                 projectTool("simg2img"),
                 projectTool("erofsfuse"),
                 projectTool("mkfs.erofs"),
+                projectTool("fsck.erofs"),
                 projectTool("avbtool"),
                 projectTool("unpack_bootimg"),
                 projectTool("img2sdat"),

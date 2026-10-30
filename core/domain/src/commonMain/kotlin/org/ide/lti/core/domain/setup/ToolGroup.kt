@@ -79,7 +79,10 @@ data class ToolOutput(
     val mode: String = "exec",
     val aliasOf: String? = null,
     val requiredFor: List<String> = emptyList(),
-)
+    val licence: String? = null,
+) {
+    val license: String? get() = licence
+}
 
 /**
  * Cohesive group of tools built from a single repository or downloaded release archive.

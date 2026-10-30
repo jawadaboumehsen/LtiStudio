@@ -42,6 +42,8 @@ public class ExtractStageEditor : StageEditor {
             facts = facts,
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
+            onReplace = viewModel::replacePartition,
+            onUseStock = viewModel::useStockImage,
             modifier = modifier,
         )
     }

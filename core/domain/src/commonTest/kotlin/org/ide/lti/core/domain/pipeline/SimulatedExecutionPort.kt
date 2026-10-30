@@ -141,34 +141,49 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         val args = cmd.args
         return when (cmd.toolId) {
             "curl" -> "".also { files[args[args.indexOf("-o") + 1]] = ByteArray(1_000_000) }
+
             "mv" -> "".also { files.remove(args[0])?.let { files[args[1]] = it } }
+
             "cp" -> "".also { copy(args) }
+
             "mkdir", "rm", "rsync", "find", "unzip", "payload-dumper-go", "lpunpack", "erofsfuse", "fusermount3",
             "truncate", "simg2img", "lpmake", "brotli", "zip", "unpack_bootimg", "chmod",
             -> defaultProduce(cmd)
+
             "file" -> "application/zip"
+
             "sha256sum" -> {
                 val path = args.last()
                 val digest = archiveSha256?.takeIf { "/firmware/downloaded/" in path } ?: fakeDigest(path, 64)
                 "$digest  $path"
             }
+
             "sha1sum" -> "${fakeDigest(args.last(), 40)}  ${args.last()}"
+
             "stat" -> {
                 val name = args.last().substringAfterLast('/').removeSuffix(".img")
                 if (name in BOOT) bootBytes(name).toString() else (files[args.last()]?.size ?: 0).toString()
             }
+
             "cat" -> files[args.last()]?.decodeToString() ?: ""
-            "xxd" -> "3aff26ed"
+
+            "xxd" -> if (args.last().endsWith(".zip")) "504b0304" else "3aff26ed"
+
             "getfattr" -> getfattrDump(args.last())
+
             "mkfs.erofs" -> "".also { files[args[args.size - 2]] = ByteArray(IMAGE_BYTES) }
+
             "img2sdat" ->
                 "".also {
                     val name = args.last().substringAfterLast('/').removeSuffix(".img")
                     files["${args[1]}/$name.new.dat"] = ByteArray(10)
                     files["${args[1]}/$name.transfer.list"] = ByteArray(5)
                 }
+
             "signapk" -> "".also { files[args.last()] = ByteArray(ZIP_BYTES) }
+
             "avbtool" -> avbtool(args)
+
             else -> ""
         }
     }
@@ -177,9 +192,11 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         val args = cmd.args
         when (cmd.toolId) {
             "find" -> if ("stat" in args) return statDump(args[0])
+
             "unzip" ->
                 when {
                     args[0] == "-l" -> return zipListing()
+
                     args[0] == "-o" && args.size == 4 -> { // raw archive extracted into a directory
                         val dir = args.last()
                         BOOT.forEach { files["$dir/$it.img"] = ByteArray(1024) }
@@ -187,13 +204,18 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
                         files["$dir/super.raw.img"] = ByteArray(IMAGE_BYTES * 2)
                     }
                 }
+
             "payload-dumper-go" ->
                 DYNAMIC.forEach { files["${args[1]}/$it.img"] = ByteArray(IMAGE_BYTES) }.also {
                     BOOT.forEach { files["${args[1]}/$it.img"] = ByteArray(1024) }
                 }
+
             "lpmake" -> files[args.last()] = ByteArray(65536)
+
             "lpunpack" -> DYNAMIC.forEach { files["${args.last()}/${it}_a.img"] = ByteArray(IMAGE_BYTES) }
+
             "brotli" -> files[args[2].removePrefix("--output=")] = ByteArray(8)
+
             "zip" -> files["${cmd.workingDir}/rom.zip"] = ByteArray(ZIP_BYTES)
         }
         return ""
@@ -217,18 +239,20 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
                 files[image] = ByteArray(args[args.indexOf("--partition_size") + 1].toInt())
                 ""
             }
+
         "info_image" -> {
             val image = args[args.indexOf("--image") + 1]
             val name = image.substringAfterLast('/').removeSuffix(".img")
             "Footer version: 1.0\nImage size: ${files[image]?.size ?: 0} bytes\n" +
                 "Partition Name: $name\nHash Algorithm: sha256\nAlgorithm: SHA256_RSA4096\n"
         }
+
         else -> ""
     }
 
     /** The system image is system-as-root (its files live under `system/`), like the real device's. */
     private fun mountedFiles(mnt: String): List<String> {
-        val base = if (mnt.endsWith("/system_mnt")) "$mnt/system" else mnt
+        val base = if (mnt.endsWith("/system_mnt") || mnt.endsWith("/verify/system")) "$mnt/system" else mnt
         return listOfNotNull(mnt, base.takeIf { it != mnt }, "$base/build.prop", "$base/bin/run-as")
     }
 
@@ -240,10 +264,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         }
     }
 
-    private fun getfattrDump(mnt: String): String =
-        mountedFiles(mnt).joinToString("\n") {
-            "# file: $it\nsecurity.selinux=\"u:object_r:system_file:s0\"\n"
-        }
+    private fun getfattrDump(mnt: String): String = mountedFiles(mnt).joinToString("\n") {
+        "# file: $it\nsecurity.selinux=\"u:object_r:system_file:s0\"\n"
+    }
 
     private fun zipListing(): String = buildString {
         appendLine("Archive: rom.zip")
@@ -251,9 +274,14 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         val members =
             DYNAMIC.flatMap { listOf("$it.new.dat.br", "$it.transfer.list") } + BOOT.map { "$it.img" } +
                 listOf(
-                    "META-INF/com/android/otacert", "META-INF/com/android/metadata",
-                    "META-INF/com/google/android/update-binary", "META-INF/com/google/android/updater-script",
-                    "dynamic_partitions_op_list", "unsparse_super_empty.img", "build_info.txt", "changelog.md",
+                    "META-INF/com/android/otacert",
+                    "META-INF/com/android/metadata",
+                    "META-INF/com/google/android/update-binary",
+                    "META-INF/com/google/android/updater-script",
+                    "dynamic_partitions_op_list",
+                    "unsparse_super_empty.img",
+                    "build_info.txt",
+                    "changelog.md",
                 )
         members.forEach { appendLine("     1000  2026-09-11 12:00   $it") }
     }
@@ -291,4 +319,17 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
 class FakeVendoredFiles(private val present: Boolean = true) : VendoredFilePort {
     override fun load(resourceId: String): VendoredFile? =
         if (present) VendoredFile("ELF-updater".encodeToByteArray(), "pinned") else null
+}
+
+/**
+ * The app's host steps as far as the simulated pipeline needs them: the work tree it assembles is covered by its
+ * sidecars, so the Build stage's coverage check answers clean.
+ */
+internal val CoveredWorkTree = HostStepPort { _, request ->
+    check(
+        request is org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest,
+    ) { "unexpected host request $request" }
+    org.ide.lti.core.domain.pipeline.toolkit.CoverageResult.encode(
+        org.ide.lti.core.domain.pipeline.toolkit.CoverageResult(),
+    )
 }

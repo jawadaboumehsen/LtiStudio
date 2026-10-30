@@ -88,6 +88,7 @@ internal class FakeRemoteTransport(
             projectTool("simg2img"),
             projectTool("erofsfuse"),
             projectTool("mkfs.erofs"),
+            projectTool("fsck.erofs"),
             projectTool("avbtool"),
             projectTool("unpack_bootimg"),
             projectTool("img2sdat"),
@@ -117,7 +118,7 @@ internal class FakeRemoteTransport(
                 val output =
                     listOf(
                         "payload-dumper-go", "lpunpack", "lpmake", "simg2img",
-                        "erofsfuse", "mkfs.erofs", "avbtool", "unpack_bootimg",
+                        "erofsfuse", "mkfs.erofs", "fsck.erofs", "avbtool", "unpack_bootimg",
                         "img2sdat", "signapk", "adb", "fastboot",
                     ).let(::fakeBinListing)
                 ToolExecutionResponse(0, output, "", 10L)

@@ -40,7 +40,7 @@ class PatchStageEditorTest {
         val editor = PatchStageEditor()
         assertEquals(StageId.MODULE_APPLICATION, editor.stageId)
         assertEquals(CanonicalStageDescriptors.PATCH, editor.descriptor)
-        assertEquals(6, editor.descriptor.subobjects.size)
+        assertEquals(13, editor.descriptor.subobjects.size)
         assertNotNull(editor.descriptor.subobject(CanonicalStageDescriptors.PATCH.subobjects.first().id))
     }
 

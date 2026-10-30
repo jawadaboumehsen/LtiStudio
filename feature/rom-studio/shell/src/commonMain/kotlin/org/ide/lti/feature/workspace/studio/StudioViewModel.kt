@@ -29,9 +29,13 @@ import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.pipeline.stages.DebloatStage
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.pipeline.toolkit.RestoreIndex
 import org.ide.lti.core.domain.ports.StudioPresentationStorePort
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.workbench.RestoreWorkbench
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.BuildRun
@@ -87,6 +91,8 @@ public data class StudioUiState(
     val snapshot: ConfigurationSnapshot? = null,
     /** The workspace's build runs, newest first. */
     val runs: List<BuildRun> = emptyList(),
+    val restoreIndex: RestoreIndex = RestoreIndex.Empty,
+    val restoreMessage: String? = null,
 )
 
 /**
@@ -109,6 +115,7 @@ public class StudioViewModel(
     private val workspaceDeviceRepository: WorkspaceDeviceRepository? = null,
     private val settingsStore: WorkspaceSettingsStore? = null,
     private val observeRuns: ObserveRunUseCase? = null,
+    private val restore: RestoreWorkbench? = null,
 ) : ViewModel() {
 
     /** The workspace's own device configuration, when known; shown by the overview instead of an id. */
@@ -432,6 +439,51 @@ public class StudioViewModel(
                 globalDestination = GlobalDestination.Workspace,
                 selectedWorkspaceSection = section,
             )
+        }
+        if (section == WorkspaceSection.RestorePoints) {
+            refreshRestorePoints()
+        }
+    }
+
+    public fun setRestoreIndex(index: RestoreIndex) {
+        _uiState.update { it.copy(restoreIndex = index) }
+    }
+
+    /** Reads the workspace's one restore index; a point whose backup was deleted shows as such (FR-038). */
+    public fun refreshRestorePoints() {
+        val workbench = restore ?: return
+        val workspaceId = _uiState.value.workspaceId
+        if (workspaceId.isBlank()) return
+        viewModelScope.launch {
+            val index = runCatching { workbench.list(workspaceId) }.getOrDefault(RestoreIndex.Empty)
+            _uiState.update { it.copy(restoreIndex = index, restoreMessage = null) }
+        }
+    }
+
+    /**
+     * Copies [pointId]'s backup back. A debloat point is also un-picked, so the next build keeps the app (the
+     * build re-assembles work/ from the firmware and Debloat would otherwise remove it again).
+     */
+    public fun restorePoint(pointId: String) {
+        val workbench = restore ?: return
+        val workspaceId = _uiState.value.workspaceId
+        viewModelScope.launch {
+            val message = try {
+                val point = workbench.restore(workspaceId, pointId)
+                if (point.tool == DebloatStage.TOOL) {
+                    val selector = point.id.removePrefix("${DebloatStage.TOOL}:")
+                    settingsStore?.update(workspaceId) { snap ->
+                        snap.copy(
+                            debloat = snap.debloat.copy(removeSelectors = snap.debloat.removeSelectors - selector),
+                        )
+                    }
+                }
+                "Restored ${point.itemPath}"
+            } catch (e: RefusalException) {
+                "${e.refusal.cause} ${e.refusal.nextStep}"
+            }
+            val index = runCatching { workbench.list(workspaceId) }.getOrDefault(_uiState.value.restoreIndex)
+            _uiState.update { it.copy(restoreIndex = index, restoreMessage = message) }
         }
     }
 

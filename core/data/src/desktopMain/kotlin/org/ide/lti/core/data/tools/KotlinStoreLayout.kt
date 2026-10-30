@@ -93,14 +93,18 @@ public object KotlinStoreLayout {
             is ResolvedSource.Git -> {
                 when (val ref = source.ref) {
                     is ToolRef.Tag -> sanitizeId(ref.name)
+
                     is ToolRef.Branch -> {
                         val shortCommit = source.commit.take(7)
                         sanitizeId("${ref.name}-$shortCommit")
                     }
+
                     is ToolRef.Commit -> sanitizeId(source.commit.take(7))
+
                     is ToolRef.ReleaseVersion -> sanitizeId(ref.version)
                 }
             }
+
             is ResolvedSource.Release -> sanitizeId(source.version)
         }
 
@@ -121,6 +125,7 @@ public object KotlinStoreLayout {
                 ref = refPayload,
             )
         }
+
         is ResolvedSource.Release ->
             SourceData(
                 kind = "release",
@@ -163,9 +168,11 @@ public object KotlinStoreLayout {
             "git" ->
                 repo == other.repo && commit == other.commit && submodules == other.submodules &&
                     (ref == null || other.ref == null || ref == other.ref)
+
             "release" ->
                 version == other.version && url == other.url && sha256 == other.sha256 &&
                     member == other.member
+
             else -> this == other
         }
     }
@@ -190,10 +197,15 @@ public object KotlinStoreLayout {
                                 "commit" -> ToolRef.Commit(source.ref.name)
                                 else -> ToolRef.Commit(source.commit.orEmpty())
                             }
+
                         catGit != null && catGit.pinnedCommit == source.commit -> catGit.pinnedRef
+
                         label.isNotBlank() && id == sanitizeId(label) -> ToolRef.Tag(label)
+
                         label.isNotBlank() && label.contains("-") -> ToolRef.Branch(label.substringBeforeLast("-"))
+
                         id.contains("-") -> ToolRef.Branch(id.substringBeforeLast("-"))
+
                         else -> ToolRef.Commit(source.commit.orEmpty())
                     }
                 ResolvedSource.Git(
@@ -218,6 +230,7 @@ public object KotlinStoreLayout {
     public fun RecipeConfig.typeName(): String = when (this) {
         is RecipeConfig.AndroidTools -> "android_tools"
         is RecipeConfig.CMake -> "cmake"
+        is RecipeConfig.Autotools -> "autotools"
         is RecipeConfig.GradleJar -> "gradle_jar"
         is RecipeConfig.ScriptCopy -> "script_copy"
         is RecipeConfig.Release -> "release"

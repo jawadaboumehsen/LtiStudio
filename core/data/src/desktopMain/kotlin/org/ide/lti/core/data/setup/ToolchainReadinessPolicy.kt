@@ -60,7 +60,7 @@ public object ToolchainReadinessPolicy {
     public val REQUIRED_HOST_PACKAGES: Set<String> =
         setOf(
             "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
-            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java",
+            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "touch", "java",
         )
 
     /**

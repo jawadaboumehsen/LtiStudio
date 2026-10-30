@@ -10,8 +10,11 @@
 package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.model.target.MetadataPolicy
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -33,6 +36,7 @@ class BuildFlashableZipStageTest {
             BuildFlashableZipStage.PACKAGE_BUILD_PROP to SimulatedExecutionPort.STOCK_BUILD_PROP,
             RuntimeKeys.ZIP_SHA256 to "zipsha256  rom.zip",
             RuntimeKeys.ZIP_SIZE to "1000000",
+            BuildFlashableZipStage.COVERAGE_RESULT_KEY to CoverageResult.encode(CoverageResult()),
         )
         base.target.dynamicPartitions.forEach { p ->
             values[RuntimeKeys.imageSha256(p)] = "sha_$p  $p.img"
@@ -47,7 +51,7 @@ class BuildFlashableZipStageTest {
     fun `unsupported filesystem plans failing check UNSUPPORTED_FILESYSTEM`() {
         val ctx = fx.globalOtaContext()
         val invalidSnap = ctx.snapshot.copy(
-            build = ctx.snapshot.build.copy(filesystem = "f2fs"),
+            build = ctx.snapshot.build.copy(filesystem = "btrfs"),
         )
         val steps = stage.plan(ctx.copy(snapshot = invalidSnap))
         val check = steps.filterIsInstance<PipelineStep.Check>().firstOrNull()
@@ -55,6 +59,14 @@ class BuildFlashableZipStageTest {
         val error = check.verify(emptyMap())
         assertNotNull(error)
         assertTrue(error.contains("UNSUPPORTED_FILESYSTEM"), "Error must contain UNSUPPORTED_FILESYSTEM: $error")
+    }
+
+    @Test
+    fun `every built image is checked by fsck right after mkfs`() {
+        val labels = stage.plan(fullContext()).map { it.label }
+        fullContext().target.dynamicPartitions.forEach { p ->
+            assertEquals(labels.indexOf("mkfs.erofs $p") + 1, labels.indexOf("fsck.erofs $p"), "fsck after mkfs $p")
+        }
     }
 
     @Test
@@ -186,5 +198,131 @@ class BuildFlashableZipStageTest {
             ),
         )
         assertNotEquals(baseKey, stage.computeCacheKey(mutatedMetadataPolicy, prevKey))
+    }
+
+    @Test
+    fun `missing coverage result plans check coverage host step`() {
+        val base = fullContext()
+        val withoutCoverage = base.copy(
+            runtimeValues = base.runtimeValues - BuildFlashableZipStage.COVERAGE_RESULT_KEY,
+        )
+        val steps = stage.plan(withoutCoverage)
+        val hostStep = steps.filterIsInstance<PipelineStep.Host>().firstOrNull()
+        assertNotNull(hostStep, "Must plan host step for checking coverage")
+        assertEquals("check coverage", hostStep.label)
+        assertEquals(BuildFlashableZipStage.COVERAGE_RESULT_KEY, hostStep.resultKey)
+    }
+
+    @Test
+    fun `unclean coverage result plans failing check COVERAGE_REFUSAL`() {
+        val base = fullContext()
+        val dirtyResult = CoverageResult(
+            uncoveredFsConfig = listOf("system/bin/uncovered_tool"),
+            uncoveredContexts = listOf("system/bin/uncovered_tool"),
+        )
+        val withDirtyCoverage = base.copy(
+            runtimeValues = base.runtimeValues + (
+                BuildFlashableZipStage.COVERAGE_RESULT_KEY to CoverageResult.encode(
+                    dirtyResult,
+                )
+                ),
+        )
+        val steps = stage.plan(withDirtyCoverage)
+        val check = steps.filterIsInstance<PipelineStep.Check>().firstOrNull()
+        assertNotNull(check, "Must plan check step for coverage gate failure")
+        val error = check.verify(emptyMap())
+        assertNotNull(error)
+        assertTrue(error.contains("COVERAGE_REFUSAL"), "Error must contain COVERAGE_REFUSAL: $error")
+        assertTrue(error.contains("system/bin/uncovered_tool"), "Error must mention uncovered file")
+    }
+
+    @Test
+    fun `a link the build broke stops it until accepted`() {
+        val base = fullContext()
+        val listing = "P\tsystem_ext\nL\tsystem_ext\tpriv-app/Wfd/lib/arm64/libwfd.so\t/system_ext/lib64/libwfd.so"
+        val values = base.runtimeValues + mapOf(
+            "build.links.work" to listing,
+            "build.links.work.missing" to "system_ext/lib64/libwfd.so\n",
+            "build.links.firmware/extracted" to listing,
+            "build.links.firmware/extracted.missing" to "",
+        )
+        val steps = stage.plan(base.copy(runtimeValues = values))
+        val labels = steps.map { it.label }
+        assertTrue(labels.indexOf("link check") in 0 until labels.indexOfFirst { it.startsWith("mkfs") }, "$labels")
+        val check = steps.filterIsInstance<PipelineStep.Check>().single { it.label == "link check" }
+        assertTrue(check.verify(emptyMap())!!.startsWith("BROKEN_LINKS: 1 link(s)"))
+
+        val accepted = base.copy(
+            runtimeValues = values,
+            snapshot = base.snapshot.copy(
+                build = base.snapshot.build.copy(acknowledgedWarnings = setOf(BuildWarningKind.BrokenLinks.name)),
+            ),
+        )
+        assertTrue(stage.plan(accepted).none { it.label == "link check" })
+    }
+
+    @Test
+    fun `a partition built as ext4 is sized by a trial, checked with e2fsck and read back through fuse2fs`() {
+        val base = fullContext()
+        val vendorLine = "vendor  /vendor  erofs  ro  wait,slotselect,avb=vbmeta,logical,first_stage_mount"
+        val values = base.runtimeValues + mapOf(
+            BuildFlashableZipStage.ext4MeasureKey("vendor") to "1929366941 4059",
+            BuildFlashableZipStage.ext4TrialKey("vendor") to "Free blocks:              76229",
+            "build.mount.tables" to "work/vendor/etc/fstab.qcom\t$vendorLine\n" +
+                "vendor_boot.img:first_stage_ramdisk/fstab.qcom\t$vendorLine",
+        )
+        val ctx = base.copy(
+            runtimeValues = values,
+            snapshot = base.snapshot.copy(
+                build = base.snapshot.build.copy(partitionFilesystem = mapOf("vendor" to "ext4")),
+            ),
+        )
+        val steps = stage.plan(ctx)
+        val tools = steps.filterIsInstance<PipelineStep.Tool>()
+        val img = ctx.abs("out/images/vendor.img")
+        val mke2fs = tools.single { it.label == "mke2fs vendor" }
+        assertEquals("mke2fs", mke2fs.command.toolId)
+        assertEquals(listOf(img, "458767"), mke2fs.command.args.takeLast(2))
+        assertEquals("e2fsdroid", tools.single { it.label == "e2fsdroid vendor" }.command.toolId)
+        assertEquals(listOf("-fn", img), tools.single { it.label == "e2fsck vendor" }.command.args)
+        assertEquals("fuse2fs", tools.single { it.label == "mount built vendor" }.command.toolId)
+        assertTrue(tools.none { it.label == "mkfs.erofs vendor" })
+        assertEquals("mkfs.erofs", tools.single { it.label == "mkfs.erofs system" }.command.toolId)
+
+        // vendor/etc gets the ext4 line from the build; the first-stage fstab is inside vendor_boot: refused.
+        assertTrue(steps.filterIsInstance<PipelineStep.EditFile>().any { it.relPath == "work/vendor/etc/fstab.qcom" })
+        val refusal = steps.filterIsInstance<PipelineStep.Check>().single { it.label == "mount table" }
+        assertTrue(
+            refusal.verify(emptyMap())!!.startsWith("MOUNT_TABLE: vendor_boot.img:first_stage_ramdisk/fstab.qcom"),
+        )
+        val labels = steps.map { it.label }
+        assertTrue(labels.indexOf("mount table") < labels.indexOf("mke2fs vendor"), "refused before any image")
+    }
+
+    @Test
+    fun `a partition built as F2FS is sized by sload's max image size and read back by dump f2fs in fakeroot`() {
+        val base = fullContext()
+        // Real fw-baseline vendor: prepare output and the trial sload's check line.
+        val values = base.runtimeValues + mapOf(
+            BuildFlashableZipStage.f2fsPrepareKey("vendor") to "1929366941 4059 0:2000",
+            BuildFlashableZipStage.f2fsTrialKey("vendor") to "[FSCK] Max image size: 1884 MB, Free space: 186 MB",
+        )
+        val ctx = base.copy(
+            runtimeValues = values,
+            snapshot = base.snapshot.copy(
+                build = base.snapshot.build.copy(partitionFilesystem = mapOf("vendor" to "f2fs")),
+            ),
+        )
+        val tools = stage.plan(ctx).filterIsInstance<PipelineStep.Tool>()
+        val img = ctx.abs("out/images/vendor.img")
+        assertEquals(listOf("-s", "2011168768", img), tools.single { it.label == "size vendor" }.command.args)
+        val make = tools.single { it.label == "make_f2fs vendor" }.command.args
+        assertEquals(listOf("-R", "0:2000"), make.subList(make.indexOf("-R"), make.indexOf("-R") + 2))
+        assertEquals("sload_f2fs", tools.single { it.label == "sload_f2fs vendor" }.command.toolId)
+        assertEquals(listOf("--dry-run", "-f", img), tools.single { it.label == "fsck.f2fs vendor" }.command.args)
+        val readback = tools.single { it.label == "read back built vendor" }.command
+        assertEquals("fakeroot", readback.toolId)
+        assertTrue(pinnedToolArg("dump.f2fs") in readback.args)
+        assertTrue(tools.none { it.label == "mkfs.erofs vendor" || it.label == "mount built vendor" })
     }
 }

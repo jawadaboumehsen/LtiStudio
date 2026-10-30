@@ -4,6 +4,9 @@ import org.ide.lti.core.data.AppShutdownCoordinator
 import org.ide.lti.core.data.setup.check.EnvironmentCheck
 import org.ide.lti.core.data.tools.KotlinToolStoreAdapter
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.pipeline.toolkit.AckStore
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
 import org.ide.lti.core.domain.plugin.InstallPluginUseCase
@@ -86,6 +89,16 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<PluginCatalogPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.WorkspaceAdmissionPort>())
         assertNotNull(koin.get<org.ide.lti.core.domain.ports.SnapshotMaterializerPort>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.BootWorkbench>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.ImageWorkbench>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.ContentWorkbench>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.CompareWorkbench>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.WorkspaceStorage>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.DeviceFirmwareCheck>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.RestoreWorkbench>())
+        assertNotNull(koin.get<RestorePointStore>())
+        assertNotNull(koin.get<AckStore>())
+        assertNotNull(koin.get<JobLock>())
         val toolStore = koin.get<ToolStorePort>()
         assertNotNull(toolStore)
         assertTrue(toolStore is KotlinToolStoreAdapter)

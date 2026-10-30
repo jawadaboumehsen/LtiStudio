@@ -18,6 +18,10 @@ import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
 import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stepCommand
+import org.ide.lti.core.domain.pipeline.toolkit.ChecksumResult
+import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
+import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
+import org.ide.lti.core.domain.pipeline.toolkit.PackageManifest
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
@@ -37,7 +41,7 @@ private data class AcquisitionPolicy(val retries: Int, val resume: Boolean, val 
 public class FirmwareAcquisitionStage : StageDefinition {
     override val id: StageId = StageId.FIRMWARE_ACQUISITION
 
-    override val requiredToolIds: Set<String> = setOf("curl", "file", "sha256sum", "test", "mv", "mkdir")
+    override val requiredToolIds: Set<String> = setOf("curl", "file", "sha256sum", "xxd", "test", "mv", "mkdir")
 
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String {
         val payload = ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.acquisition)
@@ -69,15 +73,22 @@ public class FirmwareAcquisitionStage : StageDefinition {
                 )
                 steps += downloadSteps(ctx, archive)
             }
+
             AcquisitionMode.IMPORT_ARCHIVE -> {
                 steps += PipelineStep.Tool(stepCommand("test", listOf("-f", archive), ws), "imported archive present")
             }
         }
 
+        val expectedSha = ctx.snapshot.acquisition.expectedSha256
+            ?: ctx.snapshot.acquisition.firmware.sha256?.takeIf { it.isNotBlank() }
+        val isMd5 = expectedSha != null && expectedSha.length == 32
+        val checksumTool = if (isMd5) "md5sum" else "sha256sum"
+        val checksumKey = if (isMd5) RuntimeKeys.ARCHIVE_MD5 else RuntimeKeys.ARCHIVE_SHA256
+
         steps += PipelineStep.Tool(
-            command = stepCommand("sha256sum", listOf(archive), ws),
-            label = "sha256sum archive",
-            resultKey = RuntimeKeys.ARCHIVE_SHA256,
+            command = stepCommand(checksumTool, listOf(archive), ws),
+            label = "$checksumTool archive",
+            resultKey = checksumKey,
         )
 
         val policy = AcquisitionPolicy(
@@ -92,15 +103,65 @@ public class FirmwareAcquisitionStage : StageDefinition {
             label = "write work/acquire/policy.json",
         )
 
-        val expectedSha = ctx.snapshot.acquisition.expectedSha256
-            ?: ctx.snapshot.acquisition.firmware.sha256?.takeIf { it.isNotBlank() }
+        if (ctx.has(checksumKey) || ctx.has(RuntimeKeys.ARCHIVE_SHA256)) {
+            steps += checksumSteps(ctx, archive, expectedSha, isMd5)
+        }
 
-        if (ctx.has(RuntimeKeys.ARCHIVE_SHA256) && !expectedSha.isNullOrBlank()) {
+        return steps
+    }
+
+    /** Records the measured checksum and the detected package format, then checks both (FR-001, FR-006). */
+    private fun checksumSteps(
+        ctx: StageContext,
+        archive: String,
+        expectedSha: String?,
+        isMd5: Boolean,
+    ): List<PipelineStep> {
+        val ws = ctx.wsPath
+        val checksumKey = if (isMd5) RuntimeKeys.ARCHIVE_MD5 else RuntimeKeys.ARCHIVE_SHA256
+        val checksumRaw = ctx.value(checksumKey) ?: ctx.value(RuntimeKeys.ARCHIVE_SHA256).orEmpty()
+        val actual = checksumRaw.digestToken()
+        val ok = expectedSha.isNullOrBlank() || actual.equals(expectedSha, ignoreCase = true)
+        val resultJson = ChecksumResult.encode(ChecksumResult(ok = ok, expected = expectedSha, actual = actual))
+        val steps = mutableListOf<PipelineStep>(
+            PipelineStep.Tool(
+                command = stepCommand("echo", listOf(resultJson), ws),
+                label = "record checksum result",
+                resultKey = RuntimeKeys.PACKAGE_CHECKSUM_RESULT,
+            ),
+            PipelineStep.Tool(
+                command = stepCommand("xxd", listOf("-p", "-l", "512", archive), ws),
+                label = "read archive header",
+                resultKey = RuntimeKeys.PACKAGE_HEADER_HEX,
+            ),
+        )
+        ctx.value(RuntimeKeys.PACKAGE_HEADER_HEX)?.let { hex -> steps += manifestSteps(ctx, hex, expectedSha) }
+        if (!expectedSha.isNullOrBlank()) {
             steps += PipelineStep.Check("verify archive checksum") { values ->
-                checksumVerdict(expectedSha, values)
+                checksumVerdict(expectedSha, values, isMd5)
             }
         }
         return steps
+    }
+
+    /** The package manifest from the archive's first bytes; an unrecognised format is refused. */
+    private fun manifestSteps(ctx: StageContext, headerHex: String, expectedSha: String?): List<PipelineStep> {
+        val format = FormatDetector.detect(FormatDetector.fromHex(headerHex))
+        val manifest = if (format == PackageFormat.Unknown) {
+            PackageManifest.unknownRefusal(archiveName(ctx.snapshot))
+        } else {
+            PackageManifest(format = format, declaredChecksum = expectedSha)
+        }
+        val record = PipelineStep.Tool(
+            command = stepCommand("echo", listOf(PackageManifest.encode(manifest)), ctx.wsPath),
+            label = "record package manifest",
+            resultKey = RuntimeKeys.PACKAGE_MANIFEST,
+        )
+        val refusal = manifest.refusal ?: return listOf(record)
+        return listOf(
+            record,
+            PipelineStep.Check("verify package format") { "${refusal.cause} ${refusal.item} ${refusal.nextStep}" },
+        )
     }
 
     private fun downloadSteps(ctx: StageContext, archive: String): List<PipelineStep> {
@@ -148,10 +209,11 @@ public class FirmwareAcquisitionStage : StageDefinition {
         return steps
     }
 
-    private fun checksumVerdict(expected: String, values: Map<String, String>): String? {
-        val actual = values[RuntimeKeys.ARCHIVE_SHA256]?.digestToken().orEmpty()
+    private fun checksumVerdict(expected: String, values: Map<String, String>, isMd5: Boolean): String? {
+        val actual = (values[RuntimeKeys.ARCHIVE_SHA256] ?: values[RuntimeKeys.ARCHIVE_MD5])?.digestToken().orEmpty()
+        val toolName = if (isMd5) "md5sum" else "sha256sum"
         return when {
-            actual.isEmpty() -> "sha256sum produced no digest for the firmware archive"
+            actual.isEmpty() -> "$toolName produced no digest for the firmware archive"
             actual.equals(expected, ignoreCase = true) -> null
             else -> "CHECKSUM_MISMATCH: Firmware archive checksum mismatch: expected $expected, got $actual"
         }
@@ -166,6 +228,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
             AcquisitionMode.IMPORT_ARCHIVE ->
                 acquisition.archiveRef?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
                     ?: acquisition.archiveRef.orEmpty()
+
             AcquisitionMode.DOWNLOAD -> {
                 val fromUrl = acquisition.firmware.acquisitionUrl?.substringAfterLast('/')?.substringBefore('?')
                 fromUrl?.takeIf { it.isNotBlank() } ?: "${acquisition.firmware.version}.zip"

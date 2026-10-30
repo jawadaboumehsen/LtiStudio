@@ -31,6 +31,7 @@ public class BuildStageEditor : StageEditor {
         val settings by viewModel.settings.collectAsState()
         val device by viewModel.device.collectAsState()
         val facts by viewModel.facts.collectAsState()
+        val coverage by viewModel.coverage.collectAsState()
 
         BuildEditor(
             settings = settings,
@@ -39,6 +40,9 @@ public class BuildStageEditor : StageEditor {
             onChange = viewModel::updateSettings,
             onRefresh = viewModel::refresh,
             selectedObjectId = context.selectedObjectId?.value ?: "compression",
+            coverage = coverage,
+            onCheckCoverage = viewModel::checkCoverage,
+            onFixCoverage = { viewModel.setFillInEveryBuild(true) },
             modifier = modifier,
         )
     }

@@ -14,8 +14,20 @@ import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
+import org.ide.lti.core.domain.pipeline.pinnedToolArg
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
+import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
+import org.ide.lti.core.domain.pipeline.toolkit.FsType
+import org.ide.lti.core.domain.pipeline.toolkit.FsTypes
+import org.ide.lti.core.domain.pipeline.toolkit.PackageManifest
+import org.ide.lti.core.domain.pipeline.toolkit.PartitionImage
+import org.ide.lti.core.domain.pipeline.toolkit.SlotMode
+import org.ide.lti.core.domain.pipeline.toolkit.ToolkitBasicInfo
+import org.ide.lti.core.domain.pipeline.toolkit.ToolkitFacts
+import org.ide.lti.core.domain.pipeline.toolkit.ToolkitPartitionFact
+import org.ide.lti.core.domain.pipeline.toolkit.ToolkitPartitionInfo
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.FirmwareSourceKind
 
@@ -72,75 +84,146 @@ public class FirmwareExtractionStage : StageDefinition {
                 PipelineStep.Check("verify extraction adapter") {
                     "UNSUPPORTED_EXTRACTION_ADAPTER: Extraction adapter '$adapter' is not supported"
                 }
+
             invalidDynamic.isNotEmpty() ->
                 PipelineStep.Check("verify dynamic partitions on target") {
                     "PARTITION_NOT_ON_TARGET: Dynamic partition(s) not on target: ${invalidDynamic.joinToString()}"
                 }
+
             invalidBoot.isNotEmpty() ->
                 PipelineStep.Check("verify boot partitions on target") {
                     "PARTITION_NOT_ON_TARGET: Boot partition(s) not on target: ${invalidBoot.joinToString()}"
                 }
+
             !slot.isNullOrBlank() && slot !in validSlots ->
                 PipelineStep.Check("verify extraction slot") {
                     "UNSUPPORTED_SLOT: Slot '$slot' is not supported on target device '${ctx.target.id}'"
                 }
+
             else -> null
         }
     }
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
-        val validationError = validate(ctx)
-        if (validationError != null) {
-            return listOf(validationError)
+        val manifest = ctx.value(RuntimeKeys.PACKAGE_MANIFEST)?.let { raw ->
+            runCatching { PackageManifest.decode(raw) }.getOrNull()
         }
+        return validate(ctx)?.let(::listOf)
+            ?: manifest?.refusal?.let { listOf(FirmwareIngestion.refusalCheck(it)) }
+            ?: extractionSteps(ctx, manifest)
+    }
 
-        val extraction = ctx.snapshot.extraction
-        val slot = extraction.slot
-        val adapter = extraction.adapter
-        val isAuto = adapter.equals("AUTO", ignoreCase = true)
-        val isPayloadDumper = adapter.equals("payload-dumper-go", ignoreCase = true)
-
-        val dynamicPartitions = effectiveDynamicPartitions(ctx)
-        val bootPartitions = effectiveBootPartitions(ctx)
-        val effectiveSlotSuffix = if (!slot.isNullOrBlank()) {
-            if (slot.startsWith("_")) slot else "_$slot"
-        } else {
-            ctx.target.activeSlotSuffix
-        }
-
+    private fun extractionSteps(ctx: StageContext, manifest: PackageManifest?): List<PipelineStep> {
         val ws = ctx.wsPath
         val extracted = ctx.abs(EXTRACTED)
-        val archive = ctx.abs(FirmwareAcquisitionStage.archiveRelPath(ctx.snapshot))
+        val dynamicPartitions = effectiveDynamicPartitions(ctx)
+        val bootPartitions = effectiveBootPartitions(ctx)
         val steps = mutableListOf<PipelineStep>()
-
         if (!ctx.snapshot.extraction.reuseVerifiedExtraction) {
             steps += PipelineStep.Tool(stepCommand("rm", listOf("-rf", extracted), ws), "clean extracted")
         }
         steps += PipelineStep.Tool(stepCommand("mkdir", listOf("-p", extracted), ws), "mkdir extracted")
+        steps += containerSteps(ctx, manifest, Partitions(dynamicPartitions, bootPartitions, slotSuffix(ctx)))
+        steps += replacementSteps(ctx, dynamicPartitions)
 
-        val useOta = if (isAuto) {
+        // The filesystem comes from each image's superblock: EROFS mounts with erofsfuse, ext4 with fuse2fs, F2FS
+        // (no FUSE driver) is dumped with dump.f2fs. Build & Sign builds each partition as EROFS, ext4 or F2FS.
+        val fsTypes = dynamicPartitions.associateWith { p ->
+            steps += fsTypeStep(ctx, p)
+            ctx.value(fsTypeKey(p))?.let { FsTypes.fromSuperblock(FormatDetector.fromHex(it)) }
+        }
+        dynamicPartitions.forEach { p -> steps += sidecarSteps(ctx, p, fsTypes[p]) }
+        steps += bootInfoSteps(ctx, bootPartitions)
+        steps += PipelineStep.Tool(
+            command = stepCommand("cat", listOf("$extracted/system/system/build.prop"), ws),
+            label = "read stock build.prop",
+            resultKey = RuntimeKeys.BUILD_PROP,
+        )
+        if (ctx.value(RuntimeKeys.BUILD_PROP) != null) {
+            steps += factsSteps(ctx, dynamicPartitions, bootPartitions, fsTypes)
+        }
+        return steps
+    }
+
+    /** The user's own images over the stock ones, each checked against the SHA-256 recorded when imported. */
+    private fun replacementSteps(ctx: StageContext, dynamicPartitions: List<String>): List<PipelineStep> =
+        ctx.snapshot.extraction.replacementImages.filterKeys { it in dynamicPartitions }.flatMap { (p, sha256) ->
+            val image = ctx.abs(replacementPath(p))
+            val key = "firmware.$p.replacement.sha256"
+            listOf(
+                PipelineStep.Tool(stepCommand("sha256sum", listOf(image), ctx.wsPath), "hash replacement $p", key),
+                PipelineStep.Check("check replacement $p") { values ->
+                    val actual = values[key]?.trim()?.substringBefore(' ')
+                    (
+                        "REPLACEMENT_CHANGED: ${replacementPath(p)} is not the image imported for $p (expected " +
+                            "$sha256, found $actual). Import it again in Extract."
+                        ).takeIf { actual != sha256 }
+                },
+                PipelineStep.Tool(
+                    stepCommand("cp", listOf("-f", image, "${ctx.abs(EXTRACTED)}/$p.img"), ctx.wsPath),
+                    "replace $p",
+                ),
+            )
+        }
+
+    private fun slotSuffix(ctx: StageContext): String {
+        val slot = ctx.snapshot.extraction.slot
+        return when {
+            slot.isNullOrBlank() -> ctx.target.activeSlotSuffix
+            slot.startsWith("_") -> slot
+            else -> "_$slot"
+        }
+    }
+
+    private fun containerSteps(ctx: StageContext, manifest: PackageManifest?, parts: Partitions): List<PipelineStep> {
+        val archive = ctx.abs(FirmwareAcquisitionStage.archiveRelPath(ctx.snapshot))
+        if (manifest != null) return FirmwareIngestion.ingestSteps(ctx, archive, manifest.format, parts)
+        // No package manifest (Acquire predates format detection): the device settings decide.
+        val adapter = ctx.snapshot.extraction.adapter
+        val useOta = if (adapter.equals("AUTO", ignoreCase = true)) {
             ctx.snapshot.acquisition.firmware.sourceKind == FirmwareSourceKind.OTA_ZIP
         } else {
-            isPayloadDumper
+            adapter.equals("payload-dumper-go", ignoreCase = true)
         }
-
-        if (useOta) {
-            steps += otaSteps(ctx, archive)
+        return if (useOta) {
+            FirmwareIngestion.otaSteps(ctx, archive)
         } else {
-            steps += rawSteps(ctx, archive, dynamicPartitions, bootPartitions, effectiveSlotSuffix)
+            FirmwareIngestion.rawZipSteps(ctx, archive, parts)
         }
+    }
 
-        dynamicPartitions.forEach { p -> steps += sidecarSteps(ctx, p) }
-        bootPartitions.forEach { b ->
-            steps += PipelineStep.Tool(
+    private fun fsTypeKey(partition: String) = "firmware.$partition.fstype"
+
+    private fun fsTypeStep(ctx: StageContext, partition: String): PipelineStep.Tool = PipelineStep.Tool(
+        command = stepCommand(
+            "xxd",
+            listOf(
+                "-p",
+                "-s",
+                "${FsTypes.SUPERBLOCK_OFFSET}",
+                "-l",
+                "${FsTypes.SUPERBLOCK_BYTES}",
+                "${ctx.abs(EXTRACTED)}/$partition.img",
+            ),
+            ctx.wsPath,
+        ),
+        label = "detect filesystem $partition",
+        resultKey = fsTypeKey(partition),
+    )
+
+    private fun bootInfoSteps(ctx: StageContext, bootPartitions: List<String>): List<PipelineStep> {
+        val ws = ctx.wsPath
+        val extracted = ctx.abs(EXTRACTED)
+        val avbInfo = bootPartitions.map { b ->
+            PipelineStep.Tool(
                 command = stepCommand("avbtool", listOf("info_image", "--image", "$extracted/$b.img"), ws),
                 label = "avbtool info $b",
                 resultKey = RuntimeKeys.bootInfo(b),
                 allowFailure = true,
             )
         }
-        BOOT_IMAGES_WITH_HEADER.filter { it in bootPartitions }.forEach { b ->
-            steps += PipelineStep.Tool(
+        val headers = BOOT_IMAGES_WITH_HEADER.filter { it in bootPartitions }.map { b ->
+            PipelineStep.Tool(
                 command = stepCommand(
                     "unpack_bootimg",
                     listOf("--boot_img", "$extracted/$b.img", "--format", "info"),
@@ -151,12 +234,60 @@ public class FirmwareExtractionStage : StageDefinition {
                 allowFailure = true,
             )
         }
-        steps += PipelineStep.Tool(
-            command = stepCommand("cat", listOf("$extracted/system/system/build.prop"), ws),
-            label = "read stock build.prop",
-            resultKey = RuntimeKeys.BUILD_PROP,
+        return avbInfo + headers
+    }
+
+    /** `extract.images` and the workspace facts (`facts/basic_info.json`, `facts/partition_info.json`). */
+    private fun factsSteps(
+        ctx: StageContext,
+        dynamicPartitions: List<String>,
+        bootPartitions: List<String>,
+        fsTypes: Map<String, FsType?>,
+    ): List<PipelineStep> {
+        val dynamicSizes = dynamicPartitions.associateWith { ctx.longValue(RuntimeKeys.imageSize(it)) ?: 0L }
+        val bootSizes = bootPartitions.associateWith { ctx.longValue(RuntimeKeys.bootSize(it)) ?: 0L }
+        val images = dynamicSizes.map { (p, size) ->
+            PartitionImage(p, fsTypes[p] ?: FsType.Unknown, size, sparse = false, path = "$EXTRACTED/$p.img")
+        } + bootSizes.map { (b, size) ->
+            PartitionImage(b, FsType.Raw, size, sparse = false, path = "$EXTRACTED/$b.img")
+        }
+        val slotMode = when {
+            ctx.target.packagePolicy.bootSlots.size <= 1 -> SlotMode.A_ONLY
+            ctx.target.virtualAb -> SlotMode.VIRTUAL_AB
+            else -> SlotMode.AB
+        }
+        val basicInfo = ToolkitBasicInfo(
+            deviceIdentity = ctx.target.id,
+            slotMode = slotMode,
+            isVirtualAbCompressed = ctx.target.virtualAb,
         )
-        return steps
+        val partitionInfo = ToolkitPartitionInfo(
+            partitions = dynamicSizes.map { (p, size) ->
+                ToolkitPartitionFact(p, (fsTypes[p] ?: FsType.Unknown).name.lowercase(), size, inSuper = true)
+            } + bootSizes.map { (b, size) -> ToolkitPartitionFact(b, "raw", size, inSuper = false) },
+        )
+        return listOf(
+            PipelineStep.WriteFile(
+                relPath = "$EXTRACTED/extract.images.json",
+                content = PartitionImage.encodeList(images).encodeToByteArray(),
+                label = "write extract.images",
+            ),
+            PipelineStep.Tool(
+                command = stepCommand("cat", listOf("${ctx.abs(EXTRACTED)}/extract.images.json"), ctx.wsPath),
+                label = "read extract.images",
+                resultKey = RuntimeKeys.EXTRACT_IMAGES,
+            ),
+            PipelineStep.WriteFile(
+                relPath = "facts/basic_info.json",
+                content = ToolkitFacts.encodeBasicInfo(basicInfo).encodeToByteArray(),
+                label = "write basic_info facts",
+            ),
+            PipelineStep.WriteFile(
+                relPath = "facts/partition_info.json",
+                content = ToolkitFacts.encodePartitionInfo(partitionInfo).encodeToByteArray(),
+                label = "write partition_info facts",
+            ),
+        )
     }
 
     private fun effectiveDynamicPartitions(ctx: StageContext): List<String> =
@@ -165,100 +296,8 @@ public class FirmwareExtractionStage : StageDefinition {
     private fun effectiveBootPartitions(ctx: StageContext): List<String> =
         ctx.snapshot.extraction.bootPartitions.ifEmpty { ctx.target.bootPartitions }
 
-    private fun otaSteps(ctx: StageContext, archive: String): List<PipelineStep> {
-        val ws = ctx.wsPath
-        val firmware = ctx.abs("firmware")
-        return listOf(
-            PipelineStep.Tool(
-                stepCommand("unzip", listOf("-o", archive, "payload.bin", "-d", firmware), ws),
-                "unzip payload",
-            ),
-            PipelineStep.Tool(
-                stepCommand("payload-dumper-go", listOf("-o", ctx.abs(EXTRACTED), "$firmware/payload.bin"), ws),
-                "payload-dumper-go",
-            ),
-            PipelineStep.Tool(stepCommand("rm", listOf("-f", "$firmware/payload.bin"), ws), "rm payload"),
-        )
-    }
-
-    private fun rawSteps(
-        ctx: StageContext,
-        archive: String,
-        dynamicPartitions: List<String>,
-        bootPartitions: List<String>,
-        slot: String,
-    ): List<PipelineStep> {
-        val ws = ctx.wsPath
-        val raw = ctx.abs("firmware/raw")
-        val extracted = ctx.abs(EXTRACTED)
-        val steps = mutableListOf<PipelineStep>()
-        steps += PipelineStep.Tool(stepCommand("unzip", listOf("-o", archive, "-d", raw), ws), "unzip raw archive")
-        bootPartitions.forEach { b ->
-            steps += PipelineStep.Tool(stepCommand("cp", listOf("-a", "$raw/$b.img", "$extracted/$b.img"), ws), "cp $b")
-            steps += avbPaddingTrim(ctx, b)
-        }
-        steps += PipelineStep.Tool(
-            command = stepCommand("xxd", listOf("-l", "4", "-p", "$raw/super.img"), ws),
-            label = "detect sparse super",
-            resultKey = RuntimeKeys.SUPER_MAGIC,
-        )
-        val superMagic = ctx.value(RuntimeKeys.SUPER_MAGIC)?.trim() ?: return steps
-        val superImg = if (superMagic.equals(SPARSE_MAGIC_LE, ignoreCase = true)) {
-            steps += PipelineStep.Tool(
-                stepCommand("simg2img", listOf("$raw/super.img", "$raw/super.raw.img"), ws),
-                "simg2img super",
-            )
-            "$raw/super.raw.img"
-        } else {
-            "$raw/super.img"
-        }
-        val lpunpackArgs = listOf("--slot=0") +
-            dynamicPartitions.flatMap { listOf("-p", "$it$slot") } +
-            listOf(superImg, extracted)
-        steps += PipelineStep.Tool(stepCommand("lpunpack", lpunpackArgs, ws), "lpunpack")
-        dynamicPartitions.forEach { p ->
-            steps += PipelineStep.Tool(
-                stepCommand("mv", listOf("$extracted/$p$slot.img", "$extracted/$p.img"), ws),
-                "rename $p",
-            )
-        }
-        return steps
-    }
-
-    /**
-     * Raw dumps carry padding after the AVB footer; `avbtool info_image` reports the real
-     * `Image size`, and the file is truncated to it when larger (assumption for spike T034).
-     */
-    private fun avbPaddingTrim(ctx: StageContext, image: String): List<PipelineStep> {
-        val ws = ctx.wsPath
-        val path = ctx.abs("$EXTRACTED/$image.img")
-        val infoKey = "raw.$image.info"
-        val sizeKey = RuntimeKeys.bootSize(image)
-        val steps = mutableListOf<PipelineStep>()
-        steps += PipelineStep.Tool(
-            command = stepCommand("avbtool", listOf("info_image", "--image", path), ws),
-            label = "avbtool info raw $image",
-            resultKey = infoKey,
-            allowFailure = true,
-        )
-        steps += PipelineStep.Tool(
-            command = stepCommand("stat", listOf("-c", "%s", path), ws),
-            label = "stat raw $image",
-            resultKey = sizeKey,
-        )
-        val declared = ctx.value(infoKey)?.let(::parseImageSize)
-        val actual = ctx.longValue(sizeKey)
-        val needsTrim = declared != null && actual != null && actual > declared
-        if (ctx.exitOf(infoKey) == 0 && needsTrim) {
-            steps += PipelineStep.Tool(
-                stepCommand("truncate", listOf("-s", declared.toString(), path), ws),
-                "trim $image",
-            )
-        }
-        return steps
-    }
-
-    private fun sidecarSteps(ctx: StageContext, partition: String): List<PipelineStep> {
+    private fun sidecarSteps(ctx: StageContext, partition: String, fs: FsType?): List<PipelineStep> {
+        if (fs == FsType.F2fs) return f2fsSidecarSteps(ctx, partition)
         val ws = ctx.wsPath
         val extracted = ctx.abs(EXTRACTED)
         val mnt = "$extracted/${partition}_mnt"
@@ -266,8 +305,15 @@ public class FirmwareExtractionStage : StageDefinition {
         val selinuxKey = RuntimeKeys.selinuxDump(partition)
         val steps = mutableListOf<PipelineStep>()
         steps += PipelineStep.Tool(stepCommand("mkdir", listOf("-p", mnt), ws), "mkdir mount $partition")
+        val image = "$extracted/$partition.img"
         steps += PipelineStep.Tool(
-            stepCommand("erofsfuse", listOf("$extracted/$partition.img", mnt), ws),
+            if (fs == FsType.Ext4) {
+                // fakeroot: fuse2fs checks permissions (erofsfuse does not), so a root-only folder would stop the
+                // stat dump; read-only either way.
+                stepCommand("fuse2fs", listOf(image, mnt, "-o", "ro,fakeroot"), ws)
+            } else {
+                stepCommand("erofsfuse", listOf(image, mnt), ws)
+            },
             "mount $partition",
         )
         steps += PipelineStep.Tool(
@@ -303,6 +349,7 @@ public class FirmwareExtractionStage : StageDefinition {
         )
         // Owner, mode and SELinux label are in the sidecars just written (mkfs.erofs applies them), so only
         // content and links are copied: `cp -a` also copies ACLs, which erofsfuse does not serve (ENODATA).
+        // An ext4 image's lost+found is dropped below; it has no sidecar line in a stock tree.
         steps += PipelineStep.Tool(
             stepCommand(
                 "cp",
@@ -319,9 +366,56 @@ public class FirmwareExtractionStage : StageDefinition {
         return steps
     }
 
+    /**
+     * A stock F2FS partition: dump.f2fs writes the tree straight to `firmware/extracted/<p>` inside one fakeroot
+     * session that also prints the owners, modes and labels the sidecars are made from (`F2fsImage.READBACK_SCRIPT`).
+     */
+    private fun f2fsSidecarSteps(ctx: StageContext, partition: String): List<PipelineStep> {
+        val extracted = ctx.abs(EXTRACTED)
+        val tree = "$extracted/$partition"
+        val key = RuntimeKeys.statLines(partition)
+        val steps = mutableListOf<PipelineStep>(
+            PipelineStep.Tool(
+                command = stepCommand(
+                    "fakeroot",
+                    listOf(
+                        "sh",
+                        "-c",
+                        F2fsImage.READBACK_SCRIPT,
+                        "sh",
+                        pinnedToolArg("dump.f2fs"),
+                        "$extracted/$partition.img",
+                        tree,
+                        "keep",
+                    ),
+                    ctx.wsPath,
+                ),
+                label = "dump $partition",
+                resultKey = key,
+            ),
+        )
+        ctx.value(key)?.let { output ->
+            val (stat, labels) = F2fsImage.splitReadback(output, partition, tree, expectedFsConfig = "")
+            val sidecars = SidecarNormalizer.fromDumps(partition, tree, stat, labels)
+            steps += PipelineStep.WriteFile(
+                "$EXTRACTED/fs_config-$partition",
+                sidecars.fsConfigContent.encodeToByteArray(),
+            )
+            steps += PipelineStep.WriteFile(
+                "$EXTRACTED/file_context-$partition",
+                sidecars.fileContextContent.encodeToByteArray(),
+            )
+        }
+        return steps
+    }
+
     public companion object {
         public const val EXTRACTED: String = "firmware/extracted"
-        private const val SPARSE_MAGIC_LE = "3aff26ed"
+        public const val RAW: String = "firmware/raw"
+        public const val REPLACEMENTS: String = "firmware/replacements"
+
+        /** Where the user's own image for [partition] is kept. */
+        public fun replacementPath(partition: String): String = "$REPLACEMENTS/$partition.img"
         private val BOOT_IMAGES_WITH_HEADER = listOf("boot", "init_boot", "vendor_boot")
         private val IMAGE_SIZE = Regex("""Image size:\s+(\d+) bytes""")
 

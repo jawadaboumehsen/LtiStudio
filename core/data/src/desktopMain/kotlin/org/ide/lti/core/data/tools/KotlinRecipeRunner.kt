@@ -45,9 +45,15 @@ public class KotlinRecipeRunner(
                     onLog,
                     groupId,
                 )
+
             is RecipeConfig.CMake -> runCmake(srcDir, outDir, recipe, outputs, supportFiles, onLog, groupId)
+
+            is RecipeConfig.Autotools -> runAutotools(srcDir, outDir, recipe, outputs, supportFiles, onLog, groupId)
+
             is RecipeConfig.GradleJar -> runGradleJar(srcDir, outDir, recipe, outputs, onLog, groupId)
+
             is RecipeConfig.ScriptCopy -> runScriptCopy(srcDir, outDir, recipe, outputs, onLog)
+
             is RecipeConfig.Release ->
                 runRelease(
                     srcDir,
@@ -361,6 +367,18 @@ public class KotlinRecipeRunner(
             )
         }
 
+        copyOutputs(buildPath, srcDir, outDir, outputs, supportFiles, onLog)
+    }
+
+    /** Each output from [searchRoot] (its path, else the first file of that name) into [outDir], then support files. */
+    private suspend fun copyOutputs(
+        searchRoot: String,
+        srcDir: String,
+        outDir: String,
+        outputs: List<ToolOutput>,
+        supportFiles: List<String>,
+        onLog: suspend (String) -> Unit,
+    ) {
         runCmd("mkdir", listOf("-p", outDir), srcDir, onLog)
         for (out in outputs) {
             KotlinStoreLayout.validateRelativePath(out.file)
@@ -368,10 +386,10 @@ public class KotlinRecipeRunner(
             val qDestination = KotlinStoreLayout.shellQuote("$outDir/${out.file}")
             val copyScript =
                 buildString {
-                    appendLine("file=" + KotlinStoreLayout.shellQuote("$buildPath/${out.file}"))
+                    appendLine("file=" + KotlinStoreLayout.shellQuote("$searchRoot/${out.file}"))
                     appendLine("if [ ! -f \"\$file\" ]; then")
                     appendLine(
-                        "  file=\$(find " + KotlinStoreLayout.shellQuote(buildPath) +
+                        "  file=\$(find " + KotlinStoreLayout.shellQuote(searchRoot) +
                             " -type f -name $qOutFile | head -n 1)",
                     )
                     appendLine("fi")
@@ -380,7 +398,7 @@ public class KotlinRecipeRunner(
                         val qAlias = KotlinStoreLayout.shellQuote(alias)
                         appendLine("if [ ! -f \"\$file\" ]; then")
                         appendLine(
-                            "  file=\$(find " + KotlinStoreLayout.shellQuote(buildPath) +
+                            "  file=\$(find " + KotlinStoreLayout.shellQuote(searchRoot) +
                                 " -type f -name $qAlias | head -n 1)",
                         )
                         appendLine("fi")
@@ -401,6 +419,34 @@ public class KotlinRecipeRunner(
             val copySupp = "if [ -e $qSource ]; then cp -r $qSource $qDestination; fi"
             runCmd("sh", listOf("-c", copySupp), srcDir, onLog)
         }
+    }
+
+    private suspend fun runAutotools(
+        srcDir: String,
+        outDir: String,
+        recipe: RecipeConfig.Autotools,
+        outputs: List<ToolOutput>,
+        supportFiles: List<String>,
+        onLog: suspend (String) -> Unit,
+        groupId: String? = null,
+    ) {
+        val configure = (listOf("./configure", "CC=clang") + recipe.configureArgs).joinToString(" ") {
+            KotlinStoreLayout.shellQuote(it)
+        }
+        val autogen = if (recipe.autogen) listOf("./autogen.sh") else emptyList()
+        val script = (autogen + configure + recipe.make.map { "make -j\$(nproc) $it".trim() }).joinToString(" && ")
+        var buildExit = 0
+        commandRunner.stream(
+            script = script,
+            category = CommandCategory.BUILD,
+            cwd = srcDir,
+            env = if (groupId != null) mapOf("LTI_TOOL_GROUP" to groupId) else emptyMap(),
+            onFinished = { buildExit = it },
+        ).collect { line -> onLog(line) }
+        if (buildExit != 0) {
+            throw ToolErrorException(ToolError.BuildFailed("configure/make failed with exit $buildExit"))
+        }
+        copyOutputs(srcDir, srcDir, outDir, outputs, supportFiles, onLog)
     }
 
     private suspend fun runGradleJar(
@@ -493,6 +539,8 @@ public class KotlinRecipeRunner(
                     appendLine("mkdir -p \"\$(dirname '$outDir/'$qFile)\"")
                     appendLine("cp -a '$srcDir/'$qFile '$outDir/'$qFile")
                     appendLine("chmod 755 '$outDir/'$qFile")
+                    // Ubuntu has no `python`, only `python3`: a script asking for the bare name would not start.
+                    appendLine("sed -i '1s|^#!/usr/bin/env python\$|#!/usr/bin/env python3|' '$outDir/'$qFile")
                 }
             runCmd("sh", listOf("-c", script), srcDir, onLog)
         }

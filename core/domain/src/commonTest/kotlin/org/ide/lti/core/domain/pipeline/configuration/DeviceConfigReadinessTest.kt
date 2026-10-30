@@ -102,7 +102,12 @@ class DeviceConfigReadinessTest {
     fun `boot chain sizes matter only for partitions that are listed`() {
         val noSize = codes(target.copy(dtboPartitionBytes = 0))
         assertTrue("dtboPartitionBytes" to DeviceConfigReadiness.INVALID_SIZE in noSize)
-        val noDtbo = target.copy(dtboPartitionBytes = 0, bootPartitions = listOf("boot", "init_boot", "vendor_boot"))
+        val withoutDtbo = listOf("boot", "init_boot", "vendor_boot")
+        val noDtbo = target.copy(
+            dtboPartitionBytes = 0,
+            bootPartitions = withoutDtbo,
+            packagePolicy = target.packagePolicy.copy(flashableBootPartitions = withoutDtbo),
+        )
         assertEquals(emptyList(), DeviceConfigReadiness.check(noDtbo, snapshot))
         val badPath = codes(target.copy(bootDevicePath = "dev"))
         assertTrue("bootDevicePath" to DeviceConfigReadiness.INVALID_FORMAT in badPath)
@@ -122,6 +127,15 @@ class DeviceConfigReadinessTest {
         assertTrue(
             "signing.avbKeyRef" to StageSettingsValidator.MISSING_KEY_REF in
                 codes(s = signing(SigningPolicy(avbKeyRef = ""))),
+        )
+    }
+
+    @Test
+    fun `the package writes only the device's own boot partitions, never one like persist`() {
+        val policy = target.packagePolicy.copy(flashableBootPartitions = listOf("boot", "persist"))
+        assertTrue(
+            "packagePolicy.flashableBootPartitions" to DeviceConfigReadiness.UNKNOWN_PARTITION in
+                codes(target.copy(packagePolicy = policy)),
         )
     }
 }

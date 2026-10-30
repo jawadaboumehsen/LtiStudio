@@ -91,7 +91,7 @@ class ToolManagerTest {
         val summary = manager.prepareMissing()
         assertTrue(port.initCalled, "prepareMissing must call port.init() first")
         assertTrue(summary.isComplete, "All groups should be installed successfully")
-        assertEquals(7, port.installedRequests.size, "Must install all 7 catalog groups")
+        assertEquals(ToolGroupCatalog.allGroups.size, port.installedRequests.size, "Must install every catalog group")
 
         // First group is android-tools
         val firstReq = port.installedRequests.first()
@@ -111,7 +111,11 @@ class ToolManagerTest {
 
         assertEquals(frozen, port.installedRequests.first { it.group == group.id }.source)
         val others = port.installedRequests.filter { it.group != group.id }
-        assertEquals(6, others.size, "groups without a frozen target still follow their current target")
+        assertEquals(
+            ToolGroupCatalog.allGroups.size - 1,
+            others.size,
+            "groups without a frozen target still follow their current target",
+        )
     }
 
     @Test
@@ -227,7 +231,7 @@ class ToolManagerTest {
         // First group failed with MissingPackages
         assertEquals(1, summary.failedCount)
         // Remaining 6 groups must be NotAttempted
-        assertEquals(6, summary.notAttemptedCount)
+        assertEquals(ToolGroupCatalog.allGroups.size - 1, summary.notAttemptedCount)
     }
 
     @Test

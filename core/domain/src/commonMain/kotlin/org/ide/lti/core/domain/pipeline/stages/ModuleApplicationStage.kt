@@ -56,18 +56,20 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
                     relPath = APPLIED_PATH,
                     content = EMPTY_APPLIED_JSON.encodeToByteArray(),
                 ),
-            )
+            ) + ProjectScripts.steps(ctx)
         }
 
         val outcome = resolveAllPackages(ctx, enabledPackages)
         return outcome.failureStep?.let { listOf(it) }
-            ?: buildPlanSteps(
-                enabledPackages = enabledPackages,
-                resolvedEntries = outcome.resolvedEntries,
-                resolvedPlans = outcome.resolvedPlans,
-                partitions = ctx.target.dynamicPartitions,
-                platformKeyRef = ctx.snapshot.build.signing.platformKeyRef,
-            )
+            ?: (
+                buildPlanSteps(
+                    enabledPackages = enabledPackages,
+                    resolvedEntries = outcome.resolvedEntries,
+                    resolvedPlans = outcome.resolvedPlans,
+                    partitions = ctx.target.dynamicPartitions,
+                    platformKeyRef = ctx.snapshot.build.signing.platformKeyRef,
+                ) + ProjectScripts.steps(ctx)
+                )
     }
 
     private sealed interface PackageOutcome {
@@ -88,6 +90,7 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
         for (pkg in enabledPackages) {
             when (val outcome = resolveSinglePackage(ctx, pkg)) {
                 is PackageOutcome.Failure -> return ResolutionOutcome(emptyList(), emptyList(), outcome.step)
+
                 is PackageOutcome.Success -> {
                     resolvedEntries += outcome.entry
                     resolvedPlans += outcome.plan
@@ -166,6 +169,7 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
                     ),
                 )
             }
+
             is ResolutionResult.Resolved -> PackageOutcome.Success(entry, resolution.plan)
         }
     }
@@ -241,26 +245,31 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
                 kind = "Copy",
                 target = "${destination.partition}/${destination.relativePath}",
             )
+
             is ConcreteOperation.Replace -> AppliedOperationSummary(
                 id = id,
                 kind = "Replace",
                 target = "${destination.partition}/${destination.relativePath}",
             )
+
             is ConcreteOperation.Delete -> AppliedOperationSummary(
                 id = id,
                 kind = "Delete",
                 target = "${target.partition}/${target.relativePath}",
             )
+
             is ConcreteOperation.PropertyPatch -> AppliedOperationSummary(
                 id = id,
                 kind = "PropertyPatch",
                 target = "${target.partition}/${target.relativePath}",
             )
+
             is ConcreteOperation.TextPatch -> AppliedOperationSummary(
                 id = id,
                 kind = "TextPatch",
                 target = "${target.partition}/${target.relativePath}",
             )
+
             is ConcreteOperation.ApkJarPatch -> AppliedOperationSummary(
                 id = id,
                 kind = "ApkJarPatch",

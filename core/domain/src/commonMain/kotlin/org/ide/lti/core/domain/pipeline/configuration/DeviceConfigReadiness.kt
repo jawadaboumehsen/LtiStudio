@@ -189,6 +189,17 @@ public object DeviceConfigReadiness {
                 val failed = partition in t.bootPartitions && fieldAndSize.second <= 0L
                 rule(failed, stage, fieldAndSize.first, INVALID_SIZE, "Size of '$partition' must be above zero")
             }
+            // The package writes only partitions this device describes: never one that holds the phone's own
+            // identity (persist, efs, modem calibration), which a ROM can never bring back.
+            t.packagePolicy.flashableBootPartitions.filter { it !in t.bootPartitions }.distinct().forEach {
+                rule(
+                    true,
+                    stage,
+                    "packagePolicy.flashableBootPartitions",
+                    UNKNOWN_PARTITION,
+                    "'$it' is not one of this device's boot partitions, so the package must not write it",
+                )
+            }
             val relative = !t.bootDevicePath.startsWith("/")
             rule(relative, stage, "bootDevicePath", INVALID_FORMAT, "Boot device path must be absolute")
         }

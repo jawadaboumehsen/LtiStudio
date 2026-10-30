@@ -33,10 +33,10 @@ class StageDefinitionsTest {
         // Mirrors EnvironmentReadinessAdapter.DEFAULT_REQUIRED_PRODUCT_TOOLS ∪ DEFAULT_REQUIRED_HOST_PACKAGES
         // (core/data cannot be referenced from here); `java` is needed only to launch signapk.jar.
         val readinessSet = setOf(
-            "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs", "avbtool",
+            "payload-dumper-go", "lpunpack", "lpmake", "simg2img", "erofsfuse", "mkfs.erofs", "fsck.erofs", "avbtool",
             "unpack_bootimg", "img2sdat", "signapk",
             "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
-            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "java",
+            "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "touch", "java",
         )
         assertEquals(readinessSet - setOf("java"), DefaultPipelineStages.allRequiredToolIds)
     }

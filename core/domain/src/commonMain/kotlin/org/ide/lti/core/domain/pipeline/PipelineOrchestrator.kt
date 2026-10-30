@@ -790,7 +790,9 @@ public class PipelineOrchestrator(
                         if (!event.isError) stdout.append(event.text).append('\n')
                         outputBuffer.add(event.text)
                     }
+
                     is StepEvent.Finished -> finished = event.exitCode
+
                     StepEvent.Heartbeat ->
                         runRepository.heartbeatDriver(
                             driver.runId,
@@ -1039,7 +1041,10 @@ public class PipelineOrchestrator(
                 "Required tool '${cmd.toolId}' has no immutable pin in run ${driver.runId}"
             }
         }
-        return if (pinned != null) cmd.copy(toolId = pinned) else cmd
+        val args = cmd.args.map { arg ->
+            arg.removePrefix(PINNED_TOOL_ARG).takeIf { it != arg }?.let { driver.run.pinnedTools[it] ?: it } ?: arg
+        }
+        return cmd.copy(toolId = pinned ?: cmd.toolId, args = args)
     }
 
     private suspend fun collectArtifacts(driver: Driver): List<Artifact> {

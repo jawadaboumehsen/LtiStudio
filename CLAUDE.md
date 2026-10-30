@@ -742,9 +742,18 @@ per stage; a failed stage marks every later stage pending and stops.
   - `SIGNAPK` (`signapk`): `ToolSource.Git`, `RecipeConfig.GradleJar`. Jar output: `signapk.jar`.
   - `GH` (`gh`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `gh`.
   - `PAYLOAD_DUMPER_GO` (`payload-dumper-go`): `ToolSource.Release`, `RecipeConfig.Release`. Native output: `payload-dumper-go`.
+  - `E2FSPROGS` (`e2fsprogs`): `ToolSource.Git` (v1.47.4), `RecipeConfig.Autotools`. Native output: `fuse2fs` (not
+    required for the product; mounts an ext4 image as the user, built against `libfuse3-dev`). Every catalog group
+    must have a selected version for a run to start (`paths()` pins them all), so setup builds it like the rest.
+  - `F2FS_TOOLS` (`f2fs-tools`): `ToolSource.Git` (kernel.org, tag 1.17.0), `RecipeConfig.Autotools(autogen = true)`,
+    static (`--disable-shared`). Outputs `fsck.f2fs` and `dump.f2fs` (a copy of it: the binary acts on its name).
+    Needs the system packages `autoconf`, `automake`, `libtool` (setup asks for them like any package) and
+    `fakeroot` for the readback.
 - Sealed `RecipeConfig` types (`core:domain`):
   - `RecipeConfig.AndroidTools`: native build with vendor patches applied via git identity.
   - `RecipeConfig.CMake`: CMake-based build with custom args and parallel compile.
+  - `RecipeConfig.Autotools`: `./configure CC=clang <args>` then one `make -j` per entry, in the source root
+    (`./autogen.sh` first when `autogen`).
   - `RecipeConfig.GradleJar`: shadow JAR build via wrapper.
   - `RecipeConfig.ScriptCopy`: executable script copy and mode set.
   - `RecipeConfig.Release`: checksum-verified release archive download and member extraction.
@@ -828,8 +837,21 @@ per stage; a failed stage marks every later stage pending and stops.
   quarantine, then installs like an import. Entries show Installed / Update from x (`installStatus`).
 - Window shortcuts (`WindowKeyShortcutHandler`) are taken only when a handler is registered; otherwise the key
   reaches the focused text field (Ctrl+C/V/X/A/Z).
-- Debloat: inventory = APK folders of the assembled `work/` (`DebloatInventory`); picks are `partition:path`;
-  protected apps can never be picked.
+- Debloat: inventory = APK folders of the assembled `work/` (`DebloatInventory`); an APK loose in `app/`,
+  `priv-app/`, `overlay/` or `framework/` is its own entry, and framework entries are protected. Picks are
+  `partition:path`; protected apps can never be picked. `AppManifests.SCRIPT` reads every manifest with the aapt2
+  inside the apktool jar (cached in `~/.ltirom/cache/aapt2-<jar hash>`), about 7 s for a ROM; `DebloatRisk` turns
+  that into blockers (provides a library a kept app needs, last home screen, last keyboard), warnings (persistent,
+  system UID) and notes (boot receiver, overlays). The stage refuses a blocked pick (`DEBLOAT_BREAKS_DEVICE`);
+  the editor shows the reasons per app, and each app's name and bitmap icon (`AppManifests.LABELS_SCRIPT`, aapt2
+  badging; adaptive XML icons have no bitmap, so only some apps get one).
+- Disk usage (Studio > Workspace > Disk usage, `WorkspaceStorage`): `du -sb` of the known workspace folders; only
+  folders the next build makes again can be freed, never while a run is active (a stage counts as cached only
+  while its declared outputs still exist, so a freed folder is rebuilt).
+- Patches scripts (`CustomizationSettings.scripts`, `ProjectScripts`): run after the plugins from `work/`; then
+  `CoverageFixRequest` gives new files the sidecar lines of their folder. Never fix sidecars by writing
+  `work/configs` between builds: Assemble's cache covers them, so the next build re-assembles and drops the fix;
+  set `fillMissingSidecars` instead (what Build & Sign's Coverage button does).
 - Patches/Mods: plugins installed in the app (`InstalledPluginCatalog`, `<LOCALAPPDATA>/LtiRomGui/plugins/installed`).
   Their plans are applied in the app by `PipelineStep.Host` → `ModuleHostSteps` (`FileMutationAdapter` on
   `\\wsl.localhost\<distro>\…\work`), which also writes the sidecar entries of added or deleted files.
@@ -907,6 +929,88 @@ LtiRomProject/
 - CI must check out both, side by side.
 - You never build the server by hand: `stageBundledServer` (a dependency of `run`, `createDistributable`
   and `package*`) builds it through the included build.
+
+## Toolkit (ROM Workbench Toolkit - Spec 010)
+
+Spec: `specs/010-rom-workbench-toolkit/`. Everything runs as real jobs in the workspace through the build service;
+nothing is shown as done before its job finished.
+
+- Ingestion (Acquire + Extract): `FormatDetector.detect` reads the archive's first 512 bytes (`xxd -p`), never the
+  file name, and Acquire records `package.manifest`. Extract unpacks the container (`FirmwareIngestion`: zip, 7z/RAR
+  via `7zz`, tar/gz/xz/lz4/zstd, payload.bin, sparse chunks, block OTA, Odin `.tar.md5`), then classifies the member
+  list with `FirmwareLayouts.classify`. Refused with a plain reason: incremental OTAs (payload metadata or block-OTA
+  diff ops), NTPI, unknown formats. EROFS mounts with erofsfuse, ext4 with `fuse2fs -o ro,fakeroot`; F2FS (no FUSE
+  driver) is dumped straight into `firmware/extracted/<p>` by `F2fsImage.READBACK_SCRIPT ... keep` (dump.f2fs in
+  fakeroot), its symlinks written as mode 777 (a Linux link keeps none). The filesystem comes from the
+  image superblock (`FsTypes.fromSuperblock`).
+- Workbenches (`core:domain` `workbench/`, Koin singles in `PlatformRepositoryModule.desktop.kt`):
+  `WorkbenchRunner` (job lock, workspace paths, acknowledgements), `BootWorkbench`, `ImageWorkbench`,
+  `ContentWorkbench`, `RestoreWorkbench`. The UI calls them from `BootPaneModel` / `ImagePaneModel` (Assemble),
+  `ContentToolsViewModel` (Patches/Mods), the Debloat and Build view models.
+- Boot: unpack with `unpack_bootimg`, the ramdisk as a folder, repack with `mkbootfs` + `RamdiskCheck` (any
+  difference stops it), AVB footer re-signed with `keys/avb.pem`. The result is the partition's override
+  (`KernelOverrides.path`, sha256 in `AssemblySettings.kernelOverrides`); Assemble copies it and refuses it when the
+  hash no longer matches. APatch via `kptools`; Magisk only by importing an image patched on the phone (there is no
+  Linux magiskboot). vbmeta flags: an edited copy in `out/toolkit/`, never packaged.
+- Device vs firmware (Target panel, `DeviceFirmwareCheck`): build.prop identity, boot-chain sizes from the stock
+  images' AVB footers and the stock super table (raw firmware only) next to `device.json`, with "use firmware
+  value". A footer size is what the stock image was signed for; confirm with `fastboot getvar partition-size`.
+- Kernel facts (Assemble > Boot preparation, `BootWorkbench.kernelFacts`/`KernelFacts`): version and, from the
+  embedded config, the EROFS compressions and ramdisk formats the boot kernel reads.
+- Image browser "Search all partitions" (`ImageWorkbench.search`): names across every partition tree.
+- Kernel facts also show dm-verity (with FEC) and fs-verity from the embedded config.
+- Link check (Build, `BuildChecks.linkSteps` + `LinkCheck`): every symlink of `work/` and of the stock trees is
+  resolved as the phone would (system is `/`, another partition mounted on `/<p>` hides system's folder of that
+  name, links into system's empty top-level folders such as `/apex`, `/data`, `/mnt` are run-time and skipped);
+  only links dangling in the build but not in stock refuse it (`BROKEN_LINKS`), unless
+  `BuildWarningKind.BrokenLinks` is accepted (Build & Sign > Coverage).
+- Compare (`CompareWorkbench`, Patches > Compare): files, archives, folders, decoded code; two JARs/APKs decoded
+  with `apktool d -r --no-debug-info` and diffed method by method with their changed instructions (`LineDiff`,
+  an LCS diff); and "What the build changed": a partition of `work/` against `firmware/extracted/` (`TreeCompare`):
+  added, removed, content, metadata (owner, mode, caps, label, link target from each side's sidecars) and type
+  changes. Content uses rsync's quick check (same size and mtime = same; Assemble keeps the stock times).
+- Replacement images (Extract > Dynamic partitions, `ExtractionSettings.replacementImages`): EROFS, ext4 or F2FS, stored
+  raw in `firmware/replacements/`, pinned by sha256. ext4 mounts with `fuse2fs -o ro,fakeroot` (fuse2fs checks
+  permissions, erofsfuse does not; without fakeroot a root-only `lost+found` stops the stat dump).
+- Build filesystems (`BuildFilesystems`: `BuildSettings.filesystem` + per-partition `partitionFilesystem`): EROFS
+  (mkfs.erofs) or ext4 (`Ext4Image`: android-tools mke2fs + e2fsdroid, no journal, sized by a trial build then the
+  used blocks + 1% + 64, `e2fsck -fn`, read back through fuse2fs; `lost+found` gets root's owner/label in sidecar
+  copies under `out/ext4/<p>` and is skipped by the verify) or F2FS (`F2fsImage`: android-tools `make_f2fs -O ro`
+  + `sload_f2fs`, not `-g android`, which forces the root to 0:0; sized by a trial's "Max image size" + 1% + 16 MiB,
+  at least 32 MiB; sload labels the root by `<mount point><mount point>`, so a sidecar copy in `out/f2fs/<p>` adds
+  that line; `fsck.f2fs --dry-run -f`; read back by f2fs-tools' `dump.f2fs -r -P -L` inside one `fakeroot` session,
+  symlinks compared without a mode). A catalog tool used as an argument (`fakeroot sh -c … <dump.f2fs>`) is written
+  `pinnedToolArg(id)` and resolved to the run's pin. Other filesystems are refused (`UNSUPPORTED_FILESYSTEM`). Mount table (`MountTable`, `BuildChecks.mountTableSteps`): every fstab declaring a dynamic
+  partition must also declare it as its built filesystem; the build adds lines to `work/vendor|odm/etc/fstab.*`
+  (`FstabEditor.withFilesystems`) and refuses (`MOUNT_TABLE`) a gap in a boot image's first-stage fstab, which
+  Assemble > Mount table fixes (`BootWorkbench.addMountLines`: EROFS, ext4 and F2FS lines for every logical partition,
+  vendor_boot repacked as an override). PQ84P01's fstabs mount system as erofs or ext4, the rest erofs only.
+- Mount table (Assemble > Mount table): `AssemblySettings.disableDataEncryption` strips the encryption flags of
+  the `/data` line in every fstab of `work/` (`FstabEditor`); the phone must be formatted once. The first-stage
+  fstab in vendor_boot is not edited (verity there is off through the disabled vbmeta).
+- Build safety: `fsck.erofs` checks every built image; the package writes only the device's boot partitions
+  (never persist/efs); leaving a boot image out warns (`BOOT_IMAGE_LEFT_OUT`); a boot or init_boot ramdisk
+  without `/init` is not repacked (`RamdiskCheck.missingInit`).
+- Build: coverage gate (`BuildChecks.coverageRefusal`, refuses when a work-tree file has no fs_config or
+  file_contexts entry), every built image is mounted and its sidecars compared with `work/configs`
+  (`IMAGE_VERIFY_FAILED`), per-partition compression (`BuildSettings.partitionCompression`: `lz4`, `lz4hc,12` or `none`),
+  extra packages (`BuildSettings.extraPackages`: `FullPackage` fastboot images zip, `Odin` AP tar with md5 trailer,
+  both from a full `super.img`; `SUPER_OVERLAP` unless accepted in `acknowledgedWarnings`).
+- Debloat backups: `restore/debloat/<partition>/<path>` plus the sidecars in `restore/debloat/configs`; points in
+  `restore/index.json` (`RestoreIndex`). Restoring copies the app back and merges its sidecar lines back.
+- Risky features (`RiskyFeature`: kernel override, root patch, vbmeta flags, library patch, package
+  rebuild) ask once per workspace;
+  the answer is kept in `facts/acknowledgements.json`.
+- Workspace files: `facts/basic_info.json`, `facts/partition_info.json` (written by Extract), `.job.lock` (one
+  workbench job at a time; a lock from an earlier app session is stale).
+- Step result keys (`RuntimeKeys`): `package.manifest`, `package.checksum.result`, `package.header.hex`,
+  `extract.images`, `build.coverage`.
+- Tools added to the catalog for the toolkit: `7zz` (7-Zip), `sdat2img.py`, `kptools` (KernelPatch); system packages
+  `lz4`, `zstd`, `cpio`, `dtc`. Not available, so not offered: Linux magiskboot, delta_generator (no Seamless OTA
+  output), vdexExtractor (deodex handles plain VDEX/ODEX only), simg2simg (split writes byte parts).
+- Tests: pure logic gets `kotlin.test` with real sample data; tool-backed steps are planned against
+  `SimulatedExecutionPort` with real tool output. Gates (run sequentially, app closed): `detekt`,
+  `verifyDesignSystemGuardrails`, `checkArchitecture` plus the touched module's `desktopTest --rerun-tasks`.
 
 ## Credits
 

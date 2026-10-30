@@ -27,9 +27,20 @@ public class PatchStageEditor : StageEditor {
 
     @Composable
     override fun Content(context: StageEditorContext, modifier: Modifier) {
+        val selected = context.selectedObjectId?.value ?: "module-catalog"
+        if (selected in ContentTools.ALL) {
+            val tools: ContentToolsViewModel = koinViewModel { parametersOf(context.workspaceId) }
+            val state by tools.state.collectAsState()
+            ContentToolsPane(toolId = selected, state = state, viewModel = tools, modifier = modifier)
+            return
+        }
         val viewModel: PatchViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
         val facts by viewModel.facts.collectAsState()
+        if (selected == SCRIPTS) {
+            ScriptsPane(settings = settings, onChange = viewModel::updateSettings, modifier = modifier)
+            return
+        }
 
         PatchEditor(
             settings = settings,
@@ -37,7 +48,7 @@ public class PatchStageEditor : StageEditor {
             onToggle = viewModel::toggle,
             onRefresh = viewModel::refresh,
             onOpenPlugins = context.onOpenPlugins,
-            selectedObjectId = context.selectedObjectId?.value ?: "module-catalog",
+            selectedObjectId = selected,
             modifier = modifier,
         )
     }

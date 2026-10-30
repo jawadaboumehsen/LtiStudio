@@ -17,6 +17,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
+import org.ide.lti.core.domain.pipeline.toolkit.Refusal
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.ide.lti.core.domain.workspace.WorkspaceFile
@@ -39,11 +43,21 @@ public data class BuildFacts(
     val romVersion: String = "",
 )
 
+/** The coverage check of the Build & Sign stage: running, its result, or why it could not run. */
+public data class CoverageState(
+    val busy: String? = null,
+    val result: CoverageResult? = null,
+    val refusal: Refusal? = null,
+    /** Every build gives files without sidecar lines those of their folder (`fillMissingSidecars`). */
+    val fillInEveryBuild: Boolean = false,
+)
+
 public class BuildViewModel(
     public val workspaceId: String,
     initialSettings: BuildSettings? = null,
     private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
+    private val content: ContentWorkbench? = null,
 ) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
@@ -70,6 +84,43 @@ public class BuildViewModel(
 
     public fun updateSettings(updated: BuildSettings) {
         sync.update(updated)
+    }
+
+    private val _coverage = MutableStateFlow(CoverageState())
+
+    /** The work tree's permission and label coverage, as last checked (FR-015). */
+    public val coverage: StateFlow<CoverageState> = _coverage.asStateFlow()
+
+    public fun checkCoverage() {
+        coverageTask("Checking the work tree") { it.coverage(workspaceId, partitions()) }
+    }
+
+    /**
+     * Makes every build add the missing fs_config and file_contexts lines (FR-016), at the end of the Patches
+     * stage. Writing them into work/configs now would not last: the next build assembles work/ again first.
+     */
+    public fun setFillInEveryBuild(on: Boolean) {
+        val store = store ?: return
+        viewModelScope.launch {
+            store.update(workspaceId) { it.copy(customization = it.customization.copy(fillMissingSidecars = on)) }
+                .onSuccess { _coverage.value = _coverage.value.copy(fillInEveryBuild = on) }
+        }
+    }
+
+    private fun partitions(): List<String> = (device.value ?: targetDevice).dynamicPartitions
+
+    private fun coverageTask(name: String, block: suspend (ContentWorkbench) -> CoverageResult) {
+        val workbench = content ?: return
+        if (_coverage.value.busy != null) return
+        _coverage.value = _coverage.value.copy(busy = name, refusal = null)
+        viewModelScope.launch {
+            try {
+                val fill = store?.current(workspaceId)?.customization?.fillMissingSidecars == true
+                _coverage.value = CoverageState(result = block(workbench), fillInEveryBuild = fill)
+            } catch (e: RefusalException) {
+                _coverage.value = _coverage.value.copy(busy = null, refusal = e.refusal)
+            }
+        }
     }
 
     public fun refresh() {

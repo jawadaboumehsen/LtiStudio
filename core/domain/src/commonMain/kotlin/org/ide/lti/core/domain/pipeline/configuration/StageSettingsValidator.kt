@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.pipeline.configuration
 
+import org.ide.lti.core.domain.pipeline.stages.ProjectScripts
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -17,6 +19,7 @@ import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.CustomizationSettings
 import org.ide.lti.core.model.workspace.DebloatSettings
 import org.ide.lti.core.model.workspace.ExtractionSettings
+import org.ide.lti.core.model.workspace.ProjectScript
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 import org.ide.lti.core.model.workspace.SigningPolicy
@@ -43,6 +46,9 @@ public object StageSettingsValidator {
     public const val INVALID_BLOCK_SIZE: String = "INVALID_BLOCK_SIZE"
     public const val INVALID_ALIGNMENT: String = "INVALID_ALIGNMENT"
     public const val INCOMPATIBLE_FILESYSTEM: String = "INCOMPATIBLE_FILESYSTEM"
+    public const val UNSUPPORTED_FILESYSTEM: String = "UNSUPPORTED_FILESYSTEM"
+    public const val BOOT_IMAGE_LEFT_OUT: String = "BOOT_IMAGE_LEFT_OUT"
+    public const val INVALID_SCRIPT: String = "INVALID_SCRIPT"
     public const val INLINE_CREDENTIAL_NOT_ALLOWED: String = "INLINE_CREDENTIAL_NOT_ALLOWED"
     public const val MISSING_KEY_REF: String = "MISSING_KEY_REF"
     public const val INVALID_PART_SIZE: String = "INVALID_PART_SIZE"
@@ -266,7 +272,35 @@ public object StageSettingsValidator {
                 )
             }
         }
+        errors += scriptErrors(settings.scripts)
         return ValidationReport(errors = errors)
+    }
+
+    /** A script needs a plain, unique file name and some text to run. */
+    private fun scriptErrors(scripts: List<ProjectScript>): List<ValidationError> {
+        val repeated = scripts.groupBy { it.name }.filterValues { it.size > 1 }.keys
+        return scripts.mapNotNull { script ->
+            val message = when {
+                !ProjectScripts.NAME.matches(script.name) ->
+                    "Script name '${script.name}' may only hold letters, digits, '_' and '-' (64 at most)"
+
+                script.name in repeated -> "Two scripts are named '${script.name}'"
+
+                script.enabled && script.content.isBlank() -> "Script '${script.name}' is empty"
+
+                else -> null
+            }
+            message?.let {
+                ValidationError(
+                    stageId = StageId.MODULE_APPLICATION,
+                    objectId = script.name,
+                    fieldPath = "scripts",
+                    code = INVALID_SCRIPT,
+                    severity = Severity.ERROR,
+                    message = it,
+                )
+            }
+        }
     }
 
     public fun validateBuild(settings: BuildSettings, target: TargetDevice? = null): ValidationReport {
@@ -315,6 +349,7 @@ public object StageSettingsValidator {
                 )
             }
         }
+        errors += unsupportedFilesystems(settings)
         if (target != null && target.filesystemType.isNotBlank()) {
             if (!settings.filesystem.equals(target.filesystemType, ignoreCase = true)) {
                 errors += ValidationError(
@@ -328,8 +363,48 @@ public object StageSettingsValidator {
                 )
             }
         }
+        target?.let { errors += bootImagesLeftOut(it) }
         errors += validateSigning(settings.signing).errors
         return ValidationReport(errors = errors)
+    }
+
+    /** A filesystem the build cannot make, for the stage or for one partition. */
+    private fun unsupportedFilesystems(settings: BuildSettings): List<ValidationError> {
+        val chosen = mapOf("filesystem" to settings.filesystem) +
+            settings.partitionFilesystem.mapKeys { "partitionFilesystem.${it.key}" }
+        return chosen.filterValues { it.lowercase() !in BuildFilesystems.SUPPORTED }.map { (field, fs) ->
+            ValidationError(
+                stageId = StageId.BUILD_FLASHABLE_ZIP,
+                objectId = null,
+                fieldPath = field,
+                code = UNSUPPORTED_FILESYSTEM,
+                severity = Severity.ERROR,
+                message = "'$fs' cannot be built; choose ${BuildFilesystems.SUPPORTED.joinToString(" or ")}",
+            )
+        }
+    }
+
+    /**
+     * A boot partition the package does not write keeps what the slot already has: the device then boots another
+     * build's kernel (or device tree) against this build's system.
+     */
+    private fun bootImagesLeftOut(target: TargetDevice): List<ValidationError> {
+        val left = target.bootPartitions - target.packagePolicy.flashableBootPartitions.toSet()
+        return if (left.isEmpty()) {
+            emptyList()
+        } else {
+            listOf(
+                ValidationError(
+                    stageId = StageId.BUILD_FLASHABLE_ZIP,
+                    objectId = target.id,
+                    fieldPath = "packagePolicy.flashableBootPartitions",
+                    code = BOOT_IMAGE_LEFT_OUT,
+                    severity = Severity.WARNING,
+                    message = "The package does not write ${left.joinToString()}: the slot it installs to keeps " +
+                        "the old ones, so the device boots another build's image with this system.",
+                ),
+            )
+        }
     }
 
     public fun validateSigning(settings: SigningPolicy): ValidationReport {

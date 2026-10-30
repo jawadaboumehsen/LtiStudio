@@ -23,28 +23,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.AotCleanupPane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.BootPreparationPane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.BuildPropertiesPane
+import org.ide.lti.feature.rom.studio.stage.assemble.panes.ImageBrowserPane
+import org.ide.lti.feature.rom.studio.stage.assemble.panes.ImageToolsPane
+import org.ide.lti.feature.rom.studio.stage.assemble.panes.MountTablePane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.SystemExtHandlingPane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.WorkTreesPane
 
-@Suppress("LongParameterList", "UnusedParameter")
+@Suppress("LongParameterList")
 @Composable
 public fun AssembleEditor(
     settings: AssemblySettings,
     target: TargetDevice,
     onChange: (AssemblySettings) -> Unit,
-    validationErrors: List<ValidationError> = emptyList(),
-    dirtyPaths: Set<String> = emptySet(),
     selectedObjectId: String = "work-trees",
+    imageState: ImagePaneState = ImagePaneState(),
+    imageActions: ImagePaneActions = ImagePaneActions(),
+    bootState: BootPaneState = BootPaneState(),
+    bootActions: BootPaneActions = BootPaneActions(),
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val isImageBrowser = selectedObjectId.lowercase() in setOf("image-browser", "image_browser", "images", "browser")
     val scrollState = rememberScrollState()
 
     Box(
@@ -53,49 +58,73 @@ public fun AssembleEditor(
             .testTag("AssembleEditor"),
         contentAlignment = Alignment.TopCenter,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = GlassDimens.OverviewMaxContentWidth)
-                .verticalScroll(scrollState)
-                .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
-        ) {
-            when (selectedObjectId.lowercase()) {
-                "system-ext-handling", "system_ext_handling", "system_ext", "system-ext" -> SystemExtHandlingPane(
-                    settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
-                )
-                "aot-cleanup", "aot_cleanup", "aot" -> AotCleanupPane(
-                    settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
-                )
-                "boot-preparation", "boot_preparation", "boot" -> BootPreparationPane(
-                    settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
-                )
-                "build-properties", "build_properties", "properties" -> BuildPropertiesPane(
-                    settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
-                )
-                else -> WorkTreesPane(
-                    settings = settings,
-                    target = target,
-                    onChange = onChange,
-                    onValidate = onValidate,
-                    onSave = onSave,
-                )
+        if (isImageBrowser) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = GlassDimens.OverviewMaxContentWidth)
+                    .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
+            ) {
+                ImageBrowserPane(target = target, state = imageState, actions = imageActions)
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = GlassDimens.OverviewMaxContentWidth)
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
+            ) {
+                when (selectedObjectId.lowercase()) {
+                    "system-ext-handling", "system_ext_handling", "system_ext", "system-ext" -> SystemExtHandlingPane(
+                        settings = settings,
+                        target = target,
+                        onChange = onChange,
+                        onValidate = onValidate,
+                        onSave = onSave,
+                    )
+
+                    "aot-cleanup", "aot_cleanup", "aot" -> AotCleanupPane(
+                        settings = settings,
+                        target = target,
+                        onChange = onChange,
+                        onValidate = onValidate,
+                        onSave = onSave,
+                    )
+
+                    "boot-preparation", "boot_preparation", "boot" -> BootPreparationPane(
+                        settings = settings,
+                        target = target,
+                        state = bootState,
+                        actions = bootActions,
+                        onChange = onChange,
+                    )
+
+                    "image-conversion" -> ImageToolsPane(state = imageState, actions = imageActions)
+
+                    "mount-table" -> MountTablePane(
+                        settings = settings,
+                        onChange = onChange,
+                        boot = bootState,
+                        onAddMountLines = bootActions.addMountLines,
+                    )
+
+                    "build-properties", "build_properties", "properties" -> BuildPropertiesPane(
+                        settings = settings,
+                        target = target,
+                        onChange = onChange,
+                        onValidate = onValidate,
+                        onSave = onSave,
+                    )
+
+                    else -> WorkTreesPane(
+                        settings = settings,
+                        target = target,
+                        onChange = onChange,
+                        onValidate = onValidate,
+                        onSave = onSave,
+                    )
+                }
             }
         }
     }

@@ -19,7 +19,7 @@ public object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-10-19.1"
+    public const val PIPELINE_VERSION: String = "2026-10-30.1"
 
     public fun sha256(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")
@@ -41,6 +41,7 @@ public object CacheKeys {
             extraction.bootPartitions.sorted().joinToString(","),
             extraction.slot.orEmpty(),
             extraction.reuseVerifiedExtraction.toString(),
+            extraction.replacementImages.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
         ).joinToString("|")
         return sha256(raw)
     }
@@ -59,6 +60,8 @@ public object CacheKeys {
             snapshot.assembly.bootFooterPolicy,
             snapshot.assembly.baselineCleanup.toString(),
             snapshot.assembly.propertyOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.assembly.kernelOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.assembly.disableDataEncryption.toString(),
         ).joinToString("|")
         return sha256(raw)
     }
@@ -94,6 +97,10 @@ public object CacheKeys {
             avbPubkeySha1,
             platformCertSha1,
             snapshot.assembly.romVersion,
+            snapshot.build.partitionCompression.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.build.partitionFilesystem.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.build.extraPackages.sorted().joinToString(","),
+            snapshot.build.standaloneImages.sorted().joinToString(","),
         ).joinToString("|")
         return sha256(raw)
     }

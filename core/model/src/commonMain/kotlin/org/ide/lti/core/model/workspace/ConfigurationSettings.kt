@@ -43,6 +43,11 @@ public data class ExtractionSettings(
     val bootPartitions: List<String> = emptyList(),
     val slot: String? = null,
     val reuseVerifiedExtraction: Boolean = true,
+    /**
+     * Partitions whose stock image is replaced by the user's own (`firmware/replacements/<p>.img`), with that
+     * image's SHA-256: a file changed outside the Studio stops the build.
+     */
+    val replacementImages: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -54,6 +59,10 @@ public data class AssemblySettings(
     val buildType: String = "user",
     val romVersion: String = "1.0.0",
     val propertyOverrides: Map<String, String> = emptyMap(),
+    /** Boot-chain images edited in the Studio (`overrides/kernel/<p>.img`), by partition, with their SHA-256. */
+    val kernelOverrides: Map<String, String> = emptyMap(),
+    /** Remove the encryption flags of `/data` from the work tree's fstabs; the phone must be formatted once. */
+    val disableDataEncryption: Boolean = false,
 ) {
     init {
         propertyOverrides.forEach { (k, v) ->
@@ -97,10 +106,22 @@ public data class CustomizationSettings(
     val settings: Map<String, Map<String, String>> = emptyMap(),
     val templateDigest: String? = null,
     val resolvedPlanDigest: String? = null,
+    /** Shell scripts run on the work tree after the modules, in this order (only the enabled ones). */
+    val scripts: List<ProjectScript> = emptyList(),
+    /** Give files without fs_config / file_contexts lines those of their folder, at the end of every Patches run. */
+    val fillMissingSidecars: Boolean = false,
 )
+
+/**
+ * A shell script kept in the workspace settings and run by the Patches stage as `sh <script> <work dir>
+ * <workspace dir>` from inside the work tree. Its text is part of the settings, so editing it re-runs the stage.
+ */
+@Serializable
+public data class ProjectScript(val name: String, val content: String = "", val enabled: Boolean = true)
 
 @Serializable
 public data class BuildSettings(
+    /** The filesystem dynamic partitions are built as (`erofs`, `ext4`, `f2fs`), unless [partitionFilesystem] says. */
     val filesystem: String = "erofs",
     val compression: String = "lz4hc,9",
     val level: Int? = null,
@@ -108,6 +129,16 @@ public data class BuildSettings(
     val alignment: Int? = null,
     val signing: SigningPolicy = SigningPolicy(),
     val filenameTemplate: String = "Lti_{version}_{date}_{device}-sign.zip",
+    /** Per-partition `mkfs.erofs -z` value overriding [compression]; `none` builds that partition uncompressed. */
+    val partitionCompression: Map<String, String> = emptyMap(),
+    /** Per-partition filesystem overriding [filesystem] (`erofs`, `ext4` or `f2fs`). */
+    val partitionFilesystem: Map<String, String> = emptyMap(),
+    /** Packages built besides the flashable zip (`PackageKind` names in core:domain: FullPackage, Odin). */
+    val extraPackages: Set<String> = emptySet(),
+    /** Dynamic partitions also put in the fastboot images package as standalone images (they are in super too). */
+    val standaloneImages: List<String> = emptyList(),
+    /** Build warnings (`BuildWarningKind` names) the user accepted. */
+    val acknowledgedWarnings: Set<String> = emptySet(),
 )
 
 @Serializable

@@ -24,7 +24,6 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.model.run.*
-import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -38,8 +37,13 @@ class PipelineResumeTest {
         archiveSha256 = fixture.snapshotGlobalOta.acquisition.firmware.sha256
     }
 
-    private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository) =
-        PipelineOrchestrator(port, repo, FakeVendoredFiles(true), toolStore = PipelinePinnedToolStore())
+    private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository) = PipelineOrchestrator(
+        port,
+        repo,
+        FakeVendoredFiles(true),
+        toolStore = PipelinePinnedToolStore(),
+        hostSteps = CoveredWorkTree,
+    )
 
     private class FakeWorkspaceRepo(vararg initial: Workspace) : WorkspaceRepository {
         val workspaces = initial.associateBy { it.id }.toMutableMap()

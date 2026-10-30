@@ -9,13 +9,20 @@
  */
 package org.ide.lti.core.domain.workspace
 
+import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
+import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 
 /** A firmware archive in the workspace folder; [ref] is what `AcquisitionSettings.archiveRef` stores. */
-public data class FirmwareArchive(val ref: String, val name: String, val sizeBytes: Long)
+public data class FirmwareArchive(
+    val ref: String,
+    val name: String,
+    val sizeBytes: Long,
+    val detectedFormat: PackageFormat? = null,
+)
 
 /**
  * The firmware archives of a workspace, kept in `firmware/downloaded/` where the Acquire stage looks for them.
@@ -37,7 +44,7 @@ public class FirmwareArchives(
         return out.lines().mapNotNull { line ->
             val (size, name) = line.split('\t', limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
             FirmwareArchive(ref = "$DIR/$name", name = name, sizeBytes = size.toLongOrNull() ?: 0L)
-        }.sortedBy { it.name }
+        }.sortedBy { it.name }.map { it.copy(detectedFormat = detect(ws, "$dir/${it.name}")) }
     }
 
     /** Copies the archive at [localPath] (a path on this computer) into the workspace folder. */
@@ -51,7 +58,18 @@ public class FirmwareArchives(
         // Copy to a side name first: an interrupted copy never looks like a complete archive.
         run(ws, "cp", "-f", "--", source, "$dest.partial", timeoutMs = COPY_TIMEOUT_MS)
         run(ws, "mv", "-f", "--", "$dest.partial", dest)
-        return FirmwareArchive(ref = "$DIR/$name", name = name, sizeBytes = execution.stat(ws, "$DIR/$name").sizeBytes)
+        return FirmwareArchive(
+            ref = "$DIR/$name",
+            name = name,
+            sizeBytes = execution.stat(ws, "$DIR/$name").sizeBytes,
+            detectedFormat = detect(ws, dest),
+        )
+    }
+
+    /** The container format from the file's first bytes (FR-001: content, never the name); null when unknown. */
+    private suspend fun detect(ws: Workspace, path: String): PackageFormat? {
+        val header = runCatching { run(ws, "xxd", "-p", "-l", HEADER_BYTES, path) }.getOrNull() ?: return null
+        return FormatDetector.detect(FormatDetector.fromHex(header)).takeIf { it != PackageFormat.Unknown }
     }
 
     private suspend fun workspace(id: String): Workspace =
@@ -74,6 +92,7 @@ public class FirmwareArchives(
         public const val DIR: String = "firmware/downloaded"
         private const val LISTING = "%s\\t%f\\n" // find -printf: size<TAB>name per file
         private const val QUICK_TIMEOUT_MS = 60_000L
+        private const val HEADER_BYTES = "512"
         private const val COPY_TIMEOUT_MS = 3_600_000L
     }
 }

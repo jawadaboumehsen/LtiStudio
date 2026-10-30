@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
@@ -47,6 +48,7 @@ import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ExtractionSettings
+import org.ide.lti.core.ui.toolkit.RefusalView
 import org.ide.lti.feature.rom.studio.api.formatBytes
 import org.ide.lti.feature.rom.studio.api.toggledSelection
 
@@ -62,6 +64,8 @@ public fun ExtractEditor(
     facts: ExtractFacts = ExtractFacts(),
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
+    onReplace: (String) -> Unit = {},
+    onUseStock: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("extraction.") || !it.fieldPath.contains('.') }
@@ -79,17 +83,27 @@ public fun ExtractEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            when (selectedObjectId.lowercase()) {
-                "dynamic-partitions", "dynamic_partitions" -> item {
-                    DynamicPartitionsCard(settings, target, errors, dirtyPaths, onChange)
+            facts.refusal?.let { refusal ->
+                item {
+                    RefusalView(refusal = refusal)
                 }
+            }
+            when (selectedObjectId.lowercase()) {
+                "dynamic-partitions", "dynamic_partitions" -> {
+                    item { DynamicPartitionsCard(settings, target, errors, dirtyPaths, onChange) }
+                    item { ReplacementsCard(settings, target, facts, onReplace, onUseStock) }
+                }
+
                 "boot-partitions", "boot_partitions" -> item {
                     BootPartitionsCard(settings, target, errors, dirtyPaths, onChange)
                 }
+
                 "slot" -> item { SlotCard(settings, target, dirtyPaths, onChange) }
+
                 "filesystem-handling", "filesystem_handling" -> item {
                     FilesystemCard(settings, target, dirtyPaths, onChange)
                 }
+
                 else -> {
                     item { ArchiveLayoutCard(settings, errors, dirtyPaths, onChange) }
                     item { ArchiveContentsCard(facts) }
@@ -167,36 +181,113 @@ private fun ArchiveContentsCard(facts: ExtractFacts) {
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
+        val checksum = facts.checksumResult?.let { c ->
+            if (c.ok) "checksum OK" else "checksum mismatch: expected ${c.expected ?: "none"}, actual ${c.actual}"
+        }
+        listOfNotNull(facts.detectedFormat?.let { "Format ${it.name}" }, checksum).takeIf { it.isNotEmpty() }
+            ?.let { Hint(it.joinToString(" · ")) }
         val archive = facts.archive
         when {
             !facts.loaded -> Hint("Reading the workspace…")
+
             archive == null -> Hint("No firmware archive yet. Acquire or import one first.")
+
             facts.members.isEmpty() -> Hint("$archive could not be read.")
+
             else -> {
                 Hint("$archive · ${facts.members.size} members")
                 facts.members.filterNot { it.startsWith("META-INF/") || it.endsWith("/") }.take(MAX_MEMBERS)
                     .forEach { Mono(it) }
             }
         }
-        Text(
-            text = "Extracted images",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.Medium,
-            fontFamily = ideFontFamily(),
+        ExtractedImages(facts)
+    }
+}
+
+/** The images the last Extract produced (with filesystem and size), or what to run first. */
+@Composable
+private fun ExtractedImages(facts: ExtractFacts) {
+    Text(
+        text = "Extracted images",
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.BodySmall,
+        fontWeight = FontWeight.Medium,
+        fontFamily = ideFontFamily(),
+    )
+    if (facts.partitionImages.isEmpty() && facts.extracted.isEmpty()) {
+        Hint(if (facts.loaded) "None yet. Run the build through Extract to unpack the archive." else "")
+    } else if (facts.partitionImages.isNotEmpty()) {
+        facts.partitionImages.forEach { image ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val flags = listOfNotNull(
+                    if (image.sparse) "sparse" else null,
+                    image.fsType.name.lowercase().takeIf { it != "unknown" },
+                ).joinToString()
+                val label = if (flags.isNotBlank()) "${image.name} ($flags)" else image.name
+                Mono(label)
+                Mono(formatBytes(image.sizeBytes))
+            }
+        }
+    } else {
+        facts.extracted.forEach { image ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Mono(image.path)
+                Mono(formatBytes(image.sizeBytes))
+            }
+        }
+    }
+}
+
+/** Partitions whose stock image is replaced by the user's own EROFS image (a prebuilt product, a ported system). */
+@Composable
+private fun ReplacementsCard(
+    settings: ExtractionSettings,
+    target: TargetDevice,
+    facts: ExtractFacts,
+    onReplace: (String) -> Unit,
+    onUseStock: (String) -> Unit,
+) {
+    ExtractCard("Your own partition images") {
+        Hint(
+            "Extract uses an image you pick instead of the firmware's: EROFS, ext4 or F2FS (a sparse one is " +
+                "expanded; Build & Sign rebuilds it as the filesystem you choose there). The build stops if the " +
+                "file changes outside the Studio.",
         )
-        if (facts.extracted.isEmpty()) {
-            Hint(if (facts.loaded) "None yet. Run the build through Extract to unpack the archive." else "")
-        } else {
-            facts.extracted.forEach { image ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Mono(image.path)
-                    Mono(formatBytes(image.sizeBytes))
+        facts.replaceRefusal?.let { RefusalView(refusal = it) }
+        val partitions = settings.dynamicPartitions.ifEmpty { target.dynamicPartitions }
+        partitions.forEach { p ->
+            val replaced = settings.replacementImages[p]
+            Row(
+                modifier = Modifier.fillMaxWidth().testTag("Replacement_$p"),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Mono(p)
+                Box(Modifier.weight(1f)) {
+                    Hint(replaced?.let { "Your image (sha256 ${it.take(SHA_SHOWN)}…)" } ?: "Stock image")
+                }
+                GlassButton(onClick = { onReplace(p) }, enabled = facts.replacing == null) {
+                    Text(if (facts.replacing == p) "Importing…" else "Use my image…", fontSize = FontSize.BodySmall)
+                }
+                if (replaced != null) {
+                    GlassButton(onClick = { onUseStock(p) }, enabled = facts.replacing == null) {
+                        Text("Use the stock image", fontSize = FontSize.BodySmall)
+                    }
                 }
             }
         }
     }
 }
+
+private const val SHA_SHOWN = 12
 
 @Composable
 private fun Hint(text: String) {

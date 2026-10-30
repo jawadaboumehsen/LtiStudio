@@ -25,6 +25,8 @@ public val stageDebloatModule: Module = module {
             workspaceId = params.getOrNull<String>() ?: "",
             store = getOrNull(),
             workspaceFacts = getOrNull(),
+            restore = getOrNull(),
+            runner = getOrNull(),
         )
     }
 }

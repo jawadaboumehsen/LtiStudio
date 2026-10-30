@@ -13,7 +13,12 @@ import kotlinx.coroutines.yield
 import org.ide.lti.core.domain.pipeline.HostRequest
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
+import org.ide.lti.core.domain.pipeline.stages.CoverageFixRequest
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageFix
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageGate
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ApplyModules
 import org.ide.lti.core.domain.plugin.ConcreteOperation
@@ -43,7 +48,15 @@ class ModuleHostSteps(
 
     override suspend fun run(workspace: Workspace, request: HostRequest): String {
         yield()
-        require(request is ApplyModules) { "unsupported host request ${request::class.simpleName}" }
+        return when (request) {
+            is ApplyModules -> applyModules(workspace, request)
+            is CoverageCheckRequest -> checkCoverage(workspace, request)
+            is CoverageFixRequest -> fixCoverage(workspace, request)
+            else -> error("unsupported host request ${request::class.simpleName}")
+        }
+    }
+
+    private suspend fun applyModules(workspace: Workspace, request: ApplyModules): String {
         val work = workTree(workspace)
         val ctx = MutationContext(
             workTreeRelPath = work.toString(),
@@ -228,5 +241,65 @@ class ModuleHostSteps(
         const val AVB_HEADER = 256
         const val TEXT_LIMIT = 256L * 1024
         val BUILD_VALUE = Regex("""\{\{[a-z]+(\.[a-z]+)+}}""")
+    }
+
+    /** Gives every entry of work/ without sidecar lines the lines of its nearest covered parent (scripts). */
+    private fun fixCoverage(workspace: Workspace, request: CoverageFixRequest): String {
+        val work = workTree(workspace)
+        val configs = work.resolve("configs")
+        var added = 0
+        for (partition in request.partitions.filter { Files.isDirectory(work.resolve(it)) }) {
+            val partDir = work.resolve(partition)
+            val fsFile = configs.resolve("fs_config-$partition")
+            val ctxFile = configs.resolve("file_context-$partition")
+            val fsText = if (Files.isRegularFile(fsFile)) Files.readString(fsFile) else ""
+            val ctxText = if (Files.isRegularFile(ctxFile)) Files.readString(ctxFile) else ""
+            val paths = Files.walk(partDir).use { stream ->
+                stream.map { partDir.relativize(it).toString().replace('\\', '/') }.filter { it.isNotBlank() }.toList()
+            }
+            val missing = CoverageGate.check(partition, paths, fsText, ctxText)
+            if (missing.isClean) continue
+            Files.writeString(
+                fsFile,
+                CoverageFix.fixFsConfig(fsText, partition, missing.uncoveredFsConfig) {
+                    Files.isDirectory(partDir.resolve(it))
+                },
+            )
+            Files.writeString(ctxFile, CoverageFix.fixFileContexts(ctxText, partition, missing.uncoveredContexts))
+            added += (missing.uncoveredFsConfig + missing.uncoveredContexts).distinct().size
+        }
+        return """{"added":$added}"""
+    }
+
+    private fun checkCoverage(workspace: Workspace, request: CoverageCheckRequest): String {
+        val work = workTree(workspace)
+        val configs = work.resolve("configs")
+        val uncoveredFs = mutableListOf<String>()
+        val uncoveredCtx = mutableListOf<String>()
+
+        for (partition in request.partitions) {
+            val partDir = work.resolve(partition)
+            if (!Files.isDirectory(partDir)) continue
+            val fsFile = configs.resolve("fs_config-$partition")
+            val ctxFile = configs.resolve("file_context-$partition")
+            val fsText = if (Files.isRegularFile(fsFile)) Files.readString(fsFile) else ""
+            val ctxText = if (Files.isRegularFile(ctxFile)) Files.readString(ctxFile) else ""
+            // Every entry, links included (walk does not follow them): each needs its own sidecar lines.
+            val paths = Files.walk(partDir).use { stream ->
+                stream
+                    .map { partDir.relativize(it).toString().replace('\\', '/') }
+                    .filter { it.isNotBlank() }
+                    .toList()
+            }
+            val result = CoverageGate.check(partition, paths, fsText, ctxText)
+            uncoveredFs += result.uncoveredFsConfig
+            uncoveredCtx += result.uncoveredContexts
+        }
+        return CoverageResult.encode(
+            CoverageResult(
+                uncoveredFsConfig = uncoveredFs.distinct(),
+                uncoveredContexts = uncoveredCtx.distinct(),
+            ),
+        )
     }
 }

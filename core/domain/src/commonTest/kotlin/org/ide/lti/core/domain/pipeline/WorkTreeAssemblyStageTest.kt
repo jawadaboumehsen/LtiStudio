@@ -109,6 +109,27 @@ class WorkTreeAssemblyStageTest {
     }
 
     @Test
+    fun `turning off data encryption edits every fstab that mounts data, and refuses when none does`() {
+        val ctx = fx.globalOtaContext()
+        val on = ctx.copy(
+            snapshot = ctx.snapshot.copy(assembly = ctx.snapshot.assembly.copy(disableDataEncryption = true)),
+        )
+        assertFalse(stage.plan(ctx).any { it.label == "find /data fstabs" }, "off by default")
+
+        val found = on.copy(runtimeValues = on.runtimeValues + ("assembly.data.fstabs" to "vendor/etc/fstab.qcom\n"))
+        val edit = stage.plan(found).filterIsInstance<PipelineStep.EditFile>().single { "fstab" in it.relPath }
+        assertEquals("work/vendor/etc/fstab.qcom", edit.relPath)
+        assertEquals(
+            "/dev/block/by-name/userdata /data f2fs noatime wait,quota",
+            edit.transform("/dev/block/by-name/userdata /data f2fs noatime wait,fileencryption=aes-256-xts,quota"),
+        )
+
+        val none = on.copy(runtimeValues = on.runtimeValues + ("assembly.data.fstabs" to ""))
+        val check = stage.plan(none).filterIsInstance<PipelineStep.Check>().single { it.label == "data encryption" }
+        assertTrue(check.verify(emptyMap())!!.contains("NO_DATA_FSTAB"))
+    }
+
+    @Test
     fun `systemExtMode auto preserves target-conditional fold behaviour`() {
         val globalCtx = fx.globalOtaContext()
         val globalSteps = stage.plan(globalCtx)

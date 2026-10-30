@@ -25,6 +25,7 @@ public val stageBuildModule: Module = module {
             workspaceId = params.getOrNull<String>() ?: "",
             store = getOrNull(),
             workspaceFacts = getOrNull(),
+            content = getOrNull(),
         )
     }
 }

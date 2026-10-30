@@ -17,20 +17,25 @@ import kotlin.test.assertTrue
 
 class ToolGroupCatalogTest {
     @Test
-    fun catalogYieldsExactlyTheSevenExpectedGroups() {
+    fun catalogYieldsExactlyTheExpectedGroups() {
         val expectedGroupIds =
             setOf(
                 "android-tools",
                 "erofs-utils",
+                "e2fsprogs",
+                "f2fs-tools",
                 "img2sdat",
                 "apktool",
                 "signapk",
                 "payload-dumper-go",
                 "gh",
+                "7zip",
+                "sdat2img",
+                "kptools",
             )
         val actualGroupIds = ToolGroupCatalog.allGroups.map { it.id.value }.toSet()
         assertEquals(expectedGroupIds, actualGroupIds)
-        assertEquals(7, ToolGroupCatalog.allGroups.size)
+        assertEquals(expectedGroupIds.size, ToolGroupCatalog.allGroups.size)
     }
 
     @Test
@@ -54,6 +59,12 @@ class ToolGroupCatalogTest {
                         "https://github.com/sekaiacg/erofs-tools.git",
                         ToolRef.Tag("v1.8.10-251217"),
                         "7274417816e3adfe0cd6d4a8ff194ec5f41268f4",
+                    ),
+                "e2fsprogs" to
+                    Triple(
+                        "https://github.com/tytso/e2fsprogs.git",
+                        ToolRef.Tag("v1.47.4"),
+                        "7ee1d505ef3b37831215f490411f346fe57e9053",
                     ),
                 "img2sdat" to
                     Triple(
@@ -202,5 +213,33 @@ class ToolGroupCatalogTest {
         assertEquals("demo-tool", demoGroup.id.value)
         assertEquals(listOf("demo-bin"), demoGroup.outputs.map { it.toolId })
         assertEquals(listOf("cmake", "build-essential"), demoGroup.packages)
+    }
+
+    @Test
+    fun theFirmwareToolkitGroupsArePinnedDownloadsTheToolManagerInstalls() {
+        val sevenZip = ToolGroupCatalog.group(ToolGroupId("7zip"))
+        assertNotNull(sevenZip)
+        val sevenZipRecipe = sevenZip.recipe as RecipeConfig.Release
+        assertEquals("7zz", sevenZipRecipe.versions.single().archiveMember)
+        assertEquals(64, sevenZipRecipe.versions.single().sha256.length)
+
+        val kptools = ToolGroupCatalog.group(ToolGroupId("kptools"))
+        assertNotNull(kptools)
+        // A bare binary: the release recipe copies it as the group's single output.
+        assertEquals("", (kptools.recipe as RecipeConfig.Release).versions.single().archiveMember)
+        assertEquals("kptools", kptools.outputs.single().file)
+
+        val sdat2img = ToolGroupCatalog.group(ToolGroupId("sdat2img"))
+        assertNotNull(sdat2img)
+        assertTrue(sdat2img.source is ToolSource.Git)
+        assertEquals(ToolOutputKind.SCRIPT, sdat2img.outputs.single().kind)
+
+        for (group in listOf(sevenZip, kptools, sdat2img)) {
+            assertTrue(
+                group in ToolGroupCatalog.DEFAULT_GROUPS,
+                "${group.id.value} must be installed by the Tool Manager",
+            )
+            group.outputs.forEach { assertTrue(!it.licence.isNullOrBlank(), "${it.toolId} needs a licence") }
+        }
     }
 }

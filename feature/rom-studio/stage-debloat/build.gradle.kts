@@ -15,6 +15,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.feature.romStudio.romStudioApi)
+            implementation(projects.core.common)
+            implementation(libs.filekit.core)
             implementation(projects.core.domain)
             implementation(projects.core.model)
             implementation(projects.core.designsystem)

@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.patch.di
 
 import org.ide.lti.feature.rom.studio.api.StageEditor
+import org.ide.lti.feature.rom.studio.stage.patch.ContentToolsViewModel
 import org.ide.lti.feature.rom.studio.stage.patch.PatchStageEditor
 import org.ide.lti.feature.rom.studio.stage.patch.PatchViewModel
 import org.koin.core.module.Module
@@ -26,6 +27,16 @@ public val stagePatchModule: Module = module {
             store = getOrNull(),
             plugins = getOrNull(),
             catalog = getOrNull(),
+        )
+    }
+
+    viewModel { params ->
+        ContentToolsViewModel(
+            workspaceId = params.getOrNull<String>() ?: "",
+            content = getOrNull(),
+            comparing = getOrNull(),
+            runner = getOrNull(),
+            environment = getOrNull(),
         )
     }
 }

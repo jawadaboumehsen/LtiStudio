@@ -21,6 +21,7 @@ import org.ide.lti.core.model.workspace.DebloatSettings
 import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PluginLockfile
 import org.ide.lti.core.model.workspace.PluginLockfileEntry
+import org.ide.lti.core.model.workspace.ProjectScript
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 import org.ide.lti.core.model.workspace.SigningPolicy
@@ -227,6 +228,21 @@ class StageSettingsValidatorTest {
         val fsReport = StageSettingsValidator.validateBuild(diffFs, target)
         val warning = fsReport.errors.find { it.code == StageSettingsValidator.INCOMPATIBLE_FILESYSTEM }
         assertEquals(Severity.WARNING, warning?.severity)
+        // F2FS builds (read back by dump.f2fs); a filesystem nothing builds is an error, per field.
+        assertTrue(fsReport.errors.none { it.code == StageSettingsValidator.UNSUPPORTED_FILESYSTEM })
+        val perPartition = StageSettingsValidator.validateBuild(
+            valid.copy(partitionFilesystem = mapOf("vendor" to "btrfs")),
+            target,
+        )
+        assertEquals(
+            "partitionFilesystem.vendor",
+            perPartition.errors.single { it.code == StageSettingsValidator.UNSUPPORTED_FILESYSTEM }.fieldPath,
+        )
+        val ext4 = StageSettingsValidator.validateBuild(
+            valid.copy(partitionFilesystem = mapOf("vendor" to "ext4")),
+            target,
+        )
+        assertTrue(ext4.errors.none { it.code == StageSettingsValidator.UNSUPPORTED_FILESYSTEM })
     }
 
     @Test
@@ -290,5 +306,35 @@ class StageSettingsValidatorTest {
         val badRetention = valid.copy(retentionPerDevice = 0)
         val retReport = StageSettingsValidator.validatePublish(badRetention)
         assertTrue(retReport.errors.any { it.code == StageSettingsValidator.INVALID_RETENTION })
+    }
+
+    @Test
+    fun aPackageThatLeavesOutABootImageIsWarnedAbout() {
+        val target = DefaultTargetCatalog.PQ84P01_DEFAULT
+        val withoutDtbo = target.copy(
+            packagePolicy = target.packagePolicy.copy(
+                flashableBootPartitions = target.packagePolicy.flashableBootPartitions - "dtbo",
+            ),
+        )
+        val warning = StageSettingsValidator.validateBuild(BuildSettings(), withoutDtbo).errors
+            .single { it.code == StageSettingsValidator.BOOT_IMAGE_LEFT_OUT }
+        assertEquals(Severity.WARNING, warning.severity)
+        assertTrue("dtbo" in warning.message)
+        assertTrue(
+            StageSettingsValidator.validateBuild(BuildSettings(), target).errors
+                .none { it.code == StageSettingsValidator.BOOT_IMAGE_LEFT_OUT },
+        )
+    }
+
+    @Test
+    fun scriptsNeedAPlainUniqueNameAndText() {
+        fun codes(vararg scripts: ProjectScript) =
+            StageSettingsValidator.validateCustomization(CustomizationSettings(scripts = scripts.toList())).errors
+                .filter { it.code == StageSettingsValidator.INVALID_SCRIPT }.map { it.objectId }
+        assertEquals(emptyList(), codes(ProjectScript("debrand", "rm -f $1/product/app/Foo")))
+        assertEquals(listOf("../x"), codes(ProjectScript("../x", "true")))
+        assertEquals(listOf("a", "a"), codes(ProjectScript("a", "true"), ProjectScript("a", "true")))
+        assertEquals(listOf("empty"), codes(ProjectScript("empty", " ")))
+        assertEquals(emptyList(), codes(ProjectScript("draft", "", enabled = false)))
     }
 }

@@ -15,8 +15,11 @@ import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.StageDefinition
+import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
+import org.ide.lti.core.domain.pipeline.text.FstabEditor
+import org.ide.lti.core.domain.pipeline.toolkit.KernelOverrides
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
@@ -28,7 +31,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 public class WorkTreeAssemblyStage : StageDefinition {
     override val id: StageId = StageId.WORK_TREE_ASSEMBLY
 
-    override val requiredToolIds: Set<String> = setOf("rsync", "avbtool", "find", "cp", "mkdir", "cat")
+    override val requiredToolIds: Set<String> = setOf("rsync", "avbtool", "find", "cp", "mkdir", "cat", "sha256sum")
 
     /**
      * Debloat and Patches & mods edit work/ in place, so a change to either needs a fresh tree: their inputs are
@@ -62,34 +65,36 @@ public class WorkTreeAssemblyStage : StageDefinition {
                 PipelineStep.Check("verify included partitions on target") {
                     "PARTITION_NOT_ON_TARGET: Included partition(s) not on target: ${invalidIncluded.joinToString()}"
                 }
+
             systemExtMode !in SUPPORTED_SYSTEM_EXT_MODES ->
                 PipelineStep.Check("verify system_ext mode") {
                     "UNSUPPORTED_SYSTEM_EXT_MODE: Unsupported system_ext mode '${ctx.snapshot.assembly.systemExtMode}'"
                 }
+
             bootFooterPolicy !in SUPPORTED_FOOTER_POLICIES ->
                 PipelineStep.Check("verify boot footer policy") {
                     "UNSUPPORTED_FOOTER_POLICY: Unsupported boot footer policy " +
                         "'${ctx.snapshot.assembly.bootFooterPolicy}'"
                 }
+
             invalidProp != null ->
                 PipelineStep.Check("verify property overrides") {
                     "INVALID_PROPERTY_OVERRIDE: Property override key or value contains newline or NUL: " +
                         "'${invalidProp.key}'"
                 }
+
             reserved.isNotEmpty() ->
                 PipelineStep.Check("verify property overrides") {
                     "RESERVED_PROPERTY: Property override contains reserved key(s): ${reserved.joinToString()}"
                 }
+
             else -> null
         }
     }
 
-    override fun plan(ctx: StageContext): List<PipelineStep> {
-        val validationError = validate(ctx)
-        if (validationError != null) {
-            return listOf(validationError)
-        }
+    override fun plan(ctx: StageContext): List<PipelineStep> = validate(ctx)?.let(::listOf) ?: assemblySteps(ctx)
 
+    private fun assemblySteps(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
         val extracted = ctx.abs(FirmwareExtractionStage.EXTRACTED)
         val work = ctx.abs("work")
@@ -116,25 +121,10 @@ public class WorkTreeAssemblyStage : StageDefinition {
         }
         if (foldsSystemExt(ctx, dynamicPartitions)) steps += systemExtFoldIn(ctx)
 
-        val shouldEraseFooter = ctx.snapshot.assembly.bootFooterPolicy.equals("erase", ignoreCase = true)
-        ctx.target.bootPartitions.forEach { b ->
-            val infoKey = RuntimeKeys.kernelInfo(b)
-            steps += PipelineStep.Tool(
-                stepCommand("cp", listOf("-a", "$extracted/$b.img", "$work/kernel/$b.img"), ws),
-                "cp kernel $b",
-            )
-            steps += PipelineStep.Tool(
-                command = stepCommand("avbtool", listOf("info_image", "--image", "$work/kernel/$b.img"), ws),
-                label = "avbtool info kernel $b",
-                resultKey = infoKey,
-                allowFailure = true,
-            )
-            if (shouldEraseFooter && ctx.exitOf(infoKey) == 0) {
-                steps += PipelineStep.Tool(
-                    stepCommand("avbtool", listOf("erase_footer", "--image", "$work/kernel/$b.img"), ws),
-                    "erase footer $b",
-                )
-            }
+        for (b in ctx.target.bootPartitions) {
+            val kernel = kernelSteps(ctx, b)
+            steps += kernel
+            if (kernel.last() is PipelineStep.Check) return steps
         }
 
         if (ctx.snapshot.assembly.baselineCleanup) {
@@ -155,6 +145,8 @@ public class WorkTreeAssemblyStage : StageDefinition {
             )
         }
 
+        if (ctx.snapshot.assembly.disableDataEncryption) steps += dataEncryptionSteps(ctx)
+
         val baseStamper = BuildPropStamper.stamper(ctx)
         val overrides = ctx.snapshot.assembly.propertyOverrides
         val transform: (String) -> String = { original ->
@@ -163,6 +155,82 @@ public class WorkTreeAssemblyStage : StageDefinition {
         }
         steps += PipelineStep.EditFile(BUILD_PROP, transform, "stamp build.prop")
         return steps
+    }
+
+    /** Copies boot image [b] (stock, or the Studio's override checked by hash) into work/kernel/ (FR-024). */
+    private fun kernelSteps(ctx: StageContext, b: String): List<PipelineStep> {
+        val ws = ctx.wsPath
+        val work = ctx.abs("work")
+        val infoKey = RuntimeKeys.kernelInfo(b)
+        val overrideSha = ctx.snapshot.assembly.kernelOverrides[b]
+        val steps = mutableListOf<PipelineStep>()
+        if (overrideSha == null) {
+            steps += PipelineStep.Tool(
+                stepCommand(
+                    "cp",
+                    listOf("-a", "${ctx.abs(FirmwareExtractionStage.EXTRACTED)}/$b.img", "$work/kernel/$b.img"),
+                    ws,
+                ),
+                "cp kernel $b",
+            )
+        } else {
+            // An image edited in the Studio (boot workbench): used only while it is the file the settings name.
+            val shaKey = "kernel.$b.override.sha256"
+            steps += PipelineStep.Tool(
+                stepCommand("cp", listOf("-a", ctx.abs(KernelOverrides.path(b)), "$work/kernel/$b.img"), ws),
+                "cp kernel override $b",
+            )
+            steps += PipelineStep.Tool(
+                command = stepCommand("sha256sum", listOf("$work/kernel/$b.img"), ws),
+                label = "hash kernel override $b",
+                resultKey = shaKey,
+            )
+            val actual = ctx.value(shaKey)?.digestToken()
+            if (actual != null && !actual.equals(overrideSha, ignoreCase = true)) {
+                return steps + PipelineStep.Check("verify kernel override $b") {
+                    "OVERRIDE_CHANGED: ${KernelOverrides.path(b)} is not the image saved in the Studio " +
+                        "(expected $overrideSha, found $actual). Repack or import it again."
+                }
+            }
+        }
+        steps += PipelineStep.Tool(
+            command = stepCommand("avbtool", listOf("info_image", "--image", "$work/kernel/$b.img"), ws),
+            label = "avbtool info kernel $b",
+            resultKey = infoKey,
+            allowFailure = true,
+        )
+        val eraseFooter = ctx.snapshot.assembly.bootFooterPolicy.equals("erase", ignoreCase = true)
+        if (eraseFooter && ctx.exitOf(infoKey) == 0) {
+            steps += PipelineStep.Tool(
+                stepCommand("avbtool", listOf("erase_footer", "--image", "$work/kernel/$b.img"), ws),
+                "erase footer $b",
+            )
+        }
+        return steps
+    }
+
+    /** Every fstab in work/ that mounts `/data` loses that line's encryption flags ([FstabEditor]). */
+    private fun dataEncryptionSteps(ctx: StageContext): List<PipelineStep> {
+        val find = PipelineStep.Tool(
+            command = stepCommand("sh", listOf("-c", FIND_DATA_FSTABS, "sh", ctx.abs("work")), ctx.wsPath),
+            label = "find /data fstabs",
+            resultKey = DATA_FSTABS_KEY,
+        )
+        val files = ctx.value(DATA_FSTABS_KEY)?.lines()?.map(String::trim)?.filter(String::isNotEmpty)
+        return listOf(find) + when {
+            files == null -> emptyList()
+
+            files.isEmpty() -> listOf(
+                PipelineStep.Check("data encryption") {
+                    "NO_DATA_FSTAB: no fstab in work/ mounts /data, so its encryption cannot be turned off. " +
+                        "Turn the option off in Assemble (Mount table)."
+                },
+            )
+
+            else -> files.map { rel ->
+                PipelineStep.EditFile("work/$rel", FstabEditor::withoutDataEncryption, "decrypt /data in $rel")
+            }
+        }
     }
 
     private fun effectiveDynamicPartitions(ctx: StageContext): List<String> =
@@ -248,6 +316,12 @@ public class WorkTreeAssemblyStage : StageDefinition {
     }
 
     public companion object {
+        private const val DATA_FSTABS_KEY = "assembly.data.fstabs"
+
+        /** `sh -c FIND_DATA_FSTABS sh <work>`: fstab files (relative to work/) with a line mounting `/data`. */
+        private const val FIND_DATA_FSTABS =
+            "cd \"\$1\" && grep -rlE '^[^#[:space:]]+[[:space:]]+/data[[:space:]]' --include='fstab*' . " +
+                "| sed 's#^\\./##' || true"
         public const val BUILD_PROP: String = "work/system/system/build.prop"
         private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
         private val SUPPORTED_FOOTER_POLICIES = setOf("erase", "preserve")

@@ -154,6 +154,13 @@ class ToolsPresentationMapperTest {
         assertTrue(pres.canRetry)
         assertEquals("2 ready · 1 failed · 1 not attempted", pres.summaryText)
     }
+
+    @Test
+    fun mapsGroupStateToIncludeLicenceFromCatalog() {
+        val state = GroupState(group = ToolGroupId("erofs-utils"), current = null, installed = emptyList())
+        val presentation = ToolsPresentationMapper.mapRow(state)
+        assertEquals("GPL-2.0", presentation.licenceLabel)
+    }
 }
 
 private operator fun String.times(n: Int): String = repeat(n)

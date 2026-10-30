@@ -48,10 +48,13 @@ public object CanonicalStageDescriptors {
         iconKey = StudioIconKey.ASSEMBLE,
         subobjects = listOf(
             StudioSubobject(StudioSubobjectId("work-trees"), "Work trees"),
+            StudioSubobject(StudioSubobjectId("image-browser"), "Image browser"),
+            StudioSubobject(StudioSubobjectId("image-conversion"), "Image conversion"),
             StudioSubobject(StudioSubobjectId("system-ext-handling"), "system_ext handling"),
             StudioSubobject(StudioSubobjectId("boot-preparation"), "Boot preparation"),
             StudioSubobject(StudioSubobjectId("aot-cleanup"), "AOT cleanup"),
             StudioSubobject(StudioSubobjectId("build-properties"), "Build properties"),
+            StudioSubobject(StudioSubobjectId("mount-table"), "Mount table"),
         ),
     )
 
@@ -79,6 +82,13 @@ public object CanonicalStageDescriptors {
             StudioSubobject(StudioSubobjectId("text-patches"), "Text patches"),
             StudioSubobject(StudioSubobjectId("property-patches"), "Property patches"),
             StudioSubobject(StudioSubobjectId("conflicts"), "Conflicts"),
+            StudioSubobject(StudioSubobjectId("scripts"), "Scripts"),
+            StudioSubobject(StudioSubobjectId("deodex"), "Deodex"),
+            StudioSubobject(StudioSubobjectId("package-editor"), "APK and JAR"),
+            StudioSubobject(StudioSubobjectId("library-patch"), "Library patch"),
+            StudioSubobject(StudioSubobjectId("config-files"), "Configuration files"),
+            StudioSubobject(StudioSubobjectId("compare"), "Compare"),
+            StudioSubobject(StudioSubobjectId("samsung-csc"), "Samsung CSC"),
         ),
     )
 
@@ -94,6 +104,8 @@ public object CanonicalStageDescriptors {
             StudioSubobject(StudioSubobjectId("avb-keys"), "AVB keys"),
             StudioSubobject(StudioSubobjectId("package-signing"), "Package signing"),
             StudioSubobject(StudioSubobjectId("output-naming"), "Output naming"),
+            StudioSubobject(StudioSubobjectId("extra-packages"), "Extra packages"),
+            StudioSubobject(StudioSubobjectId("coverage"), "Coverage"),
         ),
     )
 

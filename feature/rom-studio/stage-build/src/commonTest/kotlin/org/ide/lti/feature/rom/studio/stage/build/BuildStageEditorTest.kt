@@ -22,7 +22,7 @@ class BuildStageEditorTest {
         val editor = BuildStageEditor()
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, editor.stageId)
         assertEquals(CanonicalStageDescriptors.BUILD, editor.descriptor)
-        assertEquals(7, editor.descriptor.subobjects.size)
+        assertEquals(9, editor.descriptor.subobjects.size)
         assertNotNull(editor.descriptor.subobject(CanonicalStageDescriptors.BUILD.subobjects.first().id))
     }
 

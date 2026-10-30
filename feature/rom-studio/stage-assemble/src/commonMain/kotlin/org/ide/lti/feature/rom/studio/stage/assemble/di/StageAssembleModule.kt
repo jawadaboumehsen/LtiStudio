@@ -24,6 +24,10 @@ public val stageAssembleModule: Module = module {
         AssembleViewModel(
             workspaceId = params.getOrNull<String>() ?: "",
             store = getOrNull(),
+            boot = getOrNull(),
+            images = getOrNull(),
+            runner = getOrNull(),
+            environment = getOrNull(),
         )
     }
 }

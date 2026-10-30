@@ -37,6 +37,9 @@ public fun BuildEditor(
     onChange: (BuildSettings) -> Unit,
     onRefresh: () -> Unit = {},
     selectedObjectId: String = "compression",
+    coverage: CoverageState = CoverageState(),
+    onCheckCoverage: () -> Unit = {},
+    onFixCoverage: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
@@ -50,12 +53,29 @@ public fun BuildEditor(
         ) {
             when (selectedObjectId.lowercase().replace('_', '-').replace(' ', '-')) {
                 "images" -> ImagesPane(target, facts)
+
                 "partition-layout" -> PartitionLayoutPane(target, facts)
+
                 "flashable-members" -> FlashableMembersPane(target, facts)
+
                 "avb-keys" -> AvbKeysPane(settings, facts, onChange)
+
                 "package-signing" -> PackageSigningPane(settings, facts, onChange)
+
                 "output-naming" -> OutputNamingPane(settings, target, facts, onChange)
-                else -> CompressionPane(settings, onChange)
+
+                "extra-packages" -> ExtraPackagesPane(settings, target, onChange)
+
+                "coverage" -> {
+                    CoveragePane(coverage, onCheckCoverage, onFixCoverage)
+                    LinkCheckPane(settings, onChange)
+                }
+
+                else -> {
+                    CompressionPane(settings, onChange)
+                    PartitionFilesystemPane(settings, target, onChange)
+                    PartitionCompressionPane(settings, target, onChange)
+                }
             }
         }
     }

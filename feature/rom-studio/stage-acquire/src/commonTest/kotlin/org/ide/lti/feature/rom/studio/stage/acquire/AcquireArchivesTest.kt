@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.ide.lti.core.domain.pipeline.ToolResult
+import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
 import org.ide.lti.core.domain.ports.FileStat
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.RunHandle
@@ -40,13 +41,17 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AcquireArchivesTest {
-    /** The service: copies succeed unless [copyError] is set; `find` lists [listed]. */
+    /** The service: copies succeed unless [copyError] is set; `find` lists [listed]; `xxd` dumps [headers]. */
     private class Service : PipelineExecutionPort {
         var copyError: String? = null
         var listed = ""
+
+        /** First bytes (hex) of each file, by name. */
+        var headers = mapOf<String, String>()
         override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult = when {
             command.toolId == "cp" && copyError != null -> ToolResult(1, "", copyError!!)
             command.toolId == "find" -> ToolResult(0, listed)
+            command.toolId == "xxd" -> ToolResult(0, headers[command.args.last().substringAfterLast('/')].orEmpty())
             else -> ToolResult(0, "")
         }
         override suspend fun stat(ws: Workspace, relPath: String) = FileStat(relPath, exists = true, sizeBytes = 7L)
@@ -129,5 +134,51 @@ class AcquireArchivesTest {
         vm.probe()
         assertEquals(listOf("a.zip", "b.zip"), vm.archiveState.value.archives.map { it.name })
         assertTrue(vm.archiveState.value.probed)
+    }
+
+    @Test
+    fun `importing an archive detects its format from its first bytes`() = runTest {
+        service.listed = "1048576\tupdate.bin\n"
+        // "CrAU": a payload, whatever the file is called.
+        service.headers = mapOf("update.bin" to "4372415500000000000000020000000000")
+        val vm = viewModel(picked = "C:\\fw\\update.bin")
+
+        vm.importArchive()
+
+        assertEquals(AcquisitionMode.IMPORT_ARCHIVE, vm.settings.value.mode)
+        assertEquals(PackageFormat.AndroidPayload, vm.archiveState.value.lastDetectedFormat)
+    }
+
+    @Test
+    fun `probe detects the format from content, not from the name`() = runTest {
+        service.listed = "100\tfirmware.tar.md5\n200\tnamed.rar\n300\tnotes.txt\n"
+        service.headers = mapOf(
+            "firmware.tar.md5" to "00".repeat(TAR_MAGIC_OFFSET) + "7573746172",
+            "named.rar" to "504b030414000000",
+            "notes.txt" to "68656c6c6f",
+        )
+        val vm = viewModel()
+        vm.probe()
+
+        val formats = vm.archiveState.value.archives.associate { it.name to it.detectedFormat }
+        assertEquals(PackageFormat.Tar, formats["firmware.tar.md5"])
+        assertEquals(PackageFormat.Zip, formats["named.rar"])
+        assertEquals(null, formats["notes.txt"])
+    }
+
+    @Test
+    fun `selecting an archive shows its detected format`() = runTest {
+        service.listed = "200\tota.zip\n"
+        service.headers = mapOf("ota.zip" to "504b030414000000")
+        val vm = viewModel()
+        vm.probe()
+
+        vm.selectArchive(vm.archiveState.value.archives.first())
+
+        assertEquals(PackageFormat.Zip, vm.archiveState.value.lastDetectedFormat)
+    }
+
+    private companion object {
+        const val TAR_MAGIC_OFFSET = 257
     }
 }

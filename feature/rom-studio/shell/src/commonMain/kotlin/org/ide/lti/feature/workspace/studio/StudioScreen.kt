@@ -72,6 +72,9 @@ import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
 import org.ide.lti.feature.workspace.studio.components.TopBarTargetSpecifier
+import org.ide.lti.feature.workspace.studio.components.WorkspaceRestorePointsPanel
+import org.ide.lti.feature.workspace.studio.components.WorkspaceStoragePanel
+import org.ide.lti.feature.workspace.studio.components.WorkspaceStorageViewModel
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -220,6 +223,19 @@ private fun StudioContent(
             onNavigateToSetup = onNavigateToSetup,
             modifier = Modifier.fillMaxSize(),
         )
+    } else if (shellState.selectedWorkspaceSection == WorkspaceSection.Storage) {
+        WorkspaceStoragePanel(
+            viewModel = koinViewModel<WorkspaceStorageViewModel> { parametersOf(workspaceId) },
+            modifier = Modifier.fillMaxSize(),
+        )
+    } else if (shellState.selectedWorkspaceSection == WorkspaceSection.RestorePoints) {
+        WorkspaceRestorePointsPanel(
+            restoreIndex = uiState.restoreIndex,
+            restoreMessage = uiState.restoreMessage,
+            onRestoreOne = { viewModel.restorePoint(it) },
+            onRefresh = { viewModel.refreshRestorePoints() },
+            modifier = Modifier.fillMaxSize(),
+        )
     } else {
         WorkspaceOverview(
             state = uiState.overviewState,
@@ -249,11 +265,17 @@ private fun dispatchOverviewAction(
     when (action) {
         is WorkspaceActionUi.OpenStage -> action.objectId?.let { viewModel.selectObject(action.stageId, it) }
             ?: viewModel.selectStage(action.stageId)
+
         is WorkspaceActionUi.OpenWorkspaceSection -> viewModel.selectWorkspaceSection(action.section)
+
         WorkspaceActionUi.Reload -> viewModel.onEntry(workspaceId)
+
         WorkspaceActionUi.Validate -> viewModel.validateWorkspace()
+
         WorkspaceActionUi.Save -> viewModel.saveWorkspace()
+
         WorkspaceActionUi.OpenSetup -> onNavigateToSetup()
+
         WorkspaceActionUi.OpenSettings -> onOpenSettings()
     }
 }
@@ -303,6 +325,8 @@ public fun StudioShellContent(
                 WorkspaceSection.RunHistory -> "Run History"
                 WorkspaceSection.Artifacts -> "Artifacts"
                 WorkspaceSection.TargetProfile -> "Target Profile"
+                WorkspaceSection.RestorePoints -> "Restore Points"
+                WorkspaceSection.Storage -> "Disk Usage"
                 null -> "Overview"
             }
             listOf("Workspace", sectionName)
@@ -560,6 +584,16 @@ private fun WorkspaceSubMenuTabBar(
                 label = "Artifacts",
                 icon = resolveNavIcon("archive"),
             ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.RestorePoints.name,
+                label = "Restore points",
+                icon = resolveNavIcon("history"),
+            ),
+            IdeSubMenuItem(
+                id = WorkspaceSection.Storage.name,
+                label = "Disk usage",
+                icon = resolveNavIcon("archive"),
+            ),
         )
     }
 
@@ -723,6 +757,8 @@ private fun resolveHeaderTitle(
         WorkspaceSection.RunHistory -> "Run History"
         WorkspaceSection.Artifacts -> "Generated Artifacts"
         WorkspaceSection.TargetProfile -> "Target Device Profile"
+        WorkspaceSection.RestorePoints -> "Restore Points"
+        WorkspaceSection.Storage -> "Disk Usage"
         null -> "Workspace Overview"
     }
 }
@@ -739,7 +775,11 @@ private fun resolveHeaderSubtitle(
         val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
         return resolveStageSubtitle(stageItem.stageId, activeObjectId)
     }
-    return null
+    return when (selectedSection) {
+        WorkspaceSection.RestorePoints -> "Manage backups and restore modified or removed components."
+        WorkspaceSection.Storage -> "What the workspace takes in WSL, and freeing what the next build makes again."
+        else -> null
+    }
 }
 
 private fun resolveStageSubtitle(stageId: StageId, subobjectId: String?): String = when (stageId) {
@@ -755,39 +795,54 @@ private fun resolveStageSubtitle(stageId: StageId, subobjectId: String?): String
 
 private fun resolveAcquireSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
     "source" -> "Configure acquisition mode and target firmware source."
+
     "firmware-baseline", "firmware_baseline", "baseline" ->
         "Select the official firmware build to use as the foundation for this workspace build."
+
     "existing-archives", "existing_archives", "archives" ->
         "Manage and verify previously downloaded or cached firmware archives."
+
     "download-policy", "download_policy", "download" ->
         "Configure how source files are downloaded, with retry and resume behavior."
+
     "integrity" -> "Verify downloaded source against expected hash."
+
     else -> "Acquire and verify official source firmware for this target."
 }
 
 private fun resolveExtractSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
     "archive-layout", "archive_layout" ->
         "Inspect the archive layout and choose target-supported extraction inputs."
+
     "dynamic-partitions", "dynamic_partitions" ->
         "Choose what to extract from the verified source."
+
     "boot-partitions", "boot_partitions" ->
         "Choose which boot images to unpack (boot, init_boot, vendor_boot, dtbo)."
+
     "slot" -> "Choose which A/B slot's images to unpack."
+
     "filesystem-handling", "filesystem_handling" -> "How unpacked images are kept between builds."
+
     else -> "Extract and unpack partition images from verified firmware."
 }
 
 private fun resolveAssembleSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
     "work-trees", "work_trees" ->
         "Configure source work trees and assembly options."
+
     "system-ext-handling", "system_ext_handling" ->
         "Configure how system_ext is handled during assembly."
+
     "boot-preparation", "boot_preparation" ->
         "Configure boot image handling for the assembled build."
+
     "aot-cleanup", "aot_cleanup" ->
         "Configure ahead-of-time compilation cleanup and odex stripping."
+
     "build-properties", "build_properties" ->
         "Configure build properties and fingerprint overrides."
+
     else -> "Assemble work trees and staging structures for customization."
 }
 

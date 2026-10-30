@@ -25,6 +25,7 @@ public val stageExtractModule: Module = module {
             workspaceId = params.getOrNull<String>() ?: "",
             store = getOrNull(),
             workspaceFacts = getOrNull(),
+            images = getOrNull(),
         )
     }
 }

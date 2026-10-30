@@ -35,6 +35,17 @@ sealed interface RecipeConfig {
         override val revision: Int = 1,
     ) : RecipeConfig
 
+    /**
+     * `./configure CC=clang <configureArgs>`, then `make -j<n> <args>` per [make] entry, in the source root; first
+     * `./autogen.sh` when [autogen] (a git checkout without a generated `configure`).
+     */
+    data class Autotools(
+        val configureArgs: List<String> = emptyList(),
+        val make: List<String> = listOf(""),
+        val autogen: Boolean = false,
+        override val revision: Int = 1,
+    ) : RecipeConfig
+
     data class GradleJar(val task: String, val outputPath: String, override val revision: Int = 1) : RecipeConfig
 
     data class ScriptCopy(val files: List<String>, override val revision: Int = 1) : RecipeConfig

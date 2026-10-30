@@ -28,6 +28,14 @@ public object SidecarEditor {
         paths.map { SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, it)) },
     )
 
+    /** fs_config [text] with [backup]'s lines for [path] (inside `work/<partition>/`) and below it put back. */
+    public fun withRestoredFsConfig(text: String, backup: String, partition: String, path: String): String =
+        restoreLines(text, backup, SidecarNormalizer.fsConfigPath(partition, path))
+
+    /** file_context [text] with [backup]'s lines for [path] (inside `work/<partition>/`) and below it put back. */
+    public fun withRestoredFileContext(text: String, backup: String, partition: String, path: String): String =
+        restoreLines(text, backup, SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path)))
+
     /**
      * fs_config [text] with an entry for [path] and each missing parent folder: root-owned, 0755 for folders,
      * 0644 for a file (as LtiRom's ADD_TO_WORK_DIR defaults). Existing entries are kept, except that [path]'s
@@ -95,6 +103,15 @@ public object SidecarEditor {
         if (lines.isEmpty()) return text
         val base = text.trimEnd('\n')
         return (if (base.isEmpty()) lines else listOf(base) + lines).joinToString("\n", postfix = "\n")
+    }
+
+    private fun restoreLines(text: String, backup: String, prefix: String): String {
+        val known = text.lineSequence().map { it.substringBefore(' ') }.toSet()
+        val lines = backup.lineSequence().filter { line ->
+            val path = line.substringBefore(' ')
+            line.isNotBlank() && (path == prefix || path.startsWith("$prefix/")) && path !in known
+        }.toList()
+        return append(text, lines)
     }
 
     private fun filterLines(text: String, prefixes: List<String>): String {

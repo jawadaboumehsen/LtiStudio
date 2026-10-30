@@ -37,6 +37,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.feature.rom.studio.api.formatBytes
@@ -45,7 +46,17 @@ import org.ide.lti.feature.rom.studio.api.formatBytes
 @Composable
 internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
     Card("Image compression", tag = "CompressionPane") {
-        Detail("Filesystem", "${settings.filesystem} (from the device)")
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            Hint("Filesystem")
+            BuildFilesystems.SUPPORTED.forEach { fs ->
+                GlassChip(
+                    label = fs,
+                    selected = settings.filesystem.equals(fs, ignoreCase = true),
+                    onClick = { onChange(settings.copy(filesystem = fs)) },
+                )
+            }
+        }
+        Hint("Compression and level apply to EROFS images; ext4 images are not compressed.")
         // The level is one value: older settings kept it in the compression string ("lz4hc,9"), which the build
         // still reads; shown and edited here as the Level, it is saved in `level` and the string keeps the algorithm.
         val algorithm = settings.compression.substringBefore(',')

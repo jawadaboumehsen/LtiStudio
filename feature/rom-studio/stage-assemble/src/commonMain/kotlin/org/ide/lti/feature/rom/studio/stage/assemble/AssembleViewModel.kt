@@ -12,6 +12,11 @@ package org.ide.lti.feature.rom.studio.stage.assemble
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.StateFlow
+import org.ide.lti.core.common.utils.DialogUtils
+import org.ide.lti.core.domain.ports.AppEnvironmentPort
+import org.ide.lti.core.domain.workbench.BootWorkbench
+import org.ide.lti.core.domain.workbench.ImageWorkbench
+import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.target.DefaultTargetCatalog
@@ -22,6 +27,11 @@ public class AssembleViewModel(
     public val workspaceId: String,
     initialSettings: AssemblySettings? = null,
     store: WorkspaceSettingsStore? = null,
+    boot: BootWorkbench? = null,
+    images: ImageWorkbench? = null,
+    runner: WorkbenchRunner? = null,
+    environment: AppEnvironmentPort? = null,
+    pickFile: suspend () -> String? = { DialogUtils.selectFile()?.path },
 ) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
@@ -43,7 +53,28 @@ public class AssembleViewModel(
     /** The workspace's own device once loaded; null until then. */
     public val device: StateFlow<TargetDevice?> = sync.device
 
+    public val bootPane: BootPaneModel = BootPaneModel(
+        scope = viewModelScope,
+        workspaceId = workspaceId,
+        boot = boot,
+        runner = runner,
+        environment = environment,
+        pickFile = pickFile,
+        overrides = { settings.value.kernelOverrides },
+        setOverrides = { updateSettings(settings.value.copy(kernelOverrides = it)) },
+        bootImages = { (device.value ?: targetDevice).bootPartitions },
+    )
+
+    public val imagePane: ImagePaneModel = ImagePaneModel(viewModelScope, workspaceId, images, environment) {
+        (device.value ?: targetDevice).dynamicPartitions
+    }
+
     public fun updateSettings(updated: AssemblySettings) {
         sync.update(updated)
+    }
+
+    public companion object {
+        /** The workspace AVB key the Build stage signs with (`BuildSettings.signing.avbKeyRef` default). */
+        public const val AVB_KEY_REF: String = "keys/avb.pem"
     }
 }

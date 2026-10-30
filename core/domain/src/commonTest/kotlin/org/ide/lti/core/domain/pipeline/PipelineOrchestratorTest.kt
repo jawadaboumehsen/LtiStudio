@@ -34,7 +34,13 @@ class PipelineOrchestratorTest {
     private val ws = fixture.workspace.linuxPath!!
 
     private fun orchestrator(port: SimulatedExecutionPort, repo: InMemoryRunRepository, vendored: Boolean = true) =
-        PipelineOrchestrator(port, repo, FakeVendoredFiles(vendored), toolStore = PipelinePinnedToolStore())
+        PipelineOrchestrator(
+            port,
+            repo,
+            FakeVendoredFiles(vendored),
+            toolStore = PipelinePinnedToolStore(),
+            hostSteps = CoveredWorkTree,
+        )
 
     private fun globalPort() = SimulatedExecutionPort(ws).apply {
         archiveSha256 =
@@ -242,6 +248,7 @@ class PipelineOrchestratorTest {
             repo,
             FakeVendoredFiles(true),
             toolStore = PipelinePinnedToolStore(),
+            hostSteps = CoveredWorkTree,
             clock = at(day),
         )
         // The run date comes from the clock, not the fixture.
