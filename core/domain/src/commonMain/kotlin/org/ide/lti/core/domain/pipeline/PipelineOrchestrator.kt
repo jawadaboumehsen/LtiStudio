@@ -26,6 +26,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.domain.pipeline.stages.AbOtaSteps
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.text.AvbSizeCalculator
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
@@ -47,6 +48,7 @@ import org.ide.lti.core.model.run.StageStep
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.run.StepState
 import org.ide.lti.core.model.run.VerificationState
+import org.ide.lti.core.model.workspace.PackageType
 import org.ide.lti.core.model.workspace.Workspace
 
 public sealed interface PipelineEvent {
@@ -1051,9 +1053,21 @@ public class PipelineOrchestrator(
         // Only what this run built: a run stopped before Build & Sign has no package and no manifest.
         val ran = stagesOf(driver.run).map { it.id }
         if (StageId.BUILD_FLASHABLE_ZIP !in ran) return emptyList()
-        val built = listOf(
+        val type = ctx.snapshot.build.packageType
+        // With both packages the flashable zip is the main one and the OTA comes with it.
+        val ota = listOfNotNull(
             Artifact(
-                ArtifactKind.FLASHABLE_ZIP,
+                ArtifactKind.AB_OTA_ZIP,
+                ctx.abs(BuildFlashableZipStage.otaRelPath(ctx)),
+                ctx.longValue(AbOtaSteps.SIZE),
+                ctx.value(AbOtaSteps.SHA256)?.digestToken(),
+                VerificationState.VERIFIED,
+                Presence.PRESENT,
+            ).takeIf { type == PackageType.BOTH },
+        )
+        val built = ota + listOf(
+            Artifact(
+                if (type == PackageType.AB_OTA) ArtifactKind.AB_OTA_ZIP else ArtifactKind.FLASHABLE_ZIP,
                 ctx.abs(zipRel),
                 ctx.longValue(RuntimeKeys.ZIP_SIZE),
                 sha,

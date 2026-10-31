@@ -80,7 +80,7 @@ public class GenerateOtaManifestStage : StageDefinition {
         val baseManifest = OtaManifestWriter.generate(
             datetime = timestamp,
             device = ctx.target.id,
-            filename = BuildFlashableZipStage.zipName(ctx),
+            filename = BuildFlashableZipStage.packageName(ctx),
             patch = ctx.snapshot.assembly.romVersion,
             size = size,
             otaBaseUrl = ctx.snapshot.release.otaBaseUrl,

@@ -11,11 +11,14 @@ package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.domain.pipeline.stages.BuildChecks
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
+import org.ide.lti.core.domain.pipeline.toolkit.AbOtaPackage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.workspace.BuildSettings
+import org.ide.lti.core.model.workspace.PackageType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -459,6 +462,56 @@ class BuildFlashableZipStageTest {
         val du = stage.plan(base).filterIsInstance<PipelineStep.Tool>().single { it.label == "content size vendor" }
         assertEquals(BuildFlashableZipStage.contentSize("vendor"), du.resultKey)
         assertEquals(listOf("-sb", "--apparent-size", base.abs("work/vendor")), du.command.args)
+    }
+
+    @Test
+    fun `the package type decides between the flashable zip and the A-B OTA, or builds both`() {
+        val base = fullContext()
+        fun plan(type: PackageType) = stage.plan(
+            base.copy(snapshot = base.snapshot.copy(build = base.snapshot.build.copy(packageType = type))),
+        )
+        fun labels(type: PackageType) = plan(type).map { it.label }
+        // Flashable only: no payload; A/B only: no block-dat, no recovery zip; both: each.
+        assertTrue(labels(PackageType.FLASHABLE).none { it == "payload.bin" })
+        assertTrue(labels(PackageType.FLASHABLE).any { it.startsWith("img2sdat ") })
+        assertTrue(labels(PackageType.AB_OTA).none { it.startsWith("img2sdat ") || it == "signapk" })
+        assertTrue(labels(PackageType.BOTH).containsAll(listOf("payload.bin", "signapk", "signapk A/B package")))
+        // The payload: the dynamic images, then the signed boot chain from staging.
+        val payload = plan(
+            PackageType.AB_OTA,
+        ).filterIsInstance<PipelineStep.Tool>().single { it.label == "payload.bin" }
+        val args = payload.command.args
+        assertEquals("python3", payload.command.toolId)
+        assertEquals(listOf("-I", base.abs("work/package/ab/ota_payload.py"), "payload"), args.take(3))
+        assertTrue(base.abs("keys/platform.key.pem") in args)
+        assertTrue(
+            "${base.target.dynamicPartitions.first()}=${base.abs(
+                "out/images/${base.target.dynamicPartitions.first()}.img",
+            )}:dynamic" in args,
+        )
+        val boot = base.target.packagePolicy.flashableBootPartitions.first()
+        assertTrue("$boot=${base.abs("out/package/.stage/$boot.img")}" in args)
+        // The OTA is the main package when it is the only one: Release metadata and Publish use it.
+        val ota = base.copy(
+            snapshot = base.snapshot.copy(build = base.snapshot.build.copy(packageType = PackageType.AB_OTA)),
+        )
+        assertTrue(BuildFlashableZipStage.zipRelPath(ota).endsWith("-ota.zip"))
+        assertEquals(BuildFlashableZipStage.flashableRelPath(base), BuildFlashableZipStage.zipRelPath(base))
+        assertEquals("lz4:3:65536", AbOtaPackage.vab(virtualAb = true, sdk = 35))
+        assertEquals("lz4:2:0", AbOtaPackage.vab(virtualAb = true, sdk = 34))
+        assertEquals("none", AbOtaPackage.vab(virtualAb = false, sdk = 35))
+    }
+
+    @Test
+    fun `the A-B metadata carries the AOSP keys with room for the members' offsets`() {
+        val text = OtaMetadataWriter.generateAb(
+            OtaMetadataWriter.OtaMetadataParams("fp", "inc", "35", "2025-12-01", 1761920000, "PQ84P01"),
+        )
+        val keys = text.lines().filter { it.isNotEmpty() }.map { it.substringBefore('=') }
+        assertEquals(keys.sorted(), keys)
+        assertTrue("ota-type=AB" in text && "pre-device=PQ84P01" in text && "ota-required-cache=0" in text)
+        val blank = text.lines().single { it.startsWith("ota-property-files=") }.substringAfter('=')
+        assertEquals(OtaMetadataWriter.PROPERTY_FILES_WIDTH, blank.length)
     }
 
     @Test

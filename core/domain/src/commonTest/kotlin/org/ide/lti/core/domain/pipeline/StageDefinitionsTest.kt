@@ -37,6 +37,7 @@ class StageDefinitionsTest {
             "unpack_bootimg", "img2sdat", "signapk",
             "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
             "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "touch", "java",
+            "python3", "openssl",
         )
         assertEquals(readinessSet - setOf("java"), DefaultPipelineStages.allRequiredToolIds)
     }

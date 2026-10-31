@@ -167,7 +167,24 @@ public data class BuildSettings(
      * reads on the device decompress more. Absent means one block (4 KiB), as AOSP builds.
      */
     val partitionClusterKib: Map<String, Int> = emptyMap(),
+    /** Which install package the build writes: the recovery flashable zip, the A/B OTA (payload.bin), or both. */
+    val packageType: PackageType = PackageType.FLASHABLE,
 )
+
+/**
+ * The build's install package. [FLASHABLE]: a block-based zip a custom recovery flashes. [AB_OTA]: a payload.bin OTA
+ * update_engine installs to the other slot (stock recovery, adb sideload, an updater app). [BOTH]: one of each.
+ */
+@Serializable
+public enum class PackageType {
+    FLASHABLE,
+    AB_OTA,
+    BOTH,
+    ;
+
+    public val flashable: Boolean get() = this != AB_OTA
+    public val abOta: Boolean get() = this != FLASHABLE
+}
 
 @Serializable
 public data class SigningPolicy(

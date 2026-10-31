@@ -115,7 +115,7 @@ public class BootWorkbench(
                 }
             }
             val hasDtb = tryRun("test", "-s", abs("$dir/unpacked/dtb")).exitCode == 0
-            if (hasDtb) run("dtc", "-q", "-I", "dtb", "-O", "dts", "-o", abs("$dir/$DTS"), abs("$dir/unpacked/dtb"))
+            if (hasDtb) sh(DTB_UNPACK_SCRIPT, abs(dir), "dtc")
             val footer = footerOf(this, source)
             // The size a new footer is made for is the stock partition's: the assembled copy in work/kernel has no
             // footer under the "erase" policy, and its file size is the bare image, not the partition.
@@ -237,12 +237,7 @@ public class BootWorkbench(
                 if (!check.ok) return@job SavedOverride(partition, "", check)
                 sh(state.compression.compress, abs("$dir/ramdisk.new.cpio"), abs("$dir/unpacked/${state.ramdisk}"))
             }
-            if (exists(
-                    "$dir/$DTS",
-                )
-            ) {
-                run("dtc", "-q", "-I", "dts", "-O", "dtb", "-o", abs("$dir/unpacked/dtb"), abs("$dir/$DTS"))
-            }
+            if (exists("$dir/$DTS")) sh(DTB_REPACK_SCRIPT, abs(dir), "dtc")
             // Empty values stay (`--ramdisk_name ''` of a v4 vendor ramdisk); only the trailing newline goes.
             val args = mkbootimgArgs(readText("$dir/$ARGS").orEmpty())
             // A vendor_boot is written with --vendor_boot: with --output, mkbootimg refuses its ramdisk fragments.
@@ -545,6 +540,47 @@ public class BootWorkbench(
                     }.sorted()
             }
         private const val DTS = "dtb.dts"
+
+        /**
+         * `sh -c DTB_UNPACK_SCRIPT sh <unpacked dir> <dtc>`: keeps the dtb as found (`dtb.orig`; a vendor_boot dtb is
+         * often several device trees back to back), writes the first one as `dtb.dts` for editing, headed by how many
+         * there are, and records its hash so repack can tell whether it was edited.
+         */
+        public const val DTB_UNPACK_SCRIPT: String = """
+            set -e
+            cd "$1"
+            cp -f unpacked/dtb dtb.orig
+            size=${'$'}(stat -c %s dtb.orig); off=0; n=0
+            while [ ${'$'}off -lt ${'$'}size ] && [ "${'$'}(xxd -p -s ${'$'}off -l 4 dtb.orig)" = d00dfeed ]; do
+              off=${'$'}((off + 0x${'$'}(xxd -p -s ${'$'}((off + 4)) -l 4 dtb.orig))); n=${'$'}((n + 1))
+            done
+            "$2" -q -I dtb -O dts -o dtb.first.dts dtb.orig
+            {
+              if [ ${'$'}n -gt 1 ]; then
+                echo "// This dtb holds ${'$'}n device trees; this is the first. Repack keeps the others as they are."
+              fi
+              cat dtb.first.dts
+            } > dtb.dts
+            rm -f dtb.first.dts
+            sha256sum dtb.dts > dtb.dts.sha
+        """
+
+        /**
+         * `sh -c DTB_REPACK_SCRIPT sh <unpacked dir> <dtc>`: the dtb as found when `dtb.dts` was not edited; otherwise
+         * the edited first device tree followed by the others byte for byte (dtc reads only the first).
+         */
+        public const val DTB_REPACK_SCRIPT: String = """
+            set -e
+            cd "$1"
+            if [ ! -f dtb.orig ] || { [ -f dtb.dts.sha ] && sha256sum -c --status dtb.dts.sha; }; then
+              [ -f dtb.orig ] && cp -f dtb.orig unpacked/dtb
+              exit 0
+            fi
+            "$2" -q -I dts -O dtb -o dtb.first dtb.dts
+            first=${'$'}((0x${'$'}(xxd -p -s 4 -l 4 dtb.orig)))
+            { cat dtb.first; tail -c +${'$'}((first + 1)) dtb.orig; } > unpacked/dtb
+            rm -f dtb.first
+        """
         private const val RAMDISK_DIR = "ramdisk"
         private val RAMDISK_NAMES = listOf("ramdisk", "vendor_ramdisk00", "vendor_ramdisk")
         private const val BOOT_MAGIC_HEX = "414e44524f494421" // ANDROID!

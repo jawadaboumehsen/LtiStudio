@@ -89,6 +89,7 @@ public fun RunPanel(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
+
             else -> {
                 ActiveRunContent(
                     viewModel = viewModel,
@@ -422,6 +423,7 @@ internal fun ArtifactItem(artifact: Artifact) {
                 GlassChip(
                     label = when (artifact.kind) {
                         ArtifactKind.FLASHABLE_ZIP -> "ZIP"
+                        ArtifactKind.AB_OTA_ZIP -> "A/B OTA"
                         ArtifactKind.OTA_MANIFEST -> "MANIFEST"
                         ArtifactKind.CHECKSUM -> "SHA256"
                         ArtifactKind.IMAGE -> "IMG"

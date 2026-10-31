@@ -57,7 +57,7 @@ public fun BuildEditor(
 
                 "partition-layout" -> PartitionLayoutPane(target, settings, facts)
 
-                "flashable-members" -> FlashableMembersPane(target, facts)
+                "flashable-members" -> FlashableMembersPane(target, facts, settings, onChange)
 
                 "avb-keys" -> AvbKeysPane(settings, facts, onChange)
 

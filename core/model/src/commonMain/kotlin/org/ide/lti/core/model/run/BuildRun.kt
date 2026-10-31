@@ -83,6 +83,9 @@ data class StageStep(
 @Serializable
 enum class ArtifactKind {
     FLASHABLE_ZIP,
+
+    /** The A/B OTA zip (payload.bin), installed by update_engine. */
+    AB_OTA_ZIP,
     OTA_MANIFEST,
     CHECKSUM,
     IMAGE,

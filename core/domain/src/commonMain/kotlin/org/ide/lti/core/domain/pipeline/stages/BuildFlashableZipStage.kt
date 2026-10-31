@@ -31,6 +31,7 @@ import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.PackageType
 
 @Serializable
 private data class PackagingPolicy(
@@ -54,6 +55,8 @@ public class BuildFlashableZipStage : StageDefinition {
         "fusermount3",
         "find", "getfattr",
         "sha256sum", "sha1sum", "stat", "cp", "rm", "mkdir", "cat",
+        // The A/B OTA's payload writer and its signatures (AbOtaPackage.SCRIPT).
+        "python3", "openssl",
     )
 
     // Key digests are captured inside the stage, so the input key uses the key *references*;
@@ -68,7 +71,9 @@ public class BuildFlashableZipStage : StageDefinition {
         )
 
     override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
-        listOf(zipRelPath(ctx), "${zipRelPath(ctx)}.sha256") +
+        listOfNotNull(flashableRelPath(ctx).takeIf { ctx.snapshot.build.packageType.flashable })
+            .plus(listOfNotNull(otaRelPath(ctx).takeIf { ctx.snapshot.build.packageType.abOta }))
+            .flatMap { listOf(it, "$it.sha256") } +
         if (!ctx.snapshot.build.signing.signPackage) listOf("out/package/UNSIGNED") else emptyList()
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
@@ -146,9 +151,12 @@ public class BuildFlashableZipStage : StageDefinition {
         if (ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) {
             ctx.target.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
             steps += superSteps(ctx)
-            ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
+            val type = ctx.snapshot.build.packageType
+            if (type.flashable) ctx.target.dynamicPartitions.forEach { p -> steps += blockDatSteps(ctx, p) }
+            // build_info.txt and the changelog are for Release metadata whichever package is built.
             steps += generatedMembers(ctx)
-            steps += packageSteps(ctx)
+            if (type.flashable) steps += packageSteps(ctx)
+            if (type.abOta) metadataParams(ctx)?.let { steps += AbOtaSteps.steps(ctx, STAGE_DIR, it) }
             steps += BuildChecks.extraPackageSteps(ctx)
         }
         return steps
@@ -438,16 +446,7 @@ public class BuildFlashableZipStage : StageDefinition {
                 securityPatch = patch,
             ),
         )
-        val metadata = OtaMetadataWriter.generate(
-            OtaMetadataWriter.OtaMetadataParams(
-                postBuild = requireNotNull(fingerprint),
-                postBuildIncremental = incremental,
-                postSdkLevel = requireNotNull(sdk),
-                postSecurityPatchLevel = patch,
-                postTimestamp = timestamp,
-                preDevice = ctx.target.id,
-            ),
-        )
+        val metadata = OtaMetadataWriter.generate(requireNotNull(metadataParams(ctx)))
         val changelog = "# LtiRom ${ctx.snapshot.assembly.romVersion} for ${ctx.target.name}\n\n" +
             "Built $date from ${ctx.snapshot.acquisition.firmware.version} (${ctx.snapshot.acquisition.region.name}).\n"
 
@@ -489,10 +488,37 @@ public class BuildFlashableZipStage : StageDefinition {
         )
     }
 
+    /**
+     * What both packages' metadata says about the build (from the built tree's build.prop and the run's time);
+     * null until those are read, or when build.prop lacks one ([generatedMembers] says which).
+     */
+    private fun metadataParams(ctx: StageContext): OtaMetadataWriter.OtaMetadataParams? {
+        val buildProp = ctx.value(PACKAGE_BUILD_PROP)
+        fun prop(key: String) = BuildPropStamper.prop(buildProp, key)
+        // Since Android 15 ro.build.fingerprint is derived at boot; build.prop carries the system one.
+        val fingerprint = prop("ro.build.fingerprint") ?: prop("ro.system.build.fingerprint")
+        val incremental = prop("ro.build.version.incremental")
+        val sdk = prop("ro.build.version.sdk")
+        val timestamp = ctx.longValue(RuntimeKeys.RUN_TIMESTAMP)
+        return if (fingerprint == null || incremental == null || sdk == null || timestamp == null) {
+            null
+        } else {
+            OtaMetadataWriter.OtaMetadataParams(
+                postBuild = fingerprint,
+                postBuildIncremental = incremental,
+                postSdkLevel = sdk,
+                postSecurityPatchLevel = prop("ro.build.version.security_patch")
+                    ?: ctx.snapshot.acquisition.firmware.securityPatch,
+                postTimestamp = timestamp,
+                preDevice = ctx.target.id,
+            )
+        }
+    }
+
     private fun packageSteps(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
-        val signed = ctx.abs(zipRelPath(ctx))
+        val signed = ctx.abs(flashableRelPath(ctx))
         val steps = mutableListOf<PipelineStep>()
         // zip adds to an existing archive: start from none, or a failed run's members would stay in it.
         steps += PipelineStep.Tool(stepCommand("rm", listOf("-f", "$stage/rom.zip"), ws), "remove old rom.zip")
@@ -568,7 +594,10 @@ public class BuildFlashableZipStage : StageDefinition {
             resultKey = RuntimeKeys.ZIP_SIZE,
         )
         val zipSha = ctx.value(RuntimeKeys.ZIP_SHA256)?.digestToken() ?: return steps
-        steps += PipelineStep.WriteFile("${zipRelPath(ctx)}.sha256", "$zipSha  ${zipName(ctx)}\n".encodeToByteArray())
+        steps += PipelineStep.WriteFile(
+            "${flashableRelPath(ctx)}.sha256",
+            "$zipSha  ${zipName(ctx)}\n".encodeToByteArray(),
+        )
         steps += PipelineStep.Tool(
             stepCommand("unzip", listOf("-l", signed), ws),
             "list zip",
@@ -665,7 +694,19 @@ public class BuildFlashableZipStage : StageDefinition {
             .replace("{date}", date)
             .replace("{device}", device)
 
-        public fun zipRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"
+        /** The build's main package, which Release metadata and Publish use: the A/B OTA when it is the only one. */
+        public fun zipRelPath(ctx: StageContext): String = "out/package/${packageName(ctx)}"
+
+        public fun packageName(ctx: StageContext): String =
+            if (ctx.snapshot.build.packageType == PackageType.AB_OTA) otaName(ctx) else zipName(ctx)
+
+        /** The recovery flashable zip. */
+        public fun flashableRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"
+
+        /** The A/B OTA zip: the flashable zip's name with `-ota`. */
+        public fun otaName(ctx: StageContext): String = zipName(ctx).removeSuffix(".zip") + "-ota.zip"
+
+        public fun otaRelPath(ctx: StageContext): String = "out/package/${otaName(ctx)}"
 
         public fun bootPartitionBytes(target: TargetDevice, image: String): Long = when (image) {
             "boot" -> target.bootPartitionBytes

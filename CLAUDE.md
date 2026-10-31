@@ -1047,6 +1047,22 @@ nothing is shown as done before its job finished.
   holds `/dev/console`, `/dev/null`, `/dev/urandom` device nodes a user cannot create; without the state, mkbootfs
   wrote them as empty files. Repack also refuses an `/init` that is neither ELF nor a symlink (`RamdiskCheck.badInit`).
   `mkbootimgArgs` drops only the trailing newline of the args file (an empty `--cmdline` value stays; init_boot has one).
+- A/B OTA (`BuildSettings.packageType` FLASHABLE / AB_OTA / BOTH, `AbOtaSteps`, `AbOtaPackage.SCRIPT`): a Python 3
+  (stdlib + openssl) payload writer in WSL, written to `work/package/ab/`. Full payload, major version 2, 2 MiB
+  REPLACE/REPLACE_XZ ops (xz: no check, 1 MiB dictionary), exactly as PQ84P01's stock OTA; Virtual A/B as
+  `AbOtaPackage.vab` (Android 15: lz4, COW v3, factor 65536) with `estimate_cow_size`/`estimate_op_count_max` per
+  dynamic partition; a version (build timestamp) per partition. It is a PARTIAL update (dynamic partitions + signed
+  boot chain from the staging dir): update_engine copies the firmware partitions from the running slot, so no
+  firmware image is ever packaged. Signed with the platform key (otacerts.zip must hold its certificate). The zip is
+  signed twice: `props` fills `ota-property-files` / `ota-streaming-property-files` (padded to
+  `OtaMetadataWriter.PROPERTY_FILES_WIDTH`) and the second fill must find nothing to change (`OTA_LAYOUT`); `verify`
+  re-checks payload_properties and both signatures. OTA only: the OTA is the main package (`zipRelPath`,
+  `RuntimeKeys.ZIP_*`, artifact `AB_OTA_ZIP`); both: the flashable zip is main and the OTA is `AbOtaSteps.SHA256/SIZE`.
+  Verified offline: payload-dumper-go extracts every partition byte-identical, openssl verifies both signatures.
+- Boot dtb (`DTB_UNPACK_SCRIPT` / `DTB_REPACK_SCRIPT`): a vendor_boot dtb is several FDTs back to back (PQ84P01:
+  10) and dtc reads only the first. Unpack keeps `dtb.orig` and the first tree as `dtb.dts` (headed by the count, hash
+  in `dtb.dts.sha`); repack restores `dtb.orig` byte for byte unless dtb.dts was edited, then the edited first tree
+  plus the others unchanged. Before this, every vendor_boot repack kept only the first tree.
 - `importPatched` refuses an AVB footer avbtool cannot read and a ramdisk compression the boot kernel's `CONFIG_RD_*`
   does not unpack (`RamdiskCheck.unreadableRamdisk`, `RamdiskCompression.kernelName`).
 - Extract: an image with no EROFS/ext4/F2FS superblock stops the build: `EMPTY_PARTITION` when it is zeros only

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -52,6 +54,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
+import org.ide.lti.core.model.workspace.PackageType
 import org.ide.lti.feature.rom.studio.api.formatBytes
 
 /** How each dynamic partition image is built (mkfs.erofs). */
@@ -221,20 +224,64 @@ internal fun PartitionLayoutPane(target: TargetDevice, settings: BuildSettings, 
     }
 }
 
+/** Which install package the build writes, and what each one is for. */
+@Composable
+private fun PackageTypeCard(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
+    Card("Install package", tag = "PackageTypeCard") {
+        Hint("What the build writes to out/package/. Both are signed with the platform key.")
+        SelectField(
+            selected = settings.packageType,
+            options = listOf(
+                SelectOption(
+                    PackageType.FLASHABLE,
+                    "Flashable zip",
+                    "A custom recovery flashes it to the running slot",
+                ),
+                SelectOption(
+                    PackageType.AB_OTA,
+                    "A/B OTA",
+                    "update_engine installs it to the other slot: stock recovery, adb sideload or an updater app",
+                ),
+                SelectOption(PackageType.BOTH, "Both", "A flashable zip and an A/B OTA from the same images"),
+            ),
+            onSelect = { onChange(settings.copy(packageType = it)) },
+            tag = "PackageType",
+            modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
+        )
+        if (settings.packageType.abOta) {
+            Hint(
+                "The A/B OTA is a partial update of the ROM's partitions (${target.dynamicPartitions.size} dynamic, " +
+                    "${target.packagePolicy.flashableBootPartitions.joinToString()}): the phone keeps its own " +
+                    "firmware, copied from the running slot. The ROM's otacerts.zip must hold the platform " +
+                    "certificate, or the phone refuses the package.",
+            )
+        }
+    }
+}
+
 /** What goes into the flashable zip: the planned members, or the real ones of the last package. */
 @Composable
-internal fun FlashableMembersPane(target: TargetDevice, facts: BuildFacts) {
+internal fun FlashableMembersPane(
+    target: TargetDevice,
+    facts: BuildFacts,
+    settings: BuildSettings = BuildSettings(),
+    onChange: (BuildSettings) -> Unit = {},
+) {
+    PackageTypeCard(settings, target, onChange)
     val title = if (facts.zipMembers.isEmpty()) "Planned members" else "Members of the last package"
     Card(title, tag = "FlashableMembersPane") {
         val members = facts.zipMembers.ifEmpty {
-            target.dynamicPartitions.flatMap { listOf("$it.new.dat.br", "$it.transfer.list", "$it.patch.dat") } +
-                target.packagePolicy.flashableBootPartitions.map { "$it.img" } +
-                listOf(
-                    "dynamic_partitions_op_list",
-                    "META-INF/com/google/android/update-binary",
-                    "META-INF/com/google/android/updater-script",
-                    "META-INF/com/android/metadata",
-                )
+            val flashable = target.dynamicPartitions.flatMap {
+                listOf("$it.new.dat.br", "$it.transfer.list", "$it.patch.dat")
+            } + target.packagePolicy.flashableBootPartitions.map { "$it.img" } + listOf(
+                "dynamic_partitions_op_list",
+                "META-INF/com/google/android/update-binary",
+                "META-INF/com/google/android/updater-script",
+                "META-INF/com/android/metadata",
+            )
+            val ota = listOf("META-INF/com/android/metadata", "payload.bin", "payload_properties.txt")
+            (if (settings.packageType.flashable) flashable else emptyList()) +
+                if (settings.packageType.abOta) ota.map { "A/B OTA: $it" } else emptyList()
         }
         members.forEach { Mono(it) }
         if ((facts.packages.lastOrNull()?.sizeBytes ?: 0L) > ZIP32_LIMIT) {

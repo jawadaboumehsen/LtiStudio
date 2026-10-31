@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.pipeline
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.ExtractionSettings
+import org.ide.lti.core.model.workspace.PackageType
 import java.security.MessageDigest
 
 public object CacheKeys {
@@ -111,6 +112,7 @@ public object CacheKeys {
             snapshot.build.sparseImages.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(",", "sparse "),
             snapshot.build.partitionDedupe.takeIf { it.isNotEmpty() }
                 ?.toSortedMap()?.entries?.joinToString(",") { "dedupe ${it.key}=${it.value}" },
+            snapshot.build.packageType.takeIf { it != PackageType.FLASHABLE }?.let { "package ${it.name}" },
             snapshot.build.partitionClusterKib.takeIf { it.isNotEmpty() }
                 ?.toSortedMap()?.entries?.joinToString(",") { "cluster ${it.key}=${it.value}" },
         )

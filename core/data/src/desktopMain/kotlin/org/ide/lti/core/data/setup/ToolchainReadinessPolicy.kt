@@ -61,6 +61,8 @@ public object ToolchainReadinessPolicy {
         setOf(
             "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
             "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "touch", "java",
+            // The A/B OTA's payload writer and its signatures.
+            "python3", "openssl",
         )
 
     /**
@@ -105,6 +107,7 @@ public object ToolchainReadinessPolicy {
                     remediation = "Start the LtiRomServer daemon or verify WSL connectivity",
                     technicalDetails = details,
                 )
+
             // An explicit unhealthy status (DOWN, DEGRADED) wins over everything else.
             statusUpper in UNHEALTHY_STATUSES ->
                 DaemonHealthEvaluation(
@@ -114,6 +117,7 @@ public object ToolchainReadinessPolicy {
                     remediation = "Check daemon logs and restart the daemon",
                     technicalDetails = details,
                 )
+
             statusUpper !in HEALTHY_STATUSES ->
                 DaemonHealthEvaluation(
                     isHealthy = false,
@@ -122,6 +126,7 @@ public object ToolchainReadinessPolicy {
                     remediation = "Verify daemon version and check daemon logs",
                     technicalDetails = details,
                 )
+
             // Only a canonical UP (or compatibility HEALTHY) daemon gets its Java version judged.
             !isJavaVersionSupported(health.javaVersion) ->
                 DaemonHealthEvaluation(
@@ -133,6 +138,7 @@ public object ToolchainReadinessPolicy {
                     remediation = "Install Java $MIN_JAVA_VERSION+ in WSL distribution",
                     technicalDetails = "Reported runtime: ${health.javaVersion}",
                 )
+
             else ->
                 DaemonHealthEvaluation(
                     isHealthy = true,
