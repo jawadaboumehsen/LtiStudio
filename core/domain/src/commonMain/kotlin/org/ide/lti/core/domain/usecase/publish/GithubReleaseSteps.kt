@@ -41,9 +41,13 @@ internal class GithubReleaseSteps(
     private val root = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
     private val repo = checkNotNull(settings.repository?.takeIf { it.isNotBlank() }) { "No release repository set." }
     val tag: String = settings.sourceTag?.takeIf { it.isNotBlank() } ?: release.zip.removeSuffix(".zip")
-    private val split = release.size > settings.partSizeBytes
-    private val zipPath = "$root/out/package/${release.zip}"
+
+    /** The package and, when built next to it, the A/B OTA. */
+    private val packages = listOfNotNull(release, release.ota)
+    private val split = packages.any { it.split }
     private val partsDir = "$root/out/publish/parts"
+
+    private val ReleaseFiles.split: Boolean get() = size > settings.partSizeBytes
 
     suspend fun run(stepId: String): String = when (stepId) {
         "check-auth" -> gh("auth", "status").let { "gh is signed in" }
@@ -57,18 +61,24 @@ internal class GithubReleaseSteps(
 
     /** A package larger than the part size goes up as `<zip>.00`, `.01`, … (GitHub's asset limit is 2 GiB). */
     private suspend fun prepareAssets(): String {
-        if (!split) return "one asset, ${release.size} bytes"
+        if (!split) return if (packages.size == 1) "one asset, ${release.size} bytes" else "${packages.size} assets"
         tool("rm", "-rf", "--", partsDir)
         tool("mkdir", "-p", partsDir)
-        tool("split", "-b", settings.partSizeBytes.toString(), "-d", "-a", "2", zipPath, "$partsDir/${release.zip}.")
-        return "${assets().size} parts"
+        packages.filter { it.split }.forEach {
+            tool("split", "-b", settings.partSizeBytes.toString(), "-d", "-a", "2", pathOf(it), "$partsDir/${it.zip}.")
+        }
+        return "${assets().size} assets"
     }
 
-    private suspend fun assets(): List<String> = if (!split) {
-        listOf(zipPath)
-    } else {
-        tool("find", partsDir, "-maxdepth", "1", "-name", "${release.zip}.*", "-type", "f")
-            .lines().filter { it.isNotBlank() }.sorted()
+    private fun pathOf(p: ReleaseFiles) = "$root/out/package/${p.zip}"
+
+    private suspend fun assets(): List<String> = packages.flatMap { p ->
+        if (!p.split) {
+            listOf(pathOf(p))
+        } else {
+            tool("find", partsDir, "-maxdepth", "1", "-name", "${p.zip}.*", "-type", "f")
+                .lines().filter { it.isNotBlank() }.sorted()
+        }
     }
 
     private suspend fun createRelease(): String {
@@ -111,11 +121,15 @@ internal class GithubReleaseSteps(
         val name = path.substringAfterLast('/')
         return when {
             name !in remote -> false
+
             // The same bytes are already there (an earlier upload of this file): nothing to upload or refuse.
             remote[name] == "sha256:" + tool("sha256sum", "--", path).digestToken() -> null
+
             settings.collisionPolicy == CollisionPolicy.FAIL ->
                 error("$name is already in release $tag (collision policy: fail).")
+
             settings.collisionPolicy == CollisionPolicy.SKIP -> null
+
             else -> true
         }
     }
@@ -187,8 +201,13 @@ internal class GithubReleaseSteps(
 
     private fun merge(existing: String?, built: String): String {
         val entry = Json.parseToJsonElement(built).jsonObject.getValue("response").jsonArray.first().jsonObject
-        val url = "https://github.com/$repo/releases/download/$tag/${release.zip}"
-        val newEntry = JsonObject(entry + ("urls" to JsonArray(listOf(JsonPrimitive(url)))))
+        val base = "https://github.com/$repo/releases/download/$tag"
+        fun withUrl(o: JsonObject): JsonObject {
+            val url = "$base/${o.getValue("filename").jsonPrimitive.content}"
+            return JsonObject(o + ("urls" to JsonArray(listOf(JsonPrimitive(url)))))
+        }
+        val ota = entry["ota"]?.jsonObject?.let(::withUrl)
+        val newEntry = withUrl(entry).let { if (ota == null) it else JsonObject(it + ("ota" to ota)) }
         val device = entry["device"]?.jsonPrimitive?.content
         val old = existing?.let { Json.parseToJsonElement(it).jsonObject["response"]?.jsonArray }.orEmpty()
             .map { it.jsonObject }
@@ -217,7 +236,7 @@ internal class GithubReleaseSteps(
             "check-auth" to "Check the GitHub sign-in (gh auth status)",
             "prepare-assets" to "Prepare the upload (split when larger than the part size)",
             "create-release" to "Create the GitHub release",
-            "upload-assets" to "Upload the package",
+            "upload-assets" to "Upload the package (and the A/B OTA)",
             "verify-remote" to "Verify the uploaded digests",
             "publish-manifest" to "Update the OTA manifest",
         )

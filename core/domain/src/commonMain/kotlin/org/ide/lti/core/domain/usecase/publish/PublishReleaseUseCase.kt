@@ -33,8 +33,11 @@ import org.ide.lti.core.model.workspace.PublishProvider
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.Workspace
 
-/** The release the last build produced: `out/manifest.json` and the zip it names. */
-public data class ReleaseFiles(val zip: String, val sha256: String, val size: Long)
+/**
+ * The release the last build produced: `out/manifest.json` and the zip it names; [ota] is the A/B OTA built next to
+ * it (the manifest's `"ota"` when it is another file).
+ */
+public data class ReleaseFiles(val zip: String, val sha256: String, val size: Long, val ota: ReleaseFiles? = null)
 
 /** What Publish would do now, or why it cannot. */
 public data class PublishPreflight(
@@ -139,7 +142,7 @@ public class PublishReleaseUseCase(
             destination = destination,
             zip = release.zip,
             sha256 = release.sha256,
-            steps = stepsFor(settings.provider).map { (id, label) -> PublishJournalStep(id, label) },
+            steps = stepsFor(settings.provider, release).map { (id, label) -> PublishJournalStep(id, label) },
             requestKey = requestKey,
         )
         onProgress(journal)
@@ -180,7 +183,7 @@ public class PublishReleaseUseCase(
     private fun PublishJournalStep.completed(detail: String) = copy(
         state = PublishStepState.DONE,
         detail = detail,
-        copiedByAttempt = copiedByAttempt || (id == "export-zip" && detail != "already there, kept"),
+        copiedByAttempt = copiedByAttempt || (id in PACKAGE_COPIES && detail != "already there, kept"),
     )
 
     @Suppress("LongParameterList")
@@ -207,27 +210,47 @@ public class PublishReleaseUseCase(
         report: (Long, Long) -> Unit,
     ): String = when (step.id) {
         "verify-package" -> {
-            val actual = sha256(ws, ws.abs("out/package/${release.zip}"))
-            check(actual == release.sha256) { "The package does not match its manifest (sha256 $actual)." }
+            listOfNotNull(release, release.ota).forEach { p ->
+                val actual = sha256(ws, ws.abs("out/package/${p.zip}"))
+                check(actual == p.sha256) { "${p.zip} does not match its manifest (sha256 $actual)." }
+            }
             "sha256 ${release.sha256}"
         }
+
         "export-zip" -> {
             val policy = if (step.copiedByAttempt) CollisionPolicy.OVERWRITE else settings.collisionPolicy
             export(ws, policy, ws.abs("out/package/${release.zip}"), dest, release.zip) { done ->
                 report(done, release.size)
             }
         }
+
         "verify-zip" -> {
             val actual = sha256(ws, "$dest/${release.zip}")
             check(actual == release.sha256) { "The exported package differs from the built one (sha256 $actual)." }
             "sha256 matches"
         }
+
+        "export-ota" -> {
+            val ota = checkNotNull(release.ota)
+            val policy = if (step.copiedByAttempt) CollisionPolicy.OVERWRITE else settings.collisionPolicy
+            export(ws, policy, ws.abs("out/package/${ota.zip}"), dest, ota.zip) { done -> report(done, ota.size) }
+        }
+
+        "verify-ota" -> {
+            val ota = checkNotNull(release.ota)
+            val actual = sha256(ws, "$dest/${ota.zip}")
+            check(actual == ota.sha256) { "The exported OTA differs from the built one (sha256 $actual)." }
+            "sha256 matches"
+        }
+
         "export-manifest" -> export(ws, CollisionPolicy.OVERWRITE, ws.abs(MANIFEST), dest, manifestName(release))
+
         "verify-manifest" -> {
             val built = sha256(ws, ws.abs(MANIFEST))
             check(sha256(ws, "$dest/${manifestName(release)}") == built) { "The exported manifest differs." }
             "sha256 matches"
         }
+
         else -> error("unknown step ${step.id}")
     }
 
@@ -259,6 +282,7 @@ public class PublishReleaseUseCase(
         return if (exists) "replaced $dest/$name" else "copied to $dest/$name"
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private suspend fun releaseOf(ws: Workspace, problems: MutableList<String>): ReleaseFiles? {
         val text = port.readFile(ws, MANIFEST)
         val entry = text?.let {
@@ -277,16 +301,29 @@ public class PublishReleaseUseCase(
             return null
         }
         if (port.stat(ws, "out/package/UNSIGNED").exists) problems += "The package is unsigned; it cannot be published."
-        if (!port.stat(ws, "out/package/$zip").exists) problems += "out/package/$zip is missing; build it again."
-        return ReleaseFiles(zip, sha, size)
+        val ota = entry["ota"]?.let { runCatching { it.jsonObject }.getOrNull() }?.let { o ->
+            val name = o["filename"]?.jsonPrimitive?.content
+            val otaSha = o["sha256"]?.jsonPrimitive?.content
+            val otaSize = o["size"]?.jsonPrimitive?.content?.toLongOrNull()
+            if (name == null || otaSha == null || otaSize == null) {
+                null.also { problems += "out/manifest.json names an incomplete OTA; build Release metadata again." }
+            } else {
+                ReleaseFiles(name, otaSha, otaSize).takeIf { name != zip }
+            }
+        }
+        listOfNotNull(zip, ota?.zip).filterNot { port.stat(ws, "out/package/$it").exists }
+            .forEach { problems += "out/package/$it is missing; build it again." }
+        return ReleaseFiles(zip, sha, size, ota)
     }
 
     private fun destinationOf(settings: PublishSettings, problems: MutableList<String>): String? =
         when (settings.provider) {
             PublishProvider.NONE -> null.also { problems += "Choose where to publish (Provider)." }
+
             PublishProvider.LOCAL_EXPORT -> settings.localExportFolder?.trim()?.takeIf { WINDOWS_FOLDER.matches(it) }
                 ?.let { toLinuxPath(it).trimEnd('/') }
                 ?: null.also { problems += "Set the export folder (a Windows folder like D:\\ROM\\releases)." }
+
             PublishProvider.GITHUB_RELEASE -> settings.repository?.takeIf { it.isNotBlank() }
                 ?.let { "github.com/$it" }
                 ?: null.also { problems += "Set the release repository (owner/name)." }
@@ -332,6 +369,8 @@ public class PublishReleaseUseCase(
             "verify-package" to "Check the package against its manifest",
             "export-zip" to "Copy the package",
             "verify-zip" to "Verify the copied package",
+            "export-ota" to "Copy the A/B OTA",
+            "verify-ota" to "Verify the copied A/B OTA",
             "export-manifest" to "Copy the OTA manifest",
             "verify-manifest" to "Verify the copied manifest",
         )
@@ -339,8 +378,12 @@ public class PublishReleaseUseCase(
         /** `D:\ROM`, `D:/ROM` or `\\wsl.localhost\<distro>\…` (`\\wsl$\…`). */
         private val WINDOWS_FOLDER = Regex("""^([A-Za-z]:[\\/].*|\\\\wsl(\.localhost|[$])\\.+)$""")
 
-        private fun stepsFor(provider: PublishProvider) =
-            if (provider == PublishProvider.GITHUB_RELEASE) GithubReleaseSteps.STEPS else LOCAL_STEPS
+        private val PACKAGE_COPIES = setOf("export-zip", "export-ota")
+
+        /** The OTA's steps only when the release has one. */
+        private fun stepsFor(provider: PublishProvider, release: ReleaseFiles) =
+            (if (provider == PublishProvider.GITHUB_RELEASE) GithubReleaseSteps.STEPS else LOCAL_STEPS)
+                .filter { (id, _) -> release.ota != null || !id.endsWith("-ota") }
 
         /** A local export is "exported"; a GitHub release is "published" (its manifest step says if the OTA is). */
         private fun outcomeOf(provider: PublishProvider, destination: String) =

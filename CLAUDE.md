@@ -1059,6 +1059,9 @@ nothing is shown as done before its job finished.
   re-checks payload_properties and both signatures. OTA only: the OTA is the main package (`zipRelPath`,
   `RuntimeKeys.ZIP_*`, artifact `AB_OTA_ZIP`); both: the flashable zip is main and the OTA is `AbOtaSteps.SHA256/SIZE`.
   Verified offline: payload-dumper-go extracts every partition byte-identical, openssl verifies both signatures.
+  `out/manifest.json`'s entry names it as `"ota"` (filename, size, sha256, urls; with OTA only it repeats the main
+  package). Publish copies/uploads it with the package (`ReleaseFiles.ota`, steps `export-ota`/`verify-ota`) and the
+  GitHub manifest gets its release URL; split parts of either package keep the manifest from being published.
 - Boot dtb (`DTB_UNPACK_SCRIPT` / `DTB_REPACK_SCRIPT`): a vendor_boot dtb is several FDTs back to back (PQ84P01:
   10) and dtc reads only the first. Unpack keeps `dtb.orig` and the first tree as `dtb.dts` (headed by the count, hash
   in `dtb.dts.sha`); repack restores `dtb.orig` byte for byte unless dtb.dts was edited, then the edited first tree

@@ -9,10 +9,19 @@
  */
 package org.ide.lti.core.domain.pipeline
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.stages.GenerateOtaManifestStage
+import org.ide.lti.core.model.workspace.PackageType
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GenerateOtaManifestStageTest {
@@ -71,6 +80,40 @@ class GenerateOtaManifestStageTest {
         }
         val manifestJson = manifestStep.content.decodeToString()
         assertTrue(manifestJson.contains("Stock packaged changelog"))
+    }
+
+    private fun manifestOf(ctx: StageContext): String? = stage.plan(ctx).filterIsInstance<PipelineStep.WriteFile>()
+        .firstOrNull { it.relPath == "out/manifest.json" }?.content?.decodeToString()
+
+    @Test
+    fun `an A B OTA built next to the zip is named with its own size and sha256`() {
+        val ctx = capturedContext().let {
+            it.copy(snapshot = it.snapshot.copy(build = it.snapshot.build.copy(packageType = PackageType.BOTH)))
+        }
+        // The OTA is measured first: no manifest until its sha256 and size are in.
+        assertNull(manifestOf(ctx))
+        val otaSha = "a".repeat(64)
+        val manifest = assertNotNull(
+            manifestOf(
+                ctx.copy(
+                    runtimeValues = ctx.runtimeValues + mapOf(
+                        GenerateOtaManifestStage.OTA_SHA256 to "$otaSha  x-ota.zip",
+                        GenerateOtaManifestStage.OTA_SIZE to "7021611891",
+                    ),
+                ),
+            ),
+        )
+        val entry = Json.parseToJsonElement(manifest).jsonObject.getValue("response").jsonArray[0].jsonObject
+        val ota = entry.getValue("ota").jsonObject
+        assertEquals(BuildFlashableZipStage.otaName(ctx), ota.getValue("filename").jsonPrimitive.content)
+        assertEquals(otaSha, ota.getValue("sha256").jsonPrimitive.content)
+        assertEquals("7021611891", ota.getValue("size").jsonPrimitive.content)
+        assertEquals(BuildFlashableZipStage.zipName(ctx), entry.getValue("filename").jsonPrimitive.content)
+    }
+
+    @Test
+    fun `a flashable zip alone has no ota entry`() {
+        assertFalse("\"ota\"" in assertNotNull(manifestOf(capturedContext())))
     }
 
     @Test

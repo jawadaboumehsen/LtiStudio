@@ -19,10 +19,12 @@ import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
 import org.ide.lti.core.domain.pipeline.text.OtaManifestWriter
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.workspace.PackageType
 
 /**
  * Stage 6 — `out/manifest.json` (`{"response":[…]}`) from the signed zip's real size and sha256,
  * the packaged `build_info.txt` and `changelog.md`, and the snapshot's OTA base URL, channel, and changelog.
+ * When an A/B OTA is built, the entry's `"ota"` names it (with both packages, its own size and sha256).
  *
  * A channel value is internal metadata unless a consumer schema supports it.
  */
@@ -59,7 +61,19 @@ public class GenerateOtaManifestStage : StageDefinition {
             "read changelog",
             resultKey = CHANGELOG,
         )
-        val captured = listOf(RuntimeKeys.ZIP_SHA256, RuntimeKeys.ZIP_SIZE, BUILD_INFO, CHANGELOG).all(ctx::has)
+        val both = ctx.snapshot.build.packageType == PackageType.BOTH
+        if (both) {
+            val ota = ctx.abs(BuildFlashableZipStage.otaRelPath(ctx))
+            steps += PipelineStep.Tool(stepCommand("sha256sum", listOf(ota), ws), "sha256 ota", resultKey = OTA_SHA256)
+            steps += PipelineStep.Tool(
+                stepCommand("stat", listOf("-c", "%s", ota), ws),
+                "stat ota",
+                resultKey = OTA_SIZE,
+            )
+        }
+        val needed = listOf(RuntimeKeys.ZIP_SHA256, RuntimeKeys.ZIP_SIZE, BUILD_INFO, CHANGELOG) +
+            if (both) listOf(OTA_SHA256, OTA_SIZE) else emptyList()
+        val captured = needed.all(ctx::has)
         if (captured) steps += manifestStep(ctx)
         return steps
     }
@@ -88,6 +102,7 @@ public class GenerateOtaManifestStage : StageDefinition {
             incremental = incremental,
             sha256 = sha,
             changelog = effectiveChangelog,
+            ota = otaPackage(ctx, sha, size),
         )
         val channel = ctx.snapshot.release.channel
         val manifest = if (baseManifest.contains("\"changelog\":")) {
@@ -101,9 +116,23 @@ public class GenerateOtaManifestStage : StageDefinition {
         return PipelineStep.WriteFile(MANIFEST, manifest.encodeToByteArray())
     }
 
+    private fun otaPackage(ctx: StageContext, sha: String, size: Long) = when (ctx.snapshot.build.packageType) {
+        PackageType.FLASHABLE -> null
+
+        PackageType.AB_OTA -> OtaManifestWriter.OtaPackage(BuildFlashableZipStage.packageName(ctx), size, sha)
+
+        PackageType.BOTH -> OtaManifestWriter.OtaPackage(
+            BuildFlashableZipStage.otaName(ctx),
+            ctx.longValue(OTA_SIZE) ?: 0L,
+            ctx.value(OTA_SHA256).orEmpty().digestToken(),
+        )
+    }
+
     public companion object {
         const val MANIFEST = "out/manifest.json"
         const val BUILD_INFO = "package.build_info"
         const val CHANGELOG = "package.changelog"
+        const val OTA_SHA256 = "manifest.ota.sha256"
+        const val OTA_SIZE = "manifest.ota.size"
     }
 }

@@ -91,24 +91,31 @@ public fun PublishEditor(
                 "release-repository-and-tag", "release_repository_and_tag" -> item {
                     RepositoryCard(settings, dirtyPaths, onChange)
                 }
+
                 "split-assets", "split_assets" -> item {
                     SplitAssetsCard(settings, dirtyPaths, onChange)
                 }
+
                 "credentials" -> item {
                     CredentialsCard()
                 }
+
                 "ota-manifest", "ota_manifest" -> item {
                     OtaManifestCard(settings, dirtyPaths, onChange)
                 }
+
                 "retention" -> item {
                     RetentionCard(settings, dirtyPaths, onChange)
                 }
+
                 "verification" -> item {
                     VerificationCard(state)
                 }
+
                 "publish-review-and-recovery", "publish_review_and_recovery" -> item {
                     ReviewCard(state, onPublish, onCancelPublish)
                 }
+
                 else -> item {
                     ProviderCard(settings, dirtyPaths, onChange)
                 }
@@ -377,11 +384,14 @@ private fun VerificationCard(state: PublishUiState) {
         val preflight = state.preflight
         when {
             preflight == null -> Hint("Checking the last build…")
+
             preflight.problems.isEmpty() -> {
                 Hint("Ready: the package matches its manifest and has a destination.")
-                preflight.release?.let { Mono("${it.zip}  ${size(it.size)}  sha256 ${it.sha256}") }
+                listOfNotNull(preflight.release, preflight.release?.ota)
+                    .forEach { Mono("${it.zip}  ${size(it.size)}  sha256 ${it.sha256}") }
                 preflight.destination?.let { Mono("to $it") }
             }
+
             else -> preflight.problems.forEach { Problem(it) }
         }
     }
@@ -405,7 +415,8 @@ private fun ReviewCard(state: PublishUiState, onPublish: () -> Unit, onCancel: (
     }
     val release = preflight?.release
     if (confirming && release != null) {
-        ConfirmPublish("${release.zip} goes to ${preflight.destination}.", onDismiss = { confirming = false }) {
+        val what = release.ota?.let { "${release.zip} and ${it.zip} go" } ?: "${release.zip} goes"
+        ConfirmPublish("$what to ${preflight.destination}.", onDismiss = { confirming = false }) {
             confirming = false
             onPublish()
         }

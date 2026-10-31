@@ -60,18 +60,26 @@ class PublishReleaseUseCaseTest {
             val a = command.args
             return when (command.toolId) {
                 "mkdir" -> ToolResult(0, "")
+
                 "stat" -> if (a.last() in files) ToolResult(0, "1") else ToolResult(1, "", "No such file")
+
                 "cp" -> {
                     files[a[2]] = files.getValue(a[1]) + if (corruptCopies) "!" else ""
                     ToolResult(0, "")
                 }
+
                 "mv" -> ToolResult(0, "").also { files[a[3]] = files.remove(a[2])!! }
+
                 "sha256sum" -> files[a.last()]?.let { ToolResult(0, "${sha(it)}  ${a.last()}") }
                     ?: ToolResult(1, "", "No such file")
+
                 "gh" -> gh(a).also { if (a.take(2) == listOf("release", "upload")) uploadGate?.await() }
+
                 // The running upload: gh's pid, and the bytes it has read.
                 "pgrep" -> if (failingSamples) error("Remote termination was not confirmed") else ToolResult(0, "7")
+
                 "cat" -> ToolResult(0, "rchar: 1")
+
                 else -> error("unexpected ${command.toolId}")
             }
         }
@@ -79,6 +87,7 @@ class PublishReleaseUseCaseTest {
         @Suppress("CyclomaticComplexMethod")
         private fun gh(a: List<String>): ToolResult = when {
             a[0] == "auth" -> ToolResult(0, "")
+
             a[0] == "release" && a[1] == "view" && "--json" in a -> releases[a[2]]?.let { assets ->
                 ToolResult(
                     0,
@@ -87,16 +96,22 @@ class PublishReleaseUseCaseTest {
                     },
                 )
             } ?: ToolResult(1, "", "release not found")
+
             a[0] == "release" && a[1] == "view" -> if (a[2] in releases) ToolResult(0, "") else ToolResult(1, "")
+
             a[0] == "release" && a[1] == "create" -> ToolResult(0, "").also { releases[a[2]] = mutableMapOf() }
+
             a[0] == "release" && a[1] == "upload" -> ToolResult(0, "").also {
                 releases.getValue(a[2])[a[3].substringAfterLast('/')] = files.getValue(a[3])
             }
+
             a[0] == "api" && "PUT" in a -> ToolResult(0, "{}").also {
                 val content = a.first { it.startsWith("content=") }.removePrefix("content=")
                 repoFiles[a[3]] = String(java.util.Base64.getDecoder().decode(content))
             }
+
             a[0] == "api" -> ToolResult(1, "", "HTTP 404")
+
             else -> error("unexpected gh $a")
         }
 
@@ -180,6 +195,50 @@ class PublishReleaseUseCaseTest {
         assertEquals("rom", folder.files["/mnt/d/ROM/releases/LtiRom-1.0.zip"])
         assertTrue("/mnt/d/ROM/releases/LtiRom-1.0.json" in folder.files)
         assertTrue(folder.files.keys.none { it.endsWith(".partial") })
+    }
+
+    /** A release with an A/B OTA next to the flashable zip, as the manifest names it. */
+    private fun builtWithOta() {
+        folder.files["/w/out/package/LtiRom-1.0.zip"] = "rom"
+        folder.files["/w/out/package/LtiRom-1.0-ota.zip"] = "ota"
+        folder.files["/w/out/manifest.json"] = """{"response":[{"filename":"LtiRom-1.0.zip","size":3,""" +
+            """"sha256":"${sha("rom")}","ota":{"filename":"LtiRom-1.0-ota.zip","size":3,"sha256":"${sha("ota")}"}}]}"""
+    }
+
+    @Test
+    fun theOtaIsExportedAndVerifiedWithThePackage() = runTest {
+        builtWithOta()
+        val journal = assertNotNull(publish.publish("ws"))
+        assertEquals("Exported to /mnt/d/ROM/releases", journal.outcome, "${journal.steps}")
+        assertTrue(journal.steps.any { it.id == "verify-ota" })
+        assertEquals("ota", folder.files["/mnt/d/ROM/releases/LtiRom-1.0-ota.zip"])
+
+        folder.files.remove("/w/out/package/LtiRom-1.0-ota.zip")
+        assertTrue(publish.preflight("ws").problems.any { "LtiRom-1.0-ota.zip is missing" in it })
+    }
+
+    @Test
+    fun theOtaIsUploadedAndTheManifestEntryGetsItsUrl() = runTest {
+        builtWithOta()
+        settings.publish = PublishSettings(
+            provider = PublishProvider.GITHUB_RELEASE,
+            repository = "me/rom-test",
+            manifestRepository = "me/ota",
+            manifestPath = "PQ84P01.json",
+        )
+        val journal = assertNotNull(publish.publish("ws"))
+
+        assertEquals("Published to github.com/me/rom-test", journal.outcome, "${journal.steps}")
+        assertEquals("ota", folder.releases.getValue("LtiRom-1.0")["LtiRom-1.0-ota.zip"])
+        val manifest = folder.repoFiles.getValue("repos/me/ota/contents/PQ84P01.json")
+        val url = "https://github.com/me/rom-test/releases/download/LtiRom-1.0/LtiRom-1.0-ota.zip"
+        assertTrue(url in manifest, manifest)
+    }
+
+    @Test
+    fun aReleaseWithoutAnOtaHasNoOtaSteps() = runTest {
+        built()
+        assertTrue(assertNotNull(publish.publish("ws")).steps.none { it.id.endsWith("-ota") })
     }
 
     @Test

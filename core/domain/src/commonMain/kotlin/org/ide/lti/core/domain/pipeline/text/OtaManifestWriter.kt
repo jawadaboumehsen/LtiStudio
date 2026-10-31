@@ -13,6 +13,9 @@ import java.security.MessageDigest
 
 public object OtaManifestWriter {
 
+    /** The A/B OTA zip offered next to the main package (`"ota"` in the entry). */
+    public data class OtaPackage(val filename: String, val size: Long, val sha256: String)
+
     public fun generate(
         datetime: Long,
         device: String,
@@ -24,6 +27,7 @@ public object OtaManifestWriter {
         incremental: String,
         sha256: String,
         changelog: String,
+        ota: OtaPackage? = null,
     ): String {
         val cleanBaseUrl = otaBaseUrl.removeSuffix("/")
         val idInput = "$sha256$datetime"
@@ -35,6 +39,17 @@ public object OtaManifestWriter {
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t")
+        val otaField = ota?.let {
+            """
+            "ota": {
+                "filename": "${it.filename}",
+                "size": ${it.size},
+                "sha256": "${it.sha256}",
+                "urls": [
+                    "$cleanBaseUrl/${it.filename}"
+                ]
+            },"""
+        }.orEmpty()
 
         return """{
     "response": [
@@ -50,7 +65,7 @@ public object OtaManifestWriter {
             ],
             "version": "$version",
             "incremental": "$incremental",
-            "sha256": "$sha256",
+            "sha256": "$sha256",$otaField
             "changelog": "$safeChangelog"
         }
     ]
