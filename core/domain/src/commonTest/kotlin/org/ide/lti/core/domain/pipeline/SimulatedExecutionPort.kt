@@ -167,7 +167,12 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
 
             "cat" -> files[args.last()]?.decodeToString() ?: ""
 
-            "xxd" -> if (args.last().endsWith(".zip")) "504b0304" else "3aff26ed"
+            // A superblock read (`-s <offset>`) finds EROFS, as the stock partitions are; a header read the sparse magic.
+            "xxd" -> when {
+                args.last().endsWith(".zip") -> "504b0304"
+                "-s" in args -> "e2e1f5e0" + "00".repeat(60)
+                else -> "3aff26ed"
+            }
 
             "getfattr" -> getfattrDump(args.last())
 

@@ -175,6 +175,12 @@ public class BuildFlashableZipStage : StageDefinition {
             "stat $p",
             resultKey = RuntimeKeys.imageSize(p),
         )
+        // What the image holds, so Build & Sign can say how much the filesystem saved over the files themselves.
+        steps += PipelineStep.Tool(
+            stepCommand("du", listOf("-sb", "--apparent-size", ctx.abs("work/$p")), ws),
+            "content size $p",
+            resultKey = contentSize(p),
+        )
         val imageSize = ctx.longValue(RuntimeKeys.imageSize(p))
         val salt = ctx.value(RuntimeKeys.imageSha256(p))?.digestToken()
         if (imageSize != null && salt != null) {
@@ -199,7 +205,7 @@ public class BuildFlashableZipStage : StageDefinition {
             listOf(DEDUPE)
         } else {
             emptyList()
-        }
+        } + BuildFilesystems.erofsCluster(ctx.snapshot.build, p)?.let { listOf("-C", it.toString()) }.orEmpty()
         steps += PipelineStep.Tool(
             stepCommand(
                 "mkfs.erofs",
@@ -630,6 +636,9 @@ public class BuildFlashableZipStage : StageDefinition {
         )
 
         public fun footeredSize(p: String): String = "image.$p.footeredSize"
+
+        /** `du -sb` of `work/<p>`: the bytes of the files [p]'s image was built from. */
+        public fun contentSize(p: String): String = "image.$p.contentSize"
 
         public fun ext4MeasureKey(p: String): String = "image.$p.ext4.measure"
 

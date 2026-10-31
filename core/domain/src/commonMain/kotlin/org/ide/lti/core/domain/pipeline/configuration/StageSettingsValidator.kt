@@ -52,6 +52,7 @@ public object StageSettingsValidator {
     public const val INVALID_PACKAGE_OPTION: String = "INVALID_PACKAGE_OPTION"
     private val BROTLI_LEVELS = 0..11
     public const val BOOT_IMAGE_LEFT_OUT: String = "BOOT_IMAGE_LEFT_OUT"
+    public const val NO_DEVICE_CHECK: String = "NO_DEVICE_CHECK"
     public const val INVALID_SCRIPT: String = "INVALID_SCRIPT"
     public const val INVALID_COVERAGE_RULE: String = "INVALID_COVERAGE_RULE"
     public const val INLINE_CREDENTIAL_NOT_ALLOWED: String = "INLINE_CREDENTIAL_NOT_ALLOWED"
@@ -436,7 +437,13 @@ public object StageSettingsValidator {
         }.map {
             error("sparseImages.$it", "$it is not a standalone image of the fastboot images package")
         }
-        return brotli + free + sizes + sparse
+        val clusters = settings.partitionClusterKib.filterValues { it !in BuildFilesystems.CLUSTER_KIB }.map { (p, k) ->
+            error(
+                "partitionClusterKib.$p",
+                "The cluster of $p must be ${BuildFilesystems.CLUSTER_KIB.joinToString(", ")} KiB, was $k KiB",
+            )
+        }
+        return brotli + free + sizes + sparse + clusters
     }
 
     /** A filesystem the build cannot make, for the stage or for one partition. */
@@ -461,7 +468,17 @@ public object StageSettingsValidator {
      */
     private fun bootImagesLeftOut(target: TargetDevice): List<ValidationError> {
         val left = target.bootPartitions - target.packagePolicy.flashableBootPartitions.toSet()
-        return if (left.isEmpty()) {
+        // With no model to assert, the package's updater-script checks nothing and installs on any device.
+        val unchecked = ValidationError(
+            stageId = StageId.BUILD_FLASHABLE_ZIP,
+            objectId = target.id,
+            fieldPath = "assertModels",
+            code = NO_DEVICE_CHECK,
+            severity = Severity.WARNING,
+            message = "The device names no model to check, so the package installs on any device, including " +
+                "ones it would break. Add the device codename to its models.",
+        ).takeIf { target.assertModels.isEmpty() }
+        return listOfNotNull(unchecked) + if (left.isEmpty()) {
             emptyList()
         } else {
             listOf(

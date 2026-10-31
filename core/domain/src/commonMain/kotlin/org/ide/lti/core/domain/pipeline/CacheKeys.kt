@@ -111,6 +111,8 @@ public object CacheKeys {
             snapshot.build.sparseImages.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(",", "sparse "),
             snapshot.build.partitionDedupe.takeIf { it.isNotEmpty() }
                 ?.toSortedMap()?.entries?.joinToString(",") { "dedupe ${it.key}=${it.value}" },
+            snapshot.build.partitionClusterKib.takeIf { it.isNotEmpty() }
+                ?.toSortedMap()?.entries?.joinToString(",") { "cluster ${it.key}=${it.value}" },
         )
         return sha256(raw.joinToString("|"))
     }

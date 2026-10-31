@@ -11,6 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.assemble.panes
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,25 +21,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.display.IdeTable
+import org.ide.lti.core.designsystem.component.display.IdeTableHeader
+import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
+import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.MountTable
 import org.ide.lti.core.model.workspace.AssemblySettings
+import org.ide.lti.core.ui.toolkit.RefusalView
 import org.ide.lti.feature.rom.studio.stage.assemble.BootPaneState
 
 /**
- * The mount table (`fstab`) of the work tree. Turning off data encryption removes the encryption flags of the
- * `/data` line from every fstab that mounts it.
+ * The mount tables (`fstab`) the phone reads: the work tree's own (encryption and verity flags, set per build),
+ * the first-stage one inside vendor_boot (changed by a vendor_boot override), and the one in the device trees.
  */
 @Composable
 public fun MountTablePane(
@@ -52,175 +64,217 @@ public fun MountTablePane(
 ) {
     LaunchedEffect(Unit) { onReadDeviceTree() }
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium)
-            .testTag("MountTablePane"),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        modifier = modifier.fillMaxWidth().testTag("MountTablePane"),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Text(
-            text = "Mount table",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            verticalAlignment = Alignment.CenterVertically,
+        Section("Work-tree mount tables", "vendor/etc/fstab.* in work/, changed by every build.") {
+            SettingRow(
+                title = "Turn off data encryption",
+                text = "Removes fileencryption, metadata_encryption, keydirectory and forceencrypt from the /data " +
+                    "line. The build stops if no fstab mounts /data.",
+            ) {
+                GlassToggle(
+                    checked = settings.disableDataEncryption,
+                    onCheckedChange = { onChange(settings.copy(disableDataEncryption = it)) },
+                    activeColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("DisableDataEncryptionToggle"),
+                )
+            }
+            if (settings.disableDataEncryption) {
+                GlassBanner(
+                    severity = GlassBannerSeverity.WARNING,
+                    title = "Format data when you first flash this ROM",
+                    description = "The phone cannot read what the old encryption wrote and will not boot until data " +
+                        "is formatted in recovery. Afterwards your files are not protected by the screen lock.",
+                )
+            }
+            SettingRow(
+                title = "Remove AVB and verity flags",
+                text = "Removes avb, avb_keys, verify and verifyatboot from every line, so no partition is mounted " +
+                    "with dm-verity. Remove them from vendor_boot too (below).",
+            ) {
+                GlassToggle(
+                    checked = settings.removeIntegrityFlags,
+                    onCheckedChange = { onChange(settings.copy(removeIntegrityFlags = it)) },
+                    activeColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("RemoveIntegrityFlagsToggle"),
+                )
+            }
+        }
+        Section(
+            "First-stage mount table",
+            "Inside vendor_boot; the dynamic partitions mount from it. Each action saves vendor_boot as an override.",
         ) {
-            GlassToggle(
-                checked = settings.disableDataEncryption,
-                onCheckedChange = { onChange(settings.copy(disableDataEncryption = it)) },
-                activeColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("DisableDataEncryptionToggle"),
-            )
-            Text(
-                text = "Turn off data encryption",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.BodySmall,
-                fontFamily = ideFontFamily(),
-            )
+            SettingRow(
+                title = "AVB and verity flags",
+                text = "Removes them from every line, as the setting above does for the work tree.",
+            ) {
+                GlassButton(
+                    onClick = onRemoveIntegrityFlags,
+                    enabled = boot.busy == null,
+                    modifier = Modifier.testTag("RemoveIntegrityFlagsButton"),
+                ) { Text(text = "Remove from vendor_boot", fontSize = FontSize.BodySmall) }
+            }
+            SettingRow(
+                title = "Partitions built as ext4 or F2FS",
+                text =
+                "Adds an EROFS, an ext4 and an F2FS line for every dynamic partition (stock lines stay first). " +
+                    "Without them the build stops when a partition is built as another filesystem.",
+            ) {
+                GlassButton(
+                    onClick = onAddMountLines,
+                    enabled = boot.busy == null,
+                    modifier = Modifier.testTag("AddMountLinesButton"),
+                ) { Text(text = "Add mount lines", fontSize = FontSize.BodySmall) }
+            }
+            boot.busy?.let { Muted("$it…") }
+            boot.message?.let { GlassBanner(severity = GlassBannerSeverity.INFO, title = it) }
+            boot.refusal?.let { RefusalView(refusal = it) }
         }
-        Text(
-            text = "Removes fileencryption, metadata_encryption, keydirectory and the older forceencrypt flags " +
-                "from the /data line of every fstab in work/ (vendor/etc/fstab.*). The build stops if no fstab " +
-                "mounts /data.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GlassToggle(
-                checked = settings.removeIntegrityFlags,
-                onCheckedChange = { onChange(settings.copy(removeIntegrityFlags = it)) },
-                activeColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("RemoveIntegrityFlagsToggle"),
-            )
-            Text(
-                text = "Remove AVB and verity flags",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.BodySmall,
-                fontFamily = ideFontFamily(),
-            )
-        }
-        Text(
-            text = "Removes avb, avb_keys, verify and verifyatboot from every line of the fstabs in work/, so no " +
-                "partition is mounted with dm-verity. The dynamic partitions mount from the first-stage fstab in " +
-                "vendor_boot: remove them there too with the button (saved as a vendor_boot override).",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-        )
-        GlassButton(
-            onClick = onRemoveIntegrityFlags,
-            enabled = boot.busy == null,
-            modifier = Modifier.testTag("RemoveIntegrityFlagsButton"),
-        ) {
-            Text(text = boot.busy ?: "Remove AVB and verity flags from vendor_boot", fontSize = FontSize.BodySmall)
-        }
-        Text(
-            text = "Partitions built as ext4 or F2FS",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        Text(
-            text = "The phone mounts each partition with a line of its fstab for that filesystem. Build & Sign adds " +
-                "the missing lines to vendor/etc/fstab.* itself; the first-stage fstab is inside vendor_boot, so " +
-                "the build stops until it has them. This adds an EROFS, an ext4 and an F2FS line for every dynamic " +
-                "partition to it and saves vendor_boot as an override (stock lines stay first).",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-        )
-        GlassButton(
-            onClick = onAddMountLines,
-            enabled = boot.busy == null,
-            modifier = Modifier.testTag("AddMountLinesButton"),
-        ) {
-            Text(text = boot.busy ?: "Add mount lines to vendor_boot", fontSize = FontSize.BodySmall)
-        }
-        boot.message?.let {
-            Text(text = it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
-        }
-        boot.refusal?.let {
-            Text(
-                text = "${it.cause} ${it.nextStep}",
-                color = GlassTheme.diagnosticColors.error,
-                fontSize = FontSize.BodySmall,
-            )
-        }
-        DeviceTreeMounts(boot.dtMounts, onReadDeviceTree)
-        if (settings.disableDataEncryption) {
-            Text(
-                text = "Format data in recovery when you first flash this ROM: the phone cannot read the data the " +
-                    "old encryption wrote and will not boot until it is formatted. Afterwards your files are not " +
-                    "protected by the screen lock.",
-                color = GlassTheme.diagnosticColors.warning,
-                fontSize = FontSize.BodySmall,
-                fontFamily = ideFontFamily(),
-            )
-        }
+        DeviceTreeMounts(boot.dtMounts, boot.dtUnread, onReadDeviceTree)
     }
 }
 
 /**
- * The device tree's fstab: `firmware/android/fstab` in the boot images' dtb and the
- * dtbo overlays. First-stage init reads it only when no ramdisk carries an fstab; it cannot be edited here.
+ * The device tree's fstab: `firmware/android/fstab` in the boot images' dtb and the dtbo overlays. First-stage init
+ * reads it only when no ramdisk carries an fstab; it cannot be edited here.
  */
 @Composable
-private fun DeviceTreeMounts(tree: MountTable.DeviceTree?, onRead: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = "Device-tree mount table",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            modifier = Modifier.weight(1f),
+private fun DeviceTreeMounts(tree: MountTable.DeviceTree?, unread: String?, onRead: () -> Unit) {
+    val (badge, severity, note) = when {
+        unread != null -> Triple("Not read", IdeStatusSeverity.Warning, unread)
+
+        tree == null -> Triple(
+            "Reading",
+            IdeStatusSeverity.Running,
+            "Reading boot, vendor_boot and dtbo in work/kernel…",
         )
-        GlassButton(onClick = onRead, modifier = Modifier.testTag("ReadDeviceTreeButton")) {
+
+        tree.mounts.isEmpty() -> Triple(
+            "None",
+            IdeStatusSeverity.Neutral,
+            "No device tree declares a fstab: the phone mounts its partitions from the first-stage fstab.",
+        )
+
+        tree.inUse -> Triple(
+            "In use",
+            IdeStatusSeverity.Warning,
+            "The ramdisks carry no fstab, so the phone mounts these from the device tree. A partition built as " +
+                "another filesystem than its line here cannot be mounted.",
+        )
+
+        else -> Triple(
+            "Not used",
+            IdeStatusSeverity.Neutral,
+            "A ramdisk carries a first-stage fstab, which first-stage init reads instead.",
+        )
+    }
+    Section("Device-tree mount table", note, action = {
+        IdeStatusBadge(badge, severity)
+        GlassButton(
+            onClick = onRead,
+            variant = GlassButtonVariant.Secondary,
+            modifier = Modifier.testTag("ReadDeviceTreeButton"),
+        ) {
             Text(text = "Read again", fontSize = FontSize.Micro)
         }
+    }, tag = "DeviceTreeMountsNote") {
+        tree?.mounts?.takeIf { it.isNotEmpty() }?.let { mounts ->
+            IdeTable {
+                IdeTableHeader { DT_COLUMNS.forEach { (t, w) -> IdeTableHeaderCell(t, Modifier.weight(w)) } }
+                mounts.forEach { m ->
+                    IdeTableRow(modifier = Modifier.alpha(if (m.disabled) AlphaTokens.Disabled else 1f)) {
+                        listOf(m.mountPoint, m.type, m.device, "${m.mountFlags} ${m.fsMgrFlags}".trim(), m.source)
+                            .forEachIndexed { i, v -> Mono(v, Modifier.weight(DT_COLUMNS[i].second)) }
+                    }
+                }
+            }
+        }
     }
-    val note = when {
-        tree == null -> "Reading the device trees of boot, vendor_boot and dtbo in work/kernel…"
+}
 
-        tree.mounts.isEmpty() ->
-            "None: no device tree of the boot images declares a fstab. The phone mounts its " +
-                "partitions from the first-stage fstab in the ramdisk."
-
-        tree.inUse ->
-            "The phone mounts these partitions from the device tree: the ramdisks carry no fstab. A " +
-                "partition built as another filesystem than its line here cannot be mounted."
-
-        else -> "Present but not used: a ramdisk carries a first-stage fstab, which first-stage init reads instead."
+/** A titled card; [action] sits on the title's line (a status, a button). */
+@Composable
+private fun Section(
+    title: String,
+    subtitle: String,
+    action: (@Composable () -> Unit)? = null,
+    tag: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = FontSize.TitleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                )
+                Muted(subtitle, if (tag != null) Modifier.testTag(tag) else Modifier)
+            }
+            action?.invoke()
+        }
+        content()
     }
+}
+
+/** A setting or action: what it is and does on the left, its control on the right. */
+@Composable
+private fun SettingRow(title: String, text: String, control: @Composable () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Medium), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = FontSize.BodySmall,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = ideFontFamily(),
+            )
+            Muted(text)
+        }
+        control()
+    }
+}
+
+@Composable
+private fun Muted(text: String, modifier: Modifier = Modifier) {
     Text(
-        text = note,
+        text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = FontSize.BodySmall,
         fontFamily = ideFontFamily(),
-        modifier = Modifier.testTag("DeviceTreeMountsNote"),
+        modifier = modifier,
     )
-    tree?.mounts?.forEach { m ->
-        Text(
-            text = "${m.mountPoint}  ${m.type}  ${m.device}  ${m.mountFlags}  ${m.fsMgrFlags}  (${m.source})" +
-                if (m.disabled) "  disabled" else "",
-            color = if (m.disabled) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-        )
-    }
 }
+
+@Composable
+private fun Mono(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.BodySmall,
+        fontFamily = codeFontFamily(),
+        maxLines = 1,
+        modifier = modifier,
+    )
+}
+
+private val DT_COLUMNS = listOf(
+    "Mount point" to 1f,
+    "Type" to 0.6f,
+    "Device" to 1.2f,
+    "Flags" to 2f,
+    "Source" to 1f,
+)

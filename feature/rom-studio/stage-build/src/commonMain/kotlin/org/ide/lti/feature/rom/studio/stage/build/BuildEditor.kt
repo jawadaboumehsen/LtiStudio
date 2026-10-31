@@ -53,7 +53,7 @@ public fun BuildEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
         ) {
             when (selectedObjectId.lowercase().replace('_', '-').replace(' ', '-')) {
-                "images" -> ImagesPane(target, facts)
+                "images" -> ImagesPane(target, settings, facts)
 
                 "partition-layout" -> PartitionLayoutPane(target, settings, facts)
 
@@ -76,8 +76,7 @@ public fun BuildEditor(
 
                 else -> {
                     CompressionPane(settings, onChange)
-                    PartitionFilesystemPane(settings, target, onChange, facts)
-                    PartitionCompressionPane(settings, target, onChange)
+                    PartitionsPane(settings, target, facts, onChange)
                 }
             }
         }

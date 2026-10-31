@@ -163,12 +163,21 @@ public class DebloatViewModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            val busy = e.message.orEmpty().let { "Run conflict" in it || "locked by active run" in it }
             _facts.value = _facts.value.copy(
-                refusal = Refusal(
-                    "The app manifests could not be read (${e.message ?: e::class.simpleName}).",
-                    "work/",
-                    "Check that apktool is installed in Setup > Tools; picks are still checked when the build runs.",
-                ),
+                refusal = if (busy) {
+                    Refusal(
+                        "A build is running in this workspace, so app names, signers and risks cannot be read now.",
+                        "work/",
+                        "Press Refresh when the build has finished; your picks are kept.",
+                    )
+                } else {
+                    Refusal(
+                        "The app manifests could not be read (${e.message ?: e::class.simpleName}).",
+                        "work/",
+                        "Check that aapt2 is installed in Setup > Tools; picks are still checked when the build runs.",
+                    )
+                },
             )
         }
     }

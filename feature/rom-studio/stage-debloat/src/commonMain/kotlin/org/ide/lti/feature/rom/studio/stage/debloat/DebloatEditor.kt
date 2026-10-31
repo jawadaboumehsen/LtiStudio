@@ -13,6 +13,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -230,7 +232,7 @@ private fun InventoryRow(
     picked: Boolean,
     risk: AppRisk?,
     app: ShownApp,
-    details: String?,
+    details: List<Pair<String, String>>?,
     onToggle: (DebloatCandidate) -> Unit,
 ) {
     val protected = DebloatInventory.isProtected(candidate)
@@ -277,49 +279,83 @@ private fun InventoryRow(
             )
         }
         risk?.let { Reasons(it) }
-        details?.let { Reason(it, MaterialTheme.colorScheme.onSurfaceVariant) }
+        details?.let { Facts(it) }
     }
 }
 
 /**
- * The app in both directions. First line, who would notice it gone:
- * `v15.2 · target SDK 35 · signed by ZTE (platform key) · needed by a, b · overlaid by c · looked for by d`.
- * Second line, what it relies on: `uses lib (provider) · overlays x · looks for y · looks for z (not among the apps)`.
+ * The app in both directions, as labelled facts: who would notice it gone (version, signer, needed by, overlaid
+ * by, looked for by, shared user id, config files naming it), then what it relies on (uses, overlays, looks for).
  */
-private fun details(app: AppFacts?, selector: String, facts: DebloatFacts): String? {
+private fun details(app: AppFacts?, selector: String, facts: DebloatFacts): List<Pair<String, String>>? {
     app ?: return null
     val impact = DebloatRisk.impact(selector, facts.apps)
-    val notice = listOfNotNull(
-        app.version?.let { "v$it" },
-        app.targetSdk?.let { "target SDK $it" },
-        signer(app, impact),
-        impact.neededBy.labelled("needed by"),
-        impact.overlaidBy.labelled("overlaid by"),
-        impact.askedBy.labelled("looked for by"),
-        impact.sharesUidWith.takeIf { it.isNotEmpty() }?.let { "shares ${app.sharedUserId} with ${it.size}" },
-        app.packageId?.let { pkg ->
-            PackageMentions.namedIn(facts.mentions, pkg).map { it.substringAfterLast('/') }.labelled("named in")
+    return listOfNotNull(
+        app.version?.let {
+            "Version" to listOfNotNull(
+                it,
+                app.targetSdk?.let { sdk -> "target SDK $sdk" },
+            ).joinToString(", ")
         },
-    )
-    val relies = listOfNotNull(
-        impact.uses.labelled("uses"),
-        impact.overlays.labelled("overlays"),
-        impact.looksFor.labelled("looks for"),
-        impact.looksForMissing.labelled("looks for", " (not among the apps)"),
-    )
-    return listOf(notice, relies).filter { it.isNotEmpty() }.map { it.joinToString(" · ") }
-        .takeIf { it.isNotEmpty() }?.joinToString("\n")
+        signer(app, impact),
+        impact.neededBy.labelled("Needed by"),
+        impact.overlaidBy.labelled("Overlaid by"),
+        impact.askedBy.labelled("Looked for by"),
+        impact.sharesUidWith.takeIf {
+            it.isNotEmpty()
+        }?.let { "Shares user" to "${app.sharedUserId} (${it.size} apps)" },
+        app.packageId?.let { pkg ->
+            PackageMentions.namedIn(facts.mentions, pkg).map { it.substringAfterLast('/') }.labelled("Named in")
+        },
+        impact.uses.labelled("Uses"),
+        impact.overlays.labelled("Overlays"),
+        impact.looksFor.labelled("Looks for"),
+        impact.looksForMissing.labelled("Looks for (missing)"),
+    ).takeIf { it.isNotEmpty() }
 }
 
 /** Who signed [app]: the platform key (the framework's), or which key by its digest (subjects repeat). */
-private fun signer(app: AppFacts, impact: AppImpact): String? = app.signerName?.let { name ->
-    if (impact.platformSigned) "signed by $name (platform key)" else "signed by $name (key ${app.signerDigest})"
+private fun signer(app: AppFacts, impact: AppImpact): Pair<String, String>? = app.signerName?.let { name ->
+    "Signed by" to if (impact.platformSigned) "$name, platform key" else "$name, key ${app.signerDigest}"
 }
 
-/** `label a, b, c +2`, or null when empty. */
-private fun List<String>.labelled(label: String, suffix: String = ""): String? = takeIf { it.isNotEmpty() }?.let {
-    "$label ${take(DETAIL_NAMES).joinToString()}" + (if (size > DETAIL_NAMES) " +${size - DETAIL_NAMES}" else "") +
-        suffix
+/** `label` to `a, b, c +2`, or null when empty. */
+private fun List<String>.labelled(label: String): Pair<String, String>? = takeIf { it.isNotEmpty() }?.let {
+    label to take(DETAIL_NAMES).joinToString() + if (size > DETAIL_NAMES) " +${size - DETAIL_NAMES}" else ""
+}
+
+/** The app's facts as `Label value` pairs, flowing across the row under the app. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Facts(facts: List<Pair<String, String>>) {
+    FlowRow(
+        // Aligned with the risk lines above it.
+        modifier = Modifier.fillMaxWidth().padding(start = Spacing.ExtraExtraLarge, top = Spacing.ExtraSmall),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        facts.forEach { (label, value) ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = FontSize.Micro,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = ideFontFamily(),
+                )
+                Text(
+                    text = value,
+                    color = if (value.endsWith("platform key")) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontSize = FontSize.Micro,
+                    fontFamily = codeFontFamily(),
+                )
+            }
+        }
+    }
 }
 
 private const val DETAIL_NAMES = 3

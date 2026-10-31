@@ -55,6 +55,15 @@ public object BuildFilesystems {
     public fun erofsDedupe(build: BuildSettings, p: String, kernelVersion: String?): Boolean =
         erofsCompression(build, p) != NO_COMPRESSION && (build.partitionDedupe[p] ?: kernelDedupes(kernelVersion))
 
+    /** The cluster sizes Build & Sign offers besides one block (`BuildSettings.partitionClusterKib`), in KiB. */
+    public val CLUSTER_KIB: List<Int> = listOf(16, 64, 128)
+
+    /** `mkfs.erofs -C` for [p]: its cluster in bytes, or null for one block (uncompressed images have none). */
+    public fun erofsCluster(build: BuildSettings, p: String): Long? =
+        build.partitionClusterKib[p]?.takeIf { erofsCompression(build, p) != NO_COMPRESSION }?.let { it * KIB }
+
+    private const val KIB = 1024L
+
     /**
      * The kernel decoder [p]'s EROFS image needs (`lz4`, `lzma`, `deflate`, `zstd`), as `KernelFacts.erofsCompressions`
      * names them; null when it is not compressed. lz4hc is written for the lz4 decoder.

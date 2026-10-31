@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.pipeline.configuration
 
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.DefaultTargetCatalog
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 import org.ide.lti.core.model.workspace.AcquisitionMode
@@ -374,6 +375,24 @@ class StageSettingsValidatorTest {
             StageSettingsValidator.validateBuild(BuildSettings(), target).errors
                 .none { it.code == StageSettingsValidator.BOOT_IMAGE_LEFT_OUT },
         )
+    }
+
+    @Test
+    fun anEroFsClusterOutsideTheOfferedSizesIsRefused() {
+        fun codes(kib: Int) = StageSettingsValidator.validateBuild(
+            BuildSettings(partitionClusterKib = mapOf("vendor" to kib)),
+        )
+            .errors.filter { it.fieldPath == "partitionClusterKib.vendor" }.map { it.code }
+        assertTrue(codes(64).isEmpty())
+        assertEquals(listOf(StageSettingsValidator.INVALID_PACKAGE_OPTION), codes(48))
+    }
+
+    @Test
+    fun aDeviceWithNoModelToAssertIsWarnedAbout() {
+        val target = DefaultTargetCatalog.PQ84P01_DEFAULT
+        fun codes(t: TargetDevice) = StageSettingsValidator.validateBuild(BuildSettings(), t).errors.map { it.code }
+        assertTrue(StageSettingsValidator.NO_DEVICE_CHECK !in codes(target))
+        assertTrue(StageSettingsValidator.NO_DEVICE_CHECK in codes(target.copy(assertModels = emptyList())))
     }
 
     @Test

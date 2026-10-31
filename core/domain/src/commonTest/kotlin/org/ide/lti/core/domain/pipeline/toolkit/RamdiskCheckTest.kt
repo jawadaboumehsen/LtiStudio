@@ -107,4 +107,25 @@ class RamdiskCheckTest {
         assertNull(RamdiskCheck.missingInit("init_boot", withoutInit + "./init"))
         assertNull(RamdiskCheck.missingInit("vendor_boot", withoutInit))
     }
+
+    @Test
+    fun anInitThatIsNotAProgramIsRefused() {
+        assertNull(RamdiskCheck.badInit("init_boot", "7f454c46"))
+        assertNull(RamdiskCheck.badInit("boot", "link"))
+        assertNull(RamdiskCheck.badInit("vendor_boot", "23212f62"))
+        val script = RamdiskCheck.badInit("init_boot", "23212f62")
+        assertNotNull(script)
+        assertTrue(script.cause.contains("starts 23212f62"), script.cause)
+    }
+
+    @Test
+    fun aRamdiskTheBootKernelCannotUnpackIsRefused() {
+        val gki = listOf("gzip", "lz4", "zstd")
+        assertNull(RamdiskCheck.unreadableRamdisk("init_boot", "lz4", gki))
+        assertNull(RamdiskCheck.unreadableRamdisk("init_boot", null, gki))
+        assertNull(RamdiskCheck.unreadableRamdisk("init_boot", "xz", null))
+        val xz = RamdiskCheck.unreadableRamdisk("init_boot", "xz", gki)
+        assertNotNull(xz)
+        assertTrue(xz.cause.contains("compressed with xz") && xz.cause.contains("gzip, lz4, zstd"), xz.cause)
+    }
 }

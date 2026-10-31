@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.extract
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -138,14 +139,19 @@ private fun MemberTable(members: List<ArchiveMember>, browse: ArchiveBrowse, act
                 Cell(m.size?.let(::formatBytes) ?: "?", Modifier.weight(1f))
                 Cell(m.packedSize?.let(::formatBytes) ?: "?", Modifier.weight(1f))
                 Cell(m.method ?: "-", Modifier.weight(1f))
-                // Any file may be an archive; the browser reads its first bytes before unpacking anything.
-                GlassButton(
-                    onClick = { actions.enter(m.path) },
-                    enabled = browse.busy == null,
-                    variant = GlassButtonVariant.Secondary,
-                    modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth).testTag("ArchiveOpen_${m.path}"),
-                ) {
-                    Text("Open", fontSize = FontSize.Micro)
+                // Offered on what is named like a container; the browser still reads the first bytes before unpacking.
+                if (m.path.substringAfterLast('/').substringAfterLast('.', "").lowercase() in CONTAINER_EXTENSIONS) {
+                    GlassButton(
+                        onClick = { actions.enter(m.path) },
+                        enabled = browse.busy == null,
+                        variant = GlassButtonVariant.Secondary,
+                        modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth)
+                            .testTag("ArchiveOpen_${m.path}"),
+                    ) {
+                        Text("Open", fontSize = FontSize.Micro)
+                    }
+                } else {
+                    Box(Modifier.width(GlassDimens.AcquireTableActionColWidth))
                 }
             }
         }
@@ -177,3 +183,8 @@ private fun Note(text: String) {
 
 private const val PATH_WEIGHT = 3f
 private const val MAX_ROWS = 200
+
+/** Names a member can be opened by: archives, compressed files and the zip-based app packages. */
+private val CONTAINER_EXTENSIONS = setOf(
+    "zip", "tar", "md5", "tgz", "gz", "xz", "lz4", "bz2", "zst", "7z", "rar", "br", "apk", "apex", "ntpi",
+)

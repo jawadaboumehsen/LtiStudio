@@ -131,7 +131,9 @@ public class FirmwareExtractionStage : StageDefinition {
             steps += fsTypeStep(ctx, p)
             ctx.value(fsTypeKey(p))?.let { FsTypes.fromSuperblock(FormatDetector.fromHex(it)) }
         }
-        dynamicPartitions.forEach { p -> steps += sidecarSteps(ctx, p, fsTypes[p]) }
+        dynamicPartitions.forEach { p ->
+            steps += if (fsTypes[p] == FsType.Unknown) unknownFsSteps(ctx, p) else sidecarSteps(ctx, p, fsTypes[p])
+        }
         steps += bootInfoSteps(ctx, bootPartitions)
         steps += PipelineStep.Tool(
             command = stepCommand("cat", listOf("$extracted/system/system/build.prop"), ws),
@@ -192,6 +194,36 @@ public class FirmwareExtractionStage : StageDefinition {
     }
 
     private fun fsTypeKey(partition: String) = "firmware.$partition.fstype"
+
+    /**
+     * [partition]'s image holds no EROFS, ext4 or F2FS superblock: stops the build, saying whether the firmware
+     * carries only zeros for it (space reserved in super, no content) or something this app cannot read.
+     */
+    private fun unknownFsSteps(ctx: StageContext, partition: String): List<PipelineStep> {
+        val key = "firmware.$partition.zeros"
+        val image = "${ctx.abs(EXTRACTED)}/$partition.img"
+        return listOf(
+            PipelineStep.Tool(
+                stepCommand(
+                    "sh",
+                    listOf("-c", "cmp -s -n \"$(stat -c %s \"$1\")\" \"$1\" /dev/zero && echo zeros || echo data") +
+                        listOf("sh", image),
+                    ctx.wsPath,
+                ),
+                "check $partition is not empty",
+                key,
+            ),
+            PipelineStep.Check("filesystem of $partition") { values ->
+                if (values[key]?.trim() == "zeros") {
+                    "EMPTY_PARTITION: $partition came out of the firmware as zeros only: the firmware reserves its " +
+                        "space but carries no content. Remove it from the dynamic partitions in Extract."
+                } else {
+                    "UNKNOWN_FILESYSTEM: $partition.img is not EROFS, ext4 or F2FS, so it cannot be read or rebuilt. " +
+                        "Remove it from the dynamic partitions in Extract, or replace it with an image of one of those."
+                }
+            },
+        )
+    }
 
     private fun fsTypeStep(ctx: StageContext, partition: String): PipelineStep.Tool = PipelineStep.Tool(
         command = stepCommand(

@@ -103,10 +103,14 @@ public class BootWorkbench(
                 val magic = run("xxd", "-p", "-l", "6", abs("$dir/unpacked/$name")).trim()
                 RamdiskCompression.of(FormatDetector.fromHex(magic)).also { c ->
                     sh(c.decompress, abs("$dir/unpacked/$name"), abs("$dir/ramdisk.cpio"))
+                    // Inside fakeroot, whose state keeps what a user cannot create (the /dev nodes of an init_boot
+                    // ramdisk, root ownership) for repack to put back.
                     sh(
-                        "mkdir -p \"$1\" && cd \"$1\" && cpio -idmu --no-absolute-filenames --quiet < \"$2\"",
+                        "mkdir -p \"$1\" && fakeroot -s \"$3\" -- sh -c " +
+                            "'cd \"$1\" && cpio -idmu --no-absolute-filenames --quiet < \"$2\"' sh \"$1\" \"$2\"",
                         abs("$dir/$RAMDISK_DIR"),
                         abs("$dir/ramdisk.cpio"),
+                        abs("$dir/$FAKEROOT_STATE"),
                     )
                 }
             }
@@ -212,10 +216,23 @@ public class BootWorkbench(
             var check = RamdiskCheckResult(ok = true)
             if (state.ramdisk != null && state.compression != null) {
                 val folder = abs("$dir/$RAMDISK_DIR")
-                sh("\"$3\" \"$1\" > \"$2\"", folder, abs("$dir/ramdisk.new.cpio"), toolPath("mkbootfs"))
+                // The unpack's fakeroot state brings back the device nodes; without it they would be empty files.
+                sh(
+                    "if [ -f \"$4\" ]; then fakeroot -i \"$4\" -s \"$4\" -- \"$3\" \"$1\" > \"$2\"; " +
+                        "else \"$3\" \"$1\" > \"$2\"; fi",
+                    folder,
+                    abs("$dir/ramdisk.new.cpio"),
+                    toolPath("mkbootfs"),
+                    abs("$dir/$FAKEROOT_STATE"),
+                )
                 val archived = sh("cpio -it --quiet < \"$1\"", abs("$dir/ramdisk.new.cpio")).lines()
                 val listed = run("find", folder, "-mindepth", "1", "-printf", "%P\\n").lines()
                 RamdiskCheck.missingInit(partition, listed)?.let { throw RefusalException(it) }
+                val initHead = sh(
+                    "if [ -L \"$1/init\" ]; then echo link; elif [ -f \"$1/init\" ]; then xxd -p -l 4 \"$1/init\"; fi",
+                    folder,
+                )
+                RamdiskCheck.badInit(partition, initHead.trim())?.let { throw RefusalException(it) }
                 check = RamdiskCheck.compare(entries(archived), entries(listed))
                 if (!check.ok) return@job SavedOverride(partition, "", check)
                 sh(state.compression.compress, abs("$dir/ramdisk.new.cpio"), abs("$dir/unpacked/${state.ramdisk}"))
@@ -227,7 +244,7 @@ public class BootWorkbench(
                 run("dtc", "-q", "-I", "dts", "-O", "dtb", "-o", abs("$dir/unpacked/dtb"), abs("$dir/$DTS"))
             }
             // Empty values stay (`--ramdisk_name ''` of a v4 vendor ramdisk); only the trailing newline goes.
-            val args = readText("$dir/$ARGS").orEmpty().split('\u0000').dropLastWhile { it.isBlank() }
+            val args = mkbootimgArgs(readText("$dir/$ARGS").orEmpty())
             // A vendor_boot is written with --vendor_boot: with --output, mkbootimg refuses its ramdisk fragments.
             val vendor = run("xxd", "-p", "-l", "8", abs(state.source)).trim() == VENDOR_BOOT_MAGIC_HEX
             run("mkbootimg", *args.toTypedArray(), if (vendor) "--vendor_boot" else "--output", abs("$dir/new.img"))
@@ -250,7 +267,11 @@ public class BootWorkbench(
             saved
         }
 
-    /** Copies a boot image patched elsewhere (the Magisk app) from [windowsPath] into the partition's override. */
+    /**
+     * Copies a boot image patched elsewhere (the Magisk app) from [windowsPath] into the partition's override,
+     * refusing one the device would not boot: an AVB footer avbtool cannot read (the bootloader reads it first), or
+     * a ramdisk compressed in a format the boot kernel does not unpack.
+     */
     public suspend fun importPatched(workspaceId: String, partition: String, windowsPath: String): SavedOverride =
         runner.job(workspaceId, "Import $partition") {
             val linuxSource = toLinuxPath(windowsPath)
@@ -264,8 +285,40 @@ public class BootWorkbench(
                     ),
                 )
             }
+            checkImported(this, partition, linuxSource)
             saveOverride(this, partition, linuxSource)
         }
+
+    // A lambda, not a function: the class is at detekt's function limit.
+    private val checkImported: suspend (WorkbenchRunner.Job, String, String) -> Unit = { job, partition, image ->
+        with(job) {
+            if (footerOf(this, image) == null &&
+                sh("tail -c 64 \"$1\" | head -c 4", image).trim() == AVB_FOOTER_MAGIC
+            ) {
+                throw RefusalException(
+                    Refusal(
+                        "Its AVB footer cannot be read (it points outside the image or at no vbmeta block).",
+                        "$partition.img",
+                        "Patch the stock image again and import the new file.",
+                    ),
+                )
+            }
+            val t = "${dir(partition)}/import-check"
+            sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(t))
+            tryRun("unpack_bootimg", "--boot_img", image, "--out", abs(t))
+            val ramdisk = RAMDISK_NAMES.firstOrNull { tryRun("test", "-s", abs("$t/$it")).exitCode == 0 }
+            val format = ramdisk?.let {
+                val magic = run("xxd", "-p", "-l", "6", abs("$t/$it")).trim()
+                RamdiskCompression.of(FormatDetector.fromHex(magic)).kernelName
+            }
+            tryRun("rm", "-rf", abs(t))
+            // The kernel that unpacks it: the imported boot's own, else the workspace's boot image.
+            val kernelImage = if (partition == KERNEL_IMAGE) image else abs(sourceOf(this, KERNEL_IMAGE))
+            val kernel = KernelFacts.parse(sh(KernelFacts.SCRIPT, kernelImage, toolPath("unpack_bootimg")))
+            RamdiskCheck.unreadableRamdisk(partition, format, kernel?.ramdiskFormats)
+                ?.let { throw RefusalException(it) }
+        }
+    }
 
     /** Whether the unpacked image already carries Magisk (ramdisk) or APatch (kernel) (FR-026). */
     public suspend fun rootStatus(workspaceId: String, partition: String): RootStatus = runner.read(workspaceId) {
@@ -435,6 +488,7 @@ public class BootWorkbench(
         public const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
         private const val ARGS = "mkbootimg.args"
         private const val STATE = "state.json"
+        private const val FAKEROOT_STATE = "fakeroot.state"
 
         /**
          * `sh -c FINGERPRINT_SCRIPT sh <unpacked dir>`: one hash over the ramdisk folder (paths, modes, link targets,
@@ -451,6 +505,13 @@ public class BootWorkbench(
 
         private suspend fun fingerprintOf(job: WorkbenchRunner.Job, dir: String): String =
             job.sh(FINGERPRINT_SCRIPT, job.abs(dir)).trim()
+
+        /**
+         * `unpack_bootimg --format mkbootimg -0` output as arguments: NUL-separated, then one newline. Only that last
+         * piece goes; an empty value before it (`--cmdline ''` of an init_boot) is an argument and stays.
+         */
+        public fun mkbootimgArgs(text: String): List<String> =
+            text.split('\u0000').let { if (it.lastOrNull()?.isBlank() == true) it.dropLast(1) else it }
 
         /**
          * The device tree's fstab of the images in `work/kernel/` (boot and vendor_boot dtb, dtbo overlays)
@@ -489,6 +550,7 @@ public class BootWorkbench(
         private const val BOOT_MAGIC_HEX = "414e44524f494421" // ANDROID!
         private const val VENDOR_BOOT_MAGIC_HEX = "564e4452424f4f54" // VNDRBOOT
         private const val AVB_MAGIC_HEX = "41564230" // AVB0
+        private const val AVB_FOOTER_MAGIC = "AVBf" // the last 64 bytes of an image with an AVB footer
         private const val VBMETA_FLAGS_OFFSET = 120 // AvbVBMetaImageHeader.flags, big-endian uint32
         private const val INT_BYTES = 4
         private const val BITS_PER_BYTE = 8
@@ -568,12 +630,17 @@ private data class BootState(
 
 /** A ramdisk's compression, from its first bytes; the scripts take the input as `$1` and the output as `$2`. */
 @Serializable
-public enum class RamdiskCompression(public val decompress: String, public val compress: String) {
-    GZIP("gzip -dc \"$1\" > \"$2\"", "gzip -9nc \"$1\" > \"$2\""),
-    LZ4_LEGACY("lz4 -dc \"$1\" > \"$2\"", "lz4 -l -12 --favor-decSpeed -c \"$1\" > \"$2\""),
-    LZ4_FRAME("lz4 -dc \"$1\" > \"$2\"", "lz4 -12 -c \"$1\" > \"$2\""),
-    XZ("xz -dc \"$1\" > \"$2\"", "xz --check=crc32 -c \"$1\" > \"$2\""),
-    NONE("cp -f \"$1\" \"$2\"", "cp -f \"$1\" \"$2\""),
+public enum class RamdiskCompression(
+    public val decompress: String,
+    public val compress: String,
+    /** The kernel's name for its decoder (`CONFIG_RD_<name>`, `KernelFacts.ramdiskFormats`); null needs none. */
+    public val kernelName: String?,
+) {
+    GZIP("gzip -dc \"$1\" > \"$2\"", "gzip -9nc \"$1\" > \"$2\"", "gzip"),
+    LZ4_LEGACY("lz4 -dc \"$1\" > \"$2\"", "lz4 -l -12 --favor-decSpeed -c \"$1\" > \"$2\"", "lz4"),
+    LZ4_FRAME("lz4 -dc \"$1\" > \"$2\"", "lz4 -12 -c \"$1\" > \"$2\"", "lz4"),
+    XZ("xz -dc \"$1\" > \"$2\"", "xz --check=crc32 -c \"$1\" > \"$2\"", "xz"),
+    NONE("cp -f \"$1\" \"$2\"", "cp -f \"$1\" \"$2\"", null),
     ;
 
     public companion object {

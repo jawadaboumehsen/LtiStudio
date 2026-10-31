@@ -199,6 +199,10 @@ public class StudioViewModel(
                         val updated = current.copy(runs = runs)
                         updated.copy(overviewState = recomputeOverview(updated))
                     }
+                    val live = runs.firstOrNull { !it.state.isTerminal }
+                    setActivityState(
+                        runActivity(live) { id -> activeDescriptors().firstOrNull { it.stageId == id }?.title },
+                    )
                 }
         }
     }

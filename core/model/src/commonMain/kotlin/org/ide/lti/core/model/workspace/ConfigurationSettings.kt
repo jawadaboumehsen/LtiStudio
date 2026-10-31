@@ -162,6 +162,11 @@ public data class BuildSettings(
      * means automatic, on when the boot kernel is 6.1 or newer.
      */
     val partitionDedupe: Map<String, Boolean> = emptyMap(),
+    /**
+     * EROFS compression cluster in KiB by partition (`mkfs.erofs -C`): bigger compresses better and makes small
+     * reads on the device decompress more. Absent means one block (4 KiB), as AOSP builds.
+     */
+    val partitionClusterKib: Map<String, Int> = emptyMap(),
 )
 
 @Serializable

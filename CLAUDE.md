@@ -1038,6 +1038,19 @@ nothing is shown as done before its job finished.
   seconds). Absent = automatic: on when the boot kernel read by `BuildChecks.kernelFilesystemSteps` (`KERNEL_KEY`) is
   6.1 or newer (`kernelDedupes`), so EROFS images are planned only after that read. Forced on with an older kernel
   refuses (`KERNEL_FILESYSTEM`). Never for uncompressed images. Build & Sign > Compression, per partition.
+- EROFS cluster (`BuildSettings.partitionClusterKib`, `BuildFilesystems.erofsCluster`, `CLUSTER_KIB` 16/64/128):
+  `mkfs.erofs -C <bytes>`; absent = one block as AOSP. PQ84P01 vendor 1275 -> 1161 MiB at 64 KiB in 40 s. Other
+  values are `INVALID_PACKAGE_OPTION`; never for uncompressed images.
+- Each built image's files are measured (`du -sb`, `BuildFlashableZipStage.contentSize`); Build & Sign > Images shows
+  files vs image and the % saved. A package over 4 GiB gets a zip64 note in Flashable members.
+- Boot ramdisks unpack and repack inside `fakeroot` (`workbench/boot/<p>/fakeroot.state`): an init_boot ramdisk
+  holds `/dev/console`, `/dev/null`, `/dev/urandom` device nodes a user cannot create; without the state, mkbootfs
+  wrote them as empty files. Repack also refuses an `/init` that is neither ELF nor a symlink (`RamdiskCheck.badInit`).
+  `mkbootimgArgs` drops only the trailing newline of the args file (an empty `--cmdline` value stays; init_boot has one).
+- `importPatched` refuses an AVB footer avbtool cannot read and a ramdisk compression the boot kernel's `CONFIG_RD_*`
+  does not unpack (`RamdiskCheck.unreadableRamdisk`, `RamdiskCompression.kernelName`).
+- Extract: an image with no EROFS/ext4/F2FS superblock stops the build: `EMPTY_PARTITION` when it is zeros only
+  (`cmp` against /dev/zero), else `UNKNOWN_FILESYSTEM`. Validator warns `NO_DEVICE_CHECK` when `assertModels` is empty.
 - Fixed partition size (`BuildSettings.partitionSizeBytes`, ext4/F2FS only, whole blocks, not with free space):
   the image is built at that size; content that does not fit refuses (`PARTITION_TOO_SMALL`, in KiB). Edited in
   Build & Sign > Compression (KiB, "Use the stock size"). Sparse output (`BuildSettings.sparseImages`): a standalone

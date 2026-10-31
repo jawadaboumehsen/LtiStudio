@@ -70,6 +70,42 @@ public object RamdiskCheck {
             null
         }
 
+    /**
+     * The refusal when [partition]'s `/init` is there but is not something the kernel can start: [head] is the
+     * hex of its first four bytes, or `link` when it is a symbolic link (the kernel follows those). An ELF starts
+     * `7f454c46`; anything else panics the kernel ("Attempted to kill init").
+     */
+    public fun badInit(partition: String, head: String): Refusal? =
+        if (partition in INIT_RAMDISKS && head != "link" && head.isNotEmpty() && !head.startsWith(ELF_MAGIC)) {
+            Refusal(
+                cause = "This ramdisk's /init is not a program (it starts $head), so the kernel cannot start it and " +
+                    "the device would not boot.",
+                item = "$partition.img",
+                nextStep = "Put the original init back in the ramdisk folder (or unpack the image again), then repack.",
+            )
+        } else {
+            null
+        }
+
+    private const val ELF_MAGIC = "7f454c46"
+
+    /**
+     * The refusal when [partition]'s ramdisk is compressed with [format] (the kernel's name for it, null when it is
+     * not compressed) and the boot kernel, which unpacks it, reads only [kernelFormats]: it would not be unpacked
+     * and the device would not boot. Says nothing when the kernel does not tell (no embedded config).
+     */
+    public fun unreadableRamdisk(partition: String, format: String?, kernelFormats: List<String>?): Refusal? =
+        if (format != null && kernelFormats != null && format !in kernelFormats) {
+            Refusal(
+                cause = "This ramdisk is compressed with $format, and the boot kernel unpacks only " +
+                    "${kernelFormats.joinToString().ifEmpty { "uncompressed ramdisks" }}: the device would not boot.",
+                item = "$partition.img",
+                nextStep = "Patch it again with a ramdisk format the kernel reads (the stock image's format).",
+            )
+        } else {
+            null
+        }
+
     public fun normalizePath(rawPath: String): String = rawPath.replace('\\', '/')
         .trimStart('/')
         .removePrefix("./")

@@ -44,6 +44,8 @@ public data class BuildFacts(
     val platformCertSha1: String? = null,
     /** The ROM version the package name uses (Assemble settings). */
     val romVersion: String = "",
+    /** Per partition of the last build: the bytes of its files and of its image before the AVB footer. */
+    val contentAndImage: Map<String, Pair<Long, Long>> = emptyMap(),
 )
 
 /** The coverage check of the Build & Sign stage: running, its result, or why it could not run. */
@@ -172,6 +174,12 @@ public class BuildViewModel(
                 avbPublicKeySha1 = value(RuntimeKeys.AVB_PUBKEY_SHA1)?.trim()?.substringBefore(' '),
                 platformCertSha1 = value(BuildFlashableZipStage.PLATFORM_CERT_SHA1)?.trim()?.substringBefore(' '),
                 romVersion = store?.current(workspaceId)?.assembly?.romVersion.orEmpty(),
+                contentAndImage = partitions().mapNotNull { p ->
+                    val content = value(BuildFlashableZipStage.contentSize(p))?.trim()?.substringBefore('\t')
+                        ?.toLongOrNull()
+                    val image = value(RuntimeKeys.imageSize(p))?.trim()?.toLongOrNull()
+                    if (content != null && image != null) p to (content to image) else null
+                }.toMap(),
             )
             store?.current(workspaceId)?.customization?.let { custom ->
                 _coverage.value = _coverage.value.copy(fillInEveryBuild = custom.fillMissingSidecars)

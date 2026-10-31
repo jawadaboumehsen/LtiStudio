@@ -13,7 +13,10 @@ import androidx.compose.runtime.Immutable
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
@@ -220,6 +223,24 @@ public sealed interface ConnectionUiState {
 public sealed interface ActivityUiState {
     public data object Idle : ActivityUiState
     public data class Active(val description: String, val progress: Float? = null) : ActivityUiState
+}
+
+/**
+ * The status bar's activity for [run], the workspace's unfinished run (null: idle): its stage, named by
+ * [titleOf], and how far it is.
+ */
+internal fun runActivity(run: BuildRun?, titleOf: (StageId) -> String?): ActivityUiState {
+    run ?: return ActivityUiState.Idle
+    val title = run.stages.firstOrNull { it.state == StageState.RUNNING }?.stageId?.let(titleOf)
+    val total = run.stages.size
+    val done = run.stages.count { it.state == StageState.EXECUTED || it.state == StageState.SKIPPED }
+    val description = when {
+        run.state == RunState.QUEUED -> "build queued"
+        run.state == RunState.CANCELLING -> "cancelling the build"
+        title != null -> "$title (stage ${done + 1} of $total)"
+        else -> "building"
+    }
+    return ActivityUiState.Active(description, progress = if (total > 0) done.toFloat() / total else null)
 }
 
 @Immutable

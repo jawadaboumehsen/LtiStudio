@@ -435,4 +435,22 @@ class FirmwareExtractionStageTest {
         assertTrue(fsConfig.lines().any { it.endsWith("link 0 0 777 capabilities=0x0") }, fsConfig)
         assertTrue(fsConfig.lines().any { it.endsWith("a.txt 0 0 644 capabilities=0x0") }, fsConfig)
     }
+
+    @Test
+    fun `an image with no filesystem stops the build, saying when it is only zeros`() {
+        val ctx = fx.globalOtaContext()
+        val p = ctx.target.dynamicPartitions.first()
+        val erofs = "e2e1f5e0" + "00".repeat(60)
+        val values = ctx.target.dynamicPartitions.associate { "firmware.$it.fstype" to erofs } +
+            ("firmware.$p.fstype" to "00".repeat(64))
+        fun check(zeros: String?) = stage.plan(
+            ctx.copy(runtimeValues = values + listOfNotNull(zeros?.let { "firmware.$p.zeros" to it })),
+        ).let { steps ->
+            assertTrue(steps.none { it.label == "mount $p" })
+            steps.filterIsInstance<PipelineStep.Check>().single { it.label == "filesystem of $p" }
+                .verify(values + listOfNotNull(zeros?.let { "firmware.$p.zeros" to it }))!!
+        }
+        assertTrue(check("zeros\n").startsWith("EMPTY_PARTITION: $p came out of the firmware as zeros only"))
+        assertTrue(check("data\n").startsWith("UNKNOWN_FILESYSTEM: $p.img is not EROFS, ext4 or F2FS"))
+    }
 }

@@ -10,8 +10,10 @@
 package org.ide.lti.feature.rom.studio.stage.build
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -24,10 +26,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.display.IdeTable
+import org.ide.lti.core.designsystem.component.display.IdeTableHeader
+import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
+import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -93,17 +104,70 @@ internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) 
     }
 }
 
+private const val PERCENT = 100L
+
 /** The images the last build produced, per dynamic partition of the device. */
 @Composable
-internal fun ImagesPane(target: TargetDevice, facts: BuildFacts) {
+internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: BuildFacts) {
     Card("Partition images", tag = "ImagesPane") {
-        Hint("Built from work/<partition>/ into out/images/, then given an AVB hashtree footer.")
-        target.dynamicPartitions.forEach { p ->
-            val built = facts.images.firstOrNull { it.path == "$p.img" }
-            Detail("$p.img", built?.let { mb(it.sizeBytes) } ?: "not built yet")
+        Hint(
+            "Built from work/<partition>/ into out/images/, then given an AVB hashtree footer. Files is what the " +
+                "partition holds; Saved compares the image (before its footer) with it.",
+        )
+        IdeTable {
+            IdeTableHeader { IMAGE_COLUMNS.forEach { (t, w) -> IdeTableHeaderCell(t, Modifier.weight(w)) } }
+            target.dynamicPartitions.forEach { p ->
+                val built = facts.images.firstOrNull { it.path == "$p.img" }
+                val pair = facts.contentAndImage[p]
+                IdeTableRow(modifier = Modifier.testTag("ImageRow_$p")) {
+                    Cell(0) { Mono(p) }
+                    Cell(1) { Hint(BuildFilesystems.of(settings, p)) }
+                    Cell(2) { Mono(pair?.first?.let(::mb) ?: "—") }
+                    Cell(3) { Mono(built?.let { mb(it.sizeBytes) } ?: "—") }
+                    Cell(4) {
+                        val saved = pair?.let { (content, image) ->
+                            if (content > 0) "${(content - image) * PERCENT / content}%" else null
+                        }
+                        Mono(saved ?: "—")
+                    }
+                    Cell(5) {
+                        if (built != null) {
+                            IdeStatusBadge("Built", IdeStatusSeverity.Ready)
+                        } else {
+                            IdeStatusBadge("Not built", IdeStatusSeverity.Neutral)
+                        }
+                    }
+                }
+            }
+        }
+        val total = target.dynamicPartitions.sumOf { p ->
+            facts.images.firstOrNull { it.path == "$p.img" }?.sizeBytes
+                ?: 0L
+        }
+        if (total > 0 && target.superGroupBytes > 0) {
+            Detail("Images in total", "${mb(total)} of ${mb(target.superGroupBytes)} (${target.superGroupName})")
+            GlassProgressBar(
+                progress = (total.toFloat() / target.superGroupBytes).coerceIn(0f, 1f),
+                modifier = Modifier.fillMaxWidth(),
+                contentDescription = "Images fill ${total * PERCENT / target.superGroupBytes}% of the super group",
+            )
         }
     }
 }
+
+@Composable
+private fun RowScope.Cell(column: Int, content: @Composable () -> Unit) {
+    Box(modifier = Modifier.weight(IMAGE_COLUMNS[column].second)) { content() }
+}
+
+private val IMAGE_COLUMNS = listOf(
+    "Partition" to 1.2f,
+    "Filesystem" to 1f,
+    "Files" to 1.2f,
+    "Image" to 1.2f,
+    "Saved" to 0.8f,
+    "Status" to 1f,
+)
 
 /**
  * The super partition the package flashes, from the device, and how the partitions fill its group:
@@ -173,8 +237,18 @@ internal fun FlashableMembersPane(target: TargetDevice, facts: BuildFacts) {
                 )
         }
         members.forEach { Mono(it) }
+        if ((facts.packages.lastOrNull()?.sizeBytes ?: 0L) > ZIP32_LIMIT) {
+            GlassBanner(
+                severity = GlassBannerSeverity.INFO,
+                title = "Over 4 GiB: zip64",
+                description = "The package carries a zip64 directory. A current recovery reads it; a very old one " +
+                    "may not.",
+            )
+        }
     }
 }
+
+private const val ZIP32_LIMIT = 0xFFFFFFFFL
 
 /** The AVB key that signs the images and the boot chain. */
 @Composable

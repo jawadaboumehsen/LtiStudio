@@ -55,6 +55,8 @@ public data class BootPaneState(
     val unbuilt: List<String> = emptyList(),
     /** The device tree's fstab of the boot images; null until read. */
     val dtMounts: MountTable.DeviceTree? = null,
+    /** Why the device trees could not be read (a build holds the workspace, a tool is missing); null otherwise. */
+    val dtUnread: String? = null,
 ) {
     val vbmetaDiff: BootFlagDiff?
         get() = if (vbmetaFlags != null && vbmetaEdited != null) {
@@ -159,11 +161,14 @@ public class BootPaneModel(
         readDeviceTree = {
             runner?.let { r ->
                 scope.launch {
+                    mutableState.update { it.copy(dtMounts = null, dtUnread = null) }
                     try {
                         val mounts = BootWorkbench.deviceTreeMounts(r, workspaceId)
                         mutableState.update { it.copy(dtMounts = mounts) }
                     } catch (e: RefusalException) {
-                        mutableState.update { it.copy(refusal = e.refusal) }
+                        val busy = e.refusal.cause.let { "Run conflict" in it || "locked by active run" in it }
+                        val why = if (busy) BUILD_RUNNING else e.refusal.cause
+                        mutableState.update { it.copy(dtUnread = why) }
                     }
                 }
             }
@@ -390,3 +395,5 @@ public class BootPaneModel(
         }
     }
 }
+
+private const val BUILD_RUNNING = "A build is running in this workspace: read again when it has finished."

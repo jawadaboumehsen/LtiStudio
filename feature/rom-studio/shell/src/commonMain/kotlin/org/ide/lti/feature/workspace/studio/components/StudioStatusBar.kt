@@ -183,7 +183,11 @@ private fun StatusBarActivity(activity: ActivityUiState, onOpenActivity: (() -> 
             imageVector = Icons.Default.Circle,
             contentDescription = null,
             modifier = Modifier.size(IconSize.Indicator),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = if (activity is ActivityUiState.Active) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         )
         val activityText = when (activity) {
             is ActivityUiState.Idle -> "idle"

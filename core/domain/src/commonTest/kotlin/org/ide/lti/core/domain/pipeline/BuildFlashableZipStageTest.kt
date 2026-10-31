@@ -441,6 +441,27 @@ class BuildFlashableZipStageTest {
     }
 
     @Test
+    fun `a cluster size reaches mkfs erofs unless uncompressed, and the files are measured`() {
+        val base = fullContext()
+        fun args(build: BuildSettings) = stage.plan(base.copy(snapshot = base.snapshot.copy(build = build)))
+            .filterIsInstance<PipelineStep.Tool>().single { it.label == "mkfs.erofs vendor" }.command.args
+        val b = base.snapshot.build
+        assertTrue("-C" !in args(b))
+        assertEquals(
+            "65536",
+            args(b.copy(partitionClusterKib = mapOf("vendor" to 64))).let { it[it.indexOf("-C") + 1] },
+        )
+        assertTrue(
+            "-C" !in args(
+                b.copy(partitionClusterKib = mapOf("vendor" to 64), partitionCompression = mapOf("vendor" to "none")),
+            ),
+        )
+        val du = stage.plan(base).filterIsInstance<PipelineStep.Tool>().single { it.label == "content size vendor" }
+        assertEquals(BuildFlashableZipStage.contentSize("vendor"), du.resultKey)
+        assertEquals(listOf("-sb", "--apparent-size", base.abs("work/vendor")), du.command.args)
+    }
+
+    @Test
     fun `a standalone image asked for as sparse goes into the fastboot package as one`() {
         val base = fullContext()
         val ctx = base.copy(
