@@ -23,6 +23,7 @@ import org.ide.lti.core.domain.debloat.AppRisk
 import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatDecision
 import org.ide.lti.core.domain.debloat.DebloatInventory
+import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.debloat.DebloatRisk
 import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
@@ -58,6 +59,8 @@ public data class DebloatFacts(
     val iconFolder: String? = null,
     /** The permission/sysconfig files of work/ and the packages each names (`PackageMentions`). */
     val mentions: Map<String, PackageMentions.Mentions> = emptyMap(),
+    /** The app's saved presets (`DebloatPresetStore`), by name. */
+    val presets: List<RemovalList> = emptyList(),
     val message: String? = null,
     val refusal: Refusal? = null,
 ) {
@@ -72,7 +75,10 @@ public class DebloatViewModel(
     private val workspaceFacts: WorkspaceFacts? = null,
     private val restore: RestoreWorkbench? = null,
     private val runner: WorkbenchRunner? = null,
-    private val pickFile: suspend () -> String? = { DialogUtils.selectFilePath("Pick a removal list (.json)") },
+    private val presets: DebloatPresetStore? = null,
+    private val pickFile: suspend () -> String? = {
+        DialogUtils.selectFilePath("Pick a removal list (.json, uad_lists.json, or text with one package per line)")
+    },
     private val pickFolder: suspend () -> String? = { DialogUtils.selectDirectory("Folder for the removal list") },
 ) : ViewModel() {
 
@@ -136,13 +142,19 @@ public class DebloatViewModel(
             )
             readApps(inventory)
         }
+        guarded { _facts.value = _facts.value.copy(presets = presets?.load().orEmpty()) }
     }
 
     /** Reads the manifests of [inventory]'s apps (aapt2 in WSL, a few seconds for a whole ROM). */
     private suspend fun readApps(inventory: List<DebloatCandidate>) {
         val runner = runner ?: return
         try {
-            val manifests = runner.read(workspaceId) { AppManifests.parse(sh(AppManifests.SCRIPT, abs("work"))) }
+            // Apps the last build removed are no longer in work/; their backups (same layout) still have manifests.
+            val manifests = runner.read(workspaceId) {
+                val backups = DebloatStage.BACKUP_DIR.takeIf { exists(it) }
+                    ?.let { AppManifests.parse(sh(AppManifests.SCRIPT, abs(it))) }.orEmpty()
+                backups + AppManifests.parse(sh(AppManifests.SCRIPT, abs("work")))
+            }
             // Signers take under a second (only each APK's end is read); without them the apps still show.
             val signers = try {
                 runner.read(workspaceId) { AppManifests.parse(sh(AppManifests.SIGNERS_SCRIPT, abs("work"))) }
@@ -212,34 +224,81 @@ public class DebloatViewModel(
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
             guarded {
-                val list = RemovalList.fromJson(File(path).readText())
-                val items = _facts.value.inventory.map { c ->
-                    RemovalItem(
-                        id = selectorOf(c),
-                        name = c.relativePath.substringAfterLast('/'),
-                        path = "${c.partition}/${c.relativePath}",
-                        isProtected = DebloatInventory.isProtected(c),
-                    )
-                }
-                val match = RemovalListMatcher.match(list, items)
-                val picks = (settings.value.removeSelectors + match.effectiveRemovals.map { it.id }).distinct()
-                updateSettings(settings.value.copy(enabled = picks.isNotEmpty(), removeSelectors = picks))
-                _facts.value = _facts.value.copy(listResult = match, message = "Imported ${list.name}.")
+                val file = File(path)
+                pick(RemovalList.parse(file.nameWithoutExtension, file.readText()), "Imported")
             }
         }
     }
 
-    /** Saves the current picks as a removal list (`partition:path` entries) in a folder the user picks. */
+    /**
+     * Adds the apps of [list] to the picks, matched by `partition:path` or by package name (once the manifests are
+     * read), so a list from another firmware still finds apps whose folder moved.
+     */
+    private fun pick(list: RemovalList, verb: String) {
+        val items = _facts.value.inventory.map { c ->
+            RemovalItem(
+                id = selectorOf(c),
+                name = c.relativePath.substringAfterLast('/'),
+                path = "${c.partition}/${c.relativePath}",
+                packageId = packageOf(selectorOf(c)),
+                isProtected = DebloatInventory.isProtected(c),
+            )
+        }
+        val listed = RemovalListMatcher.match(list, items)
+        // As a pick by hand: an app the device needs once the others go (DebloatRisk blockers) is not picked.
+        val all = (settings.value.removeSelectors + listed.effectiveRemovals.map { it.id }).toSet()
+        val risks = _facts.value.risks(all)
+        val (needed, removable) = listed.effectiveRemovals.partition { risks[it.id]?.blockers.orEmpty().isNotEmpty() }
+        val match = listed.copy(blockedProtected = listed.blockedProtected + needed, effectiveRemovals = removable)
+        val picks = (settings.value.removeSelectors + match.effectiveRemovals.map { it.id }).distinct()
+        updateSettings(settings.value.copy(enabled = picks.isNotEmpty(), removeSelectors = picks))
+        _facts.value = _facts.value.copy(listResult = match, message = "$verb ${list.name}.")
+    }
+
+    /**
+     * [selector]'s package name: from its manifest, else from the last Debloat result (an app that build removed is
+     * no longer in work/, so its manifest cannot be read); null when neither knows it.
+     */
+    private fun packageOf(selector: String): String? = _facts.value.apps[selector]?.packageId
+        ?: _facts.value.inventory.firstOrNull { selectorOf(it) == selector }?.packageId
+
+    /** The picks as list entries: each app's package name where it is known, else `partition:path`. */
+    private fun portableList(name: String): RemovalList =
+        RemovalList(name, settings.value.removeSelectors.map { packageOf(it) ?: it })
+
+    /** Saves the current picks as a removal list in a folder the user picks. */
     public fun exportList() {
         viewModelScope.launch {
             val folder = pickFolder() ?: return@launch
             guarded {
                 val file = File(folder, "debloat-$workspaceId.json")
-                file.writeText(
-                    RemovalList.toJson(RemovalList("Debloat of $workspaceId", settings.value.removeSelectors)),
-                )
+                file.writeText(RemovalList.toJson(portableList("Debloat of $workspaceId")))
                 _facts.value = _facts.value.copy(message = "Saved ${file.path}.")
             }
+        }
+    }
+
+    /** Keeps the current picks in the app as preset [name] (replacing one of that name). */
+    public fun savePreset(name: String) {
+        val store = presets ?: return
+        val trimmed = name.trim().takeIf { it.isNotEmpty() } ?: return
+        guarded {
+            val updated = store.load().filter { it.name != trimmed } + portableList(trimmed)
+            store.save(updated.sortedBy { it.name.lowercase() })
+            _facts.value = _facts.value.copy(presets = store.load(), message = "Saved the preset $trimmed.")
+        }
+    }
+
+    /** Adds preset [name]'s apps to the picks, as an imported list would. */
+    public fun applyPreset(name: String) {
+        _facts.value.presets.firstOrNull { it.name == name }?.let { pick(it, "Applied the preset") }
+    }
+
+    public fun deletePreset(name: String) {
+        val store = presets ?: return
+        guarded {
+            store.save(store.load().filter { it.name != name })
+            _facts.value = _facts.value.copy(presets = store.load(), message = "Deleted the preset $name.")
         }
     }
 

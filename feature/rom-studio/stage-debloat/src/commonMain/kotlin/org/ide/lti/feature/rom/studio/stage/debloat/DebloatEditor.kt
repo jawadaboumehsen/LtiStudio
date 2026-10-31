@@ -156,6 +156,9 @@ public class DebloatActions(
     public val restoreAll: () -> Unit = {},
     public val importList: () -> Unit = {},
     public val exportList: () -> Unit = {},
+    public val savePreset: (String) -> Unit = {},
+    public val applyPreset: (String) -> Unit = {},
+    public val deletePreset: (String) -> Unit = {},
     public val dismiss: () -> Unit = {},
 )
 
@@ -479,7 +482,7 @@ private fun PickRow(selector: String, onUnpick: (String) -> Unit, isProblem: Boo
 }
 
 @Composable
-private fun Line(text: String) {
+internal fun Line(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurface,
@@ -489,7 +492,7 @@ private fun Line(text: String) {
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun Hint(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -522,10 +525,11 @@ private fun LazyListScope.removeSelections(
             }
         }
     }
+    item { DebloatPresets(facts, picked.isNotEmpty(), actions) }
     facts.listResult?.let { match ->
         item { Hint("The list matched ${match.effectiveRemovals.size} app(s).") }
         if (match.blockedProtected.isNotEmpty()) {
-            item { Hint("Protected, not picked:") }
+            item { Hint("Protected or needed by the device, not picked:") }
             items(match.blockedProtected) { Line(it.id) }
         }
         if (match.unknown.isNotEmpty()) {

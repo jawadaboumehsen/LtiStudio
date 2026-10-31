@@ -11,6 +11,10 @@ package org.ide.lti.core.domain.pipeline.toolkit
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Scanned removable application or component in the ROM (FR-027).
@@ -37,6 +41,48 @@ public data class RemovalList(public val name: String, public val entries: List<
         }
 
         public fun fromJson(text: String): RemovalList = json.decodeFromString(serializer(), text)
+
+        /**
+         * A list file, named [name] unless it names itself:
+         * - this app's JSON (`{"name":…,"entries":[…]}`);
+         * - a package map, as Universal Android Debloater's `uad_lists.json` (`{"<package>": {"removal": …}}`, or an
+         *   array of `{"id": …, "removal": …}`): only the packages it rates `Recommended` (all, when it rates none);
+         * - plain text, one package name or `partition:path` per line (blank lines and `#` comments skipped).
+         */
+        public fun parse(name: String, text: String): RemovalList {
+            val trimmed = text.trimStart()
+            val isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
+            val root = if (isJson) json.parseToJsonElement(text) else null
+            return when {
+                root == null -> RemovalList(
+                    name,
+                    text.lines().map(String::trim).filter { it.isNotEmpty() && !it.startsWith("#") },
+                )
+
+                root is JsonObject && "entries" in root -> fromJson(text)
+
+                else -> RemovalList(name, recommendedPackages(root))
+            }
+        }
+
+        /** A package map's packages rated `Recommended`, or all of them when it rates none. */
+        private fun recommendedPackages(root: JsonElement): List<String> {
+            fun removal(o: JsonElement?) = (o as? JsonObject)?.get("removal")?.jsonPrimitive?.content
+            val rated = when (root) {
+                is JsonObject -> root.map { (id, v) -> id to removal(v) }
+
+                is JsonArray -> root.mapNotNull { e ->
+                    (e as? JsonObject)?.get("id")?.jsonPrimitive?.content?.let { it to removal(e) }
+                }
+
+                else -> emptyList()
+            }
+            require(rated.isNotEmpty()) { "This file is neither a removal list nor a list of packages." }
+            return rated.filter { it.second == RECOMMENDED }.ifEmpty { rated }.map { it.first }
+        }
+
+        private const val RECOMMENDED = "Recommended"
+
         public fun toJson(list: RemovalList): String = json.encodeToString(serializer(), list)
     }
 }

@@ -232,7 +232,7 @@ public class DebloatStage : StageDefinition {
         public const val APPS_KEY: String = "debloat.apps"
         public const val MENTIONS_KEY: String = "debloat.mentions"
         public const val TOOL: String = "debloat"
-        private const val BACKUP_DIR = "restore/debloat"
+        public const val BACKUP_DIR: String = "restore/debloat"
 
         /** Copies of `work/configs/{fs_config,file_context}-<p>` taken before the last debloat pruned them. */
         public const val SIDECAR_BACKUP_DIR: String = "$BACKUP_DIR/configs"

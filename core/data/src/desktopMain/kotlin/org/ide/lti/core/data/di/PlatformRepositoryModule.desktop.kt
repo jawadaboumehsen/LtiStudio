@@ -13,6 +13,7 @@ import org.ide.lti.core.data.admission.WorkspaceAdmissionRepository
 import org.ide.lti.core.data.common.DesktopAppEnvironment
 import org.ide.lti.core.data.common.resolveAppDataDir
 import org.ide.lti.core.data.configuration.SnapshotMaterializer
+import org.ide.lti.core.data.debloat.FileDebloatPresetStore
 import org.ide.lti.core.data.patch.ModuleHostSteps
 import org.ide.lti.core.data.plugin.InstalledPluginCatalog
 import org.ide.lti.core.data.plugin.InstalledPluginRepository
@@ -27,6 +28,7 @@ import org.ide.lti.core.data.repository.device.ConnectedDeviceRepositoryImpl
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
 import org.ide.lti.core.data.repository.run.RunRepositoryImpl
 import org.ide.lti.core.data.toolkit.WorkspaceToolkitStores
+import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
@@ -134,6 +136,7 @@ internal actual val platformRepositoryModule =
             )
         }
         single { RestoreWorkbench(runner = get(), store = get()) }
+        single<DebloatPresetStore> { FileDebloatPresetStore() }
         single {
             val paths = io.ltirom.tooling.client.WslPathTranslator()
             BootWorkbench(runner = get(), toLinuxPath = paths::toWslPath)

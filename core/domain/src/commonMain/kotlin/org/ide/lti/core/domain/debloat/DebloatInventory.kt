@@ -44,7 +44,9 @@ public object DebloatInventory {
         // DocumentsUIGoogle): a protected name also covers its variants with a suffix.
         return PROTECTED_NAMES.any { protectedName -> variantOf(name, protectedName) } ||
             PROTECTED_PREFIXES.any { name.startsWith(it, ignoreCase = true) } ||
-            "framework" in candidate.relativePath.split('/')
+            "framework" in candidate.relativePath.split('/') ||
+            // etc/security holds signed manifests (fsverity/BuildManifest.apk), not apps.
+            "etc/security/" in "/${candidate.relativePath}/"
     }
 
     /** `partition:path` selectors of the protected apps in [inventory], for [DebloatResolver]. */

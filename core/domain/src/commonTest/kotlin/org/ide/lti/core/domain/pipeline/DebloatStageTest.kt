@@ -248,11 +248,14 @@ class DebloatStageTest {
             "priv-app/DocumentsUIGoogle",
             "priv-app/MediaProviderLegacy",
             "priv-app/Shell",
+            // PQ84P01's signed fs-verity manifests (system, system_ext): not apps.
+            "system/etc/security/fsverity",
+            "etc/security/fsverity",
         )
         for (core in core) {
             assertTrue(inventory.isProtected(app(core)), core)
         }
-        for (other in listOf("app/ShellExtras", "app/PhoneticKeyboard", "app/YouTube")) {
+        for (other in listOf("app/ShellExtras", "app/PhoneticKeyboard", "app/YouTube", "partner-app/TikTok")) {
             assertFalse(inventory.isProtected(app(other)), other)
         }
     }

@@ -27,6 +27,7 @@ public val stageDebloatModule: Module = module {
             workspaceFacts = getOrNull(),
             restore = getOrNull(),
             runner = getOrNull(),
+            presets = getOrNull(),
         )
     }
 }

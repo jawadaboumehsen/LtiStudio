@@ -1095,6 +1095,14 @@ nothing is shown as done before its job finished.
   (`IMAGE_VERIFY_FAILED`), per-partition compression (`BuildSettings.partitionCompression`: `lz4`, `lz4hc,12` or `none`),
   extra packages (`BuildSettings.extraPackages`: `FullPackage` fastboot images zip, `Odin` AP tar with md5 trailer,
   both from a full `super.img`; `SUPER_OVERLAP` unless accepted in `acknowledgedWarnings`).
+- Debloat presets (Debloat > Remove selections, `DebloatPresetStore` -> `FileDebloatPresetStore`,
+  `<LOCALAPPDATA>/LtiRomGui/debloat/presets.json`): named picks kept by the app for any workspace. Entries are package
+  names where known (manifests of work/, and of the backups in `restore/debloat` for apps the last build removed), else
+  `partition:path`; applying or importing matches either (`RemovalListMatcher`), so a preset finds an app whose folder
+  moved on another firmware. Import also takes plain text (one package or path per line) and a package map such as
+  Universal Android Debloater's `uad_lists.json` (only its `Recommended` packages; PQ84P01 has 69 of them).
+  Imported or applied apps go through the same checks as a pick by hand: protected apps and ones the device needs
+  (`DebloatRisk` blockers) are listed, not picked. `etc/security/` (fs-verity BuildManifest.apk) is protected.
 - Debloat backups: `restore/debloat/<partition>/<path>` plus the sidecars in `restore/debloat/configs`; points in
   `restore/index.json` (`RestoreIndex`). Restoring copies the app back and merges its sidecar lines back.
 - Risky features (`RiskyFeature`: kernel override, root patch, vbmeta flags, library patch, package

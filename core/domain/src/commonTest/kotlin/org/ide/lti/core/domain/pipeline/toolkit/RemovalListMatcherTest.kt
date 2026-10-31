@@ -124,4 +124,37 @@ class RemovalListMatcherTest {
         val decoded = RemovalList.fromJson(json)
         assertEquals(list, decoded)
     }
+
+    @Test
+    fun aPlainTextListIsOnePackageOrPathPerLineAndAJsonListStaysJson() {
+        val text = "# my bloat\ncom.facebook.katana\n\n  product:app/OneDrive  \n"
+        assertEquals(
+            RemovalList("mine", listOf("com.facebook.katana", "product:app/OneDrive")),
+            RemovalList.parse("mine", text),
+        )
+        val json = RemovalList.toJson(RemovalList("Saved", listOf("com.x")))
+        assertEquals(RemovalList("Saved", listOf("com.x")), RemovalList.parse("ignored", json))
+    }
+
+    @Test
+    fun aUniversalAndroidDebloaterListGivesItsRecommendedPackages() {
+        // uad_lists.json (UAD-ng) is a map; the older UAD list an array with "id".
+        val map = """{"com.facebook.appmanager": {"list": "Oem", "removal": "Recommended"},
+            "com.android.systemui": {"list": "Aosp", "removal": "Unsafe"},
+            "com.google.android.youtube": {"list": "Google", "removal": "Advanced"}}"""
+        assertEquals(listOf("com.facebook.appmanager"), RemovalList.parse("uad_lists", map).entries)
+        val array = """[{"id": "com.a", "removal": "Recommended"}, {"id": "com.b", "removal": "Expert"}]"""
+        assertEquals(RemovalList("old", listOf("com.a")), RemovalList.parse("old", array))
+        // A plain package map rates nothing: every package is taken.
+        assertEquals(listOf("com.x", "com.y"), RemovalList.parse("m", """{"com.x": "bloat", "com.y": 1}""").entries)
+    }
+
+    @Test
+    fun aPresetMatchesAnAppByPackageAfterItsFolderMoved() {
+        // Saved on one firmware as the package name; on the next the app lives in another folder.
+        val moved = RemovalItem("product:app/GameSpace2", "GameSpace2", "product/app/GameSpace2", "cn.nubia.gamespace")
+        val result = RemovalListMatcher.match(RemovalList("p", listOf("cn.nubia.gamespace")), listOf(moved))
+        assertEquals(listOf("product:app/GameSpace2"), result.effectiveRemovals.map { it.id })
+        assertTrue(result.unknown.isEmpty())
+    }
 }
