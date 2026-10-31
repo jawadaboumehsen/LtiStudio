@@ -19,6 +19,28 @@ public data class AppRisk(
     val notes: List<String> = emptyList(),
 )
 
+/**
+ * One app in both directions, by package name. Who would notice it gone: those that cannot start
+ * without a library it provides, the overlays that change it, those that look for it by name, those sharing its user
+ * ID. What it relies on: the libraries it needs ([uses], with the app providing each when one does), the apps it
+ * overlays, the apps of the ROM it looks for, and those it looks for that the ROM does not have ([looksForMissing]).
+ */
+public data class AppImpact(
+    val neededBy: List<String> = emptyList(),
+    val overlaidBy: List<String> = emptyList(),
+    val askedBy: List<String> = emptyList(),
+    val sharesUidWith: List<String> = emptyList(),
+    val uses: List<String> = emptyList(),
+    val overlays: List<String> = emptyList(),
+    val looksFor: List<String> = emptyList(),
+    val looksForMissing: List<String> = emptyList(),
+    /** Signed with the framework's key (the platform key): it holds the system's signature permissions. */
+    val platformSigned: Boolean = false,
+) {
+    public val isEmpty: Boolean get() = neededBy.isEmpty() && overlaidBy.isEmpty() && askedBy.isEmpty() &&
+        sharesUidWith.isEmpty()
+}
+
 /** The risk of removing each app, from what the manifests of all the apps say (not from a list of names). */
 public object DebloatRisk {
     /** The framework's own HOME activity only says "no home screen" ([AppFacts.home] there is not a launcher). */
@@ -58,6 +80,29 @@ public object DebloatRisk {
         val app = facts[selector] ?: return@associateWith AppRisk()
         val kept = facts.filterKeys { it != selector && it !in picked }.values
         AppRisk(blockers(app, kept), warnings(app), notes(app, kept))
+    }
+
+    /** What every other app of [facts] says about the app [selector] names ([AppImpact]). */
+    public fun impact(selector: String, facts: Map<String, AppFacts>): AppImpact {
+        val app = facts[selector] ?: return AppImpact()
+        val others = facts.filterKeys { it != selector }.values
+        val pkg = app.packageId
+        fun List<AppFacts>.names() = mapNotNull { it.packageId }.distinct().sorted()
+        val packages = others.mapNotNull { it.packageId }.toSet()
+        val platform = facts.values.firstOrNull { it.packageId == FRAMEWORK_PACKAGE }?.signerDigest
+        return AppImpact(
+            neededBy = others.filter { o -> app.providedLibraries.any { it in o.requiredLibraries } }.names(),
+            overlaidBy = others.filter { pkg != null && pkg in it.overlayTargets }.names(),
+            askedBy = others.filter { pkg != null && pkg in it.queries }.names(),
+            sharesUidWith = others.filter { app.sharedUserId != null && it.sharedUserId == app.sharedUserId }.names(),
+            uses = app.requiredLibraries.sorted().map { lib ->
+                others.firstOrNull { lib in it.providedLibraries }?.packageId?.let { "$lib ($it)" } ?: lib
+            },
+            overlays = app.overlayTargets.sorted(),
+            looksFor = app.queries.filter { it in packages }.sorted(),
+            looksForMissing = app.queries.filter { it !in packages && it != pkg }.sorted(),
+            platformSigned = platform != null && app.signerDigest == platform && pkg != FRAMEWORK_PACKAGE,
+        )
     }
 
     private fun blockers(app: AppFacts, kept: Collection<AppFacts>): List<String> = buildList {

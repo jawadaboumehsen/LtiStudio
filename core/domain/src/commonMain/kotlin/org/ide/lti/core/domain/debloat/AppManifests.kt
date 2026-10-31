@@ -27,11 +27,29 @@ public data class AppFacts(
     val providedLibraries: Set<String> = emptySet(),
     /** Packages this app is a resource overlay for. */
     val overlayTargets: Set<String> = emptySet(),
+    /** `versionName`, as the manifest gives it. */
+    val version: String? = null,
+    /** `targetSdkVersion`: the Android version the app was made for. */
+    val targetSdk: Int? = null,
+    /** Packages it asks to see by name (`<queries><package>`): it looks for them when it runs. */
+    val queries: Set<String> = emptySet(),
     /** The name a user sees ("Game Space"), when the app has one. */
     val label: String? = null,
     /** Its icon's file name in the icon folder [AppManifests.LABELS_SCRIPT] wrote (bitmap icons only). */
     val icon: String? = null,
+    /** The first signer's certificate subject (RFC 2253), as [AppManifests.SIGNERS_SCRIPT] read it. */
+    val signer: String? = null,
+    /** The first 16 hex digits of that certificate's SHA-256: equal digests are the same signing key. */
+    val signerDigest: String? = null,
 ) {
+    /** The signer's common name (`CN=`), else its organisation, else the whole subject. */
+    public val signerName: String?
+        get() = signer?.let { s ->
+            listOf("CN", "O").firstNotNullOfOrNull { key ->
+                Regex("""(?:^|,)$key=((?:\\,|[^,])*)""").find(s)?.groupValues?.get(1)?.replace("\\,", ",")
+            } ?: s
+        }
+
     /** Two APKs of one app (splits) as one app. */
     public operator fun plus(other: AppFacts): AppFacts = AppFacts(
         packageId = packageId ?: other.packageId,
@@ -43,8 +61,13 @@ public data class AppFacts(
         requiredLibraries = requiredLibraries + other.requiredLibraries,
         providedLibraries = providedLibraries + other.providedLibraries,
         overlayTargets = overlayTargets + other.overlayTargets,
+        version = version ?: other.version,
+        targetSdk = targetSdk ?: other.targetSdk,
+        queries = queries + other.queries,
         label = label ?: other.label,
         icon = icon ?: other.icon,
+        signer = signer ?: other.signer,
+        signerDigest = signerDigest ?: other.signerDigest,
     )
 }
 
@@ -53,6 +76,8 @@ public data class AppFacts(
  * time, and keeps only the [AppFacts] lines: the whole xmltree of a ROM is about 15 MB, the facts under 100 KB.
  */
 public object AppManifests {
+    private const val HEX = 16
+
     /** `sh -c SCRIPT sh <work dir>`: `@ <apk path relative to work>` then that APK's fact lines. */
     public const val SCRIPT: String = """
         set -e
@@ -79,6 +104,9 @@ public object AppManifests {
           else if (e == \"uses-library\" && name == \"required\" && (v == \"false\" || v == \"0x0\")) print \"optional \" lib
           else if (e == \"library\" && name == \"name\") print \"lib \" v
           else if (e == \"overlay\" && name == \"targetPackage\") print \"overlay \" v
+          else if (e == \"manifest\" && name == \"versionName\") print \"ver \" v
+          else if (e == \"uses-sdk\" && name == \"targetSdkVersion\") { s = a; sub(/.*\\)/, \"\", s); print \"sdk \" s }
+          else if (e == \"package\" && p == \"queries\" && name == \"name\") print \"asks \" v
           else if (name == \"name\" && p == \"intent-filter\") {
             if (e == \"category\" && v == \"android.intent.category.HOME\" && g == \"activity\") print \"home\"
             else if (e == \"action\" && v == \"android.view.InputMethod\" && g == \"service\") print \"ime\"
@@ -122,7 +150,122 @@ public object AppManifests {
         cat "${'$'}t"/* 2>/dev/null || true
     """
 
-    /** [SCRIPT]'s or [LABELS_SCRIPT]'s output as facts per APK path (relative to `work/`). */
+    /**
+     * `sh -c SIGNERS_SCRIPT sh <work dir>`: `@ <apk path>` then `signer <digest> <subject>` for every APK with a
+     * signature. A small JDK program (JDK 17 is a Setup requirement) reads the first signer's certificate from the
+     * APK Signing Block (v3, else v2), else from the v1 `.RSA`/`.DSA`/`.EC` in META-INF: only the end of each APK
+     * is read.
+     */
+    public const val SIGNERS_SCRIPT: String = """
+        set -e
+        w="$1"
+        t=$(mktemp -d)
+        trap 'rm -rf "${'$'}t"' EXIT
+        cat > "${'$'}t/Signers.java" <<'JAVA'
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.cert.*;
+import java.util.*;
+import java.util.zip.*;
+
+public class Signers {
+    static final ByteOrder LE = ByteOrder.LITTLE_ENDIAN;
+
+    public static void main(String[] a) throws Exception {
+        Path root = Paths.get(a[0]);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        StringBuilder out = new StringBuilder();
+        for (String line; (line = in.readLine()) != null; ) {
+            Path p = Paths.get(line);
+            X509Certificate c = null;
+            try { c = blockCert(p, cf); } catch (Exception e) { }
+            if (c == null) try { c = v1Cert(p, cf); } catch (Exception e) { }
+            out.append("@ ").append(root.relativize(p)).append('\n');
+            if (c != null) {
+                byte[] d = MessageDigest.getInstance("SHA-256").digest(c.getEncoded());
+                StringBuilder h = new StringBuilder();
+                for (int i = 0; i < 8; i++) h.append(String.format("%02x", d[i]));
+                out.append("signer ").append(h).append(' ')
+                    .append(c.getSubjectX500Principal().getName("RFC2253")).append('\n');
+            }
+        }
+        System.out.print(out);
+    }
+
+    static ByteBuffer read(FileChannel ch, long at, int n) throws IOException {
+        ByteBuffer b = ByteBuffer.allocate(n).order(LE);
+        while (b.hasRemaining()) if (ch.read(b, at + b.position()) < 0) throw new EOFException();
+        b.flip();
+        return b;
+    }
+
+    static ByteBuffer lengthPrefixed(ByteBuffer b) {
+        int n = b.getInt();
+        ByteBuffer r = b.slice().order(LE);
+        r.limit(n);
+        b.position(b.position() + n);
+        return r;
+    }
+
+    static X509Certificate blockCert(Path p, CertificateFactory cf) throws Exception {
+        try (FileChannel ch = FileChannel.open(p)) {
+            long size = ch.size();
+            int tail = (int) Math.min(size, 65557);
+            ByteBuffer t = read(ch, size - tail, tail);
+            int eocd = -1;
+            for (int i = tail - 22; i >= 0; i--) if (t.getInt(i) == 0x06054b50) { eocd = i; break; }
+            if (eocd < 0) return null;
+            long cd = t.getInt(eocd + 16) & 0xffffffffL;
+            if (cd < 32) return null;
+            ByteBuffer foot = read(ch, cd - 24, 24);
+            if (!"APK Sig Block 42".equals(new String(foot.array(), 8, 16, "US-ASCII"))) return null;
+            long blockSize = foot.getLong(0);
+            ByteBuffer pairs = read(ch, cd - blockSize, (int) (blockSize - 24));
+            ByteBuffer v2 = null, v3 = null;
+            while (pairs.remaining() >= 12) {
+                long len = pairs.getLong();
+                int id = pairs.getInt();
+                ByteBuffer v = pairs.slice().order(LE);
+                v.limit((int) len - 4);
+                pairs.position(pairs.position() + (int) len - 4);
+                if (id == 0xf05368c0) v3 = v; else if (id == 0x7109871a) v2 = v;
+            }
+            ByteBuffer scheme = v3 != null ? v3 : v2;
+            if (scheme == null) return null;
+            ByteBuffer signedData = lengthPrefixed(lengthPrefixed(lengthPrefixed(scheme)));
+            lengthPrefixed(signedData);
+            ByteBuffer cert = lengthPrefixed(lengthPrefixed(signedData));
+            byte[] der = new byte[cert.remaining()];
+            cert.get(der);
+            return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
+        }
+    }
+
+    static X509Certificate v1Cert(Path p, CertificateFactory cf) throws Exception {
+        try (ZipFile z = new ZipFile(p.toFile())) {
+            for (Enumeration<? extends ZipEntry> e = z.entries(); e.hasMoreElements(); ) {
+                ZipEntry en = e.nextElement();
+                String n = en.getName().toUpperCase(Locale.ROOT);
+                boolean block = n.endsWith(".RSA") || n.endsWith(".DSA") || n.endsWith(".EC");
+                if (!n.startsWith("META-INF/") || !block) continue;
+                try (InputStream is = z.getInputStream(en)) {
+                    Collection<? extends Certificate> cs = cf.generateCertificates(is);
+                    if (!cs.isEmpty()) return (X509Certificate) cs.iterator().next();
+                }
+            }
+        }
+        return null;
+    }
+}
+JAVA
+        find "${'$'}w" -mindepth 3 -maxdepth 7 -type f -name '*.apk' | java "${'$'}t/Signers.java" "${'$'}w"
+    """
+
+    /** [SCRIPT]'s, [LABELS_SCRIPT]'s or [SIGNERS_SCRIPT]'s output as facts per APK path (relative to `work/`). */
     public fun parse(output: String): Map<String, AppFacts> {
         val blocks = linkedMapOf<String, MutableList<String>>()
         var current: MutableList<String>? = null
@@ -149,8 +292,16 @@ public object AppManifests {
             requiredLibraries = values("uses") - values("optional"),
             providedLibraries = values("lib"),
             overlayTargets = values("overlay"),
+            version = values("ver").firstOrNull(),
+            // What follows the attribute's `)`: `=31` from aapt2 2.19, a typed `0x22` (hex) from older ones.
+            targetSdk = values("sdk").firstOrNull()?.removePrefix("=")?.let { v ->
+                if (v.startsWith("0x")) v.removePrefix("0x").toIntOrNull(HEX) else v.toIntOrNull()
+            },
+            queries = values("asks"),
             label = lines.firstOrNull { it.startsWith("label ") }?.substringAfter(' '),
             icon = values("icon").firstOrNull(),
+            signer = lines.firstOrNull { it.startsWith("signer ") }?.substringAfter(' ')?.substringAfter(' '),
+            signerDigest = lines.firstOrNull { it.startsWith("signer ") }?.split(' ')?.getOrNull(1),
         )
     }
 }

@@ -45,6 +45,13 @@ public class ExtractStageEditor : StageEditor {
             onReplace = viewModel::replacePartition,
             onUseStock = viewModel::useStockImage,
             onReextract = viewModel::reextract,
+            archiveActions = ArchiveActions(
+                pickArchive = viewModel::openArchive,
+                enter = viewModel::enter,
+                up = viewModel::up,
+                toggle = viewModel::toggleMember,
+                copyOut = viewModel::copyOutSelected,
+            ),
             modifier = modifier,
         )
     }

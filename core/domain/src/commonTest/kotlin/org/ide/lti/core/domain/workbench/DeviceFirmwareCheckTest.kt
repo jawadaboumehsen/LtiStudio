@@ -67,4 +67,17 @@ class DeviceFirmwareCheckTest {
         val facts = DeviceFirmwareCheck.compare(device, other).filter { it.differs }.map { it.setting }
         assertEquals(listOf("codename", "assertModels", "dtboPartitionBytes"), facts)
     }
+
+    @Test
+    fun theDynamicPartitionsAreComparedWithTheStockFstab() {
+        // PQ84P01's stock fstab mounts the same seven, in another order: no difference.
+        val fstabOrder = listOf("system", "system_ext", "product", "vendor", "vendor_dlkm", "odm", "system_dlkm")
+        val same = DeviceFirmwareCheck.compare(device, stock.copy(logicalPartitions = fstabOrder))
+        assertTrue(same.single { it.setting == "dynamicPartitions" }.differs.not())
+        // A firmware with odm_dlkm: the package would leave it out of super, so it shows, and taking it adds it last.
+        val newer = DeviceFirmwareCheck.compare(device, stock.copy(logicalPartitions = fstabOrder + "odm_dlkm"))
+        val fact = newer.single { it.setting == "dynamicPartitions" }
+        assertTrue(fact.differs)
+        assertEquals(device.dynamicPartitions + "odm_dlkm", DeviceFirmwareCheck.apply(device, fact).dynamicPartitions)
+    }
 }

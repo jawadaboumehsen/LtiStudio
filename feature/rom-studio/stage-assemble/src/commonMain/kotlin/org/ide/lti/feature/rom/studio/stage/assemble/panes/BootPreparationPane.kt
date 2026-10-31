@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,10 +69,20 @@ public fun BootPreparationPane(
     modifier: Modifier = Modifier,
 ) {
     val idle = state.busy == null
+    // Edits made in Explorer are not seen by the app: look each time the pane opens.
+    LaunchedEffect(Unit) { actions.checkUnbuilt() }
     Column(
         modifier = modifier.fillMaxWidth().testTag("BootPreparationPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
+        if (state.unbuilt.isNotEmpty()) {
+            GlassBanner(
+                severity = GlassBannerSeverity.WARNING,
+                title = "Edited but not repacked: ${state.unbuilt.joinToString { "$it.img" }}. Those edits are not " +
+                    "in the next build until you repack.",
+                modifier = Modifier.testTag("UnbuiltBootEdits"),
+            )
+        }
         ImageCard(settings, target, state, actions, idle)
         state.parts?.let { parts ->
             ComponentsCard(parts, actions, idle)
@@ -84,6 +95,12 @@ public fun BootPreparationPane(
         FooterCard(settings, onChange)
     }
 
+    BootAckDialog(state, actions)
+}
+
+/** The acknowledgement a boot action waits for (FR-035); shown by every pane that starts one (Mount table too). */
+@Composable
+public fun BootAckDialog(state: BootPaneState, actions: BootPaneActions) {
     state.pendingAck?.let { feature ->
         AcknowledgementDialog(
             featureId = feature,

@@ -36,6 +36,24 @@ class FstabEditorTest {
     }
 
     @Test
+    fun theAvbAndVerityFlagsLeaveEveryLineAndNothingElseDoes() {
+        val vendor = "vendor  /vendor  erofs  ro  wait,slotselect,avb=vbmeta,logical,first_stage_mount"
+        val legacy = "/dev/block/by-name/system  /  ext4  ro  wait,verify,avb_keys=/avb/q-gsi.avbpubkey,avb"
+        val fstab = listOf("# avb=vbmeta comment", system, vendor, legacy, data, "").joinToString("\n")
+        assertEquals(
+            listOf(
+                "# avb=vbmeta comment",
+                "system  /system  erofs  ro  wait,slotselect,logical,first_stage_mount",
+                "vendor  /vendor  erofs  ro  wait,slotselect,logical,first_stage_mount",
+                "/dev/block/by-name/system  /  ext4  ro  wait",
+                data,
+                "",
+            ),
+            FstabEditor.withoutIntegrity(fstab).lines(),
+        )
+    }
+
+    @Test
     fun aDataLineWithNothingToRemoveIsLeftAlone() {
         val plain = "/dev/block/by-name/userdata /data ext4 noatime wait,check"
         assertEquals(plain, FstabEditor.withoutDataEncryption(plain))

@@ -53,6 +53,8 @@ public data class CoverageState(
     val refusal: Refusal? = null,
     /** Every build gives files without sidecar lines those of their folder (`fillMissingSidecars`). */
     val fillInEveryBuild: Boolean = false,
+    /** The user's coverage rules (`CustomizationSettings.coverageRules`), tried before "like its folder". */
+    val rules: String = "",
 )
 
 public class BuildViewModel(
@@ -110,6 +112,30 @@ public class BuildViewModel(
         }
     }
 
+    // Debounced and saved in order, so a burst of keys can never leave an older text saved last.
+    private val rulesSync = StageSettingsSync(
+        scope = viewModelScope,
+        workspaceId = workspaceId,
+        store = store,
+        initial = "",
+        read = { it.customization.coverageRules },
+        write = { snapshot, value ->
+            snapshot.copy(
+                customization = snapshot.customization.copy(coverageRules = value),
+            )
+        },
+    )
+
+    init {
+        viewModelScope.launch { rulesSync.settings.collect { _coverage.value = _coverage.value.copy(rules = it) } }
+    }
+
+    /** Saves the user's coverage rules (tried before "like its folder" when lines are added). */
+    public fun setCoverageRules(text: String) {
+        _coverage.value = _coverage.value.copy(rules = text)
+        rulesSync.update(text)
+    }
+
     private fun partitions(): List<String> = (device.value ?: targetDevice).dynamicPartitions
 
     private fun coverageTask(name: String, block: suspend (ContentWorkbench) -> CoverageResult) {
@@ -119,7 +145,11 @@ public class BuildViewModel(
         viewModelScope.launch {
             try {
                 val fill = store?.current(workspaceId)?.customization?.fillMissingSidecars == true
-                _coverage.value = CoverageState(result = block(workbench), fillInEveryBuild = fill)
+                _coverage.value = CoverageState(
+                    result = block(workbench),
+                    fillInEveryBuild = fill,
+                    rules = _coverage.value.rules,
+                )
             } catch (e: RefusalException) {
                 _coverage.value = _coverage.value.copy(busy = null, refusal = e.refusal)
             }
@@ -143,6 +173,9 @@ public class BuildViewModel(
                 platformCertSha1 = value(BuildFlashableZipStage.PLATFORM_CERT_SHA1)?.trim()?.substringBefore(' '),
                 romVersion = store?.current(workspaceId)?.assembly?.romVersion.orEmpty(),
             )
+            store?.current(workspaceId)?.customization?.let { custom ->
+                _coverage.value = _coverage.value.copy(fillInEveryBuild = custom.fillMissingSidecars)
+            }
         }
     }
 }

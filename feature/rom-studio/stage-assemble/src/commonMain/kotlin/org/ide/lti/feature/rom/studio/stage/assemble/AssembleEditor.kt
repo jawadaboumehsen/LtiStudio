@@ -26,6 +26,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.AotCleanupPane
+import org.ide.lti.feature.rom.studio.stage.assemble.panes.BootAckDialog
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.BootPreparationPane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.BuildPropertiesPane
 import org.ide.lti.feature.rom.studio.stage.assemble.panes.ImageBrowserPane
@@ -102,12 +103,17 @@ public fun AssembleEditor(
 
                     "image-conversion" -> ImageToolsPane(state = imageState, actions = imageActions)
 
-                    "mount-table" -> MountTablePane(
-                        settings = settings,
-                        onChange = onChange,
-                        boot = bootState,
-                        onAddMountLines = bootActions.addMountLines,
-                    )
+                    "mount-table" -> {
+                        MountTablePane(
+                            settings = settings,
+                            onChange = onChange,
+                            boot = bootState,
+                            onAddMountLines = bootActions.addMountLines,
+                            onRemoveIntegrityFlags = bootActions.removeIntegrityFlags,
+                            onReadDeviceTree = bootActions.readDeviceTree,
+                        )
+                        BootAckDialog(bootState, bootActions)
+                    }
 
                     "build-properties", "build_properties", "properties" -> BuildPropertiesPane(
                         settings = settings,

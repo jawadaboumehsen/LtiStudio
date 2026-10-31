@@ -121,15 +121,15 @@ public fun ImageBrowserPane(
                     Text("Open the tree in Explorer", fontSize = FontSize.BodySmall)
                 }
             }
-            state.tree?.let {
-                val where = if (state.partition == ImagePaneModel.ALL) "every partition" else it.source
-                Hint("${it.tree.entries.size} entries from $where. Click rows to select several.")
-            }
-            if (state.selected.isNotEmpty()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                state.tree?.let {
+                    val where = if (state.partition == ImagePaneModel.ALL) "every partition" else it.source
+                    Hint("${it.tree.entries.size} entries from $where. Click rows to select several.")
+                }
+                if (state.selected.isNotEmpty()) {
                     GlassButton(
                         onClick = actions.extractSelected,
                         enabled = state.busy == null,
@@ -140,9 +140,9 @@ public fun ImageBrowserPane(
                     }
                 }
             }
+            state.imageInfo?.takeIf { it.stock != null || it.built != null }?.let { SuperblockPanel(it) }
             Feedback(state, actions)
         }
-        state.imageInfo?.takeIf { it.stock != null || it.built != null }?.let { SuperblockPanel(it) }
 
         Column(
             modifier = Modifier
@@ -229,16 +229,28 @@ private fun EntryRow(entry: ImageTreeEntry, selected: Boolean, actions: ImagePan
 /** The partition's stock image and last built one side by side, as their own tools read the superblock. */
 @Composable
 private fun SuperblockPanel(info: ImageInfo) {
-    Panel {
-        Title("Superblock")
+    // Collapsed by default: the file table below needs the height.
+    var open by remember { mutableStateOf(false) }
+    fun describe(sb: Superblock?) = sb?.let { "${it.fs.name.lowercase()}, ${formatBytes(it.sizeBytes)}" } ?: "none"
+    // Inside the browser's top panel, not a card of its own: the file table below needs the height.
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.testTag("SuperblockPanel"),
+        ) {
+            Hint("Superblock: stock ${describe(info.stock)} · built ${describe(info.built)}")
+            GlassButton(onClick = { open = !open }, variant = GlassButtonVariant.Secondary) {
+                Text(if (open) "Hide fields" else "Show fields", fontSize = FontSize.Micro)
+            }
+        }
+        if (!open) return@Column
         val keys = (info.stock?.fields.orEmpty() + info.built?.fields.orEmpty()).map { it.first }.distinct()
-        Row(Modifier.fillMaxWidth().testTag("SuperblockPanel")) {
+        Row(Modifier.fillMaxWidth()) {
             Cell("", Modifier.weight(SB_KEY_WEIGHT))
             Cell("Stock (firmware/extracted)", Modifier.weight(1f))
             Cell("Built (out/images)", Modifier.weight(1f))
         }
-        fun describe(sb: Superblock?) = sb?.let { "${it.fs.name.lowercase()}, ${formatBytes(it.sizeBytes)}" } ?: "none"
-        SuperblockRow("Image", describe(info.stock), describe(info.built))
         keys.forEach { key ->
             SuperblockRow(
                 key,

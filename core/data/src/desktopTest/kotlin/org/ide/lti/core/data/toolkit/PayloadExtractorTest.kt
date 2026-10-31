@@ -63,6 +63,16 @@ class PayloadExtractorTest {
         """.trimIndent()
         assertFalse(PayloadExtractor.isIncrementalMetadata(fullMeta))
 
+        // The real PQ84P01 full OTA: names its device but no source build.
+        val pq84p01Full = """
+            ota-type=AB
+            post-build=nubia/PQ84P01-UN/PQ84P01:15/AQ3A.240812.002/20260113.140154:user/release-keys
+            post-build-incremental=20260113.140154
+            post-timestamp=1768284156
+            pre-device=PQ84P01
+        """.trimIndent()
+        assertFalse(PayloadExtractor.isIncrementalMetadata(pq84p01Full))
+
         val incMeta = """
             pre-build=google/walleye/walleye:8.0.0/OPR6.170623.013/4374187:user/release-keys
             pre-device=walleye

@@ -130,6 +130,23 @@ class WorkTreeAssemblyStageTest {
     }
 
     @Test
+    fun `removing the integrity flags edits every fstab that asks for avb or verity`() {
+        val ctx = fx.globalOtaContext()
+        assertFalse(stage.plan(ctx).any { it.label == "find verified fstabs" }, "off by default")
+        val on = ctx.copy(
+            snapshot = ctx.snapshot.copy(assembly = ctx.snapshot.assembly.copy(removeIntegrityFlags = true)),
+            runtimeValues = ctx.runtimeValues + ("assembly.verified.fstabs" to "vendor/etc/fstab.qcom\n"),
+        )
+        val edit = stage.plan(on).filterIsInstance<PipelineStep.EditFile>().single { "fstab" in it.relPath }
+        assertEquals("work/vendor/etc/fstab.qcom", edit.relPath)
+        // PQ84P01's vendor/etc/fstab.qcom vendor line.
+        assertEquals(
+            "vendor  /vendor  erofs  ro  wait,slotselect,logical,first_stage_mount",
+            edit.transform("vendor  /vendor  erofs  ro  wait,slotselect,avb=vbmeta,logical,first_stage_mount"),
+        )
+    }
+
+    @Test
     fun `systemExtMode auto preserves target-conditional fold behaviour`() {
         val globalCtx = fx.globalOtaContext()
         val globalSteps = stage.plan(globalCtx)

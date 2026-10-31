@@ -19,7 +19,7 @@ public object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-10-30.2"
+    public const val PIPELINE_VERSION: String = "2026-10-31.1"
 
     public fun sha256(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")
@@ -62,6 +62,7 @@ public object CacheKeys {
             snapshot.assembly.propertyOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
             snapshot.assembly.kernelOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
             snapshot.assembly.disableDataEncryption.toString(),
+            snapshot.assembly.removeIntegrityFlags.toString(),
         ).joinToString("|")
         return sha256(raw)
     }
@@ -101,8 +102,17 @@ public object CacheKeys {
             snapshot.build.partitionFilesystem.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
             snapshot.build.extraPackages.sorted().joinToString(","),
             snapshot.build.standaloneImages.sorted().joinToString(","),
-        ).joinToString("|")
-        return sha256(raw)
+            snapshot.build.brotliLevel.toString(),
+            snapshot.build.partitionFreeMib.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+        ) + listOfNotNull(
+            // Only when set, so builds made before these settings existed stay cached.
+            snapshot.build.partitionSizeBytes.takeIf { it.isNotEmpty() }
+                ?.toSortedMap()?.entries?.joinToString(",") { "size ${it.key}=${it.value}" },
+            snapshot.build.sparseImages.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(",", "sparse "),
+            snapshot.build.partitionDedupe.takeIf { it.isNotEmpty() }
+                ?.toSortedMap()?.entries?.joinToString(",") { "dedupe ${it.key}=${it.value}" },
+        )
+        return sha256(raw.joinToString("|"))
     }
 
     public fun stage6ManifestKey(stage5Key: String, snapshot: ConfigurationSnapshot): String {

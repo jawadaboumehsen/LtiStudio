@@ -24,6 +24,7 @@ import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
+import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
 import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
 import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.run.StageId
@@ -100,6 +101,7 @@ public class BuildFlashableZipStage : StageDefinition {
         steps += BuildChecks.linkSteps(ctx)
         steps += BuildChecks.mountTableSteps(ctx)
         steps += BuildChecks.kernelFilesystemSteps(ctx)
+        steps += BuildChecks.apkSignatureSteps(ctx)
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
         steps += PipelineStep.Tool(
@@ -156,13 +158,8 @@ public class BuildFlashableZipStage : StageDefinition {
         val steps = mutableListOf<PipelineStep>()
         val built = when (BuildFilesystems.of(ctx.snapshot.build, p)) {
             BuildFilesystems.EXT4 -> FilesystemImageSteps.ext4(ctx, p, steps)
-
             BuildFilesystems.F2FS -> FilesystemImageSteps.f2fs(ctx, p, steps)
-
-            else -> {
-                steps += erofsSteps(ctx, p)
-                true
-            }
+            else -> erofsSteps(ctx, p)?.let { steps += it } != null
         }
         if (!built) return steps
         val ws = ctx.wsPath
@@ -187,16 +184,22 @@ public class BuildFlashableZipStage : StageDefinition {
         return steps
     }
 
-    private fun erofsSteps(ctx: StageContext, p: String): List<PipelineStep> {
+    /** [p] as EROFS; null until the boot kernel is read (it decides whether the image is deduplicated). */
+    private fun erofsSteps(ctx: StageContext, p: String): List<PipelineStep>? {
+        val kernel = ctx.value(BuildChecks.KERNEL_KEY) ?: return null
         val ws = ctx.wsPath
         val img = ctx.abs("out/images/$p.img")
         val steps = mutableListOf<PipelineStep>()
-        val compressionArg = ctx.snapshot.build.partitionCompression[p] ?: if (ctx.snapshot.build.level != null) {
-            "${ctx.snapshot.build.compression.substringBefore(',')},${ctx.snapshot.build.level}"
+        val compressionArg = BuildFilesystems.erofsCompression(ctx.snapshot.build, p)
+        val compressionArgs = if (compressionArg == BuildFilesystems.NO_COMPRESSION) {
+            emptyList()
         } else {
-            ctx.snapshot.build.compression
+            listOf("-z", compressionArg)
+        } + if (BuildFilesystems.erofsDedupe(ctx.snapshot.build, p, KernelFacts.parse(kernel)?.version)) {
+            listOf(DEDUPE)
+        } else {
+            emptyList()
         }
-        val compressionArgs = if (compressionArg == NO_COMPRESSION) emptyList() else listOf("-z", compressionArg)
         steps += PipelineStep.Tool(
             stepCommand(
                 "mkfs.erofs",
@@ -369,7 +372,12 @@ public class BuildFlashableZipStage : StageDefinition {
             PipelineStep.Tool(
                 stepCommand(
                     "brotli",
-                    listOf("-f", "--quality=6", "--output=$stage/$p.new.dat.br", "$stage/$p.new.dat"),
+                    listOf(
+                        "-f",
+                        "--quality=${ctx.snapshot.build.brotliLevel}",
+                        "--output=$stage/$p.new.dat.br",
+                        "$stage/$p.new.dat",
+                    ),
                     ws,
                 ),
                 "brotli $p",
@@ -605,8 +613,10 @@ public class BuildFlashableZipStage : StageDefinition {
         public const val PACKAGE_BUILD_PROP: String = "package.build.prop"
         public const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
         private const val EROFS_TIMESTAMP = "1640995200"
-        private const val NO_COMPRESSION = "none"
         public const val EXTRA_DIR: String = "out/extra"
+
+        /** mkfs.erofs's data deduplication and tail fragments (`BuildFilesystems.erofsDedupe`). */
+        private const val DEDUPE = "-Ededupe,fragments"
         private const val BLOCK = 4096L
         private val REQUIRED_MEMBERS = listOf(
             "META-INF/com/android/otacert",

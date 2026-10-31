@@ -19,6 +19,7 @@ import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.FstabEditor
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatures
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
@@ -36,7 +37,10 @@ internal object BuildChecks {
     private const val COVERAGE_SHOWN = 20
     private const val LINKS_SHOWN = 20
     private const val MOUNT_TABLES_KEY = "build.mount.tables"
-    private const val KERNEL_KEY = "build.kernel.config"
+
+    /** The boot kernel's version and config lines (`KernelFacts.SCRIPT`), read before any image is built. */
+    const val KERNEL_KEY = "build.kernel.config"
+    private const val UNSIGNED_KEY = "build.apks.unsigned"
 
     /** The build tree first, then the stock one it is compared with. */
     private val LINK_TREES = listOf("work", FirmwareExtractionStage.EXTRACTED)
@@ -74,9 +78,10 @@ internal object BuildChecks {
     fun mountTableSteps(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
         val unpack = ctx.toolPaths["unpack_bootimg"] ?: "unpack_bootimg"
+        val dtbo = ctx.toolPaths["mkdtboimg"] ?: "mkdtboimg"
         val steps = mutableListOf<PipelineStep>(
             PipelineStep.Tool(
-                stepCommand("sh", listOf("-c", MountTable.SCRIPT, "sh", ws, unpack), ws),
+                stepCommand("sh", listOf("-c", MountTable.SCRIPT, "sh", ws, unpack, dtbo), ws),
                 "read mount tables",
                 MOUNT_TABLES_KEY,
             ),
@@ -89,12 +94,18 @@ internal object BuildChecks {
             steps += PipelineStep.EditFile(source, { FstabEditor.withFilesystems(it, lines) }, "mount lines in $source")
         }
         if (inImages.isNotEmpty()) {
+            // The device tree's fstab is compiled into the dtb or dtbo: the Studio adds lines to a ramdisk only.
+            val fix = if (inImages.any { ":dt" in it.source }) {
+                "The device tree mounts them (Assemble > Mount table shows it); the Studio cannot edit a device " +
+                    "tree, so build those partitions as "
+            } else {
+                "Add the mount lines in Assemble > Mount table, or build those partitions as "
+            }
             steps += PipelineStep.Check("mount table") {
                 "MOUNT_TABLE: " + inImages.joinToString("; ") {
                     "${it.source} mounts ${it.partition} only as ${it.declared.sorted().joinToString("/")}, " +
                         "not ${it.filesystem}"
-                } + ". Add the mount lines in Assemble > Mount table, or build those partitions as " +
-                    inImages.first().declared.first() + "."
+                } + ". " + fix + inImages.first().declared.first() + "."
             }
         }
         return steps
@@ -126,13 +137,66 @@ internal object BuildChecks {
         val facts = ctx.value(KERNEL_KEY)?.let(KernelFacts::parse)?.takeUnless { it.config.isNullOrEmpty() }
         val built = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
         val unmountable = built.filterValues { facts?.mounts(it) == false }
+        val kernel = "the boot kernel${facts?.version?.let { " $it" }.orEmpty()}"
         if (facts != null && unmountable.isNotEmpty()) {
             val mountable = BuildFilesystems.SUPPORTED.filter { facts.mounts(it) == true }
             steps += PipelineStep.Check("kernel filesystems") {
-                "KERNEL_FILESYSTEM: the boot kernel${facts.version?.let { " $it" }.orEmpty()} cannot mount " +
+                "KERNEL_FILESYSTEM: $kernel cannot mount " +
                     unmountable.entries.joinToString { "${it.key} as ${it.value}" } +
                     " (CONFIG_${unmountable.values.first().uppercase()}_FS is off). Build them as " +
                     mountable.joinToString(" or ") + "."
+            }
+        }
+        // Deduplication asked for by hand on a kernel older than 6.1, which cannot read it.
+        val version = ctx.value(KERNEL_KEY)?.let(KernelFacts::parse)?.version
+        val forced = built.filter { (p, fs) ->
+            fs == BuildFilesystems.EROFS && ctx.snapshot.build.partitionDedupe[p] == true &&
+                BuildFilesystems.erofsDedupe(ctx.snapshot.build, p, version)
+        }.keys
+        if (version != null && forced.isNotEmpty() && !BuildFilesystems.kernelDedupes(version)) {
+            steps += PipelineStep.Check("kernel erofs dedupe") {
+                "KERNEL_FILESYSTEM: the boot kernel $version cannot read deduplicated EROFS (it needs 6.1 or " +
+                    "newer): ${forced.joinToString()}. Set their deduplication to automatic or off."
+            }
+        }
+        // A compressed EROFS image also needs the kernel's decoder for that compression (CONFIG_EROFS_FS_ZIP*).
+        val readable = facts?.erofsCompressions?.takeIf { facts.mounts(BuildFilesystems.EROFS) == true }
+        val undecodable = built.filterValues { it == BuildFilesystems.EROFS }.keys
+            .associateWith { BuildFilesystems.erofsDecoder(ctx.snapshot.build, it) }
+            .filterValues { it != null && readable != null && it !in readable }
+        if (undecodable.isNotEmpty()) {
+            steps += PipelineStep.Check("kernel erofs compression") {
+                "KERNEL_FILESYSTEM: $kernel cannot read " +
+                    undecodable.entries.joinToString { "${it.key} (${it.value})" } +
+                    ": its EROFS reads " + (readable.orEmpty().ifEmpty { listOf("no") }).joinToString("/") +
+                    " compression. Build them with " +
+                    (readable.orEmpty().map { if (it == "lz4") "lz4hc" else it } + BuildFilesystems.NO_COMPRESSION)
+                        .joinToString(" or ") + "."
+            }
+        }
+        return steps
+    }
+
+    /**
+     * Every APK of work/ must carry a signature (`ApkSignatures`): an unsigned one, dropped in by a mod or a script,
+     * is not installed and its app is gone after boot. Refused until accepted ([BuildWarningKind.UnsignedApks]).
+     */
+    fun apkSignatureSteps(ctx: StageContext): List<PipelineStep> {
+        val steps = mutableListOf<PipelineStep>(
+            PipelineStep.Tool(
+                stepCommand("sh", listOf("-c", ApkSignatures.SCRIPT, "sh", ctx.abs("work")), ctx.wsPath),
+                "find unsigned APKs",
+                UNSIGNED_KEY,
+            ),
+        )
+        val unsigned = ctx.value(UNSIGNED_KEY)?.let(ApkSignatures::parse).orEmpty()
+        val accepted = BuildWarningKind.UnsignedApks.name in ctx.snapshot.build.acknowledgedWarnings
+        if (unsigned.isNotEmpty() && !accepted) {
+            steps += PipelineStep.Check("apk signatures") {
+                "UNSIGNED_APK: ${unsigned.size} APK(s) in work/ carry no signature, so Android will not install " +
+                    "them: ${unsigned.take(LINKS_SHOWN).joinToString()}" +
+                    (if (unsigned.size > LINKS_SHOWN) " and ${unsigned.size - LINKS_SHOWN} more" else "") +
+                    ". Sign them in the mod or script that adds them, or accept it in Build & Sign > Coverage."
             }
         }
         return steps
@@ -330,15 +394,25 @@ internal object BuildChecks {
     private fun imagesZipSteps(ctx: StageContext): List<PipelineStep> {
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
+        val extra = ctx.abs(EXTRA_DIR)
         val images = ctx.abs("out/package/${zipName(ctx).removeSuffix(".zip")}-images.zip")
-        return listOf(
+        // A standalone image asked for as sparse goes in as one (img2simg); the others as built.
+        val sparse = ctx.snapshot.build.standaloneImages.filter { it in ctx.snapshot.build.sparseImages }
+        val standalone = ctx.snapshot.build.standaloneImages.map {
+            if (it in sparse) "$extra/$it.img" else ctx.abs("out/images/$it.img")
+        }
+        return sparse.map { p ->
+            PipelineStep.Tool(
+                stepCommand("img2simg", listOf(ctx.abs("out/images/$p.img"), "$extra/$p.img"), ws),
+                "sparse $p",
+            )
+        } + listOf(
             PipelineStep.Tool(stepCommand("rm", listOf("-f", images), ws), "remove old images zip"),
             PipelineStep.Tool(
                 stepCommand(
                     "zip",
-                    listOf("-j", images, "${ctx.abs(EXTRA_DIR)}/super.img") +
-                        ctx.target.packagePolicy.flashableBootPartitions.map { "$stage/$it.img" } +
-                        ctx.snapshot.build.standaloneImages.map { ctx.abs("out/images/$it.img") },
+                    listOf("-j", images, "$extra/super.img") +
+                        ctx.target.packagePolicy.flashableBootPartitions.map { "$stage/$it.img" } + standalone,
                     ws,
                 ),
                 "zip fastboot images",

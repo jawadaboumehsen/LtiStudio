@@ -47,6 +47,7 @@ import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
+import org.ide.lti.core.domain.workbench.ArchiveWorkbench
 import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
@@ -138,6 +139,12 @@ internal actual val platformRepositoryModule =
             BootWorkbench(runner = get(), toLinuxPath = paths::toWslPath)
         }
         single { ImageWorkbench(runner = get(), toLinuxPath = io.ltirom.tooling.client.WslPathTranslator()::toWslPath) }
+        single {
+            ArchiveWorkbench(
+                runner = get(),
+                toLinuxPath = io.ltirom.tooling.client.WslPathTranslator()::toWslPath,
+            )
+        }
         single { ContentWorkbench(runner = get()) }
         single { CompareWorkbench(runner = get()) }
         single { WorkspaceStorage(runner = get(), runs = get()) }

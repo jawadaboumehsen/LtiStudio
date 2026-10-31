@@ -31,6 +31,15 @@ import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 public class ContentWorkbench(private val runner: WorkbenchRunner) {
 
     /**
+     * `sh -n` of a project script's [content], the check the build runs before any script: the
+     * shell's message (`sh: 3: Syntax error: …`), or null when it parses.
+     */
+    public suspend fun checkScript(workspaceId: String, content: String): String? = runner.read(workspaceId) {
+        val result = tryRun("sh", "-c", "printf '%s' \"\$1\" | sh -n", "sh", content)
+        if (result.exitCode == 0) null else result.stderr.ifBlank { result.stdout }.trim().ifEmpty { "sh -n failed" }
+    }
+
+    /**
      * Brings every app of the work tree back to a self-contained package (FR-028). An APK that already carries
      * its dex is reported as such (stale `oat/` next to it is removed); one with no `.vdex` in `oat/` has nothing to
      * convert. An app whose code is only in a vdex needs `vdexExtractor`, which LtiRom does not install, so it

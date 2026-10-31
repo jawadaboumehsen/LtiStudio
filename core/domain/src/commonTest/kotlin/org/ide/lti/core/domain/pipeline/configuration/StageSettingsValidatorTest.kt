@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.pipeline.configuration
 
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
@@ -243,6 +244,55 @@ class StageSettingsValidatorTest {
             target,
         )
         assertTrue(ext4.errors.none { it.code == StageSettingsValidator.UNSUPPORTED_FILESYSTEM })
+
+        // Brotli takes 0..11; free space only on a partition built as ext4, never negative.
+        fun packageErrors(settings: BuildSettings) = StageSettingsValidator.validateBuild(settings, target).errors
+            .filter { it.code == StageSettingsValidator.INVALID_PACKAGE_OPTION }.map { it.fieldPath }
+        assertEquals(listOf("brotliLevel"), packageErrors(valid.copy(brotliLevel = 12)))
+        assertEquals(
+            listOf("partitionFreeMib.system", "partitionFreeMib.vendor"),
+            packageErrors(
+                valid.copy(
+                    partitionFilesystem = mapOf("vendor" to "ext4"),
+                    partitionFreeMib = mapOf("system" to 100, "vendor" to -1, "odm" to 0),
+                ),
+            ),
+        )
+        assertEquals(
+            emptyList(),
+            packageErrors(
+                valid.copy(partitionFilesystem = mapOf("vendor" to "ext4"), partitionFreeMib = mapOf("vendor" to 256)),
+            ),
+        )
+        // A fixed size: whole blocks, not on EROFS (sized by its content), not with free space as well.
+        val writable = mapOf("vendor" to "ext4", "odm" to "f2fs", "product" to "ext4")
+        assertEquals(
+            listOf("partitionSizeBytes.system", "partitionSizeBytes.vendor", "partitionSizeBytes.product"),
+            packageErrors(
+                valid.copy(
+                    partitionFilesystem = writable,
+                    partitionSizeBytes = mapOf(
+                        "system" to (1L shl 30),
+                        "vendor" to 1000L,
+                        "odm" to (64L shl 20),
+                        "product" to (2L shl 30),
+                    ),
+                    partitionFreeMib = mapOf("product" to 64),
+                ),
+            ),
+        )
+        // Sparse output: only a standalone image of the fastboot package.
+        assertEquals(listOf("sparseImages.odm"), packageErrors(valid.copy(sparseImages = setOf("odm"))))
+        assertEquals(
+            emptyList(),
+            packageErrors(
+                valid.copy(
+                    extraPackages = setOf("FullPackage"),
+                    standaloneImages = listOf("odm"),
+                    sparseImages = setOf("odm"),
+                ),
+            ),
+        )
     }
 
     @Test
@@ -336,5 +386,13 @@ class StageSettingsValidatorTest {
         assertEquals(listOf("a", "a"), codes(ProjectScript("a", "true"), ProjectScript("a", "true")))
         assertEquals(listOf("empty"), codes(ProjectScript("empty", " ")))
         assertEquals(emptyList(), codes(ProjectScript("draft", "", enabled = false)))
+    }
+
+    @Test
+    fun aBadCoverageRuleIsBuildAndSignsErrorWhereItIsEdited() {
+        val rules = "/system/x 0 0\n^/system/app/A(/.*)? 0 0 0644 u:object_r:system_file:s0"
+        val errors = StageSettingsValidator.validateCustomization(CustomizationSettings(coverageRules = rules))
+            .errors.filter { it.code == StageSettingsValidator.INVALID_COVERAGE_RULE }
+        assertEquals(listOf(StageId.BUILD_FLASHABLE_ZIP), errors.map { it.stageId })
     }
 }

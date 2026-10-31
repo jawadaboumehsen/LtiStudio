@@ -50,13 +50,12 @@ public object PayloadExtractor {
     }
 
     /**
-     * Inspects OTA zip `metadata` string to determine if the package is an incremental update.
+     * Inspects OTA zip `metadata` string to determine if the package is an incremental update: only an incremental
+     * names the build it starts from. `pre-device` is in full OTAs too.
      */
     public fun isIncrementalMetadata(metadataContent: String): Boolean = metadataContent.lineSequence().any { line ->
         val trimmed = line.trim()
-        trimmed.startsWith("pre-build=") ||
-            trimmed.startsWith("pre-build-incremental=") ||
-            trimmed.startsWith("pre-device=")
+        trimmed.startsWith("pre-build=") || trimmed.startsWith("pre-build-incremental=")
     }
 
     /**

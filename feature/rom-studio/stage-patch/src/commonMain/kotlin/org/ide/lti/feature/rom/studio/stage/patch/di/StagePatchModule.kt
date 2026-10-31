@@ -27,6 +27,7 @@ public val stagePatchModule: Module = module {
             store = getOrNull(),
             plugins = getOrNull(),
             catalog = getOrNull(),
+            content = getOrNull(),
         )
     }
 

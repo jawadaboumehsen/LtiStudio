@@ -146,6 +146,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
         }
 
         if (ctx.snapshot.assembly.disableDataEncryption) steps += dataEncryptionSteps(ctx)
+        if (ctx.snapshot.assembly.removeIntegrityFlags) steps += integritySteps(ctx)
 
         val baseStamper = BuildPropStamper.stamper(ctx)
         val overrides = ctx.snapshot.assembly.propertyOverrides
@@ -230,6 +231,19 @@ public class WorkTreeAssemblyStage : StageDefinition {
             else -> files.map { rel ->
                 PipelineStep.EditFile("work/$rel", FstabEditor::withoutDataEncryption, "decrypt /data in $rel")
             }
+        }
+    }
+
+    /** Every fstab in work/ asking for AVB or dm-verity loses those flags ([FstabEditor.withoutIntegrity]). */
+    private fun integritySteps(ctx: StageContext): List<PipelineStep> {
+        val find = PipelineStep.Tool(
+            command = stepCommand("sh", listOf("-c", FIND_VERIFIED_FSTABS, "sh", ctx.abs("work")), ctx.wsPath),
+            label = "find verified fstabs",
+            resultKey = VERIFIED_FSTABS_KEY,
+        )
+        val files = ctx.value(VERIFIED_FSTABS_KEY)?.lines()?.map(String::trim)?.filter(String::isNotEmpty).orEmpty()
+        return listOf(find) + files.map { rel ->
+            PipelineStep.EditFile("work/$rel", FstabEditor::withoutIntegrity, "remove integrity flags in $rel")
         }
     }
 
@@ -322,6 +336,12 @@ public class WorkTreeAssemblyStage : StageDefinition {
         private const val FIND_DATA_FSTABS =
             "cd \"\$1\" && grep -rlE '^[^#[:space:]]+[[:space:]]+/data[[:space:]]' --include='fstab*' . " +
                 "| sed 's#^\\./##' || true"
+        private const val VERIFIED_FSTABS_KEY = "assembly.verified.fstabs"
+
+        /** `sh -c FIND_VERIFIED_FSTABS sh <work>`: fstab files (relative to work/) with an avb/verify fs_mgr flag. */
+        private const val FIND_VERIFIED_FSTABS =
+            "cd \"\$1\" && grep -rlE '[[:space:],](avb|avb_keys|verify|verifyatboot)([=,[:space:]]|$)' " +
+                "--include='fstab*' . | sed 's#^\\./##' || true"
         public const val BUILD_PROP: String = "work/system/system/build.prop"
         private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
         private val SUPPORTED_FOOTER_POLICIES = setOf("erase", "preserve")

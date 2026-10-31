@@ -19,6 +19,7 @@ import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.debloat.DebloatResolution
 import org.ide.lti.core.domain.debloat.DebloatResolver
 import org.ide.lti.core.domain.debloat.DebloatRisk
+import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
@@ -66,8 +67,25 @@ public class DebloatStage : StageDefinition {
                     label = "read app manifests",
                     resultKey = APPS_KEY,
                 ),
-            ) + ctx.value(APPS_KEY)?.let { stepsFor(ctx, DebloatInventory.parse(listing), AppManifests.parse(it)) }
-                .orEmpty()
+                PipelineStep.Tool(
+                    command = stepCommand(
+                        "sh",
+                        listOf("-c", PackageMentions.SCRIPT, "sh", ctx.abs("work")),
+                        ctx.wsPath,
+                    ),
+                    label = "read package mentions",
+                    resultKey = MENTIONS_KEY,
+                ),
+            ) + ctx.value(APPS_KEY)?.let { apps ->
+                ctx.value(MENTIONS_KEY)?.let { mentions ->
+                    stepsFor(
+                        ctx,
+                        DebloatInventory.parse(listing),
+                        AppManifests.parse(apps),
+                        PackageMentions.parse(mentions),
+                    )
+                }
+            }.orEmpty()
         }.orEmpty()
     }
 
@@ -76,9 +94,11 @@ public class DebloatStage : StageDefinition {
         ctx: StageContext,
         inventory: List<DebloatCandidate>,
         apps: Map<String, AppFacts>,
+        mentions: Map<String, PackageMentions.Mentions>,
     ): List<PipelineStep> {
         val picks = ctx.snapshot.debloat.removeSelectors.toSet()
-        val blocked = DebloatRisk.assess(inventory, DebloatRisk.byApp(inventory, apps), picks)
+        val byApp = DebloatRisk.byApp(inventory, apps)
+        val blocked = DebloatRisk.assess(inventory, byApp, picks)
             .filter { (selector, risk) -> selector in picks && risk.blockers.isNotEmpty() }
         if (blocked.isNotEmpty()) {
             return listOf(
@@ -103,14 +123,27 @@ public class DebloatStage : StageDefinition {
                 },
             )
 
-            is DebloatResolution.Resolved -> removalSteps(ctx, resolution.decision)
+            is DebloatResolution.Resolved -> {
+                // Config files that only name the removed apps (privapp-permissions-x.xml, …) go with them.
+                val removedPackages = resolution.decision.removals
+                    .mapNotNull { byApp["${it.partition}:${it.relativePath}"]?.packageId }.toSet()
+                val orphans = PackageMentions.orphaned(mentions, removedPackages)
+                    .map { it.substringBefore('/') to it.substringAfter('/') }
+                removalSteps(ctx, resolution.decision, orphans)
+            }
         }
     }
 
-    private fun removalSteps(ctx: StageContext, decision: DebloatDecision): List<PipelineStep> {
+    private fun removalSteps(
+        ctx: StageContext,
+        decision: DebloatDecision,
+        orphans: List<Pair<String, String>>,
+    ): List<PipelineStep> {
         val steps = mutableListOf<PipelineStep>()
-        val byPartition = decision.removals.groupBy { it.partition }
-        if (decision.removals.isNotEmpty()) {
+        // (partition, path inside it) of every app and config file the run removes.
+        val items = decision.removals.map { it.partition to it.relativePath } + orphans
+        val byPartition = items.groupBy({ it.first }, { it.second })
+        if (items.isNotEmpty()) {
             // Back up before removal (FR-027, FR-038). Only the latest run's backups are kept: work/ is rebuilt
             // from the firmware on every run, so an older copy restores nothing a new run would not remove again.
             steps += PipelineStep.Tool(
@@ -137,30 +170,30 @@ public class DebloatStage : StageDefinition {
                     "backup sidecars $partition",
                 )
             }
-            for (removal in decision.removals) {
-                val src = ctx.abs("work/${removal.partition}/${removal.relativePath}")
-                val dest = ctx.abs(backupPath(removal.partition, removal.relativePath))
+            for ((partition, path) in items) {
+                val src = ctx.abs("work/$partition/$path")
+                val dest = ctx.abs(backupPath(partition, path))
                 steps += PipelineStep.Tool(
                     stepCommand("mkdir", listOf("-p", dest.substringBeforeLast('/')), ctx.wsPath),
-                    "mkdir backup ${removal.partition}:${removal.relativePath}",
+                    "mkdir backup $partition:$path",
                 )
                 steps += PipelineStep.Tool(
                     stepCommand("cp", listOf("-a", "-T", src, dest), ctx.wsPath),
-                    "backup ${removal.partition}:${removal.relativePath}",
+                    "backup $partition:$path",
                 )
             }
-            val paths = decision.removals.map { ctx.abs("work/${it.partition}/${it.relativePath}") }
+            val paths = items.map { (partition, path) -> ctx.abs("work/$partition/$path") }
             steps += PipelineStep.Tool(stepCommand("rm", listOf("-rf", "--") + paths, ctx.wsPath), "remove apps")
 
             val createdAt = ctx.longValue(RuntimeKeys.RUN_TIMESTAMP)?.let { Instant.fromEpochSeconds(it).toString() }
                 ?: "unknown"
-            val points = decision.removals.map { removal ->
+            val points = items.map { (partition, path) ->
                 RestorePoint(
-                    id = "debloat:${removal.partition}:${removal.relativePath}",
+                    id = "debloat:$partition:$path",
                     tool = TOOL,
-                    itemPath = "${removal.partition}/${removal.relativePath}",
+                    itemPath = "$partition/$path",
                     createdAt = createdAt,
-                    backupPath = backupPath(removal.partition, removal.relativePath),
+                    backupPath = backupPath(partition, path),
                 )
             }
             steps += PipelineStep.Tool(
@@ -174,8 +207,7 @@ public class DebloatStage : StageDefinition {
                 "record restore points",
             )
         }
-        byPartition.forEach { (partition, removals) ->
-            val paths = removals.map { it.relativePath }
+        byPartition.forEach { (partition, paths) ->
             steps += PipelineStep.EditFile(
                 "work/configs/fs_config-$partition",
                 { SidecarEditor.withoutFsConfig(it, partition, paths) },
@@ -198,6 +230,7 @@ public class DebloatStage : StageDefinition {
         public const val RESULT: String = "work/debloat/result.json"
         public const val INVENTORY_KEY: String = "debloat.inventory"
         public const val APPS_KEY: String = "debloat.apps"
+        public const val MENTIONS_KEY: String = "debloat.mentions"
         public const val TOOL: String = "debloat"
         private const val BACKUP_DIR = "restore/debloat"
 

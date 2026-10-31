@@ -362,8 +362,13 @@ class StageDefinitionsTest {
         assertEquals(1, s4.size)
         assertEquals("work/modules/applied.json", (s4.single() as PipelineStep.WriteFile).relPath)
 
-        // Stage 5 before any capture: staging, key digests, mkfs.erofs/sha256sum/stat per partition — nothing else.
-        val s5 = tools(BuildFlashableZipStage().plan(ctx))
+        // Stage 5 once the boot kernel is read (a 5.15 one: no deduplication): staging, key digests,
+        // mkfs.erofs/sha256sum/stat per partition — nothing else.
+        val s5 = tools(
+            BuildFlashableZipStage().plan(
+                ctx.copy(runtimeValues = mapOf(BuildChecks.KERNEL_KEY to "version 5.15.0\nnoconfig")),
+            ),
+        )
         val mkfs = s5.first { it.toolId == "mkfs.erofs" }
         assertEquals(
             listOf(

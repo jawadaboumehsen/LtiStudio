@@ -60,9 +60,13 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.debloat.AppFacts
+import org.ide.lti.core.domain.debloat.AppImpact
 import org.ide.lti.core.domain.debloat.AppRisk
 import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatInventory
+import org.ide.lti.core.domain.debloat.DebloatRisk
+import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
 import org.ide.lti.core.model.workspace.DebloatSettings
@@ -128,7 +132,15 @@ public fun DebloatEditor(
                     }
                     items(shown) { candidate ->
                         val selector = DebloatViewModel.selectorOf(candidate)
-                        InventoryRow(candidate, selector in picked, risks[selector], facts.app(selector), onToggle)
+                        val details = remember(facts.apps, selector) { details(facts.apps[selector], selector, facts) }
+                        InventoryRow(
+                            candidate,
+                            selector in picked,
+                            risks[selector],
+                            facts.app(selector),
+                            details,
+                            onToggle,
+                        )
                     }
                 }
             }
@@ -190,7 +202,24 @@ private fun Header(
         if (facts.loaded && facts.inventory.isEmpty()) {
             Hint("No assembled work tree yet. In Run history, run through Assemble, then refresh.")
         } else if (facts.loaded) {
-            Hint("${facts.inventory.size} apps in the assembled tree.")
+            val picked = settings.removeSelectors.toSet()
+            val freed = facts.inventory.filter { DebloatViewModel.selectorOf(it) in picked }.sumOf { it.sizeBytes }
+            val configs = PackageMentions.orphaned(
+                facts.mentions,
+                picked.mapNotNull { facts.apps[it]?.packageId }.toSet(),
+            )
+            Hint(
+                "${facts.inventory.size} apps in the assembled tree." +
+                    (if (picked.isNotEmpty()) " The ${picked.size} picked would free ${formatBytes(freed)}." else "") +
+                    (
+                        if (configs.isNotEmpty()) {
+                            " ${configs.size} config file(s) naming only them go too: " +
+                                configs.joinToString { it.substringAfterLast('/') } + "."
+                        } else {
+                            ""
+                        }
+                        ),
+            )
         }
     }
 }
@@ -201,6 +230,7 @@ private fun InventoryRow(
     picked: Boolean,
     risk: AppRisk?,
     app: ShownApp,
+    details: String?,
     onToggle: (DebloatCandidate) -> Unit,
 ) {
     val protected = DebloatInventory.isProtected(candidate)
@@ -247,8 +277,52 @@ private fun InventoryRow(
             )
         }
         risk?.let { Reasons(it) }
+        details?.let { Reason(it, MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
+
+/**
+ * The app in both directions. First line, who would notice it gone:
+ * `v15.2 · target SDK 35 · signed by ZTE (platform key) · needed by a, b · overlaid by c · looked for by d`.
+ * Second line, what it relies on: `uses lib (provider) · overlays x · looks for y · looks for z (not among the apps)`.
+ */
+private fun details(app: AppFacts?, selector: String, facts: DebloatFacts): String? {
+    app ?: return null
+    val impact = DebloatRisk.impact(selector, facts.apps)
+    val notice = listOfNotNull(
+        app.version?.let { "v$it" },
+        app.targetSdk?.let { "target SDK $it" },
+        signer(app, impact),
+        impact.neededBy.labelled("needed by"),
+        impact.overlaidBy.labelled("overlaid by"),
+        impact.askedBy.labelled("looked for by"),
+        impact.sharesUidWith.takeIf { it.isNotEmpty() }?.let { "shares ${app.sharedUserId} with ${it.size}" },
+        app.packageId?.let { pkg ->
+            PackageMentions.namedIn(facts.mentions, pkg).map { it.substringAfterLast('/') }.labelled("named in")
+        },
+    )
+    val relies = listOfNotNull(
+        impact.uses.labelled("uses"),
+        impact.overlays.labelled("overlays"),
+        impact.looksFor.labelled("looks for"),
+        impact.looksForMissing.labelled("looks for", " (not among the apps)"),
+    )
+    return listOf(notice, relies).filter { it.isNotEmpty() }.map { it.joinToString(" · ") }
+        .takeIf { it.isNotEmpty() }?.joinToString("\n")
+}
+
+/** Who signed [app]: the platform key (the framework's), or which key by its digest (subjects repeat). */
+private fun signer(app: AppFacts, impact: AppImpact): String? = app.signerName?.let { name ->
+    if (impact.platformSigned) "signed by $name (platform key)" else "signed by $name (key ${app.signerDigest})"
+}
+
+/** `label a, b, c +2`, or null when empty. */
+private fun List<String>.labelled(label: String, suffix: String = ""): String? = takeIf { it.isNotEmpty() }?.let {
+    "$label ${take(DETAIL_NAMES).joinToString()}" + (if (size > DETAIL_NAMES) " +${size - DETAIL_NAMES}" else "") +
+        suffix
+}
+
+private const val DETAIL_NAMES = 3
 
 /** The app's name and icon file (as Windows reads it), when its APK has them. */
 private data class ShownApp(val name: String?, val iconFile: String?)

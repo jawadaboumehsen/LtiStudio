@@ -87,6 +87,9 @@ internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) 
         NumberField("Super alignment in bytes (empty = default)", settings.alignment) {
             onChange(settings.copy(alignment = it))
         }
+        NumberField("Package brotli level, 0-11 (higher: smaller zip, slower build)", settings.brotliLevel) {
+            onChange(settings.copy(brotliLevel = it ?: BuildSettings().brotliLevel))
+        }
     }
 }
 
@@ -308,7 +311,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 }
 
 @Composable
-private fun NumberField(label: String, value: Int?, onChange: (Int?) -> Unit) {
+internal fun NumberField(label: String, value: Int?, onChange: (Int?) -> Unit) {
     Hint(label)
     GlassTextField(
         value = value?.toString().orEmpty(),

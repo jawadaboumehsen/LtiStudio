@@ -24,6 +24,7 @@ import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatDecision
 import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.debloat.DebloatRisk
+import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -55,6 +56,8 @@ public data class DebloatFacts(
     val apps: Map<String, AppFacts> = emptyMap(),
     /** Where the app icons are, as Windows sees the folder (`AppFacts.icon` names a file in it). */
     val iconFolder: String? = null,
+    /** The permission/sysconfig files of work/ and the packages each names (`PackageMentions`). */
+    val mentions: Map<String, PackageMentions.Mentions> = emptyMap(),
     val message: String? = null,
     val refusal: Refusal? = null,
 ) {
@@ -139,8 +142,18 @@ public class DebloatViewModel(
     private suspend fun readApps(inventory: List<DebloatCandidate>) {
         val runner = runner ?: return
         try {
-            val apks = runner.read(workspaceId) { AppManifests.parse(sh(AppManifests.SCRIPT, abs("work"))) }
-            _facts.value = _facts.value.copy(apps = DebloatRisk.byApp(inventory, apks))
+            val manifests = runner.read(workspaceId) { AppManifests.parse(sh(AppManifests.SCRIPT, abs("work"))) }
+            // Signers take under a second (only each APK's end is read); without them the apps still show.
+            val signers = try {
+                runner.read(workspaceId) { AppManifests.parse(sh(AppManifests.SIGNERS_SCRIPT, abs("work"))) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (@Suppress("SwallowedException") e: Exception) {
+                emptyMap()
+            }
+            val apks = manifests.mapValues { (apk, facts) -> signers[apk]?.let(facts::plus) ?: facts }
+            val mentions = runner.read(workspaceId) { PackageMentions.parse(sh(PackageMentions.SCRIPT, abs("work"))) }
+            _facts.value = _facts.value.copy(apps = DebloatRisk.byApp(inventory, apks), mentions = mentions)
             // Names and icons come second: the risks matter more, and badging takes as long again.
             val (labels, icons) = runner.read(workspaceId) {
                 AppManifests.parse(sh(AppManifests.LABELS_SCRIPT, abs("work"), abs(ICON_DIR))) to hostPath(ICON_DIR)

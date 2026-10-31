@@ -38,7 +38,14 @@ public class PatchStageEditor : StageEditor {
         val settings by viewModel.settings.collectAsState()
         val facts by viewModel.facts.collectAsState()
         if (selected == SCRIPTS) {
-            ScriptsPane(settings = settings, onChange = viewModel::updateSettings, modifier = modifier)
+            val checks by viewModel.scriptCheck.collectAsState()
+            ScriptsPane(
+                settings = settings,
+                onChange = viewModel::updateSettings,
+                checks = checks,
+                onCheck = viewModel::checkScript,
+                modifier = modifier,
+            )
             return
         }
 

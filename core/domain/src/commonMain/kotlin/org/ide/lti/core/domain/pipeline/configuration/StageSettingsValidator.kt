@@ -11,6 +11,8 @@ package org.ide.lti.core.domain.pipeline.configuration
 
 import org.ide.lti.core.domain.pipeline.stages.ProjectScripts
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
+import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -47,8 +49,11 @@ public object StageSettingsValidator {
     public const val INVALID_ALIGNMENT: String = "INVALID_ALIGNMENT"
     public const val INCOMPATIBLE_FILESYSTEM: String = "INCOMPATIBLE_FILESYSTEM"
     public const val UNSUPPORTED_FILESYSTEM: String = "UNSUPPORTED_FILESYSTEM"
+    public const val INVALID_PACKAGE_OPTION: String = "INVALID_PACKAGE_OPTION"
+    private val BROTLI_LEVELS = 0..11
     public const val BOOT_IMAGE_LEFT_OUT: String = "BOOT_IMAGE_LEFT_OUT"
     public const val INVALID_SCRIPT: String = "INVALID_SCRIPT"
+    public const val INVALID_COVERAGE_RULE: String = "INVALID_COVERAGE_RULE"
     public const val INLINE_CREDENTIAL_NOT_ALLOWED: String = "INLINE_CREDENTIAL_NOT_ALLOWED"
     public const val MISSING_KEY_REF: String = "MISSING_KEY_REF"
     public const val INVALID_PART_SIZE: String = "INVALID_PART_SIZE"
@@ -273,6 +278,17 @@ public object StageSettingsValidator {
             }
         }
         errors += scriptErrors(settings.scripts)
+        errors += CoverageRule.parse(settings.coverageRules).second.map {
+            // Filed under Build & Sign, whose Coverage pane edits them: a Patches error would lock that editor away.
+            ValidationError(
+                stageId = StageId.BUILD_FLASHABLE_ZIP,
+                objectId = null,
+                fieldPath = "coverageRules",
+                code = INVALID_COVERAGE_RULE,
+                severity = Severity.ERROR,
+                message = "Coverage rule $it",
+            )
+        }
         return ValidationReport(errors = errors)
     }
 
@@ -350,6 +366,7 @@ public object StageSettingsValidator {
             }
         }
         errors += unsupportedFilesystems(settings)
+        errors += packageSpace(settings)
         if (target != null && target.filesystemType.isNotBlank()) {
             if (!settings.filesystem.equals(target.filesystemType, ignoreCase = true)) {
                 errors += ValidationError(
@@ -366,6 +383,60 @@ public object StageSettingsValidator {
         target?.let { errors += bootImagesLeftOut(it) }
         errors += validateSigning(settings.signing).errors
         return ValidationReport(errors = errors)
+    }
+
+    /**
+     * The brotli level must be one brotli takes (0..11); free space only works on a partition built as ext4 (EROFS
+     * and the read-only F2FS image cannot be written to) and is never negative.
+     */
+    private fun packageSpace(settings: BuildSettings): List<ValidationError> {
+        fun error(field: String, message: String) = ValidationError(
+            stageId = StageId.BUILD_FLASHABLE_ZIP,
+            objectId = null,
+            fieldPath = field,
+            code = INVALID_PACKAGE_OPTION,
+            severity = Severity.ERROR,
+            message = message,
+        )
+        val brotli = listOfNotNull(
+            error("brotliLevel", "The brotli level must be 0 to 11, was ${settings.brotliLevel}")
+                .takeIf { settings.brotliLevel !in BROTLI_LEVELS },
+        )
+        val free = settings.partitionFreeMib.mapNotNull { (p, mib) ->
+            val fs = BuildFilesystems.of(settings, p)
+            when {
+                mib < 0 -> error("partitionFreeMib.$p", "Free space for $p cannot be negative, was $mib MiB")
+
+                mib > 0 && fs != BuildFilesystems.EXT4 ->
+                    error("partitionFreeMib.$p", "$p is built as $fs, which cannot be written to: build it as ext4")
+
+                else -> null
+            }
+        }
+        val sizes = settings.partitionSizeBytes.mapNotNull { (p, bytes) ->
+            val fs = BuildFilesystems.of(settings, p)
+            when {
+                bytes <= 0 || bytes % settings.blockSize != 0L -> error(
+                    "partitionSizeBytes.$p",
+                    "The size of $p must be a whole number of ${settings.blockSize}-byte blocks, was $bytes bytes",
+                )
+
+                fs == BuildFilesystems.EROFS ->
+                    error("partitionSizeBytes.$p", "$p is built as EROFS, which is always sized by its content")
+
+                (settings.partitionFreeMib[p] ?: 0) > 0 ->
+                    error("partitionSizeBytes.$p", "$p has both a fixed size and free space: keep one")
+
+                else -> null
+            }
+        }
+        // Sparse output only changes the standalone images of the fastboot images package.
+        val sparse = settings.sparseImages.filter {
+            it !in settings.standaloneImages || PackageKind.FullPackage.name !in settings.extraPackages
+        }.map {
+            error("sparseImages.$it", "$it is not a standalone image of the fastboot images package")
+        }
+        return brotli + free + sizes + sparse
     }
 
     /** A filesystem the build cannot make, for the stage or for one partition. */

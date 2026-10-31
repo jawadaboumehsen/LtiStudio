@@ -63,6 +63,8 @@ public data class AssemblySettings(
     val kernelOverrides: Map<String, String> = emptyMap(),
     /** Remove the encryption flags of `/data` from the work tree's fstabs; the phone must be formatted once. */
     val disableDataEncryption: Boolean = false,
+    /** Remove the AVB/verity fs_mgr flags (`avb`, `avb_keys`, `verify`) from every line of the work tree's fstabs. */
+    val removeIntegrityFlags: Boolean = false,
 ) {
     init {
         propertyOverrides.forEach { (k, v) ->
@@ -110,6 +112,11 @@ public data class CustomizationSettings(
     val scripts: List<ProjectScript> = emptyList(),
     /** Give files without fs_config / file_contexts lines those of their folder, at the end of every Patches run. */
     val fillMissingSidecars: Boolean = false,
+    /**
+     * Rules for files without sidecar lines, tried before "like its folder": one per line, `<regex> <uid> <gid>
+     * <mode> <label>`, the regex matched against the whole device path (`/system/app/Foo/Foo.apk`); `#` comments.
+     */
+    val coverageRules: String = "",
 )
 
 /**
@@ -139,6 +146,22 @@ public data class BuildSettings(
     val standaloneImages: List<String> = emptyList(),
     /** Build warnings (`BuildWarningKind` names) the user accepted. */
     val acknowledgedWarnings: Set<String> = emptySet(),
+    /** `brotli --quality` of the package's `.new.dat.br` members: 0 (fastest) to 11 (smallest zip). */
+    val brotliLevel: Int = 6,
+    /** MiB of free space left in a partition built as ext4, by partition, so it can be written to later. */
+    val partitionFreeMib: Map<String, Int> = emptyMap(),
+    /**
+     * Exact image size in bytes of a partition built as ext4 or F2FS, instead of its content's size plus a margin
+     * (auto); a whole number of blocks. EROFS is always sized by its content.
+     */
+    val partitionSizeBytes: Map<String, Long> = emptyMap(),
+    /** [standaloneImages] written as Android sparse images in the fastboot images package (smaller, flashed as is). */
+    val sparseImages: Set<String> = emptySet(),
+    /**
+     * EROFS data deduplication by partition (`mkfs.erofs -Ededupe,fragments`): true or false forces it; absent
+     * means automatic, on when the boot kernel is 6.1 or newer.
+     */
+    val partitionDedupe: Map<String, Boolean> = emptyMap(),
 )
 
 @Serializable

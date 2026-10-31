@@ -9,10 +9,13 @@
  */
 package org.ide.lti.core.domain.pipeline
 
+import org.ide.lti.core.domain.pipeline.stages.BuildChecks
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.model.target.MetadataPolicy
+import org.ide.lti.core.model.workspace.BuildSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -37,6 +40,8 @@ class BuildFlashableZipStageTest {
             RuntimeKeys.ZIP_SHA256 to "zipsha256  rom.zip",
             RuntimeKeys.ZIP_SIZE to "1000000",
             BuildFlashableZipStage.COVERAGE_RESULT_KEY to CoverageResult.encode(CoverageResult()),
+            // A kernel older than 6.1: images are not deduplicated (the dedupe test reads a 6.6 one).
+            BuildChecks.KERNEL_KEY to "version 5.15.0\nnoconfig",
         )
         base.target.dynamicPartitions.forEach { p ->
             values[RuntimeKeys.imageSha256(p)] = "sha_$p  $p.img"
@@ -327,6 +332,137 @@ class BuildFlashableZipStageTest {
     }
 
     @Test
+    fun `an unsigned apk in the work tree stops the build until accepted`() {
+        val base = fullContext()
+        val found = base.copy(
+            runtimeValues = base.runtimeValues + ("build.apks.unsigned" to "product/app/Mod/Mod.apk\n"),
+        )
+        val refusal = stage.plan(found).filterIsInstance<PipelineStep.Check>().single { it.label == "apk signatures" }
+        assertTrue(refusal.verify(emptyMap())!!.startsWith("UNSIGNED_APK: 1 APK(s) in work/ carry no signature"))
+        val accepted = found.copy(
+            snapshot = found.snapshot.copy(
+                build = found.snapshot.build.copy(acknowledgedWarnings = setOf(BuildWarningKind.UnsignedApks.name)),
+            ),
+        )
+        assertTrue(stage.plan(accepted).none { it.label == "apk signatures" })
+        val clean = base.copy(runtimeValues = base.runtimeValues + ("build.apks.unsigned" to ""))
+        assertTrue(stage.plan(clean).none { it.label == "apk signatures" }, "fw-baseline: every APK is signed")
+    }
+
+    @Test
+    fun `free space grows an ext4 image and the brotli level reaches the package`() {
+        val base = fullContext()
+        val ctx = base.copy(
+            runtimeValues = base.runtimeValues + mapOf(
+                BuildFlashableZipStage.ext4MeasureKey("vendor") to "1929366941 4059",
+                BuildFlashableZipStage.ext4TrialKey("vendor") to "Free blocks:              76229",
+            ),
+            snapshot = base.snapshot.copy(
+                build = base.snapshot.build.copy(
+                    partitionFilesystem = mapOf("vendor" to "ext4"),
+                    partitionFreeMib = mapOf("vendor" to 256),
+                    brotliLevel = 11,
+                ),
+            ),
+        )
+        val tools = stage.plan(ctx).filterIsInstance<PipelineStep.Tool>()
+        val mke2fs = tools.single { it.label == "mke2fs vendor" }.command.args
+        // 458767 blocks as built tight, 65536 more for 256 MiB; 64 inodes per MiB on top of the 4123.
+        assertEquals("524303", mke2fs.last())
+        assertEquals("20507", mke2fs[mke2fs.indexOf("-N") + 1])
+        assertTrue(tools.filter { it.label.startsWith("brotli ") }.all { "--quality=11" in it.command.args })
+    }
+
+    @Test
+    fun `a fixed size sets an ext4 image's size and refuses one its content does not fit`() {
+        val base = fullContext()
+        fun plan(bytes: Long) = stage.plan(
+            base.copy(
+                runtimeValues = base.runtimeValues + mapOf(
+                    BuildFlashableZipStage.ext4MeasureKey("vendor") to "1929366941 4059",
+                    BuildFlashableZipStage.ext4TrialKey("vendor") to "Free blocks:              76229",
+                ),
+                snapshot = base.snapshot.copy(
+                    build = base.snapshot.build.copy(
+                        partitionFilesystem = mapOf("vendor" to "ext4"),
+                        partitionSizeBytes = mapOf("vendor" to bytes),
+                    ),
+                ),
+            ),
+        )
+        // 2 GiB = 524288 blocks; the 65521 beyond the content's 458767 get 64 inodes per whole MiB (255).
+        val mke2fs = plan(2L shl 30).filterIsInstance<PipelineStep.Tool>().single { it.label == "mke2fs vendor" }
+        assertEquals("524288", mke2fs.command.args.last())
+        assertEquals("20443", mke2fs.command.args[mke2fs.command.args.indexOf("-N") + 1])
+        val small = plan(1L shl 30)
+        assertTrue(small.none { it.label == "mke2fs vendor" })
+        val refusal = small.filterIsInstance<PipelineStep.Check>().single { it.label == "partition size vendor" }
+        assertEquals(
+            "PARTITION_TOO_SMALL: vendor needs 1835068 KiB as ext4, but its size is set to 1048576 KiB. Raise it in " +
+                "Build & Sign > Compression, or set it back to automatic.",
+            refusal.verify(emptyMap()),
+        )
+    }
+
+    @Test
+    fun `erofs images are deduplicated when the boot kernel reads it, unless a partition says otherwise`() {
+        val base = fullContext()
+        fun mkfs(kernel: String, dedupe: Map<String, Boolean> = emptyMap()) = stage.plan(
+            base.copy(
+                snapshot = base.snapshot.copy(build = base.snapshot.build.copy(partitionDedupe = dedupe)),
+                runtimeValues = base.runtimeValues + (BuildChecks.KERNEL_KEY to kernel),
+            ),
+        ).filterIsInstance<PipelineStep.Tool>().filter { it.label.startsWith("mkfs.erofs ") }
+            .associate { it.label.removePrefix("mkfs.erofs ") to ("-Ededupe,fragments" in it.command.args) }
+        val gki = "version 6.6.92-android15-8\nCONFIG_EROFS_FS=y\nCONFIG_EROFS_FS_ZIP=y\n"
+        assertEquals(
+            listOf(false, true, true, true, false, false),
+            listOf("6.0.9", "6.1", "6.1.57-android14", "7.0.1", "5.15.149", null).map(BuildFilesystems::kernelDedupes),
+        )
+        // PQ84P01's 6.6 kernel: every partition is deduplicated; vendor can be turned off by hand.
+        assertTrue(mkfs(gki).values.all { it })
+        assertEquals(false, mkfs(gki, mapOf("vendor" to false))["vendor"])
+        // A 5.15 kernel (or no boot kernel at all) gets none, unless forced, which is then refused.
+        assertTrue(mkfs("version 5.15.0\nnoconfig").values.none { it })
+        assertTrue(mkfs("nokernel").values.none { it })
+        val forced = stage.plan(
+            base.copy(
+                snapshot = base.snapshot.copy(
+                    build = base.snapshot.build.copy(partitionDedupe = mapOf("vendor" to true)),
+                ),
+            ),
+        ).filterIsInstance<PipelineStep.Check>().single { it.label == "kernel erofs dedupe" }.verify(emptyMap())!!
+        assertTrue(forced.startsWith("KERNEL_FILESYSTEM: the boot kernel 5.15.0 cannot read deduplicated"), forced)
+        // Before the kernel is read, no image is built: the kernel decides.
+        assertTrue(
+            stage.plan(base.copy(runtimeValues = base.runtimeValues - BuildChecks.KERNEL_KEY))
+                .none { it.label.startsWith("mkfs.erofs ") },
+        )
+    }
+
+    @Test
+    fun `a standalone image asked for as sparse goes into the fastboot package as one`() {
+        val base = fullContext()
+        val ctx = base.copy(
+            snapshot = base.snapshot.copy(
+                build = base.snapshot.build.copy(
+                    extraPackages = setOf("FullPackage"),
+                    standaloneImages = listOf("vendor_dlkm", "odm"),
+                    sparseImages = setOf("vendor_dlkm"),
+                    acknowledgedWarnings = setOf(BuildWarningKind.SuperOverlap.name),
+                ),
+            ),
+        )
+        val tools = stage.plan(ctx).filterIsInstance<PipelineStep.Tool>()
+        val sparse = tools.single { it.label == "sparse vendor_dlkm" }.command
+        assertEquals("img2simg", sparse.toolId)
+        val zip = tools.single { it.label == "zip fastboot images" }.command.args
+        assertTrue(zip.any { it.endsWith("/out/extra/vendor_dlkm.img") }, zip.toString())
+        assertTrue(zip.any { it.endsWith("/out/images/odm.img") }, zip.toString())
+        assertTrue(tools.none { it.label == "sparse odm" })
+    }
+
+    @Test
     fun `a partition built as a filesystem the boot kernel cannot mount is refused`() {
         val base = fullContext()
         val vendorF2fs = base.snapshot.copy(
@@ -343,5 +479,28 @@ class BuildFlashableZipStageTest {
         assertTrue(noF2fs.startsWith("KERNEL_FILESYSTEM: the boot kernel 5.10.1 cannot mount vendor as f2fs"), noF2fs)
         assertTrue(noF2fs.endsWith("Build them as erofs or ext4."), noF2fs)
         assertEquals(null, refusal("version 5.10.1\nnoconfig\n"), "no embedded config: nothing is known")
+    }
+
+    @Test
+    fun `a compressed erofs image the boot kernel cannot decode is refused`() {
+        val base = fullContext()
+        fun refusal(build: BuildSettings, config: String) = stage.plan(
+            base.copy(
+                snapshot = base.snapshot.copy(build = build),
+                runtimeValues = base.runtimeValues + ("build.kernel.config" to config),
+            ),
+        ).filterIsInstance<PipelineStep.Check>().singleOrNull { it.label == "kernel erofs compression" }
+            ?.verify(emptyMap())
+
+        val lz4hc = base.snapshot.build.copy(filesystem = "erofs", compression = "lz4hc", level = 9)
+        // PQ84P01's GKI kernel has the EROFS decoders; one without CONFIG_EROFS_FS_ZIP reads uncompressed images only.
+        assertEquals(null, refusal(lz4hc, "version 6.6\nCONFIG_EROFS_FS=y\nCONFIG_EROFS_FS_ZIP=y\n"))
+        val noZip = refusal(lz4hc, "version 6.6\nCONFIG_EROFS_FS=y\n")!!
+        assertTrue(noZip.startsWith("KERNEL_FILESYSTEM: the boot kernel 6.6 cannot read "), noZip)
+        assertTrue("system (lz4)" in noZip && "its EROFS reads no compression" in noZip, noZip)
+        assertTrue(noZip.endsWith("Build them with none."), noZip)
+        val none = lz4hc.copy(partitionCompression = base.target.dynamicPartitions.associateWith { "none" })
+        assertEquals(null, refusal(none, "version 6.6\nCONFIG_EROFS_FS=y\n"))
+        assertEquals(null, refusal(lz4hc, "version 6.6\nnoconfig\n"), "no embedded config: nothing is known")
     }
 }

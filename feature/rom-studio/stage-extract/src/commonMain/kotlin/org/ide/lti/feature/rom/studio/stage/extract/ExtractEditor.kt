@@ -72,6 +72,7 @@ public fun ExtractEditor(
     onReplace: (String) -> Unit = {},
     onUseStock: (String) -> Unit = {},
     onReextract: (String) -> Unit = {},
+    archiveActions: ArchiveActions = ArchiveActions(),
     modifier: Modifier = Modifier,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("extraction.") || !it.fieldPath.contains('.') }
@@ -113,6 +114,7 @@ public fun ExtractEditor(
                 else -> {
                     item { ArchiveLayoutCard(settings, errors, dirtyPaths, onChange) }
                     item { ArchiveContentsCard(facts) }
+                    item { ArchiveBrowserCard(facts.browse, archiveActions) }
                 }
             }
             item { Diagnostics(errors) }
@@ -200,11 +202,8 @@ private fun ArchiveContentsCard(facts: ExtractFacts) {
 
             facts.members.isEmpty() -> Hint("$archive could not be read.")
 
-            else -> {
-                Hint("$archive · ${facts.members.size} members")
-                facts.members.filterNot { it.startsWith("META-INF/") || it.endsWith("/") }.take(MAX_MEMBERS)
-                    .forEach { Mono(it) }
-            }
+            // The members themselves are in the archive browser below.
+            else -> Hint("$archive · ${facts.members.size} members")
         }
         ExtractedImages(facts)
     }
@@ -346,8 +345,6 @@ private fun Mono(text: String) {
         fontFamily = codeFontFamily(),
     )
 }
-
-private const val MAX_MEMBERS = 12
 
 @Composable
 private fun DynamicPartitionsCard(

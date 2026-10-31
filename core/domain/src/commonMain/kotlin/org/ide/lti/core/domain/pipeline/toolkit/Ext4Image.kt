@@ -21,9 +21,47 @@ public object BuildFilesystems {
     /** EROFS (mkfs.erofs), ext4 (mke2fs + e2fsdroid) and F2FS (make_f2fs + sload_f2fs, read back by dump.f2fs). */
     public val SUPPORTED: List<String> = listOf(EROFS, EXT4, F2FS)
 
+    /** mkfs.erofs's `-z` value meaning "no compression". */
+    public const val NO_COMPRESSION: String = "none"
+
     /** [p]'s filesystem: its own choice, else the build's default. */
     public fun of(build: BuildSettings, p: String): String =
         (build.partitionFilesystem[p] ?: build.filesystem).lowercase()
+
+    /** mkfs.erofs's `-z` for [p] (`lz4hc,9`, `lz4`, [NO_COMPRESSION]): its own choice, else the build's. */
+    public fun erofsCompression(build: BuildSettings, p: String): String =
+        build.partitionCompression[p] ?: build.level?.let { "${build.compression.substringBefore(',')},$it" }
+            ?: build.compression
+
+    /** The first kernel that reads EROFS data deduplication and fragments (`-Ededupe,fragments`). */
+    public val DEDUPE_KERNEL: Pair<Int, Int> = 6 to 1
+
+    /** `6.6.92-android15-8` as (6, 6); null when it does not start with two numbers. */
+    public fun kernelRelease(version: String?): Pair<Int, Int>? = version?.let(RELEASE::find)
+        ?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() }
+
+    private val RELEASE = Regex("""^(\d+)\.(\d+)""")
+
+    /** Whether [version] (a kernel release) reads deduplicated EROFS images: 6.1 or newer. */
+    public fun kernelDedupes(version: String?): Boolean = kernelRelease(version)?.let { (major, minor) ->
+        major > DEDUPE_KERNEL.first || (major == DEDUPE_KERNEL.first && minor >= DEDUPE_KERNEL.second)
+    } == true
+
+    /**
+     * Whether [p]'s EROFS image is built with `-Ededupe,fragments` (identical data stored once; vendor shrinks about a
+     * quarter, the build is much slower): its own choice, else on exactly when the boot kernel ([kernelVersion]) reads
+     * it. Uncompressed images are never deduplicated (mkfs.erofs dedupes compressed data only).
+     */
+    public fun erofsDedupe(build: BuildSettings, p: String, kernelVersion: String?): Boolean =
+        erofsCompression(build, p) != NO_COMPRESSION && (build.partitionDedupe[p] ?: kernelDedupes(kernelVersion))
+
+    /**
+     * The kernel decoder [p]'s EROFS image needs (`lz4`, `lzma`, `deflate`, `zstd`), as `KernelFacts.erofsCompressions`
+     * names them; null when it is not compressed. lz4hc is written for the lz4 decoder.
+     */
+    public fun erofsDecoder(build: BuildSettings, p: String): String? =
+        erofsCompression(build, p).substringBefore(',').lowercase().takeUnless { it == NO_COMPRESSION }
+            ?.let { if (it == "lz4hc") "lz4" else it }
 }
 
 /**

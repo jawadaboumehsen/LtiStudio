@@ -19,6 +19,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageFix
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageGate
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ApplyModules
 import org.ide.lti.core.domain.plugin.ConcreteOperation
@@ -30,8 +31,12 @@ import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.model.plugin.FileMetadata
 import org.ide.lti.core.model.workspace.Workspace
+import java.io.IOException
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 
 /**
  * Runs the Patches/Mods stage's [ApplyModules] in the app: the plans are applied by [files] straight to the
@@ -247,6 +252,8 @@ class ModuleHostSteps(
     private fun fixCoverage(workspace: Workspace, request: CoverageFixRequest): String {
         val work = workTree(workspace)
         val configs = work.resolve("configs")
+        // The validator refuses bad lines before a build starts; any left here are skipped.
+        val rules = CoverageRule.parse(request.rules).first
         var added = 0
         for (partition in request.partitions.filter { Files.isDirectory(work.resolve(it)) }) {
             val partDir = work.resolve(partition)
@@ -254,18 +261,22 @@ class ModuleHostSteps(
             val ctxFile = configs.resolve("file_context-$partition")
             val fsText = if (Files.isRegularFile(fsFile)) Files.readString(fsFile) else ""
             val ctxText = if (Files.isRegularFile(ctxFile)) Files.readString(ctxFile) else ""
-            val paths = Files.walk(partDir).use { stream ->
-                stream.map { partDir.relativize(it).toString().replace('\\', '/') }.filter { it.isNotBlank() }.toList()
-            }
-            val missing = CoverageGate.check(partition, paths, fsText, ctxText)
+            val missing = CoverageGate.check(partition, treePaths(partDir), fsText, ctxText)
             if (missing.isClean) continue
             Files.writeString(
                 fsFile,
-                CoverageFix.fixFsConfig(fsText, partition, missing.uncoveredFsConfig) {
-                    Files.isDirectory(partDir.resolve(it))
-                },
+                CoverageFix.fixFsConfig(
+                    fsText,
+                    partition,
+                    missing.uncoveredFsConfig,
+                    isDirectory = { Files.isDirectory(partDir.resolve(it)) },
+                    rules = rules,
+                ),
             )
-            Files.writeString(ctxFile, CoverageFix.fixFileContexts(ctxText, partition, missing.uncoveredContexts))
+            Files.writeString(
+                ctxFile,
+                CoverageFix.fixFileContexts(ctxText, partition, missing.uncoveredContexts, rules = rules),
+            )
             added += (missing.uncoveredFsConfig + missing.uncoveredContexts).distinct().size
         }
         return """{"added":$added}"""
@@ -284,14 +295,7 @@ class ModuleHostSteps(
             val ctxFile = configs.resolve("file_context-$partition")
             val fsText = if (Files.isRegularFile(fsFile)) Files.readString(fsFile) else ""
             val ctxText = if (Files.isRegularFile(ctxFile)) Files.readString(ctxFile) else ""
-            // Every entry, links included (walk does not follow them): each needs its own sidecar lines.
-            val paths = Files.walk(partDir).use { stream ->
-                stream
-                    .map { partDir.relativize(it).toString().replace('\\', '/') }
-                    .filter { it.isNotBlank() }
-                    .toList()
-            }
-            val result = CoverageGate.check(partition, paths, fsText, ctxText)
+            val result = CoverageGate.check(partition, treePaths(partDir), fsText, ctxText)
             uncoveredFs += result.uncoveredFsConfig
             uncoveredCtx += result.uncoveredContexts
         }
@@ -301,5 +305,35 @@ class ModuleHostSteps(
                 uncoveredContexts = uncoveredCtx.distinct(),
             ),
         )
+    }
+
+    /**
+     * Every entry under [root], relative and with `/`, links included and never followed: each needs its own
+     * sidecar lines. Over `\\wsl.localhost` an absolute link (`lib/modules -> /system_dlkm/lib/modules`) cannot be
+     * read ("Incorrect function"); it is still an entry, so it is listed and the walk goes on.
+     */
+    private fun treePaths(root: Path): List<String> {
+        val paths = linkedSetOf<String>()
+        fun add(p: Path) = root.relativize(p).toString().replace('\\', '/').takeIf { it.isNotBlank() }?.let(paths::add)
+        Files.walkFileTree(
+            root,
+            object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    add(dir)
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    add(file)
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun visitFileFailed(file: Path, exc: IOException): FileVisitResult {
+                    add(file)
+                    return FileVisitResult.CONTINUE
+                }
+            },
+        )
+        return paths.toList()
     }
 }

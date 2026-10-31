@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.model.plugin.FileMetadata
 
 /**
  * Result of checking permission (fs_config) and SELinux label (file_contexts) coverage.
@@ -92,6 +93,41 @@ public object CoverageGate {
 }
 
 /**
+ * The user's own owner, mode and label for files without sidecar lines: the first rule
+ * whose [pattern] matches the whole device path wins; files no rule matches get their folder's lines.
+ */
+public data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, val mode: String, val label: String) {
+    public companion object {
+        private const val FIELDS = 5
+        private val MODE = Regex("[0-7]{3,4}")
+
+        /** [text]'s rules; a line that is not `<regex> <uid> <gid> <mode> <label>` (or a bad regex) is an error. */
+        public fun parse(text: String): Pair<List<CoverageRule>, List<String>> {
+            val rules = mutableListOf<CoverageRule>()
+            val errors = mutableListOf<String>()
+            text.lines().forEachIndexed { index, raw ->
+                val line = raw.trim()
+                if (line.isEmpty() || line.startsWith("#")) return@forEachIndexed
+                val f = line.split(Regex("\\s+"))
+                val uid = f.getOrNull(1)?.toIntOrNull()
+                val gid = f.getOrNull(2)?.toIntOrNull()
+                val regex = runCatching { Regex(f[0]) }.getOrNull()
+                val wellFormed = f.size == FIELDS && MODE.matches(f[3])
+                if (!wellFormed || uid == null || gid == null || regex == null) {
+                    errors += "line ${index + 1}: '$line' is not <regex> <uid> <gid> <mode> <label>"
+                } else {
+                    rules += CoverageRule(regex, uid, gid, f[3], f[4])
+                }
+            }
+            return rules to errors
+        }
+
+        public fun match(rules: List<CoverageRule>, devicePath: String): CoverageRule? =
+            rules.firstOrNull { it.pattern.matches(devicePath) }
+    }
+}
+
+/**
  * Proposes and applies missing coverage entries through [SidecarEditor] (FR-016).
  */
 public object CoverageFix {
@@ -127,14 +163,17 @@ public object CoverageFix {
         partition: String,
         uncoveredPaths: Collection<String>,
         isDirectory: (String) -> Boolean = { false },
+        rules: List<CoverageRule> = emptyList(),
     ): String {
         var current = fsConfigText
         for (path in uncoveredPaths) {
+            val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
             current = SidecarEditor.withFsConfig(
                 text = current,
                 partition = partition,
                 path = path,
                 isDirectory = isDirectory(path),
+                metadata = rule?.let { FileMetadata(it.uid, it.gid, it.mode) },
             )
         }
         return current
@@ -145,10 +184,12 @@ public object CoverageFix {
         partition: String,
         uncoveredPaths: Collection<String>,
         defaultLabel: String? = null,
+        rules: List<CoverageRule> = emptyList(),
     ): String {
         var current = fileContextsText
         for (path in uncoveredPaths) {
-            val label = defaultLabel ?: findNearestLabel(current, partition, path)
+            val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
+            val label = rule?.label ?: defaultLabel ?: findNearestLabel(current, partition, path)
             current = SidecarEditor.withFileContext(
                 text = current,
                 partition = partition,

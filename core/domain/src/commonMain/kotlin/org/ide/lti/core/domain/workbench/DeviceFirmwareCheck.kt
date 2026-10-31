@@ -20,6 +20,11 @@ public data class FirmwareFacts(
     val partitionSizes: Map<String, Long>,
     /** The stock super image's partition table; null when the firmware has none (an OTA payload). */
     val superLayout: SuperLayout?,
+    /**
+     * The dynamic partitions the stock fstab mounts (`logical`), in its order; empty when there is none. The package
+     * writes only the device's dynamic partitions into super, so one missing there is gone after flashing.
+     */
+    val logicalPartitions: List<String> = emptyList(),
 )
 
 /** One fact: [setting] is the device setting it checks (null for facts shown for reference only). */
@@ -49,7 +54,8 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
         }.toMap()
         val superLayout = SUPER_IMAGES.firstOrNull { exists(it) }
             ?.let { SuperTool.parseLpdumpOutput(run("lpdump", abs(it))) }
-        FirmwareFacts(props, sizes, superLayout)
+        val logical = sh(LOGICAL_SCRIPT, abs(EXTRACTED)).lines().map(String::trim).filter(String::isNotEmpty)
+        FirmwareFacts(props, sizes, superLayout, logical)
     }
 
     public companion object {
@@ -57,6 +63,24 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
         private val PROP_FILES = listOf("$EXTRACTED/system/system/build.prop", "$EXTRACTED/vendor/build.prop")
         private val SUPER_IMAGES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img")
         private val IMAGE_SIZE = Regex("""Image size:\s+(\d+) bytes""")
+
+        /** `sh -c LOGICAL_SCRIPT sh <extracted>`: each partition the stock fstabs mount as `logical`, once. */
+        private const val LOGICAL_SCRIPT: String = """
+            cat "$1"/vendor/etc/fstab.* "$1"/odm/etc/fstab.* 2>/dev/null |
+              awk '$1 !~ /^#/ && $5 ~ /(^|,)logical(,|$)/ {
+                p = $2; sub(/^\//, "", p); if (!(p in s)) { s[p] = 1; print p } }'
+        """
+
+        /** The device's dynamic partitions next to the stock fstab's, compared as sets (their order means nothing). */
+        private fun dynamicFact(device: TargetDevice, facts: FirmwareFacts): FirmwareFact? =
+            facts.logicalPartitions.takeIf { it.isNotEmpty() }?.let { stock ->
+                FirmwareFact(
+                    "dynamicPartitions",
+                    "dynamic partitions",
+                    device.dynamicPartitions.sorted().joinToString(", "),
+                    stock.sorted().joinToString(", "),
+                )
+            }
 
         private val SIZE_FIELDS = mapOf(
             "boot" to "bootPartitionBytes",
@@ -98,6 +122,7 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
             }.orEmpty()
             return listOfNotNull(
                 codename?.let { FirmwareFact("codename", "codename", device.codename, it) },
+                dynamicFact(device, facts),
                 codename?.takeIf { it !in device.assertModels }?.let {
                     FirmwareFact(
                         "assertModels",
@@ -131,16 +156,35 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
             val v = fact.firmware
             return when (fact.setting) {
                 "codename" -> device.copy(codename = v)
+
                 "assertModels" -> device.copy(assertModels = device.assertModels + v)
+
                 "fastbootProduct" -> device.copy(fastbootProduct = v)
+
                 "virtualAb" -> device.copy(virtualAb = v == "true")
+
                 "bootPartitionBytes" -> device.copy(bootPartitionBytes = v.toLong())
+
                 "vendorBootPartitionBytes" -> device.copy(vendorBootPartitionBytes = v.toLong())
+
                 "initBootPartitionBytes" -> device.copy(initBootPartitionBytes = v.toLong())
+
                 "dtboPartitionBytes" -> device.copy(dtboPartitionBytes = v.toLong())
+
                 "superPartitionBytes" -> device.copy(superPartitionBytes = v.toLong())
+
                 "superGroupName" -> device.copy(superGroupName = v)
+
                 "superGroupBytes" -> device.copy(superGroupBytes = v.toLong())
+
+                // Keeps the device's order for the partitions both name; the firmware's new ones go last.
+                "dynamicPartitions" -> v.split(", ").toSet().let { stock ->
+                    device.copy(
+                        dynamicPartitions = device.dynamicPartitions.filter { it in stock } +
+                            stock.filter { it !in device.dynamicPartitions }.sorted(),
+                    )
+                }
+
                 else -> device
             }
         }

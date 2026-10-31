@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.DeviceTreeDiff
 import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
 import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
 import org.ide.lti.core.domain.pipeline.toolkit.KernelOverrides
+import org.ide.lti.core.domain.pipeline.toolkit.MountTable
 import org.ide.lti.core.domain.pipeline.toolkit.RamdiskCheck
 import org.ide.lti.core.domain.pipeline.toolkit.RamdiskCheckResult
 import org.ide.lti.core.domain.pipeline.toolkit.RamdiskEntry
@@ -34,6 +35,30 @@ import org.ide.lti.core.domain.pipeline.toolkit.VerityRemovalResult
 
 /** A repacked image saved as the partition's override, with the SHA-256 the Assemble settings record. */
 public data class SavedOverride(val partition: String, val sha256: String, val check: RamdiskCheckResult)
+
+/** What [BootWorkbench.editFstabs] does to the first-stage mount table. */
+public enum class FstabEdit(public val title: String) {
+    /**
+     * Lets every dynamic partition mount as each buildable filesystem: a line is added for whichever is missing,
+     * after the existing ones, so the stock one is still tried first.
+     */
+    MOUNT_LINES("Add mount lines") {
+        override fun apply(fstab: String): String {
+            val points = FstabEditor.logicalMountPoints(fstab)
+            return BuildFilesystems.SUPPORTED.fold(fstab) { t, fs ->
+                FstabEditor.withFilesystems(t, points.associateWith { fs })
+            }
+        }
+    },
+
+    /** Removes the AVB and verity flags: no partition is mounted with dm-verity. */
+    NO_INTEGRITY("Remove integrity flags") {
+        override fun apply(fstab: String): String = FstabEditor.withoutIntegrity(fstab)
+    },
+    ;
+
+    public abstract fun apply(fstab: String): String
+}
 
 /**
  * Boot, vendor_boot and init_boot work in WSL with the AOSP tools: `unpack_bootimg` / `mkbootimg` (the
@@ -88,7 +113,10 @@ public class BootWorkbench(
             val hasDtb = tryRun("test", "-s", abs("$dir/unpacked/dtb")).exitCode == 0
             if (hasDtb) run("dtc", "-q", "-I", "dtb", "-O", "dts", "-o", abs("$dir/$DTS"), abs("$dir/unpacked/dtb"))
             val footer = footerOf(this, source)
-            val state = BootState(source, ramdisk, compression, footer?.imageSize)
+            // The size a new footer is made for is the stock partition's: the assembled copy in work/kernel has no
+            // footer under the "erase" policy, and its file size is the bare image, not the partition.
+            val partitionSize = (footerOf(this, "firmware/extracted/$partition.img") ?: footer)?.imageSize
+            val state = BootState(source, ramdisk, compression, partitionSize, fingerprintOf(this, dir))
             writeText("$dir/$STATE", json.encodeToString(BootState.serializer(), state))
             BootParts(
                 imageName = partition,
@@ -130,12 +158,11 @@ public class BootWorkbench(
         }
 
     /**
-     * Lets every dynamic partition of the unpacked image's fstabs (the first-stage mount table in vendor_boot) mount
-     * as ext4 and as EROFS: a line is added for whichever is missing, after the existing ones, so the stock one is
-     * still tried first. Returns the fstab files changed; repack to keep the change.
+     * Applies [edit] to every fstab of [partition]'s unpacked ramdisk (the first-stage mount table in vendor_boot).
+     * Returns the fstab files changed; repack to keep the change.
      */
-    public suspend fun addMountLines(workspaceId: String, partition: String): List<String> =
-        runner.job(workspaceId, "Add mount lines") {
+    public suspend fun editFstabs(workspaceId: String, partition: String, edit: FstabEdit): List<String> =
+        runner.job(workspaceId, edit.title) {
             val folder = "${dir(partition)}/$RAMDISK_DIR"
             if (!exists(folder)) {
                 throw RefusalException(Refusal("$partition.img is not unpacked.", "$partition.img", "Unpack it first."))
@@ -150,10 +177,7 @@ public class BootWorkbench(
             ).lines().filter { it.isNotBlank() }.mapNotNull { f ->
                 val rel = "$folder/${f.removePrefix(abs(folder) + "/")}"
                 val text = readText(rel) ?: return@mapNotNull null
-                val points = FstabEditor.logicalMountPoints(text)
-                val edited = BuildFilesystems.SUPPORTED.fold(text) { t, fs ->
-                    FstabEditor.withFilesystems(t, points.associateWith { fs })
-                }
+                val edited = edit.apply(text)
                 rel.takeIf { edited != text }?.also { writeText(it, edited) }
             }
         }
@@ -202,8 +226,11 @@ public class BootWorkbench(
             ) {
                 run("dtc", "-q", "-I", "dts", "-O", "dtb", "-o", abs("$dir/unpacked/dtb"), abs("$dir/$DTS"))
             }
-            val args = readText("$dir/$ARGS").orEmpty().split('\u0000').filter { it.isNotEmpty() }
-            run("mkbootimg", *args.toTypedArray(), "--output", abs("$dir/new.img"))
+            // Empty values stay (`--ramdisk_name ''` of a v4 vendor ramdisk); only the trailing newline goes.
+            val args = readText("$dir/$ARGS").orEmpty().split('\u0000').dropLastWhile { it.isBlank() }
+            // A vendor_boot is written with --vendor_boot: with --output, mkbootimg refuses its ramdisk fragments.
+            val vendor = run("xxd", "-p", "-l", "8", abs(state.source)).trim() == VENDOR_BOOT_MAGIC_HEX
+            run("mkbootimg", *args.toTypedArray(), if (vendor) "--vendor_boot" else "--output", abs("$dir/new.img"))
             val partitionSize = plan?.partitionSize ?: state.footerImageSize
             if (partitionSize != null) {
                 val sign = plan?.let { listOf("--key", abs(it.keyPath), "--algorithm", it.algorithmName) }
@@ -214,7 +241,13 @@ public class BootWorkbench(
                 )
             }
             run("unpack_bootimg", "--boot_img", abs("$dir/new.img"), "--out", abs("$dir/verify"), "--format", "info")
-            saveOverride(this, partition, "$dir/new.img").copy(check = check)
+            val saved = saveOverride(this, partition, "$dir/new.img").copy(check = check)
+            // What is in the folder now is built: only later edits count as not built.
+            writeText(
+                "$dir/$STATE",
+                json.encodeToString(BootState.serializer(), state.copy(fingerprint = fingerprintOf(this, dir))),
+            )
+            saved
         }
 
     /** Copies a boot image patched elsewhere (the Magisk app) from [windowsPath] into the partition's override. */
@@ -328,8 +361,10 @@ public class BootWorkbench(
         if (!exists(keyRef)) {
             throw RefusalException(Refusal("The AVB key is missing.", keyRef, "Set the AVB key in Build & Sign."))
         }
-        val size = footerOf(this, sourceOf(this, partition))?.imageSize
-            ?: run("stat", "-c", "%s", abs(sourceOf(this, partition))).trim().toLong()
+        val source = sourceOf(this, partition)
+        // The stock partition's size, as in unpack: work/kernel's copy may have had its footer erased.
+        val size = (footerOf(this, "firmware/extracted/$partition.img") ?: footerOf(this, source))?.imageSize
+            ?: run("stat", "-c", "%s", abs(source)).trim().toLong()
         SigningPlan(partitionName = partition, algorithmName = algorithm, keyPath = keyRef, partitionSize = size)
     }
 
@@ -400,6 +435,54 @@ public class BootWorkbench(
         public const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
         private const val ARGS = "mkbootimg.args"
         private const val STATE = "state.json"
+
+        /**
+         * `sh -c FINGERPRINT_SCRIPT sh <unpacked dir>`: one hash over the ramdisk folder (paths, modes, link targets,
+         * contents) and the device tree source, the parts a user edits.
+         */
+        internal const val FINGERPRINT_SCRIPT: String = """
+            cd "$1" && {
+              if [ -d ramdisk ]; then
+                (cd ramdisk && find . -printf '%p %m %l\n' | LC_ALL=C sort && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum)
+              fi
+              if [ -f dtb.dts ]; then sha256sum dtb.dts; fi
+            } | sha256sum | cut -c1-64
+        """
+
+        private suspend fun fingerprintOf(job: WorkbenchRunner.Job, dir: String): String =
+            job.sh(FINGERPRINT_SCRIPT, job.abs(dir)).trim()
+
+        /**
+         * The device tree's fstab of the images in `work/kernel/` (boot and vendor_boot dtb, dtbo overlays)
+         * and whether the phone uses it. Without mkdtboimg (optional in its tool group)
+         * the dtbo overlays are not read.
+         */
+        public suspend fun deviceTreeMounts(runner: WorkbenchRunner, workspaceId: String): MountTable.DeviceTree =
+            runner.read(workspaceId) {
+                val dtbo = try {
+                    toolPath("mkdtboimg")
+                } catch (@Suppress("SwallowedException") e: RefusalException) {
+                    ""
+                }
+                MountTable.deviceTree(sh(MountTable.SCRIPT, root, toolPath("unpack_bootimg"), dtbo))
+            }
+
+        /**
+         * The unpacked boot images whose ramdisk folder or device tree changed since they were unpacked or last
+         * repacked: those edits are not in the next build until repacked.
+         */
+        public suspend fun unbuiltEdits(runner: WorkbenchRunner, workspaceId: String): List<String> =
+            runner.read(workspaceId) {
+                // Nothing unpacked yet: no folder, so find fails and finds nothing.
+                tryRun("find", abs("workbench/boot"), "-mindepth", "2", "-maxdepth", "2", "-name", STATE).stdout
+                    .lines().filter(String::isNotBlank).mapNotNull { path ->
+                        val dir = path.removePrefix("$root/").substringBeforeLast('/')
+                        val state = readText("$dir/$STATE")?.let { json.decodeFromString(BootState.serializer(), it) }
+                        dir.substringAfterLast('/').takeIf {
+                            state?.fingerprint != null && state.fingerprint != fingerprintOf(this, dir)
+                        }
+                    }.sorted()
+            }
         private const val DTS = "dtb.dts"
         private const val RAMDISK_DIR = "ramdisk"
         private val RAMDISK_NAMES = listOf("ramdisk", "vendor_ramdisk00", "vendor_ramdisk")
@@ -479,6 +562,8 @@ private data class BootState(
     val ramdisk: String?,
     val compression: RamdiskCompression?,
     val footerImageSize: Long?,
+    /** [BootWorkbench.FINGERPRINT_SCRIPT] of the folder when it was unpacked or last repacked. */
+    val fingerprint: String? = null,
 )
 
 /** A ramdisk's compression, from its first bytes; the scripts take the input as `$1` and the output as `$2`. */

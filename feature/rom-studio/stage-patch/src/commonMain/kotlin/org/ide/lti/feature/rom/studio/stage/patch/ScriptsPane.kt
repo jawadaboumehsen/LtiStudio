@@ -60,6 +60,9 @@ public fun ScriptsPane(
     settings: CustomizationSettings,
     onChange: (CustomizationSettings) -> Unit,
     modifier: Modifier = Modifier,
+    /** The last `sh -n` of each script by name: `ok` or the error. */
+    checks: Map<String, String> = emptyMap(),
+    onCheck: (String) -> Unit = {},
 ) {
     val scripts = settings.scripts
     var selected by remember { mutableStateOf(scripts.firstOrNull()?.name) }
@@ -128,6 +131,19 @@ public fun ScriptsPane(
                     },
                     modifier = Modifier.fillMaxWidth().height(ComponentSize.MaxPanelHeight).testTag("ScriptEditor"),
                 )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GlassButton(
+                        onClick = { onCheck(script.name) },
+                        variant = GlassButtonVariant.Standard,
+                        modifier = Modifier.testTag("CheckScriptButton"),
+                    ) { Text("Check", fontSize = FontSize.BodySmall) }
+                    checks[script.name]?.let { result ->
+                        if (result == "ok") Hint("sh -n: no syntax error.") else Hint(result, isError = true)
+                    }
+                }
             }
         }
     }

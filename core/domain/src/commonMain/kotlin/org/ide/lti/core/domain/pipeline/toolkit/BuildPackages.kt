@@ -25,4 +25,7 @@ public enum class BuildWarningKind {
 
     /** Symbolic links the build left pointing at nothing (they work in the stock firmware). */
     BrokenLinks,
+
+    /** APKs in the work tree with no signature at all (Android will not install them). */
+    UnsignedApks,
 }

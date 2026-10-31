@@ -21,6 +21,9 @@ import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
 
 /** The Build stage's ext4 and F2FS image steps; EROFS is one mkfs.erofs call in the stage itself. */
 internal object FilesystemImageSteps {
+    private const val MIB = 1024L * 1024
+    private const val INODES_PER_MIB = 64
+
     /**
      * [p] as a read-only ext4 image (`Ext4Image`): measured, built once to learn its size, then built at that
      * size and checked with e2fsck, into [steps]. False while the measure or the trial has not run yet.
@@ -78,11 +81,18 @@ internal object FilesystemImageSteps {
             ext4TrialKey(p),
         )
         val free = ctx.value(ext4TrialKey(p))?.let(Ext4Image::parseFreeBlocks)
-        if (free != null) {
-            val blocks = Ext4Image.finalBlocks(trialBlocks, free)
+        val content = free?.let { Ext4Image.finalBlocks(trialBlocks, it) }
+        val fixed = ctx.snapshot.build.partitionSizeBytes[p]?.div(blockSize)
+        if (content != null && fixed != null && fixed < content) {
+            steps += tooSmall(p, "ext4", fixed * blockSize, content * blockSize)
+        } else if (content != null) {
+            // Free space asked for (or a fixed size), with inodes to match (one per 16 KiB), so files can be added.
+            val freeMib = ctx.snapshot.build.partitionFreeMib[p] ?: 0
+            val blocks = fixed ?: (content + freeMib * MIB / blockSize)
+            val inodes = measure.inodes + (blocks - content) * blockSize / MIB * INODES_PER_MIB
             steps += PipelineStep.Tool(stepCommand("rm", listOf("-f", trial), ws), "drop ext4 trial $p")
             steps += PipelineStep.Tool(
-                stepCommand("mke2fs", Ext4Image.mke2fsArgs(p, mountPoint, blockSize, measure.inodes, img, blocks), ws),
+                stepCommand("mke2fs", Ext4Image.mke2fsArgs(p, mountPoint, blockSize, inodes, img, blocks), ws),
                 "mke2fs $p",
             )
             steps += PipelineStep.Tool(
@@ -149,12 +159,27 @@ internal object FilesystemImageSteps {
         }
         build(F2fsImage.trialBytes(prepared.measure), trial, "trial $p", f2fsTrialKey(p))
         val maxMib = ctx.value(f2fsTrialKey(p))?.let(F2fsImage::parseMaxImageMib)
-        if (maxMib != null) {
+        val content = maxMib?.let(F2fsImage::finalBytes)
+        val fixed = ctx.snapshot.build.partitionSizeBytes[p]
+        if (content != null && fixed != null && fixed < content) {
+            steps += tooSmall(p, "F2FS", fixed, content)
+        } else if (content != null) {
             steps += PipelineStep.Tool(stepCommand("rm", listOf("-f", trial), ws), "drop f2fs trial $p")
-            build(F2fsImage.finalBytes(maxMib), img, p)
+            build(fixed ?: content, img, p)
             // The filesystem's own consistency check, without fixing anything: a corrupt image is caught here.
             steps += PipelineStep.Tool(stepCommand("fsck.f2fs", listOf("--dry-run", "-f", img), ws), "fsck.f2fs $p")
         }
         return maxMib != null
     }
+
+    /** A fixed size ([org.ide.lti.core.model.workspace.BuildSettings.partitionSizeBytes]) the content does not fit. */
+    private fun tooSmall(p: String, fs: String, fixedBytes: Long, neededBytes: Long) =
+        PipelineStep.Check("partition size $p") {
+            "PARTITION_TOO_SMALL: $p needs ${neededBytes.ceilKib()} KiB as $fs, but its size is set to " +
+                "${fixedBytes / KIB} KiB. Raise it in Build & Sign > Compression, or set it back to automatic."
+        }
+
+    private const val KIB = 1024L
+
+    private fun Long.ceilKib(): Long = (this + KIB - 1) / KIB
 }

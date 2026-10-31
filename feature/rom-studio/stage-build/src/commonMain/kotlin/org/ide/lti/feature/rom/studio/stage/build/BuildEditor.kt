@@ -41,6 +41,7 @@ public fun BuildEditor(
     onCheckCoverage: () -> Unit = {},
     onFixCoverage: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onCoverageRules: (String) -> Unit = {},
 ) {
     LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
     Box(modifier = modifier.fillMaxSize().testTag("BuildEditor"), contentAlignment = Alignment.TopCenter) {
@@ -68,12 +69,14 @@ public fun BuildEditor(
 
                 "coverage" -> {
                     CoveragePane(coverage, onCheckCoverage, onFixCoverage)
+                    CoverageRulesPane(coverage.rules, onCoverageRules)
                     LinkCheckPane(settings, onChange)
+                    ApkSignaturePane(settings, onChange)
                 }
 
                 else -> {
                     CompressionPane(settings, onChange)
-                    PartitionFilesystemPane(settings, target, onChange)
+                    PartitionFilesystemPane(settings, target, onChange, facts)
                     PartitionCompressionPane(settings, target, onChange)
                 }
             }

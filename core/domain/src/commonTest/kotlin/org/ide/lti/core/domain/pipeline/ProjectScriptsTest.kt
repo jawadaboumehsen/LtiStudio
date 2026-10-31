@@ -32,13 +32,15 @@ class ProjectScriptsTest {
         )
         val steps = ModuleApplicationStage().plan(withScripts)
         val labels = steps.map { it.label }
+        // Every script is checked before the first one runs: a syntax error in fonts stops the build before
+        // debrand has changed work/.
         assertEquals(
             listOf(
                 "write debrand",
                 "check debrand",
-                "run debrand",
                 "write fonts",
                 "check fonts",
+                "run debrand",
                 "run fonts",
                 "add missing sidecar lines",
             ),

@@ -21,12 +21,15 @@ import org.ide.lti.core.domain.pipeline.toolkit.BootFlagDiff
 import org.ide.lti.core.domain.pipeline.toolkit.BootParts
 import org.ide.lti.core.domain.pipeline.toolkit.DeviceTreeDiff
 import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
+import org.ide.lti.core.domain.pipeline.toolkit.KernelOverrides
+import org.ide.lti.core.domain.pipeline.toolkit.MountTable
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RootStatus
 import org.ide.lti.core.domain.pipeline.toolkit.VbmetaFlag
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
 import org.ide.lti.core.domain.workbench.BootWorkbench
+import org.ide.lti.core.domain.workbench.FstabEdit
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 
@@ -48,6 +51,10 @@ public data class BootPaneState(
     /** The boot kernel's version and what it can read; null until read. */
     val kernel: KernelFacts? = null,
     val kernelRead: Boolean = false,
+    /** Unpacked images edited since they were unpacked or last repacked: not in the next build yet. */
+    val unbuilt: List<String> = emptyList(),
+    /** The device tree's fstab of the boot images; null until read. */
+    val dtMounts: MountTable.DeviceTree? = null,
 ) {
     val vbmetaDiff: BootFlagDiff?
         get() = if (vbmetaFlags != null && vbmetaEdited != null) {
@@ -81,6 +88,11 @@ public class BootPaneActions(
     public val readKernel: () -> Unit = {},
     /** Adds EROFS, ext4 and F2FS mount lines to the first-stage fstab and saves the image as an override. */
     public val addMountLines: () -> Unit = {},
+    /** Removes the AVB/verity flags from the first-stage fstab and saves the image as an override. */
+    public val removeIntegrityFlags: () -> Unit = {},
+    /** Looks for unpacked images edited but not repacked ([BootPaneState.unbuilt]). */
+    public val checkUnbuilt: () -> Unit = {},
+    public val readDeviceTree: () -> Unit = {},
 )
 
 /**
@@ -124,6 +136,7 @@ public class BootPaneModel(
         setSign = { sign -> mutableState.update { it.copy(signWithWorkspaceKey = sign) } },
         repack = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::repack) },
         addMountLines = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::addMountLines) },
+        removeIntegrityFlags = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::removeIntegrityFlags) },
         dropOverride = ::dropOverride,
         importPatched = { withAck(RiskyFeature.ROOT_PATCH, ::importPatched) },
         patchApatch = { key -> withAck(RiskyFeature.ROOT_PATCH) { patchApatch(key) } },
@@ -142,6 +155,19 @@ public class BootPaneModel(
         dismiss = { mutableState.update { it.copy(message = null, refusal = null) } },
         acknowledge = ::acknowledge,
         readKernel = ::readKernel,
+        checkUnbuilt = ::checkUnbuilt,
+        readDeviceTree = {
+            runner?.let { r ->
+                scope.launch {
+                    try {
+                        val mounts = BootWorkbench.deviceTreeMounts(r, workspaceId)
+                        mutableState.update { it.copy(dtMounts = mounts) }
+                    } catch (e: RefusalException) {
+                        mutableState.update { it.copy(refusal = e.refusal) }
+                    }
+                }
+            }
+        },
         dismissAck = {
             afterAck = null
             mutableState.update { it.copy(pendingAck = null) }
@@ -197,23 +223,31 @@ public class BootPaneModel(
      * Lets the phone mount every dynamic partition as ext4 or EROFS from its first stage: the fstab inside
      * vendor_boot (boot where there is none) gets the missing lines, and the image is repacked as its override.
      */
-    private fun addMountLines() = task("Adding mount lines") { boot ->
+    private fun addMountLines() = editFirstStage(
+        FstabEdit.MOUNT_LINES,
+        unchanged = "already mounts every partition as each filesystem",
+        done = "Added mount lines to",
+    )
+
+    /** Strips the AVB/verity flags from the first-stage fstab and saves the image as an override. */
+    private fun removeIntegrityFlags() = editFirstStage(
+        FstabEdit.NO_INTEGRITY,
+        unchanged = "has no AVB or verity flags",
+        done = "Removed the AVB/verity flags from",
+    )
+
+    /** Edits the fstabs of vendor_boot (boot where there is none) with [edit] and repacks it as its override. */
+    private fun editFirstStage(edit: FstabEdit, unchanged: String, done: String) = task(edit.title) { boot ->
         val image = MOUNT_TABLE_IMAGES.firstOrNull { it in bootImages() } ?: return@task
         boot.unpack(workspaceId, image)
-        val changed = boot.addMountLines(workspaceId, image)
+        val changed = boot.editFstabs(workspaceId, image, edit)
         if (changed.isEmpty()) {
-            mutableState.update { it.copy(message = "The $image fstab already mounts every partition both ways.") }
+            mutableState.update { it.copy(message = "The $image fstab $unchanged.") }
             return@task
         }
         repackAs(boot, image)
         mutableState.update {
-            it.copy(
-                message = "Added ext4/EROFS lines to ${changed.joinToString { f ->
-                    f.substringAfterLast(
-                        '/',
-                    )
-                }}; " + (it.message ?: ""),
-            )
+            it.copy(message = "$done ${changed.joinToString { f -> f.substringAfterLast('/') }}; " + (it.message ?: ""))
         }
     }
 
@@ -266,6 +300,17 @@ public class BootPaneModel(
     private fun dropOverride(image: String) {
         setOverrides(overrides() - image)
         mutableState.update { it.copy(message = "$image uses the extracted image again.") }
+        // The file goes too: Unpack opens an override file before the stock image, so the dropped edit would return.
+        scope.launch {
+            try {
+                runner?.job(
+                    workspaceId,
+                    "Use the stock $image",
+                ) { sh("rm -f \"$1\"", abs(KernelOverrides.path(image))) }
+            } catch (e: RefusalException) {
+                mutableState.update { it.copy(message = null, refusal = e.refusal) }
+            }
+        }
     }
 
     private fun readKernel() = task("Reading the kernel") { boot ->
@@ -330,6 +375,18 @@ public class BootPaneModel(
             } finally {
                 mutableState.update { it.copy(busy = null) }
             }
+            checkUnbuilt()
+        }
+    }
+
+    /** A read outside the job lock: refreshes [BootPaneState.unbuilt] after each task and when the pane opens. */
+
+    private fun checkUnbuilt() {
+        val runner = runner ?: return
+        scope.launch {
+            val unbuilt = runCatching { BootWorkbench.unbuiltEdits(runner, workspaceId) }
+                .getOrDefault(state.value.unbuilt)
+            mutableState.update { it.copy(unbuilt = unbuilt) }
         }
     }
 }

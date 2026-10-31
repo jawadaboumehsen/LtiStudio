@@ -26,6 +26,7 @@ public val stageExtractModule: Module = module {
             store = getOrNull(),
             workspaceFacts = getOrNull(),
             images = getOrNull(),
+            archives = getOrNull(),
         )
     }
 }

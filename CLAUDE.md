@@ -948,13 +948,17 @@ nothing is shown as done before its job finished.
   `ContentWorkbench`, `RestoreWorkbench`. The UI calls them from `BootPaneModel` / `ImagePaneModel` (Assemble),
   `ContentToolsViewModel` (Patches/Mods), the Debloat and Build view models.
 - Boot: unpack with `unpack_bootimg`, the ramdisk as a folder, repack with `mkbootfs` + `RamdiskCheck` (any
-  difference stops it), AVB footer re-signed with `keys/avb.pem`. The result is the partition's override
+  difference stops it), AVB footer re-signed with `keys/avb.pem` for the stock image's partition size
+  (`firmware/extracted/<p>.img`'s footer; work/kernel's copy has none under the "erase" footer policy). "Use the stock
+  image again" also deletes the override file, which Unpack would otherwise open first. The result is the partition's override
   (`KernelOverrides.path`, sha256 in `AssemblySettings.kernelOverrides`); Assemble copies it and refuses it when the
   hash no longer matches. APatch via `kptools`; Magisk only by importing an image patched on the phone (there is no
   Linux magiskboot). vbmeta flags: an edited copy in `out/toolkit/`, never packaged.
 - Device vs firmware (Target panel, `DeviceFirmwareCheck`): build.prop identity, boot-chain sizes from the stock
   images' AVB footers and the stock super table (raw firmware only) next to `device.json`, with "use firmware
   value". A footer size is what the stock image was signed for; confirm with `fastboot getvar partition-size`.
+  The dynamic partition list is compared (as a set) with the `logical` mounts of the stock `vendor|odm/etc/fstab.*`:
+  a partition the firmware has but the device lacks would be left out of super and the phone would not boot.
 - Kernel facts (Assemble > Boot preparation, `BootWorkbench.kernelFacts`/`KernelFacts`): version and, from the
   embedded config, the EROFS compressions and ramdisk formats the boot kernel reads.
 - Image browser "Search all partitions" (`ImageWorkbench.search`): names across every partition tree. Rows can be
@@ -995,6 +999,53 @@ nothing is shown as done before its job finished.
   (`FstabEditor.withFilesystems`) and refuses (`MOUNT_TABLE`) a gap in a boot image's first-stage fstab, which
   Assemble > Mount table fixes (`BootWorkbench.addMountLines`: EROFS, ext4 and F2FS lines for every logical partition,
   vendor_boot repacked as an override). PQ84P01's fstabs mount system as erofs or ext4, the rest erofs only.
+- Device-tree mount table (Assemble > Mount table, `MountTable.deviceTree`, `BootWorkbench.deviceTreeMounts`):
+  `firmware/android/fstab/<name>` nodes in the dtb of `work/kernel/{boot,vendor_boot}.img` and the dtbo overlays
+  (mkdtboimg dump), as fstab lines from sources `<img>:dtb` / `dtbo.img:dt.<n>` (`status = "disabled"` as `#`).
+  First-stage init reads them only when no ramdisk has an fstab, so `MountTable.parse` counts them only then; a gap
+  there refuses the build (`MOUNT_TABLE`) with no automatic fix (the Studio does not edit device trees).
+  PQ84P01 declares none.
+- Integrity flags (Assemble > Mount table): `AssemblySettings.removeIntegrityFlags` strips `avb`, `avb_keys`,
+  `verify`, `verifyatboot` from every fstab line in work/ (`FstabEditor.withoutIntegrity`); the first-stage fstab in
+  vendor_boot gets the same through `BootWorkbench.editFstabs(…, FstabEdit.NO_INTEGRITY)` (a vendor_boot override).
+- Project scripts: all are written and checked with `sh -n` before the first runs; Patches > Scripts has a Check
+  button (`ContentWorkbench.checkScript`).
+- Package options: `BuildSettings.brotliLevel` (0-11, default 6) and `partitionFreeMib` (ext4 only: extra blocks
+  and 64 inodes per MiB, so the partition can be written to later; `INVALID_PACKAGE_OPTION` otherwise).
+- APK signatures (Build, `BuildChecks.apkSignatureSteps` + `ApkSignatures`): an APK in work/ with no v2/v3 signing
+  block and no v1 signature refuses the build (`UNSIGNED_APK`) unless `BuildWarningKind.UnsignedApks` is accepted.
+- Unbuilt boot edits: `BootWorkbench` keeps a fingerprint of the unpacked ramdisk folder and dts (`FINGERPRINT_SCRIPT`,
+  in `state.json`, renewed on repack); `BootWorkbench.unbuiltEdits(runner, ws)` lists images edited since, shown as a
+  warning in Assemble > Boot preparation.
+- Coverage rules (`CustomizationSettings.coverageRules`, `CoverageRule`): `<regex> <uid> <gid> <mode> <label>` lines,
+  matched against the device path, tried before "like its folder" when missing sidecar lines are added
+  (`CoverageFixRequest.rules`); bad lines are `INVALID_COVERAGE_RULE`. Edited in Build & Sign > Coverage.
+- Debloat "named in" (`PackageMentions`): the `etc/permissions|sysconfig|default-permissions` XMLs naming each
+  package; a file naming only removed apps (and declaring no library, feature or permission) is backed up and
+  removed with them by `DebloatStage`.
+- Debloat app map: `AppFacts.version`, `targetSdk`, `queries` (`<queries><package>`) from the manifests;
+  `DebloatRisk.impact` lists the apps that need it (library), overlay it, look for it by name, share its UID, and
+  what it relies on (`uses` with each library's provider, `overlays`, `looksFor`, `looksForMissing`). The editor
+  shows them per app (two lines) and the space the picks would free.
+- App signers (`AppManifests.SIGNERS_SCRIPT`): a JDK single-file program reads each APK's first signer certificate
+  from the APK Signing Block (v3, else v2) or the v1 block file, in under a second for a ROM. `AppImpact.platformSigned`
+  is an app signed with framework-res's key. ktlint's indentation rule crashes ("Can not find matching rbrace") on a
+  `/*` inside KDoc text: write such globs another way.
+- Kernel EROFS decoders: `BuildChecks.kernelFilesystemSteps` also refuses (`KERNEL_FILESYSTEM`) an EROFS partition
+  whose compression (`BuildFilesystems.erofsCompression`/`erofsDecoder`) the kernel has no `CONFIG_EROFS_FS_ZIP*` for.
+- EROFS deduplication (`BuildSettings.partitionDedupe`, `BuildFilesystems.erofsDedupe`): `mkfs.erofs
+  -Ededupe,fragments` (identical data stored once; PQ84P01 vendor 1275 -> 947 MiB, but minutes per image instead of
+  seconds). Absent = automatic: on when the boot kernel read by `BuildChecks.kernelFilesystemSteps` (`KERNEL_KEY`) is
+  6.1 or newer (`kernelDedupes`), so EROFS images are planned only after that read. Forced on with an older kernel
+  refuses (`KERNEL_FILESYSTEM`). Never for uncompressed images. Build & Sign > Compression, per partition.
+- Fixed partition size (`BuildSettings.partitionSizeBytes`, ext4/F2FS only, whole blocks, not with free space):
+  the image is built at that size; content that does not fit refuses (`PARTITION_TOO_SMALL`, in KiB). Edited in
+  Build & Sign > Compression (KiB, "Use the stock size"). Sparse output (`BuildSettings.sparseImages`): a standalone
+  image of the fastboot images zip goes in as `img2simg` output. Both are in the stage-5 cache key only when set.
+- Archive browser (Extract > Archive layout, `ArchiveBrowser` + `ArchiveWorkbench`): any archive (workspace or a
+  picked Windows file) and the archives inside it (zip/7z/rar/tar/gz/xz/zstd/bz2 by 7zz, lz4), with size, packed
+  size and method; a member is unpacked into `out/toolkit/archive-cache` only after its first 512 bytes show an
+  archive (a payload.bin is never unpacked). Selected members are copied to `out/toolkit/archive/`.
 - Mount table (Assemble > Mount table): `AssemblySettings.disableDataEncryption` strips the encryption flags of
   the `/data` line in every fstab of `work/` (`FstabEditor`); the phone must be formatted once. The first-stage
   fstab in vendor_boot is not edited (verity there is off through the disabled vbmeta).

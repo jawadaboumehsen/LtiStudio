@@ -83,7 +83,16 @@ class DebloatStageTest {
         val first = stage.plan(ctx(settings))
         assertEquals(listOf("list apps"), first.map { it.label }, "nothing is removed before the inventory is read")
 
-        val plan = stage.plan(ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to "")))
+        val plan = stage.plan(
+            ctx(
+                settings,
+                mapOf(
+                    DebloatStage.INVENTORY_KEY to listing,
+                    DebloatStage.APPS_KEY to "",
+                    DebloatStage.MENTIONS_KEY to "",
+                ),
+            ),
+        )
         val rm = plan.filterIsInstance<PipelineStep.Tool>().single { it.label == "remove apps" }
         assertEquals(
             listOf("-rf", "--", "/w/work/product/app/YouTube", "/w/work/system/system/app/Facebook"),
@@ -116,11 +125,34 @@ class DebloatStageTest {
     }
 
     @Test
+    fun `a config file naming only a removed app is backed up and removed with it`() {
+        val settings = DebloatSettings(enabled = true, removeSelectors = listOf("product:app/YouTube"))
+        val apps = "@ product/app/YouTube/YouTube.apk\npkg com.google.android.youtube\n" +
+            "@ system/system/app/Facebook/Facebook.apk\npkg com.facebook.katana"
+        val mentions = "product/etc/sysconfig/youtube.xml\tcom.google.android.youtube\n" +
+            "product/etc/sysconfig/google.xml\tcom.google.android.youtube\n" +
+            "product/etc/sysconfig/google.xml\tcom.facebook.katana"
+        val values = mapOf(
+            DebloatStage.INVENTORY_KEY to listing,
+            DebloatStage.APPS_KEY to apps,
+            DebloatStage.MENTIONS_KEY to mentions,
+        )
+        val tools = DebloatStage().plan(ctx(settings, values)).filterIsInstance<PipelineStep.Tool>()
+        assertEquals(
+            listOf("-rf", "--", "/w/work/product/app/YouTube", "/w/work/product/etc/sysconfig/youtube.xml"),
+            tools.single { it.label == "remove apps" }.command.args,
+            "google.xml also names Facebook, which stays",
+        )
+        assertTrue(tools.any { it.label == "backup product:etc/sysconfig/youtube.xml" })
+    }
+
+    @Test
     fun `picked apps and their sidecars are backed up before removal and recorded in the workspace restore index`() {
         val settings = DebloatSettings(enabled = true, removeSelectors = listOf("system:system/app/Facebook"))
         val values = mapOf(
             DebloatStage.INVENTORY_KEY to listing,
             DebloatStage.APPS_KEY to "",
+            DebloatStage.MENTIONS_KEY to "",
             RuntimeKeys.RUN_TIMESTAMP to "1761400000",
         )
         val plan = DebloatStage().plan(ctx(settings, values))
@@ -167,7 +199,14 @@ class DebloatStageTest {
     fun `picking a protected app fails the stage instead of removing it`() {
         val settings = DebloatSettings(enabled = true, removeSelectors = listOf("system:system/priv-app/SystemUI"))
         val plan = DebloatStage().plan(
-            ctx(settings, mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to "")),
+            ctx(
+                settings,
+                mapOf(
+                    DebloatStage.INVENTORY_KEY to listing,
+                    DebloatStage.APPS_KEY to "",
+                    DebloatStage.MENTIONS_KEY to "",
+                ),
+            ),
         )
         val check = plan.filterIsInstance<PipelineStep.Check>().single()
         assertTrue(check.verify(emptyMap())!!.contains("PROTECTED_ENTRY"))
@@ -224,7 +263,11 @@ class DebloatStageTest {
         val apps = "@ product/app/LatinImeGoogle/LatinImeGoogle.apk\nime\npkg com.google.android.inputmethod.latin\n" +
             "@ product/app/Maps/Maps.apk\npkg com.google.android.apps.maps"
         val settings = DebloatSettings(enabled = true, removeSelectors = listOf("product:app/LatinImeGoogle"))
-        val values = mapOf(DebloatStage.INVENTORY_KEY to listing, DebloatStage.APPS_KEY to apps)
+        val values = mapOf(
+            DebloatStage.INVENTORY_KEY to listing,
+            DebloatStage.APPS_KEY to apps,
+            DebloatStage.MENTIONS_KEY to "",
+        )
         val check = DebloatStage().plan(ctx(settings, values)).filterIsInstance<PipelineStep.Check>().single()
         val message = check.verify(emptyMap())
         assertTrue(message != null && "DEBLOAT_BREAKS_DEVICE" in message && "last keyboard" in message, message)

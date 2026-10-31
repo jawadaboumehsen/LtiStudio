@@ -43,6 +43,7 @@ public class BuildStageEditor : StageEditor {
             coverage = coverage,
             onCheckCoverage = viewModel::checkCoverage,
             onFixCoverage = { viewModel.setFillInEveryBuild(true) },
+            onCoverageRules = viewModel::setCoverageRules,
             modifier = modifier,
         )
     }

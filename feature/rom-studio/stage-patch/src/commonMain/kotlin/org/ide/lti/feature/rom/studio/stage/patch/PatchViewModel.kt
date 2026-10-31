@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.LockResult
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
@@ -27,6 +28,7 @@ import org.ide.lti.core.domain.plugin.incompatibility
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.core.domain.plugin.newestPerPlugin
 import org.ide.lti.core.domain.plugin.toInstalledPackage
+import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
@@ -52,7 +54,27 @@ public class PatchViewModel(
     private val store: WorkspaceSettingsStore? = null,
     private val plugins: PluginInstallPort? = null,
     private val catalog: PluginCatalogPort? = null,
+    private val content: ContentWorkbench? = null,
 ) : ViewModel() {
+
+    private val _scriptCheck = MutableStateFlow<Map<String, String>>(emptyMap())
+
+    /** The last check of each script by name: `ok`, or the shell's syntax error. */
+    public val scriptCheck: StateFlow<Map<String, String>> = _scriptCheck.asStateFlow()
+
+    /** Runs `sh -n` on [name]'s content as the build does before running any script. */
+    public fun checkScript(name: String) {
+        val workbench = content ?: return
+        val script = settings.value.scripts.firstOrNull { it.name == name } ?: return
+        viewModelScope.launch {
+            val result = try {
+                workbench.checkScript(workspaceId, script.content) ?: "ok"
+            } catch (e: RefusalException) {
+                "${e.refusal.cause} ${e.refusal.nextStep}"
+            }
+            _scriptCheck.update { it + (name to result) }
+        }
+    }
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
@@ -122,6 +144,7 @@ public class PatchViewModel(
             is LockResult.Rejected -> _facts.value = _facts.value.copy(
                 lockError = result.report.errors.joinToString("; ") { it.message },
             )
+
             is LockResult.Locked -> {
                 val ordered = result.lockfile.entries.map { "${it.publisher}:${it.id}" }
                 updateSettings(current.copy(enabledPackages = ordered, lockfile = result.lockfile))

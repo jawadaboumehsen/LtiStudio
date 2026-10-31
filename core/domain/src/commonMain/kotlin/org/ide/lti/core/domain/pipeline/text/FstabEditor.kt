@@ -34,6 +34,23 @@ public object FstabEditor {
         "metadata_encryption",
     )
 
+    /** fs_mgr flags that make a partition verified: AVB (hashtree from vbmeta, its keys) and older dm-verity. */
+    private val INTEGRITY_FLAGS = setOf("avb", "avb_keys", "verify", "verifyatboot")
+
+    /**
+     * [fstab] with the AVB and verity flags of every line removed: the phone mounts the
+     * partitions without dm-verity, whatever vbmeta says. Lines without such a flag stay byte for byte.
+     */
+    public fun withoutIntegrity(fstab: String): String = fstab.lines().joinToString("\n") { line ->
+        val tokens = TOKEN.findAll(line).toList()
+        val flags = tokens.getOrNull(FS_MGR_FLAGS)
+        if (mountPoint(line) == null || flags == null) return@joinToString line
+        val parts = flags.value.split(',')
+        val kept = parts.filterNot { it.substringBefore('=') in INTEGRITY_FLAGS }
+        val shown = kept.joinToString(",").ifEmpty { "defaults" }
+        if (kept.size == parts.size) line else line.replaceRange(flags.range, shown)
+    }
+
     /** Whether [fstab] has a line mounting `/data`. */
     public fun mountsData(fstab: String): Boolean = fstab.lines().any { mountPoint(it) == DATA }
 
