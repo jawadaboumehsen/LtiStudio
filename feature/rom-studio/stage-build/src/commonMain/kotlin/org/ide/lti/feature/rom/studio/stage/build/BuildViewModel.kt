@@ -21,6 +21,7 @@ import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
@@ -46,6 +47,8 @@ public data class BuildFacts(
     val romVersion: String = "",
     /** Per partition of the last build: the bytes of its files and of its image before the AVB footer. */
     val contentAndImage: Map<String, Pair<Long, Long>> = emptyMap(),
+    /** EROFS compressions the boot kernel reads; null when it cannot be read (no extracted boot image yet). */
+    val erofsCompressions: List<String>? = null,
 )
 
 /** The coverage check of the Build & Sign stage: running, its result, or why it could not run. */
@@ -65,6 +68,7 @@ public class BuildViewModel(
     private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
     private val content: ContentWorkbench? = null,
+    private val boot: BootWorkbench? = null,
 ) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
@@ -180,6 +184,11 @@ public class BuildViewModel(
                     val image = value(RuntimeKeys.imageSize(p))?.trim()?.toLongOrNull()
                     if (content != null && image != null) p to (content to image) else null
                 }.toMap(),
+                erofsCompressions = try {
+                    boot?.kernelFacts(workspaceId)?.erofsCompressions
+                } catch (_: RefusalException) {
+                    null
+                },
             )
             store?.current(workspaceId)?.customization?.let { custom ->
                 _coverage.value = _coverage.value.copy(fillInEveryBuild = custom.fillMissingSidecars)

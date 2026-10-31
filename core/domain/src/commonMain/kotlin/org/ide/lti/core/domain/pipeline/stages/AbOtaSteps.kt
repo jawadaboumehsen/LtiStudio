@@ -57,7 +57,7 @@ internal object AbOtaSteps {
                     metadata.postTimestamp.toString(),
                     metadata.postSecurityPatchLevel,
                     "${ctx.target.superGroupName}:${ctx.target.superGroupBytes}",
-                    AbOtaPackage.vab(ctx.target.virtualAb, sdk),
+                    AbOtaPackage.vab(ctx.target.virtualAb, sdk, ctx.value(BuildFlashableZipStage.VENDOR_BUILD_PROP)),
                     *partitions.toTypedArray(),
                 ),
                 "payload.bin",

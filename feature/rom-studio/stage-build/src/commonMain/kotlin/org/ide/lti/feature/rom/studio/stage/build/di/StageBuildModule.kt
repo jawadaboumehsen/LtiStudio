@@ -26,6 +26,7 @@ public val stageBuildModule: Module = module {
             store = getOrNull(),
             workspaceFacts = getOrNull(),
             content = getOrNull(),
+            boot = getOrNull(),
         )
     }
 }

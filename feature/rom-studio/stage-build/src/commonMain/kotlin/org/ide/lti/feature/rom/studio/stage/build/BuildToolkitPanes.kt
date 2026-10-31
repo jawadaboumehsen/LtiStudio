@@ -56,6 +56,13 @@ internal val PARTITION_COMPRESSION = listOf(
     "none" to "None",
 )
 
+/** Other `mkfs.erofs -z` compressors, offered only when the boot kernel reads them (`KernelFacts`). */
+internal val KERNEL_COMPRESSION = listOf(
+    "lzma" to "lzma",
+    "deflate" to "deflate",
+    "zstd" to "zstd",
+)
+
 /**
  * Packages built besides the flashable zip (FR-013): a fastboot images zip and a Samsung Odin AP. A dynamic
  * partition added as a standalone image is also inside super.img, which needs an explicit acceptance (FR-017).

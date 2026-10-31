@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.pipeline.toolkit
 
+import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
+
 /**
  * The A/B OTA package: a full `payload.bin` (update_engine's format, major version 2) of the ROM's partitions, signed
  * with the platform key whose certificate the ROM's otacerts.zip carries. It is a partial update: the firmware
@@ -26,12 +28,22 @@ public object AbOtaPackage {
     /**
      * Virtual A/B as the payload declares it, `compression:cow_version:compression_factor`, for a device on
      * Android [sdk]: COW v3 with 64 KiB lz4 operations from Android 15, v2 with lz4 before; `none` without VAB.
+     * The ROM's own `ro.virtual_ab.*` properties ([vendorProps], vendor's build.prop) win where they are set, as
+     * AOSP's OTA tools read them: `enabled`, `compression.enabled`/`compression.method`, `cow_version`,
+     * `compression.factor`.
      */
-    public fun vab(virtualAb: Boolean, sdk: Int?): String = when {
-        !virtualAb -> "none"
-        (sdk ?: 0) >= COW_V3_SDK -> "lz4:3:65536"
-        else -> "lz4:2:0"
+    public fun vab(virtualAb: Boolean, sdk: Int?, vendorProps: String? = null): String {
+        fun prop(key: String) = BuildPropStamper.prop(vendorProps, "ro.virtual_ab.$key")
+        if (!(prop("enabled")?.let { it == "true" } ?: virtualAb)) return "none"
+        val cow = prop("cow_version")?.toIntOrNull() ?: if ((sdk ?: 0) >= COW_V3_SDK) COW_V3 else COW_V2
+        val method = if (prop("compression.enabled") == "false") "none" else prop("compression.method") ?: "lz4"
+        val factor = prop("compression.factor")?.toLongOrNull() ?: if (cow >= COW_V3) V3_FACTOR else 0L
+        return "$method:$cow:$factor"
     }
+
+    private const val COW_V2 = 2
+    private const val COW_V3 = 3
+    private const val V3_FACTOR = 65536L
 
     private const val COW_V3_SDK = 35
 
@@ -159,7 +171,7 @@ public object AbOtaPackage {
             meta = ld(1, ld(1, group_name.encode()) + u(2, int(group_size)) + b''.join(ld(3, n.encode()) for n in dynamic))
             if vab != 'none':
                 compression, cow, factor = vab.split(':')
-                meta += u(2, 1) + u(3, 1) + ld(4, compression.encode()) + u(5, int(cow))
+                meta += u(2, 1) + u(3, int(compression != 'none')) + ld(4, compression.encode()) + u(5, int(cow))
                 if int(factor):
                     meta += u(7, int(factor))
             sig_size = len(signatures(b'\0' * sig_len))

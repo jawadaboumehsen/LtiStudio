@@ -23,6 +23,12 @@ public data class ImageTreeEntry(
     val uid: Int,
     val gid: Int,
     val label: String,
+    /** fs_config's `capabilities=` (file capabilities the file runs with); 0 for none. */
+    val capabilities: Long = 0L,
+    /** A symlink's target as written in the tree; null for anything else. */
+    val target: String? = null,
+    /** False when fs_config has no line for it (the build's coverage gate refuses that). */
+    val hasOwner: Boolean = true,
 ) {
     init {
         require(path.isNotBlank()) { "Entry path must not be blank" }

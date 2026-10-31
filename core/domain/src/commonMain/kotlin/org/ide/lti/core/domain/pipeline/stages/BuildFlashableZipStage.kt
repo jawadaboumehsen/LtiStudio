@@ -147,6 +147,14 @@ public class BuildFlashableZipStage : StageDefinition {
             label = "read build.prop",
             resultKey = PACKAGE_BUILD_PROP,
         )
+        // The A/B payload's Virtual A/B settings follow the ROM's ro.virtual_ab.* properties (vendor's build.prop).
+        if (ctx.snapshot.build.packageType.abOta && "vendor" in ctx.target.dynamicPartitions) {
+            steps += PipelineStep.Tool(
+                command = stepCommand("cat", listOf(ctx.abs("work/vendor/build.prop")), ws),
+                label = "read vendor build.prop",
+                resultKey = VENDOR_BUILD_PROP,
+            )
+        }
         ctx.target.dynamicPartitions.forEach { p -> steps += imageSteps(ctx, p) }
         if (ctx.target.dynamicPartitions.all { ctx.has(footeredSize(it)) }) {
             ctx.target.packagePolicy.flashableBootPartitions.forEach { b -> steps += bootSteps(ctx, b) }
@@ -646,6 +654,7 @@ public class BuildFlashableZipStage : StageDefinition {
         public const val COVERAGE_RESULT_KEY: String = RuntimeKeys.BUILD_COVERAGE
         public const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
         public const val PACKAGE_BUILD_PROP: String = "package.build.prop"
+        public const val VENDOR_BUILD_PROP: String = "package.vendor.build.prop"
         public const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
         private const val EROFS_TIMESTAMP = "1640995200"
         public const val EXTRA_DIR: String = "out/extra"

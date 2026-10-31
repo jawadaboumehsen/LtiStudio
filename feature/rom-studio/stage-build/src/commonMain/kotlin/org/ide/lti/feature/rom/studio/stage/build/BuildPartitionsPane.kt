@@ -69,7 +69,7 @@ internal fun PartitionsPane(
             target.dynamicPartitions.forEach { p ->
                 IdeTableRow(
                     modifier = Modifier.testTag("PartitionRow_$p"),
-                ) { PartitionRow(settings, p, stock[p], onChange) }
+                ) { PartitionRow(settings, p, stock[p], facts.erofsCompressions, onChange) }
             }
         }
         AboutPartitions()
@@ -81,6 +81,7 @@ private fun RowScope.PartitionRow(
     settings: BuildSettings,
     p: String,
     stockBytes: Long?,
+    kernelReads: List<String>?,
     onChange: (BuildSettings) -> Unit,
 ) {
     val fs = BuildFilesystems.of(settings, p)
@@ -107,7 +108,8 @@ private fun RowScope.PartitionRow(
         SelectField(
             selected = settings.partitionCompression[p],
             options = listOf(SelectOption<String?>(null, "Stage setting (${settings.compression})")) +
-                PARTITION_COMPRESSION.map { (v, label) -> SelectOption(v, label, COMPRESSION_DETAIL[v]) },
+                (PARTITION_COMPRESSION + KERNEL_COMPRESSION.filter { it.first in kernelReads.orEmpty() })
+                    .map { (v, label) -> SelectOption(v, label, COMPRESSION_DETAIL[v]) },
             onSelect = { onChange(settings.copy(partitionCompression = settings.partitionCompression.with(p, it))) },
             tag = "Compression_$p",
             disabledText = "— ($fs)".takeUnless { erofs },
@@ -302,6 +304,9 @@ private val COMPRESSION_DETAIL = mapOf(
     "lz4" to "Fastest to read and build, larger",
     "lz4hc,12" to "Smallest lz4, slower to build",
     "none" to "No compression: the largest image",
+    "lzma" to "Smallest; slowest to read and build",
+    "deflate" to "Between lz4hc and lzma",
+    "zstd" to "About lz4hc's size, fast to read",
 )
 
 private val DEDUPE_OPTIONS = listOf(
@@ -322,7 +327,8 @@ private val CLUSTER_OPTIONS = listOf(SelectOption<Int?>(null, "4 KiB (stock)", "
 private val ABOUT = listOf(
     "Filesystem" to "The phone needs an fstab line for it: the build adds one to vendor/etc/fstab.*, and " +
         "Assemble > Mount table adds it to the first-stage fstab in vendor_boot.",
-    "Compression" to "Passed to mkfs.erofs as -z for that partition.",
+    "Compression" to "Passed to mkfs.erofs as -z for that partition. lzma, deflate and zstd are offered only " +
+        "when the boot kernel has their decoder (CONFIG_EROFS_FS_ZIP_*).",
     "Deduplicate" to "mkfs.erofs -Ededupe,fragments: vendor shrinks about a quarter, each image takes minutes " +
         "to build. A kernel older than 6.1 cannot read it, so forcing it on there stops the build.",
     "Cluster" to "mkfs.erofs -C: bigger compresses better in seconds; the device then decompresses a whole " +

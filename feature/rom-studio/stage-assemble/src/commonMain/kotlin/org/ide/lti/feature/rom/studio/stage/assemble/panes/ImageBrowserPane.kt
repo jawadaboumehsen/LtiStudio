@@ -208,11 +208,12 @@ private fun EntryRow(entry: ImageTreeEntry, selected: Boolean, actions: ImagePan
                 tint = with(MaterialTheme.colorScheme) { if (isDirectory) primary else onSurfaceVariant },
                 modifier = Modifier.size(IconSize.Small),
             )
-            Cell(entry.path)
+            Cell(entry.target?.let { "${entry.path} -> $it" } ?: entry.path)
         }
         Cell(if (isDirectory) "" else formatBytes(entry.size), Modifier.weight(SIZE_WEIGHT))
         Cell(entry.mode.toString(OCTAL).padStart(MODE_DIGITS, '0'), Modifier.weight(1f))
-        Cell("${entry.uid}:${entry.gid}", Modifier.weight(1f))
+        val caps = if (entry.capabilities != 0L) " caps 0x${entry.capabilities.toString(HEX)}" else ""
+        Cell(if (entry.hasOwner) "${entry.uid}:${entry.gid}$caps" else "no fs_config line", Modifier.weight(1f))
         Cell(entry.label, Modifier.weight(LABEL_WEIGHT))
         Box(modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth), contentAlignment = Alignment.CenterEnd) {
             GlassButton(
@@ -410,4 +411,5 @@ private const val PATH_WEIGHT = 3.5f
 private const val SIZE_WEIGHT = 1.2f
 private const val LABEL_WEIGHT = 2.5f
 private const val OCTAL = 8
+private const val HEX = 16
 private const val MODE_DIGITS = 4

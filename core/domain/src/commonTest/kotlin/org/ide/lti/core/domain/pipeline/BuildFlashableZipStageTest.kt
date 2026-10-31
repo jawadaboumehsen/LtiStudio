@@ -16,6 +16,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.AbOtaPackage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
+import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
 import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.PackageType
@@ -500,6 +501,16 @@ class BuildFlashableZipStageTest {
         assertEquals("lz4:3:65536", AbOtaPackage.vab(virtualAb = true, sdk = 35))
         assertEquals("lz4:2:0", AbOtaPackage.vab(virtualAb = true, sdk = 34))
         assertEquals("none", AbOtaPackage.vab(virtualAb = false, sdk = 35))
+        // The ROM's ro.virtual_ab.* properties win: PQ84P01's vendor sets only enabled and compression.enabled.
+        val pq = "ro.virtual_ab.enabled=true\nro.virtual_ab.compression.enabled=true\n"
+        assertEquals("lz4:3:65536", AbOtaPackage.vab(virtualAb = true, sdk = 35, vendorProps = pq))
+        assertEquals("none", AbOtaPackage.vab(virtualAb = true, sdk = 35, vendorProps = "ro.virtual_ab.enabled=false"))
+        val custom = "ro.virtual_ab.enabled=true\nro.virtual_ab.compression.method=gz\nro.virtual_ab.cow_version=2\n"
+        assertEquals("gz:2:0", AbOtaPackage.vab(virtualAb = false, sdk = 35, vendorProps = custom))
+        assertEquals(
+            "none:3:65536",
+            AbOtaPackage.vab(virtualAb = true, sdk = 35, vendorProps = "ro.virtual_ab.compression.enabled=false"),
+        )
     }
 
     @Test
@@ -576,5 +587,19 @@ class BuildFlashableZipStageTest {
         val none = lz4hc.copy(partitionCompression = base.target.dynamicPartitions.associateWith { "none" })
         assertEquals(null, refusal(none, "version 6.6\nCONFIG_EROFS_FS=y\n"))
         assertEquals(null, refusal(lz4hc, "version 6.6\nnoconfig\n"), "no embedded config: nothing is known")
+
+        // lzma for vendor: refused on PQ84P01's lz4-only kernel, built on one with the lzma decoder.
+        val lzma = lz4hc.copy(partitionCompression = mapOf("vendor" to "lzma"))
+        val lz4Only = refusal(lzma, "version 6.1\nCONFIG_EROFS_FS=y\nCONFIG_EROFS_FS_ZIP=y\n")!!
+        assertTrue("vendor (lzma)" in lz4Only && "Build them with lz4hc or none." in lz4Only, lz4Only)
+        assertEquals(
+            null,
+            refusal(lzma, "version 6.1\nCONFIG_EROFS_FS=y\nCONFIG_EROFS_FS_ZIP=y\nCONFIG_EROFS_FS_ZIP_LZMA=y\n"),
+        )
+        assertEquals(
+            listOf("lz4", "zstd"),
+            KernelFacts.parse("CONFIG_EROFS_FS=y\nCONFIG_EROFS_FS_ZIP=y\nCONFIG_EROFS_FS_ZIP_ZSTD=y\n")
+                ?.erofsCompressions,
+        )
     }
 }

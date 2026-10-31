@@ -77,7 +77,7 @@ public class ImageWorkbench(
                 Refusal("The $partition tree is not unpacked yet.", "$partition.img", "Run the build through Extract."),
             )
         }
-        val listing = run("find", abs(dir), "-mindepth", "1", "-printf", "%y\\t%s\\t%P\\n")
+        val listing = run("find", abs(dir), "-mindepth", "1", "-printf", "%y\\t%s\\t%l\\t%P\\n")
         val owners = readText("$configs/fs_config-$partition").orEmpty().lineSequence()
             .map { it.trim().split(WHITESPACE) }.filter { it.size >= OWNER_FIELDS }
             .associate { it[0] to it }
@@ -85,7 +85,10 @@ public class ImageWorkbench(
             .map { it.trim().split(WHITESPACE) }.filter { it.size >= 2 }
             .associate { it[0] to it.last() }
         val entries = listing.lineSequence().mapNotNull { line ->
-            val (type, size, path) = line.split('\t', limit = 3).takeIf { it.size == 3 } ?: return@mapNotNull null
+            // type, size, link target, path
+            val fields = line.split('\t', limit = 4).takeIf { it.size == 4 } ?: return@mapNotNull null
+            val (type, size, target) = fields
+            val path = fields[3]
             val owner = owners[SidecarNormalizer.fsConfigPath(partition, path)]
             ImageTreeEntry(
                 path = if (type == "d") "$path/" else path,
@@ -95,6 +98,10 @@ public class ImageWorkbench(
                 gid = owner?.get(GID)?.toIntOrNull() ?: 0,
                 label = labels[SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path))]
                     ?: NO_LABEL,
+                capabilities = owner?.getOrNull(CAPABILITIES)?.substringAfter("capabilities=0x", "")
+                    ?.toLongOrNull(HEX) ?: 0L,
+                target = target.takeIf { type == "l" },
+                hasOwner = owner != null,
             )
         }.sortedBy { it.path }.toList()
         PartitionTree(ImageTree(entries), dir, hostPath(dir))
@@ -293,6 +300,8 @@ public class ImageWorkbench(
         const val UID = 1
         const val GID = 2
         const val MODE = 3
+        const val CAPABILITIES = 4
+        const val HEX = 16
         const val OCTAL = 8
         val WHITESPACE = Regex("""\s+""")
         val SUPER_CANDIDATES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img", "out/extra/super.img")

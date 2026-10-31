@@ -1038,6 +1038,11 @@ nothing is shown as done before its job finished.
   seconds). Absent = automatic: on when the boot kernel read by `BuildChecks.kernelFilesystemSteps` (`KERNEL_KEY`) is
   6.1 or newer (`kernelDedupes`), so EROFS images are planned only after that read. Forced on with an older kernel
   refuses (`KERNEL_FILESYSTEM`). Never for uncompressed images. Build & Sign > Compression, per partition.
+- EROFS compressors: Build & Sign > Compression offers `lzma`, `deflate` and `zstd` per partition only when the boot
+  kernel has their decoder (`BootWorkbench.kernelFacts` -> `KernelFacts.erofsCompressions`, read by `BuildViewModel`;
+  run values over 512 characters are not kept, so the build's own kernel read cannot be used). PQ84P01 reads lz4 only.
+- Image browser rows show a symlink's target, fs_config capabilities (`ImageTreeEntry.capabilities`) and files with no
+  fs_config line. Read-only by design: `work/` is rebuilt by Assemble, so edits there belong in mods or scripts.
 - EROFS cluster (`BuildSettings.partitionClusterKib`, `BuildFilesystems.erofsCluster`, `CLUSTER_KIB` 16/64/128):
   `mkfs.erofs -C <bytes>`; absent = one block as AOSP. PQ84P01 vendor 1275 -> 1161 MiB at 64 KiB in 40 s. Other
   values are `INVALID_PACKAGE_OPTION`; never for uncompressed images.
@@ -1059,6 +1064,7 @@ nothing is shown as done before its job finished.
   re-checks payload_properties and both signatures. OTA only: the OTA is the main package (`zipRelPath`,
   `RuntimeKeys.ZIP_*`, artifact `AB_OTA_ZIP`); both: the flashable zip is main and the OTA is `AbOtaSteps.SHA256/SIZE`.
   Verified offline: payload-dumper-go extracts every partition byte-identical, openssl verifies both signatures.
+  `AbOtaPackage.vab` follows the ROM's `ro.virtual_ab.*` (vendor build.prop, `VENDOR_BUILD_PROP`) where set.
   `out/manifest.json`'s entry names it as `"ota"` (filename, size, sha256, urls; with OTA only it repeats the main
   package). Publish copies/uploads it with the package (`ReleaseFiles.ota`, steps `export-ota`/`verify-ota`) and the
   GitHub manifest gets its release URL; split parts of either package keep the manifest from being published.
