@@ -59,8 +59,11 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         val json = readFile(workspace, RESTORE_INDEX_FILE) ?: return RestoreIndex.Empty
         return try {
             RestoreIndex.fromJson(json)
-        } catch (_: Throwable) {
-            RestoreIndex.Empty
+        } catch (e: kotlinx.serialization.SerializationException) {
+            // Writing an empty index over it would lose every backup it points to.
+            throw IllegalStateException("$RESTORE_INDEX_FILE is damaged (${e.message}); it is kept as it is.", e)
+        } catch (e: IllegalArgumentException) {
+            throw IllegalStateException("$RESTORE_INDEX_FILE is damaged (${e.message}); it is kept as it is.", e)
         }
     }
 
@@ -68,15 +71,14 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         writeFile(workspace, RESTORE_INDEX_FILE, index.toJson())
     }
 
-    override suspend fun addRestorePoint(workspace: Workspace, point: RestorePoint) {
-        val current = readIndex(workspace)
-        writeIndex(workspace, current.add(point))
+    override suspend fun addRestorePoint(workspace: Workspace, point: RestorePoint): Unit = indexMutex.withLock {
+        writeIndex(workspace, readIndex(workspace).add(point))
     }
 
-    override suspend fun updateRestorePointState(workspace: Workspace, id: String, state: RestorePointState) {
-        val current = readIndex(workspace)
-        writeIndex(workspace, current.withState(id, state))
-    }
+    override suspend fun updateRestorePointState(workspace: Workspace, id: String, state: RestorePointState): Unit =
+        indexMutex.withLock { writeIndex(workspace, readIndex(workspace).withState(id, state)) }
+
+    private val indexMutex = Mutex()
 
     // -------------------------------------------------------------------------
     // AckStore
@@ -162,7 +164,9 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
 
     private suspend fun writeFile(workspace: Workspace, relPath: String, content: String) {
         if (execution != null) {
-            execution.uploadFile(workspace, relPath, content.encodeToByteArray())
+            check(execution.uploadFile(workspace, relPath, content.encodeToByteArray())) {
+                "$relPath could not be written to the workspace"
+            }
             return
         }
         val local = resolveLocal(workspace, relPath)

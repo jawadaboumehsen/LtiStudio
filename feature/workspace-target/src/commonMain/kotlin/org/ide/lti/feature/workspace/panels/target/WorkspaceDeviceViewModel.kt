@@ -111,11 +111,18 @@ class WorkspaceDeviceViewModel(
     }
 
     private suspend fun load(workspace: Workspace) {
-        snapshot = workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }
+        val loadedSnapshot = workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }
         val read = runCatching { workspaceDeviceRepository.get(workspace.id) }
         val device = read.getOrNull()
         _uiState.update {
+            // A load for a workspace that is no longer shown (a slow retry) changes nothing.
+            if (workspaceManager.currentWorkspace.value?.id != workspace.id) return@update it
+            // Only the workspace now shown sets the snapshot its device is checked against.
+            snapshot = loadedSnapshot
+            val same = it.workspaceId == workspace.id
             it.copy(
+                // A save still running for another workspace never locks this one's editor.
+                isSaving = it.isSaving && same,
                 workspaceId = workspace.id,
                 saved = device,
                 draft = device,
@@ -123,6 +130,10 @@ class WorkspaceDeviceViewModel(
                 message = null,
                 loadError = read.exceptionOrNull()?.let { error -> error.message ?: "Unknown error" },
                 resetCount = it.resetCount + 1,
+                // Another workspace's firmware facts must never be offered here.
+                firmware = it.firmware.takeIf { same },
+                firmwareError = it.firmwareError.takeIf { same },
+                firmwareChecking = it.firmwareChecking && same,
             )
         }
     }
@@ -155,7 +166,7 @@ class WorkspaceDeviceViewModel(
     fun update(change: (TargetDevice) -> TargetDevice) {
         _uiState.update { state ->
             val draft = state.draft
-            if (draft == null || state.locked) return@update state
+            if (draft == null || state.locked || state.isSaving) return@update state
             val changed = change(draft)
             state.copy(draft = changed, issues = issuesOf(changed), message = null)
         }
@@ -179,6 +190,7 @@ class WorkspaceDeviceViewModel(
             }
             bindRevision(workspaceId, stored.revision)
             _uiState.update {
+                if (it.workspaceId != workspaceId) return@update it
                 it.copy(
                     saved = stored,
                     draft = stored,
@@ -191,6 +203,8 @@ class WorkspaceDeviceViewModel(
     }
 
     /** Reads the extracted firmware's own facts (build.prop, boot image footers, super table) to compare with. */
+    private var firmwareRequest = 0L
+
     fun checkFirmware() {
         val check = firmwareCheck
         val state = _uiState.value
@@ -198,9 +212,12 @@ class WorkspaceDeviceViewModel(
         val device = state.draft
         if (check == null || workspaceId == null || device == null) return
         _uiState.update { it.copy(firmwareChecking = true, firmwareError = null) }
+        // Only the latest check reports: an older one finishing later (same workspace or not) is dropped.
+        val request = ++firmwareRequest
         viewModelScope.launch {
             val read = runCatching { check.read(workspaceId, device.bootPartitions) }
             _uiState.update {
+                if (it.workspaceId != workspaceId || request != firmwareRequest) return@update it
                 it.copy(
                     firmware = read.getOrNull() ?: it.firmware,
                     firmwareChecking = false,
@@ -228,7 +245,7 @@ class WorkspaceDeviceViewModel(
             _uiState.update { it.copy(isSaving = true, message = null) }
             val stored = runCatching { workspaceDeviceRepository.save(workspaceId, draft) }
             stored.onSuccess { device ->
-                bindRevision(workspaceId, device.revision)
+                val bound = bindRevision(workspaceId, device.revision)
                 _uiState.update {
                     if (it.workspaceId != workspaceId) return@update it
                     it.copy(
@@ -236,7 +253,12 @@ class WorkspaceDeviceViewModel(
                         draft = device,
                         issues = issuesOf(device),
                         isSaving = false,
-                        message = "Device configuration saved",
+                        message = if (bound) {
+                            "Device configuration saved"
+                        } else {
+                            "Device saved, but the workspace could not record revision ${device.revision}; " +
+                                "the next build uses the device file as it is. Save again to retry."
+                        },
                         resetCount = it.resetCount + 1,
                     )
                 }
@@ -248,13 +270,16 @@ class WorkspaceDeviceViewModel(
         }
     }
 
-    /** The workspace records which revision of its device it is on; each run snapshot carries that number. */
-    private suspend fun bindRevision(workspaceId: String, revision: Int) {
-        val workspace = workspaceManager.repository.getWorkspace(workspaceId) ?: return
+    /**
+     * The workspace records which revision of its device it is on; each run snapshot carries that number. False
+     * when that write failed (the device file itself is saved).
+     */
+    private suspend fun bindRevision(workspaceId: String, revision: Int): Boolean = runCatching {
+        val workspace = workspaceManager.repository.getWorkspace(workspaceId) ?: return true
         workspaceManager.repository.saveWorkspace(
             workspace.copy(targetBinding = TargetBinding(workspaceId, revision)),
         )
-    }
+    }.onFailure { e -> if (e is kotlinx.coroutines.CancellationException) throw e }.isSuccess
 
     private fun issuesOf(device: TargetDevice?): List<ValidationError> {
         val base = snapshot ?: return emptyList()

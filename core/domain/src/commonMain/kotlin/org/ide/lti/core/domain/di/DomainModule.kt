@@ -151,6 +151,7 @@ val DomainModule =
                 orchestrator = get(),
                 scope = getOrNull(),
                 settingsStore = get(),
+                jobLock = getOrNull(),
             )
         }
         single {

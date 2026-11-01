@@ -143,9 +143,17 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
             ?: ctx.snapshot.customization.settings["${entry.publisher}:${entry.id}"]
             ?: emptyMap()
 
-        val contentDigest = entry.contentDigest.ifEmpty {
-            catalog.contentDigestFor(entry.publisher, entry.id, entry.version).orEmpty()
+        val installed = catalog.contentDigestFor(entry.publisher, entry.id, entry.version).orEmpty()
+        // The lockfile pins what was enabled: another package installed under the same version is not that one.
+        if (entry.contentDigest.isNotEmpty() && installed.isNotEmpty() && installed != entry.contentDigest) {
+            return PackageOutcome.Failure(
+                PipelineStep.Check(label = "Pinned content $pkg") {
+                    "PLUGIN_CONTENT_CHANGED: $pkg ${entry.version} installed now is not the package this workspace " +
+                        "enabled (${entry.contentDigest}); enable it again in Patches/Mods to use it."
+                },
+            )
         }
+        val contentDigest = entry.contentDigest.ifEmpty { installed }
 
         val input = ResolutionInput(
             template = template,

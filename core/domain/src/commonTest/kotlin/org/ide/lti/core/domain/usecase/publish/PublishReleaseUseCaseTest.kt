@@ -236,6 +236,28 @@ class PublishReleaseUseCaseTest {
     }
 
     @Test
+    fun publishingAFinishedReleaseAgainChecksTheDestinationAgain() = runTest {
+        built()
+        assertNotNull(publish.publish("ws")?.outcome)
+        folder.files.remove("/mnt/d/ROM/releases/LtiRom-1.0.zip")
+        // The copy is gone: its check fails, and the next publish copies it again.
+        val checked = assertNotNull(publish.publish("ws"))
+        assertEquals(PublishStepState.FAILED, checked.steps.first { it.id == "verify-zip" }.state)
+        assertNotNull(publish.publish("ws")?.outcome)
+        assertEquals("rom", folder.files["/mnt/d/ROM/releases/LtiRom-1.0.zip"])
+    }
+
+    @Test
+    fun aManifestFileNameMustBeAPlainName() = runTest {
+        folder.files["/w/out/elsewhere.zip"] = "rom"
+        folder.files["/w/out/manifest.json"] =
+            """{"response":[{"filename":"../elsewhere.zip","size":3,"sha256":"${sha("rom")}"}]}"""
+        assertTrue(publish.preflight("ws").problems.any { "does not name a package" in it })
+        folder.files["/w/out/manifest.json"] = """{"response":[{"filename":{"x":1},"size":[],"sha256":"a"}]}"""
+        assertTrue(publish.preflight("ws").problems.any { "does not name a package" in it })
+    }
+
+    @Test
     fun aReleaseWithoutAnOtaHasNoOtaSteps() = runTest {
         built()
         assertTrue(assertNotNull(publish.publish("ws")).steps.none { it.id.endsWith("-ota") })

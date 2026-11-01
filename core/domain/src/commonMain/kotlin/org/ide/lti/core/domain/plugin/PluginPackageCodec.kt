@@ -16,7 +16,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
-import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.plugin.PluginManifest
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.plugin.SettingDefinition
@@ -92,6 +91,7 @@ object PluginPackageCodec {
                 }
                 propertyMap["default"] = JsonPrimitive(setting.default)
             }
+
             is SettingDefinition.IntSetting -> {
                 propertyMap["type"] = JsonPrimitive("integer")
                 propertyMap["title"] = JsonPrimitive(setting.label)
@@ -102,6 +102,7 @@ object PluginPackageCodec {
                 propertyMap["minimum"] = JsonPrimitive(setting.min)
                 propertyMap["maximum"] = JsonPrimitive(setting.max)
             }
+
             is SettingDefinition.TextSetting -> {
                 propertyMap["type"] = JsonPrimitive("string")
                 propertyMap["title"] = JsonPrimitive(setting.label)
@@ -111,6 +112,7 @@ object PluginPackageCodec {
                 propertyMap["default"] = JsonPrimitive(setting.default)
                 propertyMap["maxLength"] = JsonPrimitive(setting.maxLength)
             }
+
             is SettingDefinition.EnumSetting -> {
                 propertyMap["type"] = JsonPrimitive("string")
                 propertyMap["title"] = JsonPrimitive(setting.label)
@@ -124,16 +126,21 @@ object PluginPackageCodec {
         return JsonObject(propertyMap)
     }
 
-    fun contentIdentity(entries: List<PayloadEntry>): String {
+    /**
+     * The package's identity: its canonical manifest (identity, dependencies and every payload's size and sha256)
+     * and its plan (the operations it runs), so a changed plan is a different package even with the same assets.
+     */
+    fun contentIdentity(manifest: PluginManifest, plan: PluginPlanTemplate): String {
         val md = MessageDigest.getInstance("SHA-256")
-        val sorted = entries.sortedBy { it.path }
-        for (entry in sorted) {
-            val line = "${entry.path}\t${entry.sizeBytes}\t${entry.sha256}\n"
-            md.update(line.toByteArray(Charsets.UTF_8))
-        }
-        val hash = md.digest().joinToString("") { "%02x".format(it) }
-        return "sha256:$hash"
+        md.update(PluginPlanTemplate.canonicalJson.encodeToString(PluginManifest.serializer(), manifest).toByteArray())
+        md.update("\n${plan.canonicalDigest()}\n".toByteArray())
+        return "sha256:" + md.digest().joinToString("") { "%02x".format(it) }
     }
+
+    /** A publisher, id or version: one safe folder name (it names the package's folder in the store). */
+    private val IDENTITY_SEGMENT = Regex("""^[A-Za-z0-9][A-Za-z0-9._+-]*$""")
+
+    fun isSafeIdentitySegment(value: String): Boolean = IDENTITY_SEGMENT.matches(value) && ".." !in value
 
     fun validateMembers(memberPaths: List<String>, manifest: PluginManifest): ValidationReport {
         val errors = mutableListOf<ValidationError>()

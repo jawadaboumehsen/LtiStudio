@@ -140,7 +140,8 @@ public class ImageWorkbench(
             val rels = paths.map { it.trimEnd('/') }.distinct()
             rels.forEach { rel ->
                 sh(
-                    "mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"",
+                    // A second export replaces the first: files removed since do not linger in the copy.
+                    "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2\" && cp -a -T \"$1\" \"$2\"",
                     abs("$source/$rel"),
                     abs("out/toolkit/$partition/$rel"),
                 )
@@ -257,10 +258,20 @@ public class ImageWorkbench(
             val partial = "out/toolkit/.$name.partial"
             // Parts are made in a side folder and moved together, so a cancelled split leaves no partial set.
             sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(partial))
-            run("split", "-b", "${maxMegabytes}M", "-d", "-a", "2", abs(image), abs("$partial/$name"))
-            val parts = run("find", abs(partial), "-maxdepth", "1", "-name", "$name.*", "-printf", "%P\\n")
+            // Enough suffix digits for any part count (split stops at 100 with two).
+            val bytes = run("stat", "-c", "%s", abs(image)).trim().toLong()
+            val count = (bytes + maxMegabytes * MIB - 1) / (maxMegabytes * MIB)
+            val digits = maxOf(2, count.toString().length)
+            run("split", "-b", "${maxMegabytes}M", "-d", "-a", "$digits", abs(image), abs("$partial/$name"))
+            val parts = run("find", abs(partial), "-maxdepth", "1", "-name", "$name*", "-printf", "%P\\n")
                 .lines().filter { it.isNotBlank() }.sorted()
-            sh("mv -f \"$1\"/* \"$2\" && rmdir \"$1\"", abs(partial), abs("out/toolkit"))
+            // An earlier split of the same image may have had more parts: they go, so `cat` joins only this one.
+            sh(
+                "rm -f \"$2\"/\"$3\"[0-9]* && mv -f \"$1\"/* \"$2\" && rmdir \"$1\"",
+                abs(partial),
+                abs("out/toolkit"),
+                name,
+            )
             parts.map { "out/toolkit/$it" }
         }
 
@@ -274,6 +285,8 @@ public class ImageWorkbench(
     }
 
     private companion object {
+        const val MIB = 1024L * 1024L
+
         /**
          * `sh -c UNPACK_SCRIPT sh <erofsfuse|fuse2fs> <image> <tree> <erofs|ext4>`: mounts the image on `<tree>.mnt`,
          * prints Extract's stat dump, `#--` and the getfattr labels, then copies it to `<tree>` (as Extract does:

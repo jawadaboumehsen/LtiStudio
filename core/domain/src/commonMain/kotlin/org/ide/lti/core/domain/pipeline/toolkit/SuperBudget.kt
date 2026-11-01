@@ -21,8 +21,8 @@ public data class SuperBudget(val rows: List<Row>, val groupBytes: Long) {
     public val freeBytes: Long get() = groupBytes - usedBytes
     public val fits: Boolean get() = freeBytes >= 0
 
-    /** True when a row is a stock estimate: the real total is known only after a build. */
-    public val estimated: Boolean get() = rows.any { it.estimated }
+    /** True when a row is a stock estimate or has no size at all: the real total is known only after a build. */
+    public val estimated: Boolean get() = rows.any { it.estimated || it.bytes == null }
 
     public companion object {
         private const val MIB = 1024L * 1024

@@ -103,6 +103,9 @@ interface PluginInstallPort {
     suspend fun installed(): List<InstalledRecord>
     suspend fun remove(identity: PackageIdentity): Boolean
     suspend fun updateRecord(record: InstalledRecord): Boolean = true
+
+    /** Deletes a quarantined file that will not be installed. */
+    suspend fun discard(quarantined: Path) {}
 }
 
 class InstallPluginUseCase(private val port: PluginInstallPort) {
@@ -132,54 +135,62 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
             return@flow
         }
 
-        emit(InstallState.Quarantined)
-        val inspection = port.inspect(quarantined)
-        if (inspection.report.hasBlockingErrors()) {
-            emit(InstallState.Failed(inspection.report))
-            return@flow
-        }
+        // A rejected or cancelled package is deleted; a promoted one was moved into the store already.
+        try {
+            emit(InstallState.Quarantined)
+            val inspection = port.inspect(quarantined)
+            if (inspection.report.hasBlockingErrors()) {
+                emit(InstallState.Failed(inspection.report))
+                return@flow
+            }
 
-        val identity = inspection.identity ?: run {
-            emit(InstallState.Failed(inspection.report))
-            return@flow
-        }
+            val identity = inspection.identity ?: run {
+                emit(InstallState.Failed(inspection.report))
+                return@flow
+            }
 
-        if (request.expectedDigest != null && request.expectedDigest != identity.contentDigest) {
-            val msg = "Package digest mismatch: expected '${request.expectedDigest}', got '${identity.contentDigest}'"
-            emit(InstallState.Failed(singleError(identity.key, "expectedDigest", DIGEST_MISMATCH, msg)))
-            return@flow
-        }
+            if (request.expectedDigest != null && request.expectedDigest != identity.contentDigest) {
+                val msg = "Package digest mismatch: expected '${request.expectedDigest}', " +
+                    "got '${identity.contentDigest}'"
+                emit(InstallState.Failed(singleError(identity.key, "expectedDigest", DIGEST_MISMATCH, msg)))
+                return@flow
+            }
 
-        val existing = port.installed()
-        val sameVersionDiffDigest = existing.firstOrNull {
-            it.identity.publisher == identity.publisher &&
-                it.identity.id == identity.id &&
-                it.identity.version == identity.version &&
-                it.identity.contentDigest != identity.contentDigest
-        }
-        if (sameVersionDiffDigest != null) {
-            val msg = "Package '${identity.key}' version '${identity.version}' already installed with different digest"
-            emit(InstallState.Failed(singleError(identity.key, "contentDigest", SAME_VERSION_DIFFERENT_CONTENT, msg)))
-            return@flow
-        }
+            val existing = port.installed()
+            val sameVersionDiffDigest = existing.firstOrNull {
+                it.identity.publisher == identity.publisher &&
+                    it.identity.id == identity.id &&
+                    it.identity.version == identity.version &&
+                    it.identity.contentDigest != identity.contentDigest
+            }
+            if (sameVersionDiffDigest != null) {
+                val msg = "Package '${identity.key}' version '${identity.version}' already installed " +
+                    "with different digest"
+                val report = singleError(identity.key, "contentDigest", SAME_VERSION_DIFFERENT_CONTENT, msg)
+                emit(InstallState.Failed(report))
+                return@flow
+            }
 
-        emit(InstallState.Verified)
-        val promoted = port.promote(quarantined, identity)
-        if (!promoted) {
-            val msg = "Store refused package promotion for '${identity.key}'"
-            emit(InstallState.Failed(singleError(identity.key, "promote", INSTALL_REFUSED, msg)))
-            return@flow
-        }
+            emit(InstallState.Verified)
+            val promoted = port.promote(quarantined, identity)
+            if (!promoted) {
+                val msg = "Store refused package promotion for '${identity.key}'"
+                emit(InstallState.Failed(singleError(identity.key, "promote", INSTALL_REFUSED, msg)))
+                return@flow
+            }
 
-        val record = InstalledPackage(
-            publisher = identity.publisher,
-            id = identity.id,
-            version = identity.version,
-            contentDigest = identity.contentDigest,
-            dependencies = inspection.dependencies,
-            conflicts = inspection.conflicts,
-        )
-        emit(InstallState.Installed(record))
+            val record = InstalledPackage(
+                publisher = identity.publisher,
+                id = identity.id,
+                version = identity.version,
+                contentDigest = identity.contentDigest,
+                dependencies = inspection.dependencies,
+                conflicts = inspection.conflicts,
+            )
+            emit(InstallState.Installed(record))
+        } finally {
+            port.discard(quarantined)
+        }
     }
 
     private fun singleError(objectId: String, fieldPath: String, code: String, message: String): ValidationReport =

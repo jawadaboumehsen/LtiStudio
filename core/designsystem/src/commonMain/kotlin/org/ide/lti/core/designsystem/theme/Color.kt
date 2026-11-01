@@ -503,10 +503,6 @@ object PluginThemeColors {
         @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.outline
 
-    val StatusVerified: Color
-        @Composable
-        get() = GlassTheme.diagnosticColors.success
-
     val StatusUnverified: Color
         @Composable
         get() = GlassTheme.diagnosticColors.warning

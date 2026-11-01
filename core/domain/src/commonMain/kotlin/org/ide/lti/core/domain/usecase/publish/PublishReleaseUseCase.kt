@@ -17,9 +17,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stages.GenerateOtaManifestStage
@@ -82,6 +83,12 @@ public data class PublishJournal(
 ) {
     val finished: Boolean get() = steps.all { it.state == PublishStepState.DONE }
 
+    /** Every verify step runs again (the destination is checked anew); a copy whose check fails is made again. */
+    public fun reverifying(): PublishJournal = copy(
+        outcome = null,
+        steps = steps.map { if (it.id.startsWith("verify-")) it.copy(state = PublishStepState.PENDING) else it },
+    )
+
     /** A copy that failed verification is copied again: `verify-x` failed means `export-x` runs again too. */
     public fun retryingFailedCopies(): PublishJournal {
         val redo = steps.filter { it.state == PublishStepState.FAILED && it.id.startsWith("verify-") }
@@ -99,6 +106,8 @@ public class PublishReleaseUseCase(
     private val workspaces: WorkspaceRepository,
     private val store: WorkspaceSettingsStore,
     private val port: PipelineExecutionPort,
+    /** Publishing waits for a running build: it would copy files that build is replacing. */
+    private val runs: org.ide.lti.core.domain.repository.run.RunRepository? = null,
     /** A Windows folder as WSL sees it (`D:\ROM` -> `/mnt/d/ROM`), as for Acquire's imports. */
     private val toLinuxPath: (String) -> String,
 ) {
@@ -108,6 +117,9 @@ public class PublishReleaseUseCase(
             ?: return PublishPreflight(null, listOf("The workspace is not available."), null, null)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
         val problems = mutableListOf<String>()
+        runs?.latestActive(workspaceId)?.let {
+            problems += "A build is running in this workspace; publish when it has finished."
+        }
         val release = releaseOf(ws, problems)
         val destination = destinationOf(settings, problems)
         return PublishPreflight(release, problems, destination, readJournal(ws))
@@ -137,14 +149,16 @@ public class PublishReleaseUseCase(
         val previous = check.journal?.takeIf {
             it.matches(settings.provider, destination, release, requestKey)
         }
-        var journal = previous?.retryingFailedCopies() ?: PublishJournal(
-            provider = settings.provider,
-            destination = destination,
-            zip = release.zip,
-            sha256 = release.sha256,
-            steps = stepsFor(settings.provider, release).map { (id, label) -> PublishJournalStep(id, label) },
-            requestKey = requestKey,
-        )
+        // A finished publish asked for again checks its destination again: files there may be gone or changed.
+        var journal =
+            previous?.let { if (it.finished) it.reverifying() else it.retryingFailedCopies() } ?: PublishJournal(
+                provider = settings.provider,
+                destination = destination,
+                zip = release.zip,
+                sha256 = release.sha256,
+                steps = stepsFor(settings.provider, release).map { (id, label) -> PublishJournalStep(id, label) },
+                requestKey = requestKey,
+            )
         onProgress(journal)
         for (step in journal.steps.filter { it.state != PublishStepState.DONE }) {
             onTransfer(PublishTransfer(step.id))
@@ -276,9 +290,19 @@ public class PublishReleaseUseCase(
                 CollisionPolicy.OVERWRITE -> Unit
             }
         }
-        val partial = "$dest/.$name.partial"
+        // A name of this attempt's own: two exports to one folder never share a temporary file.
+        val partial = "$dest/.$name.${java.util.UUID.randomUUID()}.partial"
         sampling(sample = { sizeOf(ws, partial) }, report = copied) { run(ws, "cp", "--", source, partial) }
-        run(ws, "mv", "-f", "--", "$dest/.$name.partial", "$dest/$name")
+        if (policy == CollisionPolicy.OVERWRITE) {
+            run(ws, "mv", "-f", "--", partial, "$dest/$name")
+        } else {
+            // No-clobber: a file that appeared there meanwhile is never replaced.
+            run(ws, "mv", "-n", "--", partial, "$dest/$name")
+            if (port.runToEnd(ws, "stat", listOf("-c", "%s", partial)).exitCode == 0) {
+                run(ws, "rm", "-f", "--", partial)
+                error("$dest/$name appeared while it was being copied (collision policy: ${policy.name.lowercase()}).")
+            }
+        }
         return if (exists) "replaced $dest/$name" else "copied to $dest/$name"
     }
 
@@ -289,9 +313,10 @@ public class PublishReleaseUseCase(
             runCatching { Json.parseToJsonElement(it).jsonObject.getValue("response").jsonArray.first().jsonObject }
                 .getOrNull()
         }
-        val zip = entry?.get("filename")?.jsonPrimitive?.content
-        val sha = entry?.get("sha256")?.jsonPrimitive?.content
-        val size = entry?.get("size")?.jsonPrimitive?.content?.toLongOrNull()
+        // A field of another type (an object, an array) is simply missing; a name must be a plain file name.
+        val zip = entry?.text("filename")?.takeIf(::isPlainName)
+        val sha = entry?.text("sha256")
+        val size = entry?.text("size")?.toLongOrNull()
         if (zip == null || sha == null || size == null) {
             problems += if (text == null) {
                 "No release yet: run the build through Release metadata first."
@@ -301,10 +326,10 @@ public class PublishReleaseUseCase(
             return null
         }
         if (port.stat(ws, "out/package/UNSIGNED").exists) problems += "The package is unsigned; it cannot be published."
-        val ota = entry["ota"]?.let { runCatching { it.jsonObject }.getOrNull() }?.let { o ->
-            val name = o["filename"]?.jsonPrimitive?.content
-            val otaSha = o["sha256"]?.jsonPrimitive?.content
-            val otaSize = o["size"]?.jsonPrimitive?.content?.toLongOrNull()
+        val ota = (entry["ota"] as? JsonObject)?.let { o ->
+            val name = o.text("filename")?.takeIf(::isPlainName)
+            val otaSha = o.text("sha256")
+            val otaSize = o.text("size")?.toLongOrNull()
             if (name == null || otaSha == null || otaSize == null) {
                 null.also { problems += "out/manifest.json names an incomplete OTA; build Release metadata again." }
             } else {
@@ -348,9 +373,17 @@ public class PublishReleaseUseCase(
     private suspend fun readJournal(ws: Workspace): PublishJournal? =
         port.readFile(ws, JOURNAL)?.let { runCatching { json.decodeFromString<PublishJournal>(it) }.getOrNull() }
 
+    /** Throws when the journal is not saved: a step it does not record would be repeated or refused later. */
     private suspend fun save(ws: Workspace, journal: PublishJournal) {
-        port.uploadFile(ws, JOURNAL, json.encodeToString(PublishJournal.serializer(), journal).encodeToByteArray())
+        val bytes = json.encodeToString(PublishJournal.serializer(), journal).encodeToByteArray()
+        check(port.uploadFile(ws, JOURNAL, bytes)) { "$JOURNAL could not be saved; publishing stopped." }
     }
+
+    private fun JsonObject.text(key: String): String? = (this[key] as? JsonPrimitive)?.content
+
+    /** A file name of out/package, never a path: no separator, no `..`, not hidden. */
+    private fun isPlainName(name: String): Boolean =
+        name.isNotBlank() && '/' !in name && '\\' !in name && !name.startsWith(".")
 
     private val Workspace.root: String get() = checkNotNull(linuxPath) { "workspace $id has no WSL folder" }
 

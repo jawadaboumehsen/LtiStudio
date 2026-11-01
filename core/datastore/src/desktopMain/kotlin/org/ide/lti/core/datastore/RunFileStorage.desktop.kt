@@ -17,9 +17,7 @@ import java.io.File
  * Desktop JVM implementation of [RunFileStorage] storing runs as JSON files
  * and event logs as JSONL lines in the platform's local application data directory.
  */
-public class DesktopRunFileStorage(
-    public val baseDir: File = resolveDefaultBaseDir(),
-) : RunFileStorage {
+public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBaseDir()) : RunFileStorage {
 
     init {
         if (!baseDir.exists()) {
@@ -30,7 +28,18 @@ public class DesktopRunFileStorage(
     override suspend fun saveRun(runId: String, json: String): Unit = withContext(Dispatchers.IO) {
         val file = File(baseDir, "$runId.json")
         file.parentFile?.mkdirs()
-        file.writeText(json, Charsets.UTF_8)
+        // Written beside it and renamed over it: a crash mid-write leaves the previous record whole.
+        val partial = File(baseDir, "$runId.json.partial")
+        java.io.FileOutputStream(partial).use { out ->
+            out.write(json.toByteArray(Charsets.UTF_8))
+            out.fd.sync()
+        }
+        java.nio.file.Files.move(
+            partial.toPath(),
+            file.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+        )
     }
 
     override suspend fun getRun(runId: String): String? = withContext(Dispatchers.IO) {

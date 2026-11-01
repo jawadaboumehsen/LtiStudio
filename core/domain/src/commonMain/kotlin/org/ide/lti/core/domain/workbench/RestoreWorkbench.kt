@@ -24,13 +24,13 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
     public suspend fun list(workspaceId: String): RestoreIndex = runner.read(workspaceId) {
         val index = store.readIndex(ws)
         val checked = index.items.map { point ->
-            if (point.state == RestorePointState.Available && !exists(point.backupPath)) {
+            if (point.state == RestorePointState.Available && !point.added && !exists(point.backupPath)) {
                 point.copy(state = RestorePointState.BackupMissing)
             } else {
                 point
             }
         }
-        RestoreIndex(checked).also { if (it != index) store.writeIndex(ws, it) }
+        RestoreIndex(checked)
     }
 
     /** Copies [pointId]'s backup over its item and marks it restored. */
@@ -42,13 +42,14 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
         runner.job(workspaceId, "Restore") {
             store.readIndex(ws).items
                 .filter { it.state == RestorePointState.Available && (tool == null || it.tool == tool) }
+                .asReversed()
                 .map { restoreOne(this, it.id) }
         }
 
     private suspend fun restoreOne(job: WorkbenchRunner.Job, pointId: String): RestorePoint = with(job) {
         val point = store.readIndex(ws).findById(pointId)
             ?: throw RefusalException(Refusal("No such restore point.", pointId, "Refresh the restore point list."))
-        if (!exists(point.backupPath)) {
+        if (!point.added && !exists(point.backupPath)) {
             store.updateRestorePointState(ws, point.id, RestorePointState.BackupMissing)
             throw RefusalException(
                 Refusal("The backup file is gone.", point.backupPath, "Nothing can be restored from this point."),
@@ -56,8 +57,26 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
         }
         // A debloat item lives in work/<partition>/…; other tools record the path relative to the workspace.
         val target = if (point.tool == DebloatStage.TOOL) "work/${point.itemPath}" else point.itemPath
+        listOf(point.backupPath, target).firstOrNull { !insideWorkspace(it) }?.let {
+            throw RefusalException(
+                Refusal(
+                    "This restore point leaves the workspace.",
+                    it,
+                    "Check restore/index.json; nothing was changed.",
+                ),
+            )
+        }
+        if (point.added) {
+            // Undoing an addition: the item goes (its sidecar lines name a missing path and are harmless).
+            run("rm", "-rf", "--", abs(target))
+            store.updateRestorePointState(ws, point.id, RestorePointState.Restored)
+            return@with point.copy(state = RestorePointState.Restored)
+        }
         sh(
-            "rm -rf \"$2\" && mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"",
+            "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2.restoring\" && cp -a -T \"$1\" \"$2.restoring\" && " +
+                // Swapped, not deleted first: stopped midway, the old item is still there as "$2.old".
+                "rm -rf \"$2.old\" && { [ ! -e \"$2\" ] && [ ! -L \"$2\" ] || mv \"$2\" \"$2.old\"; } && " +
+                "mv \"$2.restoring\" \"$2\" && rm -rf \"$2.old\"",
             abs(point.backupPath),
             abs(target),
         )
@@ -81,4 +100,8 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
             }
         }
     }
+
+    /** A workspace-relative path that stays inside it (no absolute path, no `..`). */
+    private fun insideWorkspace(path: String): Boolean =
+        path.isNotBlank() && !path.startsWith("/") && ".." !in path.split('/')
 }

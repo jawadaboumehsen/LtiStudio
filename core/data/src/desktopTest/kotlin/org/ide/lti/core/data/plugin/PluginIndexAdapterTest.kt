@@ -260,6 +260,7 @@ class PluginIndexAdapterTest {
         {"tag_name":"v1.3.0","assets":[
           {"name":"io.ltirom-adb-1.3.0.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/io.ltirom-adb-1.3.0.lti-mod.zip","digest":"sha256:abc123"},
           {"name":"io.ltirom-nubia-gameassist-1.3.0.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/n.zip"},
+          {"name":"org.example-basic-mod-1.2.3-beta.1.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/b.zip"},
           {"name":"notes.txt","browser_download_url":"https://github.com/o/r/releases/download/v1.3.0/notes.txt"}
         ]}
     """.trimIndent()
@@ -280,9 +281,9 @@ class PluginIndexAdapterTest {
         assertIs<IndexFetchResult.Fetched>(result)
         assertEquals(listOf("https://api.github.com/repos/o/r/releases/latest"), opened)
         val entries = result.doc.entries
-        assertEquals(listOf("adb", "nubia-gameassist"), entries.map { it.id })
-        assertEquals(listOf("io.ltirom", "io.ltirom"), entries.map { it.publisher })
-        assertEquals("1.3.0", entries.first().version)
+        assertEquals(listOf("adb", "nubia-gameassist", "basic-mod"), entries.map { it.id })
+        assertEquals(listOf("io.ltirom", "io.ltirom", "org.example"), entries.map { it.publisher })
+        assertEquals(listOf("1.3.0", "1.3.0", "1.2.3-beta.1"), entries.map { it.version })
         // The asset's digest is the file's sha256; a release that lists none leaves it unchecked.
         assertEquals("abc123", entries[0].fileSha256)
         assertNull(entries[1].fileSha256)

@@ -49,7 +49,7 @@ internal fun resolveMarketplaceSelection(entries: List<IndexEntry>, selectedId: 
     entries.firstOrNull { it.id == selectedId } ?: entries.firstOrNull()
 
 internal fun canInstallInspectedPackage(inspection: PackageInspection?, acknowledged: Boolean): Boolean =
-    inspection != null && !inspection.report.hasBlockingErrors() && (inspection.hasSignature || acknowledged)
+    inspection != null && !inspection.report.hasBlockingErrors() && acknowledged
 
 internal fun marketplaceSourceIsVerified(fetchResult: IndexFetchResult?): Boolean =
     fetchResult is IndexFetchResult.Fetched
@@ -72,9 +72,13 @@ internal val InstalledRecord.title: String get() = displayName.ifBlank { formatP
 
 internal fun formatPluginDisplayName(id: String): String = when (id) {
     "buildprops" -> "Build properties"
+
     "framework-hooks" -> "Framework hook sample"
+
     "resource-overlay" -> "Resource overlay"
+
     "pixel-tuner" -> "Pixel tuner"
+
     else -> id.split("-", "_", ".").joinToString(" ") { segment ->
         segment.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
     }

@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.domain.pipeline.digestToken
@@ -198,8 +200,21 @@ public class BootWorkbench(
 
     public suspend fun saveDeviceTree(workspaceId: String, partition: String, newDts: String) {
         runner.job(workspaceId, "Edit device tree") {
-            writeText("${dir(partition)}/$DTS", newDts)
-            run("dtc", "-q", "-I", "dts", "-O", "dts", "-o", "/dev/null", abs("${dir(partition)}/$DTS"))
+            val candidate = "${dir(partition)}/$DTS.new"
+            writeText(candidate, newDts)
+            val checked = tryRun("dtc", "-q", "-I", "dts", "-O", "dts", "-o", "/dev/null", abs(candidate))
+            if (checked.exitCode != 0) {
+                tryRun("rm", "-f", abs(candidate))
+                throw RefusalException(
+                    Refusal(
+                        "The device tree does not compile; the saved one is unchanged.",
+                        "$partition: $DTS",
+                        "Fix the error and save again.",
+                        details = checked.stderr.trim(),
+                    ),
+                )
+            }
+            run("mv", "-f", abs(candidate), abs("${dir(partition)}/$DTS"))
         }
     }
 
@@ -225,15 +240,20 @@ public class BootWorkbench(
                     toolPath("mkbootfs"),
                     abs("$dir/$FAKEROOT_STATE"),
                 )
-                val archived = sh("cpio -it --quiet < \"$1\"", abs("$dir/ramdisk.new.cpio")).lines()
-                val listed = run("find", folder, "-mindepth", "1", "-printf", "%P\\n").lines()
-                RamdiskCheck.missingInit(partition, listed)?.let { throw RefusalException(it) }
+                val archived = sh("cpio -itv --quiet --numeric-uid-gid < \"$1\"", abs("$dir/ramdisk.new.cpio"))
+                val listed = run("find", folder, "-mindepth", "1", "-printf", "%y %s %P\\n")
+                RamdiskCheck.missingInit(
+                    partition,
+                    folderEntries(listed).map { it.path },
+                )?.let { throw RefusalException(it) }
                 val initHead = sh(
-                    "if [ -L \"$1/init\" ]; then echo link; elif [ -f \"$1/init\" ]; then xxd -p -l 4 \"$1/init\"; fi",
+                    "if [ -L \"$1/init\" ]; then echo link; elif [ -f \"$1/init\" ]; then " +
+                        "h=$(xxd -p -l 4 \"$1/init\"); echo \"${'$'}{h:-empty}\"; " +
+                        "elif [ -e \"$1/init\" ]; then echo notfile; fi",
                     folder,
                 )
                 RamdiskCheck.badInit(partition, initHead.trim())?.let { throw RefusalException(it) }
-                check = RamdiskCheck.compare(entries(archived), entries(listed))
+                check = RamdiskCheck.compare(cpioEntries(archived), folderEntries(listed))
                 if (!check.ok) return@job SavedOverride(partition, "", check)
                 sh(state.compression.compress, abs("$dir/ramdisk.new.cpio"), abs("$dir/unpacked/${state.ramdisk}"))
             }
@@ -271,10 +291,11 @@ public class BootWorkbench(
         runner.job(workspaceId, "Import $partition") {
             val linuxSource = toLinuxPath(windowsPath)
             val head = run("xxd", "-p", "-l", "8", linuxSource).trim()
-            if (head != BOOT_MAGIC_HEX && head != VENDOR_BOOT_MAGIC_HEX) {
+            val wanted = if (partition.startsWith("vendor_boot")) VENDOR_BOOT_MAGIC_HEX else BOOT_MAGIC_HEX
+            if (head != wanted) {
                 throw RefusalException(
                     Refusal(
-                        "The file is not a boot image.",
+                        "The file is not a $partition image.",
                         linuxSource.substringAfterLast('/'),
                         "Pick the patched .img file.",
                     ),
@@ -358,6 +379,7 @@ public class BootWorkbench(
                 KPIMG_URL,
             )
             val keyFile = "${dir(partition)}/.skey"
+            sh("umask 077 && : > \"$1\"", abs(keyFile))
             writeText(keyFile, superKey)
             try {
                 sh(
@@ -368,7 +390,7 @@ public class BootWorkbench(
                     abs(KPIMG),
                 )
             } finally {
-                tryRun("rm", "-f", abs(keyFile))
+                withContext(NonCancellable) { tryRun("rm", "-f", abs(keyFile)) }
             }
         }
     }
@@ -495,6 +517,7 @@ public class BootWorkbench(
                 (cd ramdisk && find . -printf '%p %m %l\n' | LC_ALL=C sort && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum)
               fi
               if [ -f dtb.dts ]; then sha256sum dtb.dts; fi
+              if [ -f unpacked/kernel ]; then sha256sum unpacked/kernel; fi
             } | sha256sum | cut -c1-64
         """
 
@@ -552,7 +575,9 @@ public class BootWorkbench(
             cp -f unpacked/dtb dtb.orig
             size=${'$'}(stat -c %s dtb.orig); off=0; n=0
             while [ ${'$'}off -lt ${'$'}size ] && [ "${'$'}(xxd -p -s ${'$'}off -l 4 dtb.orig)" = d00dfeed ]; do
-              off=${'$'}((off + 0x${'$'}(xxd -p -s ${'$'}((off + 4)) -l 4 dtb.orig))); n=${'$'}((n + 1))
+              sz=${'$'}((0x${'$'}(xxd -p -s ${'$'}((off + 4)) -l 4 dtb.orig)))
+              [ ${'$'}sz -gt 0 ] && [ ${'$'}((off + sz)) -le ${'$'}size ] || break
+              off=${'$'}((off + sz)); n=${'$'}((n + 1))
             done
             "$2" -q -I dtb -O dts -o dtb.first.dts dtb.orig
             {
@@ -632,9 +657,35 @@ public class BootWorkbench(
         private suspend fun kpatchInfo(job: WorkbenchRunner.Job, kernel: String): String? =
             job.tryRun("kptools", "-l", "-i", job.abs(kernel)).takeIf { it.exitCode == 0 }?.stdout
 
-        private fun entries(paths: List<String>): List<RamdiskEntry> =
-            paths.map { it.trim().removePrefix("./") }.filter { it.isNotEmpty() && it != "." }
-                .map { RamdiskEntry(path = it, sizeBytes = 0L, isDirectory = false) }
+        /**
+         * `cpio -itv --numeric-uid-gid` lines: mode, links, uid, gid, size, three date fields, name (`a -> b` for a
+         * link). A directory's size is not compared (it differs between cpio and a filesystem).
+         */
+        internal fun cpioEntries(listing: String): List<RamdiskEntry> = listing.lines().mapNotNull { line ->
+            val t = line.trim().split(Regex("""\s+"""))
+            // A device node lists "major, minor" where the size is: one field more, and no size.
+            val device = t.getOrNull(CPIO_SIZE_FIELD)?.endsWith(",") == true
+            val nameField = CPIO_NAME_FIELD + if (device) 1 else 0
+            if (t.size < nameField + 1) return@mapNotNull null
+            val name = t.drop(nameField).joinToString(" ").substringBefore(" -> ").removePrefix("./")
+            val dir = t[0].startsWith("d")
+            val size = if (dir || device) 0L else t[CPIO_SIZE_FIELD].toLongOrNull() ?: 0L
+            RamdiskEntry(name, size, dir)
+                .takeIf { name.isNotEmpty() && name != "." }
+        }
+
+        /** `find -printf '%y %s %P'` lines of the ramdisk folder, as [cpioEntries] reads the archive. */
+        internal fun folderEntries(listing: String): List<RamdiskEntry> = listing.lines().mapNotNull { line ->
+            val parts = line.split(
+                ' ',
+                limit = 3,
+            ).takeIf { it.size == 3 && it[2].isNotEmpty() } ?: return@mapNotNull null
+            val dir = parts[0] == "d"
+            RamdiskEntry(parts[2], if (dir) 0L else parts[1].toLongOrNull() ?: 0L, dir)
+        }
+
+        private const val CPIO_SIZE_FIELD = 4
+        private const val CPIO_NAME_FIELD = 8
 
         private fun lineChanges(old: String, new: String): List<String> {
             val a = old.lines()

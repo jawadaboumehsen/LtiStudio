@@ -175,6 +175,7 @@ public class PluginManagerViewModel(
                     refreshInstalled()
                     _uiState.update { it.copy(notificationMessage = "Archived '${record.identity.key}'") }
                 }
+
                 is LifecycleOutcome.Refused -> {
                     val err = outcome.report.errors.firstOrNull()?.message ?: "Archive refused"
                     _uiState.update { it.copy(errorMessage = err) }
@@ -191,6 +192,7 @@ public class PluginManagerViewModel(
                     refreshInstalled()
                     _uiState.update { it.copy(notificationMessage = "Uninstalled '${record.identity.key}'") }
                 }
+
                 is LifecycleOutcome.Refused -> {
                     val err = outcome.report.errors.firstOrNull()?.message ?: "Uninstall refused"
                     _uiState.update { it.copy(errorMessage = err) }
@@ -453,7 +455,15 @@ public class PluginManagerViewModel(
                 sdkVersion = "1.0.0",
                 generatorEntry = "",
             )
-            val result = authorProjectTrustUseCase.runTask(project, task, timeoutMs)
+            // A task that cannot even start (no wrapper, not executable) is a failed result, never a stuck spinner.
+            val result = try {
+                authorProjectTrustUseCase.runTask(project, task, timeoutMs)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                _uiState.update { it.copy(isAuthorTaskRunning = false) }
+                throw e
+            } catch (e: Exception) {
+                AuthorTaskResult.Failed(exitCode = -1, diagnostics = emptyList(), stderr = e.message ?: e.toString())
+            }
             _uiState.update {
                 it.copy(isAuthorTaskRunning = false, authorTaskResult = result)
             }

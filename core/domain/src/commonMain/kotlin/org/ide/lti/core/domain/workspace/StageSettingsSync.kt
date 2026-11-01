@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -46,6 +47,9 @@ public interface WorkspaceSettingsStore {
 
     /** The id of each workspace whose settings were just saved. */
     public val changes: Flow<String> get() = emptyFlow()
+
+    /** The workspace's device as it is saved (edited in the Target panel while an editor stays open). */
+    public fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = emptyFlow()
 }
 
 /** The workspace's saved snapshot, changed through [SaveConfigurationSnapshotUseCase.update]. */
@@ -70,6 +74,9 @@ public class SnapshotSettingsStore(
 
     override suspend fun device(workspaceId: String): TargetDevice? =
         runCatching { devices.get(workspaceId) }.getOrNull()
+
+    // An unreadable device (service down) is simply not an update; the editor keeps the device it has.
+    override fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = devices.observe(workspaceId).catch { }
 
     private companion object {
         /** Saves arrive a few at a time; a slow listener never holds up an editor's save. */
@@ -118,6 +125,8 @@ public class StageSettingsSync<T>(
                 reload()
                 _device.value = store?.device(workspaceId)
             }
+            // A device saved while this editor is open replaces the one it loaded.
+            scope.launch { store!!.deviceUpdates(workspaceId).collect { _device.value = it } }
             scope.launch {
                 // Show other writers' saves, retaining this group's pending value while it is being edited.
                 store!!.changes.filter { it == workspaceId }.collect {

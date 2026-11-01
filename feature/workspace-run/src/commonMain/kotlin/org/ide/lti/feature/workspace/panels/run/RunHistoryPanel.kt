@@ -230,10 +230,13 @@ private fun RunListItemCard(run: BuildRun, isSelected: Boolean, onSelect: () -> 
                     style = typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                GlassChip(
-                    label = "Delete",
-                    onClick = onDelete,
-                )
+                // A queued or running build cannot be deleted; cancel it first.
+                if (!run.state.isActive) {
+                    GlassChip(
+                        label = "Delete",
+                        onClick = onDelete,
+                    )
+                }
             }
         }
     }

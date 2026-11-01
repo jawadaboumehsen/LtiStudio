@@ -149,13 +149,10 @@ public object CoverageFix {
             val subpath = parts.take(i).joinToString("/")
             val ctxPath = SidecarNormalizer.fileContextPath(partition, subpath)
             val escaped = SidecarNormalizer.escapeRegex(ctxPath)
-            lines.firstOrNull { (k, _) ->
-                k == escaped || k == ctxPath || (subpath.isNotEmpty() && k.contains(subpath))
-            }?.second
+            // The folder itself, never a name that merely contains it (bin-extra is not bin's ancestor).
+            lines.firstOrNull { (k, _) -> k == escaped || k == ctxPath }?.second
         }.firstOrNull()
-        return ancestor
-            ?: lines.firstOrNull { (k, _) -> k.contains(partition) }?.second
-            ?: "u:object_r:system_file:s0"
+        return ancestor ?: "u:object_r:system_file:s0"
     }
 
     public fun fixFsConfig(

@@ -11,10 +11,11 @@ package org.ide.lti.core.data.repository.target
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
@@ -32,23 +33,27 @@ public class WorkspaceFolderDeviceRepository(
 ) : WorkspaceDeviceRepository {
     private val changes = MutableSharedFlow<Pair<String, TargetDevice?>>(extraBufferCapacity = CHANGE_BUFFER)
 
-    override fun observe(workspaceId: String): Flow<TargetDevice?> = flow {
-        emit(read(workspace(workspaceId)))
-        emitAll(changes.filter { it.first == workspaceId }.map { it.second })
-    }
+    // Subscribed first, then read: a save between the two is never missed.
+    override fun observe(workspaceId: String): Flow<TargetDevice?> = changes
+        .onSubscription { emit(workspaceId to read(workspace(workspaceId))) }
+        .filter { it.first == workspaceId }
+        .map { it.second }
 
     // A successful read is shared with every observer, so a retry anywhere refreshes the whole app.
     override suspend fun get(workspaceId: String): TargetDevice? =
         read(workspace(workspaceId)).also { changes.emit(workspaceId to it) }
 
-    override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice {
+    /** One save at a time: two saves reading the same revision would both write the next one. */
+    override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice = saving.withLock {
         val workspace = workspace(workspaceId)
         val next = nextRevision(read(workspace), device)
         val written = files.uploadFile(workspace, FILE_NAME, json.encodeToString(next).encodeToByteArray())
         check(written) { "Could not write $FILE_NAME into the workspace folder" }
         changes.emit(workspaceId to next)
-        return next
+        next
     }
+
+    private val saving = Mutex()
 
     private suspend fun workspace(workspaceId: String): Workspace =
         requireNotNull(workspaces.getWorkspace(workspaceId)) { "Workspace not found: $workspaceId" }

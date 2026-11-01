@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.plugin
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -16,6 +18,7 @@ import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PackageIdentity
 import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.PluginInstallPort
+import org.ide.lti.core.domain.plugin.PluginPackageCodec
 import org.ide.lti.core.domain.plugin.PluginPackagePolicy
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
@@ -52,7 +55,7 @@ class InstalledPluginRepository(
             val quarantineDir = storeDir.resolve("quarantine")
             Files.createDirectories(quarantineDir)
             val quarantined = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
-            copyStream(sourcePath, quarantined)
+            copyStream(sourcePath, quarantined, PluginPackagePolicy.PACKAGE_MAX_COMPRESSED_BYTES + 1)
             quarantined
         }
     } catch (_: IOException) {
@@ -99,7 +102,9 @@ class InstalledPluginRepository(
                     conn.disconnect()
                     uri = uri.resolve(location ?: return null)
                 }
+
                 in 200..299 -> return conn.inputStream
+
                 else -> {
                     conn.disconnect()
                     return null
@@ -148,6 +153,7 @@ class InstalledPluginRepository(
                     compatibility = pkg.template.compatibility,
                 )
             }
+
             is PackageReadResult.Rejected -> {
                 PackageInspection(
                     identity = null,
@@ -159,18 +165,17 @@ class InstalledPluginRepository(
             }
         }
 
-    override suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean {
-        if (!Files.exists(quarantined)) return false
-
-        val versionDir = storeDir.resolve("packages")
-            .resolve(identity.publisher)
-            .resolve(identity.id)
-            .resolve(identity.version)
+    override suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean = promotion.withLock {
+        val versionDir = versionDirOf(identity)
+        if (!Files.exists(quarantined) || versionDir == null) return@withLock false
         val recordFile = versionDir.resolve("record.json")
 
-        return checkExistingPromotion(recordFile, quarantined, identity)
+        checkExistingPromotion(recordFile, quarantined, identity)
             ?: executePromotion(versionDir, recordFile, quarantined, identity)
     }
+
+    /** Two installs of one package must not interleave their check and move (the later would replace the first). */
+    private val promotion = Mutex()
 
     private fun checkExistingPromotion(recordFile: Path, quarantined: Path, identity: PackageIdentity): Boolean? {
         if (!Files.exists(recordFile)) return null
@@ -180,7 +185,11 @@ class InstalledPluginRepository(
 
         return when {
             existing == null -> null
+
             existing.identity.contentDigest != identity.contentDigest -> false
+
+            !Files.isRegularFile(recordFile.resolveSibling("package.lti-mod.zip")) -> null
+
             else -> {
                 Files.deleteIfExists(quarantined)
                 true
@@ -204,11 +213,8 @@ class InstalledPluginRepository(
         val packageFile = versionDir.resolve("package.lti-mod.zip")
         atomicMove(quarantined, packageFile)
 
-        val trust = if (inspection.hasSignature) {
-            TrustDecision.TRUSTED_SIGNATURE
-        } else {
-            TrustDecision.TRUSTED_UNVERIFIED
-        }
+        // A signature file is not verified (no trusted publisher keys yet), so it grants no trust.
+        val trust = TrustDecision.TRUSTED_UNVERIFIED
 
         val record = InstalledRecord(
             identity = identity,
@@ -253,21 +259,12 @@ class InstalledPluginRepository(
     }
 
     override suspend fun remove(identity: PackageIdentity): Boolean {
-        val versionDir = storeDir.resolve("packages")
-            .resolve(identity.publisher)
-            .resolve(identity.id)
-            .resolve(identity.version)
-        if (!Files.exists(versionDir)) return false
-
+        val versionDir = versionDirOf(identity)?.takeIf { Files.exists(it) } ?: return false
         return versionDir.toFile().deleteRecursively()
     }
 
     override suspend fun updateRecord(record: InstalledRecord): Boolean {
-        val versionDir = storeDir.resolve("packages")
-            .resolve(record.identity.publisher)
-            .resolve(record.identity.id)
-            .resolve(record.identity.version)
-        if (!Files.exists(versionDir)) return false
+        val versionDir = versionDirOf(record.identity)?.takeIf { Files.exists(it) } ?: return false
 
         val recordFile = versionDir.resolve("record.json")
         val recordJson = json.encodeToString(InstalledRecord.serializer(), record)
@@ -275,17 +272,36 @@ class InstalledPluginRepository(
         return true
     }
 
-    private fun copyStream(source: Path, target: Path) {
+    /** Copies at most [limit] bytes: an oversized file never fills the store, and the reader refuses it by size. */
+    private fun copyStream(source: Path, target: Path, limit: Long) {
         val buffer = ByteArray(CHUNK_SIZE)
+        var left = limit
         Files.newInputStream(source).use { input ->
             Files.newOutputStream(target).use { output ->
-                while (true) {
-                    val read = input.read(buffer)
+                while (left > 0) {
+                    val read = input.read(buffer, 0, minOf(buffer.size.toLong(), left).toInt())
                     if (read == -1) break
                     output.write(buffer, 0, read)
+                    left -= read
                 }
             }
         }
+    }
+
+    /**
+     * The folder of [identity] in the store, or null when a publisher, id or version is not a plain folder name or
+     * the path would leave `packages/` (a crafted record must never point a write or delete elsewhere).
+     */
+    private fun versionDirOf(identity: PackageIdentity): Path? {
+        val parts = listOf(identity.publisher, identity.id, identity.version)
+        if (!parts.all(PluginPackageCodec::isSafeIdentitySegment)) return null
+        val packages = storeDir.resolve("packages").toAbsolutePath().normalize()
+        val dir = parts.fold(packages) { path, part -> path.resolve(part) }.normalize()
+        return dir.takeIf { it.startsWith(packages) && it != packages }
+    }
+
+    override suspend fun discard(quarantined: Path) {
+        runCatching { Files.deleteIfExists(quarantined) }
     }
 
     private fun atomicMove(source: Path, target: Path) {

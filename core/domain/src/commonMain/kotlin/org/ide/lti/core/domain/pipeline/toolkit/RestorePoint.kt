@@ -33,6 +33,8 @@ data class RestorePoint(
     val createdAt: String,
     val backupPath: String,
     val state: RestorePointState = RestorePointState.Available,
+    /** The item did not exist before the tool wrote it: restoring removes it ([backupPath] is never written). */
+    val added: Boolean = false,
 ) {
     init {
         require(id.isNotBlank()) { "RestorePoint id must not be blank" }

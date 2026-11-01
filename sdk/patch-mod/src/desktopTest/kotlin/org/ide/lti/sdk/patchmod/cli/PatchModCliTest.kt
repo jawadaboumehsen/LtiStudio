@@ -114,7 +114,7 @@ class PatchModCliTest {
         assertEquals("example-file-property", readPkg.manifest.id)
         assertEquals("1.0.0", readPkg.manifest.version)
 
-        val expectedDigest = PluginPackageCodec.contentIdentity(readPkg.manifest.payloads)
+        val expectedDigest = PluginPackageCodec.contentIdentity(readPkg.manifest, readPkg.template)
         assertEquals(expectedDigest, readPkg.contentDigest)
 
         val inspectResult = PatchModTool.inspectMod(tempDir, zipFile)

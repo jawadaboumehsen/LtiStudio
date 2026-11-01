@@ -37,19 +37,24 @@ class InstalledPluginCatalog(private val storeDir: Path) : PluginCatalogPort {
     override fun assetRootFor(publisher: String, id: String, version: String): String? {
         if (load(publisher, id, version) !is PackageReadResult.Ok) return null
         val content = versionDir(publisher, id, version).resolve("content")
-        if (!Files.isDirectory(content)) extractAssets(packageFile(publisher, id, version), content)
+        // One extraction at a time: two builds using a plugin first must not share or delete each other's files.
+        synchronized(extracting) {
+            if (!Files.isDirectory(content)) extractAssets(packageFile(publisher, id, version), content)
+        }
         return content.toString()
     }
 
     private fun load(publisher: String, id: String, version: String): PackageReadResult? {
         val file = packageFile(publisher, id, version)
         if (!Files.isRegularFile(file)) return null
-        return read.getOrPut("$publisher:$id:$version") { PluginPackageReader.read(file) }
+        // Keyed by the file too: a package removed and installed again under the same version is read again.
+        val stamp = "${Files.size(file)}:${Files.getLastModifiedTime(file).toMillis()}"
+        return read.getOrPut("$publisher:$id:$version:$stamp") { PluginPackageReader.read(file) }
     }
 
     /** Extracts into a temporary folder and renames it, so a half-extracted folder is never used. */
     private fun extractAssets(zip: Path, content: Path) {
-        val partial = content.resolveSibling("content.partial")
+        val partial = content.resolveSibling("content.${java.util.UUID.randomUUID()}.partial")
         partial.toFile().deleteRecursively()
         ZipFile(zip.toFile()).use { zf ->
             zf.entries().asSequence()
@@ -65,6 +70,8 @@ class InstalledPluginCatalog(private val storeDir: Path) : PluginCatalogPort {
         Files.createDirectories(partial)
         Files.move(partial, content, StandardCopyOption.ATOMIC_MOVE)
     }
+
+    private val extracting = Any()
 
     private fun versionDir(publisher: String, id: String, version: String): Path =
         storeDir.resolve("packages").resolve(publisher).resolve(id).resolve(version)

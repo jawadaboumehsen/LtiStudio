@@ -146,14 +146,9 @@ public class RunRecordDataSource(
         }
     }
 
+    /** Throws when the index cannot be saved: a run the next launch would not find is not reported as saved. */
     private fun persistRunsIndexInternal(items: List<BuildRunSummary>) {
-        try {
-            val wrapper = RunIndex(schemaVersion = 1, items = items)
-            val encoded = json.encodeToString(wrapper)
-            settings[KEY_RUNS] = encoded
-        } catch (_: Exception) {
-            // Keep in-memory
-        }
+        settings[KEY_RUNS] = json.encodeToString(RunIndex(schemaVersion = 1, items = items))
     }
 
     private fun handleDecodeFailure(key: String, raw: String, message: String) {

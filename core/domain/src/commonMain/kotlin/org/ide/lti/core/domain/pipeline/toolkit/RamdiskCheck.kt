@@ -77,8 +77,13 @@ public object RamdiskCheck {
      */
     public fun badInit(partition: String, head: String): Refusal? =
         if (partition in INIT_RAMDISKS && head != "link" && head.isNotEmpty() && !head.startsWith(ELF_MAGIC)) {
+            val what = when (head) {
+                "empty" -> "it is empty"
+                "notfile" -> "it is not a file"
+                else -> "it starts $head"
+            }
             Refusal(
-                cause = "This ramdisk's /init is not a program (it starts $head), so the kernel cannot start it and " +
+                cause = "This ramdisk's /init is not a program ($what), so the kernel cannot start it and " +
                     "the device would not boot.",
                 item = "$partition.img",
                 nextStep = "Put the original init back in the ramdisk folder (or unpack the image again), then repack.",

@@ -17,6 +17,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.model.plugin.AssetRef
+import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -185,41 +186,43 @@ class PluginPackageCodecTest {
     }
 
     @Test
-    fun testContentIdentityOrderIndependent() {
-        val entry1 = PayloadEntry(
-            path = "assets/a.txt",
-            sizeBytes = 10L,
-            sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    fun testContentIdentityCoversManifestAndPlan() {
+        val manifest = PluginManifest(
+            sdkApiRange = "[1.0,2.0)",
+            publisher = "org.example",
+            id = "mod",
+            version = "1.0.0",
+            displayName = "Mod",
+            license = "MIT",
+            compatibleTargets = emptyList(),
+            payloads = listOf(PayloadEntry("assets/a.txt", 10L, "a".repeat(64))),
         )
-        val entry2 = PayloadEntry(
-            path = "assets/b.txt",
-            sizeBytes = 20L,
-            sha256 = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        val plan = PluginPlanTemplate(
+            publisher = "org.example",
+            id = "mod",
+            version = "1.0.0",
+            settings = emptyList(),
+            operations = emptyList(),
         )
-
-        val digest1 = PluginPackageCodec.contentIdentity(listOf(entry1, entry2))
-        val digest2 = PluginPackageCodec.contentIdentity(listOf(entry2, entry1))
-        assertEquals(digest1, digest2)
-        assertTrue(digest1.startsWith("sha256:"))
+        val base = PluginPackageCodec.contentIdentity(manifest, plan)
+        assertTrue(base.startsWith("sha256:"))
+        assertEquals(base, PluginPackageCodec.contentIdentity(manifest, plan))
+        // A changed asset, manifest field or plan is another package.
+        val asset = manifest.copy(payloads = listOf(PayloadEntry("assets/a.txt", 10L, "c".repeat(64))))
+        assertNotEquals(base, PluginPackageCodec.contentIdentity(asset, plan))
+        assertNotEquals(base, PluginPackageCodec.contentIdentity(manifest.copy(displayName = "Other"), plan))
+        val planChanged = plan.copy(compatibility = listOf(Compatibility("PQ84P01", emptyList())))
+        assertNotEquals(base, PluginPackageCodec.contentIdentity(manifest, planChanged))
     }
 
     @Test
-    fun testContentIdentityChangesOnAnyField() {
-        val base = PayloadEntry(
-            path = "assets/a.txt",
-            sizeBytes = 10L,
-            sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        )
-        val baseDigest = PluginPackageCodec.contentIdentity(listOf(base))
-
-        val pathChanged = base.copy(path = "assets/changed.txt")
-        assertNotEquals(baseDigest, PluginPackageCodec.contentIdentity(listOf(pathChanged)))
-
-        val sizeChanged = base.copy(sizeBytes = 99L)
-        assertNotEquals(baseDigest, PluginPackageCodec.contentIdentity(listOf(sizeChanged)))
-
-        val shaChanged = base.copy(sha256 = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
-        assertNotEquals(baseDigest, PluginPackageCodec.contentIdentity(listOf(shaChanged)))
+    fun identitySegmentsAreSafeFolderNames() {
+        listOf("org.example", "basic-mod", "1.2.3-beta.1", "1.0.0+build").forEach {
+            assertTrue(PluginPackageCodec.isSafeIdentitySegment(it), it)
+        }
+        listOf("..", "../x", "/abs", "a/b", "a\b", "", ".hidden", "a..b").forEach {
+            assertFalse(PluginPackageCodec.isSafeIdentitySegment(it), it)
+        }
     }
 
     @Test

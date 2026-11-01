@@ -37,12 +37,16 @@ class PluginLifecycleUseCase(private val port: PluginInstallPort) {
         val failure = when {
             currentRecord == null ->
                 ValidationFailure(current.key, "current", UNKNOWN_PACKAGE, "Current package is not installed")
+
             isSameVersionDiffDigest(current, incoming) ->
                 ValidationFailure(incoming.key, "contentDigest", SAME_VERSION_DIFFERENT_CONTENT, "Same version diff")
+
             incomingRecord == null ->
                 ValidationFailure(incoming.key, "incoming", UNKNOWN_PACKAGE, "Incoming package is not installed")
+
             incomingRecord.revoked ->
                 ValidationFailure(incoming.key, "incoming", REVOKED_PACKAGE, "Incoming package is revoked")
+
             else -> null
         }
 
@@ -60,12 +64,16 @@ class PluginLifecycleUseCase(private val port: PluginInstallPort) {
         val failure = when {
             record == null ->
                 ValidationFailure(identity.key, "identity", UNKNOWN_PACKAGE, "Package not installed")
+
             record.revoked ->
                 ValidationFailure(identity.key, "identity", REVOKED_PACKAGE, "Revoked package cannot be deleted")
+
             referencedBy.isNotEmpty() ->
                 ValidationFailure(identity.key, "referencedBy", REFERENCED_PACKAGE, "Referenced package")
+
             !port.remove(identity) ->
                 ValidationFailure(identity.key, "remove", UNKNOWN_PACKAGE, "Failed to remove package")
+
             else -> null
         }
 
@@ -76,29 +84,26 @@ class PluginLifecycleUseCase(private val port: PluginInstallPort) {
         }
     }
 
-    suspend fun archive(identity: PackageIdentity): LifecycleOutcome {
-        val records = port.installed()
-        val record = records.firstOrNull { it.identity == identity }
-        if (record == null) {
-            return refuse(ValidationFailure(identity.key, "identity", UNKNOWN_PACKAGE, "Not installed"))
-        }
-
-        val updated = record.copy(archived = true)
-        port.updateRecord(updated)
-        return LifecycleOutcome.Applied(updated)
-    }
+    suspend fun archive(identity: PackageIdentity): LifecycleOutcome = change(identity) { it.copy(archived = true) }
 
     suspend fun revoke(identity: PackageIdentity, reason: String): LifecycleOutcome {
         require(reason.isNotEmpty()) { "Revocation reason must not be empty" }
-        val records = port.installed()
-        val record = records.firstOrNull { it.identity == identity }
-        if (record == null) {
-            return refuse(ValidationFailure(identity.key, "identity", UNKNOWN_PACKAGE, "Not installed"))
-        }
+        return change(identity) { it.copy(revoked = true) }
+    }
 
-        val updated = record.copy(revoked = true)
-        port.updateRecord(updated)
-        return LifecycleOutcome.Applied(updated)
+    /** Applies [update] to [identity]'s record; refused when it is not installed or its record cannot be saved. */
+    private suspend fun change(
+        identity: PackageIdentity,
+        update: (InstalledRecord) -> InstalledRecord,
+    ): LifecycleOutcome {
+        val record = port.installed().firstOrNull { it.identity == identity }
+            ?: return refuse(ValidationFailure(identity.key, "identity", UNKNOWN_PACKAGE, "Not installed"))
+        val updated = update(record)
+        return if (port.updateRecord(updated)) {
+            LifecycleOutcome.Applied(updated)
+        } else {
+            refuse(ValidationFailure(identity.key, "record", UNKNOWN_PACKAGE, "The record could not be saved"))
+        }
     }
 
     fun canEnable(record: InstalledRecord): Boolean = Companion.canEnable(record)

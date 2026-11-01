@@ -65,21 +65,34 @@ internal class GithubReleaseSteps(
         tool("rm", "-rf", "--", partsDir)
         tool("mkdir", "-p", partsDir)
         packages.filter { it.split }.forEach {
-            tool("split", "-b", settings.partSizeBytes.toString(), "-d", "-a", "2", pathOf(it), "$partsDir/${it.zip}.")
+            // Enough suffix digits for the part count (split stops at 100 with two).
+            val count = (it.size + settings.partSizeBytes - 1) / settings.partSizeBytes
+            val digits = maxOf(2, count.toString().length).toString()
+            tool(
+                "split",
+                "-b",
+                settings.partSizeBytes.toString(),
+                "-d",
+                "-a",
+                digits,
+                pathOf(it),
+                "$partsDir/${it.zip}.",
+            )
         }
         return "${assets().size} assets"
     }
 
     private fun pathOf(p: ReleaseFiles) = "$root/out/package/${p.zip}"
 
-    private suspend fun assets(): List<String> = packages.flatMap { p ->
-        if (!p.split) {
-            listOf(pathOf(p))
-        } else {
-            tool("find", partsDir, "-maxdepth", "1", "-name", "${p.zip}.*", "-type", "f")
-                .lines().filter { it.isNotBlank() }.sorted()
-        }
+    /** The files to upload; parts gone since a resumed prepare step (or never made) are made again. */
+    private suspend fun assets(): List<String> {
+        if (split && packages.filter { it.split }.any { partsOf(it).isEmpty() }) prepareAssets()
+        return packages.flatMap { p -> if (!p.split) listOf(pathOf(p)) else partsOf(p) }
     }
+
+    private suspend fun partsOf(p: ReleaseFiles): List<String> =
+        exec("find", partsDir, "-maxdepth", "1", "-name", "${p.zip}.*", "-type", "f").stdout
+            .lines().filter { it.isNotBlank() }.sorted()
 
     private suspend fun createRelease(): String {
         if (exec("gh", "release", "view", tag, "--repo", repo).exitCode == 0) return "release $tag exists"

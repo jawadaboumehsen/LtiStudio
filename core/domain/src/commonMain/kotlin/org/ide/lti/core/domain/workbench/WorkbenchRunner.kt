@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
@@ -21,6 +23,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.runToEnd
+import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -35,6 +38,8 @@ public class WorkbenchRunner(
     private val lock: JobLock,
     private val restorePoints: RestorePointStore,
     private val acknowledgements: AckStore,
+    /** A workbench job never changes a workspace while one of its builds is queued or running. */
+    private val runs: RunRepository? = null,
 ) {
     /** Whether [feature] (a [RiskyFeature]) was acknowledged in [workspaceId]; asked once per workspace (FR-035). */
     public suspend fun isAcknowledged(workspaceId: String, feature: String): Boolean =
@@ -54,9 +59,19 @@ public class WorkbenchRunner(
             is LockResult.Locked -> throw RefusalException(RefusalCatalog.workspaceLocked(holder = acquired.holderName))
 
             is LockResult.Acquired -> try {
+                runs?.latestActive(workspaceId)?.let { run ->
+                    throw RefusalException(
+                        Refusal(
+                            "A build is running in this workspace.",
+                            run.id,
+                            "Wait for it to finish, or cancel it, then try again.",
+                        ),
+                    )
+                }
                 Job(ws).block()
             } finally {
-                acquired.handle.release()
+                // Released even when the job was cancelled: a cancelled coroutine cannot run the remote delete.
+                withContext(NonCancellable) { acquired.handle.release() }
             }
         }
     }
@@ -119,13 +134,18 @@ public class WorkbenchRunner(
         public suspend fun backup(tool: String, itemRel: String): RestorePoint {
             val now = Clock.System.now()
             val backupRel = "restore/$tool/${now.toEpochMilliseconds()}/$itemRel"
-            sh("mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"", abs(itemRel), abs(backupRel))
+            // An item the tool is about to create has nothing to copy: its point records that it was added.
+            val added = !exists(itemRel)
+            if (!added) {
+                sh("mkdir -p \"$(dirname \"$2\")\" && cp -a -T \"$1\" \"$2\"", abs(itemRel), abs(backupRel))
+            }
             val point = RestorePoint(
                 id = "$tool:${now.toEpochMilliseconds()}:$itemRel",
                 tool = tool,
                 itemPath = itemRel,
                 createdAt = now.toString(),
                 backupPath = backupRel,
+                added = added,
             )
             restorePoints.addRestorePoint(ws, point)
             return point

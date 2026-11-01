@@ -27,10 +27,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 @Serializable
-public data class SnapshotList(
-    val schemaVersion: Int = 1,
-    val items: List<ConfigurationSnapshot> = emptyList(),
-)
+public data class SnapshotList(val schemaVersion: Int = 1, val items: List<ConfigurationSnapshot> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for configuration snapshots.
@@ -49,8 +46,8 @@ public class SnapshotPreferencesDataSource(
     public val snapshots: Flow<List<ConfigurationSnapshot>> = _snapshots.asStateFlow()
     public val currentSnapshots: List<ConfigurationSnapshot> get() = _snapshots.value
 
-    public fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> {
-        return _snapshots.map { list -> list.filter { it.workspaceId == workspaceId } }
+    public fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> = _snapshots.map { list ->
+        list.filter { it.workspaceId == workspaceId }
     }
 
     public suspend fun getSnapshot(id: String): ConfigurationSnapshot? = withContext(ioDispatcher) {
@@ -99,20 +96,20 @@ public class SnapshotPreferencesDataSource(
                 }
             }
         } catch (e: Exception) {
-            co.touchlab.kermit.Logger.w(e) { "Failed to decode persisted ConfigurationSnapshot store. Discarding." }
+            // Kept aside, not deleted: the raw value still holds every earlier snapshot.
+            val quarantine = "$KEY_SNAPSHOTS.quarantine.${System.currentTimeMillis()}"
+            co.touchlab.kermit.Logger.w(
+                e,
+            ) { "The ConfigurationSnapshot store could not be read; it was kept as $quarantine." }
+            settings[quarantine] = raw.orEmpty()
             settings.remove(KEY_SNAPSHOTS)
             emptyList()
         }
     }
 
+    /** Throws when the store cannot be saved: a snapshot is never acknowledged before it is durable. */
     private fun persistSnapshotsInternal(snapshots: List<ConfigurationSnapshot>) {
-        try {
-            val wrapper = SnapshotList(schemaVersion = 1, items = snapshots)
-            val encoded = json.encodeToString(wrapper)
-            settings[KEY_SNAPSHOTS] = encoded
-        } catch (_: Exception) {
-            // Keep in-memory
-        }
+        settings[KEY_SNAPSHOTS] = json.encodeToString(SnapshotList(schemaVersion = 1, items = snapshots))
     }
 
     public companion object {

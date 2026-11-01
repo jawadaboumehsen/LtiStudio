@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.domain.usecase.workspace
 
-import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.workspace.Workspace
@@ -26,34 +25,20 @@ class OpenWorkspaceByPathUseCase(
     private val repository: WorkspaceRepository,
     private val workspaceManager: WorkspaceManager? = null,
 ) {
-    suspend operator fun invoke(
-        path: String,
-        type: WorkspaceType = WorkspaceType.LOCAL,
-    ): Result<Workspace> {
-        return try {
-            val normalized = path.trimEnd('/', '\\')
-            val workspaceId = path.hashCode().toString()
-            val name = normalized.substringAfterLast('/').substringAfterLast('\\').ifEmpty { path }
+    suspend operator fun invoke(path: String, type: WorkspaceType = WorkspaceType.LOCAL): Result<Workspace> = try {
+        val workspace = WorkspaceManager.workspaceForPath(repository, path, type)
+        val workspaceId = workspace.id
+        repository.saveWorkspace(workspace)
 
-            val workspace = Workspace(
-                id = workspaceId,
-                name = name,
-                path = path,
-                type = type,
-                lastOpened = Clock.System.now(),
-            )
-            repository.saveWorkspace(workspace)
-
-            val openUseCase = OpenWorkspaceUseCase(repository, workspaceManager)
-            val result = openUseCase(workspaceId)
-            if (result.isSuccess) {
-                result
-            } else {
-                workspaceManager?.setCurrentWorkspace(workspace)
-                Result.success(workspace)
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+        val openUseCase = OpenWorkspaceUseCase(repository, workspaceManager)
+        val result = openUseCase(workspaceId)
+        if (result.isSuccess) {
+            result
+        } else {
+            workspaceManager?.setCurrentWorkspace(workspace)
+            Result.success(workspace)
         }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 }

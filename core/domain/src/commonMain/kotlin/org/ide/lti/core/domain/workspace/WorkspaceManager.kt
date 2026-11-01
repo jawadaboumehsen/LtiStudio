@@ -21,15 +21,13 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
+import org.ide.lti.core.model.workspace.WorkspaceType
 
 /**
  * Manages workspace state and operations.
  * Handles opening, closing, and switching between workspaces.
  */
-class WorkspaceManager(
-    val repository: WorkspaceRepository,
-    private val coroutineScope: CoroutineScope,
-) {
+class WorkspaceManager(val repository: WorkspaceRepository, private val coroutineScope: CoroutineScope) {
     private val _currentWorkspace = MutableStateFlow<Workspace?>(null)
     val currentWorkspace: StateFlow<Workspace?> = _currentWorkspace.asStateFlow()
 
@@ -39,16 +37,12 @@ class WorkspaceManager(
     /**
      * Get all available workspaces.
      */
-    fun getWorkspaces(): Flow<List<Workspace>> {
-        return repository.getWorkspaces()
-    }
+    fun getWorkspaces(): Flow<List<Workspace>> = repository.getWorkspaces()
 
     /**
      * Get recent projects.
      */
-    fun getRecentProjects(): Flow<List<RecentProject>> {
-        return repository.getRecentProjects()
-    }
+    fun getRecentProjects(): Flow<List<RecentProject>> = repository.getRecentProjects()
 
     /**
      * Open a workspace by ID.
@@ -76,7 +70,8 @@ class WorkspaceManager(
                 targetBinding = workspace.targetBinding,
                 targetDisplayName = previous?.targetDisplayName,
             )
-            repository.addRecentProject(recentProject)
+            // The workspace is open either way: a failed recents update is not an open failure.
+            runCatching { repository.addRecentProject(recentProject) }
 
             Result.success(workspace)
         } catch (e: Exception) {
@@ -88,19 +83,9 @@ class WorkspaceManager(
      * Open a workspace by path.
      */
     suspend fun openWorkspaceByPath(path: String): Result<Workspace> {
-        val workspaceId = path.hashCode().toString()
-        val normalized = path.trimEnd('/', '\\')
-        val name = normalized.substringAfterLast('/').substringAfterLast('\\').ifEmpty { path }
-
-        val workspace = Workspace(
-            id = workspaceId,
-            name = name,
-            path = path,
-            lastOpened = Clock.System.now(),
-        )
-
+        val workspace = workspaceForPath(repository, path)
         repository.saveWorkspace(workspace)
-        return openWorkspace(workspaceId)
+        return openWorkspace(workspace.id)
     }
 
     /**
@@ -124,6 +109,9 @@ class WorkspaceManager(
      */
     fun setCurrentWorkspace(workspace: Workspace?) {
         _currentWorkspace.value = workspace
+        if (_currentSession.value?.workspaceId != workspace?.id) {
+            _currentSession.value = workspace?.let { WorkspaceSession(workspaceId = it.id) }
+        }
     }
 
     /**
@@ -142,11 +130,10 @@ class WorkspaceManager(
      */
     fun updateSession(update: (WorkspaceSession) -> WorkspaceSession) {
         _currentSession.value?.let { currentSession ->
-            _currentSession.value = update(currentSession)
-            // Auto-save session in background
-            coroutineScope.launch {
-                _currentSession.value?.let { repository.saveWorkspaceSession(it) }
-            }
+            val updated = update(currentSession)
+            _currentSession.value = updated
+            // Auto-save in background: the edited session itself, not whichever is current when it runs.
+            coroutineScope.launch { repository.saveWorkspaceSession(updated) }
         }
     }
 
@@ -159,5 +146,43 @@ class WorkspaceManager(
         if (_currentWorkspace.value?.id == workspaceId) {
             closeWorkspace()
         }
+    }
+
+    companion object {
+        /**
+         * The workspace registered for [path] (compared as [canonicalPath]: separators, trailing slash and, for a
+         * drive path, letter case do not matter), keeping all it records; else a new one with an id derived from
+         * the canonical path by SHA-256 (String.hashCode collides: "Aa" and "BB").
+         */
+        suspend fun workspaceForPath(
+            repository: WorkspaceRepository,
+            path: String,
+            type: WorkspaceType = WorkspaceType.LOCAL,
+        ): Workspace {
+            val key = canonicalPath(path)
+            val now = Clock.System.now()
+            repository.getWorkspaces().first().firstOrNull { canonicalPath(it.path) == key }
+                ?.let { return it.copy(lastOpened = now) }
+            // A drive root keeps its separator: "C:" alone means that drive's current folder.
+            val trimmed = path.trimEnd('/', '\\').ifEmpty { path }
+                .let { if (DRIVE_ONLY.matches(it)) it + path[it.length] else it }
+            val name = trimmed.substringAfterLast('/').substringAfterLast('\\').ifEmpty { path }
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(key.encodeToByteArray())
+            val id = "ws-" + digest.take(ID_BYTES).joinToString("") { "%02x".format(it) }
+            return Workspace(id = id, name = name, path = trimmed, type = type, lastOpened = now)
+        }
+
+        fun canonicalPath(path: String): String {
+            val forward = path.replace('\\', '/')
+            // A UNC root (//server/share) keeps its two slashes: collapsing them would make it a Linux path.
+            val unc = forward.startsWith("//")
+            val slashes = (if (unc) "/" else "") + forward.replace(Regex("/+"), "/").trimEnd('/').ifEmpty { "/" }
+            return if (unc || DRIVE.containsMatchIn(slashes)) slashes.lowercase() else slashes
+        }
+
+        private val DRIVE_ONLY = Regex("^[A-Za-z]:$")
+
+        private val DRIVE = Regex("^[A-Za-z]:")
+        private const val ID_BYTES = 12
     }
 }

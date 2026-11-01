@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -50,8 +52,17 @@ public class RunRepositoryImpl(
 ) : RunRepository {
 
     private val runs = MutableStateFlow<Map<String, BuildRun>>(emptyMap())
+
+    /** A run's whole event log, or nothing: a partial list is never cached. Guarded by [eventsLock]. */
     private val events = mutableMapOf<String, MutableList<String>>()
     private val lastLogMirror = mutableMapOf<String, Long>()
+
+    /** Where each run's current stage began in its event log, for that stage's own log file. */
+    private val stageStart = mutableMapOf<String, Pair<String, Int>>()
+    private val eventsLock = Mutex()
+
+    /** Run records are written one at a time: a heartbeat or claim never interleaves with a state change. */
+    private val writes = Mutex()
 
     init {
         scope.launch(ioDispatcher) {
@@ -91,38 +102,50 @@ public class RunRepositoryImpl(
     }
 
     override suspend fun upsert(run: BuildRun): Unit = withContext(ioDispatcher) {
-        runs.update { it + (run.id to run) }
-        runRecordDataSource.saveRun(run)
+        writes.withLock { persist(run) }
         mirrorRunToRemoteWorkspace(run)
         // Step and stage boundaries always bring the mirrored log up to date.
-        if (events[run.id] != null) mirrorStageLogsToRemoteWorkspace(run.id)
+        if (eventsLock.withLock { events[run.id] != null }) mirrorStageLogsToRemoteWorkspace(run.id)
+    }
+
+    /** Disk first: memory (what the UI and admission see) only ever shows a record that was saved. */
+    private suspend fun persist(run: BuildRun) {
+        runRecordDataSource.saveRun(run)
+        runs.update { it + (run.id to run) }
     }
 
     override suspend fun appendEvents(runId: String, events: List<String>): Unit = withContext(ioDispatcher) {
         if (events.isEmpty()) return@withContext
-        this@RunRepositoryImpl.events.getOrPut(runId) { mutableListOf() }.addAll(events)
         runRecordDataSource.appendEvents(runId, events)
-        // The mirror uploads the whole stage log, so it runs at most every few seconds, not per output batch.
-        val now = System.currentTimeMillis()
-        if (now - (lastLogMirror[runId] ?: 0L) >= LOG_MIRROR_INTERVAL_MS) {
-            lastLogMirror[runId] = now
-            mirrorStageLogsToRemoteWorkspace(runId)
+        // Only a cached whole log is extended; otherwise the next read loads it all from disk.
+        val mirrorNow = eventsLock.withLock {
+            this@RunRepositoryImpl.events[runId]?.addAll(events)
+            // The mirror uploads the whole stage log, so it runs at most every few seconds, not per output batch.
+            val now = System.currentTimeMillis()
+            (now - (lastLogMirror[runId] ?: 0L) >= LOG_MIRROR_INTERVAL_MS).also { if (it) lastLogMirror[runId] = now }
         }
+        if (mirrorNow) mirrorStageLogsToRemoteWorkspace(runId)
     }
 
+    /**
+     * Events from [fromSeq], 1-based and inclusive as on disk (0 or 1: all). The whole log is cached on first read,
+     * so memory and disk give the same answer.
+     */
     override suspend fun cachedEvents(runId: String, fromSeq: Long): List<String> = withContext(ioDispatcher) {
-        val inMemory = events[runId]
-        if (!inMemory.isNullOrEmpty()) {
-            return@withContext inMemory.drop(fromSeq.toInt().coerceIn(0, inMemory.size))
+        val all = eventsLock.withLock {
+            events[runId]?.toList() ?: runRecordDataSource.getEvents(runId, 0L)
+                .also { if (it.isNotEmpty()) events[runId] = it.toMutableList() }
         }
-        val fromDisk = runRecordDataSource.getEvents(runId, fromSeq)
-        if (fromDisk.isNotEmpty()) {
-            events.getOrPut(runId) { mutableListOf() }.addAll(fromDisk)
-        }
-        fromDisk
+        all.drop((fromSeq - 1).coerceIn(0L, all.size.toLong()).toInt())
     }
 
     override suspend fun latestActive(workspaceId: String): BuildRun? = withContext(ioDispatcher) {
+        runRecordDataSource.currentSummaries
+            .filter { it.workspaceId == workspaceId && it.id !in runs.value }
+            .forEach { summary ->
+                runCatching { runRecordDataSource.getRun(summary.id) }.getOrNull()
+                    ?.let { loaded -> runs.update { it + (loaded.id to loaded) } }
+            }
         runs.value.values
             .filter { it.workspaceId == workspaceId && it.state.isActive }
             .maxByOrNull { it.startedAt }
@@ -136,8 +159,15 @@ public class RunRepositoryImpl(
     }
 
     override suspend fun deleteRun(runId: String): Unit = withContext(ioDispatcher) {
+        // A queued or running build keeps its record: its driver and the active-run check need it.
+        // A run not loaded yet is read first, so a cold cache cannot hide that it is active.
+        check(getRun(runId)?.state?.isActive != true) { "Run $runId is still active; cancel it first." }
         runs.update { it - runId }
-        events.remove(runId)
+        eventsLock.withLock {
+            events.remove(runId)
+            lastLogMirror.remove(runId)
+            stageStart.remove(runId)
+        }
         runRecordDataSource.deleteRun(runId)
     }
 
@@ -171,24 +201,27 @@ public class RunRepositoryImpl(
         }
     }
 
+    /** Compare-and-set under [writes]: two claimants can never both win. */
     override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean =
         withContext(ioDispatcher) {
-            val run = getRun(runId) ?: return@withContext false
-            val currentDriver = run.driverInstanceId
-            val lastHeartbeat = run.driverHeartbeatEpochMs
-            val leaseExpired = lastHeartbeat == null || (now - lastHeartbeat >= 45_000L)
-            if (currentDriver == null || currentDriver == instanceId || leaseExpired) {
-                upsert(run.copy(driverInstanceId = instanceId, driverHeartbeatEpochMs = now))
-                return@withContext true
+            val claimed = writes.withLock {
+                val run = getRun(runId) ?: return@withLock null
+                val lastHeartbeat = run.driverHeartbeatEpochMs
+                val leaseExpired = lastHeartbeat == null || (now - lastHeartbeat >= LEASE_MS)
+                val free = run.driverInstanceId == null || run.driverInstanceId == instanceId || leaseExpired
+                run.copy(driverInstanceId = instanceId, driverHeartbeatEpochMs = now).takeIf { free }
+                    ?.also { persist(it) }
             }
-            false
+            claimed?.let { mirrorRunToRemoteWorkspace(it) }
+            claimed != null
         }
 
+    /** Only the heartbeat time of the latest record changes: a newer state is never replaced by an older copy. */
     override suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long): Unit =
         withContext(ioDispatcher) {
-            val run = getRun(runId) ?: return@withContext
-            if (run.driverInstanceId == instanceId) {
-                upsert(run.copy(driverHeartbeatEpochMs = now))
+            writes.withLock {
+                val run = getRun(runId)?.takeIf { it.driverInstanceId == instanceId } ?: return@withLock
+                persist(run.copy(driverHeartbeatEpochMs = now))
             }
         }
 
@@ -213,7 +246,12 @@ public class RunRepositoryImpl(
             val activeStage = run.stages.firstOrNull { it.state == StageState.RUNNING }?.stageId
                 ?: run.stages.lastOrNull()?.stageId ?: return
             val allLogs = cachedEvents(runId)
-            val logContent = allLogs.joinToString("\n")
+            // A stage's file holds the events since it began, not the earlier stages' output.
+            val from = eventsLock.withLock {
+                stageStart[runId]?.takeIf { it.first == activeStage.name }?.second
+                    ?: allLogs.size.also { stageStart[runId] = activeStage.name to it }
+            }
+            val logContent = allLogs.drop(from).joinToString("\n")
             port.uploadFile(workspace, "stages/${activeStage.name.lowercase()}.log", logContent.encodeToByteArray())
         } catch (_: Exception) {
             // Non-critical mirror operation
@@ -222,5 +260,6 @@ public class RunRepositoryImpl(
 
     private companion object {
         const val LOG_MIRROR_INTERVAL_MS = 5_000L
+        const val LEASE_MS = 45_000L
     }
 }

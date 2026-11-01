@@ -14,6 +14,8 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * Validates fstab, build.prop, fs_config, and file_contexts syntax.
  */
 public object ConfigValidators {
+    private val ID_RANGE = 0L..0xFFFFFFFFL
+    private val MODE_RANGE = 0..0b111_111_111_111
     private val WHITESPACE = "\\s+".toRegex()
     private const val OCTAL = 8
 
@@ -43,9 +45,10 @@ public object ConfigValidators {
             listOf("Line $n: fs_config requires at least 4 fields (<path> <uid> <gid> <mode>), found ${tokens.size}")
         } else {
             listOfNotNull(
-                "Line $n: Invalid UID number '${tokens[1]}'".takeIf { tokens[1].toLongOrNull() == null },
-                "Line $n: Invalid GID number '${tokens[2]}'".takeIf { tokens[2].toLongOrNull() == null },
-                "Line $n: Invalid octal mode '${tokens[3]}'".takeIf { tokens[3].toIntOrNull(OCTAL) == null },
+                // An owner is an unsigned 32-bit id; a mode holds permission and setuid/setgid/sticky bits only.
+                "Line $n: Invalid UID number '${tokens[1]}'".takeIf { tokens[1].toLongOrNull() !in ID_RANGE },
+                "Line $n: Invalid GID number '${tokens[2]}'".takeIf { tokens[2].toLongOrNull() !in ID_RANGE },
+                "Line $n: Invalid octal mode '${tokens[3]}'".takeIf { tokens[3].toIntOrNull(OCTAL) !in MODE_RANGE },
             )
         }
     }

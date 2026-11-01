@@ -107,6 +107,7 @@ class PluginIndexAdapter(
                 cacheSuccess(source.url, stepResult.doc, now)
                 IndexFetchResult.Fetched(stepResult.doc, now)
             }
+
             is RemoteFetchResult.Failure -> {
                 if (stepResult.reason is IndexFailure.Offline && allowCache) {
                     val cached = readCached(source.url)
@@ -161,12 +162,12 @@ class PluginIndexAdapter(
     /** `<publisher>-<id>-<version>.lti-mod.zip` (the SDK's package name); other assets are not packages. */
     private fun assetEntry(asset: GithubAsset, tag: String): IndexEntry? {
         val base = asset.name.takeIf { it.endsWith(PACKAGE_SUFFIX) }?.removeSuffix(PACKAGE_SUFFIX) ?: return null
-        val id = base.substringAfter('-', "").substringBeforeLast('-', "")
-        if (id.isEmpty()) return null
+        // The version starts with a digit and may carry a prerelease (1.2.3-beta.1); the id may hold hyphens.
+        val (publisher, id, version) = assetName.matchEntire(base)?.destructured ?: return null
         return IndexEntry(
-            publisher = base.substringBefore('-'),
+            publisher = publisher,
             id = id,
-            version = base.substringAfterLast('-'),
+            version = version,
             sdkApiRange = "",
             targetSummary = "Release $tag",
             packageUrl = asset.url,
@@ -175,6 +176,8 @@ class PluginIndexAdapter(
             fileSha256 = asset.digest?.removePrefix("sha256:"),
         )
     }
+
+    private val assetName = Regex("""^([^-]+)-(.+)-(\d[0-9A-Za-z.+]*(?:-[0-9A-Za-z.]+)?)$""")
 
     /** `owner/repo` of a `https://github.com/owner/repo` URL, or null for any other source. */
     private fun githubRepo(uri: URI): String? {
@@ -197,6 +200,7 @@ class PluginIndexAdapter(
                     }
                     currentUri = step.nextUri
                 }
+
                 is StepResult.Done -> return step.result
             }
         }
@@ -220,20 +224,25 @@ class PluginIndexAdapter(
         return try {
             when (val code = conn.responseCode) {
                 in REDIRECT_RANGE -> handleRedirect(conn, currentUri)
+
                 in SUCCESS_RANGE -> StepResult.Done(handleSuccess(conn, parse))
+
                 401, 403 -> {
                     conn.disconnect()
                     StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Unauthenticated))
                 }
+
                 429 -> {
                     val retryAfter = conn.getHeaderField("Retry-After")?.trim()?.toLongOrNull()
                     conn.disconnect()
                     StepResult.Done(RemoteFetchResult.Failure(IndexFailure.RateLimited(retryAfter)))
                 }
+
                 in 500..599 -> {
                     conn.disconnect()
                     StepResult.Done(RemoteFetchResult.Failure(IndexFailure.ServerError(code)))
                 }
+
                 else -> {
                     conn.disconnect()
                     StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Malformed("HTTP $code")))
@@ -266,8 +275,10 @@ class PluginIndexAdapter(
         return when {
             nextUri.scheme?.lowercase() != "https" ->
                 StepResult.Done(RemoteFetchResult.Failure(IndexFailure.InsecureSource))
+
             !nextUri.userInfo.isNullOrBlank() ->
                 StepResult.Done(RemoteFetchResult.Failure(IndexFailure.InsecureSource))
+
             else -> StepResult.Redirect(nextUri)
         }
     }

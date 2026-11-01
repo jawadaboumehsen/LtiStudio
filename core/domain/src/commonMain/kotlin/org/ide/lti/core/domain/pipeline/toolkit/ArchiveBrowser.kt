@@ -52,8 +52,6 @@ public object ArchiveBrowser {
     public const val SCRIPT: String = """
         set -e
         mode="$1"; z="$2"; c="$3"; dest="$4"; f="$5"; shift 5
-        # Listing the archive itself starts afresh; the levels below stay cached while browsing them.
-        { [ ${'$'}# -eq 0 ] && [ "${'$'}mode" = list ]; } && rm -rf "${'$'}c"
         mkdir -p "${'$'}c"
         magic() { xxd -p -l 8 "$1" | tr -d '\n'; }
         stream() { case "$1" in 1f8b*|fd377a585a00*|28b52ffd*|425a68*) return 0 ;; esac; return 1; }
@@ -63,7 +61,7 @@ public object ArchiveBrowser {
           _mg=$(magic "$1")
           if lz4ish "${'$'}_mg"; then lz4 -dc "$1"
           elif stream "${'$'}_mg"; then "${'$'}z" e -so "$1"
-          else "${'$'}z" e -so "$1" -- "$2"
+          else "${'$'}z" e -so -spd "$1" -- "$2"
           fi
         }
         container() {
@@ -71,7 +69,8 @@ public object ArchiveBrowser {
           [ "$(printf %s "$1" | cut -c515-524)" = 7573746172 ]
         }
         while [ ${'$'}# -gt 0 ] && [ "$1" != "--" ]; do
-          k="${'$'}c/$(printf '%s\n' "${'$'}f" "$1" | sha1sum | cut -c1-16)"
+          # Keyed by the parent's path, size and time: a replaced archive never serves its old members.
+          k="${'$'}c/$(printf '%s\n' "${'$'}f" "$(stat -c %s.%.9Y.%i "${'$'}f")" "$1" | sha1sum | cut -c1-16)"
           if [ ! -s "${'$'}k" ]; then
             peek=$(cat_member "${'$'}f" "$1" 2>/dev/null | head -c 512 | xxd -p | tr -d '\n')
             if ! container "${'$'}peek"; then echo "magic ${'$'}peek"; echo "notarchive $1"; exit 0; fi
@@ -82,10 +81,15 @@ public object ArchiveBrowser {
         [ "${'$'}{1:-}" = "--" ] && shift
         echo "magic $(xxd -p -l 512 "${'$'}f" | tr -d '\n')"
         if [ "${'$'}mode" = list ]; then
-          if lz4ish "$(magic "${'$'}f")"; then echo lz4; else "${'$'}z" l -slt -ba "${'$'}f" 2>/dev/null || true; fi
+          if lz4ish "$(magic "${'$'}f")"; then echo lz4; else "${'$'}z" l -slt -ba "${'$'}f" || [ ${'$'}? -eq 1 ]; fi
         else
           for m in "$@"; do
+            case "/${'$'}m/" in */../*|//*) echo "unsafe member path: ${'$'}m" >&2; exit 2 ;; esac
             mkdir -p "${'$'}dest/$(dirname "${'$'}m")"
+            # Resolved, the folder must still be inside dest: a link already there must not lead the write out.
+            case "$(realpath "${'$'}dest/$(dirname "${'$'}m")")/" in "$(realpath "${'$'}dest")"/*) ;;
+              *) echo "unsafe member path: ${'$'}m" >&2; exit 2 ;; esac
+            rm -f "${'$'}dest/${'$'}m"
             cat_member "${'$'}f" "${'$'}m" > "${'$'}dest/${'$'}m"
             echo "extracted ${'$'}m"
           done

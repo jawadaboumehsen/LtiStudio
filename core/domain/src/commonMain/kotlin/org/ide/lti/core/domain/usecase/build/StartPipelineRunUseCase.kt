@@ -1,13 +1,19 @@
 package org.ide.lti.core.domain.usecase.build
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
+import org.ide.lti.core.domain.pipeline.toolkit.LockResult
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.repository.run.RunRepository
@@ -34,12 +40,43 @@ public class StartPipelineRunUseCase(
     private val orchestrator: PipelineOrchestrator,
     private val scope: CoroutineScope? = null,
     private val settingsStore: WorkspaceSettingsStore? = null,
+    /** The workbench job lock: a build never starts while an interactive edit is changing the workspace. */
+    private val jobLock: JobLock? = null,
 ) {
     public suspend operator fun invoke(
         workspaceId: String,
         driverInstanceId: String = "driver_${UUID.randomUUID()}",
         throughStage: StageId? = null,
     ): Result<BuildRun> = runCatching {
+        // One start at a time: the active-run check and the QUEUED record must not interleave with another start.
+        admission.withLock { start(workspaceId, driverInstanceId, throughStage) }
+    }
+
+    /**
+     * Holds the workspace's job lock while the run is checked and queued: a workbench edit then either holds the
+     * lock (and the build is refused) or finds the queued run (and the edit is refused). Never both running.
+     */
+    private suspend fun start(workspaceId: String, driverInstanceId: String, throughStage: StageId?): BuildRun {
+        val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
+            "Workspace not found: $workspaceId"
+        }
+        val lease = when (val lock = jobLock?.acquire(workspace, BUILD_HOLDER)) {
+            null -> null
+
+            is LockResult.Locked ->
+                error("Cannot start build: \"${lock.holderName}\" is changing this workspace; wait for it to finish.")
+
+            is LockResult.Acquired -> lock.handle
+        }
+        return try {
+            queue(workspaceId, driverInstanceId, throughStage)
+        } finally {
+            lease?.let { withContext(NonCancellable) { it.release() } }
+        }
+    }
+
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
+    private suspend fun queue(workspaceId: String, driverInstanceId: String, throughStage: StageId?): BuildRun {
         settingsStore?.flush(workspaceId)?.getOrThrow()
         // 1. Fetch workspace
         val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
@@ -101,11 +138,9 @@ public class StartPipelineRunUseCase(
             ConfigurationSnapshot.serializer(),
             snapshot,
         )
-        executionPort.uploadFile(
-            workspace,
-            "runs/$runId/config.json",
-            configJson.toByteArray(Charsets.UTF_8),
-        )
+        check(executionPort.uploadFile(workspace, "runs/$runId/config.json", configJson.toByteArray(Charsets.UTF_8))) {
+            "Cannot start build: runs/$runId/config.json could not be written to the workspace"
+        }
 
         // 7. Persist run as QUEUED
         val queuedRun = BuildRun(
@@ -135,7 +170,12 @@ public class StartPipelineRunUseCase(
             }
         }
 
-        queuedRun
+        return queuedRun
+    }
+
+    private companion object {
+        val admission = Mutex()
+        const val BUILD_HOLDER = "Starting a build"
     }
 
     /** Size of an already-imported archive (`stat -c %s`), or null when absent/unknown. */

@@ -137,9 +137,11 @@ internal fun PluginImportTab(
                         onDismiss = onDismissLegacyWarning,
                     )
                 }
+
                 inspection == null -> {
                     ImportInspectFirstEmptyState()
                 }
+
                 else -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -506,8 +508,9 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
 
 @Composable
 private fun ImportSignatureCard(isSigned: Boolean) {
-    val sigColor = if (isSigned) GlassTheme.diagnosticColors.success else MaterialTheme.colorScheme.onSurfaceVariant
-    val sigPainter = if (isSigned) AppIcons.CheckPainterResource() else AppIcons.InfoPainterResource()
+    // Signatures are not verified yet (no trusted publisher keys), so a signature file proves nothing.
+    val sigColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val sigPainter = AppIcons.InfoPainterResource()
 
     Box(
         modifier = Modifier
@@ -541,7 +544,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
-                    text = if (isSigned) "Verified signature" else "Unsigned · Unverified publisher",
+                    text = if (isSigned) "Signature not verified" else "Unsigned · Unverified publisher",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = sigColor,
@@ -549,7 +552,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
             }
             Text(
                 text = if (isSigned) {
-                    "Digitally signed by verified publisher."
+                    "It carries a signature file, but this app cannot verify signatures yet."
                 } else {
                     "This package is not digitally signed."
                 },
@@ -597,24 +600,19 @@ private fun ImportRightReviewColumn(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isSigned = inspection.hasSignature
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        if (!isSigned) {
-            UnsignedSecurityAlertCard()
-        }
+        // Every package is unverified until signatures are checked against trusted keys.
+        UnsignedSecurityAlertCard()
 
         DependencyResolutionCard(inspection = inspection)
 
-        if (!isSigned) {
-            UnsignedAcknowledgementRow(
-                acknowledged = acknowledgedUnverified,
-                onAcknowledgedChange = onAcknowledgedChange,
-            )
-        }
+        UnsignedAcknowledgementRow(
+            acknowledged = acknowledgedUnverified,
+            onAcknowledgedChange = onAcknowledgedChange,
+        )
 
         val canInstall = canInstallInspectedPackage(inspection, acknowledgedUnverified)
         val isInstalling = installState is InstallState.Downloading || installState is InstallState.Quarantined
@@ -627,14 +625,7 @@ private fun ImportRightReviewColumn(
             Spacer(modifier = Modifier.weight(1f))
 
             GlassButton(
-                onClick = {
-                    val decision = if (isSigned) {
-                        TrustDecision.TRUSTED_SIGNATURE
-                    } else {
-                        TrustDecision.TRUSTED_UNVERIFIED
-                    }
-                    onConfirmInstall(decision)
-                },
+                onClick = { onConfirmInstall(TrustDecision.TRUSTED_UNVERIFIED) },
                 enabled = canInstall && !isInstalling,
                 variant = GlassButtonVariant.Primary,
                 shape = GlassShapes.HazeMediumSmall,
@@ -717,7 +708,7 @@ private fun UnsignedSecurityAlertCard(modifier: Modifier = Modifier) {
                     color = PluginThemeColors.WarningText,
                 )
                 Text(
-                    text = "This package was not signed by a verified publisher. Only install packages " +
+                    text = "Its publisher is not verified. Only install packages " +
                         "from sources you trust. Malicious packages can modify your build output or target device.",
                     style = MaterialTheme.typography.bodySmall,
                     color = PluginThemeColors.WarningBody,

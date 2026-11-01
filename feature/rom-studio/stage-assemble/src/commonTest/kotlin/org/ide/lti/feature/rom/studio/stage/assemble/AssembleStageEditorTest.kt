@@ -234,8 +234,15 @@ class AssembleStageEditorTest {
         val service = Service { cmd ->
             val script = cmd.args.firstOrNull { "cpio -it" in it }
             when {
-                cmd.toolId == "sh" && script != null -> ToolResult(0, "init\nsystem\n", "")
-                cmd.toolId == "find" && "-mindepth" in cmd.args -> ToolResult(0, "init\nsystem\nadded.rc\n", "")
+                // `cpio -itv` and `find -printf '%y %s %P'` of the packed ramdisk and its folder.
+                cmd.toolId == "sh" && script != null -> ToolResult(
+                    0,
+                    "-rwxr-x---   1 0        0         3228728 Jan  1  1970 init\n" +
+                        "drwxr-xr-x   1 0        0               0 Jan  1  1970 system\n",
+                    "",
+                )
+                cmd.toolId == "find" && "-mindepth" in cmd.args ->
+                    ToolResult(0, "f 3228728 init\nd 4096 system\nf 10 added.rc\n", "")
                 cmd.toolId == "sh" && "tools.d" in cmd.args.first { it != "-c" } -> ToolResult(0, "/bin/mkbootfs\n", "")
                 else -> ToolResult(0, "", "")
             }

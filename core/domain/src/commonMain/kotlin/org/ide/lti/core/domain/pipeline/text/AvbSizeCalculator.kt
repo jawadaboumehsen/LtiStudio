@@ -20,9 +20,7 @@ public object AvbSizeCalculator {
         return roundTo4KiB(minOverhead)
     }
 
-    public fun roundTo4KiB(bytes: Long): Long {
-        return (bytes + 4095L) / 4096L * 4096L
-    }
+    public fun roundTo4KiB(bytes: Long): Long = (bytes + 4095L) / 4096L * 4096L
 
     public suspend fun findPartitionSize(
         imageSizeBytes: Long,
@@ -37,8 +35,9 @@ public object AvbSizeCalculator {
             high += reserve
             probes++
         }
-        if (probes >= 20) {
-            return roundTo4KiB(imageSizeBytes + reserve)
+        // No size tried holds the image: returning a guess would build a partition the footer does not fit.
+        check(probes < 20) {
+            "No partition size up to $high bytes holds a $imageSizeBytes-byte image with its AVB footer."
         }
 
         var optimal = high

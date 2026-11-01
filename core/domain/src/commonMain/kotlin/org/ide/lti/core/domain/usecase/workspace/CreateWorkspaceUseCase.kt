@@ -76,7 +76,9 @@ class CreateWorkspaceUseCase(
             throw EnvironmentNotReadyException(msg)
         }
 
+        // A name with no a-z/0-9 at all (Arabic only, say) still gets a folder of its own, never workspaces/ itself.
         val slug = params.name.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+            .ifEmpty { "workspace-" + UUID.randomUUID().toString().take(SLUG_ID_CHARS) }
         val destination = params.destinationLinuxPath
             ?: "${workDir.trimEnd('/')}/workspaces/$slug"
 
@@ -113,8 +115,11 @@ class CreateWorkspaceUseCase(
         provisioningPort.provision(spec).collect { event ->
             when (event) {
                 is ProvisioningEvent.Step -> emit(event)
+
                 is ProvisioningEvent.Output -> emit(event)
+
                 is ProvisioningEvent.Failed -> emit(event)
+
                 is ProvisioningEvent.Completed -> {
                     register(params.name, destination, target, workspaceId, snapshot)
                     emit(event)
@@ -195,3 +200,5 @@ class CreateWorkspaceUseCase(
         provisioningPort.cancel(id)
     }
 }
+
+private const val SLUG_ID_CHARS = 8

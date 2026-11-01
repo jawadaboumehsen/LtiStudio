@@ -128,4 +128,32 @@ class RamdiskCheckTest {
         assertNotNull(xz)
         assertTrue(xz.cause.contains("compressed with xz") && xz.cause.contains("gzip, lz4, zstd"), xz.cause)
     }
+
+    @Test
+    fun theRepackComparisonUsesRealSizesFromPQ84P01sInitBoot() {
+        // `cpio -itv --numeric-uid-gid` and `find -printf '%y %s %P'` of the same init_boot ramdisk.
+        val cpio = """
+            drwxr-xr-x   1 0        0               0 Jan  1  1970 dev
+            crw-r--r--   1 0        0          5,   1 Jan  1  1970 dev/console
+            -rwxr-x---   1 0        0         3228728 Jan  1  1970 init
+            lrwxrwxrwx   1 0        0              14 Jan  1  1970 bin -> /system/bin
+        """.trimIndent()
+        val folder = listOf("d 4096 dev", "f 0 dev/console", "f 3228728 init", "l 14 bin").joinToString("\n")
+        val archived = org.ide.lti.core.domain.workbench.BootWorkbench.cpioEntries(cpio)
+        assertEquals(listOf("dev", "dev/console", "init", "bin"), archived.map { it.path })
+        assertEquals(listOf(0L, 0L, 3228728L, 14L), archived.map { it.sizeBytes })
+        val listed = org.ide.lti.core.domain.workbench.BootWorkbench.folderEntries(folder)
+        assertTrue(RamdiskCheck.compare(archived, listed).ok)
+        // An init that lost bytes on the way is caught.
+        val shorter = listed.map { if (it.path == "init") it.copy(sizeBytes = 100L) else it }
+        assertFalse(RamdiskCheck.compare(archived, shorter).ok)
+    }
+
+    @Test
+    fun anEmptyInitOrADirectoryIsNoProgram() {
+        assertNotNull(RamdiskCheck.badInit("init_boot", "empty"))
+        assertTrue(RamdiskCheck.badInit("init_boot", "notfile")!!.cause.contains("not a file"))
+        assertNull(RamdiskCheck.badInit("init_boot", "7f454c46"))
+        assertNull(RamdiskCheck.badInit("init_boot", "link"))
+    }
 }

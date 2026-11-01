@@ -49,18 +49,21 @@ class AuthorTaskProcessAdapter(
 
     suspend fun check(projectPath: String): TrustCheck = trustUseCase.check(projectPath)
 
-    override suspend fun fingerprint(projectPath: String): String? {
-        val projectDir = Path.of(projectPath).toAbsolutePath().normalize()
-        if (!Files.exists(projectDir) || !Files.isDirectory(projectDir)) {
-            return null
-        }
-
+    /** The project files the task can execute: the wrapper, every build script, and all of src, hooks, buildSrc. */
+    private fun inputsOf(projectDir: Path): List<String> {
         val relativePaths = mutableListOf<String>()
+        // Everything the task can execute: the wrapper itself, every build script and version catalog.
         val fixedFiles = listOf(
             "build.gradle.kts",
             "settings.gradle.kts",
+            "build.gradle",
+            "settings.gradle",
             "gradle.properties",
+            "gradle/libs.versions.toml",
             "gradle/wrapper/gradle-wrapper.properties",
+            "gradle/wrapper/gradle-wrapper.jar",
+            "gradlew",
+            "gradlew.bat",
         )
         for (rel in fixedFiles) {
             val file = projectDir.resolve(rel)
@@ -69,12 +72,16 @@ class AuthorTaskProcessAdapter(
             }
         }
 
-        val scanDirs = listOf("src", "hooks")
+        val scanDirs = listOf("src", "hooks", "buildSrc")
         for (dirName in scanDirs) {
             val dir = projectDir.resolve(dirName)
             if (Files.isDirectory(dir)) {
                 Files.walk(dir).use { stream ->
-                    stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".kt") }
+                    // Every file (Java, resources, scripts), not only .kt; build output is not an input.
+                    stream.filter { file ->
+                        Files.isRegularFile(file) &&
+                            projectDir.relativize(file).none { it.toString() == "build" || it.toString() == ".gradle" }
+                    }
                         .forEach { file ->
                             val rel = projectDir.relativize(file).toString().replace('\\', '/')
                             relativePaths.add(rel)
@@ -82,6 +89,26 @@ class AuthorTaskProcessAdapter(
                 }
             }
         }
+
+        return relativePaths
+    }
+
+    /** A child that outlives the wrapper keeps the pipes open: it gets a short grace, then is stopped. */
+    private fun drain(process: Process, vararg readers: Thread) {
+        readers.forEach { it.join(READER_GRACE_MS) }
+        if (readers.any { it.isAlive }) {
+            process.descendants().forEach { it.destroyForcibly() }
+            readers.forEach { it.join(READER_GRACE_MS) }
+        }
+    }
+
+    override suspend fun fingerprint(projectPath: String): String? {
+        val projectDir = Path.of(projectPath).toAbsolutePath().normalize()
+        if (!Files.exists(projectDir) || !Files.isDirectory(projectDir)) {
+            return null
+        }
+
+        val relativePaths = inputsOf(projectDir)
 
         val sortedPaths = relativePaths.sorted()
         val md = MessageDigest.getInstance("SHA-256")
@@ -194,8 +221,7 @@ class AuthorTaskProcessAdapter(
                     }
 
                     val exitCode = process.exitValue()
-                    stdoutReader.join()
-                    stderrReader.join()
+                    drain(process, stdoutReader, stderrReader)
 
                     val diagnostics = parseDiagnostics(stdout, stderr)
                     if (exitCode != 0) {
@@ -347,6 +373,7 @@ class AuthorTaskProcessAdapter(
             "inspectMod",
             "signMod",
         )
+        private const val READER_GRACE_MS = 5_000L
         private const val MAX_OUTPUT_BYTES = 256 * 1024
         private const val POLL_INTERVAL_MS = 50L
         private const val READER_DRAIN_MS = 500L

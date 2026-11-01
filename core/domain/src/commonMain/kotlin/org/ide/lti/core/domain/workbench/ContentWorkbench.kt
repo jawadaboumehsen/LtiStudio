@@ -101,6 +101,11 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             run("unzip", "-tq", abs(output))
             val point = backup(TOOL, path)
             run("cp", "-f", abs(output), abs(path))
+            sh(
+                "d=$(dirname \"$1\"); rm -rf \"${'$'}d/oat\"; " +
+                    "find \"${'$'}d\" -maxdepth 1 \\( -name '*.prof' -o -name '*.bprof' \\) -delete",
+                abs(path),
+            )
             ApkPatchResult(file = path, status = "Rebuilt", restorePointId = point.id)
         }
 
@@ -119,8 +124,12 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
     ): ApexPatchResult = runner.job(workspaceId, "Patch library") {
         val find = findHex.lowercase().filter { !it.isWhitespace() }
         val replace = replaceHex.lowercase().filter { !it.isWhitespace() }
-        require(find.isNotEmpty() && find.length == replace.length && find.all { it in HEX_DIGITS || it == '.' }) {
-            "The find and replace hex must be the same length (\".\" matches any digit)."
+        require(
+            find.isNotEmpty() && find.length % 2 == 0 && find.length == replace.length &&
+                find.all { it in HEX_DIGITS || it == '.' },
+        ) {
+            "The find and replace hex must be whole bytes (an even number of digits) of the same length " +
+                "(\".\" matches any digit)."
         }
         require(replace.all { it in HEX_DIGITS }) { "The replace hex must be plain hex digits." }
         requireInWork(apex)
@@ -149,7 +158,8 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 Refusal("The find hex is not in the library.", library, "Use the pattern for this Android version."),
             )
         }
-        val point = if (exists(systemDest)) backup(TOOL, systemDest) else null
+        // A new destination gets a point too: restoring it removes the added library.
+        val point = backup(TOOL, systemDest)
         sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs("$lib.patched"), abs(systemDest))
         addSidecars(this, systemDest)
         ApexPatchResult(
@@ -157,7 +167,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             alreadyChanged = false,
             success = true,
             message = "Patched $library into $systemDest.",
-            restorePointId = point?.id,
+            restorePointId = point.id,
         )
     }
 
@@ -261,13 +271,20 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         require(path.startsWith("work/") && ".." !in path.split('/')) { "Pick a file inside the work tree (work/…)." }
     }
 
-    private fun decodedDir(path: String) = "workbench/apk/" + path.removePrefix("work/").replace('/', '_')
+    /** `a/b_c.apk` and `a_b/c.apk` both flatten to `a_b_c.apk`: the path's hash keeps their folders apart. */
+    private fun decodedDir(path: String): String {
+        val rel = path.removePrefix("work/")
+        val hash = java.security.MessageDigest.getInstance("SHA-256").digest(rel.encodeToByteArray())
+            .take(DECODED_HASH_BYTES).joinToString("") { "%02x".format(it) }
+        return "workbench/apk/${rel.substringAfterLast('/')}-$hash"
+    }
 
     public companion object {
         public const val TOOL: String = "content"
         private const val FRAMEWORK_DIR = "workbench/apk/framework"
         private const val DETAILS = 4_000
         private const val HEX_DIGITS = "0123456789abcdef"
+        private const val DECODED_HASH_BYTES = 6
 
         /** `$1` = work tree. One line per app: status, app folder, reason (tab separated). */
         private const val DEODEX_SCRIPT = """
@@ -289,9 +306,11 @@ done"""
          */
         private const val HEXPATCH_SCRIPT = """
 hex=${'$'}(xxd -p "$1" | tr -d '\n')
-case "${'$'}hex" in *"$3"*) echo already; exit 0;; esac
 m=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$2" | awk -F: '${'$'}1 % 2 == 0 { print; exit }')
-[ -n "${'$'}m" ] || { echo notfound; exit 0; }
+if [ -z "${'$'}m" ]; then
+  case "${'$'}hex" in *"$3"*) echo already ;; *) echo notfound ;; esac
+  exit 0
+fi
 printf '%s' "${'$'}hex" | awk -v o="${'$'}{m%%:*}" -v r="$3" '{ printf "%s%s%s", substr(${'$'}0, 1, o), r, substr(${'$'}0, o + length(r) + 1) }' | xxd -r -p > "$4"
 echo patched"""
 

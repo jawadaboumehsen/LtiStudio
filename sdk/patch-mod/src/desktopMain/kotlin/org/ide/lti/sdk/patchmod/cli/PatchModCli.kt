@@ -483,7 +483,7 @@ object PatchModTool {
             return CliResult.Failure("ERROR packageMod failed to write package: ${e.message}")
         }
 
-        val contentDigest = PluginPackageCodec.contentIdentity(updatedManifest.payloads)
+        val contentDigest = PluginPackageCodec.contentIdentity(updatedManifest, template)
         return CliResult.Success(
             message = "OK packageMod ${outZip.absolutePath} $contentDigest",
             details = mapOf("output" to outZip, "contentDigest" to contentDigest),
@@ -510,6 +510,7 @@ object PatchModTool {
                     errors = errorLines,
                 )
             }
+
             is PackageReadResult.Ok -> {
                 val pkg = readResult.pkg
                 val m = pkg.manifest

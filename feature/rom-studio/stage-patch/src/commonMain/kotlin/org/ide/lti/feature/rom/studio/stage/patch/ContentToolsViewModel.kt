@@ -128,10 +128,12 @@ public class ContentToolsViewModel(
     }
 
     public fun loadConfig(kind: ConfigKind, path: String) {
+        // While a task runs nothing changes: a switch now would pair this read's text with another path.
+        if (_state.value.busy != null) return
         _state.update { it.copy(configKind = kind, configPath = path, configText = null, configErrors = emptyList()) }
         task("Reading ${path.substringAfterLast('/')}") { tools ->
             val text = tools.readConfig(workspaceId, path)
-            _state.update { it.copy(configText = text, configSaved = null) }
+            _state.update { if (it.configPath == path) it.copy(configText = text, configSaved = null) else it }
         }
     }
 
@@ -285,6 +287,17 @@ public class ContentToolsViewModel(
                 _state.update {
                     it.copy(
                         refusal = Refusal(e.message ?: "Invalid input.", name, "Correct it and try again."),
+                    )
+                }
+            } catch (e: Exception) {
+                // A transport or state failure is shown too, never lost in the background job.
+                _state.update {
+                    it.copy(
+                        refusal = Refusal(
+                            e.message ?: e::class.simpleName.orEmpty(),
+                            name,
+                            "Check the details and try again.",
+                        ),
                     )
                 }
             } finally {

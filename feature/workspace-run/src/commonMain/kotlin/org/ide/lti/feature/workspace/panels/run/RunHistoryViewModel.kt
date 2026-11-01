@@ -44,7 +44,16 @@ public class RunHistoryViewModel(
     init {
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { ws ->
-                _uiState.update { it.copy(currentWorkspace = ws, selectedRun = null, selectedRunLogs = emptyList()) }
+                _uiState.update {
+                    it.copy(
+                        currentWorkspace = ws,
+                        runs = emptyList(),
+                        selectedRun = null,
+                        selectedRunLogs = emptyList(),
+                        isLoading = false,
+                        errorMessage = null,
+                    )
+                }
                 if (ws != null) {
                     getRunHistoryUseCase.observe(ws.id).collectLatest { runs ->
                         _uiState.update { state ->
@@ -67,9 +76,10 @@ public class RunHistoryViewModel(
     }
 
     public fun selectRun(run: BuildRun) {
+        _uiState.update { it.copy(selectedRun = run, selectedRunLogs = emptyList()) }
         viewModelScope.launch {
             val logs = runCatching { runRepository.cachedEvents(run.id) }.getOrDefault(emptyList())
-            _uiState.update { it.copy(selectedRun = run, selectedRunLogs = logs) }
+            _uiState.update { if (it.selectedRun?.id == run.id) it.copy(selectedRunLogs = logs) else it }
         }
     }
 
@@ -79,6 +89,7 @@ public class RunHistoryViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val runs = getRunHistoryUseCase(ws.id, refreshArtifactPresence = true)
+                if (_uiState.value.currentWorkspace?.id != ws.id) return@launch
                 _uiState.update { state ->
                     val sel = runs.find { it.id == state.selectedRun?.id } ?: runs.firstOrNull()
                     state.copy(runs = runs, selectedRun = sel, isLoading = false)
@@ -86,7 +97,14 @@ public class RunHistoryViewModel(
                 val sel = _uiState.value.selectedRun
                 if (sel != null) {
                     val logs = runCatching { runRepository.cachedEvents(sel.id) }.getOrDefault(emptyList())
-                    _uiState.update { it.copy(selectedRunLogs = logs) }
+                    // Late logs land only on the run (and workspace) they were read for.
+                    _uiState.update {
+                        if (it.selectedRun?.id == sel.id && it.currentWorkspace?.id == ws.id) {
+                            it.copy(selectedRunLogs = logs)
+                        } else {
+                            it
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
@@ -95,6 +113,7 @@ public class RunHistoryViewModel(
     }
 
     public fun deleteRun(runId: String) {
+        if (_uiState.value.runs.firstOrNull { it.id == runId }?.state?.isActive == true) return
         viewModelScope.launch {
             runRepository.deleteRun(runId)
             _uiState.update { state ->

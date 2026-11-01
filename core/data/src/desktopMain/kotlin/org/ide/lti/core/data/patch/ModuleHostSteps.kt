@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ApplyModules
+import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.FileMutationPort
@@ -30,6 +31,7 @@ import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.model.plugin.FileMetadata
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.Workspace
 import java.io.IOException
 import java.nio.file.FileVisitResult
@@ -68,41 +70,79 @@ class ModuleHostSteps(
             partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
         )
         val bytecode by lazy { bytecodeAdapter(workspace, work, request.platformKeyRef) }
-        val effects = request.plans.flatMap { plan ->
-            yield()
-            val key = "${plan.publisher}:${plan.id}:${plan.version}"
-            val assets = request.assetRoots[key].orEmpty()
-            val (componentOps, fileOps) = plan.operations.partition { it.isComponentEdit() }
-            val fileEffects = when (val outcome = files.apply(plan.copy(operations = fileOps), ctx, assets)) {
-                is MutationOutcome.Applied -> outcome.effects
-                is MutationOutcome.Refused -> refused(key, outcome.report.errors)
-            }
-            val copies = fileOps.filter { it is ConcreteOperation.Copy || it is ConcreteOperation.Replace }
-                .map { it.id }.toSet()
-            val copied = fileEffects.filter { it.operationId in copies }
-            if (copied.isNotEmpty()) {
-                val values = buildValues(work, request)
-                copied.forEach {
-                    yield()
-                    fillValues(work.resolve(it.partition).resolve(it.relativePath), values)
+        var changes = 0
+        try {
+            request.plans.forEach { plan ->
+                yield()
+                val key = "${plan.publisher}:${plan.id}:${plan.version}"
+                val effects = plan.operations.runs { it.isComponentEdit() }.flatMap { (components, ops) ->
+                    if (components) {
+                        applyComponents(bytecode, ops, ctx, work, request, key)
+                    } else {
+                        applyFiles(plan.copy(operations = ops), ctx, work, request, key)
+                    }
                 }
+                // Each plugin's own owner/mode/label: operation ids are only unique within one plan.
+                val metadata = plan.operations.filterIsInstance<ConcreteOperation.Copy>()
+                    .mapNotNull { op -> op.metadata?.let { op.id to it } }.toMap()
+                yield()
+                updateSidecars(work, effects, metadata)
+                changes += effects.size
             }
-            val componentEffects = if (componentOps.isEmpty()) {
-                emptyList()
-            } else {
-                val values = buildValues(work, request)
-                when (val outcome = bytecode.apply(componentOps.map { it.withValues(values) }, ctx)) {
-                    is ApkJarOutcome.Applied -> outcome.effects
-                    is ApkJarOutcome.Refused -> refused(key, outcome.report.errors)
-                }
-            }
-            fileEffects + componentEffects
+        } catch (e: Throwable) {
+            // work/ now holds part of the mods: the next build assembles it again rather than patch it twice.
+            runCatching { Files.deleteIfExists(work.parent.resolve(".cache/${StageId.WORK_TREE_ASSEMBLY.name}.key")) }
+            throw e
         }
-        val metadata = request.plans.flatMap { it.operations }.filterIsInstance<ConcreteOperation.Copy>()
-            .mapNotNull { op -> op.metadata?.let { op.id to it } }.toMap()
-        yield()
-        updateSidecars(work, effects, metadata)
-        return "ok: ${effects.size} change(s) from ${request.plans.size} module(s)"
+        return "ok: $changes change(s) from ${request.plans.size} module(s)"
+    }
+
+    /** Consecutive runs of operations of one kind, in plan order: a later copy still lands after an earlier edit. */
+    private fun <T> List<T>.runs(kind: (T) -> Boolean): List<Pair<Boolean, List<T>>> =
+        fold(mutableListOf<Pair<Boolean, MutableList<T>>>()) { acc, op ->
+            val k = kind(op)
+            if (acc.lastOrNull()?.first == k) acc.last().second += op else acc += k to mutableListOf(op)
+            acc
+        }
+
+    private suspend fun applyFiles(
+        plan: ConcreteMutationPlan,
+        ctx: MutationContext,
+        work: Path,
+        request: ApplyModules,
+        key: String,
+    ): List<MutationEffect> {
+        val effects = when (val outcome = files.apply(plan, ctx, request.assetRoots[key].orEmpty())) {
+            is MutationOutcome.Applied -> outcome.effects
+            is MutationOutcome.Refused -> refused(key, outcome.report.errors)
+        }
+        val copies = plan.operations.filter { it is ConcreteOperation.Copy || it is ConcreteOperation.Replace }
+            .map { it.id }.toSet()
+        val copied = effects.filter { it.operationId in copies }
+        if (copied.isNotEmpty()) {
+            val values = buildValues(work, request)
+            copied.forEach {
+                yield()
+                fillValues(work.resolve(it.partition).resolve(it.relativePath), values)
+            }
+        }
+        return effects
+    }
+
+    @Suppress("LongParameterList")
+    private suspend fun applyComponents(
+        bytecode: ApkJarMutationAdapter,
+        ops: List<ConcreteOperation>,
+        ctx: MutationContext,
+        work: Path,
+        request: ApplyModules,
+        key: String,
+    ): List<MutationEffect> {
+        val values = buildValues(work, request)
+        return when (val outcome = bytecode.apply(ops.map { it.withValues(values) }, ctx)) {
+            is ApkJarOutcome.Applied -> outcome.effects
+            is ApkJarOutcome.Refused -> refused(key, outcome.report.errors)
+        }
     }
 
     /**
@@ -150,8 +190,18 @@ class ModuleHostSteps(
     }
 
     private fun fillZip(bytes: ByteArray, values: Map<String, String>): ByteArray? {
+        // Read with a cap: a small zip of highly compressible members must not expand without bound in memory.
+        var expanded = 0L
         val members = java.util.zip.ZipInputStream(bytes.inputStream()).use { zip ->
-            generateSequence { zip.nextEntry }.filterNot { it.isDirectory }.map { it.name to zip.readBytes() }.toList()
+            generateSequence { zip.nextEntry }.filterNot { it.isDirectory }.map { entry ->
+                val content = zip.readNBytes((ZIP_EXPANDED_LIMIT - expanded + 1).toInt())
+                expanded += content.size
+                check(expanded <= ZIP_EXPANDED_LIMIT) {
+                    "${entry.name}: the copied zip expands beyond ${ZIP_EXPANDED_LIMIT / MIB} MiB; " +
+                        "values are not filled in it"
+                }
+                entry.name to content
+            }.toList()
         }
         val filled = members.map { (name, content) -> Triple(name, content, fill(content, values)) }
         if (filled.none { it.third != null }) return null
@@ -245,6 +295,8 @@ class ModuleHostSteps(
     private companion object {
         const val AVB_HEADER = 256
         const val TEXT_LIMIT = 256L * 1024
+        const val MIB = 1024L * 1024L
+        const val ZIP_EXPANDED_LIMIT = 64L * MIB
         val BUILD_VALUE = Regex("""\{\{[a-z]+(\.[a-z]+)+}}""")
     }
 

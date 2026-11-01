@@ -333,8 +333,6 @@ private fun InstalledTableRow(
         }
     }
 
-    val isVerified = record.trust == TrustDecision.TRUSTED_SIGNATURE
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -392,17 +390,18 @@ private fun InstalledTableRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             modifier = Modifier.width(ComponentSize.PluginTableStatusColWidth),
         ) {
+            // No package is verified: signatures are not checked against trusted keys yet.
             Icon(
-                painter = if (isVerified) AppIcons.CheckPainterResource() else AppIcons.InfoPainterResource(),
-                contentDescription = if (isVerified) "Verified" else "Unverified",
-                tint = if (isVerified) PluginThemeColors.StatusVerified else PluginThemeColors.StatusUnverified,
+                painter = AppIcons.InfoPainterResource(),
+                contentDescription = "Unverified",
+                tint = PluginThemeColors.StatusUnverified,
                 modifier = Modifier.size(IconSize.Medium),
             )
             Text(
-                text = if (isVerified) "Verified" else "Unverified",
+                text = "Unverified",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isVerified) PluginThemeColors.StatusVerified else PluginThemeColors.StatusUnverified,
+                color = PluginThemeColors.StatusUnverified,
             )
         }
 
@@ -541,7 +540,7 @@ private fun InstalledInspectorProperties(record: InstalledRecord, modifier: Modi
 }
 
 private fun trustLabel(trust: TrustDecision): String = when (trust) {
-    TrustDecision.TRUSTED_SIGNATURE -> "Signed by a verified publisher"
+    TrustDecision.TRUSTED_SIGNATURE -> "Had a signature file (not verified); you trusted it at install"
     TrustDecision.TRUSTED_UNVERIFIED -> "Unsigned; you trusted it at install"
     TrustDecision.UNTRUSTED -> "Not trusted"
 }

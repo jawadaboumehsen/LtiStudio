@@ -65,7 +65,7 @@ class PluginPresentationStateTest {
     }
 
     @Test
-    fun testInspectedSignedPackageEnablesInstallWithoutAcknowledgement() {
+    fun testASignatureFileDoesNotSkipTheAcknowledgement() {
         val inspection = PackageInspection(
             identity = PackageIdentity("com.example", "mod1", "1.0.0", "sha256:abc"),
             hasSignature = true,
@@ -73,7 +73,9 @@ class PluginPresentationStateTest {
             dependencies = listOf(DependencyRef("com.example", "core-lib", "^1.0.0")),
         )
 
-        assertTrue(canInstallInspectedPackage(inspection, acknowledged = false))
+        // Signatures are not verified, so a signed package needs the same acknowledgement as an unsigned one.
+        assertFalse(canInstallInspectedPackage(inspection, acknowledged = false))
+        assertTrue(canInstallInspectedPackage(inspection, acknowledged = true))
         assertEquals("com.example", inspection.identity?.publisher)
         assertEquals("mod1", inspection.identity?.id)
         assertEquals(1, inspection.dependencies.size)

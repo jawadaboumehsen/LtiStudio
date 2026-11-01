@@ -98,4 +98,23 @@ class ConfigValidatorsTest {
         val invalidErrors = ConfigValidators.validateFileContexts(invalidContexts)
         assertEquals(2, invalidErrors.size)
     }
+
+    @Test
+    fun ownersAndModesMustBeInRange() {
+        assertTrue(ConfigValidators.validateFsConfig("system/bin/sh 0 2000 755").isEmpty())
+        assertEquals(1, ConfigValidators.validateFsConfig("system/bin/sh -1 2000 755").size)
+        assertEquals(1, ConfigValidators.validateFsConfig("system/bin/sh 0 4294967296 755").size)
+        assertEquals(1, ConfigValidators.validateFsConfig("system/bin/sh 0 0 17777").size)
+        assertEquals(1, ConfigValidators.validateFsConfig("system/bin/sh 0 0 -755").size)
+    }
+
+    @Test
+    fun aLabelIsInheritedFromTheRealAncestorOnly() {
+        // bin-extra comes first and contains "bin", but it is not bin's folder.
+        val contexts = listOf(
+            "/vendor/bin-extra u:object_r:extra_file:s0",
+            "/vendor/bin u:object_r:vendor_bin:s0",
+        ).joinToString("\n")
+        assertEquals("u:object_r:vendor_bin:s0", CoverageFix.findNearestLabel(contexts, "vendor", "bin/newfile"))
+    }
 }

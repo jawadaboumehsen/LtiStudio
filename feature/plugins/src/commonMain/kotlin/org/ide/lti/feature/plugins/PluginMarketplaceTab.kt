@@ -311,7 +311,9 @@ private fun MarketplaceHeader(
                         val ageSec = (elapsedMs / 1000).coerceAtLeast(0)
                         if (ageSec < 60) "Cached ${ageSec}s ago" else "Cached ${ageSec / 60}m ago"
                     }
+
                     is IndexFetchResult.Fetched -> "Updated now"
+
                     else -> "Not loaded"
                 }
                 Text(
@@ -449,8 +451,10 @@ private fun MarketplaceTableHeader(modifier: Modifier = Modifier) {
 private fun getMarketplaceRowIcon(id: String): Painter = when {
     id.contains("hook", ignoreCase = true) || id.contains("framework", ignoreCase = true) ->
         AppIconsRomStages.assemble()
+
     id.contains("resource", ignoreCase = true) || id.contains("overlay", ignoreCase = true) ->
         AppIconsRomStages.patches()
+
     else -> AppIcons.FilePainterResource()
 }
 
@@ -846,14 +850,12 @@ private fun ConfigureSourceDialog(
 
 @Composable
 private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onConfirmTrust: (TrustDecision) -> Unit) {
-    var trustDecision by remember { mutableStateOf(TrustDecision.TRUSTED_UNVERIFIED) }
-
     GlassDialog(
         title = "Install Package: ${entry.id}",
         onDismissRequest = onDismiss,
         confirmButton = {
             GlassButton(
-                onClick = { onConfirmTrust(trustDecision) },
+                onClick = { onConfirmTrust(TrustDecision.TRUSTED_UNVERIFIED) },
                 variant = GlassButtonVariant.Primary,
             ) {
                 Text("Confirm and Install")
@@ -874,32 +876,12 @@ private fun MarketplaceTrustDialog(entry: IndexEntry, onDismiss: () -> Unit, onC
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                val sigVariant = if (trustDecision == TrustDecision.TRUSTED_SIGNATURE) {
-                    GlassButtonVariant.Primary
-                } else {
-                    GlassButtonVariant.Standard
-                }
-                val unverVariant = if (trustDecision == TrustDecision.TRUSTED_UNVERIFIED) {
-                    GlassButtonVariant.Primary
-                } else {
-                    GlassButtonVariant.Standard
-                }
-
-                GlassButton(
-                    onClick = { trustDecision = TrustDecision.TRUSTED_SIGNATURE },
-                    variant = sigVariant,
-                ) {
-                    Text("Trust Signature")
-                }
-                GlassButton(
-                    onClick = { trustDecision = TrustDecision.TRUSTED_UNVERIFIED },
-                    variant = unverVariant,
-                ) {
-                    Text("Trust Unverified")
-                }
-            }
+            Text(
+                text = "The publisher is not verified. Install only packages from sources you trust: a package " +
+                    "can change your build output and the device it is flashed to.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

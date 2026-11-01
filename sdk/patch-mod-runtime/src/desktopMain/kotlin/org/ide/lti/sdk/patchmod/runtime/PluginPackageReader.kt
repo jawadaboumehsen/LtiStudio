@@ -52,6 +52,8 @@ object PluginPackageReader {
     const val INVALID_JSON: String = "INVALID_JSON"
     const val PAYLOAD_MISMATCH: String = "PAYLOAD_MISMATCH"
     const val INVALID_ZIP: String = "INVALID_ZIP"
+    const val INVALID_IDENTITY: String = "INVALID_IDENTITY"
+    const val IDENTITY_MISMATCH: String = "IDENTITY_MISMATCH"
 
     // The policy has no separate LICENSE limit; a licence text is bounded like the other small text members.
     private const val LICENSE_MAX_BYTES = PluginPackagePolicy.PLAN_MAX_BYTES
@@ -60,6 +62,11 @@ object PluginPackageReader {
         PackageReadResult.Ok(Reader(zip).read())
     } catch (e: Rejection) {
         PackageReadResult.Rejected(e.report)
+    } catch (e: java.io.IOException) {
+        // A truncated or corrupt member (ZipException is an IOException) is an invalid package, not a crash.
+        PackageReadResult.Rejected(
+            ValidationReport(errors = listOf(error("zip", INVALID_ZIP, e.message ?: INVALID_ZIP))),
+        )
     }
 
     private class Rejection(val report: ValidationReport) : RuntimeException()
@@ -95,6 +102,10 @@ object PluginPackageReader {
             if (manifest.schemaVersion != 1) {
                 reject(PluginPackageCodec.MANIFEST, UNSUPPORTED_SCHEMA, "Unsupported schemaVersion")
             }
+            // They name the package's folder in the store: "../x" or "/x" must never reach a path.
+            listOf(manifest.publisher, manifest.id, manifest.version)
+                .firstOrNull { !PluginPackageCodec.isSafeIdentitySegment(it) }
+                ?.let { reject(PluginPackageCodec.MANIFEST, INVALID_IDENTITY, "Unsafe publisher, id or version: $it") }
             PluginPackageCodec.validateMembers(members, manifest).rejectIfBlocking()
 
             val template =
@@ -102,6 +113,13 @@ object PluginPackageReader {
             text(zf, PluginPackageCodec.SETTINGS, PluginPackagePolicy.SETTINGS_MAX_BYTES) // size cap only
             val readme = text(zf, PluginPackageCodec.README, PluginPackagePolicy.README_MAX_BYTES)
             val license = text(zf, PluginPackageCodec.LICENSE, LICENSE_MAX_BYTES)
+            if (template.schemaVersion != 1) {
+                reject(PluginPackageCodec.PLAN, UNSUPPORTED_SCHEMA, "Unsupported plan schemaVersion")
+            }
+            val planIdentity = Triple(template.publisher, template.id, template.version)
+            if (planIdentity != Triple(manifest.publisher, manifest.id, manifest.version)) {
+                reject(PluginPackageCodec.PLAN, IDENTITY_MISMATCH, "The plan names another package: $planIdentity")
+            }
             PluginPlanValidator.validate(template).rejectIfBlocking()
             verifyPayloads(zf, manifest.payloads)
 
@@ -110,7 +128,7 @@ object PluginPackageReader {
                 template = template,
                 readme = readme,
                 license = license,
-                contentDigest = PluginPackageCodec.contentIdentity(manifest.payloads),
+                contentDigest = PluginPackageCodec.contentIdentity(manifest, template),
                 hasSignature = zf.getEntry(PluginPackageCodec.SIGNATURE) != null,
             )
         }

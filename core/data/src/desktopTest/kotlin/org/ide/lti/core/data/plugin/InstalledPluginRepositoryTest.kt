@@ -129,7 +129,7 @@ class InstalledPluginRepositoryTest {
         )
 
         createZip(dest, entries)
-        val contentDigest = PluginPackageCodec.contentIdentity(listOf(payloadEntry))
+        val contentDigest = PluginPackageCodec.contentIdentity(manifest, template)
         return PackageIdentity(publisher, id, version, contentDigest)
     }
 

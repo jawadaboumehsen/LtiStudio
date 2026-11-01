@@ -90,7 +90,13 @@ internal actual val platformRepositoryModule =
         single { WorkspaceFacts(workspaces = get(), files = get(), runs = get()) }
         single {
             val paths = io.ltirom.tooling.client.WslPathTranslator()
-            PublishReleaseUseCase(workspaces = get(), store = get(), port = get(), toLinuxPath = paths::toWslPath)
+            PublishReleaseUseCase(
+                workspaces = get(),
+                store = get(),
+                port = get(),
+                toLinuxPath = paths::toWslPath,
+                runs = getOrNull(),
+            )
         }
         single<RunRepository> {
             RunRepositoryImpl(
@@ -133,6 +139,7 @@ internal actual val platformRepositoryModule =
                 lock = get(),
                 restorePoints = get(),
                 acknowledgements = get(),
+                runs = getOrNull(),
             )
         }
         single { RestoreWorkbench(runner = get(), store = get()) }

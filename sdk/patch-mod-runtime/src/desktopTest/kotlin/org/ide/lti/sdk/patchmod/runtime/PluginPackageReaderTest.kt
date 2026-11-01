@@ -121,6 +121,61 @@ class PluginPackageReaderTest {
         return result
     }
 
+    private fun rejectionCodes(entries: Map<String, ByteArray>): List<String> {
+        val zipFile = tempDir.resolve("case-${System.nanoTime()}.lti-mod.zip")
+        createZip(zipFile, entries)
+        return assertIs<PackageReadResult.Rejected>(PluginPackageReader.read(zipFile)).report.errors.map { it.code }
+    }
+
+    @Test
+    fun testUnsafeIdentityMismatchedPlanAndUnsupportedPlanSchemaAreRejected() {
+        // The identity names the package's folder in the store: never a path.
+        val unsafe = sampleManifest.copy(id = "../escape")
+        assertEquals(
+            listOf(PluginPackageReader.INVALID_IDENTITY),
+            rejectionCodes(buildStandardEntries(manifest = unsafe)),
+        )
+        val otherPlan = PluginPackageCodec.encodePlan(sampleTemplate.copy(id = "another-mod"))
+        assertEquals(
+            listOf(PluginPackageReader.IDENTITY_MISMATCH),
+            rejectionCodes(buildStandardEntries(planText = otherPlan)),
+        )
+        val futurePlan = PluginPackageCodec.encodePlan(sampleTemplate.copy(schemaVersion = 2))
+        assertEquals(
+            listOf(PluginPackageReader.UNSUPPORTED_SCHEMA),
+            rejectionCodes(buildStandardEntries(planText = futurePlan)),
+        )
+    }
+
+    @Test
+    fun testATruncatedPackageIsRejectedNotThrown() {
+        val zipFile = tempDir.resolve("whole.lti-mod.zip")
+        createZip(zipFile, buildStandardEntries())
+        val bytes = Files.readAllBytes(zipFile)
+        val broken = tempDir.resolve("broken.lti-mod.zip")
+        Files.write(broken, bytes.copyOf(bytes.size / 2))
+        val result = assertIs<PackageReadResult.Rejected>(PluginPackageReader.read(broken))
+        assertEquals(listOf(PluginPackageReader.INVALID_ZIP), result.report.errors.map { it.code })
+    }
+
+    @Test
+    fun testAChangedPlanIsAnotherPackage() {
+        val first = tempDir.resolve("first.lti-mod.zip")
+        createZip(first, buildStandardEntries())
+        val changed = PluginPackageCodec.encodePlan(
+            sampleTemplate.copy(
+                operations = listOf(
+                    Operation.Copy("op_copy", AssetRef("assets/bin/tool.so"), PartitionPath("vendor", "bin/tool.so")),
+                ),
+            ),
+        )
+        val second = tempDir.resolve("second.lti-mod.zip")
+        createZip(second, buildStandardEntries(planText = changed))
+        val a = assertIs<PackageReadResult.Ok>(PluginPackageReader.read(first)).pkg.contentDigest
+        val b = assertIs<PackageReadResult.Ok>(PluginPackageReader.read(second)).pkg.contentDigest
+        assertTrue(a != b, "same assets, different plan: different digest")
+    }
+
     @Test
     fun testValidPackageReadsOkWithRightDigest() {
         val zipFile = tempDir.resolve("valid.lti-mod.zip")
@@ -129,7 +184,7 @@ class PluginPackageReaderTest {
         val result = PluginPackageReader.read(zipFile)
         val ok = assertIs<PackageReadResult.Ok>(result)
 
-        val expectedDigest = PluginPackageCodec.contentIdentity(sampleManifest.payloads)
+        val expectedDigest = PluginPackageCodec.contentIdentity(ok.pkg.manifest, ok.pkg.template)
         assertEquals(expectedDigest, ok.pkg.contentDigest)
         assertEquals("reader-test", ok.pkg.manifest.id)
         assertEquals("reader-test", ok.pkg.template.id)

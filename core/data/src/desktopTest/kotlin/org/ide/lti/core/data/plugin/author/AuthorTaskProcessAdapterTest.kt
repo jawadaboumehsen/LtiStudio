@@ -133,16 +133,7 @@ class AuthorTaskProcessAdapterTest {
     @Test
     fun testFakeGradlewNonzeroExitWithDiagnosticsYieldsFailed() = runTest {
         Files.writeString(projectDir.resolve("build.gradle.kts"), "// build")
-        val fp = adapter.fingerprint(projectDir.toString())!!
-
-        val project = AuthorProject(
-            path = projectDir.toString(),
-            fingerprint = fp,
-            sdkVersion = "1.0.0",
-            generatorEntry = "main",
-        )
-        adapter.approve(project)
-
+        // The wrapper is part of what is approved, so it is in place first.
         createFakeGradlew(
             projectDir = projectDir.toFile(),
             exitCode = 1,
@@ -152,6 +143,15 @@ class AuthorTaskProcessAdapterTest {
                 "Regular unparsed log message",
             ),
         )
+        val fp = adapter.fingerprint(projectDir.toString())!!
+
+        val project = AuthorProject(
+            path = projectDir.toString(),
+            fingerprint = fp,
+            sdkVersion = "1.0.0",
+            generatorEntry = "main",
+        )
+        adapter.approve(project)
 
         val result = adapter.runTask(project, "generateModPlan", timeoutMs = 10000L)
         assertIs<AuthorTaskResult.Failed>(result)
@@ -178,16 +178,7 @@ class AuthorTaskProcessAdapterTest {
     @Test
     fun testOutputBoundHoldsAt256KiB() = runTest {
         Files.writeString(projectDir.resolve("build.gradle.kts"), "// build")
-        val fp = adapter.fingerprint(projectDir.toString())!!
-
-        val project = AuthorProject(
-            path = projectDir.toString(),
-            fingerprint = fp,
-            sdkVersion = "1.0.0",
-            generatorEntry = "main",
-        )
-        adapter.approve(project)
-
+        // The wrapper is part of what is approved, so it is in place first.
         // Create script emitting > 300 KiB
         val chunk = "A".repeat(1024)
         val lines = (1..350).map { chunk }
@@ -197,6 +188,15 @@ class AuthorTaskProcessAdapterTest {
             exitCode = 0,
             stdoutLines = lines,
         )
+        val fp = adapter.fingerprint(projectDir.toString())!!
+
+        val project = AuthorProject(
+            path = projectDir.toString(),
+            fingerprint = fp,
+            sdkVersion = "1.0.0",
+            generatorEntry = "main",
+        )
+        adapter.approve(project)
 
         val result = adapter.runTask(project, "validateMod", timeoutMs = 15000L)
         assertIs<AuthorTaskResult.Success>(result)
