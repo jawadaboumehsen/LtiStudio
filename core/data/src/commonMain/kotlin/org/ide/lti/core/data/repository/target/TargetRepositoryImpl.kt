@@ -12,7 +12,9 @@ package org.ide.lti.core.data.repository.target
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.model.target.DefaultTargetCatalog
@@ -25,9 +27,7 @@ import org.ide.lti.core.model.target.TargetDevice
  * Follows Open/Closed Principle: supports preconfigured official hardware targets
  * with extensible profile registry and interactive region / firmware configuration.
  */
-class TargetRepositoryImpl(
-    private val preferencesDataSource: TargetPreferencesDataSource,
-) : TargetRepository {
+class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesDataSource) : TargetRepository {
 
     private val _targets: MutableStateFlow<List<TargetDevice>>
     private val _selectedTargetId: MutableStateFlow<String>
@@ -49,62 +49,55 @@ class TargetRepositoryImpl(
         _selectedTargetId = MutableStateFlow(initialSelectedId)
     }
 
+    /** One change at a time, list and selection together, written before memory shows it. */
+    private val writes = Mutex()
+
     override fun getAvailableTargets(): Flow<List<TargetDevice>> = _targets.asStateFlow()
 
-    override fun getSelectedTarget(): Flow<TargetDevice> {
-        return _selectedTargetId.map { selectedId ->
-            _targets.value.find { it.id == selectedId } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
+    // An edit of the selected target is a new value too, not only another selection.
+    override fun getSelectedTarget(): Flow<TargetDevice> = combine(_targets, _selectedTargetId) { targets, id ->
+        targets.find { it.id == id } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
+    }
+
+    override suspend fun selectTarget(targetId: String): Result<TargetDevice> = writes.withLock {
+        runCatching {
+            val target = requireNotNull(_targets.value.find { it.id == targetId }) { "Unknown target ID: $targetId" }
+            preferencesDataSource.saveSelectedTargetId(target.id)
+            _selectedTargetId.value = target.id
+            target
         }
     }
 
-    override suspend fun selectTarget(targetId: String): Result<TargetDevice> {
-        val target = _targets.value.find { it.id == targetId }
-            ?: return Result.failure(IllegalArgumentException("Unknown target ID: $targetId"))
-        _selectedTargetId.value = target.id
-        preferencesDataSource.saveSelectedTargetId(target.id)
-        return Result.success(target)
+    override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = writes.withLock {
+        runCatching {
+            val current = _targets.value
+            val adding = current.none { it.id == target.id }
+            val updatedList = if (adding) current + target else current.map { if (it.id == target.id) target else it }
+            preferencesDataSource.saveTargets(updatedList)
+            _targets.value = updatedList
+            if (adding) {
+                preferencesDataSource.saveSelectedTargetId(target.id)
+                _selectedTargetId.value = target.id
+            }
+            target
+        }
     }
 
-    override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> {
-        val existing = _targets.value.find { it.id == target.id }
-        if (existing != null) {
-            return updateTarget(target)
-        }
-        val updatedList = _targets.value + target
-        _targets.value = updatedList
-        _selectedTargetId.value = target.id
-        preferencesDataSource.saveTargets(updatedList)
-        preferencesDataSource.saveSelectedTargetId(target.id)
-        return Result.success(target)
-    }
+    override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = addTarget(target)
 
-    override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> {
-        val exists = _targets.value.any { it.id == target.id }
-        if (!exists) {
-            return addTarget(target)
+    override suspend fun deleteTarget(targetId: String): Result<Unit> = writes.withLock {
+        runCatching {
+            val currentList = _targets.value
+            check(currentList.size > 1) { "Cannot delete the only remaining target profile." }
+            require(currentList.any { it.id == targetId }) { "Target not found: $targetId" }
+            val updatedList = currentList.filter { it.id != targetId }
+            preferencesDataSource.saveTargets(updatedList)
+            _targets.value = updatedList
+            if (_selectedTargetId.value == targetId) {
+                val newSelectedId = updatedList.first().id
+                preferencesDataSource.saveSelectedTargetId(newSelectedId)
+                _selectedTargetId.value = newSelectedId
+            }
         }
-        val updatedList = _targets.value.map { if (it.id == target.id) target else it }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        return Result.success(target)
-    }
-
-    override suspend fun deleteTarget(targetId: String): Result<Unit> {
-        val currentList = _targets.value
-        if (currentList.size <= 1) {
-            return Result.failure(IllegalStateException("Cannot delete the only remaining target profile."))
-        }
-        val targetToDelete = currentList.find { it.id == targetId }
-            ?: return Result.failure(IllegalArgumentException("Target not found: $targetId"))
-
-        val updatedList = currentList.filter { it.id != targetId }
-        _targets.value = updatedList
-        preferencesDataSource.saveTargets(updatedList)
-        if (_selectedTargetId.value == targetId) {
-            val newSelectedId = updatedList.first().id
-            _selectedTargetId.value = newSelectedId
-            preferencesDataSource.saveSelectedTargetId(newSelectedId)
-        }
-        return Result.success(Unit)
     }
 }

@@ -344,6 +344,18 @@ internal object BuildChecks {
         return steps
     }
 
+    /** The extra packages asked for, workspace-relative: Build's outputs (a deleted one rebuilds) and artifacts. */
+    fun extraPackageFiles(ctx: StageContext): List<String> {
+        val base = zipName(ctx).removeSuffix(".zip")
+        return ctx.snapshot.build.extraPackages.mapNotNull { name ->
+            when (name) {
+                PackageKind.FullPackage.name -> "out/package/$base-images.zip"
+                PackageKind.Odin.name -> "out/package/AP_$base.tar.md5"
+                else -> null
+            }
+        }
+    }
+
     /**
      * The packages built besides the flashable zip: a fastboot images zip ([PackageKind.FullPackage]) and a
      * Samsung Odin AP ([PackageKind.Odin]), both from a full `super.img` (FR-013). vbmeta is never included.

@@ -114,7 +114,7 @@ public object DeviceConfigReadiness {
             val acquisition = s.acquisition
             val fw = acquisition.firmware
             val download = acquisition.mode == AcquisitionMode.DOWNLOAD
-            val hasUrl = !fw.acquisitionUrl.isNullOrBlank() || !fw.otaUrl.isNullOrBlank()
+            val hasUrl = fw.downloadUrl != null
             val sha = acquisition.expectedSha256 ?: fw.sha256
             rule(download && !hasUrl, stage, "firmware.acquisitionUrl", REQUIRED, "A firmware download URL is required")
             rule(

@@ -56,6 +56,10 @@ class ConfigurationViewModel(
         viewModelScope.launch {
             getAvailableTargetsUseCase().collectLatest { targets ->
                 _uiState.update { current ->
+                    // An unsaved new or duplicated target is not in the catalog yet: it keeps its own selection.
+                    if (current.isDirty && targets.none { it.id == current.editingTarget.id }) {
+                        return@update current.copy(availableTargets = targets)
+                    }
                     val selectedId = if (current.selectedTargetId.isNotEmpty() &&
                         targets.any { it.id == current.selectedTargetId }
                     ) {
@@ -106,6 +110,7 @@ class ConfigurationViewModel(
 
         when (mode) {
             ConfigurationNavMode.CREATE -> onAddNewTarget()
+
             ConfigurationNavMode.CLONE -> {
                 if (!targetId.isNullOrBlank()) {
                     val target = _uiState.value.availableTargets.find { it.id == targetId }
@@ -119,6 +124,7 @@ class ConfigurationViewModel(
                     onDuplicateTarget(_uiState.value.editingTarget)
                 }
             }
+
             ConfigurationNavMode.EDIT -> {
                 if (!targetId.isNullOrBlank()) {
                     onSelectTarget(targetId)
@@ -152,10 +158,12 @@ class ConfigurationViewModel(
         val targetId = _uiState.value.pendingTargetId ?: return
         when (decision) {
             DirtyTargetSelectionDecision.STAY -> _uiState.update { it.copy(pendingTargetId = null) }
+
             DirtyTargetSelectionDecision.DISCARD -> {
                 onRevertChanges()
                 _uiState.value.availableTargets.find { it.id == targetId }?.let(::selectTargetImmediately)
             }
+
             DirtyTargetSelectionDecision.SAVE -> onApplyChanges {
                 _uiState.value.availableTargets.find { it.id == targetId }?.let(::selectTargetImmediately)
             }
@@ -189,9 +197,21 @@ class ConfigurationViewModel(
         }
     }
 
+    /** Unsaved edits are never replaced by a new draft; they are saved or reverted first. */
+    private fun refusedOverDirtyDraft(): Boolean {
+        val current = _uiState.value
+        if (current.isDirty || current.isSyncing) {
+            _uiState.update { it.copy(statusMessage = "Save or revert the current changes first") }
+        }
+        return current.isDirty || current.isSyncing
+    }
+
     fun onAddNewTarget() {
-        val baseCount = _uiState.value.availableTargets.size + 1
-        val newTarget = createTargetScaffoldUseCase(index = baseCount)
+        if (refusedOverDirtyDraft()) return
+        // The first free number: a list size can repeat an id still in use after a delete.
+        val ids = _uiState.value.availableTargets.map { it.id }.toSet()
+        val index = generateSequence(1) { it + 1 }.first { "TARGET_NEW_$it" !in ids }
+        val newTarget = createTargetScaffoldUseCase(index = index)
         _uiState.update {
             it.copy(
                 selectedTargetId = newTarget.id,
@@ -205,6 +225,7 @@ class ConfigurationViewModel(
     }
 
     fun onDuplicateTarget(target: TargetDevice) {
+        if (refusedOverDirtyDraft()) return
         val existingIds = _uiState.value.availableTargets.map { it.id }.toSet()
         val duplicated = duplicateTargetUseCase(target, existingIds)
         _uiState.update {
@@ -233,7 +254,13 @@ class ConfigurationViewModel(
     }
 
     fun onRevertChanges() {
-        val original = _uiState.value.originalTarget ?: return
+        val state = _uiState.value
+        // A new or duplicated draft has nothing saved to go back to: reverting discards it.
+        if (state.availableTargets.none { it.id == state.editingTarget.id }) {
+            state.availableTargets.firstOrNull()?.let(::selectTargetImmediately)
+            return
+        }
+        val original = state.originalTarget ?: return
         _uiState.update {
             it.copy(
                 editingTarget = original,
@@ -274,7 +301,11 @@ class ConfigurationViewModel(
             }
 
             if (result.isSuccess) {
+                // Closing or switching only once the draft on screen is what was saved: edits typed meanwhile stay.
+                var fullySaved = false
                 _uiState.update {
+                    // update may run this again on contention: the flag follows the state it last saw.
+                    fullySaved = it.editingTarget == target
                     // Do not let an older target's completion replace a newer editor.
                     if (it.editingTarget.id != targetId) return@update it.copy(isSyncing = false)
                     if (it.editingTarget != target) {
@@ -294,7 +325,7 @@ class ConfigurationViewModel(
                         statusMessage = "Configuration saved successfully",
                     )
                 }
-                onSuccess?.invoke()
+                if (fullySaved) onSuccess?.invoke()
             } else {
                 _uiState.update {
                     if (it.editingTarget.id != targetId) return@update it.copy(isSyncing = false)

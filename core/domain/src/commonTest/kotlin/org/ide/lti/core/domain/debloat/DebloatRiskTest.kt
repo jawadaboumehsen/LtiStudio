@@ -146,6 +146,29 @@ class DebloatRiskTest {
     }
 
     @Test
+    fun aSecondProviderOfTheLibraryKeepsItsUsersWorking() {
+        val second = AppFacts(packageId = "com.example.shared", providedLibraries = setOf("android.ext.shared"))
+        val withSecond = facts + ("product:app/SharedCopy" to second)
+        val all = inventory + DebloatCandidate("product", "app/SharedCopy", 1000, null)
+        val shared = DebloatRisk.assess(all, withSecond, emptySet()).getValue("system:system/app/GoogleExtShared")
+        assertTrue(shared.blockers.isEmpty())
+    }
+
+    @Test
+    fun anUnreadableManifestIsAnUnknownNotASafeApp() {
+        val parsed = AppManifests.parse("@ product/app/Broken/Broken.apk\nunreadable")
+        assertTrue(parsed.getValue("product/app/Broken/Broken.apk").unreadable)
+        val broken = AppFacts(unreadable = true)
+        val withBroken = facts + ("product:app/Broken" to broken)
+        val all = inventory + DebloatCandidate("product", "app/Broken", 1000, null)
+        assertTrue(DebloatRisk.assess(all, withBroken, emptySet()).getValue("product:app/Broken").blockers.isNotEmpty())
+        // A kept app that could not be read may need a library a pick provides.
+        val shared = DebloatRisk.assess(all, withBroken, setOf("product:app/Maps"))
+            .getValue("system:system/app/GoogleExtShared")
+        assertTrue(shared.blockers.single().contains("could not be read"))
+    }
+
+    @Test
     fun theLastHomeScreenAndTheLastKeyboardCannotBeRemoved() {
         // framework-res's fallback home is not a home screen anyone can use.
         assertTrue(risk("system_ext:priv-app/Launcher_MFV_tablet_abroad").blockers.isNotEmpty())

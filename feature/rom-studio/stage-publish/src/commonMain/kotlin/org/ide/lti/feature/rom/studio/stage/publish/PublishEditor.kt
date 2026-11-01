@@ -382,6 +382,7 @@ private fun RetentionCard(settings: PublishSettings, dirtyPaths: Set<String>, on
 private fun VerificationCard(state: PublishUiState) {
     Card("Before publishing") {
         val preflight = state.preflight
+        state.error?.let { Problem(it) }
         when {
             preflight == null -> Hint("Checking the last build…")
 

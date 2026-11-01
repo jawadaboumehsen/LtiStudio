@@ -27,6 +27,7 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.domain.pipeline.stages.AbOtaSteps
+import org.ide.lti.core.domain.pipeline.stages.BuildChecks
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.text.AvbSizeCalculator
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
@@ -710,7 +711,7 @@ public class PipelineOrchestrator(
 
         if (status.status == "RUNNING" || status.status == "QUEUED") {
             val lastSeq = driver.run.lastSeqByStep[serverRunId] ?: recorded.lastSeq
-            val stdout = StringBuilder()
+            val stdout = StringBuilder().takeIf { step.keepsOutput() }
             val outputBuffer = StepOutputBuffer(driver, stage.id)
             val (exitCode, currentSeq) = streamToEnd(driver, serverRunId, stdout, outputBuffer, fromSeq = lastSeq)
             outputBuffer.flush()
@@ -732,61 +733,46 @@ public class PipelineOrchestrator(
                 r.copy(steps = updatedSteps, lastSeqByStep = updatedSeqMap)
             }
 
-            val output = stdout.toString().trim()
-            step.resultKey?.let { key ->
-                driver.runtimeValues[key] = output
-                driver.runtimeValues[RuntimeKeys.exitOf(key)] = exitCode.toString()
-            }
-            if (exitCode != 0 && !step.allowFailure) {
-                throw StageFailure(index, exitCode, "${step.label}: ${step.command.toolId} exited with $exitCode")
-            }
-            step.expectStdoutContains.firstOrNull { it !in output }?.let { missing ->
-                throw StageFailure(
-                    index,
-                    exitCode,
-                    "${step.label}: expected '$missing' in ${step.command.toolId} output",
-                )
-            }
-            return step.resultKey != null
+            return finishTool(driver, index, step, stdout?.toString().orEmpty().trim(), exitCode)
         }
 
-        if (status.status == "COMPLETED" || (status.exitCode != null && status.exitCode == 0)) {
-            driver.persist { r ->
-                val updatedSteps =
-                    r.steps.map {
-                        if (it.stageId == stage.id && it.index == index) {
-                            it.copy(
-                                state = StepState.COMPLETED,
-                                exitCode = status.exitCode ?: 0,
-                                lastSeq = status.lastSeq,
-                            )
-                        } else {
-                            it
-                        }
+        val succeeded = status.status == "COMPLETED" || (status.exitCode != null && status.exitCode == 0)
+        val failed = status.status == "FAILED" || (status.exitCode != null && status.exitCode != 0)
+        if (!succeeded && !failed) {
+            throw StageInterruptedFailure(
+                "Unknown status '${status.status}' for step ${step.label}",
+            )
+        }
+        // Finished while no driver watched: recorded, then judged exactly as a step that ran now.
+        val code = status.exitCode ?: if (succeeded) 0 else -1
+        driver.persist { r ->
+            r.copy(
+                steps = r.steps.map {
+                    if (it.stageId == stage.id && it.index == index) {
+                        it.copy(
+                            state = if (code == 0) StepState.COMPLETED else StepState.FAILED,
+                            exitCode = code,
+                            lastSeq = status.lastSeq,
+                        )
+                    } else {
+                        it
                     }
-                r.copy(steps = updatedSteps)
-            }
-            if (step.resultKey != null && !driver.runtimeValues.containsKey(step.resultKey)) {
-                // This step's own output, replayed by the service (not the whole run's log).
-                val out = StringBuilder()
-                executionPort.observe(serverRunId, 1L).collect { event ->
-                    if (event is StepEvent.Output && !event.isError) out.append(event.text).append('\n')
-                }
-                driver.runtimeValues[step.resultKey] = out.toString().trim()
-                driver.runtimeValues[RuntimeKeys.exitOf(step.resultKey)] = (status.exitCode ?: 0).toString()
-            }
-            return step.resultKey != null
+                },
+            )
         }
-
-        if (status.status == "FAILED" || (status.exitCode != null && status.exitCode != 0)) {
-            val code = status.exitCode ?: -1
-            if (!step.allowFailure) {
-                throw StageFailure(index, code, "${step.label}: ${step.command.toolId} exited with $code")
+        // Its recorded result when the run kept it; else this step's own output, replayed by the service (not the
+        // whole run's log), when it is used.
+        val recordedOutput = step.resultKey?.let { driver.runtimeValues[it] }
+        val output = recordedOutput ?: if (step.keepsOutput()) {
+            val out = StringBuilder()
+            executionPort.observe(serverRunId, 1L).collect { event ->
+                if (event is StepEvent.Output && !event.isError) out.append(event.text).append('\n')
             }
-            return false
+            out.toString().trim()
+        } else {
+            ""
         }
-
-        throw StageInterruptedFailure("Unknown status '${status.status}' for step ${step.label}")
+        return finishTool(driver, index, step, output, code)
     }
 
     /**
@@ -797,7 +783,7 @@ public class PipelineOrchestrator(
     private suspend fun streamToEnd(
         driver: Driver,
         runId: String,
-        stdout: StringBuilder,
+        stdout: StringBuilder?,
         outputBuffer: StepOutputBuffer,
         fromSeq: Long = 0L,
     ): Pair<Int, Long> {
@@ -809,7 +795,7 @@ public class PipelineOrchestrator(
                     is StepEvent.Output -> {
                         lastSeq = maxOf(lastSeq, event.seq)
                         // The service sends one event per line, with the line ending stripped.
-                        if (!event.isError) stdout.append(event.text).append('\n')
+                        if (!event.isError) stdout?.append(event.text)?.append('\n')
                         outputBuffer.add(event.text)
                     }
 
@@ -855,7 +841,7 @@ public class PipelineOrchestrator(
             r.copy(steps = updated)
         }
 
-        val stdout = StringBuilder()
+        val stdout = StringBuilder().takeIf { step.keepsOutput() }
         val outputBuffer = StepOutputBuffer(driver, stage.id)
         val (exitCode, lastSeq) = streamToEnd(driver, handle.runId, stdout, outputBuffer)
         outputBuffer.flush()
@@ -877,7 +863,20 @@ public class PipelineOrchestrator(
             r.copy(steps = updated, lastSeqByStep = updatedSeqMap)
         }
 
-        val output = stdout.toString().trim()
+        return finishTool(driver, index, step, stdout?.toString().orEmpty().trim(), exitCode)
+    }
+
+    /**
+     * A tool step's end, the same whether it ran now or is reconciled on resume: its result and exit code recorded,
+     * then its exit code and expected output checked. Returns true when a result was captured (caller re-plans).
+     */
+    private fun finishTool(
+        driver: Driver,
+        index: Int,
+        step: PipelineStep.Tool,
+        output: String,
+        exitCode: Int,
+    ): Boolean {
         step.resultKey?.let { key ->
             driver.runtimeValues[key] = output
             driver.runtimeValues[RuntimeKeys.exitOf(key)] = exitCode.toString()
@@ -890,6 +889,9 @@ public class PipelineOrchestrator(
         }
         return step.resultKey != null
     }
+
+    /** Only a step whose output is used keeps it: a log-only step's (possibly huge) output just streams. */
+    private fun PipelineStep.Tool.keepsOutput() = resultKey != null || expectStdoutContains.isNotEmpty()
 
     /** Returns true (re-plan) once the result is recorded; a result already present is never redone. */
     private suspend fun runHost(driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Host): Boolean {
@@ -1034,7 +1036,12 @@ public class PipelineOrchestrator(
             ?.getOrNull().orEmpty()
         val context = driver.context().let { it.copy(runtimeValues = it.runtimeValues + recordedValues) }
         val valid = fields["input"] == cacheKey && fields["output"] == outputDigest(driver, stage.outputs(context))
-        if (valid) driver.runtimeValues.putAll(recordedValues)
+        // The run's own identity stays this run's: only a cached Build brings back the date its package is named
+        // by; the device revision a resume is checked against is never an older run's.
+        if (valid) {
+            val runOwned = if (stage.id == StageId.BUILD_FLASHABLE_ZIP) RUN_DEVICE else RUN_DEVICE + RUN_DATE_KEYS
+            driver.runtimeValues.putAll(recordedValues - runOwned)
+        }
         return valid
     }
 
@@ -1120,7 +1127,11 @@ public class PipelineOrchestrator(
             VerificationState.VERIFIED,
             Presence.PRESENT,
         )
-        return if (StageId.GENERATE_OTA_MANIFEST in ran) built + manifest else built
+        // Fastboot images zip and Odin AP: listed (and found missing) like the main package.
+        val extras = BuildChecks.extraPackageFiles(ctx).map {
+            Artifact(ArtifactKind.EXTRA_PACKAGE, ctx.abs(it), null, null, VerificationState.VERIFIED, Presence.PRESENT)
+        }
+        return (if (StageId.GENERATE_OTA_MANIFEST in ran) built + manifest else built) + extras
     }
 
     private fun cacheFile(stage: StageDefinition) = ".cache/${stage.id.name}.key"
@@ -1143,6 +1154,8 @@ public class PipelineOrchestrator(
         val json = Json
         val valuesSerializer = MapSerializer(String.serializer(), String.serializer())
         val STILL_RUNNING = setOf("RUNNING", "QUEUED")
+        val RUN_DEVICE = setOf(RuntimeKeys.DEVICE_REVISION)
+        val RUN_DATE_KEYS = setOf(RuntimeKeys.RUN_DATE, RuntimeKeys.RUN_TIMESTAMP)
         const val STREAM_RETRY_MS = 500L
         const val OUTPUT_BATCH_SIZE = 500
         const val OUTPUT_BATCH_MS = 1_000L

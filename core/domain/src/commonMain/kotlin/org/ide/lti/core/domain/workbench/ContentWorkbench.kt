@@ -99,8 +99,24 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 built
             }
             run("unzip", "-tq", abs(output))
+            // Code kept only in oat/vdex (no classes.dex) would be lost: oat is removed below, as it no longer fits.
+            val hasDex = tryRun("sh", "-c", "unzip -Z1 \"$1\" | grep -qE '^classes[0-9]*\\.dex$'", "sh", abs(output))
+            if (hasDex.exitCode != 0 && tryRun("sh", "-c", "ls \"$(dirname \"$1\")\"/oat/*/*.*dex", "sh", abs(path))
+                    .exitCode == 0
+            ) {
+                throw RefusalException(
+                    Refusal(
+                        "Its code is only in the oat folder next to it; the rebuilt package has none.",
+                        path,
+                        "Deodex it first (its dex must be in the package), then rebuild.",
+                    ),
+                )
+            }
+            requireResolvedInWork(this, path)
             val point = backup(TOOL, path)
-            run("cp", "-f", abs(output), abs(path))
+            // Next to the original, then renamed: a cut-off copy never leaves the package half written.
+            run("cp", "-f", abs(output), abs("$path.partial"))
+            run("mv", "-f", abs("$path.partial"), abs(path))
             sh(
                 "d=$(dirname \"$1\"); rm -rf \"${'$'}d/oat\"; " +
                     "find \"${'$'}d\" -maxdepth 1 \\( -name '*.prof' -o -name '*.bprof' \\) -delete",
@@ -159,6 +175,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             )
         }
         // A new destination gets a point too: restoring it removes the added library.
+        requireResolvedInWork(this, systemDest)
         val point = backup(TOOL, systemDest)
         sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs("$lib.patched"), abs(systemDest))
         addSidecars(this, systemDest)
@@ -193,6 +210,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 )
             }
             val old = readText(path).orEmpty()
+            requireResolvedInWork(this, path)
             val point = backup(TOOL, path)
             writeText(path, text)
             ConfigEditDiff(old, text, lineChanges(old, text), point.id)
@@ -271,6 +289,23 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         require(path.startsWith("work/") && ".." !in path.split('/')) { "Pick a file inside the work tree (work/…)." }
     }
 
+    /** Before a write: [path] with every link resolved (a link in work/ to a file outside) must stay in work/. */
+    private suspend fun requireResolvedInWork(job: WorkbenchRunner.Job, path: String) {
+        val inside = job.tryRun(
+            "sh",
+            "-c",
+            "r=$(realpath -m -- \"$1\") && w=$(realpath -- \"$2\") && case \"\$r\" in \"\$w\"/*) ;; *) exit 1;; esac",
+            "sh",
+            job.abs(path),
+            job.abs("work"),
+        )
+        if (inside.exitCode != 0) {
+            throw RefusalException(
+                Refusal("It is a link to a file outside the work tree.", path, "Pick the file the link points to."),
+            )
+        }
+    }
+
     /** `a/b_c.apk` and `a_b/c.apk` both flatten to `a_b_c.apk`: the path's hash keeps their folders apart. */
     private fun decodedDir(path: String): String {
         val rel = path.removePrefix("work/")
@@ -302,13 +337,15 @@ done"""
 
         /**
          * `$1` library, `$2` find hex (`.` = any digit), `$3` replace hex, `$4` output; the match must start on a
-         * byte. Prints already, notfound or patched.
+         * byte. Prints already (the pattern is gone and the replacement is there exactly once, on a byte), notfound
+         * or patched; replacement bytes found elsewhere or several times are not proof of an earlier patch.
          */
         private const val HEXPATCH_SCRIPT = """
 hex=${'$'}(xxd -p "$1" | tr -d '\n')
 m=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$2" | awk -F: '${'$'}1 % 2 == 0 { print; exit }')
 if [ -z "${'$'}m" ]; then
-  case "${'$'}hex" in *"$3"*) echo already ;; *) echo notfound ;; esac
+  n=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$3" | awk -F: '${'$'}1 % 2 == 0' | wc -l)
+  if [ "${'$'}n" -eq 1 ]; then echo already; else echo notfound; fi
   exit 0
 fi
 printf '%s' "${'$'}hex" | awk -v o="${'$'}{m%%:*}" -v r="$3" '{ printf "%s%s%s", substr(${'$'}0, 1, o), r, substr(${'$'}0, o + length(r) + 1) }' | xxd -r -p > "$4"

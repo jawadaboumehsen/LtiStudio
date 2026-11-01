@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.rom.studio.stage.publish
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
 import org.ide.lti.core.domain.usecase.publish.PublishTransfer
 import org.ide.lti.core.model.workspace.PublishSettings
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -33,10 +35,13 @@ public class PublishSessions(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val states = mutableMapOf<String, MutableStateFlow<PublishUiState>>()
-    private val jobs = mutableMapOf<String, Job>()
+
+    // Publishes of several workspaces run at once on the default dispatcher: these maps are shared between them.
+    private val jobs = ConcurrentHashMap<String, Job>()
+    private val refreshes = ConcurrentHashMap<String, Job>()
 
     /** Where each running transfer's speed is measured from. */
-    private val rateFrom = mutableMapOf<String, Pair<TimeMark, Long>>()
+    private val rateFrom = ConcurrentHashMap<String, Pair<TimeMark, Long>>()
 
     public fun state(workspaceId: String): StateFlow<PublishUiState> = flow(workspaceId).asStateFlow()
 
@@ -46,11 +51,25 @@ public class PublishSessions(
     /** Reads what Publish would do with [settings] (the editor's, maybe unsaved) and the last attempt's journal. */
     public fun refresh(workspaceId: String, settings: PublishSettings) {
         val use = publisher ?: return
-        scope.launch {
-            val preflight = use.preflight(workspaceId, settings)
+        // The newest settings' check replaces an older one still running: its result is for settings left behind.
+        refreshes[workspaceId]?.cancel()
+        refreshes[workspaceId] = scope.launch {
+            val preflight = try {
+                use.preflight(workspaceId, settings)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                flow(workspaceId).update { it.copy(error = "Could not check the release: ${e.message}") }
+                return@launch
+            }
             flow(workspaceId).update {
                 // While publishing, the live journal is the running one; the file is only as new as its last step.
-                it.copy(preflight = preflight, journal = if (it.publishing) it.journal else preflight.journal)
+                it.copy(
+                    preflight = preflight,
+                    journal = if (it.publishing) it.journal else preflight.journal,
+                    // A good check ends a failed check's message, not a stopped publish's (it ran before this).
+                    error = it.error?.takeIf { e -> e.startsWith(PUBLISH_STOPPED) },
+                )
             }
         }
     }
@@ -60,7 +79,7 @@ public class PublishSessions(
         val use = publisher ?: return
         val state = flow(workspaceId)
         if (state.value.publishing) return
-        state.update { it.copy(publishing = true, transfer = null, bytesPerSecond = null) }
+        state.update { it.copy(publishing = true, transfer = null, bytesPerSecond = null, error = null) }
         jobs[workspaceId] = scope.launch {
             try {
                 use.publish(
@@ -69,6 +88,11 @@ public class PublishSessions(
                     onProgress = { journal -> state.update { it.copy(journal = journal) } },
                     onTransfer = { onTransfer(workspaceId, it) },
                 )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Outside a step (the service gone, the journal not written): said, never a silent stop.
+                state.update { it.copy(error = "$PUBLISH_STOPPED ${e.message}") }
             } finally {
                 state.update { it.copy(publishing = false, cancelling = false, transfer = null) }
                 refresh(workspaceId, settings)
@@ -101,5 +125,6 @@ public class PublishSessions(
     private companion object {
         const val MILLIS = 1000.0
         const val MIN_RATE_SECONDS = 3.0
+        const val PUBLISH_STOPPED = "Publishing stopped:"
     }
 }

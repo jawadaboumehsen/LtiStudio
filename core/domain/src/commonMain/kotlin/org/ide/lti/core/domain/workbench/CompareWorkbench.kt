@@ -164,21 +164,29 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
             ).takeIf { it.size == ZIP_COLUMNS && it[0].all(Char::isDigit) }
         }.associate { it[ZIP_COLUMNS - 1] to it[ZIP_COLUMNS - 2] }
 
-    private suspend fun hashes(job: WorkbenchRunner.Job, dir: String): Map<String, String> =
-        job.sh("cd \"$1\" && find . -type f -exec sha256sum {} +", job.abs(dir)).lines().mapNotNull { line ->
-            line.split("  ", limit = 2).takeIf { it.size == 2 }?.let { it[1].removePrefix("./") to it[0] }
-        }.toMap()
+    /** path -> sha256 of each file, or `link:<target>` of each symlink (a link changed or added is a difference). */
+    private suspend fun hashes(job: WorkbenchRunner.Job, dir: String): Map<String, String> = job.sh(
+        "cd \"$1\" && find . -type f -exec sha256sum {} + && find . -type l -printf 'link:%l  %p\\n'",
+        job.abs(dir),
+    ).lines().mapNotNull { line ->
+        line.split("  ", limit = 2).takeIf { it.size == 2 }?.let { it[1].removePrefix("./") to it[0] }
+    }.toMap()
 
-    /** method signature -> body of each method in one smali file. */
+    /**
+     * method signature -> its `.method` line and body, in one smali file; [CLASS_LEVEL] holds every line outside
+     * the methods (class header, super, interfaces, annotations, fields), so a change there is reported too.
+     */
     private fun methodsOf(smali: String): Map<String, String> {
         val methods = mutableMapOf<String, String>()
+        val classLevel = StringBuilder()
         var signature: String? = null
         val body = StringBuilder()
         for (line in smali.lines()) {
             when {
                 line.startsWith(".method") -> {
                     signature = line.substringAfterLast(' ')
-                    body.clear()
+                    // The header too: an access flag changed on it (private -> public) is a modified method.
+                    body.clear().append(line).append('\n')
                 }
 
                 line.startsWith(
@@ -186,8 +194,11 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
                 ) -> signature?.let { methods[it] = body.toString() }.also { signature = null }
 
                 signature != null -> body.append(line).append('\n')
+
+                else -> classLevel.append(line).append('\n')
             }
         }
+        methods[CLASS_LEVEL] = classLevel.toString()
         return methods
     }
 
@@ -207,5 +218,8 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
         private const val HASH_BATCH = 2_000
         private val WHITESPACE = Regex("""\s+""")
         private const val ZIP_COLUMNS = 8
+
+        /** The lines of a class outside its methods, compared as one entry. */
+        private const val CLASS_LEVEL = "(class header and fields)"
     }
 }

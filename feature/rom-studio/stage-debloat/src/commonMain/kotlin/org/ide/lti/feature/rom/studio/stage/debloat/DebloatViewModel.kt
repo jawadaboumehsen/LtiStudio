@@ -283,9 +283,11 @@ public class DebloatViewModel(
         val store = presets ?: return
         val trimmed = name.trim().takeIf { it.isNotEmpty() } ?: return
         guarded {
-            val updated = store.load().filter { it.name != trimmed } + portableList(trimmed)
-            store.save(updated.sortedBy { it.name.lowercase() })
-            _facts.value = _facts.value.copy(presets = store.load(), message = "Saved the preset $trimmed.")
+            val preset = portableList(trimmed)
+            val saved = store.update { all ->
+                (all.filter { it.name != trimmed } + preset).sortedBy { it.name.lowercase() }
+            }
+            _facts.value = _facts.value.copy(presets = saved, message = "Saved the preset $trimmed.")
         }
     }
 
@@ -297,8 +299,8 @@ public class DebloatViewModel(
     public fun deletePreset(name: String) {
         val store = presets ?: return
         guarded {
-            store.save(store.load().filter { it.name != name })
-            _facts.value = _facts.value.copy(presets = store.load(), message = "Deleted the preset $name.")
+            val saved = store.update { all -> all.filter { it.name != name } }
+            _facts.value = _facts.value.copy(presets = saved, message = "Deleted the preset $name.")
         }
     }
 

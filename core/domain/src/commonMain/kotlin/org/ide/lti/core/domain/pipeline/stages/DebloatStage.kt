@@ -96,10 +96,21 @@ public class DebloatStage : StageDefinition {
         apps: Map<String, AppFacts>,
         mentions: Map<String, PackageMentions.Mentions>,
     ): List<PipelineStep> {
-        val picks = ctx.snapshot.debloat.removeSelectors.toSet()
         val byApp = DebloatRisk.byApp(inventory, apps)
-        val blocked = DebloatRisk.assess(inventory, byApp, picks)
-            .filter { (selector, risk) -> selector in picks && risk.blockers.isNotEmpty() }
+        // Package names from the manifests, so a `pkg:` selector finds its app.
+        val named = inventory.map { it.copy(packageId = it.packageId ?: byApp[DebloatRisk.selectorOf(it)]?.packageId) }
+        val resolution = DebloatResolver.resolve(
+            settings = ctx.snapshot.debloat,
+            inventory = named,
+            presetSelectors = emptyList(),
+            protectedSelectors = DebloatInventory.protectedSelectors(named),
+            targetPartitions = named.map { it.partition }.toSet(),
+        )
+        // The risk of what is really removed: after keep rules, not of the raw picks.
+        val removed = (resolution as? DebloatResolution.Resolved)?.decision?.removals
+            ?.map { "${it.partition}:${it.relativePath}" }?.toSet().orEmpty()
+        val blocked = DebloatRisk.assess(named, byApp, removed)
+            .filter { (selector, risk) -> selector in removed && risk.blockers.isNotEmpty() }
         if (blocked.isNotEmpty()) {
             return listOf(
                 PipelineStep.Check("debloat risk") {
@@ -109,13 +120,6 @@ public class DebloatStage : StageDefinition {
                 },
             )
         }
-        val resolution = DebloatResolver.resolve(
-            settings = ctx.snapshot.debloat,
-            inventory = inventory,
-            presetSelectors = emptyList(),
-            protectedSelectors = DebloatInventory.protectedSelectors(inventory),
-            targetPartitions = inventory.map { it.partition }.toSet(),
-        )
         return when (resolution) {
             is DebloatResolution.Rejected -> listOf(
                 PipelineStep.Check("debloat selection") {

@@ -79,7 +79,8 @@ public class BuildFlashableZipStage : StageDefinition {
         listOfNotNull(flashableRelPath(ctx).takeIf { ctx.snapshot.build.packageType.flashable })
             .plus(listOfNotNull(otaRelPath(ctx).takeIf { ctx.snapshot.build.packageType.abOta }))
             .flatMap { listOf(it, "$it.sha256") } +
-        if (!ctx.snapshot.build.signing.signPackage) listOf(UNSIGNED_MARKER) else emptyList()
+        (if (!ctx.snapshot.build.signing.signPackage) listOf(UNSIGNED_MARKER) else emptyList()) +
+        BuildChecks.extraPackageFiles(ctx)
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
         val coverage = PipelineStep.Host(

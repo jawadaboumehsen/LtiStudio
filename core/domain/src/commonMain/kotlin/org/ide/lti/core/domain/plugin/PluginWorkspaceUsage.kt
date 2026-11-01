@@ -19,12 +19,20 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * onto the newest installed versions after an update.
  */
 class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private val store: WorkspaceSettingsStore) {
-    /** `publisher:id@version` → the names of the workspaces whose builds use that version. */
+    /**
+     * `publisher:id@version` → the names of the workspaces whose builds use that version; [ANY_VERSION] → those
+     * whose settings could not be read, which may use any version (so none is removed while they are unknown).
+     */
     suspend fun usersOf(): Map<String, List<String>> {
         val users = mutableMapOf<String, MutableList<String>>()
-        eachWorkspace { _, name, snapshot ->
+        for (workspace in workspaces.getWorkspaces().first()) {
+            val snapshot = runCatching { store.current(workspace.id) }.getOrNull()
+            if (snapshot == null) {
+                users.getOrPut(ANY_VERSION) { mutableListOf() } += workspace.name
+                continue
+            }
             snapshot.customization.lockfile.entries.forEach { e ->
-                users.getOrPut("${e.publisher}:${e.id}@${e.version}") { mutableListOf() } += name
+                users.getOrPut("${e.publisher}:${e.id}@${e.version}") { mutableListOf() } += workspace.name
             }
         }
         return users
@@ -47,7 +55,11 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
                 versions["${e.publisher}:${e.id}"]?.let { it != e.version } ?: false
             }
             val locked = if (stale) {
-                PluginDependencyResolver.lock(customization.enabledPackages, packages, requestedOrder = emptyList())
+                // The workspace's own order is kept (independent mods that touch the same files apply as chosen),
+                // unless the new versions' dependencies no longer allow it.
+                PluginDependencyResolver.lock(customization.enabledPackages, packages, customization.enabledPackages)
+                    .takeIf { it is LockResult.Locked }
+                    ?: PluginDependencyResolver.lock(customization.enabledPackages, packages, emptyList())
             } else {
                 null
             }
@@ -61,6 +73,11 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
             }
         }
         return moved
+    }
+
+    companion object {
+        /** [usersOf]'s key for workspaces whose settings could not be read. */
+        const val ANY_VERSION: String = "*"
     }
 
     private suspend fun eachWorkspace(

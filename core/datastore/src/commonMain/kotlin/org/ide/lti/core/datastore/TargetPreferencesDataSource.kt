@@ -26,10 +26,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.target.TargetDevice
 
 @Serializable
-public data class TargetList(
-    val schemaVersion: Int = 2,
-    val items: List<TargetDevice> = emptyList(),
-)
+public data class TargetList(val schemaVersion: Int = 2, val items: List<TargetDevice> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for target device profiles
@@ -107,18 +104,15 @@ public class TargetPreferencesDataSource(
                 }
             }
         } catch (_: Exception) {
+            // Unreadable: kept aside, so the next save (of the defaults) does not destroy what can be recovered.
+            runCatching { settings[KEY_TARGETS_UNREADABLE] = trimmed }
             emptyList()
         }
     }
 
+    // A failed write throws: the caller reports it, and memory is updated only after the write.
     private fun persistTargetsInternal(targets: List<TargetDevice>) {
-        try {
-            val wrapper = TargetList(schemaVersion = 2, items = targets)
-            val encoded = json.encodeToString(wrapper)
-            settings[KEY_TARGETS] = encoded
-        } catch (_: Exception) {
-            // Keep in-memory
-        }
+        settings[KEY_TARGETS] = json.encodeToString(TargetList(schemaVersion = 2, items = targets))
     }
 
     private fun readSelectedTargetIdSafe(): String? {
@@ -131,16 +125,14 @@ public class TargetPreferencesDataSource(
     }
 
     private fun persistSelectedTargetIdInternal(id: String) {
-        try {
-            val encoded = json.encodeToString(id)
-            settings[KEY_SELECTED_TARGET_ID] = encoded
-        } catch (_: Exception) {
-            // Keep in-memory
-        }
+        settings[KEY_SELECTED_TARGET_ID] = json.encodeToString(id)
     }
 
     public companion object {
         public const val KEY_TARGETS: String = "lti_targets_v1"
+
+        /** The last target list that could not be read, as it was. */
+        public const val KEY_TARGETS_UNREADABLE: String = "lti_targets_v1_unreadable"
         public const val KEY_SELECTED_TARGET_ID: String = "lti_selected_target_id_v1"
 
         public fun defaultJson(): Json = Json {

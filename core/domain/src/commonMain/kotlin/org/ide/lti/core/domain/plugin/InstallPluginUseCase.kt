@@ -37,6 +37,9 @@ data class InstallRequest(
     val expectedDigest: String?,
     val trust: TrustDecision,
     val fileSha256: String? = null,
+    /** The `publisher:id` and version the source listed: a package of another identity is refused. */
+    val expectedKey: String? = null,
+    val expectedVersion: String? = null,
 )
 
 sealed interface InstallState {
@@ -112,6 +115,7 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
     companion object {
         const val INSTALL_NOT_TRUSTED: String = "INSTALL_NOT_TRUSTED"
         const val DIGEST_MISMATCH: String = "DIGEST_MISMATCH"
+        const val IDENTITY_MISMATCH: String = "IDENTITY_MISMATCH"
         const val SAME_VERSION_DIFFERENT_CONTENT: String = "SAME_VERSION_DIFFERENT_CONTENT"
         const val INSTALL_REFUSED: String = "INSTALL_REFUSED"
     }
@@ -146,6 +150,11 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
 
             val identity = inspection.identity ?: run {
                 emit(InstallState.Failed(inspection.report))
+                return@flow
+            }
+
+            identityMismatch(request, identity)?.let {
+                emit(InstallState.Failed(singleError(identity.key, "identity", IDENTITY_MISMATCH, it)))
                 return@flow
             }
 
@@ -190,6 +199,18 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
             emit(InstallState.Installed(record))
         } finally {
             port.discard(quarantined)
+        }
+    }
+
+    /** Why the package is not the one the source listed, or null when it is (or nothing was listed). */
+    private fun identityMismatch(request: InstallRequest, identity: PackageIdentity): String? {
+        val wrongKey = request.expectedKey != null && request.expectedKey != identity.key
+        val wrongVersion = request.expectedVersion != null && request.expectedVersion != identity.version
+        return if (wrongKey || wrongVersion) {
+            "The source lists ${request.expectedKey} ${request.expectedVersion}, but the package is " +
+                "${identity.key} ${identity.version}"
+        } else {
+            null
         }
     }
 

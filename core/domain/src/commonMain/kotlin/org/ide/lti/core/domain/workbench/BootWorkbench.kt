@@ -321,7 +321,18 @@ public class BootWorkbench(
             }
             val t = "${dir(partition)}/import-check"
             sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(t))
-            tryRun("unpack_bootimg", "--boot_img", image, "--out", abs(t))
+            // The magic bytes alone do not make a boot image: one unpack_bootimg cannot read is never saved.
+            val unpacked = tryRun("unpack_bootimg", "--boot_img", image, "--out", abs(t))
+            if (unpacked.exitCode != 0) {
+                tryRun("rm", "-rf", abs(t))
+                throw RefusalException(
+                    Refusal(
+                        "unpack_bootimg cannot read it: ${unpacked.stderr.trim().lines().lastOrNull().orEmpty()}",
+                        "$partition.img",
+                        "Patch the stock image again and import the new file.",
+                    ),
+                )
+            }
             val ramdisk = RAMDISK_NAMES.firstOrNull { tryRun("test", "-s", abs("$t/$it")).exitCode == 0 }
             val format = ramdisk?.let {
                 val magic = run("xxd", "-p", "-l", "6", abs("$t/$it")).trim()
@@ -433,8 +444,15 @@ public class BootWorkbench(
         }
         val source = sourceOf(this, partition)
         // The stock partition's size, as in unpack: work/kernel's copy may have had its footer erased.
+        // Only a footer says the partition's size; a bare image is usually smaller than its partition.
         val size = (footerOf(this, "firmware/extracted/$partition.img") ?: footerOf(this, source))?.imageSize
-            ?: run("stat", "-c", "%s", abs(source)).trim().toLong()
+            ?: throw RefusalException(
+                Refusal(
+                    "The partition size is unknown: neither the stock nor this $partition.img has an AVB footer.",
+                    "$partition.img",
+                    "Read it on the phone (fastboot getvar partition-size:$partition) and sign it by hand.",
+                ),
+            )
         SigningPlan(partitionName = partition, algorithmName = algorithm, keyPath = keyRef, partitionSize = size)
     }
 

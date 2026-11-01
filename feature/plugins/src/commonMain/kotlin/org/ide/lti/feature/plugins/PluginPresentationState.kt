@@ -14,6 +14,7 @@ import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.IndexFetchResult
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PackageInspection
+import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.core.domain.plugin.newestPerPlugin
 
@@ -29,8 +30,11 @@ internal fun packageReferences(
     records: List<InstalledRecord>,
     workspaceUsers: Map<String, List<String>> = emptyMap(),
 ): Map<String, List<String>> {
+    // A workspace whose settings could not be read may use any version: it holds every one.
+    val unknown = workspaceUsers[PluginWorkspaceUsage.ANY_VERSION].orEmpty().map { "Workspace '$it' (unreadable)" }
     val map = records.associate { record ->
-        record.rowKey to workspaceUsers[record.rowKey].orEmpty().map { "Workspace '$it'" }.toMutableList()
+        record.rowKey to
+            (workspaceUsers[record.rowKey].orEmpty().map { "Workspace '$it'" } + unknown).toMutableList()
     }.toMutableMap()
     val newest = newestPerPlugin(records, { it.identity.key }) { it.identity.version }.associateBy { it.identity.key }
     for (record in newest.values) {

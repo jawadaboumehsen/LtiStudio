@@ -10,6 +10,8 @@
 package org.ide.lti.core.data.debloat
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -26,10 +28,17 @@ internal class FileDebloatPresetStore(
         if (file.isFile) json.decodeFromString(serializer, file.readText()) else emptyList()
     }
 
-    /** Written to a temporary file and renamed, so a crash never leaves half a file. */
-    override suspend fun save(presets: List<RemovalList>): Unit = withContext(Dispatchers.IO) {
+    private val writes = Mutex()
+
+    override suspend fun update(change: (List<RemovalList>) -> List<RemovalList>): List<RemovalList> =
+        writes.withLock { change(load()).also { write(it) } }
+
+    override suspend fun save(presets: List<RemovalList>): Unit = writes.withLock { write(presets) }
+
+    /** Written to a temporary file of its own and renamed, so a crash never leaves half a file. */
+    private suspend fun write(presets: List<RemovalList>): Unit = withContext(Dispatchers.IO) {
         file.parentFile.mkdirs()
-        val partial = File(file.parentFile, "${file.name}.partial")
+        val partial = File(file.parentFile, "${file.name}.${java.util.UUID.randomUUID()}.partial")
         partial.writeText(json.encodeToString(serializer, presets))
         java.nio.file.Files.move(
             partial.toPath(),

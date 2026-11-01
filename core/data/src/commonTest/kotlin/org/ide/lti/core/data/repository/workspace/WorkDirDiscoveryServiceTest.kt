@@ -23,7 +23,8 @@ class WorkDirDiscoveryServiceTest {
 
     @Test
     fun testDiscoversOnlyWorkspacesSubdirectoryWithValidManifest() {
-        val tempDir = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-disc-test-${Clock.System.now().toEpochMilliseconds()}"
+        val tempDir =
+            FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-disc-test-${Clock.System.now().toEpochMilliseconds()}"
         val workspacesDir = tempDir / "workspaces"
         val validWsDir = workspacesDir / "valid_project"
         val emptyWsDir = workspacesDir / "empty_project"
@@ -87,7 +88,8 @@ class WorkDirDiscoveryServiceTest {
             val ws = discovered.first()
             assertEquals("ws-valid-1", ws.workspaceId)
             assertEquals("valid_project", ws.name)
-            assertEquals("~/LtiRomWorkDir/workspaces/valid_project", ws.path)
+            // The folder that was scanned, not an assumed ~/LtiRomWorkDir.
+            assertEquals((tempDir / "workspaces" / "valid_project").toString().replace('\\', '/'), ws.path)
             assertEquals(WorkspaceType.REMOTE_WSL, ws.type)
             assertEquals("PQ84P01", ws.targetBinding?.profileId)
         } finally {

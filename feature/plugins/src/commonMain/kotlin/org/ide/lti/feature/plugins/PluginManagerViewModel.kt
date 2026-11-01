@@ -254,6 +254,8 @@ public class PluginManagerViewModel(
                 expectedDigest = entry.contentDigest.ifBlank { null },
                 trust = trust,
                 fileSha256 = entry.fileSha256,
+                expectedKey = "${entry.publisher}:${entry.id}",
+                expectedVersion = entry.version,
             )
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
@@ -302,7 +304,18 @@ public class PluginManagerViewModel(
         ).joinToString("") { " · $it" }
     }
 
+    /** The newest inspection: an older one finishing later is discarded, never shown for the new path. */
+    private var inspectRequest = 0L
+
+    /** Deletes the copy made for the inspection on screen (the install makes its own from the picked file). */
+    private fun discardInspected() {
+        val copy = _uiState.value.importQuarantinedPath ?: return
+        viewModelScope.launch { pluginInstallPort.discard(java.nio.file.Path.of(copy)) }
+    }
+
     public fun setImportPathInput(path: String) {
+        inspectRequest++
+        discardInspected()
         _uiState.update {
             it.copy(
                 importPathInput = path,
@@ -340,13 +353,18 @@ public class PluginManagerViewModel(
         }
 
         _uiState.update { it.copy(isLegacyUnsupportedFormat = false) }
+        val request = ++inspectRequest
         viewModelScope.launch {
             val quarantined = pluginInstallPort.quarantine(trimmed)
             if (quarantined == null) {
-                _uiState.update { it.copy(errorMessage = "Could not access or quarantine package at: $trimmed") }
+                if (request == inspectRequest) {
+                    _uiState.update { it.copy(errorMessage = "Could not access or quarantine package at: $trimmed") }
+                }
                 return@launch
             }
             val inspection = pluginInstallPort.inspect(quarantined)
+            if (request != inspectRequest) return@launch pluginInstallPort.discard(quarantined)
+            discardInspected()
             _uiState.update {
                 it.copy(
                     importQuarantinedPath = quarantined.toString(),
@@ -361,10 +379,14 @@ public class PluginManagerViewModel(
     }
 
     public fun confirmImportInstall(trust: TrustDecision) {
-        val path = _uiState.value.importQuarantinedPath ?: _uiState.value.importPathInput
+        // The picked file itself, held to the inspected content by its digest: a file changed since (or an
+        // inspection of another one) fails the check instead of installing something else.
+        val path = _uiState.value.importPathInput.trim()
         if (path.isBlank()) return
         val inspection = _uiState.value.importInspection
         val expectedDigest = inspection?.identity?.contentDigest
+        discardInspected()
+        _uiState.update { it.copy(importQuarantinedPath = null) }
         viewModelScope.launch {
             val label = inspection?.identity?.key ?: path
             _uiState.update {

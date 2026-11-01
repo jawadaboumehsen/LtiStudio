@@ -11,17 +11,19 @@ package org.ide.lti.feature.workspace.studio
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
@@ -41,6 +43,7 @@ import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -121,6 +124,10 @@ public class StudioViewModel(
     /** The workspace's own device configuration, when known; shown by the overview instead of an id. */
     private var device: TargetDevice? = null
     private var validationJob: Job? = null
+    private var entryRequest = 0L
+
+    /** The workspace last asked for (set at once, while its entry is still being read). */
+    private var requestedWorkspaceId = initialWorkspaceId
 
     private fun activeDescriptors(): List<StageDescriptor> {
         val registeredMap = stageEditorRegistry.allDescriptors().associateBy { it.stageId }
@@ -162,7 +169,7 @@ public class StudioViewModel(
                 .map { it.workspaceId }
                 .distinctUntilChanged()
                 .flatMapLatest { id ->
-                    if (id.isBlank()) flowOf(null) else repository.observe(id).catch { emit(null) }
+                    if (id.isBlank()) flowOf(null) else repository.observe(id).retryingAfter(null)
                 }
                 .collect { found ->
                     device = found
@@ -191,7 +198,7 @@ public class StudioViewModel(
                 .map { it.workspaceId }
                 .distinctUntilChanged()
                 .flatMapLatest { id ->
-                    if (id.isBlank()) flowOf(emptyList()) else use.observeRuns(id).catch { emit(emptyList()) }
+                    if (id.isBlank()) flowOf(emptyList()) else use.observeRuns(id).retryingAfter(emptyList())
                 }
                 .collect { found ->
                     val runs = found.sortedByDescending { it.startedAt }
@@ -226,10 +233,14 @@ public class StudioViewModel(
      * Calls [resolveStudioEntry] with the route arguments and stored presentation.
      */
     public fun onEntry(workspaceId: String, requestedStageId: StageId? = null, requestedObjectId: String? = null) {
+        requestedWorkspaceId = workspaceId
         refreshValidation(workspaceId)
+        // Only the newest entry applies: a slow read for the workspace left a moment ago never switches back to it.
+        val request = ++entryRequest
         viewModelScope.launch {
             val descriptors = activeDescriptors()
             val stored = studioPresentationStore.get(workspaceId)
+            if (request != entryRequest) return@launch
             val entry = resolveStudioEntry(
                 presentation = stored,
                 requestedStageId = requestedStageId,
@@ -315,8 +326,10 @@ public class StudioViewModel(
      */
     public fun selectObject(stageId: StageId, objectId: String) {
         val descriptors = activeDescriptors()
-        val stage = descriptors.firstOrNull { it.stageId == stageId } ?: return
-        if (stage.subobjects.none { it.id.value == objectId }) return
+        val stage = descriptors.firstOrNull { it.stageId == stageId }
+        if (stage == null || stage.subobjects.none { it.id.value == objectId }) return
+        // Every way into an editor passes the same lock as the rail: a locked stage opens what to finish first.
+        if (isLocked(stageId, _uiState.value.validationReport)) return selectStage(stageId)
 
         val updatedPresentation = _uiState.value.presentation.withEditor(stageId, objectId)
         val newEntry = StudioEntry.Editor(stageId, objectId, StudioEntryReason.DEEP_LINK)
@@ -400,6 +413,7 @@ public class StudioViewModel(
         val stage = descriptors.firstOrNull { it.stageId == stageId } ?: descriptors.first()
         val objectId = pres.editorObjectId?.takeIf { id -> stage.subobjects.any { it.id.value == id } }
             ?: stage.subobjects.first().id.value
+        if (isLocked(stage.stageId, _uiState.value.validationReport)) return selectStage(stage.stageId)
 
         val editorEntry = StudioEntry.Editor(stageId, objectId, StudioEntryReason.RESTORED)
         val updatedPresentation = pres.withEditor(stageId, objectId)
@@ -460,7 +474,16 @@ public class StudioViewModel(
         if (workspaceId.isBlank()) return
         viewModelScope.launch {
             val index = runCatching { workbench.list(workspaceId) }.getOrDefault(RestoreIndex.Empty)
-            _uiState.update { it.copy(restoreIndex = index, restoreMessage = null) }
+            _uiState.update {
+                if (it.workspaceId == workspaceId) {
+                    it.copy(
+                        restoreIndex = index,
+                        restoreMessage = null,
+                    )
+                } else {
+                    it
+                }
+            }
         }
     }
 
@@ -474,20 +497,28 @@ public class StudioViewModel(
         viewModelScope.launch {
             val message = try {
                 val point = workbench.restore(workspaceId, pointId)
-                if (point.tool == DebloatStage.TOOL) {
+                val unpicked = if (point.tool == DebloatStage.TOOL) {
                     val selector = point.id.removePrefix("${DebloatStage.TOOL}:")
                     settingsStore?.update(workspaceId) { snap ->
                         snap.copy(
                             debloat = snap.debloat.copy(removeSelectors = snap.debloat.removeSelectors - selector),
                         )
                     }
+                } else {
+                    null
                 }
-                "Restored ${point.itemPath}"
+                // The copy is back, but a pick that could not be removed makes the next build delete it again.
+                unpicked?.exceptionOrNull()?.let {
+                    "Restored ${point.itemPath}, but it is still picked for removal (${it.message}): " +
+                        "un-pick it in Debloat or the next build removes it again."
+                } ?: "Restored ${point.itemPath}"
             } catch (e: RefusalException) {
                 "${e.refusal.cause} ${e.refusal.nextStep}"
             }
             val index = runCatching { workbench.list(workspaceId) }.getOrDefault(_uiState.value.restoreIndex)
-            _uiState.update { it.copy(restoreIndex = index, restoreMessage = message) }
+            _uiState.update {
+                if (it.workspaceId == workspaceId) it.copy(restoreIndex = index, restoreMessage = message) else it
+            }
         }
     }
 
@@ -500,8 +531,24 @@ public class StudioViewModel(
         }
         viewModelScope.launch {
             val workspaceId = _uiState.value.workspaceId
-            val report = currentValidation(workspaceId, settingsStore?.current(workspaceId))
-            _uiState.update { it.copy(validationReport = report) }
+            // A read that fails (the service down) ends the operation as failed, never leaves it running.
+            val report = try {
+                currentValidation(workspaceId, settingsStore?.current(workspaceId))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _shellState.update { current ->
+                    current.copy(
+                        validateOperation = OperationUiState.Failed(
+                            generation = generation,
+                            startedFromRevision = 1L,
+                            userMessage = "Could not read the workspace settings: ${e.message}",
+                        ),
+                    )
+                }
+                return@launch
+            }
+            _uiState.update { if (it.workspaceId == workspaceId) it.copy(validationReport = report) else it }
             updateShellState()
             val errorCount = report.errors.size
             _shellState.update { current ->
@@ -523,6 +570,8 @@ public class StudioViewModel(
 
     /** The real build check (the same one that gates Start): the device and every stage's saved settings. */
     private fun refreshValidation(workspaceId: String) {
+        // A late event of the workspace left a moment ago never cancels the check of the one asked for.
+        if (workspaceId != requestedWorkspaceId) return
         // Edits save a few times a second: one check after they settle, not one service round trip per save.
         validationJob?.cancel()
         validationJob = viewModelScope.launch {
@@ -530,6 +579,8 @@ public class StudioViewModel(
             // A read that failed (the service busy or down) is not a missing configuration: keep what is known.
             val snapshot = runCatching { settingsStore?.current(workspaceId) }.getOrElse { return@launch }
             val report = currentValidation(workspaceId, snapshot)
+            // Another workspace opened meanwhile has its own check; this one's result is for a workspace not shown.
+            if (workspaceId != requestedWorkspaceId) return@launch
             _uiState.update { current ->
                 val updated = current.copy(validationReport = report, snapshot = snapshot)
                 updated.copy(overviewState = recomputeOverview(updated))
@@ -549,26 +600,7 @@ public class StudioViewModel(
             device == null -> "This workspace has no device configuration."
             else -> null
         }
-        return if (missing != null || snapshot == null || device == null) {
-            ValidationReport(
-                errors = listOf(
-                    ValidationError(
-                        stageId = null,
-                        objectId = null,
-                        fieldPath = "workspace",
-                        code = "WORKSPACE_INCOMPLETE",
-                        severity = Severity.ERROR,
-                        message = missing ?: "Incomplete workspace",
-                    ),
-                ),
-            )
-        } else {
-            // Publish is not part of a build (the build check leaves it out), but its stage still shows its errors.
-            val publish = StageSettingsValidator.validatePublish(snapshot.publish).errors.filter {
-                it.severity == Severity.ERROR
-            }
-            ValidationReport(errors = DeviceConfigReadiness.check(device, snapshot) + publish)
-        }
+        return buildValidation(missing, snapshot, device)
     }
 
     public fun saveWorkspace() {
@@ -639,8 +671,7 @@ public class StudioViewModel(
             draft = snapshot?.let { WorkspacePipelineDraft.create(uiState.workspaceId, it, device) },
             validationReport = uiState.validationReport,
             runs = uiState.runs,
-            // The keys are proven by a build that signed with them; the source by the saved, valid settings.
-            signingVerified = signed && uiState.runs.any { it.state == RunState.SUCCEEDED },
+            signingVerified = signed && signedBuildOf(uiState.runs, snapshot?.id),
             hasExplicitValidSource = snapshot != null && !acquisitionErrors,
         )
     }
@@ -795,3 +826,53 @@ public class StudioViewModel(
             }
     }
 }
+
+/** A failed observation shows [fallback] and is read again later; it never ends (the service may come back). */
+private fun <T> Flow<T>.retryingAfter(fallback: T): Flow<T> = retryWhen { cause, _ ->
+    (cause !is CancellationException).also {
+        if (it) {
+            emit(fallback)
+            delay(OBSERVE_RETRY_MS)
+        }
+    }
+}
+
+/** The device and every stage's saved settings checked, or why they cannot be ([missing]). */
+private fun buildValidation(
+    missing: String?,
+    snapshot: ConfigurationSnapshot?,
+    device: TargetDevice?,
+): ValidationReport = if (missing != null || snapshot == null || device == null) {
+    ValidationReport(
+        errors = listOf(
+            ValidationError(
+                stageId = null,
+                objectId = null,
+                fieldPath = "workspace",
+                code = "WORKSPACE_INCOMPLETE",
+                severity = Severity.ERROR,
+                message = missing ?: "Incomplete workspace",
+            ),
+        ),
+    )
+} else {
+    // Publish is not part of a build (the build check leaves it out), but its stage still shows its errors.
+    val publish = StageSettingsValidator.validatePublish(snapshot.publish).errors.filter {
+        it.severity == Severity.ERROR
+    }
+    ValidationReport(errors = DeviceConfigReadiness.check(device, snapshot) + publish)
+}
+
+/**
+ * Whether a build of these settings ([snapshotId]) signed: its Build & Sign ran (or was its cached result). A run
+ * stopped earlier, or one of older settings, proves nothing about the keys.
+ */
+private fun signedBuildOf(runs: List<BuildRun>, snapshotId: String?): Boolean = runs.any { run ->
+    run.state == RunState.SUCCEEDED && run.snapshotId == snapshotId &&
+        run.stages.any {
+            it.stageId == StageId.BUILD_FLASHABLE_ZIP &&
+                (it.state == StageState.EXECUTED || it.state == StageState.SKIPPED)
+        }
+}
+
+private const val OBSERVE_RETRY_MS = 5_000L

@@ -64,7 +64,8 @@ public class WorkDirDiscoveryService(
                                 RecentProject(
                                     workspaceId = manifest.id,
                                     name = dirName,
-                                    path = "~/LtiRomWorkDir/workspaces/$dirName",
+                                    // The folder that was scanned, never an assumed ~/LtiRomWorkDir.
+                                    path = linuxPathOf(wsSubDir),
                                     lastOpened = now,
                                     type = WorkspaceType.REMOTE_WSL,
                                     targetBinding = manifest.targetBinding,
@@ -143,27 +144,28 @@ public class WorkDirDiscoveryService(
         return null
     }
 
-    private fun safeExists(path: Path): Boolean {
-        return try {
-            fileSystem.exists(path)
-        } catch (_: Exception) {
-            false
-        }
+    /** [path] as the distro sees it: `\\wsl.localhost\<distro>\home\x` (or `\\wsl$\…`) is `/home/x`. */
+    private fun linuxPathOf(path: Path): String {
+        val text = path.toString()
+        val unc = Regex("""^[\\/]{2}wsl(?:\.localhost|\$)[\\/][^\\/]+(.*)$""", RegexOption.IGNORE_CASE)
+        return unc.find(text)?.groupValues?.get(1)?.replace('\\', '/') ?: text.replace('\\', '/')
     }
 
-    private fun safeIsDirectory(path: Path): Boolean {
-        return try {
-            fileSystem.metadataOrNull(path)?.isDirectory == true
-        } catch (_: Exception) {
-            false
-        }
+    private fun safeExists(path: Path): Boolean = try {
+        fileSystem.exists(path)
+    } catch (_: Exception) {
+        false
     }
 
-    private fun safeList(path: Path): List<Path> {
-        return try {
-            fileSystem.list(path)
-        } catch (_: Exception) {
-            emptyList()
-        }
+    private fun safeIsDirectory(path: Path): Boolean = try {
+        fileSystem.metadataOrNull(path)?.isDirectory == true
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun safeList(path: Path): List<Path> = try {
+        fileSystem.list(path)
+    } catch (_: Exception) {
+        emptyList()
     }
 }

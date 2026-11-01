@@ -106,9 +106,16 @@ public object DebloatRisk {
     }
 
     private fun blockers(app: AppFacts, kept: Collection<AppFacts>): List<String> = buildList {
+        // Without its manifest nothing here can be judged: no app is removed on an unknown.
+        if (app.unreadable) add("Its manifest could not be read, so what relies on it is unknown.")
         app.providedLibraries.forEach { lib ->
             val needers = kept.filter { lib in it.requiredLibraries }
-            if (needers.isNotEmpty()) add("It provides $lib, which ${names(needers)} cannot start without.")
+            // Another kept app providing the same library still serves them.
+            if (needers.isNotEmpty() && kept.none { lib in it.providedLibraries }) {
+                add("It provides $lib, which ${names(needers)} cannot start without.")
+            }
+            kept.filter { it.unreadable }.takeIf { it.isNotEmpty() && kept.none { lib in it.providedLibraries } }
+                ?.let { add("It provides $lib, and ${names(it)} could not be read: they may need it.") }
         }
         if (app.home && app.packageId != FRAMEWORK_PACKAGE &&
             kept.none { it.home && it.packageId != FRAMEWORK_PACKAGE }

@@ -89,6 +89,9 @@ enum class ArtifactKind {
     OTA_MANIFEST,
     CHECKSUM,
     IMAGE,
+
+    /** A package built besides the main one: the fastboot images zip or the Odin AP tar. */
+    EXTRA_PACKAGE,
 }
 
 @Serializable

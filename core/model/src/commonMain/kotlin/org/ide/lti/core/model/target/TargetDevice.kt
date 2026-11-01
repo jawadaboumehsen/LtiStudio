@@ -23,12 +23,7 @@ enum class TargetStatus(val displayName: String) {
 /**
  * Target hardware deployment region / market.
  */
-enum class TargetRegion(
-    val id: String,
-    val displayName: String,
-    val shortName: String,
-    val code: String,
-) {
+enum class TargetRegion(val id: String, val displayName: String, val shortName: String, val code: String) {
     GLOBAL("global", "Global OS", "Global", "GL"),
     CHINA("china", "CN OS", "CN", "CN"),
     ;
@@ -41,11 +36,7 @@ enum class TargetRegion(
 /**
  * Target baseline firmware acquisition mode.
  */
-enum class FirmwareAcquisitionMode(
-    val id: String,
-    val displayName: String,
-    val description: String,
-) {
+enum class FirmwareAcquisitionMode(val id: String, val displayName: String, val description: String) {
     OTA(
         id = "ota",
         displayName = "Official OTA (Nubia CDN)",
@@ -59,8 +50,7 @@ enum class FirmwareAcquisitionMode(
     ;
 
     companion object {
-        fun fromId(id: String): FirmwareAcquisitionMode =
-            entries.find { it.id.equals(id, ignoreCase = true) } ?: OTA
+        fun fromId(id: String): FirmwareAcquisitionMode = entries.find { it.id.equals(id, ignoreCase = true) } ?: OTA
     }
 }
 
@@ -114,7 +104,10 @@ data class TargetFirmware(
     val sourceKind: FirmwareSourceKind = FirmwareSourceKind.OTA_ZIP,
     val fingerprintTriple: String? = null,
     val archiveSizeBytes: Long? = null,
-)
+) {
+    /** The archive's download: [acquisitionUrl], else [otaUrl] (readiness, naming and the download all use it). */
+    val downloadUrl: String? get() = acquisitionUrl?.takeIf { it.isNotBlank() } ?: otaUrl?.takeIf { it.isNotBlank() }
+}
 
 /**
  * Immutable entity representing a target device profile for ROM unpacking,

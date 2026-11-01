@@ -131,9 +131,18 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
                         it,
                     )
                 },
+                // The SoC platform is usually what the bootloader reports (PQ84P01: sun), but build.prop does not
+                // prove it: the label says to confirm it on the phone.
                 prop(
                     "ro.board.platform",
-                )?.let { FirmwareFact("fastbootProduct", "fastboot product", device.fastbootProduct, it) },
+                )?.let {
+                    FirmwareFact(
+                        "fastbootProduct",
+                        "fastboot product (SoC platform; confirm with fastboot getvar product)",
+                        device.fastbootProduct,
+                        it,
+                    )
+                },
                 prop(
                     "ro.virtual_ab.enabled",
                 )?.let { FirmwareFact("virtualAb", "virtual A/B", "${device.virtualAb}", it) },

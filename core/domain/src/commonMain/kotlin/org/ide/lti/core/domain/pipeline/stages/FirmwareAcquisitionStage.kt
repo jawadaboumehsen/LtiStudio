@@ -165,7 +165,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
 
     private fun downloadSteps(ctx: StageContext, archive: String): List<PipelineStep> {
         val ws = ctx.wsPath
-        val url = requireNotNull(ctx.snapshot.acquisition.firmware.acquisitionUrl?.takeIf { it.isNotBlank() }) {
+        val url = requireNotNull(ctx.snapshot.acquisition.firmware.downloadUrl) {
             "Firmware ${ctx.snapshot.acquisition.firmware.version} has no download URL; import the archive instead"
         }
         val partial = "$archive.partial"
@@ -245,7 +245,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
                     ?: acquisition.archiveRef.orEmpty()
 
             AcquisitionMode.DOWNLOAD -> {
-                val fromUrl = acquisition.firmware.acquisitionUrl?.substringAfterLast('/')?.substringBefore('?')
+                val fromUrl = acquisition.firmware.downloadUrl?.substringAfterLast('/')?.substringBefore('?')
                 fromUrl?.takeIf { it.isNotBlank() } ?: "${acquisition.firmware.version}.zip"
             }
         }

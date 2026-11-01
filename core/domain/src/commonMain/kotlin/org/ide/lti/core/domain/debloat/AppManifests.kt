@@ -15,7 +15,7 @@ public data class AppFacts(
     val sharedUserId: String? = null,
     /** `android:persistent`: Android keeps it running all the time. */
     val persistent: Boolean = false,
-    /** An activity in the HOME category: a home screen (launcher, setup, fallback). */
+    /** An activity (or activity-alias) in the HOME category: a home screen (launcher, setup, fallback). */
     val home: Boolean = false,
     /** A service for `android.view.InputMethod`: a keyboard or other input method. */
     val inputMethod: Boolean = false,
@@ -41,6 +41,8 @@ public data class AppFacts(
     val signer: String? = null,
     /** The first 16 hex digits of that certificate's SHA-256: equal digests are the same signing key. */
     val signerDigest: String? = null,
+    /** aapt2 could not read its manifest: every fact above is unknown, not absent. */
+    val unreadable: Boolean = false,
 ) {
     /** The signer's common name (`CN=`), else its organisation, else the whole subject. */
     public val signerName: String?
@@ -68,6 +70,7 @@ public data class AppFacts(
         icon = icon ?: other.icon,
         signer = signer ?: other.signer,
         signerDigest = signerDigest ?: other.signerDigest,
+        unreadable = unreadable || other.unreadable,
     )
 }
 
@@ -91,7 +94,8 @@ public object AppManifests {
         export A="${'$'}c/aapt2" W="${'$'}w" T="${'$'}t"
         find "${'$'}w" -mindepth 3 -maxdepth 7 -type f -name '*.apk' -print0 | xargs -0 -r -P8 -n1 sh -c '
         o="${'$'}T/$(printf %s "$1" | sha1sum | cut -c1-16)"
-        { echo "@ ${'$'}{1#${'$'}W/}"; "${'$'}A" dump xmltree --file AndroidManifest.xml "$1" 2>/dev/null | awk "
+        { echo "@ ${'$'}{1#${'$'}W/}"; { "${'$'}A" dump xmltree --file AndroidManifest.xml "$1" 2>/dev/null || echo "!unreadable"; } | awk "
+        /^!unreadable/ { print \"unreadable\"; next }
         /^ *E: / { d = index(\$0, \"E:\"); while (sp > 0 && sc[sp] >= d) sp--; sp++; sc[sp] = d; sn[sp] = \$2; next }
         /^ *A: / {
           a = \$0; sub(/^ *A: /, \"\", a); name = a; sub(/=.*/, \"\", name); sub(/\\(0x[0-9a-f]+\\)/, \"\", name); sub(/.*:/, \"\", name)
@@ -108,7 +112,7 @@ public object AppManifests {
           else if (e == \"uses-sdk\" && name == \"targetSdkVersion\") { s = a; sub(/.*\\)/, \"\", s); print \"sdk \" s }
           else if (e == \"package\" && p == \"queries\" && name == \"name\") print \"asks \" v
           else if (name == \"name\" && p == \"intent-filter\") {
-            if (e == \"category\" && v == \"android.intent.category.HOME\" && g == \"activity\") print \"home\"
+            if (e == \"category\" && v == \"android.intent.category.HOME\" && (g == \"activity\" || g == \"activity-alias\")) print \"home\"
             else if (e == \"action\" && v == \"android.view.InputMethod\" && g == \"service\") print \"ime\"
             else if (e == \"action\" && v ~ /^android\\.intent\\.action\\.(LOCKED_)?BOOT_COMPLETED\$/ && g == \"receiver\") print \"boot\"
           }
@@ -302,6 +306,7 @@ JAVA
             icon = values("icon").firstOrNull(),
             signer = lines.firstOrNull { it.startsWith("signer ") }?.substringAfter(' ')?.substringAfter(' '),
             signerDigest = lines.firstOrNull { it.startsWith("signer ") }?.split(' ')?.getOrNull(1),
+            unreadable = "unreadable" in lines,
         )
     }
 }

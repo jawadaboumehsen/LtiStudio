@@ -68,7 +68,9 @@ class WorkspaceRepositoryTest {
     @Test
     fun testDiscoverWorkspacesPopulatesCanonicalWorkspaces() = runTest {
         val fs = okio.FileSystem.SYSTEM
-        val tempDir = okio.FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "lti-test-${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}"
+        val tempDir =
+            okio.FileSystem.SYSTEM_TEMPORARY_DIRECTORY /
+                "lti-test-${kotlinx.datetime.Clock.System.now().toEpochMilliseconds()}"
         val wsDir = tempDir / "workspaces" / "astra_test"
         fs.createDirectories(wsDir)
         val manifestJson = """
@@ -95,7 +97,10 @@ class WorkspaceRepositoryTest {
             assertEquals(1, discovered.size)
             assertEquals("ws-astra-1", discovered.first().workspaceId)
             assertEquals("astra_test", discovered.first().name)
-            assertEquals("~/LtiRomWorkDir/workspaces/astra_test", discovered.first().path)
+            assertEquals(
+                (tempDir / "workspaces" / "astra_test").toString().replace('\\', '/'),
+                discovered.first().path,
+            )
 
             // DataStore should now have these recents
             val recents = ds.recentProjects.first()

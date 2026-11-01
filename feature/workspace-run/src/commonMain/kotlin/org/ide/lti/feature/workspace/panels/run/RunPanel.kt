@@ -427,6 +427,7 @@ internal fun ArtifactItem(artifact: Artifact) {
                         ArtifactKind.OTA_MANIFEST -> "MANIFEST"
                         ArtifactKind.CHECKSUM -> "SHA256"
                         ArtifactKind.IMAGE -> "IMG"
+                        ArtifactKind.EXTRA_PACKAGE -> "EXTRA"
                     },
                 )
             }

@@ -32,6 +32,8 @@ public data class PublishUiState(
     /** Speed of the running transfer, once it has run long enough to measure. */
     val bytesPerSecond: Double? = null,
     val cancelling: Boolean = false,
+    /** A check or publish that stopped outside its steps (the service gone, the journal not written). */
+    val error: String? = null,
 )
 
 public class PublishViewModel(

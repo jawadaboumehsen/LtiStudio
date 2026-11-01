@@ -18,6 +18,13 @@ public object PackageMentions {
     /** A file's named packages, and whether it declares anything of its own (then it is never removed). */
     public data class Mentions(val packages: Set<String>, val declares: Boolean)
 
+    /** Elements that only grant or configure the package they name; a file of these alone goes with its apps. */
+    private const val PACKAGE_TAGS: String = "permissions|config|privapp-permissions|permission|deny-permission|" +
+        "exceptions|exception|allow-in-power-save|allow-in-power-save-except-idle|allow-in-data-usage-save|" +
+        "allow-unthrottled-location|allow-ignore-location-settings|allow-adas-location-settings|" +
+        "system-user-whitelisted-app|system-user-blacklisted-app|app-link|hidden-api-whitelisted-app|" +
+        "install-in-user-type|install-in|do-not-install-in|default-enabled-vr-app"
+
     /** `sh -c SCRIPT sh <work dir>`: `<file>\t<package>` per mention, `<file>\t!` for a file that declares things. */
     public const val SCRIPT: String = """
         cd "$1" || exit 0
@@ -30,6 +37,10 @@ public object PackageMentions {
         xmls | xargs -0 -r grep -lZE '<permission[[:space:]]' 2>/dev/null |
           xargs -0 -r grep -LE '<(privapp-permissions|exception)[[:space:]>]' 2>/dev/null |
           sed -e 's#^\./##' -e 's#$#\t!#'
+        # Any element that is not a per-package grant (assign-permission, a global flag, …) keeps the whole file.
+        xmls | xargs -0 -r sh -c 'for f; do
+          grep -oE "<[A-Za-z][A-Za-z0-9_-]*" "${'$'}f" | sed "s/^<//" | grep -qvxE "$PACKAGE_TAGS" && printf "%s\t!\n" "${'$'}{f#./}"
+        done; true' sh
         true
     """
 
