@@ -19,6 +19,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stepCommand
+import org.ide.lti.core.domain.pipeline.text.OtaManifestWriter
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.runToEnd
 import org.ide.lti.core.model.workspace.CollisionPolicy
@@ -79,20 +80,35 @@ internal class GithubReleaseSteps(
                 "$partsDir/${it.zip}.",
             )
         }
-        return "${assets().size} assets"
+        // Counted here, not through assets(): that re-prepares parts that do not add up, which would loop.
+        return "${packages.sumOf { if (it.split) partsOf(it).size else 1 }} assets"
     }
 
     private fun pathOf(p: ReleaseFiles) = "$root/out/package/${p.zip}"
 
-    /** The files to upload; parts gone since a resumed prepare step (or never made) are made again. */
+    /** The files to upload; parts that no longer add up to their package (one gone or changed) are made again. */
     private suspend fun assets(): List<String> {
-        if (split && packages.filter { it.split }.any { partsOf(it).isEmpty() }) prepareAssets()
+        if (split && packages.filter { it.split }.any { !partsIntact(it) }) prepareAssets()
         return packages.flatMap { p -> if (!p.split) listOf(pathOf(p)) else partsOf(p) }
     }
 
+    /** Every part is there and, joined in order, they are byte for byte the package its manifest names. */
+    private suspend fun partsIntact(p: ReleaseFiles): Boolean {
+        val parts = partsOf(p)
+        if (parts.size.toLong() != (p.size + settings.partSizeBytes - 1) / settings.partSizeBytes) return false
+        val joined = exec("sh", "-c", "cat -- \"$@\" | sha256sum", "sh", *parts.toTypedArray())
+        return joined.exitCode == 0 && joined.stdout.digestToken() == p.sha256
+    }
+
+    /** `<zip>.<digits>` files, matched literally (a name like `rom[1].zip` is not a find pattern). */
     private suspend fun partsOf(p: ReleaseFiles): List<String> =
-        exec("find", partsDir, "-maxdepth", "1", "-name", "${p.zip}.*", "-type", "f").stdout
-            .lines().filter { it.isNotBlank() }.sorted()
+        exec("find", partsDir, "-maxdepth", "1", "-type", "f").stdout
+            .lines().filter { path ->
+                val name = path.substringAfterLast('/')
+                val suffix = name.removePrefix("${p.zip}.")
+                name.startsWith("${p.zip}.") && suffix.isNotEmpty() && suffix.all(Char::isDigit)
+            }
+            .sorted()
 
     private suspend fun createRelease(): String {
         if (exec("gh", "release", "view", tag, "--repo", repo).exitCode == 0) return "release $tag exists"
@@ -191,7 +207,9 @@ internal class GithubReleaseSteps(
         check(!split) { "A package published in parts cannot be an OTA download; raise the part size." }
         val path = checkNotNull(settings.manifestPath?.takeIf { it.isNotBlank() }) { "No manifest path set." }
         val branch = settings.manifestBranch?.takeIf { it.isNotBlank() } ?: "main"
-        val current = exec("gh", "api", "repos/$manifestRepo/contents/$path?ref=$branch")
+        // Each path segment and the ref are encoded: a '#' or '?' in them must not change the request.
+        val endpoint = "repos/$manifestRepo/contents/" + path.split('/').joinToString("/", transform = ::encoded)
+        val current = exec("gh", "api", "$endpoint?ref=${encoded(branch)}")
         val (existing, sha) = if (current.exitCode == 0) {
             val o = Json.parseToJsonElement(current.stdout).jsonObject
             val text = String(Base64.getMimeDecoder().decode(o.getValue("content").jsonPrimitive.content))
@@ -201,22 +219,27 @@ internal class GithubReleaseSteps(
         }
         val built = checkNotNull(port.readFile(ws, "out/manifest.json")) { "out/manifest.json is missing." }
         val merged = merge(existing, built)
-        val args = mutableListOf(
-            "api", "-X", "PUT", "repos/$manifestRepo/contents/$path",
-            "-f", "message=OTA: ${release.zip}",
-            "-f", "content=" + Base64.getEncoder().encodeToString(merged.encodeToByteArray()),
-            "-f", "branch=$branch",
-        )
-        if (sha != null) args += listOf("-f", "sha=$sha")
-        gh(*args.toTypedArray())
-        return "manifest $manifestRepo/$path updated"
+        // Asked again (a re-check of a finished publish): an entry already there is not committed a second time.
+        val unchanged = existing != null && Json.parseToJsonElement(existing) == Json.parseToJsonElement(merged)
+        if (!unchanged) {
+            val args = mutableListOf(
+                "api", "-X", "PUT", endpoint,
+                "-f", "message=OTA: ${release.zip}",
+                "-f", "content=" + Base64.getEncoder().encodeToString(merged.encodeToByteArray()),
+                "-f", "branch=$branch",
+            )
+            if (sha != null) args += listOf("-f", "sha=$sha")
+            gh(*args.toTypedArray())
+        }
+        val outcome = if (unchanged) "already lists this release" else "updated"
+        return "manifest $manifestRepo/$path $outcome"
     }
 
     private fun merge(existing: String?, built: String): String {
         val entry = Json.parseToJsonElement(built).jsonObject.getValue("response").jsonArray.first().jsonObject
-        val base = "https://github.com/$repo/releases/download/$tag"
+        val base = "https://github.com/$repo/releases/download/${OtaManifestWriter.urlSegment(tag)}"
         fun withUrl(o: JsonObject): JsonObject {
-            val url = "$base/${o.getValue("filename").jsonPrimitive.content}"
+            val url = "$base/${OtaManifestWriter.urlSegment(o.getValue("filename").jsonPrimitive.content)}"
             return JsonObject(o + ("urls" to JsonArray(listOf(JsonPrimitive(url)))))
         }
         val ota = entry["ota"]?.jsonObject?.let(::withUrl)
@@ -231,6 +254,8 @@ internal class GithubReleaseSteps(
             .take(settings.retentionPerDevice.coerceAtLeast(1))
         return pretty.encodeToString(JsonObject.serializer(), JsonObject(mapOf("response" to JsonArray(others + kept))))
     }
+
+    private fun encoded(segment: String) = OtaManifestWriter.urlSegment(segment)
 
     private suspend fun gh(vararg args: String): String = tool("gh", *args)
 

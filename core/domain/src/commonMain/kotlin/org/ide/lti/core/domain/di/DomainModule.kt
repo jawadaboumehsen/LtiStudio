@@ -159,6 +159,7 @@ val DomainModule =
                 runRepository = get(),
                 executionPort = get(),
                 workspaceRepository = getOrNull(),
+                isDriving = get<PipelineOrchestrator>()::isDriving,
             )
         }
         single {

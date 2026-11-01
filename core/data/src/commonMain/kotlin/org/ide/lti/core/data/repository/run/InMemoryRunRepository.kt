@@ -44,12 +44,22 @@ public class InMemoryRunRepository : RunRepository {
         return list.drop((fromSeq - 1).coerceIn(0L, list.size.toLong()).toInt())
     }
 
-    override suspend fun latestActive(workspaceId: String): BuildRun? =
-        runs.value.values
-            .filter { it.workspaceId == workspaceId && it.state.isActive }
-            .maxByOrNull { it.startedAt }
+    override suspend fun latestActive(workspaceId: String): BuildRun? = runs.value.values
+        .filter { it.workspaceId == workspaceId && it.state.isActive }
+        .maxByOrNull { it.startedAt }
 
     override suspend fun getRun(runId: String): BuildRun? = runs.value[runId]
+
+    override suspend fun update(runId: String, change: (BuildRun) -> BuildRun): BuildRun? {
+        var updated: BuildRun? = null
+        runs.update { byId ->
+            byId[runId]?.let(change)?.let {
+                updated = it
+                byId + (runId to it)
+            } ?: byId
+        }
+        return updated
+    }
 
     override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean {
         val run = getRun(runId) ?: return false

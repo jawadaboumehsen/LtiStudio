@@ -67,6 +67,14 @@ public class WorkspaceFacts(
         }.sortedBy { it.path }
     }.orEmpty()
 
+    /** The SHA-256 of the file at [relPath] as it is now (hashed again, so a replaced file is never "verified"). */
+    public suspend fun sha256(workspaceId: String, relPath: String): String? = attempt {
+        val ws = workspace(workspaceId)
+        val base = ws.linuxPath ?: ws.path
+        val result = files.execute(ws, StepCommand("sha256sum", listOf("$base/$relPath"), base, HASH_TIMEOUT_MS))
+        result.stdout.trim().substringBefore(' ').takeIf { result.exitCode == 0 && it.length == SHA256_HEX }
+    }
+
     /** Member names of the zip at [relPath] in the workspace, or empty when it does not exist. */
     public suspend fun zipMembers(workspaceId: String, relPath: String): List<String> = attempt {
         val ws = workspace(workspaceId)
@@ -89,5 +97,7 @@ public class WorkspaceFacts(
 
     private companion object {
         const val LIST_TIMEOUT_MS = 60_000L
+        const val HASH_TIMEOUT_MS = 600_000L
+        const val SHA256_HEX = 64
     }
 }

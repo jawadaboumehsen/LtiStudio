@@ -70,11 +70,16 @@ public class BuildFlashableZipStage : StageDefinition {
             computeTargetDigest(ctx.target),
         )
 
+    override fun cacheInputFiles(ctx: StageContext): List<String> {
+        val platform = ctx.snapshot.build.signing.platformKeyRef
+        return listOf(ctx.snapshot.build.signing.avbKeyRef) + PLATFORM_KEY_FILES.map { "$platform.$it" }
+    }
+
     override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
         listOfNotNull(flashableRelPath(ctx).takeIf { ctx.snapshot.build.packageType.flashable })
             .plus(listOfNotNull(otaRelPath(ctx).takeIf { ctx.snapshot.build.packageType.abOta }))
             .flatMap { listOf(it, "$it.sha256") } +
-        if (!ctx.snapshot.build.signing.signPackage) listOf("out/package/UNSIGNED") else emptyList()
+        if (!ctx.snapshot.build.signing.signPackage) listOf(UNSIGNED_MARKER) else emptyList()
 
     override fun plan(ctx: StageContext): List<PipelineStep> {
         val coverage = PipelineStep.Host(
@@ -109,11 +114,14 @@ public class BuildFlashableZipStage : StageDefinition {
         steps += BuildChecks.apkSignatureSteps(ctx)
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
+        // Staging starts empty: a member an earlier build left there must not reach this package.
+        steps += PipelineStep.Tool(stepCommand("rm", listOf("-rf", stage), ws), "clean staging")
         steps += PipelineStep.Tool(
             stepCommand(
                 "mkdir",
                 listOf(
                     "-p",
+                    ctx.abs(AVB_PUBKEY).substringBeforeLast('/'),
                     ctx.abs("out/images"),
                     "$stage/META-INF/com/google/android",
                     "$stage/META-INF/com/android",
@@ -122,13 +130,28 @@ public class BuildFlashableZipStage : StageDefinition {
             ),
             "mkdir staging",
         )
+        // The public half of the key the images are signed with, not a fixed file that may belong to another key.
         steps += PipelineStep.Tool(
-            command = stepCommand("sha1sum", listOf(ctx.abs("keys/avb.avbpubkey")), ws),
+            stepCommand(
+                "avbtool",
+                listOf(
+                    "extract_public_key",
+                    "--key",
+                    ctx.abs(ctx.snapshot.build.signing.avbKeyRef),
+                    "--output",
+                    ctx.abs(AVB_PUBKEY),
+                ),
+                ws,
+            ),
+            "extract avb public key",
+        )
+        steps += PipelineStep.Tool(
+            command = stepCommand("sha1sum", listOf(ctx.abs(AVB_PUBKEY)), ws),
             label = "sha1 avb pubkey",
             resultKey = RuntimeKeys.AVB_PUBKEY_SHA1,
         )
         steps += PipelineStep.Tool(
-            command = stepCommand("sha1sum", listOf(ctx.abs("keys/platform.x509.pem")), ws),
+            command = stepCommand("sha1sum", listOf(platformKey(ctx, "x509.pem")), ws),
             label = "sha1 platform cert",
             resultKey = PLATFORM_CERT_SHA1,
         )
@@ -166,6 +189,12 @@ public class BuildFlashableZipStage : StageDefinition {
             if (type.flashable) steps += packageSteps(ctx)
             if (type.abOta) metadataParams(ctx)?.let { steps += AbOtaSteps.steps(ctx, STAGE_DIR, it) }
             steps += BuildChecks.extraPackageSteps(ctx)
+            // The marker says whether this build's packages are signed, whichever package types were built.
+            steps += if (ctx.snapshot.build.signing.signPackage) {
+                PipelineStep.Tool(stepCommand("rm", listOf("-f", ctx.abs(UNSIGNED_MARKER)), ws), "clear UNSIGNED")
+            } else {
+                PipelineStep.WriteFile(UNSIGNED_MARKER, "UNSIGNED\n".encodeToByteArray(), "write $UNSIGNED_MARKER")
+            }
         }
         return steps
     }
@@ -570,8 +599,8 @@ public class BuildFlashableZipStage : StageDefinition {
                 signapkArgs += listOf("-a", ctx.snapshot.build.alignment.toString())
             }
             signapkArgs += listOf(
-                ctx.abs("keys/platform.x509.pem"),
-                ctx.abs("keys/platform.pk8"),
+                platformKey(ctx, "x509.pem"),
+                platformKey(ctx, "pk8"),
                 "$stage/rom.zip",
                 signed,
             )
@@ -583,11 +612,6 @@ public class BuildFlashableZipStage : StageDefinition {
             steps += PipelineStep.Tool(
                 stepCommand("cp", listOf("$stage/rom.zip", signed), ws),
                 "copy unsigned zip",
-            )
-            steps += PipelineStep.WriteFile(
-                relPath = "out/package/UNSIGNED",
-                content = "UNSIGNED\n".encodeToByteArray(),
-                label = "write out/package/UNSIGNED",
             )
         }
 
@@ -651,6 +675,13 @@ public class BuildFlashableZipStage : StageDefinition {
 
     public companion object {
         public const val STAGE_DIR: String = "out/package/.stage"
+        public const val UNSIGNED_MARKER: String = "out/package/UNSIGNED"
+        private const val AVB_PUBKEY = "work/package/avb.avbpubkey"
+        internal val PLATFORM_KEY_FILES: List<String> = listOf("x509.pem", "pk8", "key.pem")
+
+        /** A file of the configured platform key pair (`keys/platform` -> `keys/platform.pk8`). */
+        public fun platformKey(ctx: StageContext, ext: String): String =
+            ctx.abs("${ctx.snapshot.build.signing.platformKeyRef}.$ext")
         public const val COVERAGE_RESULT_KEY: String = RuntimeKeys.BUILD_COVERAGE
         public const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
         public const val PACKAGE_BUILD_PROP: String = "package.build.prop"

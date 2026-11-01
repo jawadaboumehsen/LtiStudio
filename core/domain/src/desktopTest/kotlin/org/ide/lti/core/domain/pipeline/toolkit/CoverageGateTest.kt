@@ -18,13 +18,15 @@ class CoverageGateTest {
 
     @Test
     fun coverageGateDetectsMissingAndCoverageFixHeals() {
-        val initialFsConfig = """
+        // As PQ84P01's: system's root line has an empty path.
+        val initialFsConfig = " 0 0 755 capabilities=0x0\n" + """
             system 0 0 0755 capabilities=0x0
             system/bin 0 0 0755 capabilities=0x0
             system/bin/sh 0 2000 0755 capabilities=0x0
         """.trimIndent() + "\n"
 
         val initialContexts = """
+            / u:object_r:rootfs:s0
             /system(/.*)? u:object_r:system_file:s0
             /system/bin/sh u:object_r:shell_exec:s0
         """.trimIndent() + "\n"
@@ -78,5 +80,24 @@ class CoverageGateTest {
         val json = CoverageResult.encode(result)
         val decoded = CoverageResult.decode(json)
         assertEquals(result, decoded)
+    }
+
+    @Test
+    fun aMissingPartitionRootIsReportedAndNeverInvented() {
+        // vendor's root is "/" in fs_config and "/vendor" in file_contexts; here both are gone.
+        val fs = "vendor/bin 0 2000 755 capabilities=0x0\n"
+        val ctx = "/vendor/bin u:object_r:vendor_file:s0\n"
+        val result = CoverageGate.check("vendor", listOf("bin"), fs, ctx)
+        assertEquals(listOf(CoverageGate.ROOT), result.uncoveredFsConfig)
+        assertEquals(listOf(CoverageGate.ROOT), result.uncoveredContexts)
+        assertEquals(fs, CoverageFix.fixFsConfig(fs, "vendor", result.uncoveredFsConfig))
+        assertEquals(ctx, CoverageFix.fixFileContexts(ctx, "vendor", result.uncoveredContexts))
+        val withRoot = CoverageGate.check(
+            "vendor",
+            listOf("bin"),
+            "/ 0 2000 755 capabilities=0x0\n$fs",
+            "/vendor u:object_r:vendor_file:s0\n$ctx",
+        )
+        assertTrue(withRoot.isClean)
     }
 }

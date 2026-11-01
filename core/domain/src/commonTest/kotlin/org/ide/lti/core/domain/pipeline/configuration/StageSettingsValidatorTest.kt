@@ -38,6 +38,45 @@ class StageSettingsValidatorTest {
     private val validFirmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first()
 
     @Test
+    fun aVersionThatWouldLeaveThePackageFolderIsRefused() {
+        val report = StageSettingsValidator.validateAssembly(AssemblySettings(romVersion = "../1.0"), target)
+        assertTrue(report.errors.any { it.fieldPath == "romVersion" })
+        assertTrue(
+            StageSettingsValidator.validateAssembly(
+                AssemblySettings(romVersion = "1.0-beta"),
+                target,
+            ).errors.none {
+                it.fieldPath == "romVersion"
+            },
+        )
+    }
+
+    @Test
+    fun aDeviceIdThatWouldLeaveThePackageFolderIsRefused() {
+        val build = BuildSettings(filenameTemplate = "{device}.zip")
+        val escaping = StageSettingsValidator.validateBuild(build, target.copy(id = "../x"))
+        assertTrue(escaping.errors.any { it.fieldPath == "filenameTemplate" })
+        assertTrue(
+            StageSettingsValidator.validateBuild(build, target).errors.none { it.fieldPath == "filenameTemplate" },
+        )
+    }
+
+    @Test
+    fun aZeroBlockSizeIsReportedNotThrown() {
+        val settings = BuildSettings(blockSize = 0, partitionSizeBytes = mapOf("vendor" to 4096L))
+        val report = StageSettingsValidator.validateBuild(settings, target)
+        assertTrue(report.errors.any { it.fieldPath == "blockSize" })
+    }
+
+    @Test
+    fun aRunThroughAnEarlyStageIgnoresLaterStagesProblems() {
+        fun error(stage: StageId?) = ValidationError(stage, null, "f", "C", Severity.ERROR, "m")
+        val issues = listOf(error(null), error(StageId.FIRMWARE_EXTRACTION), error(StageId.BUILD_FLASHABLE_ZIP))
+        assertEquals(2, DeviceConfigReadiness.upTo(issues, StageId.FIRMWARE_EXTRACTION).size)
+        assertEquals(3, DeviceConfigReadiness.upTo(issues, null).size)
+    }
+
+    @Test
     fun validateAcquisitionReturnsEmptyReportForValidSettings() {
         val settings = AcquisitionSettings(
             mode = AcquisitionMode.DOWNLOAD,

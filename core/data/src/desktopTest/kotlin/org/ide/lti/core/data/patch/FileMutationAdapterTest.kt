@@ -396,6 +396,25 @@ class FileMutationAdapterTest {
     }
 
     @Test
+    fun anEditMayAnchorOnTextAnEarlierEditOfThePlanWrote() = runBlocking {
+        setupWorkTreeFixture()
+        val sample = PartitionPath("system", "etc/sample.txt")
+        val plan = ConcreteMutationPlan(
+            publisher = "p",
+            id = "p",
+            version = "1",
+            operations = listOf(
+                ConcreteOperation.TextPatch("op1", sample, "old world", "brave world", expectedSha256 = ""),
+                ConcreteOperation.TextPatch("op2", sample, "brave world", "kind world", expectedSha256 = ""),
+            ),
+            notApplicable = emptyList(),
+            digest = "d",
+        )
+        assertIs<MutationOutcome.Applied>(adapter.apply(plan, ctx, assetRoot.toString()))
+        assertTrue("kind world" in Files.readString(workTree.resolve("system/etc/sample.txt")))
+    }
+
+    @Test
     fun failureInvalidPropertyKeyRefusesAndWritesNothing() = runBlocking {
         setupWorkTreeFixture()
         val plan = ConcreteMutationPlan(

@@ -284,7 +284,7 @@ internal fun FlashableMembersPane(
                 if (settings.packageType.abOta) ota.map { "A/B OTA: $it" } else emptyList()
         }
         members.forEach { Mono(it) }
-        if ((facts.packages.lastOrNull()?.sizeBytes ?: 0L) > ZIP32_LIMIT) {
+        if ((facts.currentPackage?.sizeBytes ?: 0L) > ZIP32_LIMIT) {
             GlassBanner(
                 severity = GlassBannerSeverity.INFO,
                 title = "Over 4 GiB: zip64",

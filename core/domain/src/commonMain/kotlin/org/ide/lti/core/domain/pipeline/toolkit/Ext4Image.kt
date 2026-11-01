@@ -187,6 +187,7 @@ public object F2fsImage {
         find "$3" -type l -exec stat -c '%u %g L %n' {} +
         echo '#--'
         getfattr -R -h -n security.selinux --absolute-names "$3" || true
+        getfattr -R -h -n security.capability -e hex --absolute-names "$3" 2>/dev/null || true
         [ "$4" = keep ] || rm -rf "$3"
     """
 
@@ -214,6 +215,25 @@ public object F2fsImage {
     public fun sloadArgs(fsConfig: String, contexts: String, mountPoint: String, tree: String, img: String) = listOf(
         "-C", fsConfig, "-s", contexts, "-t", mountPoint, "-T", Ext4Image.TIMESTAMP, "-f", tree, img,
     )
+
+    /**
+     * Why [p] cannot be F2FS: sload_f2fs (1.16) applies fs_config owners and modes but never writes
+     * `security.capability`, so files that need capabilities (vendor daemons such as cnd, imsdaemon) would lose
+     * them. The two debug-only AOSP runners are not counted. Null when nothing in [fsConfig] has capabilities.
+     */
+    public fun capabilityRefusal(p: String, fsConfig: String): String? {
+        val needing = fsConfig.lines().map { it.trim() }
+            .filter { it.substringAfter("capabilities=", "0x0") != "0x0" }
+            .map { it.substringBefore(' ') }
+            .filterNot { it.endsWith("/bin/run-as") || it.endsWith("/bin/simpleperf_app_runner") }
+        if (needing.isEmpty()) return null
+        return "F2FS_CAPABILITIES: $p cannot be built as F2FS: sload_f2fs does not write file capabilities, which " +
+            "${needing.size} file(s) need (${needing.take(
+                CAPABILITY_NAMES,
+            ).joinToString()}). Build $p as EROFS or ext4."
+    }
+
+    private const val CAPABILITY_NAMES = 5
 
     /**
      * [READBACK_SCRIPT]'s output as the stat and getfattr dumps; a symlink gets the mode [expectedFsConfig] asks,

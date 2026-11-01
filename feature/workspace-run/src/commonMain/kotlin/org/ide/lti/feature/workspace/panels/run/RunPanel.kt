@@ -320,8 +320,8 @@ public fun ActiveRunContent(
             onReattach = onReattach,
         )
 
-        if (uiState.deviceIssues.isNotEmpty() && !uiState.isRunning) {
-            DeviceReadinessChecklist(issues = uiState.deviceIssues)
+        if (uiState.blockingIssues.isNotEmpty() && !uiState.isRunning) {
+            DeviceReadinessChecklist(issues = uiState.blockingIssues)
         }
 
         // Error message banner

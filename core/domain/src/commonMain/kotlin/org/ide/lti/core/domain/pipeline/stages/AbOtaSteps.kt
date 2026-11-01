@@ -53,7 +53,7 @@ internal object AbOtaSteps {
                 python(
                     "payload",
                     dir,
-                    ctx.abs("keys/platform.key.pem"),
+                    BuildFlashableZipStage.platformKey(ctx, "key.pem"),
                     metadata.postTimestamp.toString(),
                     metadata.postSecurityPatchLevel,
                     "${ctx.target.superGroupName}:${ctx.target.superGroupBytes}",
@@ -83,7 +83,7 @@ internal object AbOtaSteps {
                 ?.let { "OTA_LAYOUT: the signed A/B zip moved its members after the offsets were filled in ($it)" }
         }
         steps += PipelineStep.Tool(
-            python("verify", out, ctx.abs("keys/platform.x509.pem")),
+            python("verify", out, BuildFlashableZipStage.platformKey(ctx, "x509.pem")),
             "verify A/B package",
             resultKey = VERIFY,
         )
@@ -112,7 +112,13 @@ internal object AbOtaSteps {
             PipelineStep.Tool(
                 stepCommand(
                     "signapk",
-                    listOf("-w", ctx.abs("keys/platform.x509.pem"), ctx.abs("keys/platform.pk8"), zip, out),
+                    listOf(
+                        "-w",
+                        BuildFlashableZipStage.platformKey(ctx, "x509.pem"),
+                        BuildFlashableZipStage.platformKey(ctx, "pk8"),
+                        zip,
+                        out,
+                    ),
                     ctx.wsPath,
                 ),
                 "signapk A/B package",

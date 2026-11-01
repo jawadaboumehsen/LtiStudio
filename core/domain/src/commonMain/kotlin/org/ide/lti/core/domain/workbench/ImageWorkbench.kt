@@ -168,6 +168,19 @@ public class ImageWorkbench(
                 }
                 run("cp", "-f", abs(own), abs(image))
             }
+            // The user's own image was copied over the stock one; only a run of Extract brings the stock one back.
+            val own = FirmwareExtractionStage.replacementPath(partition)
+            if (replacementSha256 == null && exists(image) && exists(own) &&
+                run("sha256sum", abs(image)).substringBefore(' ') == run("sha256sum", abs(own)).substringBefore(' ')
+            ) {
+                throw RefusalException(
+                    Refusal(
+                        "$partition.img is still your own image, not the stock one.",
+                        image,
+                        "Run the build through Extract to unpack the stock image again.",
+                    ),
+                )
+            }
             if (!exists(image)) {
                 throw RefusalException(
                     Refusal("$partition.img is not extracted yet.", image, "Run the build through Extract first."),
@@ -302,6 +315,7 @@ public class ImageWorkbench(
             find "${'$'}mnt" -exec stat -c '%u %g %a %n' {} +
             echo '#--'
             getfattr -R -h -n security.selinux --absolute-names "${'$'}mnt"
+            getfattr -R -h -n security.capability -e hex --absolute-names "${'$'}mnt" 2>/dev/null || true
             rm -rf "${'$'}tree"
             cp -r --no-dereference --preserve=links,timestamps -T "${'$'}mnt" "${'$'}tree"
             rm -rf "${'$'}tree/lost+found"

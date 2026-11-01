@@ -57,6 +57,13 @@ public object DeviceConfigReadiness {
     public fun isDeviceField(fieldPath: String): Boolean =
         fieldPath !in STAGE_FIELDS && STAGE_FIELD_PREFIXES.none { fieldPath.startsWith(it) }
 
+    /**
+     * The problems a run that stops after [throughStage] meets: a later stage's settings cannot stop it (Extract
+     * can then give the facts that finish them). Device problems (no stage) always count. Null runs every stage.
+     */
+    public fun upTo(issues: List<ValidationError>, throughStage: StageId?): List<ValidationError> =
+        if (throughStage == null) issues else issues.filter { it.stageId == null || it.stageId <= throughStage }
+
     /** Blocking problems with [target] and [snapshot]; empty means the build may start. */
     public fun check(target: TargetDevice, snapshot: ConfigurationSnapshot): List<ValidationError> {
         val problems = Problems()

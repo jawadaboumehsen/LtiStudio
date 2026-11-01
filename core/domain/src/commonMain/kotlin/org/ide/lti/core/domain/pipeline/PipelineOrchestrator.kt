@@ -120,17 +120,22 @@ public class PipelineOrchestrator(
             toolPaths = run.pinnedTools,
         )
 
+        /** One atomic change of the stored run: a cancel written meanwhile is kept, never overwritten. */
         suspend fun persist(mutate: (BuildRun) -> BuildRun) {
-            val stored = runRepository.getRun(runId)
-            // CancelRunUseCase may already have completed cancellation while a host step was running.
-            if (stored?.state == RunState.CANCELLED) {
-                run = stored
-                return
-            }
-            val cancelling = stored?.state == RunState.CANCELLING
-            run = mutate(run).copy(runtimeValues = runtimeValues.filterValues { it.length <= PERSISTED_VALUE_LIMIT })
-            if (cancelling && run.state != RunState.CANCELLED) run = run.copy(state = RunState.CANCELLING)
-            runRepository.upsert(run)
+            val next = mutate(
+                run,
+            ).copy(runtimeValues = runtimeValues.filterValues { it.length <= PERSISTED_VALUE_LIMIT })
+            run = runRepository.update(runId) { stored ->
+                when {
+                    // CancelRunUseCase may already have completed cancellation while a host step was running.
+                    stored.state == RunState.CANCELLED -> stored
+
+                    stored.state == RunState.CANCELLING && next.state != RunState.CANCELLED ->
+                        next.copy(state = RunState.CANCELLING)
+
+                    else -> next
+                }
+            } ?: next.also { runRepository.upsert(it) }
         }
 
         suspend fun checkCancellation() {
@@ -170,6 +175,17 @@ public class PipelineOrchestrator(
     /** Runs this app is driving now; a second drive/resume of one of them emits nothing (see [exclusive]). */
     private val driving: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
+    /** Whether this app drives [runId] now: a cancel then waits for this driver to stop. */
+    public fun isDriving(runId: String): Boolean = runId in driving
+
+    /** A queued run whose driver could not start is failed, never left queued (it would block every start). */
+    private suspend fun failQueued(runId: String, cause: Throwable): Nothing {
+        runRepository.update(runId) {
+            if (it.state == RunState.QUEUED) it.copy(state = RunState.FAILED, endedAt = clock.now()) else it
+        }
+        throw cause
+    }
+
     public fun drive(runId: String, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> =
         exclusive(runId) { driveRun(runId, ctx, driverInstanceId) }
 
@@ -196,19 +212,23 @@ public class PipelineOrchestrator(
         val startedAt = existing?.startedAt ?: now
         // A run StartPipelineRunUseCase only queued has not pinned its tools yet: pin them now, as for a new run.
         val notStarted = existing == null || (existing.state == RunState.QUEUED && existing.pinnedTools.isEmpty())
-        val pins =
+        // A refused admission (a tool being changed) fails a queued run too, as a pin failure does.
+        val pins = try {
             if (notStarted && toolStore != null) {
                 toolUsageCoordinator?.admitJob(runId) {
                     toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
-                        throw IllegalStateException("Cannot capture tool paths for this ROM run", cause)
+                        failQueued(runId, IllegalStateException("Cannot capture tool paths for this ROM run", cause))
                     }
                 } ?: toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
-                    throw IllegalStateException("Cannot capture tool paths for this ROM run", cause)
+                    failQueued(runId, IllegalStateException("Cannot capture tool paths for this ROM run", cause))
                 }
             } else {
                 toolUsageCoordinator?.admitJob(runId) { null }
                 null
             }
+        } catch (e: IllegalStateException) {
+            failQueued(runId, e)
+        }
         // Admission succeeded: every later initialization failure must release our job.
         // A duplicate admission throws above, outside this cleanup boundary.
         try {
@@ -216,13 +236,13 @@ public class PipelineOrchestrator(
             val pinnedVersions = pins?.versions.orEmpty().toMap()
             if (toolStore != null) {
                 val capturedPaths = existing?.pinnedTools?.takeIf { it.isNotEmpty() } ?: pinnedPaths
-                check(
-                    capturedPaths.isNotEmpty() &&
-                        capturedPaths.values.all {
-                            it.startsWith("/") && "/current/" !in it && !it.endsWith("/current")
-                        },
-                ) {
-                    "Cannot admit a ROM run without immutable tool pins"
+                val immutable = capturedPaths.isNotEmpty() &&
+                    capturedPaths.values.all { it.startsWith("/") && "/current/" !in it && !it.endsWith("/current") }
+                if (!immutable) {
+                    failQueued(
+                        runId,
+                        IllegalStateException("Cannot admit a ROM run without immutable tool pins"),
+                    )
                 }
             }
             if (existing == null) {
@@ -990,8 +1010,17 @@ public class PipelineOrchestrator(
                 val ver = driver.run.toolVersions[toolId] ?: ""
                 "$toolId=$pin@$ver"
             }
+        val files = stage.cacheInputFiles(driver.context()).sorted().map { rel -> "$rel=${fileDigest(driver, rel)}" }
+            .joinToString(";")
         // The pipeline's own version too: when a stage's commands change, its old outputs are not reused.
-        return CacheKeys.sha256("$baseCacheKey|$stageToolsFingerprint|${CacheKeys.PIPELINE_VERSION}")
+        return CacheKeys.sha256("$baseCacheKey|$stageToolsFingerprint|$files|${CacheKeys.PIPELINE_VERSION}")
+    }
+
+    /** A cache input's sha256, or "missing": a key file that appears later still changes the key. */
+    private suspend fun fileDigest(driver: Driver, rel: String): String {
+        val cmd = StepCommand("sha256sum", listOf(driver.baseContext.abs(rel)), driver.ws.linuxPath)
+        val result = executionPort.execute(driver.ws, cmd)
+        return if (result.exitCode == 0) result.stdout.digestToken() else "missing"
     }
 
     private suspend fun isCacheValid(driver: Driver, stage: StageDefinition, cacheKey: String): Boolean {

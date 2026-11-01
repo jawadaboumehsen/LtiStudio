@@ -353,11 +353,7 @@ public class FirmwareExtractionStage : StageDefinition {
             resultKey = statKey,
         )
         steps += PipelineStep.Tool(
-            command = stepCommand(
-                "getfattr",
-                listOf("-R", "-h", "-n", "security.selinux", "--absolute-names", mnt),
-                ws,
-            ),
+            command = stepCommand("sh", listOf("-c", SidecarNormalizer.LABEL_DUMP, "sh", mnt), ws),
             label = "selinux dump $partition",
             resultKey = selinuxKey,
         )

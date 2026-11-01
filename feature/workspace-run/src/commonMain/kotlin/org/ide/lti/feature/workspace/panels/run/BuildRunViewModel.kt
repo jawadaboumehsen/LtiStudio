@@ -11,17 +11,19 @@ package org.ide.lti.feature.workspace.panels.run
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
@@ -64,7 +66,11 @@ public data class BuildRunUiState(
         get() = latestRun?.state?.isActive == true || isStartingRun
 
     val isRunDisabled: Boolean
-        get() = isRunning || currentWorkspace == null || !canStartRun || deviceIssues.isNotEmpty()
+        get() = isRunning || currentWorkspace == null || !canStartRun || blockingIssues.isNotEmpty()
+
+    /** The device and stage problems that stop a run through [throughStage]. */
+    val blockingIssues: List<ValidationError>
+        get() = DeviceConfigReadiness.upTo(deviceIssues, throughStage)
 
     val canCancelRun: Boolean
         get() = latestRun?.state?.isActive == true && !isCancelling && latestRun.state != RunState.CANCELLING
@@ -133,6 +139,8 @@ public class BuildRunViewModel(
                 _uiState.update {
                     it.copy(
                         currentWorkspace = ws,
+                        // A start or cancel still running for the workspace shown before is not this one's.
+                        isStartingRun = false,
                         errorMessage = null,
                         environmentReadiness = wsReadiness ?: it.environmentReadiness,
                         failingCheck = wsReadiness?.failingCheck ?: it.failingCheck,
@@ -169,7 +177,16 @@ public class BuildRunViewModel(
                         if (latest != null && latest.state.isActive && reattachRunUseCase != null) {
                             if (!autoReattachedRuns.contains(latest.id)) {
                                 autoReattachedRuns.add(latest.id)
-                                reattachRunUseCase.invoke(ws.id, latest.id)
+                                // Not admitted (service or device unavailable): tried again a while later, as a run
+                                // with no driver may never change. A run update or another workspace cancels this.
+                                var attached: Any? = null
+                                for (attempt in 1..REATTACH_ATTEMPTS) {
+                                    attached = runCatching { reattachRunUseCase.invoke(ws.id, latest.id) }
+                                        .onFailure { if (it is CancellationException) throw it }.getOrNull()
+                                    if (attached != null || attempt == REATTACH_ATTEMPTS) break
+                                    delay(REATTACH_RETRY_MS)
+                                }
+                                if (attached == null) autoReattachedRuns.remove(latest.id)
                             }
                         }
                     }
@@ -193,8 +210,16 @@ public class BuildRunViewModel(
                         val latest = workspaceManager.getWorkspaces()
                             .map { all -> all.firstOrNull { it.id == ws.id } ?: ws }
                             .distinctUntilChanged()
+                        // An unreadable device blocks Start and says why; it is read again until it can be.
                         combine(devices.observe(ws.id), latest) { device, current -> deviceIssues(current, device) }
-                            .catch { error -> emit(listOf(unreadableDevice(error))) }
+                            .retryWhen { error, _ ->
+                                (error !is CancellationException).also {
+                                    if (it) {
+                                        emit(listOf(unreadableDevice(error)))
+                                        delay(DEVICE_RETRY_MS)
+                                    }
+                                }
+                            }
                     }
                 }
                 .collect { issues -> _uiState.update { it.copy(deviceIssues = issues) } }
@@ -222,12 +247,15 @@ public class BuildRunViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isStartingRun = true, errorMessage = null) }
             val result = startPipelineRunUseCase(ws.id, throughStage = _uiState.value.throughStage)
+            // The panel may show another workspace by now: its run and error are not this one's.
+            val shown = { state: BuildRunUiState -> state.currentWorkspace?.id == ws.id }
             result.fold(
                 onSuccess = { run ->
-                    _uiState.update { it.copy(latestRun = run, isStartingRun = false) }
+                    _uiState.update { if (shown(it)) it.copy(latestRun = run, isStartingRun = false) else it }
                 },
                 onFailure = { error ->
                     _uiState.update {
+                        if (!shown(it)) return@update it
                         it.copy(
                             isStartingRun = false,
                             errorMessage = error.message ?: "Failed to start pipeline run",
@@ -246,12 +274,23 @@ public class BuildRunViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isCancelling = true, errorMessage = null) }
             val result = cancelRunUseCase(ws.id, run.id)
+            val shown = { state: BuildRunUiState -> state.currentWorkspace?.id == ws.id }
             result.fold(
                 onSuccess = { cancelledRun ->
-                    _uiState.update { it.copy(latestRun = cancelledRun, isCancelling = false) }
+                    _uiState.update {
+                        if (shown(
+                                it,
+                            )
+                        ) {
+                            it.copy(latestRun = cancelledRun, isCancelling = cancelledRun.state.isActive)
+                        } else {
+                            it
+                        }
+                    }
                 },
                 onFailure = { error ->
                     _uiState.update {
+                        if (!shown(it)) return@update it
                         it.copy(
                             isCancelling = false,
                             errorMessage = error.message ?: "Failed to cancel pipeline run",
@@ -295,3 +334,9 @@ private fun unreadableDevice(error: Throwable) = ValidationError(
     severity = Severity.ERROR,
     message = "The device configuration could not be read: ${error.message ?: "unknown error"}",
 )
+
+private const val DEVICE_RETRY_MS = 5_000L
+
+/** A reattach the service or device refused is tried this many times, this far apart. */
+private const val REATTACH_ATTEMPTS = 12
+private const val REATTACH_RETRY_MS = 5_000L

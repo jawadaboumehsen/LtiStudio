@@ -79,9 +79,8 @@ public class FirmwareAcquisitionStage : StageDefinition {
             }
         }
 
-        val expectedSha = ctx.snapshot.acquisition.expectedSha256
-            ?: ctx.snapshot.acquisition.firmware.sha256?.takeIf { it.isNotBlank() }
-        val isMd5 = expectedSha != null && expectedSha.length == 32
+        val expectedSha = expectedChecksum(ctx)
+        val isMd5 = expectedSha != null && expectedSha.length == MD5_LENGTH
         val checksumTool = if (isMd5) "md5sum" else "sha256sum"
         val checksumKey = if (isMd5) RuntimeKeys.ARCHIVE_MD5 else RuntimeKeys.ARCHIVE_SHA256
 
@@ -205,9 +204,24 @@ public class FirmwareAcquisitionStage : StageDefinition {
                 null
             }
         }
+        // A download that fails its checksum never replaces the archive already there.
+        expectedChecksum(ctx)?.let { expected ->
+            val isMd5 = expected.length == MD5_LENGTH
+            steps += PipelineStep.Tool(
+                command = stepCommand(if (isMd5) "md5sum" else "sha256sum", listOf(partial), ws),
+                label = "checksum download",
+                resultKey = if (isMd5) RuntimeKeys.ARCHIVE_MD5 else RuntimeKeys.ARCHIVE_SHA256,
+            )
+            steps += PipelineStep.Check(
+                "verify download checksum",
+            ) { values -> checksumVerdict(expected, values, isMd5) }
+        }
         steps += PipelineStep.Tool(stepCommand("mv", listOf(partial, archive), ws), "promote archive")
         return steps
     }
+
+    private fun expectedChecksum(ctx: StageContext): String? = ctx.snapshot.acquisition.expectedSha256
+        ?: ctx.snapshot.acquisition.firmware.sha256?.takeIf { it.isNotBlank() }
 
     private fun checksumVerdict(expected: String, values: Map<String, String>, isMd5: Boolean): String? {
         val actual = (values[RuntimeKeys.ARCHIVE_SHA256] ?: values[RuntimeKeys.ARCHIVE_MD5])?.digestToken().orEmpty()
@@ -221,6 +235,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
 
     public companion object {
         private const val CURL_RANGE_NOT_SUPPORTED = 33
+        private const val MD5_LENGTH = 32
 
         public fun archiveName(snapshot: ConfigurationSnapshot): String = archiveName(snapshot.acquisition)
 

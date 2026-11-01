@@ -138,6 +138,10 @@ class PipelineAdmissionTest {
                                 base.upsert(run)
                             }
 
+                            // A driver's writes go through update; it fails where upsert does.
+                            override suspend fun update(runId: String, change: (BuildRun) -> BuildRun): BuildRun? =
+                                getRun(runId)?.let(change)?.also { upsert(it) }
+
                             override suspend fun claimDriver(runId: String, instanceId: String, now: Long): Boolean {
                                 if (failurePoint == "claim") fail()
                                 return base.claimDriver(runId, instanceId, now)

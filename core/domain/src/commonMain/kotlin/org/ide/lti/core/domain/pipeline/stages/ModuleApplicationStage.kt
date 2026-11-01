@@ -23,6 +23,7 @@ import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginPlanResolver
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
+import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -43,7 +44,8 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
 
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String {
         val payload = ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.customization)
-        return CacheKeys.sha256(previousStageCacheKey + payload)
+        // Plugins are resolved against the device (codename, compatibility): another device resolves them again.
+        return CacheKeys.sha256(previousStageCacheKey + payload + computeTargetDigest(ctx.target))
     }
 
     override fun outputs(ctx: StageContext): List<String> = listOf(APPLIED_PATH)

@@ -23,6 +23,7 @@ public class WslPathTranslator(
     override fun toLocal(remotePath: String): String = toWindowsPath(remotePath)
 
     private val drivePattern = Regex("""^([a-zA-Z]):[/\\]?(.*)$""")
+    private val driveRelativePattern = Regex("""^[a-zA-Z]:[^/\\]""")
     private val wslUncPattern =
         Regex("""^(?:\\\\|//)(?:wsl\$|wsl\.localhost)[/\\][^/\\]+[/\\]?(.*)$""", RegexOption.IGNORE_CASE)
     private val mntPattern = Regex("""^/mnt/([a-zA-Z])(?:/(.*))?$""")
@@ -47,7 +48,10 @@ public class WslPathTranslator(
     }
 
     private fun computeToWslPath(windowsPath: String): String {
-        val normalized = windowsPath.trim()
+        // "C:firmware.zip" is relative to drive C's current folder, not its root: resolve it as Windows does.
+        val normalized = windowsPath.trim().let {
+            if (driveRelativePattern.containsMatchIn(it)) java.nio.file.Path.of(it).toAbsolutePath().toString() else it
+        }
 
         // Handle WSL UNC paths e.g. \\wsl.localhost\Ubuntu\home\user
         val uncMatch = wslUncPattern.matchEntire(normalized)

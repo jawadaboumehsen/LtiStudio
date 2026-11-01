@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
@@ -105,7 +106,7 @@ public class StartPipelineRunUseCase(
         val target = requireNotNull(workspaceDeviceRepository.get(workspaceId)) {
             "Workspace has no device configuration"
         }
-        val issues = DeviceConfigReadiness.check(target, snapshot)
+        val issues = DeviceConfigReadiness.upTo(DeviceConfigReadiness.check(target, snapshot), throughStage)
         check(issues.isEmpty()) {
             "Cannot start build: device configuration is incomplete (${issues.first().message})"
         }
@@ -152,6 +153,7 @@ public class StartPipelineRunUseCase(
             driverInstanceId = driverInstanceId,
             driverHeartbeatEpochMs = nowEpoch,
             throughStage = throughStage,
+            runtimeValues = mapOf(RuntimeKeys.DEVICE_REVISION to target.revision.toString()),
         )
         runRepository.upsert(queuedRun)
 

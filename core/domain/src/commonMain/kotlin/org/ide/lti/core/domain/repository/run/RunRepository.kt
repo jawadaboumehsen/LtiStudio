@@ -74,4 +74,11 @@ interface RunRepository {
      * Updates the driver heartbeat timestamp for a run.
      */
     suspend fun heartbeatDriver(runId: String, instanceId: String, now: Long = System.currentTimeMillis())
+
+    /**
+     * Replaces the stored run with [change] of it in one step (no other write lands in between), so a cancel and
+     * a driver's progress can never overwrite each other. Null when there is no such run.
+     */
+    suspend fun update(runId: String, change: (BuildRun) -> BuildRun): BuildRun? =
+        getRun(runId)?.let(change)?.also { upsert(it) }
 }

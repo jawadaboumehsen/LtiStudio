@@ -85,7 +85,13 @@ internal actual val platformRepositoryModule =
         single<VendoredFilePort> { ResourceVendoredFileAdapter() }
         single {
             val paths = io.ltirom.tooling.client.WslPathTranslator()
-            FirmwareArchives(workspaces = get(), execution = get(), toLinuxPath = paths::toWslPath)
+            FirmwareArchives(
+                workspaces = get(),
+                execution = get(),
+                toLinuxPath = paths::toWslPath,
+                runs = getOrNull(),
+                jobLock = getOrNull(),
+            )
         }
         single { WorkspaceFacts(workspaces = get(), files = get(), runs = get()) }
         single {
@@ -96,6 +102,7 @@ internal actual val platformRepositoryModule =
                 port = get(),
                 toLinuxPath = paths::toWslPath,
                 runs = getOrNull(),
+                jobLock = getOrNull(),
             )
         }
         single<RunRepository> {

@@ -161,9 +161,19 @@ class ModuleHostSteps(
             values["platform.certificate.pem"] = Files.readString(pem)
         }
         val vbmeta = work.parent.resolve("firmware").resolve("extracted").resolve("vbmeta.img")
-        if (Files.isRegularFile(vbmeta)) {
+        val bytes = if (Files.isRegularFile(
+                vbmeta,
+            )
+        ) {
+            Files.newInputStream(vbmeta).use { it.readNBytes(AVB_HEADER) }
+        } else {
+            null
+        }
+        // Only a whole AVB header ("AVB0") gives values; a short or foreign file gives none, so only a plugin that
+        // asks for them fails ("no value for {{vbmeta.size}}"), never an unrelated copy.
+        if (bytes != null && bytes.size == AVB_HEADER && String(bytes, 0, AVB_MAGIC.length) == AVB_MAGIC) {
             // AVB header: authentication / auxiliary block sizes at 12 / 20, public key offset / size at 64 / 72.
-            val header = java.nio.ByteBuffer.wrap(Files.newInputStream(vbmeta).use { it.readNBytes(AVB_HEADER) })
+            val header = java.nio.ByteBuffer.wrap(bytes)
             val auth = header.getLong(12)
             values["vbmeta.size"] = (AVB_HEADER + auth + header.getLong(20)).toString()
             values["vbmeta.publickey.offset"] = (AVB_HEADER + auth + header.getLong(64)).toString()
@@ -294,6 +304,7 @@ class ModuleHostSteps(
 
     private companion object {
         const val AVB_HEADER = 256
+        const val AVB_MAGIC = "AVB0"
         const val TEXT_LIMIT = 256L * 1024
         const val MIB = 1024L * 1024L
         const val ZIP_EXPANDED_LIMIT = 64L * MIB

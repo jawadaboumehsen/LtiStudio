@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.pipeline.text
 
+import kotlinx.serialization.json.JsonPrimitive
+import java.net.URLEncoder
 import java.security.MessageDigest
 
 public object OtaManifestWriter {
@@ -33,20 +35,15 @@ public object OtaManifestWriter {
         val idInput = "$sha256$datetime"
         val md = MessageDigest.getInstance("SHA-256")
         val id = md.digest(idInput.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-        val safeChangelog = changelog.take(16384)
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
+        val safeChangelog = jsonText(changelog.take(16384))
         val otaField = ota?.let {
             """
             "ota": {
-                "filename": "${it.filename}",
+                "filename": "${jsonText(it.filename)}",
                 "size": ${it.size},
-                "sha256": "${it.sha256}",
+                "sha256": "${jsonText(it.sha256)}",
                 "urls": [
-                    "$cleanBaseUrl/${it.filename}"
+                    "${jsonText("$cleanBaseUrl/${urlSegment(it.filename)}")}"
                 ]
             },"""
         }.orEmpty()
@@ -55,21 +52,27 @@ public object OtaManifestWriter {
     "response": [
         {
             "datetime": $datetime,
-            "device": "$device",
-            "filename": "$filename",
-            "id": "$id",
-            "patch": "$patch",
+            "device": "${jsonText(device)}",
+            "filename": "${jsonText(filename)}",
+            "id": "${jsonText(id)}",
+            "patch": "${jsonText(patch)}",
             "size": $size,
             "urls": [
-                "$cleanBaseUrl/$filename"
+                "${jsonText("$cleanBaseUrl/${urlSegment(filename)}")}"
             ],
-            "version": "$version",
-            "incremental": "$incremental",
-            "sha256": "$sha256",$otaField
+            "version": "${jsonText(version)}",
+            "incremental": "${jsonText(incremental)}",
+            "sha256": "${jsonText(sha256)}",$otaField
             "changelog": "$safeChangelog"
         }
     ]
 }
 """
     }
+
+    /** [text] escaped for use between JSON quotes (any quote, backslash or control character). */
+    public fun jsonText(text: String): String = JsonPrimitive(text).toString().removeSurrounding("\"")
+
+    /** [text] as one URL path segment: `#`, `?`, spaces and `/` cannot change what the URL names. */
+    public fun urlSegment(text: String): String = URLEncoder.encode(text, Charsets.UTF_8).replace("+", "%20")
 }

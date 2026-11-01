@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.pipeline
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 import org.ide.lti.core.domain.ports.FileStat
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.RunHandle
@@ -175,6 +176,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
             }
 
             "getfattr" -> getfattrDump(args.last())
+
+            // The label dump (labels, then the capabilities of the files that have some: none here).
+            "sh" -> if (args.getOrNull(1) == SidecarNormalizer.LABEL_DUMP) getfattrDump(args.last()) else ""
 
             "mkfs.erofs" -> "".also { files[args[args.size - 2]] = ByteArray(IMAGE_BYTES) }
 

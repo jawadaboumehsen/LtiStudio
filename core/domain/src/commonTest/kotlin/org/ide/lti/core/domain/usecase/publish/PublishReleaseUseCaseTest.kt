@@ -61,7 +61,11 @@ class PublishReleaseUseCaseTest {
             return when (command.toolId) {
                 "mkdir" -> ToolResult(0, "")
 
-                "stat" -> if (a.last() in files) ToolResult(0, "1") else ToolResult(1, "", "No such file")
+                "stat" -> if (a.last() in files) {
+                    ToolResult(0, files.getValue(a.last()).length.toString())
+                } else {
+                    ToolResult(1, "", "No such file")
+                }
 
                 "cp" -> {
                     files[a[2]] = files.getValue(a[1]) + if (corruptCopies) "!" else ""
@@ -404,7 +408,7 @@ class PublishReleaseUseCaseTest {
         val running = launch { publish.publish("ws", onTransfer = { transfers += it }) }
         testScheduler.advanceTimeBy(3_000)
         testScheduler.runCurrent()
-        assertTrue(transfers.any { it.stepId == "upload-assets" && it.done == 1L && it.total == 1L }, "$transfers")
+        assertTrue(transfers.any { it.stepId == "upload-assets" && it.done == 1L && it.total == 3L }, "$transfers")
 
         running.cancel()
         running.join()

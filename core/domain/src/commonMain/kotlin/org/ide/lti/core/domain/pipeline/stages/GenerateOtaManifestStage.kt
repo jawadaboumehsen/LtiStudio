@@ -108,7 +108,7 @@ public class GenerateOtaManifestStage : StageDefinition {
         val manifest = if (baseManifest.contains("\"changelog\":")) {
             baseManifest.replace(
                 "\"changelog\":",
-                "\"channel\": \"$channel\",\n            \"changelog\":",
+                "\"channel\": \"${OtaManifestWriter.jsonText(channel)}\",\n            \"changelog\":",
             )
         } else {
             baseManifest

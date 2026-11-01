@@ -20,6 +20,7 @@ import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
 import org.ide.lti.core.domain.pipeline.text.FstabEditor
 import org.ide.lti.core.domain.pipeline.toolkit.KernelOverrides
+import org.ide.lti.core.domain.target.computeTargetDigest
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
@@ -35,13 +36,19 @@ public class WorkTreeAssemblyStage : StageDefinition {
 
     /**
      * Debloat and Patches & mods edit work/ in place, so a change to either needs a fresh tree: their inputs are
-     * part of this key, and a new tree makes every later stage run again (never on an already edited tree).
+     * part of this key, and a new tree makes every later stage run again (never on an already edited tree). So
+     * are the inputs of the mods' plans: the device (compatibility, facts) and the platform key they embed and sign
+     * with.
      */
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String = CacheKeys.sha256(
         CacheKeys.stage3AssemblyKey(previousStageCacheKey, ctx.target, ctx.snapshot) +
             ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.debloat) +
-            ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.customization),
+            ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.customization) +
+            computeTargetDigest(ctx.target),
     )
+
+    override fun cacheInputFiles(ctx: StageContext): List<String> =
+        BuildFlashableZipStage.PLATFORM_KEY_FILES.map { "${ctx.snapshot.build.signing.platformKeyRef}.$it" }
 
     override fun outputs(ctx: StageContext): List<String> {
         val partitions = effectiveDynamicPartitions(ctx)

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.usecase.workspace
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -121,8 +122,20 @@ class CreateWorkspaceUseCase(
                 is ProvisioningEvent.Failed -> emit(event)
 
                 is ProvisioningEvent.Completed -> {
-                    register(params.name, destination, target, workspaceId, snapshot)
-                    emit(event)
+                    // The folder is complete (workspace.json, device.json, config.json): when the app's record
+                    // cannot be written, the workspace list's discovery adds it from the folder later.
+                    val registered = runCatching { register(params.name, destination, target, workspaceId, snapshot) }
+                        .onFailure { if (it is CancellationException) throw it }
+                    registered.exceptionOrNull()?.let {
+                        emit(
+                            ProvisioningEvent.Failed(
+                                "register",
+                                "The workspace was created in $destination but could not be added to the app " +
+                                    "(${it.message}). One in the WorkDir's workspaces folder is added from its " +
+                                    "folder when the workspace list opens again.",
+                            ),
+                        )
+                    } ?: emit(event)
                 }
             }
         }
@@ -183,17 +196,21 @@ class CreateWorkspaceUseCase(
                 lastOpened = now,
             ),
         )
-        workspaceRepository.addRecentProject(
-            RecentProject(
-                workspaceId = workspaceId,
-                name = name,
-                path = destination,
-                lastOpened = now,
-                type = WorkspaceType.REMOTE_WSL,
-                targetBinding = binding,
-                targetDisplayName = target.name,
-            ),
-        )
+        // The workspace is registered now; its recents entry is a convenience whose failure never reports the
+        // creation as failed (a retry would then find the workspace already there).
+        runCatching {
+            workspaceRepository.addRecentProject(
+                RecentProject(
+                    workspaceId = workspaceId,
+                    name = name,
+                    path = destination,
+                    lastOpened = now,
+                    type = WorkspaceType.REMOTE_WSL,
+                    targetBinding = binding,
+                    targetDisplayName = target.name,
+                ),
+            )
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun cancel(id: String = "") {

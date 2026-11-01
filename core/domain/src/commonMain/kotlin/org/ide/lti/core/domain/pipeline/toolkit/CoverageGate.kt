@@ -48,6 +48,9 @@ public data class CoverageCheckRequest(val partitions: List<String>) : org.ide.l
  * Gate verifying that every file to be packaged has an entry in fs_config and file_contexts (FR-015).
  */
 public object CoverageGate {
+    /** How a missing partition root is reported. */
+    public const val ROOT: String = "/"
+
     /**
      * Checks if all paths in [paths] (relative to partition root or work tree) are covered in [fsConfigText] and [fileContextsText].
      */
@@ -57,9 +60,10 @@ public object CoverageGate {
         fsConfigText: String,
         fileContextsText: String,
     ): CoverageResult {
+        // Keys as written: system's root line has an empty path (" 0 0 755").
         val fsConfigKnown = fsConfigText.lineSequence()
-            .map { it.substringBefore(' ').trim() }
             .filter { it.isNotBlank() }
+            .map { it.substringBefore(' ').trim() }
             .toSet()
 
         val contextsKnown = fileContextsText.lineSequence()
@@ -70,9 +74,9 @@ public object CoverageGate {
         val uncoveredFsConfig = mutableListOf<String>()
         val uncoveredContexts = mutableListOf<String>()
 
-        for (rawPath in paths) {
-            val clean = rawPath.trim('/')
-            if (clean.isBlank()) continue
+        // The partition root is never in a tree listing, yet mkfs needs its lines: it is always checked.
+        for (rawPath in paths + ROOT) {
+            val clean = rawPath.trim('/').ifEmpty { ROOT }
 
             // Only the forms SidecarNormalizer writes count; a looser match would let a missing entry pass.
             if (SidecarNormalizer.fsConfigPath(partition, clean) !in fsConfigKnown) {
@@ -163,7 +167,8 @@ public object CoverageFix {
         rules: List<CoverageRule> = emptyList(),
     ): String {
         var current = fsConfigText
-        for (path in uncoveredPaths) {
+        // A root's owner and mode cannot be taken from a folder above it: a missing root stays refused.
+        for (path in uncoveredPaths - CoverageGate.ROOT) {
             val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
             current = SidecarEditor.withFsConfig(
                 text = current,
@@ -184,7 +189,7 @@ public object CoverageFix {
         rules: List<CoverageRule> = emptyList(),
     ): String {
         var current = fileContextsText
-        for (path in uncoveredPaths) {
+        for (path in uncoveredPaths - CoverageGate.ROOT) {
             val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
             val label = rule?.label ?: defaultLabel ?: findNearestLabel(current, partition, path)
             current = SidecarEditor.withFileContext(

@@ -11,6 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.build
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +39,8 @@ public data class BuildFacts(
     /** The stock images Extract unpacked, the size estimate of a partition not built yet. */
     val stockImages: List<WorkspaceFile> = emptyList(),
     val packages: List<WorkspaceFile> = emptyList(),
-    /** Member names of the newest package. */
+    /** The package the last build made (named by its measured hash's path), and its member names. */
+    val currentPackage: WorkspaceFile? = null,
     val zipMembers: List<String> = emptyList(),
     val zipSha256: String? = null,
     val avbPublicKeySha1: String? = null,
@@ -158,6 +160,14 @@ public class BuildViewModel(
                 )
             } catch (e: RefusalException) {
                 _coverage.value = _coverage.value.copy(busy = null, refusal = e.refusal)
+            } catch (e: CancellationException) {
+                _coverage.value = _coverage.value.copy(busy = null)
+                throw e
+            } catch (e: Exception) {
+                // A lost connection must not leave the check busy for good.
+                val cause = e.message ?: "The check could not run"
+                val refusal = Refusal(cause, name, "Check that the build service is running, then try again.")
+                _coverage.value = _coverage.value.copy(busy = null, refusal = refusal)
             }
         }
     }
@@ -167,13 +177,16 @@ public class BuildViewModel(
         viewModelScope.launch {
             suspend fun value(key: String) = facts.lastValue(workspaceId, key)
             val packages = facts.list(workspaceId, "out/package", name = "*.zip")
+            // sha256sum prints the file it hashed: that is the package of the last build, whatever its name sorts as.
+            val built = value(RuntimeKeys.ZIP_SHA256)?.trim()?.substringAfterLast('/')
+            val current = packages.firstOrNull { it.path == built }
             _facts.value = BuildFacts(
                 loaded = true,
                 images = facts.list(workspaceId, "out/images", name = "*.img"),
                 stockImages = facts.list(workspaceId, FirmwareExtractionStage.EXTRACTED, name = "*.img"),
                 packages = packages,
-                zipMembers = packages.lastOrNull()?.let { facts.zipMembers(workspaceId, "out/package/${it.path}") }
-                    .orEmpty(),
+                currentPackage = current,
+                zipMembers = current?.let { facts.zipMembers(workspaceId, "out/package/${it.path}") }.orEmpty(),
                 zipSha256 = value(RuntimeKeys.ZIP_SHA256)?.trim()?.substringBefore(' '),
                 avbPublicKeySha1 = value(RuntimeKeys.AVB_PUBKEY_SHA1)?.trim()?.substringBefore(' '),
                 platformCertSha1 = value(BuildFlashableZipStage.PLATFORM_CERT_SHA1)?.trim()?.substringBefore(' '),

@@ -12,13 +12,16 @@ package org.ide.lti.core.domain.usecase.build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.pipeline.PipelineEvent
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
+import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.model.run.RunState
 import java.util.UUID
 
 /**
@@ -41,13 +44,21 @@ public open class ReattachRunUseCase(
         val run = (if (runId != null) runRepository.getRun(runId) else runRepository.latestActive(workspaceId))
             ?: return null
 
-        if (run.state.isTerminal) {
+        if (run.state.isTerminal || run.workspaceId != workspaceId) {
             return null
         }
 
         val workspace = workspaceRepository.getWorkspace(workspaceId) ?: return null
         val snapshot = snapshotRepository.getSnapshot(run.snapshotId) ?: return null
         val target = runCatching { workspaceDeviceRepository.get(workspaceId) }.getOrNull() ?: return null
+        // The run was planned for one device revision: one changed since (sizes, layout) would mix two targets.
+        val admitted = run.runtimeValues[RuntimeKeys.DEVICE_REVISION]?.toIntOrNull()
+        if (admitted != null && admitted != target.revision) {
+            runRepository.update(run.id) {
+                if (it.state.isTerminal) it else it.copy(state = RunState.FAILED, endedAt = Clock.System.now())
+            }
+            return null
+        }
 
         val stageContext = StageContext(workspace, snapshot, target, run.runtimeValues)
         val eventFlow = orchestrator.resume(run, stageContext, driverInstanceId)

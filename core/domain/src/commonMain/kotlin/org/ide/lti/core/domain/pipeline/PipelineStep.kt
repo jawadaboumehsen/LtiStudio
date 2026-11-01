@@ -65,11 +65,8 @@ public sealed interface PipelineStep {
      * image (contract Stage 5 step 3). Each probe is one `avbtool` call; the result is stored
      * under [resultKey].
      */
-    public data class AvbSizeSearch(
-        val imageSizeBytes: Long,
-        val resultKey: String,
-        override val label: String,
-    ) : PipelineStep
+    public data class AvbSizeSearch(val imageSizeBytes: Long, val resultKey: String, override val label: String) :
+        PipelineStep
 
     /**
      * Work the app itself does, through [HostStepPort] (applying plugin mutation plans to the work tree). Its
@@ -79,10 +76,7 @@ public sealed interface PipelineStep {
         PipelineStep
 
     /** Pure assertion over the current runtime values; returns a failure message or null. */
-    public class Check(
-        override val label: String,
-        val verify: (Map<String, String>) -> String?,
-    ) : PipelineStep
+    public class Check(override val label: String, val verify: (Map<String, String>) -> String?) : PipelineStep
 }
 
 /** Result of a synchronous (non-durable) tool call used for quick queries such as `stat`. */
@@ -92,6 +86,9 @@ public data class ToolResult(val exitCode: Int, val stdout: String, val stderr: 
 public object RuntimeKeys {
     public const val RUN_DATE: String = "run.date"
     public const val RUN_TIMESTAMP: String = "run.timestamp"
+
+    /** The device revision a run was admitted with; a resume refuses a device changed since. */
+    public const val DEVICE_REVISION: String = "run.device.revision"
     public const val ARCHIVE_MIME: String = "firmware.archive.mime"
     public const val ARCHIVE_SHA256: String = "firmware.archive.sha256"
     public const val ARCHIVE_MD5: String = "firmware.archive.md5"

@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.pipeline
 import kotlinx.coroutines.runBlocking
 import org.ide.lti.core.domain.pipeline.stages.*
 import org.ide.lti.core.domain.pipeline.text.*
+import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 import org.ide.lti.core.model.target.*
 import org.ide.lti.core.model.workspace.*
 import kotlin.test.*
@@ -253,7 +254,7 @@ class StageDefinitionsTest {
             curl.args,
         )
         assertEquals(
-            listOf("curl", "file", "mv", "sha256sum"),
+            listOf("curl", "file", "sha256sum", "mv", "sha256sum"),
             s1.map {
                 it.toolId
             }.filter { it != "mkdir" },
@@ -261,7 +262,7 @@ class StageDefinitionsTest {
         val withSha = FirmwareAcquisitionStage().plan(
             ctx.copy(runtimeValues = mapOf(RuntimeKeys.ARCHIVE_SHA256 to "abc  x")),
         )
-        assertTrue(withSha.last() is PipelineStep.Check)
+        assertTrue(withSha.last() is PipelineStep.Check, withSha.toString())
 
         // Stage 2 (OTA): payload extraction then per-partition erofsfuse dumps; sidecars appear once dumps exist.
         val s2 = FirmwareExtractionStage().plan(ctx)
@@ -292,8 +293,8 @@ class StageDefinitionsTest {
         )
         assertTrue(
             s2tools.any {
-                it.toolId == "getfattr" &&
-                    it.args.containsAll(listOf("-R", "-h", "-n", "security.selinux", "--absolute-names"))
+                // Labels and file capabilities in one dump.
+                it.toolId == "sh" && it.args.getOrNull(1) == SidecarNormalizer.LABEL_DUMP
             },
         )
         assertTrue(

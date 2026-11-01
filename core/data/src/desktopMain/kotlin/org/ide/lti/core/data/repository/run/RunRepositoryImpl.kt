@@ -108,6 +108,12 @@ public class RunRepositoryImpl(
         if (eventsLock.withLock { events[run.id] != null }) mirrorStageLogsToRemoteWorkspace(run.id)
     }
 
+    override suspend fun update(runId: String, change: (BuildRun) -> BuildRun): BuildRun? = withContext(ioDispatcher) {
+        val updated = writes.withLock { getRun(runId)?.let(change)?.also { persist(it) } }
+        updated?.let { mirrorRunToRemoteWorkspace(it) }
+        updated
+    }
+
     /** Disk first: memory (what the UI and admission see) only ever shows a record that was saved. */
     private suspend fun persist(run: BuildRun) {
         runRecordDataSource.saveRun(run)

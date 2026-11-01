@@ -9,18 +9,19 @@
  */
 package org.ide.lti.core.domain.workspace
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
@@ -48,8 +49,8 @@ public interface WorkspaceSettingsStore {
     /** The id of each workspace whose settings were just saved. */
     public val changes: Flow<String> get() = emptyFlow()
 
-    /** The workspace's device as it is saved (edited in the Target panel while an editor stays open). */
-    public fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = emptyFlow()
+    /** The workspace's device now, then as it is saved (edited in the Target panel while an editor stays open). */
+    public fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = flow { emit(device(workspaceId)) }
 }
 
 /** The workspace's saved snapshot, changed through [SaveConfigurationSnapshotUseCase.update]. */
@@ -67,20 +68,29 @@ public class SnapshotSettingsStore(
     override suspend fun update(
         workspaceId: String,
         change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
-    ): Result<ConfigurationSnapshot> = save.update(workspaceId, change).onSuccess { _changes.tryEmit(workspaceId) }
+    ): Result<ConfigurationSnapshot> = save.update(workspaceId, change).onSuccess {
+        revisions.update { it + (workspaceId to (it[workspaceId] ?: 0L) + 1) }
+    }
 
-    private val _changes = MutableSharedFlow<String>(extraBufferCapacity = CHANGE_BUFFER)
-    override val changes: Flow<String> = _changes.asSharedFlow()
+    /** Saves per workspace. A slow listener misses intermediate saves, never a workspace: it sees every changed id. */
+    private val revisions = MutableStateFlow<Map<String, Long>>(emptyMap())
+    override val changes: Flow<String> = flow {
+        var seen = revisions.value
+        revisions.collect { now ->
+            now.filter { (id, revision) -> seen[id] != revision }.keys.forEach { emit(it) }
+            seen = now
+        }
+    }
 
     override suspend fun device(workspaceId: String): TargetDevice? =
         runCatching { devices.get(workspaceId) }.getOrNull()
 
-    // An unreadable device (service down) is simply not an update; the editor keeps the device it has.
-    override fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = devices.observe(workspaceId).catch { }
+    // An unreadable device (service down) is not an update: the editor keeps the device it has and reads again later.
+    override fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = devices.observe(workspaceId)
+        .retryWhen { cause, _ -> (cause !is CancellationException).also { if (it) delay(DEVICE_RETRY_MS) } }
 
     private companion object {
-        /** Saves arrive a few at a time; a slow listener never holds up an editor's save. */
-        const val CHANGE_BUFFER = 16
+        const val DEVICE_RETRY_MS = 5_000L
     }
 }
 
@@ -121,11 +131,8 @@ public class StageSettingsSync<T>(
 
     init {
         if (connected) {
-            scope.launch {
-                reload()
-                _device.value = store?.device(workspaceId)
-            }
-            // A device saved while this editor is open replaces the one it loaded.
+            scope.launch { reload() }
+            // The device as it is now, then each save while this editor is open: one source, so no stale read wins.
             scope.launch { store!!.deviceUpdates(workspaceId).collect { _device.value = it } }
             scope.launch {
                 // Show other writers' saves, retaining this group's pending value while it is being edited.

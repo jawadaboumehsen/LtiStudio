@@ -22,9 +22,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.ide.lti.core.domain.pipeline.CacheKeys
+import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.digestToken
 import org.ide.lti.core.domain.pipeline.stages.GenerateOtaManifestStage
 import org.ide.lti.core.domain.pipeline.stepCommand
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
+import org.ide.lti.core.domain.pipeline.toolkit.withLock
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.runToEnd
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -83,16 +86,38 @@ public data class PublishJournal(
 ) {
     val finished: Boolean get() = steps.all { it.state == PublishStepState.DONE }
 
-    /** Every verify step runs again (the destination is checked anew); a copy whose check fails is made again. */
+    /**
+     * Every verify step runs again (the destination is checked anew), and the GitHub manifest is reconciled (it is
+     * only written when it lacks this release); a copy whose check fails is made again.
+     */
     public fun reverifying(): PublishJournal = copy(
         outcome = null,
-        steps = steps.map { if (it.id.startsWith("verify-")) it.copy(state = PublishStepState.PENDING) else it },
+        steps = steps.map {
+            if (it.id.startsWith(
+                    "verify-",
+                ) || it.id == "publish-manifest"
+            ) {
+                it.copy(state = PublishStepState.PENDING)
+            } else {
+                it
+            }
+        },
     )
 
-    /** A copy that failed verification is copied again: `verify-x` failed means `export-x` runs again too. */
+    /**
+     * A copy that failed verification is copied again: `verify-x` failed means `export-x` runs again too, and a
+     * GitHub release whose assets are gone may be gone itself, so it is looked up (and made) again. The package is
+     * checked against its manifest again on every resume: it may have changed since.
+     */
     public fun retryingFailedCopies(): PublishJournal {
         val redo = steps.filter { it.state == PublishStepState.FAILED && it.id.startsWith("verify-") }
-            .map { if (it.id == "verify-remote") "upload-assets" else "export-" + it.id.removePrefix("verify-") }
+            .flatMap {
+                if (it.id == "verify-remote") {
+                    listOf("create-release", "upload-assets")
+                } else {
+                    listOf("export-" + it.id.removePrefix("verify-"))
+                }
+            } + "verify-package"
         return copy(steps = steps.map { if (it.id in redo) it.copy(state = PublishStepState.PENDING) else it })
     }
 }
@@ -108,6 +133,8 @@ public class PublishReleaseUseCase(
     private val port: PipelineExecutionPort,
     /** Publishing waits for a running build: it would copy files that build is replacing. */
     private val runs: org.ide.lti.core.domain.repository.run.RunRepository? = null,
+    /** Held for the whole publish: a build cannot start (nor an edit run) while its files are being copied. */
+    private val jobLock: JobLock? = null,
     /** A Windows folder as WSL sees it (`D:\ROM` -> `/mnt/d/ROM`), as for Acquire's imports. */
     private val toLinuxPath: (String) -> String,
 ) {
@@ -116,9 +143,13 @@ public class PublishReleaseUseCase(
         val ws = workspaces.getWorkspace(workspaceId)
             ?: return PublishPreflight(null, listOf("The workspace is not available."), null, null)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
-        val problems = mutableListOf<String>()
+        // The editor's unsaved values are checked here too: a part size of 0 would fail mid-upload.
+        val problems = StageSettingsValidator.validatePublish(settings).errors.map { it.message }.toMutableList()
         runs?.latestActive(workspaceId)?.let {
             problems += "A build is running in this workspace; publish when it has finished."
+        }
+        jobLock?.currentHolder(ws)?.takeIf { it != PUBLISH_HOLDER }?.let {
+            problems += "\"$it\" is changing this workspace; publish when it has finished."
         }
         val release = releaseOf(ws, problems)
         val destination = destinationOf(settings, problems)
@@ -135,6 +166,25 @@ public class PublishReleaseUseCase(
         edited: PublishSettings? = null,
         onProgress: (PublishJournal) -> Unit = {},
         onTransfer: (PublishTransfer) -> Unit = {},
+    ): PublishJournal? {
+        val ws = workspaces.getWorkspace(workspaceId) ?: return null
+        val lock = jobLock
+        return if (lock == null) {
+            publishHeld(workspaceId, edited, onProgress, onTransfer)
+        } else {
+            lock.withLock(
+                ws,
+                PUBLISH_HOLDER,
+                onLocked = { null },
+            ) { publishHeld(workspaceId, edited, onProgress, onTransfer) }
+        }
+    }
+
+    private suspend fun publishHeld(
+        workspaceId: String,
+        edited: PublishSettings?,
+        onProgress: (PublishJournal) -> Unit,
+        onTransfer: (PublishTransfer) -> Unit,
     ): PublishJournal? {
         val ws = workspaces.getWorkspace(workspaceId)
         val check = preflight(workspaceId, edited)
@@ -227,6 +277,8 @@ public class PublishReleaseUseCase(
             listOfNotNull(release, release.ota).forEach { p ->
                 val actual = sha256(ws, ws.abs("out/package/${p.zip}"))
                 check(actual == p.sha256) { "${p.zip} does not match its manifest (sha256 $actual)." }
+                val size = sizeOf(ws, ws.abs("out/package/${p.zip}"))
+                check(size == p.size) { "${p.zip} is $size bytes; its manifest says ${p.size}." }
             }
             "sha256 ${release.sha256}"
         }
@@ -292,16 +344,21 @@ public class PublishReleaseUseCase(
         }
         // A name of this attempt's own: two exports to one folder never share a temporary file.
         val partial = "$dest/.$name.${java.util.UUID.randomUUID()}.partial"
-        sampling(sample = { sizeOf(ws, partial) }, report = copied) { run(ws, "cp", "--", source, partial) }
-        if (policy == CollisionPolicy.OVERWRITE) {
-            run(ws, "mv", "-f", "--", partial, "$dest/$name")
-        } else {
-            // No-clobber: a file that appeared there meanwhile is never replaced.
-            run(ws, "mv", "-n", "--", partial, "$dest/$name")
-            if (port.runToEnd(ws, "stat", listOf("-c", "%s", partial)).exitCode == 0) {
-                run(ws, "rm", "-f", "--", partial)
-                error("$dest/$name appeared while it was being copied (collision policy: ${policy.name.lowercase()}).")
+        try {
+            sampling(sample = { sizeOf(ws, partial) }, report = copied) { run(ws, "cp", "--", source, partial) }
+            if (policy == CollisionPolicy.OVERWRITE) {
+                run(ws, "mv", "-f", "--", partial, "$dest/$name")
+            } else {
+                // No-clobber: a file that appeared there meanwhile is never replaced.
+                run(ws, "mv", "-n", "--", partial, "$dest/$name")
+                check(port.runToEnd(ws, "stat", listOf("-c", "%s", partial)).exitCode != 0) {
+                    "$dest/$name appeared while it was being copied (collision policy: ${policy.name.lowercase()})."
+                }
             }
+        } finally {
+            // This attempt's temporary file never stays behind (each attempt has a name of its own); after a rename
+            // there is nothing left to remove.
+            withContext(NonCancellable) { runCatching { run(ws, "rm", "-f", "--", partial) } }
         }
         return if (exists) "replaced $dest/$name" else "copied to $dest/$name"
     }
@@ -316,7 +373,7 @@ public class PublishReleaseUseCase(
         // A field of another type (an object, an array) is simply missing; a name must be a plain file name.
         val zip = entry?.text("filename")?.takeIf(::isPlainName)
         val sha = entry?.text("sha256")
-        val size = entry?.text("size")?.toLongOrNull()
+        val size = entry?.text("size")?.toLongOrNull()?.takeIf { it > 0 }
         if (zip == null || sha == null || size == null) {
             problems += if (text == null) {
                 "No release yet: run the build through Release metadata first."
@@ -326,10 +383,14 @@ public class PublishReleaseUseCase(
             return null
         }
         if (port.stat(ws, "out/package/UNSIGNED").exists) problems += "The package is unsigned; it cannot be published."
+        // An "ota" that is there but not an object is a broken manifest, not a release without an OTA.
+        if (entry["ota"].let { it != null && it !is JsonObject }) {
+            problems += "out/manifest.json names an OTA it does not describe; build Release metadata again."
+        }
         val ota = (entry["ota"] as? JsonObject)?.let { o ->
             val name = o.text("filename")?.takeIf(::isPlainName)
             val otaSha = o.text("sha256")
-            val otaSize = o.text("size")?.toLongOrNull()
+            val otaSize = o.text("size")?.toLongOrNull()?.takeIf { it > 0 }
             if (name == null || otaSha == null || otaSize == null) {
                 null.also { problems += "out/manifest.json names an incomplete OTA; build Release metadata again." }
             } else {
@@ -392,6 +453,7 @@ public class PublishReleaseUseCase(
     public companion object {
         public const val JOURNAL: String = "out/publish/journal.json"
         public const val CANCELLED: String = "Cancelled"
+        public const val PUBLISH_HOLDER: String = "Publishing"
         private const val MANIFEST = GenerateOtaManifestStage.MANIFEST
         private val json = Json {
             ignoreUnknownKeys = true

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
+import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveListing
 import org.ide.lti.core.domain.pipeline.toolkit.ChecksumResult
 import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
@@ -190,35 +191,43 @@ public class ExtractViewModel(
         val b = _facts.value.browse
         val workbench = archives?.takeIf { b.selected.isNotEmpty() && b.busy == null } ?: return
         val archive = b.archive ?: return
+        // Same generation as browsing: after navigating elsewhere, this copy's result no longer touches the view.
+        val request = ++browseRequest
+        val setLatest = { change: (ArchiveBrowse) -> ArchiveBrowse -> if (request == browseRequest) setBrowse(change) }
         viewModelScope.launch {
             setBrowse { it.copy(busy = "Copying ${b.selected.size} item(s) out", message = null, refusal = null) }
             try {
                 val dest = workbench.extract(workspaceId, archive, b.chain, b.selected.sorted())
-                setBrowse { it.copy(message = "Copied ${b.selected.size} item(s) to $dest", selected = emptySet()) }
+                setLatest { it.copy(message = "Copied ${b.selected.size} item(s) to $dest", selected = emptySet()) }
             } catch (e: RefusalException) {
-                setBrowse { it.copy(refusal = e.refusal) }
+                setLatest { it.copy(refusal = e.refusal) }
             } finally {
-                setBrowse { it.copy(busy = null) }
+                setLatest { it.copy(busy = null) }
             }
         }
     }
 
+    /** Only the newest navigation reports: an older listing finishing later never replaces it. */
+    private var browseRequest = 0L
+
     private suspend fun browse(archive: String, chain: List<String>) {
         val workbench = archives ?: return
         val name = (chain.lastOrNull() ?: archive).substringAfterLast('/').substringAfterLast('\\')
+        val request = ++browseRequest
+        val setLatest = { change: (ArchiveBrowse) -> ArchiveBrowse -> if (request == browseRequest) setBrowse(change) }
         setBrowse { it.copy(busy = "Reading $name", refusal = null, message = null) }
         try {
             val listing = workbench.list(workspaceId, archive, chain)
             if (listing.notArchive && chain.isNotEmpty()) {
                 // Not an archive (an image, a payload): stay where we were and say what it is.
-                setBrowse { it.copy(message = "$name is not an archive (${listing.format.name}).") }
+                setLatest { it.copy(message = "$name is not an archive (${listing.format.name}).") }
             } else {
-                setBrowse { ArchiveBrowse(archive = archive, chain = chain, listing = listing) }
+                setLatest { ArchiveBrowse(archive = archive, chain = chain, listing = listing) }
             }
         } catch (e: RefusalException) {
-            setBrowse { it.copy(refusal = e.refusal) }
+            setLatest { it.copy(refusal = e.refusal) }
         } finally {
-            setBrowse { it.copy(busy = null) }
+            setLatest { it.copy(busy = null) }
         }
     }
 
@@ -230,9 +239,8 @@ public class ExtractViewModel(
     public fun refreshFacts() {
         val facts = workspaceFacts ?: return
         viewModelScope.launch {
-            val archive = store?.current(workspaceId)?.acquisition?.archiveRef
-                ?: facts.list(workspaceId, "firmware/downloaded", name = "*.zip").lastOrNull()
-                    ?.let { "firmware/downloaded/${it.path}" }
+            // The archive the build will use, by the same rule as the Acquire stage.
+            val archive = store?.current(workspaceId)?.acquisition?.let { FirmwareAcquisitionStage.archiveRelPath(it) }
 
             val manifestRaw = facts.lastValue(workspaceId, RuntimeKeys.PACKAGE_MANIFEST)
             val manifest = manifestRaw?.let { runCatching { PackageManifest.decode(it) }.getOrNull() }

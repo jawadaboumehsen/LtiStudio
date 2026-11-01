@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.plugin
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -80,14 +82,21 @@ class PluginIndexAdapter(
         val digest: String? = null,
     )
 
-    override suspend fun lastSource(): IndexSource? = try {
+    // Network and disk work never runs on the caller's (UI) thread.
+    override suspend fun lastSource(): IndexSource? = withContext(Dispatchers.IO) { lastSourceBlocking() }
+
+    private suspend fun lastSourceBlocking(): IndexSource? = try {
         json.decodeFromString(SavedSource.serializer(), Files.readString(cacheDir.resolve(SOURCE_FILE)))
             .let { IndexSource(it.label, it.url) }
     } catch (_: Exception) {
         null
     }
 
-    override suspend fun fetch(source: IndexSource, allowCache: Boolean): IndexFetchResult {
+    // Network and disk work never runs on the caller's (UI) thread.
+    override suspend fun fetch(source: IndexSource, allowCache: Boolean): IndexFetchResult =
+        withContext(Dispatchers.IO) { fetchBlocking(source, allowCache) }
+
+    private suspend fun fetchBlocking(source: IndexSource, allowCache: Boolean): IndexFetchResult {
         val uri = try {
             URI(source.url)
         } catch (_: Exception) {

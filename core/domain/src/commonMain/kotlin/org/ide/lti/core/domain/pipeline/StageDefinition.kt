@@ -54,6 +54,9 @@ public interface StageDefinition {
     /** Digest of every declared input; the stage is skipped when input and output digests match. */
     public fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String = ""): String
 
+    /** Workspace files whose bytes join the cache key (keys replaced under the same name). */
+    public fun cacheInputFiles(ctx: StageContext): List<String> = emptyList()
+
     /** Workspace-relative files that must exist (and are digested) once the stage succeeded. */
     public fun outputs(ctx: StageContext): List<String>
 

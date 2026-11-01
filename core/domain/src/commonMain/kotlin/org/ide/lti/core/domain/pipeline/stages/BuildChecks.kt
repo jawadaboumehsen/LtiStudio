@@ -292,11 +292,7 @@ internal object BuildChecks {
                 resultKey = statKey,
             )
             steps += PipelineStep.Tool(
-                command = stepCommand(
-                    "getfattr",
-                    listOf("-R", "-h", "-n", "security.selinux", "--absolute-names", mnt),
-                    ws,
-                ),
+                command = stepCommand("sh", listOf("-c", SidecarNormalizer.LABEL_DUMP, "sh", mnt), ws),
                 label = "selinux built $p",
                 resultKey = selinuxKey,
             )
@@ -319,6 +315,12 @@ internal object BuildChecks {
         steps += PipelineStep.Check("verify built $p") { values ->
             // A partition Assemble did not lay out (system_ext folded into system) has no sidecars to compare with.
             if (values[fsKey].isNullOrBlank()) return@Check null
+            if (fs == BuildFilesystems.F2FS) {
+                F2fsImage.capabilityRefusal(
+                    p,
+                    values[fsKey].orEmpty(),
+                )?.let { return@Check it }
+            }
             val (statDump, labels) = if (fs == BuildFilesystems.F2FS) {
                 F2fsImage.splitReadback(values[statKey].orEmpty(), p, mnt, values[fsKey].orEmpty())
             } else {

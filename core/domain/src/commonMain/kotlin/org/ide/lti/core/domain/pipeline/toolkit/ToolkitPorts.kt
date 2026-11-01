@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.domain.pipeline.toolkit
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.model.workspace.Workspace
 
 /**
@@ -70,11 +72,12 @@ public suspend fun <T> JobLock.withLock(
     val lockResult = acquire(workspace, holderName)
     return when (lockResult) {
         is LockResult.Locked -> onLocked(lockResult.holderName)
+
         is LockResult.Acquired -> {
             try {
                 block()
             } finally {
-                lockResult.handle.release()
+                withContext(NonCancellable) { lockResult.handle.release() }
             }
         }
     }

@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.patch
 
 import kotlinx.coroutines.yield
+import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -48,6 +49,7 @@ class FileMutationAdapter : FileMutationPort {
     override suspend fun preview(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome =
         when (val checked = check(plan, ctx, assetRoot)) {
             is CheckedPlan.Refused -> MutationOutcome.Refused(checked.report)
+
             is CheckedPlan.Ready -> MutationOutcome.Applied(
                 checked.operations.map { computeEffect(it.operation, it.path, it.partitionRoot) },
             )
@@ -67,7 +69,8 @@ class FileMutationAdapter : FileMutationPort {
         val effects = mutableListOf<MutationEffect>()
         val recheckFailure = ready.firstNotNullOfOrNull { op ->
             yield()
-            val recheck = validateOperation(op.operation, ctx, assetRoot)
+            // Right before it writes, the edit meets the file as the earlier writes left it on disk.
+            val recheck = validateOperation(op.operation, ctx, assetRoot, mutableMapOf())
             if (recheck.isNotEmpty()) {
                 recheck
             } else {
@@ -96,11 +99,15 @@ class FileMutationAdapter : FileMutationPort {
         val errors = mutableListOf<ValidationError>()
         val planned = mutableListOf<PlannedOperation>()
         val seenPaths = mutableMapOf<Path, ConcreteOperation>()
+        // A file's text after the plan's earlier edits: an edit is checked against what it will really meet.
+        val staged = mutableMapOf<Path, String>()
 
         for (op in plan.operations) {
-            errors += validateOperation(op, ctx, assetRoot)
+            errors += validateOperation(op, ctx, assetRoot, staged)
             when (val resolved = resolveOperationPath(op, ctx)) {
-                is ResolvedTarget.Invalid -> Unit // already reported by validateOperation
+                is ResolvedTarget.Invalid -> Unit
+
+                // already reported by validateOperation
                 is ResolvedTarget.Valid -> {
                     val owner = seenPaths.put(resolved.path, op)
                     // Several property/text edits of one file compose (each is re-checked right before it writes).
@@ -125,13 +132,14 @@ class FileMutationAdapter : FileMutationPort {
         op: ConcreteOperation,
         ctx: MutationContext,
         assetRoot: String,
+        staged: MutableMap<Path, String>,
     ): List<ValidationError> = when (op) {
         is ConcreteOperation.ApkJarPatch -> unsupported(op.id, op.target.relativePath, "ApkJarPatch", "T059")
         is ConcreteOperation.Copy -> validateCopy(op, ctx, assetRoot)
         is ConcreteOperation.Replace -> validateReplace(op, ctx, assetRoot)
         is ConcreteOperation.Delete -> validateDelete(op, ctx)
-        is ConcreteOperation.PropertyPatch -> validatePropertyPatch(op, ctx)
-        is ConcreteOperation.TextPatch -> validateTextPatch(op, ctx)
+        is ConcreteOperation.PropertyPatch -> validatePropertyPatch(op, ctx, staged)
+        is ConcreteOperation.TextPatch -> validateTextPatch(op, ctx, staged)
     }
 
     /** Bytecode operations fail closed here; they are implemented by the adapters those tasks add. */
@@ -184,6 +192,7 @@ class FileMutationAdapter : FileMutationPort {
                 errors.add(resolved.error)
                 null
             }
+
             is ResolvedTarget.Valid -> resolved.path
         }
 
@@ -240,6 +249,7 @@ class FileMutationAdapter : FileMutationPort {
                 errors.add(resolved.error)
                 null
             }
+
             is ResolvedTarget.Valid -> resolved.path
         }
 
@@ -263,6 +273,7 @@ class FileMutationAdapter : FileMutationPort {
     private fun validatePropertyPatch(
         op: ConcreteOperation.PropertyPatch,
         ctx: MutationContext,
+        staged: MutableMap<Path, String>,
     ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
         FileEdits.propertyKeyProblem(op.key)?.let { problem ->
@@ -283,6 +294,7 @@ class FileMutationAdapter : FileMutationPort {
                 errors.add(resolved.error)
                 null
             }
+
             is ResolvedTarget.Valid -> resolved.path
         }
 
@@ -299,18 +311,27 @@ class FileMutationAdapter : FileMutationPort {
                             "not found at '$targetPath'",
                     ),
                 )
+            } else if (errors.isEmpty()) {
+                val text = staged[targetPath] ?: Files.readString(targetPath, Charsets.UTF_8)
+                (FileEdits.propertyPatch(text, op.key, op.value) as? EditResult.Changed)
+                    ?.let { staged[targetPath] = it.content }
             }
         }
         return errors
     }
 
-    private fun validateTextPatch(op: ConcreteOperation.TextPatch, ctx: MutationContext): List<ValidationError> {
+    private fun validateTextPatch(
+        op: ConcreteOperation.TextPatch,
+        ctx: MutationContext,
+        staged: MutableMap<Path, String>,
+    ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
         val targetPath = when (val resolved = resolveOperationPath(op, ctx)) {
             is ResolvedTarget.Invalid -> {
                 errors.add(resolved.error)
                 null
             }
+
             is ResolvedTarget.Valid -> resolved.path
         }
 
@@ -328,8 +349,13 @@ class FileMutationAdapter : FileMutationPort {
                 )
             } else {
                 // An empty expected hash means the edit is anchored by its unique context alone.
-                val actualSha = if (op.expectedSha256.isEmpty()) "" else sha256Of(targetPath)
-                val text = Files.readString(targetPath, Charsets.UTF_8)
+                val earlier = staged[targetPath]
+                val actualSha = when {
+                    op.expectedSha256.isEmpty() -> ""
+                    earlier != null -> CacheKeys.sha256(earlier)
+                    else -> sha256Of(targetPath)
+                }
+                val text = earlier ?: Files.readString(targetPath, Charsets.UTF_8)
                 val relative = op.target.relativePath
                 val result = FileEdits.textPatch(
                     text,
@@ -339,6 +365,7 @@ class FileMutationAdapter : FileMutationPort {
                     actualSha,
                     relative,
                 )
+                if (result is EditResult.Changed) staged[targetPath] = result.content
                 if (result is EditResult.Failed) {
                     errors.add(
                         ValidationError(
@@ -363,20 +390,25 @@ class FileMutationAdapter : FileMutationPort {
                 targetPath.parent?.let { Files.createDirectories(it) }
                 streamCopy(source, targetPath)
             }
+
             is ConcreteOperation.Replace -> {
                 val source = Path.of(assetRoot).resolve(op.source.path).normalize()
                 targetPath.parent?.let { Files.createDirectories(it) }
                 streamCopy(source, targetPath)
             }
+
             is ConcreteOperation.Delete -> {
                 Files.delete(targetPath)
             }
+
             is ConcreteOperation.PropertyPatch -> {
                 applyPropertyPatch(targetPath, op.key, op.value)
             }
+
             is ConcreteOperation.TextPatch -> {
                 applyTextPatch(targetPath, op.context, op.replacement)
             }
+
             is ConcreteOperation.ApkJarPatch -> error("Cannot execute unsupported operation: ${op.id}")
         }
     }
@@ -396,6 +428,7 @@ class FileMutationAdapter : FileMutationPort {
             is ConcreteOperation.Replace,
             is ConcreteOperation.Delete,
             -> findSidecarUpdates(partitionRoot, partPath.partition)
+
             is ConcreteOperation.PropertyPatch,
             is ConcreteOperation.TextPatch,
             is ConcreteOperation.ApkJarPatch,

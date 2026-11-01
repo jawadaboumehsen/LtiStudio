@@ -12,13 +12,13 @@ package org.ide.lti.feature.rom.studio.stage.acquire
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
-import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
 import org.ide.lti.core.domain.workspace.FirmwareArchive
@@ -72,14 +72,18 @@ public class AcquireViewModel(
     /** The archive in the workspace and the SHA-256 the last run measured, for the Integrity pane. */
     public val integrity: StateFlow<IntegrityFacts> = _integrity.asStateFlow()
 
-    /** Re-reads the archive's size and the last measured SHA-256. */
+    private var integrityJob: Job? = null
+
+    /** Re-reads the archive's size and hashes it as it is now; a newer request replaces an unfinished one. */
     public fun refreshIntegrity() {
         val facts = facts ?: return
-        viewModelScope.launch {
-            val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
+        integrityJob?.cancel()
+        val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
+        integrityJob = viewModelScope.launch {
             val stat = facts.stat(workspaceId, relPath)
-            val measured = facts.lastValue(workspaceId, RuntimeKeys.ARCHIVE_SHA256)
-                ?.trim()?.substringBefore(' ')?.takeIf { it.length == SHA256_HEX_LENGTH }
+            val measured = stat?.let { facts.sha256(workspaceId, relPath) }
+            // An archive picked meanwhile is hashed by its own request: this result is for another file.
+            if (FirmwareAcquisitionStage.archiveRelPath(settings.value) != relPath) return@launch
             _integrity.value = IntegrityFacts(
                 archivePath = relPath.takeIf { stat != null },
                 archiveSizeBytes = stat?.sizeBytes,
@@ -164,5 +168,3 @@ public data class IntegrityFacts(
     val archiveSizeBytes: Long? = null,
     val measuredSha256: String? = null,
 )
-
-private const val SHA256_HEX_LENGTH = 64

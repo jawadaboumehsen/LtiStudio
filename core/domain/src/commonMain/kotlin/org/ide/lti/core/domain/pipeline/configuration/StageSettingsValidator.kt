@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.pipeline.configuration
 
+import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.stages.ProjectScripts
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
@@ -177,6 +178,18 @@ public object StageSettingsValidator {
                 )
             }
         }
+        // The version goes into the package's file name ({version}), so it must keep that a plain name.
+        val version = settings.romVersion
+        if (version.any { it in PATH_SEPARATORS || it.isISOControl() } || version == "." || version == "..") {
+            errors += ValidationError(
+                stageId = StageId.WORK_TREE_ASSEMBLY,
+                objectId = null,
+                fieldPath = "romVersion",
+                code = INVALID_FILENAME,
+                severity = Severity.ERROR,
+                message = "The ROM version names the package file, so it cannot hold '/', '\\' or control characters",
+            )
+        }
         if (settings.systemExtMode.lowercase() !in SUPPORTED_SYSTEM_EXT_MODES) {
             errors += ValidationError(
                 stageId = StageId.WORK_TREE_ASSEMBLY,
@@ -320,18 +333,26 @@ public object StageSettingsValidator {
         }
     }
 
+    /** A plain file name in out/package ending in .zip: no separator, control character, or a dots-only base. */
+    private fun isPackageName(name: String): Boolean {
+        val base = name.removeSuffix(".zip")
+        return name.endsWith(".zip") && name.none { it in PATH_SEPARATORS || it.isISOControl() } &&
+            base.isNotBlank() && !base.all { it == '.' }
+    }
+
     public fun validateBuild(settings: BuildSettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         val name = settings.filenameTemplate
-        val notAFileName = name.any { it in PATH_SEPARATORS } || name.removeSuffix(".zip").isBlank()
-        if (!name.endsWith(".zip") || notAFileName) {
+        // The name as it is written: the device id fills {device} ({version} is checked with Assemble).
+        val rendered = BuildFlashableZipStage.renderName(name, "v", "20260101", target?.id ?: "device")
+        if (!isPackageName(rendered)) {
             errors += ValidationError(
                 stageId = StageId.BUILD_FLASHABLE_ZIP,
                 objectId = null,
                 fieldPath = "filenameTemplate",
                 code = INVALID_FILENAME,
                 severity = Severity.ERROR,
-                message = "The package name must be a file name ending in .zip, was '$name'",
+                message = "The package name must be a file name ending in .zip, was '$rendered'",
             )
         }
         if (settings.blockSize <= 0 || (settings.blockSize and (settings.blockSize - 1)) != 0) {
@@ -417,7 +438,7 @@ public object StageSettingsValidator {
         val sizes = settings.partitionSizeBytes.mapNotNull { (p, bytes) ->
             val fs = BuildFilesystems.of(settings, p)
             when {
-                bytes <= 0 || bytes % settings.blockSize != 0L -> error(
+                bytes <= 0 || settings.blockSize <= 0 || bytes % settings.blockSize != 0L -> error(
                     "partitionSizeBytes.$p",
                     "The size of $p must be a whole number of ${settings.blockSize}-byte blocks, was $bytes bytes",
                 )

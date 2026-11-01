@@ -9,9 +9,14 @@
  */
 package org.ide.lti.core.domain.workspace
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
+import org.ide.lti.core.domain.pipeline.toolkit.withLock
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
@@ -32,6 +37,9 @@ public data class FirmwareArchive(
 public class FirmwareArchives(
     private val workspaces: WorkspaceRepository,
     private val execution: PipelineExecutionPort,
+    /** An import waits for no build: it is refused while one runs, and holds the lock a build start takes. */
+    private val runs: RunRepository? = null,
+    private val jobLock: JobLock? = null,
     /** A Windows path as WSL sees it (`C:\a.zip` -> `/mnt/c/a.zip`). */
     private val toLinuxPath: (String) -> String,
 ) {
@@ -50,14 +58,33 @@ public class FirmwareArchives(
     /** Copies the archive at [localPath] (a path on this computer) into the workspace folder. */
     public suspend fun import(workspaceId: String, localPath: String): FirmwareArchive {
         val ws = workspace(workspaceId)
+        val lock = jobLock ?: return importHeld(ws, localPath)
+        return lock.withLock(
+            ws,
+            IMPORT_HOLDER,
+            onLocked = { error("\"$it\" is changing this workspace; import after it.") },
+        ) {
+            importHeld(ws, localPath)
+        }
+    }
+
+    private suspend fun importHeld(ws: Workspace, localPath: String): FirmwareArchive {
+        check(
+            runs?.latestActive(ws.id) == null,
+        ) { "A build is running in this workspace; import when it has finished." }
         val source = toLinuxPath(localPath)
         val name = source.substringAfterLast('/')
         require(name.isNotBlank() && !name.endsWith(".partial")) { "Not a file: $localPath" }
         val dest = "${root(ws)}/$DIR/$name"
         run(ws, "mkdir", "-p", "${root(ws)}/$DIR")
-        // Copy to a side name first: an interrupted copy never looks like a complete archive.
-        run(ws, "cp", "-f", "--", source, "$dest.partial", timeoutMs = COPY_TIMEOUT_MS)
-        run(ws, "mv", "-f", "--", "$dest.partial", dest)
+        // Copy to a side name of its own first: an interrupted copy never looks like a complete archive.
+        val partial = "$dest.${java.util.UUID.randomUUID()}.partial"
+        try {
+            run(ws, "cp", "-f", "--", source, partial, timeoutMs = COPY_TIMEOUT_MS)
+            run(ws, "mv", "-f", "--", partial, dest)
+        } finally {
+            withContext(NonCancellable) { runCatching { run(ws, "rm", "-f", "--", partial) } }
+        }
         return FirmwareArchive(
             ref = "$DIR/$name",
             name = name,
@@ -94,5 +121,6 @@ public class FirmwareArchives(
         private const val QUICK_TIMEOUT_MS = 60_000L
         private const val HEADER_BYTES = "512"
         private const val COPY_TIMEOUT_MS = 3_600_000L
+        public const val IMPORT_HOLDER: String = "Importing a firmware archive"
     }
 }

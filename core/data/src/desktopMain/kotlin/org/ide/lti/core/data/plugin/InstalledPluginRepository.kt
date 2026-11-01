@@ -9,8 +9,11 @@
  */
 package org.ide.lti.core.data.plugin
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
@@ -47,28 +50,48 @@ class InstalledPluginRepository(
         prettyPrint = false
     }
 
-    override suspend fun quarantine(sourceLabel: String): Path? = try {
-        val sourcePath = Paths.get(sourceLabel)
-        if (!Files.exists(sourcePath) || !Files.isRegularFile(sourcePath)) {
+    // A large package is copied off the caller's (UI) thread.
+    override suspend fun quarantine(sourceLabel: String): Path? = handedOver {
+        try {
+            val sourcePath = Paths.get(sourceLabel)
+            if (!Files.exists(sourcePath) || !Files.isRegularFile(sourcePath)) {
+                null
+            } else {
+                val quarantineDir = storeDir.resolve("quarantine")
+                Files.createDirectories(quarantineDir)
+                val quarantined = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
+                copyStream(sourcePath, quarantined, PluginPackagePolicy.PACKAGE_MAX_COMPRESSED_BYTES + 1)
+                quarantined
+            }
+        } catch (_: IOException) {
             null
-        } else {
-            val quarantineDir = storeDir.resolve("quarantine")
-            Files.createDirectories(quarantineDir)
-            val quarantined = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
-            copyStream(sourcePath, quarantined, PluginPackagePolicy.PACKAGE_MAX_COMPRESSED_BYTES + 1)
-            quarantined
+        } catch (_: IllegalArgumentException) {
+            null
         }
-    } catch (_: IOException) {
-        null
-    } catch (_: IllegalArgumentException) {
-        null
     }
 
     /**
      * Follows HTTPS-only redirects (a GitHub asset redirects to its storage host), caps the size, and keeps the file
      * only when its sha256 is [fileSha256] (`sha256:` prefix allowed), when one is given.
      */
-    override suspend fun download(url: String, fileSha256: String?): Path? {
+    // Network and disk work never runs on the caller's (UI) thread.
+    override suspend fun download(url: String, fileSha256: String?): Path? =
+        handedOver { downloadBlocking(url, fileSha256) }
+
+    /**
+     * Runs [blocking] on the IO dispatcher and hands its quarantine file to the caller. Cancelled before the caller
+     * has it (the result is then lost on the way back), the file is deleted here: nobody else knows its name.
+     */
+    private suspend fun handedOver(blocking: suspend () -> Path?): Path? {
+        var owned: Path? = null
+        try {
+            return withContext(Dispatchers.IO) { blocking()?.also { owned = it } }.also { owned = null }
+        } finally {
+            owned?.let { withContext(NonCancellable + Dispatchers.IO) { Files.deleteIfExists(it) } }
+        }
+    }
+
+    private suspend fun downloadBlocking(url: String, fileSha256: String?): Path? {
         val quarantineDir = storeDir.resolve("quarantine").also { Files.createDirectories(it) }
         val target = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
         val actual = try {
@@ -132,7 +155,11 @@ class InstalledPluginRepository(
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    // Network and disk work never runs on the caller's (UI) thread.
     override suspend fun inspect(quarantined: Path): PackageInspection =
+        withContext(Dispatchers.IO) { inspectBlocking(quarantined) }
+
+    private suspend fun inspectBlocking(quarantined: Path): PackageInspection =
         when (val result = PluginPackageReader.read(quarantined)) {
             is PackageReadResult.Ok -> {
                 val pkg = result.pkg
@@ -165,7 +192,11 @@ class InstalledPluginRepository(
             }
         }
 
-    override suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean = promotion.withLock {
+    // Network and disk work never runs on the caller's (UI) thread.
+    override suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean =
+        withContext(Dispatchers.IO) { promoteBlocking(quarantined, identity) }
+
+    private suspend fun promoteBlocking(quarantined: Path, identity: PackageIdentity): Boolean = promotion.withLock {
         val versionDir = versionDirOf(identity)
         if (!Files.exists(quarantined) || versionDir == null) return@withLock false
         val recordFile = versionDir.resolve("record.json")
