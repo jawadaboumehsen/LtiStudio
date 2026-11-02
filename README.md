@@ -1,268 +1,77 @@
-﻿<div align="center">
-    <img src="https://github.com/user-attachments/assets/ab2f5bf9-5b88-4fee-90e9-741e3b3f7a26" alt="Project Logo" width="150" style="margin-right: 20px;" />
-    <div align="center">
-      <h1>KMP Multi-Module Project Generator</h1>
-      <p>
-        🚀 Kickstart your Kotlin Multiplatform project with a fully-configured multi-module setup within minutes.
-      </p>
-    </div> 
+﻿# LtiRom Studio
 
-</div>
+A Windows desktop app for building custom Android ROMs. You configure and run the build in the app. The work runs in a
+build service inside WSL Ubuntu.
 
-<div align="center">
+Built with Kotlin and Compose Multiplatform (desktop/JVM). Licensed under the [MPL 2.0](LICENSE).
 
-![Kotlin](https://img.shields.io/badge/Kotlin-7f52ff?style=flat-square&logo=kotlin&logoColor=white)
-![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin%20Multiplatform-4c8d3f?style=flat-square&logo=kotlin&logoColor=white)
-![Compose Multiplatform](https://img.shields.io/badge/Jetpack%20Compose%20Multiplatform-000000?style=flat-square&logo=android&logoColor=white)
+## What it does
 
-![badge-android](http://img.shields.io/badge/platform-android-6EDB8D.svg?style=flat)
-![badge-ios](http://img.shields.io/badge/platform-ios-CDCDCD.svg?style=flat)
-![badge-desktop](http://img.shields.io/badge/platform-desktop-DB413D.svg?style=flat)
-![badge-js](http://img.shields.io/badge/platform-web-FDD835.svg?style=flat)
+- **Setup:** takes a clean Windows machine with WSL Ubuntu to a working toolchain. It installs the bundled build
+  service, lists any missing apt packages as one command for you to run in your own terminal, and builds the tools
+  (android-tools, erofs-utils, f2fs-tools, apktool, signapk, gh, payload-dumper-go and others) side by side in
+  `~/LtiRomTools`.
+- **Workspaces:** each workspace is a folder in the WSL work directory holding its device configuration
+  (`device.json`), its settings (`config.json`), the firmware and the build outputs.
+- **ROM pipeline:** eight stages, each with its own editor in the Studio:
 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/openMF/kmp-project-template/blob/development/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/Naereen/StrapDown.js.svg)](https://github.com/openMF/kmp-project-template/releases/)
-[![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/openMF/kmp-project-template/issues/)
+  | # | Stage | What it does |
+  |---|---|---|
+  | 1 | Acquire | Downloads or imports the stock firmware and checks its SHA-256 |
+  | 2 | Extract | Unpacks zip, 7z, tar, payload.bin, block OTA, sparse and Odin firmware, then mounts or dumps the EROFS, ext4 and F2FS images |
+  | 3 | Assemble | Builds the work tree, boot images, mount tables and build properties |
+  | 4 | Debloat | Removes the apps you pick, after checking what the device still needs; backups can be restored |
+  | 5 | Patches/Mods | Applies installed mods (Kotlin SDK plugins) and project scripts |
+  | 6 | Build & Sign | Builds the partition images and super, signs the boot chain, writes the flashable zip and/or A/B OTA |
+  | 7 | Release Metadata | Writes the OTA manifest |
+  | 8 | Publish | Exports locally or publishes a GitHub release, after you confirm |
 
-[![Pr Checks](https://github.com/openMF/kmp-project-template/actions/workflows/pr-check.yml/badge.svg)](https://github.com/openMF/kmp-project-template/actions/workflows/pr-check.yml)
-[![Slack](https://img.shields.io/badge/Slack-4A154B?style=flat-square&logo=slack&logoColor=white)](https://join.slack.com/t/mifos/shared_invite/zt-2wvi9t82t-DuSBdqdQVOY9fsqsLjkKPA)
-[![Jira](https://img.shields.io/badge/jira-%230A0FFF.svg?style=flat-square&logo=jira&logoColor=white)](https://mifosforge.jira.com/jira/software/c/projects/MM/issues/?filter=allissues&jql=project%20%3D%20%22MM%22%20ORDER%20BY%20created%20DESC)
+  Each stage is cached by its inputs, and a run can stop after any stage.
+- **Toolkit:** boot image unpack and repack, kernel facts, an image and archive browser, compare tools, a device vs
+  firmware check, sidecar (`fs_config`/`file_contexts`) coverage, and restore points.
 
-</div>
+The package never contains firmware images (radio, bootloader) or vbmeta. Flashing the result is up to you.
 
-> \[!Note]
->
-> This branch is designed for fully customized projects. Running the customizer.sh script will
-> rename all application module prefixes (e.g., mifos-) with your project name and update the
-> namespaces, packages, and other related configurations accordingly.
->
-> For partial customization, please use the [dev](https://github.com/openMF/kmp-project-template/tree/dev) branch instead.
+## Requirements
 
-> **For Example:**
->
-> If your project name is myproject, the script will:
-> - Rename modules like mifos-android to myproject-android, mifos-desktop to myproject-desktop, etc.
-> - Update the package structure, such as org.ide.lti to org.myproject, etc
-> - Adjust namespaces in the codebase to align with your project name.
+- Windows 11 with WSL 2 and an Ubuntu LTS distribution
+- JDK 21 to build the app
+- `LtiRomServer` checked out next to this repository (it is included as a composite build):
 
-## Overview
+  ```text
+  LtiRomProject/
+  ├── LtiRomGui/      (this repository)
+  └── LtiRomServer/   (build service that runs inside WSL)
+  ```
 
-The Kotlin Multiplatform Multi-module Project generator simplifies the development of cross-platform
-applications for Android, iOS, Desktop(JVM), and Web.
-
-Unlike other **wizards** that only generate a basic **Kotlin Multiplatform (KMP) or Compose
-Multiplatform (CMP) library**
-and require users to configure their projects manually—a challenging and time-consuming process.
-
-This generator streamlines the setup. By simply running the `customizer.sh` bash script
-with your desired **package and project name**, the template generates an **entire, fully-configured
-project within a minutes**.
-
-The resulting project is ready to **run seamlessly across multiple platforms**, combining shared
-business logic and UI components with native platform capabilities.
-
-This template goes beyond the basics, offering a production-ready setup out of the box. It includes:
-
-- **Multi-module Structure:** Organized core, feature, and platform-specific modules for easy
-  development.
-- **Shared UI Components:** Compose Multiplatform for shared UI components across platforms.
-- **Dependency Management:** Gradle Kotlin DSL for dependency management and build scripts.
-- **Static Analysis Tools:** Pre-configured Detekt and Spotless for code quality and style
-  consistency.
-- **Git Hooks:** Automated checks to ensure high-quality commits.
-- **CI/CD Workflows:** GitHub Actions for KMP build and publish pipelines, complete with PR checks.
-- **Fastlane**: Automated deployment and release management for Android and iOS platforms.
-- **Run configurations:** for Android, iOS, Desktop, and Web platforms.
-- **Dynamic Versioning:** Automatic versioning and release notes generation for each platform.
-
-The generated project is ready to run seamlessly across multiple platforms, combining shared
-business logic and UI components with native platform capabilities.
-
-### Project Customization Script
-
-The project includes a bash script (`customizer.sh`) that helps in customizing the project for
-different implementations. This script automates the process of renaming packages, updating
-configurations, and maintaining consistency across the project structure.
-
-### Prerequisites
-
-- Bash version 4 or higher
-- Unix-like environment (macOS, Linux) or Git Bash on Windows
-
-### Usage
-
-1. **Download the project:** Clone or download the repository to your local machine.
-
-    ```bash
-    git clone <repository-url>
-    cd <project-folder>
-    ```
-
-2. **Run the setup script:** Execute the customizer.sh script with your desired package and
-   project name.
-
-    ```bash
-    ./customizer.sh <package-name> <project-name> [application-name]
-    ```
-   Example:
-
-   ```bash
-   ./customizer.sh org.delta MyKMPApp
-   ```
-
-3. **Generated project:** The script will generate a fully-configured, multi-module KMP project in
-   just 2 minutes.
-
-4. **Run and develop:** Open the project in your favorite IDE (e.g., IntelliJ IDEA), and start
-   building your cross-platform application.
-
-#### Parameters
-
-- `package-name`: New package name (e.g., com.example.myapp)
-- `project-name`: New project name
-- `application-name`: (Optional) Custom application name (defaults to project-name)
-
-With this setup, you’re ready to develop and deploy your application on Android, iOS, Desktop, and
-Web with ease!
-
-#### Example
+## Build and run
 
 ```bash
-bash customizer.sh com.example.myapp MyKMPApp
+./gradlew :lti-desktop:run
 ```
 
-### Updating License and Copyright Information
+This also builds the bundled build service. Packaged installers come from the `package*` tasks of `:lti-desktop`.
 
-After running the customizer script to change package names and project structure, you'll need to
-update the license and copyright information across the project. This process involves:
+## Modules
 
-1. **Locate License Files**
-    - Navigate to the `spotless` directory
-    - Find the license header templates
-    - Update the copyright year and organization information
-      <br/><br/>
-2. **Apply Changes**
-    - Run the Spotless plugin to update all files:
-      ```bash
-      ./gradlew spotlessApply
-      ```
-    - This will automatically update the license headers in all source files
-    - Verify the changes in a few files to ensure correct application
+- `core/`: `model`, `domain` (pipeline, stages, workbenches), `data`, `datastore`, `ui`, `designsystem` (glass
+  theme on the vendored Haze library).
+- `feature/`: `setup`, `workspace-*`, `configuration`, `plugins`, `settings`, and `rom-studio/` (the shell and one
+  module per stage).
+- `sdk/`: `patch-mod` (the mod SDK and `patchmod` CLI), `patch-mod-runtime`, `patch-mod-hooks`.
+- `lti-desktop/`, `lti-shared/`: the desktop app.
+- `tool/`, `detekt-rules/`, `build-logic/`: tooling, custom lint rules and Gradle conventions.
 
-### Adding New Features
+First-party mods live in a separate repository, [LtiRomMods](https://github.com/jawadaboumehsen/LtiRomMods).
 
-1. Create a new feature module in the `feature/` directory
-2. Follow the existing module structure
-3. Use shared components from `core/` modules
-4. Implement platform-specific code in respective modules
+## Checks
 
-### Shared Code Guidelines
+The pre-push hook runs these, and they must pass before a push:
 
-1. Use `expect/actual` declarations for platform-specific implementations
-2. Leverage Compose Multiplatform for UI components
-3. Keep business logic in shared modules
-4. Use KMP-compatible dependencies
-
-### Building and Running
-
-1. Use appropriate run configurations for each platform
-2. Ensure all required SDKs are installed
-3. Follow platform-specific build instructions
-
-### Project Structure
-
-### Core Modules
-
-- **buildLogic/**: Contains shared Gradle build configurations and custom plugins
-- **core/**: Contains the main business logic modules
-    - `analytics`: Analytics and logging utilities
-    - `common`: Shared code across all platforms
-    - `model`: Data models and structures
-    - `data`: Data layer implementation
-    - `network`: Network communication and API clients
-    - `domain`: Business logic and use cases
-    - `ui`: Shared UI components using Compose Multiplatform
-    - `designsystem`: App-wide design system components
-    - `datastore`: Local data storage implementation
-
-### Feature Modules
-
-- **feature/**: Contains feature-specific modules
-    - `home`: Home screen and related functionality
-    - `profile`: User profile management
-    - `settings`: Application settings
-
-### Platform-Specific Modules
-
-- **mifos-android/**: Android application implementation
-- **mifos-ios/**: iOS application implementation
-- **mifos-desktop/**: Desktop application implementation
-- **mifos-web/**: Web application implementation
-- **mifos-shared/**: Shared Kotlin Multiplatform code
-
-### Project Modules
-
-```mermaid
-
-graph TD
-    A[Project Root] --> B[buildLogic]
-    A --> C[core]
-    A --> D[feature]
-    A --> E[Platform Modules]
-    C --> C1[common]
-    C --> C2[model]
-    C --> C3[data]
-    C --> C4[network]
-    C --> C5[domain]
-    C --> C6[ui]
-    C --> C7[designsystem]
-    C --> C8[datastore]
-    D --> D1[home]
-    D --> D2[profile]
-    D --> D3[settings]
-    E --> E1[mifos-android]
-    E --> E2[mifos-ios]
-    E --> E3[mifos-desktop]
-    E --> E4[mifos-web]
-    E --> E5[mifos-shared]
-
-    subgraph Core Modules
-        C1
-        C2
-        C3
-        C4
-        C5
-        C6
-        C7
-        C8
-    end
-
-    subgraph Feature Modules
-        D1
-        D2
-        D3
-    end
-
-    subgraph Platform Implementation
-        E1
-        E2
-        E3
-        E4
-        E5
-    end
+```bash
+./gradlew detekt verifyDesignSystemGuardrails checkArchitecture --continue
 ```
 
-### Contributing
+Tests: `./gradlew :core:domain:desktopTest` (and the matching task of each module you change).
 
-1. Follow the project's coding standards
-2. Write tests for new features
-3. Document changes and additions
-4. Submit pull requests with clear descriptions
-
-### Troubleshooting
-
-1. Check build logs for errors
-2. Verify module dependencies
-3. Ensure correct SDK versions
-4. Check platform-specific configurations
+Contributor notes on architecture, the design system and each pipeline stage are in [CLAUDE.md](CLAUDE.md).
