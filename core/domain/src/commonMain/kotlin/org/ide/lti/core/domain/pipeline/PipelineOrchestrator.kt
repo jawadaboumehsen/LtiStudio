@@ -766,7 +766,7 @@ public class PipelineOrchestrator(
         val output = recordedOutput ?: if (step.keepsOutput()) {
             val out = StringBuilder()
             executionPort.observe(serverRunId, 1L).collect { event ->
-                if (event is StepEvent.Output && !event.isError) out.append(event.text).append('\n')
+                if (event is StepEvent.Output && !event.isError) out.appendCaptured(event.text)
             }
             out.toString().trim()
         } else {
@@ -795,7 +795,7 @@ public class PipelineOrchestrator(
                     is StepEvent.Output -> {
                         lastSeq = maxOf(lastSeq, event.seq)
                         // The service sends one event per line, with the line ending stripped.
-                        if (!event.isError) stdout?.append(event.text)?.append('\n')
+                        if (!event.isError) stdout?.appendCaptured(event.text)
                         outputBuffer.add(event.text)
                     }
 
@@ -888,6 +888,17 @@ public class PipelineOrchestrator(
             throw StageFailure(index, exitCode, "${step.label}: expected '$missing' in ${step.command.toolId} output")
         }
         return step.resultKey != null
+    }
+
+    /**
+     * One output line of a step whose result is used. Past [MAX_CAPTURED_CHARS] the step fails: a result that large
+     * (a listing of millions of files) would exhaust the app's memory, so it says so instead.
+     */
+    private fun StringBuilder.appendCaptured(line: String) {
+        check(length + line.length < MAX_CAPTURED_CHARS) {
+            "The step's output is over ${MAX_CAPTURED_CHARS / CHARS_PER_MEGA}M characters; it is not kept."
+        }
+        append(line).append('\n')
     }
 
     /** Only a step whose output is used keeps it: a log-only step's (possibly huge) output just streams. */
@@ -1154,6 +1165,10 @@ public class PipelineOrchestrator(
         val json = Json
         val valuesSerializer = MapSerializer(String.serializer(), String.serializer())
         val STILL_RUNNING = setOf("RUNNING", "QUEUED")
+
+        // ponytail: one cap for every captured result; stream to a file if a real step ever needs more.
+        const val MAX_CAPTURED_CHARS = 64 * 1024 * 1024
+        const val CHARS_PER_MEGA = 1024 * 1024
         val RUN_DEVICE = setOf(RuntimeKeys.DEVICE_REVISION)
         val RUN_DATE_KEYS = setOf(RuntimeKeys.RUN_DATE, RuntimeKeys.RUN_TIMESTAMP)
         const val STREAM_RETRY_MS = 500L

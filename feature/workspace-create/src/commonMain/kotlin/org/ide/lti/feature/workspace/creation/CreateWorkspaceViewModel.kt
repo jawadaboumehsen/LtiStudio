@@ -106,9 +106,12 @@ class CreateWorkspaceViewModel(
         viewModelScope.launch {
             targetRepository.getAvailableTargets().collectLatest { targets ->
                 _uiState.update { state ->
+                    // The picked profile as the catalog has it now (edited elsewhere: its new revision; deleted:
+                    // the first one left), never a copy kept from an older list.
                     state.copy(
                         availableTargets = targets,
-                        selectedTarget = state.selectedTarget ?: targets.firstOrNull(),
+                        selectedTarget = targets.firstOrNull { it.id == state.selectedTarget?.id }
+                            ?: targets.firstOrNull(),
                     )
                 }
             }
@@ -132,13 +135,16 @@ class CreateWorkspaceViewModel(
      * Checks run in a fixed order: environment readiness, then the name, then the target.
      */
     private fun validateCreationState(state: CreateWorkspaceUiState): TargetDevice? {
-        val target = state.selectedTarget
+        val target = state.availableTargets.firstOrNull { it.id == state.selectedTarget?.id }
         when {
             !state.canCreate -> _uiState.update {
                 it.copy(errorMessage = state.remediation ?: state.failingCheck ?: "Environment is not ready")
             }
+
             state.name.isBlank() -> _uiState.update { it.copy(nameError = "Workspace name cannot be blank") }
+
             target == null -> _uiState.update { it.copy(errorMessage = "Target device is required") }
+
             else -> return target
         }
         return null
@@ -176,11 +182,13 @@ class CreateWorkspaceViewModel(
                                 )
                             }
                         }
+
                         is ProvisioningEvent.Output -> {
                             _uiState.update { s ->
                                 s.copy(logs = s.logs + event.text)
                             }
                         }
+
                         is ProvisioningEvent.Failed -> {
                             _uiState.update { s ->
                                 s.copy(
@@ -190,6 +198,7 @@ class CreateWorkspaceViewModel(
                                 )
                             }
                         }
+
                         is ProvisioningEvent.Completed -> {
                             val workspaces = workspaceRepository.getWorkspaces().firstOrNull().orEmpty()
                             val ws = workspaces.find { it.name.equals(state.name.trim(), ignoreCase = true) }

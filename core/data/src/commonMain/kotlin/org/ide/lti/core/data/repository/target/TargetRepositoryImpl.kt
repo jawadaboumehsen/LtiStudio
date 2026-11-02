@@ -56,7 +56,7 @@ class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesD
 
     // An edit of the selected target is a new value too, not only another selection.
     override fun getSelectedTarget(): Flow<TargetDevice> = combine(_targets, _selectedTargetId) { targets, id ->
-        targets.find { it.id == id } ?: DefaultTargetCatalog.PQ84P01_DEFAULT
+        targets.find { it.id == id } ?: targets.firstOrNull() ?: DefaultTargetCatalog.PQ84P01_DEFAULT
     }
 
     override suspend fun selectTarget(targetId: String): Result<TargetDevice> = writes.withLock {
@@ -91,13 +91,13 @@ class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesD
             check(currentList.size > 1) { "Cannot delete the only remaining target profile." }
             require(currentList.any { it.id == targetId }) { "Target not found: $targetId" }
             val updatedList = currentList.filter { it.id != targetId }
+            // The selection moves to a remaining profile before the list loses this one: a failure between the
+            // two writes leaves a valid selection (of a profile still in the list) and the list unchanged.
+            val newSelectedId = _selectedTargetId.value.takeIf { it != targetId } ?: updatedList.first().id
+            if (newSelectedId != _selectedTargetId.value) preferencesDataSource.saveSelectedTargetId(newSelectedId)
             preferencesDataSource.saveTargets(updatedList)
+            _selectedTargetId.value = newSelectedId
             _targets.value = updatedList
-            if (_selectedTargetId.value == targetId) {
-                val newSelectedId = updatedList.first().id
-                preferencesDataSource.saveSelectedTargetId(newSelectedId)
-                _selectedTargetId.value = newSelectedId
-            }
         }
     }
 }

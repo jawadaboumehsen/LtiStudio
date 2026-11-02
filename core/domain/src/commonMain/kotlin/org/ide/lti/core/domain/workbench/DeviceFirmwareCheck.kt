@@ -131,15 +131,16 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
                         it,
                     )
                 },
-                // The SoC platform is usually what the bootloader reports (PQ84P01: sun), but build.prop does not
-                // prove it: the label says to confirm it on the phone.
+                // The SoC platform is often what the bootloader reports (PQ84P01: sun), but build.prop does not
+                // prove it: shown for reference only, never applied (the phone's `fastboot getvar product` decides).
                 prop(
                     "ro.board.platform",
                 )?.let {
                     FirmwareFact(
-                        "fastbootProduct",
-                        "fastboot product (SoC platform; confirm with fastboot getvar product)",
-                        device.fastbootProduct,
+                        null,
+                        "SoC platform (fastboot product is ${device.fastbootProduct}; " +
+                            "check with fastboot getvar product)",
+                        null,
                         it,
                     )
                 },

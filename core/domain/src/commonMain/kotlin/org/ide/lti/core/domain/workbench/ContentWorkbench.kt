@@ -114,9 +114,16 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             }
             requireResolvedInWork(this, path)
             val point = backup(TOOL, path)
-            // Next to the original, then renamed: a cut-off copy never leaves the package half written.
-            run("cp", "-f", abs(output), abs("$path.partial"))
-            run("mv", "-f", abs("$path.partial"), abs(path))
+            // A new file of its own next to the original (mktemp never opens an existing name, so no link there is
+            // followed), then renamed over it: a cut-off copy never leaves the package half written.
+            // mktemp makes it 0600: it takes the original's mode before the rename.
+            sh(
+                "t=$(mktemp \"$(dirname \"$1\")/.rebuild.XXXXXX\") && " +
+                    "{ cp -- \"$2\" \"\$t\" && chmod --reference=\"$1\" \"\$t\" && mv -f -- \"\$t\" \"$1\"; } " +
+                    "|| { rm -f -- \"\$t\"; exit 1; }",
+                abs(path),
+                abs(output),
+            )
             sh(
                 "d=$(dirname \"$1\"); rm -rf \"${'$'}d/oat\"; " +
                     "find \"${'$'}d\" -maxdepth 1 \\( -name '*.prof' -o -name '*.bprof' \\) -delete",
@@ -162,16 +169,13 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             throw RefusalException(Refusal("The library is not in this APEX.", library, "Check the library path."))
         }
         val state = sh(HEXPATCH_SCRIPT, abs(lib), find, replace, abs("$lib.patched")).trim()
-        when (state) {
-            "already" -> return@job ApexPatchResult(
-                apex,
-                alreadyChanged = true,
-                success = true,
-                message = "Already patched.",
-            )
-
-            "notfound" -> throw RefusalException(
-                Refusal("The find hex is not in the library.", library, "Use the pattern for this Android version."),
+        if (state == "notfound") {
+            throw RefusalException(
+                Refusal(
+                    "The find hex is not in the library.",
+                    library,
+                    "Use the pattern for this Android version (a library patched before no longer holds it).",
+                ),
             )
         }
         // A new destination gets a point too: restoring it removes the added library.
@@ -337,15 +341,14 @@ done"""
 
         /**
          * `$1` library, `$2` find hex (`.` = any digit), `$3` replace hex, `$4` output; the match must start on a
-         * byte. Prints already (the pattern is gone and the replacement is there exactly once, on a byte), notfound
-         * or patched; replacement bytes found elsewhere or several times are not proof of an earlier patch.
+         * byte. Prints notfound or patched: without the pattern there is no location to prove an earlier patch at
+         * (replacement bytes elsewhere prove nothing), so it is never reported as already patched.
          */
         private const val HEXPATCH_SCRIPT = """
 hex=${'$'}(xxd -p "$1" | tr -d '\n')
 m=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$2" | awk -F: '${'$'}1 % 2 == 0 { print; exit }')
 if [ -z "${'$'}m" ]; then
-  n=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$3" | awk -F: '${'$'}1 % 2 == 0' | wc -l)
-  if [ "${'$'}n" -eq 1 ]; then echo already; else echo notfound; fi
+  echo notfound
   exit 0
 fi
 printf '%s' "${'$'}hex" | awk -v o="${'$'}{m%%:*}" -v r="$3" '{ printf "%s%s%s", substr(${'$'}0, 1, o), r, substr(${'$'}0, o + length(r) + 1) }' | xxd -r -p > "$4"
