@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
+import org.ide.lti.core.model.workspace.SigningPolicy
 
 public class AssembleViewModel(
     public val workspaceId: String,
@@ -63,6 +64,7 @@ public class AssembleViewModel(
         overrides = { settings.value.kernelOverrides },
         setOverrides = { updateSettings(settings.value.copy(kernelOverrides = it)) },
         bootImages = { (device.value ?: targetDevice).bootPartitions },
+        avbKeyRef = { store?.current(workspaceId)?.build?.signing?.avbKeyRef ?: SigningPolicy().avbKeyRef },
     )
 
     public val imagePane: ImagePaneModel = ImagePaneModel(viewModelScope, workspaceId, images, environment) {
@@ -71,10 +73,5 @@ public class AssembleViewModel(
 
     public fun updateSettings(updated: AssemblySettings) {
         sync.update(updated)
-    }
-
-    public companion object {
-        /** The workspace AVB key the Build stage signs with (`BuildSettings.signing.avbKeyRef` default). */
-        public const val AVB_KEY_REF: String = "keys/avb.pem"
     }
 }

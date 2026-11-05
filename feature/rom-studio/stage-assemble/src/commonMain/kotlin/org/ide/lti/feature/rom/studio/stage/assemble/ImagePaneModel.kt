@@ -185,10 +185,14 @@ public class ImagePaneModel(
 
     private fun task(name: String, block: suspend (ImageWorkbench) -> Unit) {
         val workbench = images ?: return
-        job?.cancel()
+        val previous = job
+        previous?.cancel()
+        val request = ++taskRequest
         mutableState.update { it.copy(busy = name, message = null, refusal = null) }
         job = scope.launch {
             try {
+                // The cancelled task first lets go of the job lock, or this one would be refused.
+                previous?.join()
                 block(workbench)
             } catch (e: CancellationException) {
                 throw e
@@ -197,9 +201,18 @@ public class ImagePaneModel(
             } catch (e: IllegalArgumentException) {
                 val refusal = Refusal(e.message ?: "Invalid input.", name, "Correct it and try again.")
                 mutableState.update { it.copy(refusal = refusal) }
+            } catch (e: Exception) {
+                mutableState.update { it.copy(refusal = unexpected(e, name)) }
             } finally {
-                mutableState.update { it.copy(busy = null) }
+                // A task replaced by a newer one leaves the newer one's indicator alone.
+                if (request == taskRequest) mutableState.update { it.copy(busy = null) }
             }
         }
     }
+
+    private var taskRequest = 0L
 }
+
+/** A failure no tool reported (the service gone, a read that broke), said in the pane instead of lost. */
+internal fun unexpected(e: Exception, task: String): Refusal =
+    Refusal(e.message ?: e::class.simpleName ?: "Unknown error", task, "Check the build service and try again.")

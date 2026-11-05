@@ -38,6 +38,7 @@ public val stagePatchModule: Module = module {
             comparing = getOrNull(),
             runner = getOrNull(),
             environment = getOrNull(),
+            store = getOrNull(),
         )
     }
 }

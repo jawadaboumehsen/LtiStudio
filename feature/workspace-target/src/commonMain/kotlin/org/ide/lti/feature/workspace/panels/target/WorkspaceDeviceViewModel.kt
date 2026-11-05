@@ -11,7 +11,9 @@ package org.ide.lti.feature.workspace.panels.target
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +56,8 @@ data class WorkspaceDeviceUiState(
     val firmware: FirmwareFacts? = null,
     val firmwareChecking: Boolean = false,
     val firmwareError: String? = null,
+    /** The device file is saved but the workspace did not record its revision: Save tries that again. */
+    val revisionUnbound: Boolean = false,
 ) {
     /** [draft] next to the firmware's facts (empty before a check). */
     val firmwareFacts: List<FirmwareFact>
@@ -61,7 +65,7 @@ data class WorkspaceDeviceUiState(
 
     val isDirty: Boolean get() = draft != null && draft != saved
 
-    val canSave: Boolean get() = isDirty && !locked && !isSaving
+    val canSave: Boolean get() = (isDirty || revisionUnbound) && !locked && !isSaving
 
     /** The device of a workspace with a running build is read-only: edits apply to the next run. */
     val locked: Boolean get() = runActive
@@ -98,12 +102,13 @@ class WorkspaceDeviceViewModel(
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { workspace ->
                 if (workspace == null) {
-                    _uiState.value = WorkspaceDeviceUiState()
+                    // The catalog is the app's, not the workspace's: it does not come again for the next one.
+                    _uiState.update { WorkspaceDeviceUiState(templates = it.templates) }
                 } else {
                     load(workspace)
                     coroutineScope {
-                        launch { followSnapshot(workspace.id) }
-                        observeRuns(workspace.id)
+                        launch { observeAgainAfterFailure { followSnapshot(workspace.id) } }
+                        observeAgainAfterFailure { observeRuns(workspace.id) }
                     }
                 }
             }
@@ -111,9 +116,12 @@ class WorkspaceDeviceViewModel(
     }
 
     private suspend fun load(workspace: Workspace) {
-        val loadedSnapshot = workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }
+        val readSnapshot = runCatching { workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) } }
+            .onFailure { if (it is CancellationException) throw it }
+        val loadedSnapshot = readSnapshot.getOrNull()
         val read = runCatching { workspaceDeviceRepository.get(workspace.id) }
         val device = read.getOrNull()
+        val failure = read.exceptionOrNull() ?: readSnapshot.exceptionOrNull()
         _uiState.update {
             // A load for a workspace that is no longer shown (a slow retry) changes nothing.
             if (workspaceManager.currentWorkspace.value?.id != workspace.id) return@update it
@@ -128,7 +136,8 @@ class WorkspaceDeviceViewModel(
                 draft = device,
                 issues = issuesOf(device),
                 message = null,
-                loadError = read.exceptionOrNull()?.let { error -> error.message ?: "Unknown error" },
+                loadError = failure?.let { error -> error.message ?: "Unknown error" },
+                revisionUnbound = false,
                 resetCount = it.resetCount + 1,
                 // Another workspace's firmware facts must never be offered here.
                 firmware = it.firmware.takeIf { same },
@@ -185,16 +194,20 @@ class WorkspaceDeviceViewModel(
                 return@launch
             }
             val stored = runCatching { workspaceDeviceRepository.save(workspaceId, template) }.getOrElse { error ->
-                _uiState.update { it.copy(message = error.message ?: "Failed to write the device configuration") }
+                _uiState.update {
+                    if (it.workspaceId != workspaceId) return@update it
+                    it.copy(message = error.message ?: "Failed to write the device configuration")
+                }
                 return@launch
             }
-            bindRevision(workspaceId, stored.revision)
+            val bound = bindRevision(workspaceId, stored.revision)
             _uiState.update {
                 if (it.workspaceId != workspaceId) return@update it
                 it.copy(
                     saved = stored,
                     draft = stored,
                     issues = issuesOf(stored),
+                    revisionUnbound = !bound,
                     message = "Started from ${template.name}",
                     resetCount = it.resetCount + 1,
                 )
@@ -253,6 +266,7 @@ class WorkspaceDeviceViewModel(
                         draft = device,
                         issues = issuesOf(device),
                         isSaving = false,
+                        revisionUnbound = !bound,
                         message = if (bound) {
                             "Device configuration saved"
                         } else {
@@ -264,6 +278,7 @@ class WorkspaceDeviceViewModel(
                 }
             }.onFailure { error ->
                 _uiState.update {
+                    if (it.workspaceId != workspaceId) return@update it
                     it.copy(isSaving = false, message = error.message ?: "Failed to save device configuration")
                 }
             }
@@ -279,10 +294,25 @@ class WorkspaceDeviceViewModel(
         workspaceManager.repository.saveWorkspace(
             workspace.copy(targetBinding = TargetBinding(workspaceId, revision)),
         )
-    }.onFailure { e -> if (e is kotlinx.coroutines.CancellationException) throw e }.isSuccess
+    }.onFailure { e -> if (e is CancellationException) throw e }.isSuccess
 
     private fun issuesOf(device: TargetDevice?): List<ValidationError> {
         val base = snapshot ?: return emptyList()
         return device?.let { DeviceConfigReadiness.check(it, base) }.orEmpty()
     }
 }
+
+/** Runs [observe] again after a failure, for as long as the workspace stays open: the service may come back. */
+internal suspend fun observeAgainAfterFailure(observe: suspend () -> Unit) {
+    while (true) {
+        try {
+            return observe()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            delay(OBSERVE_RETRY_MS)
+        }
+    }
+}
+
+private const val OBSERVE_RETRY_MS = 5_000L

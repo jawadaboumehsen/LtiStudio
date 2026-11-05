@@ -40,6 +40,9 @@ public class PublishSessions(
     private val jobs = ConcurrentHashMap<String, Job>()
     private val refreshes = ConcurrentHashMap<String, Job>()
 
+    /** The settings each workspace's editor last asked about: a finished publish checks those, not its own. */
+    private val latestSettings = ConcurrentHashMap<String, PublishSettings>()
+
     /** Where each running transfer's speed is measured from. */
     private val rateFrom = ConcurrentHashMap<String, Pair<TimeMark, Long>>()
 
@@ -51,6 +54,7 @@ public class PublishSessions(
     /** Reads what Publish would do with [settings] (the editor's, maybe unsaved) and the last attempt's journal. */
     public fun refresh(workspaceId: String, settings: PublishSettings) {
         val use = publisher ?: return
+        latestSettings[workspaceId] = settings
         // The newest settings' check replaces an older one still running: its result is for settings left behind.
         refreshes[workspaceId]?.cancel()
         refreshes[workspaceId] = scope.launch {
@@ -95,7 +99,7 @@ public class PublishSessions(
                 state.update { it.copy(error = "$PUBLISH_STOPPED ${e.message}") }
             } finally {
                 state.update { it.copy(publishing = false, cancelling = false, transfer = null) }
-                refresh(workspaceId, settings)
+                refresh(workspaceId, latestSettings[workspaceId] ?: settings)
             }
         }
     }

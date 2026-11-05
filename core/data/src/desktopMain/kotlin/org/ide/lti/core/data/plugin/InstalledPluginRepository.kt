@@ -59,6 +59,7 @@ class InstalledPluginRepository(
             } else {
                 val quarantineDir = storeDir.resolve("quarantine")
                 Files.createDirectories(quarantineDir)
+                sweepAbandoned(quarantineDir)
                 val quarantined = quarantineDir.resolve("${UUID.randomUUID()}.lti-mod.zip")
                 copyStream(sourcePath, quarantined, PluginPackagePolicy.PACKAGE_MAX_COMPRESSED_BYTES + 1)
                 quarantined
@@ -357,3 +358,14 @@ internal fun summaryOf(readme: String): String = readme.replace("\r\n", "\n").sp
     .firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
     ?.replace('\n', ' ')
     .orEmpty()
+
+/** A day-old copy is nobody's: an inspection left behind when the screen or the app closed. */
+private fun sweepAbandoned(quarantineDir: Path) {
+    val cutoff = java.time.Instant.now().minus(java.time.Duration.ofDays(1))
+    runCatching {
+        Files.list(quarantineDir).use { copies ->
+            copies.filter { Files.getLastModifiedTime(it).toInstant().isBefore(cutoff) }
+                .forEach { Files.deleteIfExists(it) }
+        }
+    }
+}

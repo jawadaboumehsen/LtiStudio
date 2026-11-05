@@ -50,29 +50,40 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
         val packages = newest.map { it.toInstalledPackage() }
         val moved = mutableListOf<String>()
         eachWorkspace { id, name, snapshot ->
-            val customization = snapshot.customization
-            val stale = customization.lockfile.entries.any { e ->
-                versions["${e.publisher}:${e.id}"]?.let { it != e.version } ?: false
-            }
-            val locked = if (stale) {
-                // The workspace's own order is kept (independent mods that touch the same files apply as chosen),
-                // unless the new versions' dependencies no longer allow it.
-                PluginDependencyResolver.lock(customization.enabledPackages, packages, customization.enabledPackages)
-                    .takeIf { it is LockResult.Locked }
-                    ?: PluginDependencyResolver.lock(customization.enabledPackages, packages, emptyList())
-            } else {
-                null
-            }
-            if (locked is LockResult.Locked) {
-                val ordered = locked.lockfile.entries.map { "${it.publisher}:${it.id}" }
-                store.update(id) {
-                    it.copy(
-                        customization = it.customization.copy(enabledPackages = ordered, lockfile = locked.lockfile),
-                    )
-                }.onSuccess { moved += name }
+            if (relocked(snapshot, versions, packages) != null) {
+                // Worked out again on the snapshot being replaced: an edit made meanwhile is kept, not overwritten.
+                var changed = false
+                store.update(id) { current ->
+                    relocked(current, versions, packages)?.also { changed = true } ?: current
+                }.onSuccess { if (changed) moved += name }
             }
         }
         return moved
+    }
+
+    /** [snapshot] locked onto [packages], or null when it uses no older version or cannot be locked. */
+    private fun relocked(
+        snapshot: ConfigurationSnapshot,
+        versions: Map<String, String>,
+        packages: List<InstalledPackage>,
+    ): ConfigurationSnapshot? {
+        val customization = snapshot.customization
+        val stale = customization.lockfile.entries.any { e ->
+            versions["${e.publisher}:${e.id}"]?.let { it != e.version } ?: false
+        }
+        if (!stale) return null
+        // The workspace's own order is kept (independent mods that touch the same files apply as chosen),
+        // unless the new versions' dependencies no longer allow it.
+        val locked = PluginDependencyResolver.lock(
+            customization.enabledPackages,
+            packages,
+            customization.enabledPackages,
+        ).takeIf { it is LockResult.Locked }
+            ?: PluginDependencyResolver.lock(customization.enabledPackages, packages, emptyList())
+        return (locked as? LockResult.Locked)?.let {
+            val ordered = it.lockfile.entries.map { e -> "${e.publisher}:${e.id}" }
+            snapshot.copy(customization = customization.copy(enabledPackages = ordered, lockfile = it.lockfile))
+        }
     }
 
     companion object {

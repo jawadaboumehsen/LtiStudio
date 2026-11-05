@@ -522,21 +522,26 @@ public class StudioViewModel(
         }
     }
 
+    /** The newest validation: an older one, or one of a workspace left since, reports nothing when it ends. */
+    private var validateRequest = 0L
+
     public fun validateWorkspace() {
-        val generation = 1L
+        val generation = ++validateRequest
+        val workspaceId = _uiState.value.workspaceId
+        val isLatest = { generation == validateRequest && _uiState.value.workspaceId == workspaceId }
         _shellState.update { current ->
             current.copy(
                 validateOperation = OperationUiState.Running(generation = generation, startedFromRevision = 1L),
             )
         }
         viewModelScope.launch {
-            val workspaceId = _uiState.value.workspaceId
             // A read that fails (the service down) ends the operation as failed, never leaves it running.
             val report = try {
                 currentValidation(workspaceId, settingsStore?.current(workspaceId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                if (!isLatest()) return@launch
                 _shellState.update { current ->
                     current.copy(
                         validateOperation = OperationUiState.Failed(
@@ -548,7 +553,8 @@ public class StudioViewModel(
                 }
                 return@launch
             }
-            _uiState.update { if (it.workspaceId == workspaceId) it.copy(validationReport = report) else it }
+            if (!isLatest()) return@launch
+            _uiState.update { it.copy(validationReport = report) }
             updateShellState()
             val errorCount = report.errors.size
             _shellState.update { current ->

@@ -210,7 +210,7 @@ private fun RepackCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
         ) {
             GlassToggle(checked = state.signWithWorkspaceKey, onCheckedChange = actions.setSign)
             Text(
-                "Sign the AVB footer with the workspace key (keys/avb.pem)",
+                "Sign the AVB footer with the AVB key set in Build & Sign",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),

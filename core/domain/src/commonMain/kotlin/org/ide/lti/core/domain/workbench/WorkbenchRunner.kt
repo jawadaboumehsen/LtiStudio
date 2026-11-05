@@ -104,6 +104,21 @@ public class WorkbenchRunner(
         public suspend fun tryRun(tool: String, vararg args: String): ToolResult =
             port.runToEnd(ws, tool, args.toList())
 
+        /**
+         * Whether the folder holding [rel], with every link on its way followed, lies inside [base] (workspace-
+         * relative, "" for the workspace). [rel] itself may be a link: it is replaced, never followed. Folders that
+         * do not exist yet are judged by the part that does.
+         */
+        public suspend fun folderResolvesInside(rel: String, base: String): Boolean = tryRun(
+            "sh",
+            "-c",
+            "r=$(realpath -m -- \"$(dirname -- \"$1\")\") && w=$(realpath -m -- \"$2\") && " +
+                "case \"\$r/\" in \"\$w\"/*) ;; *) exit 1;; esac",
+            "sh",
+            abs(rel),
+            abs(base).trimEnd('/'),
+        ).exitCode == 0
+
         /** Runs a POSIX shell [script] whose inputs are passed as `$1..$n` ([args]), never spliced into it. */
         public suspend fun sh(script: String, vararg args: String): String = run("sh", "-c", script, "sh", *args)
 

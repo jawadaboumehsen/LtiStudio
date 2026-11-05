@@ -65,6 +65,24 @@ class WorkspaceForPathTest {
     }
 
     @Test
+    fun foldersInsideWslKeepTheirCase() {
+        // Two Linux folders, whatever spelling Windows uses for the host and distribution.
+        assertNotEquals(
+            WorkspaceManager.canonicalPath("//wsl.localhost/Ubuntu/home/user/ROM"),
+            WorkspaceManager.canonicalPath("//wsl.localhost/Ubuntu/home/user/rom"),
+        )
+        assertEquals(
+            WorkspaceManager.canonicalPath("\\\\WSL.LOCALHOST\\UBUNTU\\home\\user\\ROM"),
+            WorkspaceManager.canonicalPath("//wsl.localhost/ubuntu/home/user/ROM/"),
+        )
+    }
+
+    @Test
+    fun aBareDriveIsAPathLikeAnyOther() = runTest {
+        assertEquals("C:", WorkspaceManager.workspaceForPath(Repo(), "C:").path)
+    }
+
+    @Test
     fun uncRootsAndDriveRootsKeepTheirMeaning() = runTest {
         // A UNC path stays a UNC path (case-insensitive), never the Linux path "/server/share".
         assertEquals(

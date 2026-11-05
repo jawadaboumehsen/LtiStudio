@@ -32,6 +32,7 @@ import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.FstabEdit
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
+import org.ide.lti.core.model.workspace.SigningPolicy
 
 /** The boot-chain workbench as the pane shows it (FR-020..FR-026). */
 public data class BootPaneState(
@@ -112,6 +113,8 @@ public class BootPaneModel(
     private val setOverrides: (Map<String, String>) -> Unit,
     /** The device's boot-chain partitions, for the mount table fix (vendor_boot when there is one). */
     private val bootImages: () -> List<String> = { emptyList() },
+    /** The AVB key the Build stage signs with (Build & Sign's setting). */
+    private val avbKeyRef: suspend () -> String = { SigningPolicy().avbKeyRef },
 ) {
     public companion object {
         /** Where the first-stage fstab lives, in order of preference. */
@@ -261,7 +264,7 @@ public class BootPaneModel(
 
     private suspend fun repackAs(boot: BootWorkbench, image: String) {
         val plan = if (state.value.signWithWorkspaceKey) {
-            boot.signingPlan(workspaceId, image, AssembleViewModel.AVB_KEY_REF)
+            boot.signingPlan(workspaceId, image, avbKeyRef())
         } else {
             null
         }
@@ -303,17 +306,22 @@ public class BootPaneModel(
 
     /** Uses the stock image again for [image]: the override is no longer named in the settings. */
     private fun dropOverride(image: String) {
-        setOverrides(overrides() - image)
-        mutableState.update { it.copy(message = "$image uses the extracted image again.") }
-        // The file goes too: Unpack opens an override file before the stock image, so the dropped edit would return.
+        // The file first: Unpack opens an override file before the stock image, so if it stayed the dropped edit
+        // would return while the settings say it is gone.
         scope.launch {
             try {
                 runner?.job(
                     workspaceId,
                     "Use the stock $image",
                 ) { sh("rm -f \"$1\"", abs(KernelOverrides.path(image))) }
+                setOverrides(overrides() - image)
+                mutableState.update { it.copy(message = "$image uses the extracted image again.") }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: RefusalException) {
                 mutableState.update { it.copy(message = null, refusal = e.refusal) }
+            } catch (e: Exception) {
+                mutableState.update { it.copy(message = null, refusal = unexpected(e, "Use the stock $image")) }
             }
         }
     }
@@ -377,6 +385,8 @@ public class BootPaneModel(
             } catch (e: IllegalArgumentException) {
                 val refusal = Refusal(e.message ?: "Invalid input.", name, "Correct it and try again.")
                 mutableState.update { it.copy(refusal = refusal) }
+            } catch (e: Exception) {
+                mutableState.update { it.copy(refusal = unexpected(e, name)) }
             } finally {
                 mutableState.update { it.copy(busy = null) }
             }

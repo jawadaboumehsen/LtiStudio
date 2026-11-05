@@ -38,6 +38,8 @@ import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
+import org.ide.lti.core.model.workspace.SigningPolicy
 
 /** Navigator items of the Patches/Mods stage that open a content tool instead of the plugin pages. */
 public object ContentTools {
@@ -86,6 +88,7 @@ public class ContentToolsViewModel(
     private val comparing: CompareWorkbench? = null,
     private val runner: WorkbenchRunner? = null,
     private val environment: AppEnvironmentPort? = null,
+    private val store: WorkspaceSettingsStore? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContentToolsState())
@@ -112,7 +115,8 @@ public class ContentToolsViewModel(
     public fun rebuild(path: String) {
         withAck(RiskyFeature.PACKAGE_REBUILD) {
             task("Rebuilding ${path.substringAfterLast('/')}") { tools ->
-                val result = tools.rebuild(workspaceId, path, PLATFORM_KEY_REF)
+                val platformKey = store?.current(workspaceId)?.build?.signing?.platformKeyRef
+                val result = tools.rebuild(workspaceId, path, platformKey ?: SigningPolicy().platformKeyRef)
                 _state.update { it.copy(rebuilt = result, message = "Rebuilt $path; the original is a restore point.") }
             }
         }
@@ -307,9 +311,6 @@ public class ContentToolsViewModel(
     }
 
     public companion object {
-        /** The workspace platform key the Build stage signs the package with (`keys/platform.{x509.pem,pk8}`). */
-        public const val PLATFORM_KEY_REF: String = "keys/platform"
-
         public fun errorsOf(kind: ConfigKind, text: String): List<String> = when (kind) {
             ConfigKind.FSTAB -> ConfigValidators.validateFstab(text)
             ConfigKind.BUILD_PROP -> ConfigValidators.validateBuildProp(text)

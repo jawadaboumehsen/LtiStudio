@@ -86,6 +86,10 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
             }
         }
 
+        uiState.errorMessage?.let { error ->
+            Text(text = error, style = typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+
         if (uiState.runs.isEmpty()) {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Box(

@@ -33,6 +33,7 @@ import org.ide.lti.core.domain.pipeline.text.AvbSizeCalculator
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.VendoredFilePort
+import org.ide.lti.core.domain.ports.appendCaptured
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.tools.ToolStorePort
@@ -336,9 +337,11 @@ public class PipelineOrchestrator(
                         continue
                     }
 
-                    invalidateLaterStages(driver, stage)
                     val failure =
-                        runCatching { executeStage(driver, stage, isResumeStage = false) }.exceptionOrNull()
+                        runCatching {
+                            invalidateLaterStages(driver, stage)
+                            executeStage(driver, stage, isResumeStage = false)
+                        }.exceptionOrNull()
                             ?.also { if (it is CancellationException) throw it }
                             ?: outputDigestOrFailure(driver, stage)
                     if (failure != null) {
@@ -492,9 +495,9 @@ public class PipelineOrchestrator(
                         continue
                     }
 
-                    invalidateLaterStages(driver, stage)
                     val failure =
                         runCatching {
+                            invalidateLaterStages(driver, stage)
                             executeStage(driver, stage, isResumeStage = (index == startStageIndex))
                         }.exceptionOrNull()
                             ?.also { if (it is CancellationException) throw it }
@@ -650,7 +653,7 @@ public class PipelineOrchestrator(
         driver.checkCancellation()
         // A stage that starts running is no longer what its old cache record describes: if it fails part way
         // (apps deleted, sidecars not yet edited), a later run must not skip it on that record.
-        executionPort.uploadFile(driver.ws, cacheFile(stage), ByteArray(0))
+        clearCache(driver, stage)
         var steps = stage.plan(driver.context())
         var index = 0
         while (index < steps.size) {
@@ -843,7 +846,16 @@ public class PipelineOrchestrator(
 
         val stdout = StringBuilder().takeIf { step.keepsOutput() }
         val outputBuffer = StepOutputBuffer(driver, stage.id)
-        val (exitCode, lastSeq) = streamToEnd(driver, handle.runId, stdout, outputBuffer)
+        val (exitCode, lastSeq) = try {
+            streamToEnd(driver, handle.runId, stdout, outputBuffer)
+        } catch (e: CancellationException) {
+            // The app is closing: the step goes on and a later session reattaches to it.
+            throw e
+        } catch (e: Exception) {
+            // The run fails here: its step must not go on changing the work tree behind it.
+            runCatching { executionPort.cancel(handle.runId) }
+            throw e
+        }
         outputBuffer.flush()
 
         driver.persist { r ->
@@ -888,17 +900,6 @@ public class PipelineOrchestrator(
             throw StageFailure(index, exitCode, "${step.label}: expected '$missing' in ${step.command.toolId} output")
         }
         return step.resultKey != null
-    }
-
-    /**
-     * One output line of a step whose result is used. Past [MAX_CAPTURED_CHARS] the step fails: a result that large
-     * (a listing of millions of files) would exhaust the app's memory, so it says so instead.
-     */
-    private fun StringBuilder.appendCaptured(line: String) {
-        check(length + line.length < MAX_CAPTURED_CHARS) {
-            "The step's output is over ${MAX_CAPTURED_CHARS / CHARS_PER_MEGA}M characters; it is not kept."
-        }
-        append(line).append('\n')
     }
 
     /** Only a step whose output is used keeps it: a log-only step's (possibly huge) output just streams. */
@@ -1145,7 +1146,7 @@ public class PipelineOrchestrator(
         return (if (StageId.GENERATE_OTA_MANIFEST in ran) built + manifest else built) + extras
     }
 
-    private fun cacheFile(stage: StageDefinition) = ".cache/${stage.id.name}.key"
+    private fun cacheFile(stage: StageDefinition) = stageCacheFile(stage.id)
 
     /**
      * A stage that runs rewrites the shared work tree, so what the stages after it left there is gone, whether or not
@@ -1154,8 +1155,13 @@ public class PipelineOrchestrator(
      */
     private suspend fun invalidateLaterStages(driver: Driver, stage: StageDefinition) {
         val all = registry.executableStages()
-        all.drop(all.indexOfFirst { it.id == stage.id } + 1).forEach { later ->
-            executionPort.uploadFile(driver.ws, cacheFile(later), ByteArray(0))
+        all.drop(all.indexOfFirst { it.id == stage.id } + 1).forEach { later -> clearCache(driver, later) }
+    }
+
+    /** Fails when the record stays: work must not start while a later run could still skip it on that record. */
+    private suspend fun clearCache(driver: Driver, stage: StageDefinition) {
+        check(executionPort.uploadFile(driver.ws, cacheFile(stage), ByteArray(0))) {
+            "Could not clear the cached result of ${stage.id}"
         }
     }
 
@@ -1166,9 +1172,6 @@ public class PipelineOrchestrator(
         val valuesSerializer = MapSerializer(String.serializer(), String.serializer())
         val STILL_RUNNING = setOf("RUNNING", "QUEUED")
 
-        // ponytail: one cap for every captured result; stream to a file if a real step ever needs more.
-        const val MAX_CAPTURED_CHARS = 64 * 1024 * 1024
-        const val CHARS_PER_MEGA = 1024 * 1024
         val RUN_DEVICE = setOf(RuntimeKeys.DEVICE_REVISION)
         val RUN_DATE_KEYS = setOf(RuntimeKeys.RUN_DATE, RuntimeKeys.RUN_TIMESTAMP)
         const val STREAM_RETRY_MS = 500L
@@ -1190,3 +1193,6 @@ public class PipelineOrchestrator(
             copy(stages = stages.mapIndexed { i, s -> if (i >= from) s.copy(state = StageState.NOT_RUN) else s })
     }
 }
+
+/** The workspace file that holds [id]'s cache record; an empty record never matches a key. */
+internal fun stageCacheFile(id: StageId): String = ".cache/${id.name}.key"

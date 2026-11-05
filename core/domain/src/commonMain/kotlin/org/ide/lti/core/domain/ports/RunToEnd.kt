@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.domain.ports
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -22,7 +21,8 @@ import java.util.UUID
  * Runs a command as a service step and reads it to its end. For long work outside the pipeline (publishing
  * gigabytes, apktool): the quick [PipelineExecutionPort.execute] call times out after 30 s while the command goes on.
  * Like the pipeline, a stream that ends without its result asks the service for the step's status. Cancelling the
- * caller cancels the command on the service too.
+ * caller, or a read that fails, cancels the command on the service too: the caller's job lock is released next, so
+ * nothing may go on changing the workspace behind it.
  */
 public suspend fun PipelineExecutionPort.runToEnd(ws: Workspace, tool: String, args: List<String>): ToolResult {
     val root = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
@@ -31,8 +31,8 @@ public suspend fun PipelineExecutionPort.runToEnd(ws: Workspace, tool: String, a
     val stderr = StringBuilder()
     val exitCode = try {
         readToEnd(handle.runId, stdout, stderr)
-    } catch (e: CancellationException) {
-        withContext(NonCancellable) { cancel(handle.runId) }
+    } catch (e: Exception) {
+        withContext(NonCancellable) { runCatching { cancel(handle.runId) } }
         throw e
     }
     return ToolResult(exitCode, stdout.toString(), stderr.toString())
@@ -46,9 +46,11 @@ private suspend fun PipelineExecutionPort.readToEnd(runId: String, stdout: Strin
             when (event) {
                 is StepEvent.Output -> {
                     lastSeq = maxOf(lastSeq, event.seq)
-                    (if (event.isError) stderr else stdout).append(event.text).append('\n')
+                    (if (event.isError) stderr else stdout).appendCaptured(event.text)
                 }
+
                 is StepEvent.Finished -> exitCode = event.exitCode
+
                 StepEvent.Heartbeat -> Unit
             }
         }
@@ -64,5 +66,20 @@ private suspend fun PipelineExecutionPort.readToEnd(runId: String, stdout: Strin
     return checkNotNull(exitCode)
 }
 
+/**
+ * One output line of a command whose result is used. Past [MAX_CAPTURED_CHARS] it fails: a result that large (a
+ * listing of millions of files) would exhaust the app's memory, so it says so instead.
+ */
+internal fun StringBuilder.appendCaptured(line: String) {
+    check(length + line.length < MAX_CAPTURED_CHARS) {
+        "The step's output is over ${MAX_CAPTURED_CHARS / CHARS_PER_MEGA}M characters; it is not kept."
+    }
+    append(line).append('\n')
+}
+
 private val STILL_RUNNING = setOf("RUNNING", "QUEUED")
 private const val RETRY_MS = 1_000L
+
+// ponytail: one cap for every captured result; stream to a file if a real step ever needs more.
+private const val MAX_CAPTURED_CHARS = 64 * 1024 * 1024
+private const val CHARS_PER_MEGA = 1024 * 1024

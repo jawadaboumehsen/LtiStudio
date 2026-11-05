@@ -9,9 +9,12 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import org.ide.lti.core.domain.pipeline.stageCacheFile
+import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.model.run.StageId
 
 /** One folder of a workspace and what it takes on disk. */
 public data class FolderUsage(
@@ -38,6 +41,8 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
         cleanRefusal(path, runs.latestActive(workspaceId) != null)?.let { throw RefusalException(it) }
         return runner.job(workspaceId, "Free disk space") {
             val freed = parseUsage(sh(USAGE_SCRIPT, root, path)).firstOrNull { it.path == path }?.bytes ?: 0L
+            // Extract's cached result does not depend on the raw members, so it must be told to unpack them again.
+            if (path == FirmwareExtractionStage.RAW) writeText(stageCacheFile(StageId.FIRMWARE_EXTRACTION), "")
             run("rm", "-rf", "--", abs(path))
             freed
         }
@@ -50,7 +55,7 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
 
         private val FOLDERS = listOf(
             Folder("firmware/downloaded", false, "The firmware archive: only a new download or import brings it back."),
-            Folder("firmware/raw", true, "Members unpacked from the archive; Extract unpacks them again."),
+            Folder("firmware/raw", true, "Members unpacked from the archive; the next build extracts them again."),
             Folder("firmware/extracted", true, "Partition images and trees; Extract makes them again (minutes)."),
             Folder("work", true, "The assembled tree; the next build assembles it again."),
             Folder("out/images", true, "Built partition images; the next build makes them again."),

@@ -564,7 +564,7 @@ class StudioNavigationTest {
         advanceUntilIdle()
 
         // The backup is copied over the item in work/ (a debloat item lives under work/<partition>/).
-        val copy = service.ran.single { it.toolId == "sh" }.args
+        val copy = service.ran.last { it.toolId == "sh" }.args
         assertEquals(
             listOf("/ws/restore/debloat/system/system/app/SampleApp", "/ws/work/system/system/app/SampleApp"),
             copy.takeLast(2),

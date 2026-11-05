@@ -186,7 +186,10 @@ public class PluginManagerViewModel(
 
     public fun uninstallPackage(record: InstalledRecord) {
         viewModelScope.launch {
-            val references = _uiState.value.packageReferences[record.rowKey] ?: emptyList()
+            // Read now, not from the list on screen: a workspace may have started using it since.
+            val references = packageReferences(pluginInstallPort.installed(), workspaceUsage?.usersOf().orEmpty())[
+                record.rowKey,
+            ].orEmpty()
             when (val outcome = pluginLifecycleUseCase.uninstall(record.identity, references)) {
                 is LifecycleOutcome.Applied -> {
                     refreshInstalled()
@@ -221,8 +224,12 @@ public class PluginManagerViewModel(
         fetchMarketplace(source = source, allowCache = true)
     }
 
+    /** The newest fetch: an older source answering later is dropped, never shown as the configured one. */
+    private var fetchRequest = 0L
+
     public fun fetchMarketplace(source: IndexSource? = _uiState.value.marketplaceSource, allowCache: Boolean = true) {
         if (source == null) return
+        val request = ++fetchRequest
         viewModelScope.launch {
             _uiState.update { it.copy(isMarketplaceLoading = true, errorMessage = null) }
             val result = marketplaceIndexPort.fetch(source, allowCache)
@@ -231,6 +238,7 @@ public class PluginManagerViewModel(
                 is IndexFetchResult.Cached -> result.doc.entries
                 is IndexFetchResult.Failed -> emptyList()
             }
+            if (request != fetchRequest) return@launch
             _uiState.update {
                 it.copy(
                     isMarketplaceLoading = false,
@@ -413,15 +421,21 @@ public class PluginManagerViewModel(
         }
     }
 
+    /** The newest trust check: one for a path edited since is dropped, never shown for the new path. */
+    private var trustRequest = 0L
+
     public fun setAuthorProjectPathInput(path: String) {
-        _uiState.update { it.copy(authorProjectPathInput = path) }
+        trustRequest++
+        _uiState.update { it.copy(authorProjectPathInput = path, authorTrustCheck = null) }
     }
 
     public fun checkAuthorProject(projectPath: String) {
         val trimmed = projectPath.trim()
         if (trimmed.isBlank()) return
+        val request = ++trustRequest
         viewModelScope.launch {
             val check = authorProjectTrustUseCase.check(trimmed)
+            if (request != trustRequest) return@launch
             _uiState.update {
                 it.copy(authorProjectPathInput = trimmed, authorTrustCheck = check)
             }
@@ -441,7 +455,10 @@ public class PluginManagerViewModel(
             authorProjectTrustUseCase.approve(project)
             val check = authorProjectTrustUseCase.check(path)
             _uiState.update {
-                it.copy(authorTrustCheck = check, notificationMessage = "Author project approved for execution")
+                it.copy(
+                    authorTrustCheck = if (it.authorProjectPathInput == path) check else it.authorTrustCheck,
+                    notificationMessage = "Author project approved for execution",
+                )
             }
         }
     }
@@ -452,7 +469,10 @@ public class PluginManagerViewModel(
             authorProjectTrustUseCase.revoke(projectPath)
             val check = authorProjectTrustUseCase.check(projectPath)
             _uiState.update {
-                it.copy(authorTrustCheck = check, notificationMessage = "Author project trust revoked")
+                it.copy(
+                    authorTrustCheck = if (it.authorProjectPathInput == projectPath) check else it.authorTrustCheck,
+                    notificationMessage = "Author project trust revoked",
+                )
             }
         }
     }

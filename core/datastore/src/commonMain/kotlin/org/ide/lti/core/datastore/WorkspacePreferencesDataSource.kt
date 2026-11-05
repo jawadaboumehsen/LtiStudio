@@ -30,16 +30,10 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 
 @Serializable
-public data class WorkspaceList(
-    val schemaVersion: Int = 2,
-    val items: List<Workspace> = emptyList(),
-)
+public data class WorkspaceList(val schemaVersion: Int = 2, val items: List<Workspace> = emptyList())
 
 @Serializable
-public data class RecentProjectList(
-    val schemaVersion: Int = 2,
-    val items: List<RecentProject> = emptyList(),
-)
+public data class RecentProjectList(val schemaVersion: Int = 2, val items: List<RecentProject> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for workspace state and recents.
@@ -73,10 +67,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically adds or promotes a project in the recent list.
      */
-    public suspend fun addRecentProject(
-        project: RecentProject,
-        maxItems: Int = 20,
-    ): Unit = withContext(ioDispatcher) {
+    public suspend fun addRecentProject(project: RecentProject, maxItems: Int = 20): Unit = withContext(ioDispatcher) {
         if (isSystemStaging(project)) return@withContext
         mutex.withLock {
             val current = _recentProjects.value.toMutableList()
@@ -244,14 +235,10 @@ public class WorkspacePreferencesDataSource(
         }
     }
 
+    /** Throws when the write fails: callers change the state they publish only after it, and report the failure. */
     private fun persistWorkspacesInternal(workspaces: List<Workspace>) {
-        try {
-            val wrapper = WorkspaceList(schemaVersion = 2, items = workspaces)
-            val encoded = json.encodeToString(wrapper)
-            settings[KEY_WORKSPACES] = encoded
-        } catch (_: Exception) {
-            // Keep in-memory
-        }
+        val wrapper = WorkspaceList(schemaVersion = 2, items = workspaces)
+        settings[KEY_WORKSPACES] = json.encodeToString(wrapper)
     }
 
     public companion object {

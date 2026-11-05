@@ -111,6 +111,8 @@ public class BuildRunViewModel(
                     }
                     val isReady = effective.state == EnvironmentReadinessState.READY
                     _uiState.update { state ->
+                        // Asked for a workspace no longer shown: its answer says nothing about this one.
+                        if (state.currentWorkspace?.id != ws?.id) return@update state
                         state.copy(
                             environmentReadiness = effective,
                             failingCheck = effective.failingCheck,
@@ -137,15 +139,20 @@ public class BuildRunViewModel(
                         )
 
                 _uiState.update {
+                    // Another workspace's run is never shown as this one's, not even until its own runs are read.
+                    val shown = it.latestRun.takeIf { _ -> it.currentWorkspace?.id == ws?.id }
                     it.copy(
                         currentWorkspace = ws,
+                        latestRun = shown,
+                        logs = if (shown == null) emptyList() else it.logs,
+                        isCancelling = it.isCancelling && shown != null,
                         // A start or cancel still running for the workspace shown before is not this one's.
                         isStartingRun = false,
                         errorMessage = null,
                         environmentReadiness = wsReadiness ?: it.environmentReadiness,
                         failingCheck = wsReadiness?.failingCheck ?: it.failingCheck,
                         remediation = wsReadiness?.remediation ?: it.remediation,
-                        canStartRun = isReady && it.latestRun?.state?.isActive != true,
+                        canStartRun = isReady && shown?.state?.isActive != true,
                     )
                 }
 
@@ -174,24 +181,29 @@ public class BuildRunViewModel(
                             )
                         }
 
-                        if (latest != null && latest.state.isActive && reattachRunUseCase != null) {
-                            if (!autoReattachedRuns.contains(latest.id)) {
-                                autoReattachedRuns.add(latest.id)
-                                // Not admitted (service or device unavailable): tried again a while later, as a run
-                                // with no driver may never change. A run update or another workspace cancels this.
-                                var attached: Any? = null
-                                for (attempt in 1..REATTACH_ATTEMPTS) {
-                                    attached = runCatching { reattachRunUseCase.invoke(ws.id, latest.id) }
-                                        .onFailure { if (it is CancellationException) throw it }.getOrNull()
-                                    if (attached != null || attempt == REATTACH_ATTEMPTS) break
-                                    delay(REATTACH_RETRY_MS)
-                                }
-                                if (attached == null) autoReattachedRuns.remove(latest.id)
-                            }
-                        }
+                        if (latest != null && latest.state.isActive) reattach(ws.id, latest.id)
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Not admitted (service or device unavailable): tried again until it is, as a run with no driver may never
+     * change. A run update or another workspace cancels this, and the next look at the run starts over.
+     */
+    private suspend fun reattach(workspaceId: String, runId: String) {
+        val use = reattachRunUseCase ?: return
+        if (!autoReattachedRuns.add(runId)) return
+        var attached: Any? = null
+        try {
+            while (attached == null) {
+                attached = runCatching { use.invoke(workspaceId, runId) }
+                    .onFailure { if (it is CancellationException) throw it }.getOrNull()
+                if (attached == null) delay(REATTACH_RETRY_MS)
+            }
+        } finally {
+            if (attached == null) autoReattachedRuns.remove(runId)
         }
     }
 
@@ -338,5 +350,4 @@ private fun unreadableDevice(error: Throwable) = ValidationError(
 private const val DEVICE_RETRY_MS = 5_000L
 
 /** A reattach the service or device refused is tried this many times, this far apart. */
-private const val REATTACH_ATTEMPTS = 12
 private const val REATTACH_RETRY_MS = 5_000L

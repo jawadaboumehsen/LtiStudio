@@ -14,7 +14,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,6 +35,8 @@ data class WorkspaceConfigurationUiState(
     val currentWorkspace: Workspace? = null,
     val currentTarget: TargetDevice? = null,
     val initialSnapshot: ConfigurationSnapshot? = null,
+    /** The generated draft of a workspace with no saved configuration: what Discard goes back to. */
+    val defaultDraft: ConfigurationDraft? = null,
     val draft: ConfigurationDraft? = null,
     val isDirty: Boolean = false,
     val isSaving: Boolean = false,
@@ -71,7 +72,9 @@ class WorkspaceConfigurationViewModel(
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { workspace ->
                 if (workspace == null) {
-                    _uiState.update { it.copy(currentWorkspace = null, draft = null, initialSnapshot = null) }
+                    _uiState.update {
+                        it.copy(currentWorkspace = null, draft = null, initialSnapshot = null, isSaving = false)
+                    }
                     return@collectLatest
                 }
                 loadWorkspaceConfiguration(workspace)
@@ -82,14 +85,16 @@ class WorkspaceConfigurationViewModel(
 
     /** The device card follows the workspace's device when it is created or changed (Start from template, Save). */
     private suspend fun followDevice(workspaceId: String) {
-        workspaceDeviceRepository.observe(workspaceId).catch { }.collect { device ->
-            if (device == null) return@collect
-            _uiState.update { state ->
-                state.copy(
-                    currentTarget = device,
-                    availableRegions = device.availableRegions,
-                    availableFirmwares = device.availableFirmwares,
-                )
+        observeAgainAfterFailure {
+            workspaceDeviceRepository.observe(workspaceId).collect { device ->
+                if (device == null) return@collect
+                _uiState.update { state ->
+                    state.copy(
+                        currentTarget = device,
+                        availableRegions = device.availableRegions,
+                        availableFirmwares = device.availableFirmwares,
+                    )
+                }
             }
         }
     }
@@ -134,8 +139,11 @@ class WorkspaceConfigurationViewModel(
                 currentWorkspace = workspace,
                 currentTarget = target,
                 initialSnapshot = snapshot,
+                defaultDraft = draft,
                 draft = draft,
                 isDirty = false,
+                // A save still running for the workspace shown before ends there; it never locks this one.
+                isSaving = state.isSaving && state.currentWorkspace?.id == workspace.id,
                 availableRegions = regions,
                 availableFirmwares = firmwares,
             )
@@ -158,8 +166,8 @@ class WorkspaceConfigurationViewModel(
 
     fun discardChanges() {
         _uiState.update { state ->
-            val initial = state.initialSnapshot ?: return@update state
-            state.copy(draft = initial.toDraft(), isDirty = false, errorMessage = null)
+            val initial = state.initialSnapshot?.toDraft() ?: state.defaultDraft ?: return@update state
+            state.copy(draft = initial, isDirty = false, errorMessage = null)
         }
     }
 
@@ -192,10 +200,12 @@ class WorkspaceConfigurationViewModel(
                     // A completion for a workspace that is no longer active must never
                     // overwrite the active workspace's draft or claim it was saved.
                     if (s.currentWorkspace?.id != workspaceId) return@update s
+                    // An edit made while saving is not in this snapshot: it stays, still to be saved.
+                    val unchanged = s.draft == draft
                     s.copy(
                         initialSnapshot = snapshot,
-                        draft = snapshot.toDraft(),
-                        isDirty = false,
+                        draft = if (unchanged) snapshot.toDraft() else s.draft,
+                        isDirty = !unchanged,
                         isSaving = false,
                         successMessage = "Configuration saved successfully",
                     )

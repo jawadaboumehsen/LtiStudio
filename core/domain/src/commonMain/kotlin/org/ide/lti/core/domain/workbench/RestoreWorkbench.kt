@@ -66,6 +66,18 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
                 ),
             )
         }
+        // The record may name no `..` and still pass through a link: what counts is where its folder really is.
+        (listOf(target) + listOfNotNull(point.backupPath.takeUnless { point.added })).firstOrNull {
+            !folderResolvesInside(it, "")
+        }?.let {
+            throw RefusalException(
+                Refusal(
+                    "This restore point leaves the workspace through a link.",
+                    it,
+                    "Check restore/index.json and the link; nothing was changed.",
+                ),
+            )
+        }
         if (point.added) {
             // Undoing an addition: the item goes (its sidecar lines name a missing path and are harmless).
             run("rm", "-rf", "--", abs(target))

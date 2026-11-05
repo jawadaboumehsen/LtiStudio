@@ -461,7 +461,13 @@ public class BootWorkbench(
     ) {
         val target = KernelOverrides.path(partition)
         if (exists(target)) backup(TOOL, target)
-        sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs(image), abs(target))
+        // Complete before it replaces the override: stopped midway, the old one is still whole.
+        sh(
+            "mkdir -p \"$(dirname \"$2\")\" && rm -f \"$2.partial\" && cp -f \"$1\" \"$2.partial\" && " +
+                "mv -f \"$2.partial\" \"$2\"",
+            abs(image),
+            abs(target),
+        )
         SavedOverride(partition, run("sha256sum", abs(target)).digestToken(), RamdiskCheckResult(ok = true))
     }
 

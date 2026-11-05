@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.RecentProject
@@ -34,6 +36,9 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
     private val _currentSession = MutableStateFlow<WorkspaceSession?>(null)
     val currentSession: StateFlow<WorkspaceSession?> = _currentSession.asStateFlow()
 
+    /** Opens and closes one at a time, in the order asked: the last request is the workspace that stays. */
+    private val lifecycle = Mutex()
+
     /**
      * Get all available workspaces.
      */
@@ -47,10 +52,10 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
     /**
      * Open a workspace by ID.
      */
-    suspend fun openWorkspace(workspaceId: String): Result<Workspace> {
-        return try {
+    suspend fun openWorkspace(workspaceId: String): Result<Workspace> = lifecycle.withLock {
+        try {
             val workspace = repository.getWorkspace(workspaceId)
-                ?: return Result.failure(Exception("Workspace not found: $workspaceId"))
+                ?: return@withLock Result.failure(Exception("Workspace not found: $workspaceId"))
 
             // Load session if exists
             val session = repository.getWorkspaceSession(workspaceId)
@@ -84,8 +89,10 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
      */
     suspend fun openWorkspaceByPath(path: String): Result<Workspace> {
         val workspace = workspaceForPath(repository, path)
-        repository.saveWorkspace(workspace)
-        return openWorkspace(workspace.id)
+        return runCatching { repository.saveWorkspace(workspace) }.fold(
+            onSuccess = { openWorkspace(workspace.id) },
+            onFailure = { Result.failure(it) },
+        )
     }
 
     /**
@@ -117,7 +124,7 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
     /**
      * Close the current workspace.
      */
-    suspend fun closeWorkspace() {
+    suspend fun closeWorkspace(): Unit = lifecycle.withLock {
         _currentSession.value?.let { session ->
             repository.saveWorkspaceSession(session)
         }
@@ -151,7 +158,7 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
     companion object {
         /**
          * The workspace registered for [path] (compared as [canonicalPath]: separators, trailing slash and, for a
-         * drive path, letter case do not matter), keeping all it records; else a new one with an id derived from
+         * Windows path, letter case do not matter), keeping all it records; else a new one with an id derived from
          * the canonical path by SHA-256 (String.hashCode collides: "Aa" and "BB").
          */
         suspend fun workspaceForPath(
@@ -165,7 +172,7 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
                 ?.let { return it.copy(lastOpened = now) }
             // A drive root keeps its separator: "C:" alone means that drive's current folder.
             val trimmed = path.trimEnd('/', '\\').ifEmpty { path }
-                .let { if (DRIVE_ONLY.matches(it)) it + path[it.length] else it }
+                .let { if (DRIVE_ONLY.matches(it)) it + path.drop(it.length).take(1) else it }
             val name = trimmed.substringAfterLast('/').substringAfterLast('\\').ifEmpty { path }
             val digest = java.security.MessageDigest.getInstance("SHA-256").digest(key.encodeToByteArray())
             val id = "ws-" + digest.take(ID_BYTES).joinToString("") { "%02x".format(it) }
@@ -177,12 +184,15 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
             // A UNC root (//server/share) keeps its two slashes: collapsing them would make it a Linux path.
             val unc = forward.startsWith("//")
             val slashes = (if (unc) "/" else "") + forward.replace(Regex("/+"), "/").trimEnd('/').ifEmpty { "/" }
+            // Inside WSL the folders are Linux ones: only the host and distribution ignore case.
+            WSL_ROOT.find(slashes)?.let { return it.value.lowercase() + slashes.substring(it.range.last + 1) }
             return if (unc || DRIVE.containsMatchIn(slashes)) slashes.lowercase() else slashes
         }
 
         private val DRIVE_ONLY = Regex("^[A-Za-z]:$")
 
         private val DRIVE = Regex("^[A-Za-z]:")
+        private val WSL_ROOT = Regex("^//wsl(\\.localhost|\\$)/[^/]+", RegexOption.IGNORE_CASE)
         private const val ID_BYTES = 12
     }
 }

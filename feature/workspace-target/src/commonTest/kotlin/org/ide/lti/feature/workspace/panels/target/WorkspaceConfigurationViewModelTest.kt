@@ -307,6 +307,59 @@ class WorkspaceConfigurationViewModelTest {
     }
 
     @Test
+    fun discardGoesBackToTheDefaultDraftAndAnEditDuringASaveIsKept() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(testDispatcher)
+        try {
+            val workspaceRepo = FakeWorkspaceRepo()
+            val saveUseCase = SaveConfigurationSnapshotUseCase(
+                workspaceRepo,
+                FakeSnapshotRepository(),
+                FakeRunRepository(),
+                FakeProvisioningPort(),
+                FakeWorkspaceAdmissionPort(),
+                FakeSnapshotMaterializerPort(),
+            )
+            val workspaceManager = WorkspaceManager(workspaceRepo, CoroutineScope(Dispatchers.Unconfined))
+            val ws = Workspace(
+                id = "ws-1",
+                name = "No configuration yet",
+                path = "/home/lti/LtiRomWorkDir/workspaces/new-ws",
+                linuxPath = "/home/lti/LtiRomWorkDir/workspaces/new-ws",
+                type = WorkspaceType.REMOTE_WSL,
+                targetBinding = TargetBinding("PQ84P01", 1),
+                layoutVersion = 1,
+            )
+            workspaceRepo.saveWorkspace(ws)
+            workspaceManager.setCurrentWorkspace(ws)
+            val viewModel = WorkspaceConfigurationViewModel(
+                workspaceManager = workspaceManager,
+                snapshotRepository = FakeSnapshotRepository(),
+                workspaceDeviceRepository = FakeWorkspaceDevices(target),
+                saveConfigurationSnapshotUseCase = saveUseCase,
+            )
+            advanceUntilIdle()
+            val generated = viewModel.uiState.value.draft
+
+            viewModel.setRomVersion("9.9")
+            viewModel.discardChanges()
+            assertEquals(generated, viewModel.uiState.value.draft)
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.setRomVersion("1.1")
+            viewModel.saveConfiguration()
+            viewModel.setRomVersion("1.2")
+            advanceUntilIdle()
+
+            assertEquals("1.2", viewModel.uiState.value.draft?.romVersion)
+            assertTrue(viewModel.uiState.value.isDirty, "the edit made during the save is still to be saved")
+            assertFalse(viewModel.uiState.value.isSaving)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun draftSurvivesReadinessChanges() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         Dispatchers.setMain(testDispatcher)

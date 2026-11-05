@@ -847,7 +847,8 @@ per stage; a failed stage marks every later stage pending and stops.
   badging; adaptive XML icons have no bitmap, so only some apps get one).
 - Disk usage (Studio > Workspace > Disk usage, `WorkspaceStorage`): `du -sb` of the known workspace folders; only
   folders the next build makes again can be freed, never while a run is active (a stage counts as cached only
-  while its declared outputs still exist, so a freed folder is rebuilt).
+  while its declared outputs still exist, so a freed folder is rebuilt; `firmware/raw` is not an output of Extract,
+  so freeing it clears Extract's cache record instead).
 - Patches scripts (`CustomizationSettings.scripts`, `ProjectScripts`): run after the plugins from `work/`; then
   `CoverageFixRequest` gives new files the sidecar lines of their folder. Never fix sidecars by writing
   `work/configs` between builds: Assemble's cache covers them, so the next build re-assembles and drops the fix;

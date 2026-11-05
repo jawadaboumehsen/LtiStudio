@@ -74,7 +74,9 @@ public object ArchiveBrowser {
           if [ ! -s "${'$'}k" ]; then
             peek=$(cat_member "${'$'}f" "$1" 2>/dev/null | head -c 512 | xxd -p | tr -d '\n')
             if ! container "${'$'}peek"; then echo "magic ${'$'}peek"; echo "notarchive $1"; exit 0; fi
-            cat_member "${'$'}f" "$1" > "${'$'}k.partial" && mv "${'$'}k.partial" "${'$'}k"
+            # Its own side name: two reads of one member (reads take no job lock) never write the same file.
+            p="${'$'}k.partial.${'$'}${'$'}"
+            cat_member "${'$'}f" "$1" > "${'$'}p" && mv "${'$'}p" "${'$'}k" || { rm -f "${'$'}p"; exit 1; }
           fi
           f="${'$'}k"; shift
         done
@@ -85,10 +87,12 @@ public object ArchiveBrowser {
         else
           for m in "$@"; do
             case "/${'$'}m/" in */../*|//*) echo "unsafe member path: ${'$'}m" >&2; exit 2 ;; esac
-            mkdir -p "${'$'}dest/$(dirname "${'$'}m")"
-            # Resolved, the folder must still be inside dest: a link already there must not lead the write out.
-            case "$(realpath "${'$'}dest/$(dirname "${'$'}m")")/" in "$(realpath "${'$'}dest")"/*) ;;
+            # Resolved, the folder must be inside dest before anything is made: a link must not lead the write out.
+            mkdir -p "${'$'}dest"
+            d="${'$'}dest/$(dirname "${'$'}m")"
+            case "$(realpath -m "${'$'}d")/" in "$(realpath "${'$'}dest")"/*) ;;
               *) echo "unsafe member path: ${'$'}m" >&2; exit 2 ;; esac
+            mkdir -p "${'$'}d"
             rm -f "${'$'}dest/${'$'}m"
             cat_member "${'$'}f" "${'$'}m" > "${'$'}dest/${'$'}m"
             echo "extracted ${'$'}m"

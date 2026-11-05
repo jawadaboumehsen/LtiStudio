@@ -48,6 +48,8 @@ public class ImageWorkbench(
             val dest = FirmwareExtractionStage.replacementPath(partition)
             val partial = "$dest.partial"
             run("mkdir", "-p", abs(FirmwareExtractionStage.REPLACEMENTS))
+            // A leftover (or a link) under the side name is removed, never written through.
+            run("rm", "-f", abs(partial))
             val sparse = run("xxd", "-p", "-l", "4", source).trim() == SPARSE_MAGIC_LE
             if (sparse) run("simg2img", source, abs(partial)) else run("cp", "-f", source, abs(partial))
             val fs = fsOf(this, partial)
@@ -139,11 +141,17 @@ public class ImageWorkbench(
             val source = tree(workspaceId, partition).source
             val rels = paths.map { it.trimEnd('/') }.distinct()
             rels.forEach { rel ->
+                val export = "out/toolkit/$partition/$rel"
+                if (".." in rel.split('/') || !folderResolvesInside(export, "out/toolkit/$partition")) {
+                    throw RefusalException(
+                        Refusal("This path leaves the export folder.", rel, "Pick an entry of the partition's tree."),
+                    )
+                }
                 sh(
                     // A second export replaces the first: files removed since do not linger in the copy.
                     "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2\" && cp -a -T \"$1\" \"$2\"",
                     abs("$source/$rel"),
-                    abs("out/toolkit/$partition/$rel"),
+                    abs(export),
                 )
             }
             val dest = "out/toolkit/$partition" + (rels.singleOrNull()?.let { "/$it" } ?: "")
@@ -255,6 +263,7 @@ public class ImageWorkbench(
             val dest = "out/toolkit/$name.${if (toSparse) "sparse" else "raw"}.img"
             run("mkdir", "-p", abs("out/toolkit"))
             // A side name until it is complete: a cancelled conversion never leaves an image that looks whole.
+            run("rm", "-f", abs("$dest.partial"))
             run(if (toSparse) "img2simg" else "simg2img", abs(image), abs("$dest.partial"))
             run("mv", "-f", abs("$dest.partial"), abs(dest))
             dest
@@ -280,7 +289,9 @@ public class ImageWorkbench(
                 .lines().filter { it.isNotBlank() }.sorted()
             // An earlier split of the same image may have had more parts: they go, so `cat` joins only this one.
             sh(
-                "rm -f \"$2\"/\"$3\"[0-9]* && mv -f \"$1\"/* \"$2\" && rmdir \"$1\"",
+                // Only numbered parts: a name that merely starts like one (`part01.backup`) is not this tool's.
+                "for f in \"$2\"/\"$3\"[0-9]*; do case \"\${f##*.part}\" in *[!0-9]*) ;; " +
+                    "*) rm -f \"\$f\" ;; esac; done; mv -f \"$1\"/* \"$2\" && rmdir \"$1\"",
                 abs(partial),
                 abs("out/toolkit"),
                 name,

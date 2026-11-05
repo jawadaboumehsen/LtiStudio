@@ -111,10 +111,11 @@ public class RunRecordDataSource(
 
     public suspend fun deleteRun(runId: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
+            // The files first: when that fails the run is still listed, and deleting it can be tried again.
+            fileStorage.deleteRun(runId)
             val current = _runsIndex.value.filterNot { it.id == runId }
             persistRunsIndexInternal(current)
             _runsIndex.value = current
-            fileStorage.deleteRun(runId)
         }
     }
 
