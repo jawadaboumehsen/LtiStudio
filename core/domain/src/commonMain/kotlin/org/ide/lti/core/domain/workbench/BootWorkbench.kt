@@ -214,7 +214,7 @@ public class BootWorkbench(
                     ),
                 )
             }
-            run("mv", "-f", abs(candidate), abs("${dir(partition)}/$DTS"))
+            run("mv", "-f", "-T", abs(candidate), abs("${dir(partition)}/$DTS"))
         }
     }
 
@@ -384,7 +384,7 @@ public class BootWorkbench(
             sh(
                 "[ -f \"$1\" ] && echo \"$2  $1\" | sha256sum -c --status && exit 0; " +
                     "mkdir -p \"$(dirname \"$1\")\" && curl -fsSL --retry 3 \"$3\" -o \"$1.partial\" && " +
-                    "echo \"$2  $1.partial\" | sha256sum -c --status && mv -f \"$1.partial\" \"$1\"",
+                    "echo \"$2  $1.partial\" | sha256sum -c --status && mv -f -T \"$1.partial\" \"$1\"",
                 abs(KPIMG),
                 KPIMG_SHA256,
                 KPIMG_URL,
@@ -394,7 +394,7 @@ public class BootWorkbench(
             writeText(keyFile, superKey)
             try {
                 sh(
-                    "\"$3\" -p -i \"$1\" -k \"$4\" --skey-fd 3 -o \"$1.new\" 3< \"$2\" && mv -f \"$1.new\" \"$1\"",
+                    "\"$3\" -p -i \"$1\" -k \"$4\" --skey-fd 3 -o \"$1.new\" 3< \"$2\" && mv -f -T \"$1.new\" \"$1\"",
                     abs(kernel),
                     abs(keyFile),
                     kptools,
@@ -422,13 +422,17 @@ public class BootWorkbench(
     ): Pair<BootFlagDiff, String> = runner.job(workspaceId, "Edit vbmeta flags") {
         val old = readVbmetaFlags(this, image)
         val out = "out/toolkit/${image.substringAfterLast('/')}"
-        sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs(image), abs(out))
+        requireFolderInside(out, "out/toolkit")
+        // Made and patched under a side name, then renamed over `out`: a link there is replaced, never written through.
+        val partial = "$out.partial"
+        sh("mkdir -p \"$(dirname \"$2\")\" && rm -f \"$2\" && cp -f \"$1\" \"$2\"", abs(image), abs(partial))
         val bytes = (0 until INT_BYTES).joinToString("") { i ->
             "\\" + ((newFlags ushr (BITS_PER_BYTE * (INT_BYTES - 1 - i))) and BYTE_MASK).toString(
                 OCTAL,
             ).padStart(3, '0')
         }
-        sh("printf '$bytes' | dd of=\"$1\" bs=1 seek=$VBMETA_FLAGS_OFFSET conv=notrunc status=none", abs(out))
+        sh("printf '$bytes' | dd of=\"$1\" bs=1 seek=$VBMETA_FLAGS_OFFSET conv=notrunc status=none", abs(partial))
+        run("mv", "-f", "-T", abs(partial), abs(out))
         BootFlagDiff.compute(old, newFlags) to out
     }
 
@@ -460,11 +464,12 @@ public class BootWorkbench(
         job,
     ) {
         val target = KernelOverrides.path(partition)
+        requireFolderInside(target, "")
         if (exists(target)) backup(TOOL, target)
         // Complete before it replaces the override: stopped midway, the old one is still whole.
         sh(
             "mkdir -p \"$(dirname \"$2\")\" && rm -f \"$2.partial\" && cp -f \"$1\" \"$2.partial\" && " +
-                "mv -f \"$2.partial\" \"$2\"",
+                "mv -f -T \"$2.partial\" \"$2\"",
             abs(image),
             abs(target),
         )

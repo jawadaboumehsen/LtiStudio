@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.StepStatus
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
@@ -24,6 +25,9 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.model.run.*
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageStep
+import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
@@ -426,6 +430,80 @@ class PipelineResumeTest {
         assertEquals(StepState.CANCELLED, cancelledRun.steps.first().state)
         assertTrue(cancelledRun.artifacts.all { it.verification != VerificationState.VERIFIED })
         assertTrue(port.syncCalls.any { it.toolId == "rm" && "-rf" in it.args })
+    }
+
+    /** The use cases of a run stuck in cancelling: a step running, no driver, and a service that refuses the stop. */
+    private inner class Cancelling(status: StepStatus?) {
+        val port = object : PipelineExecutionPort by globalPort() {
+            override suspend fun status(serverRunId: String) = status
+            override suspend fun cancel(serverRunId: String) = false
+        }
+        val repo = InMemoryRunRepository()
+        val ctx = fixture.globalOtaContext()
+        val run = BuildRun(
+            id = "run-cancelling",
+            workspaceId = ctx.workspace.id,
+            snapshotId = ctx.snapshot.id,
+            state = RunState.RUNNING,
+            startedAt = Clock.System.now(),
+            steps = listOf(
+                StageStep(StageId.FIRMWARE_ACQUISITION, 0, "remote", "key", StepCommand("sh"), StepState.RUNNING),
+            ),
+        )
+
+        suspend fun cancelled(): BuildRun {
+            repo.upsert(run)
+            return CancelRunUseCase(repo, port, FakeWorkspaceRepo(ctx.workspace))(ctx.workspace.id, run.id).getOrThrow()
+        }
+
+        suspend fun reattached() = ReattachRunUseCase(
+            workspaceRepository = FakeWorkspaceRepo(ctx.workspace),
+            snapshotRepository = InMemorySnapshotRepository().apply { saveSnapshot(ctx.snapshot) },
+            workspaceDeviceRepository = InMemoryWorkspaceDeviceRepository(
+                mapOf(ctx.workspace.id to fixture.targetGlobal),
+            ),
+            runRepository = repo,
+            orchestrator = orchestrator(globalPort(), repo),
+            executionPort = port,
+        ).invoke(ctx.workspace.id, run.id)
+    }
+
+    @Test
+    fun aStepTheServiceDoesNotReportAsFinishedKeepsTheRunCancelling() = runTest {
+        for (status in listOf(null, StepStatus("remote", "RUNNING"), StepStatus("remote", "CANCELLING"))) {
+            assertEquals(RunState.CANCELLING, Cancelling(status).cancelled().state, "status $status")
+        }
+    }
+
+    @Test
+    fun reattachingACancellingRunDoesNotCallItCancelledWhileItsStepRuns() = runTest {
+        val running = Cancelling(StepStatus("remote", "RUNNING"))
+        running.cancelled()
+
+        assertNull(running.reattached(), "nothing to resume yet: it is tried again")
+
+        assertEquals(RunState.CANCELLING, running.repo.getRun(running.run.id)?.state)
+    }
+
+    @Test
+    fun aCancellingRunResumesToBeRecordedOnceItsStepHasEnded() = runTest {
+        val ended = Cancelling(StepStatus("remote", "CANCELLED"))
+
+        assertEquals(RunState.CANCELLED, ended.cancelled().state, "reported as over, so nothing is left to wait for")
+
+        val stuck = Cancelling(StepStatus("remote", "FAILED"))
+        stuck.repo.upsert(stuck.run.copy(state = RunState.CANCELLING))
+        assertNotNull(stuck.reattached())
+    }
+
+    @Test
+    fun aStepTheServiceHasNoRecordOfEndsTheRunAsInterrupted() = runTest {
+        val unknown = Cancelling(null)
+        unknown.cancelled()
+
+        assertNull(unknown.reattached())
+
+        assertEquals(RunState.INTERRUPTED, unknown.repo.getRun(unknown.run.id)?.state)
     }
 
     @Test

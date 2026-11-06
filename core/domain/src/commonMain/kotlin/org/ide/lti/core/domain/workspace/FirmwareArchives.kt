@@ -16,6 +16,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
 import org.ide.lti.core.domain.pipeline.toolkit.withLock
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.requireNoLinkInWorkspace
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.StepCommand
@@ -47,7 +48,8 @@ public class FirmwareArchives(
     public suspend fun list(workspaceId: String): List<FirmwareArchive> {
         val ws = workspace(workspaceId)
         val dir = "${root(ws)}/$DIR"
-        run(ws, "mkdir", "-p", dir)
+        // Listing changes nothing: the folder is made by the first import, which checks the way there.
+        if (!execution.stat(ws, DIR).exists) return emptyList()
         val out = run(ws, "find", dir, "-maxdepth", "1", "-type", "f", "!", "-name", "*.partial", "-printf", LISTING)
         return out.lines().mapNotNull { line ->
             val (size, name) = line.split('\t', limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
@@ -72,6 +74,7 @@ public class FirmwareArchives(
         check(
             runs?.latestActive(ws.id) == null,
         ) { "A build is running in this workspace; import when it has finished." }
+        execution.requireNoLinkInWorkspace(ws)
         val source = toLinuxPath(localPath)
         val name = source.substringAfterLast('/')
         require(name.isNotBlank() && !name.endsWith(".partial")) { "Not a file: $localPath" }
@@ -81,7 +84,7 @@ public class FirmwareArchives(
         val partial = "$dest.${java.util.UUID.randomUUID()}.partial"
         try {
             run(ws, "cp", "-f", "--", source, partial, timeoutMs = COPY_TIMEOUT_MS)
-            run(ws, "mv", "-f", "--", partial, dest)
+            run(ws, "mv", "-f", "-T", "--", partial, dest)
         } finally {
             withContext(NonCancellable) { runCatching { run(ws, "rm", "-f", "--", partial) } }
         }

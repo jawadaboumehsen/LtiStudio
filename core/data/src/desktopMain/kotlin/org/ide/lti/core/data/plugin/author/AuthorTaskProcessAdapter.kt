@@ -49,48 +49,30 @@ class AuthorTaskProcessAdapter(
 
     suspend fun check(projectPath: String): TrustCheck = trustUseCase.check(projectPath)
 
-    /** The project files the task can execute: the wrapper, every build script, and all of src, hooks, buildSrc. */
-    private fun inputsOf(projectDir: Path): List<String> {
-        val relativePaths = mutableListOf<String>()
-        // Everything the task can execute: the wrapper itself, every build script and version catalog.
-        val fixedFiles = listOf(
-            "build.gradle.kts",
-            "settings.gradle.kts",
-            "build.gradle",
-            "settings.gradle",
-            "gradle.properties",
-            "gradle/libs.versions.toml",
-            "gradle/wrapper/gradle-wrapper.properties",
-            "gradle/wrapper/gradle-wrapper.jar",
-            "gradlew",
-            "gradlew.bat",
-        )
-        for (rel in fixedFiles) {
-            val file = projectDir.resolve(rel)
-            if (Files.isRegularFile(file)) {
-                relativePaths.add(rel)
-            }
-        }
+    /**
+     * Every file of the project but what a build or an IDE makes. A task can execute any of them (a script applied
+     * from anywhere, a subproject, `gradlew.cmd`), and a list of the known ones would always miss one; a change that
+     * could not matter only asks for approval again. [madeByTools] says what is left out.
+     */
+    private fun inputsOf(projectDir: Path): List<String> = Files.walk(projectDir).use { stream ->
+        stream.filter { file ->
+            Files.isRegularFile(file) && !file.startsWith(trustStoreDir.toAbsolutePath().normalize()) &&
+                !madeByTools(projectDir, file)
+        }.map { projectDir.relativize(it).toString().replace('\\', '/') }.toList()
+    }
 
-        val scanDirs = listOf("src", "hooks", "buildSrc")
-        for (dirName in scanDirs) {
-            val dir = projectDir.resolve(dirName)
-            if (Files.isDirectory(dir)) {
-                Files.walk(dir).use { stream ->
-                    // Every file (Java, resources, scripts), not only .kt; build output is not an input.
-                    stream.filter { file ->
-                        Files.isRegularFile(file) &&
-                            projectDir.relativize(file).none { it.toString() == "build" || it.toString() == ".gradle" }
-                    }
-                        .forEach { file ->
-                            val rel = projectDir.relativize(file).toString().replace('\\', '/')
-                            relativePaths.add(rel)
-                        }
-                }
-            }
+    /**
+     * Whether [file] lies in a [NOT_INPUTS] folder of a project: directly in the root, or beside a build script. The
+     * name alone proves nothing: `src/main/kotlin/sample/build/` is a package, and its sources are executed.
+     */
+    private fun madeByTools(projectDir: Path, file: Path): Boolean {
+        var dir = projectDir
+        for (segment in projectDir.relativize(file.parent)) {
+            val isProject = dir == projectDir || BUILD_SCRIPTS.any { Files.isRegularFile(dir.resolve(it)) }
+            if (isProject && segment.toString() in NOT_INPUTS) return true
+            dir = dir.resolve(segment)
         }
-
-        return relativePaths
+        return false
     }
 
     /** A child that outlives the wrapper keeps the pipes open: it gets a short grace, then is stopped. */
@@ -373,6 +355,10 @@ class AuthorTaskProcessAdapter(
             "inspectMod",
             "signMod",
         )
+
+        /** Folders no build reads from: what builds and IDEs make, and the repository's own history. */
+        private val NOT_INPUTS = setOf("build", ".gradle", ".git", ".idea", ".kotlin")
+        private val BUILD_SCRIPTS = listOf("build.gradle.kts", "build.gradle")
         private const val READER_GRACE_MS = 5_000L
         private const val MAX_OUTPUT_BYTES = 256 * 1024
         private const val POLL_INTERVAL_MS = 50L

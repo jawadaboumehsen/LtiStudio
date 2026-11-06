@@ -12,6 +12,7 @@ package org.ide.lti.core.datastore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.file.Files
 
 /**
  * Desktop JVM implementation of [RunFileStorage] storing runs as JSON files
@@ -73,10 +74,10 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
     }
 
     override suspend fun deleteRun(runId: String): Unit = withContext(Dispatchers.IO) {
-        val jsonFile = File(baseDir, "$runId.json")
-        if (jsonFile.exists()) jsonFile.delete()
-        val eventsFile = File(baseDir, "$runId.events.jsonl")
-        if (eventsFile.exists()) eventsFile.delete()
+        // Throws when a file stays (a locked one, on Windows). The record goes last: stopped between the two, the
+        // run is still there, and only the log of a run being deleted is gone.
+        Files.deleteIfExists(File(baseDir, "$runId.events.jsonl").toPath())
+        Files.deleteIfExists(File(baseDir, "$runId.json").toPath())
     }
 
     public companion object {

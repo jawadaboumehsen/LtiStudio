@@ -40,14 +40,23 @@ object SmaliMethodEditor {
                 ComponentPatchCodes.ANCHOR_NOT_FOUND,
                 "No method matches ${describe(match)}" + whyNot(all, match, lines),
             )
+
             1 -> candidates.single()
+
             else -> return EditResult.Failed(
                 ComponentPatchCodes.ANCHOR_AMBIGUOUS,
                 "${candidates.size} methods match ${describe(match)}: ${candidates.joinToString { it.signature }}",
             )
         }
+        val hunks = hunks(unifiedDiff)
+        if (hunks.isEmpty()) {
+            return EditResult.Failed(
+                ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
+                "The edit of ${method.signature} changes nothing: it has no hunks",
+            )
+        }
         var body = lines.subList(method.start, method.end + 1).toList()
-        for (hunk in hunks(unifiedDiff)) {
+        for (hunk in hunks) {
             body = when (val applied = applyHunk(body, hunk, method.signature)) {
                 is HunkResult.Failed -> return applied.failure
                 is HunkResult.Applied -> applied.body
@@ -88,7 +97,9 @@ object SmaliMethodEditor {
                         nearest(body, significant, patterns, old.map { it.text.trim() }),
                 ),
             )
+
             1 -> hits.single()
+
             else -> return HunkResult.Failed(
                 EditResult.Failed(
                     ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
@@ -107,14 +118,18 @@ object SmaliMethodEditor {
                             "'${line.text.trim()}' uses a register no anchor line captured",
                         ),
                     )
+
                 line.text.isBlank() -> Unit
+
                 // A kept gap keeps the firmware's lines between its neighbours; a removed one drops them.
                 hit.at[k] == GAP -> {
                     if (line.marker == ' ') replacement += body.subList(hit.at[k - 1] + 1, hit.at[k + 1])
                     k++
                 }
+
                 // Context keeps the firmware's own line; removed lines are dropped.
                 line.marker == ' ' -> replacement += body[hit.at[k++]]
+
                 else -> k++
             }
         }
@@ -185,6 +200,7 @@ object SmaliMethodEditor {
             val line = raw.trim()
             when {
                 line.startsWith(".method ") -> start = i
+
                 line == ".end method" && start >= 0 -> {
                     found += Method(start, i, lines[start].trim().substringAfterLast(' '))
                     start = -1

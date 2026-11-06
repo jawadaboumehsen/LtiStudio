@@ -68,12 +68,29 @@ class DiscoverWorkdirWorkspacesUseCase(
         return if (listing.exitCode == 0) listing.stdout.lines().filter { it.isNotBlank() } else emptyList()
     }
 
+    /**
+     * [known] once its folder has moved to [dir]: the record follows it. With the old folder still holding a manifest
+     * [dir] is a copy that carries the same id, and the record stays with the original.
+     */
+    private suspend fun relocated(files: PipelineExecutionPort, known: Workspace, dir: String): Workspace {
+        val old = known.linuxPath?.takeIf { it != dir } ?: return known
+        val stillThere = files.readFile(Workspace(id = "", name = "", path = old, linuxPath = old), MANIFEST) != null
+        return if (stillThere) {
+            known
+        } else {
+            known.copy(path = dir, linuxPath = dir).also {
+                repository.saveWorkspace(it)
+                repository.removeRecentProject(it.id)
+            }
+        }
+    }
+
     private suspend fun adopt(files: PipelineExecutionPort, dir: String): Workspace? {
         val folder = Workspace(id = "", name = dir.substringAfterLast('/'), path = dir, linuxPath = dir)
         val manifest = files.readFile(folder, MANIFEST)?.let { json.decodeFromString<WorkspaceManifest>(it) }
             ?: return null
         val device = files.readFile(folder, WorkspaceDeviceRepository.FILE_NAME)
-        val known = repository.getWorkspace(manifest.id)
+        val known = repository.getWorkspace(manifest.id)?.let { relocated(files, it, dir) }
         val workspace = known ?: folder.copy(
             id = manifest.id,
             type = WorkspaceType.REMOTE_WSL,

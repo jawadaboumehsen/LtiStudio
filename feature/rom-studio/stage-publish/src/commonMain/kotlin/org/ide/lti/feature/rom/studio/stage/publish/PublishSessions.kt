@@ -86,12 +86,13 @@ public class PublishSessions(
         state.update { it.copy(publishing = true, transfer = null, bytesPerSecond = null, error = null) }
         jobs[workspaceId] = scope.launch {
             try {
-                use.publish(
+                val journal = use.publish(
                     workspaceId = workspaceId,
                     edited = settings,
                     onProgress = { journal -> state.update { it.copy(journal = journal) } },
                     onTransfer = { onTransfer(workspaceId, it) },
                 )
+                if (journal == null) state.update { it.copy(error = "$PUBLISH_STOPPED $NOTHING_PUBLISHED") }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -130,5 +131,8 @@ public class PublishSessions(
         const val MILLIS = 1000.0
         const val MIN_RATE_SECONDS = 3.0
         const val PUBLISH_STOPPED = "Publishing stopped:"
+        const val NOTHING_PUBLISHED =
+            "nothing was published. A build or another job holds this workspace, or the release check found a " +
+                "problem; see the checks here, then try again."
     }
 }

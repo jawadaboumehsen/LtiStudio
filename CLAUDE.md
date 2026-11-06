@@ -1109,6 +1109,15 @@ nothing is shown as done before its job finished.
 - Risky features (`RiskyFeature`: kernel override, root patch, vbmeta flags, library patch, package
   rebuild) ask once per workspace;
   the answer is kept in `facts/acknowledgements.json`.
+- Paths in the workspace: `linkInWorkspace` (`ports/WorkspaceLinks.kt`) finds a link among the folders and files the
+  app makes, to three levels, leaving firmware contents alone (`work/<p>/*`). Every pipeline stage checks it before
+  any cache record is cleared, and Publish, archive import and cancel's cleanup before they write. Every workbench job
+  also refuses a link in `workbench/` (`Job.requireNoLinks`; ramdisk and APEX contents excepted, only Disk usage goes
+  without), and a write to `out/toolkit` checks `requireFolderInside`, which also judges the permitted base. A new
+  workspace folder the app writes to must not hold firmware links within three levels, or be added to the scan. That check does not judge the
+  final path: a command replaces a link there (`rm` first, or publish with `mv -f -T`, never `cp -f` or a bare `mv -f`
+  onto it). `scripts/probes/workbench-paths.sh` holds the behaviour checks: run it under Linux or WSL when these
+  commands change (`wsl.exe -d Ubuntu -- dash scripts/probes/workbench-paths.sh`); pre-push runs its source check.
 - Workspace files: `facts/basic_info.json`, `facts/partition_info.json` (written by Extract), `.job.lock` (one
   workbench job at a time; a lock from an earlier app session is stale).
 - Step result keys (`RuntimeKeys`): `package.manifest`, `package.checksum.result`, `package.header.hex`,

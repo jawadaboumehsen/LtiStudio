@@ -119,7 +119,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             // mktemp makes it 0600: it takes the original's mode before the rename.
             sh(
                 "t=$(mktemp \"$(dirname \"$1\")/.rebuild.XXXXXX\") && " +
-                    "{ cp -- \"$2\" \"\$t\" && chmod --reference=\"$1\" \"\$t\" && mv -f -- \"\$t\" \"$1\"; } " +
+                    "{ cp -- \"$2\" \"\$t\" && chmod --reference=\"$1\" \"\$t\" && mv -f -T -- \"\$t\" \"$1\"; } " +
                     "|| { rm -f -- \"\$t\"; exit 1; }",
                 abs(path),
                 abs(output),

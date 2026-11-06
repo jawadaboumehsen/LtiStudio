@@ -265,6 +265,20 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun aLinkAmongTheWorkspacesOwnFoldersStopsTheStageBeforeAnythingIsClearedOrRun() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        port.stdoutOverrides["find $ws"] = "$ws/restore"
+
+        val events = orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+
+        assertTrue(events.any { it is PipelineEvent.StageFailed })
+        assertEquals(RunState.FAILED, repo.getRun("run-1")!!.state)
+        assertTrue(port.durableSteps.isEmpty(), "no step may run: Debloat's first command is an rm -rf")
+        assertTrue(port.files.keys.none { "/.cache/" in it }, "the cache records stay as they were")
+    }
+
+    @Test
     fun secondRunSkipsEveryStageWhenInputsAndOutputsMatch() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()

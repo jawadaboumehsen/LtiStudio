@@ -48,10 +48,12 @@ object SmaliTextEditor {
         for (parsed in hunks) {
             val hunk = when (val anchored = anchorAt(parsed, content)) {
                 null -> return fail(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, "Anchor line not found in '$member'")
+
                 AMBIGUOUS_ANCHOR -> return fail(
                     ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
                     "Anchor line '${parsed.anchor}' occurs more than once in '$member'",
                 )
+
                 else -> anchored
             }
             // As git apply: identical context is told apart by the hunk's line (shifted by earlier hunks).
@@ -61,10 +63,12 @@ object SmaliTextEditor {
                     ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
                     "Patch context anchor not found in '$member'",
                 )
+
                 AMBIGUOUS -> return fail(
                     ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
                     "Patch context anchor is ambiguous in '$member'",
                 )
+
                 else -> found
             }
             content = content.substring(0, idx) + hunk.contextAndAdded +
@@ -94,18 +98,25 @@ object SmaliTextEditor {
     }
 
     /**
-     * Index of [text] in [content]: its only occurrence, or the one starting nearest [expectedLine] when it
-     * occurs more than once ([AMBIGUOUS] when two are equally near or no line is known).
+     * Index of [text] in [content]: its only occurrence on whole lines, or the one starting nearest [expectedLine]
+     * when it occurs more than once ([AMBIGUOUS] when two are equally near or no line is known). A hunk's lines are
+     * lines: `foo` must not edit `.field public foobar:I`.
      */
     private fun locate(content: String, text: String, expectedLine: Int?): Int {
         if (text.isEmpty()) return NOT_FOUND
         val hits = generateSequence(content.indexOf(text)) { content.indexOf(text, it + 1).takeIf { i -> i >= 0 } }
-            .takeWhile { it >= 0 }.toList()
+            .takeWhile { it >= 0 }.filter { onWholeLines(content, it, text) }.toList()
         if (hits.size <= 1) return hits.firstOrNull() ?: NOT_FOUND
         if (expectedLine == null) return AMBIGUOUS
         val byDistance = hits.groupBy { idx -> kotlin.math.abs(lineOf(content, idx) - expectedLine) }
         val nearest = byDistance.getValue(byDistance.keys.min())
         return nearest.singleOrNull() ?: AMBIGUOUS
+    }
+
+    private fun onWholeLines(content: String, at: Int, text: String): Boolean {
+        val end = at + text.length
+        return (at == 0 || content[at - 1] == '\n') &&
+            (end == content.length || text.endsWith('\n') || content[end] == '\n')
     }
 
     private fun lineOf(content: String, index: Int) = 1 + (0 until index).count { content[it] == '\n' }
@@ -117,9 +128,12 @@ object SmaliTextEditor {
         for (line in lines) {
             when {
                 line.startsWith("@@") -> groups += line to mutableListOf()
+
                 isGitHeader(line) -> Unit
+
                 groups.isEmpty() && (line.startsWith(" ") || line.startsWith("-") || line.startsWith("+")) ->
                     groups += null to mutableListOf(line)
+
                 groups.isNotEmpty() -> groups.last().second += line
             }
         }
@@ -137,7 +151,9 @@ object SmaliTextEditor {
         for (line in hunkLines) {
             when {
                 line.startsWith("-") -> removed += line.substring(1)
+
                 line.startsWith("+") -> added += line.substring(1)
+
                 else -> line.removePrefix(" ").let {
                     removed += it
                     added += it

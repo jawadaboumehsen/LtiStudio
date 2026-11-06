@@ -112,6 +112,7 @@ class WorkspaceBrowserState(
                                         pending.project,
                                         callback,
                                     )
+
                                     is PendingWorkspaceRequest.OpenPath -> executeOpenPath(
                                         pending.path,
                                         callback,
@@ -123,6 +124,7 @@ class WorkspaceBrowserState(
                                     is PendingWorkspaceRequest.OpenRecent -> {
                                         pending.project.workspaceId to pending.project.path
                                     }
+
                                     is PendingWorkspaceRequest.OpenPath -> {
                                         null to pending.path
                                     }
@@ -136,6 +138,7 @@ class WorkspaceBrowserState(
                                         is PendingWorkspaceRequest.OpenRecent -> {
                                             { openRecentProject(pending.project, callback) }
                                         }
+
                                         is PendingWorkspaceRequest.OpenPath -> {
                                             { openPath(pending.path, callback) }
                                         }
@@ -335,15 +338,15 @@ class WorkspaceBrowserState(
         val currentFiltered = filteredProjects.value
         val removedIndex = currentFiltered.indexOfFirst { it.workspaceId == workspaceId }
         val removedProject = currentFiltered.getOrNull(removedIndex)
-        val wasSelected = _selectedWorkspaceId.value == workspaceId
 
         scope.launch {
             val result = runCatching { removeRecentWorkspaceUseCase(workspaceId) }
             result.fold(
                 onSuccess = {
                     _workspaceError.value = null
-                    if (wasSelected && removedIndex >= 0) {
-                        val remaining = currentFiltered.filter { it.workspaceId != workspaceId }
+                    // Only while it is still the one selected: the person may have picked another meanwhile.
+                    if (_selectedWorkspaceId.value == workspaceId && removedIndex >= 0) {
+                        val remaining = filteredProjects.value.filter { it.workspaceId != workspaceId }
                         if (remaining.isNotEmpty()) {
                             val newIndex = removedIndex.coerceAtMost(remaining.lastIndex)
                             _selectedWorkspaceId.value = remaining[newIndex].workspaceId

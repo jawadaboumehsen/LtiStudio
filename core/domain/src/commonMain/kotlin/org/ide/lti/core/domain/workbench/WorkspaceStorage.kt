@@ -39,7 +39,10 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
     /** Deletes [path] when it is one the next build makes again; returns the bytes freed. */
     public suspend fun clean(workspaceId: String, path: String): Long {
         cleanRefusal(path, runs.latestActive(workspaceId) != null)?.let { throw RefusalException(it) }
-        return runner.job(workspaceId, "Free disk space") {
+        // Without the link check: freeing a folder is how a link in it goes (`rm -rf` does not follow one).
+        return runner.job(workspaceId, "Free disk space", checkLinks = false) {
+            // `rm -rf` does not follow the folder itself, but a link above it would take the removal outside.
+            requireFolderInside(path, "")
             val freed = parseUsage(sh(USAGE_SCRIPT, root, path)).firstOrNull { it.path == path }?.bytes ?: 0L
             // Extract's cached result does not depend on the raw members, so it must be told to unpack them again.
             if (path == FirmwareExtractionStage.RAW) writeText(stageCacheFile(StageId.FIRMWARE_EXTRACTION), "")

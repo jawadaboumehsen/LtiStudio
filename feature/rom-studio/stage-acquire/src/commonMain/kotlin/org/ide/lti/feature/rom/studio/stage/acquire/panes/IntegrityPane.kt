@@ -40,6 +40,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.feature.rom.studio.stage.acquire.IntegrityFacts
 
@@ -53,7 +54,7 @@ public fun IntegrityPane(
     /** Sets (or clears, with null) the SHA-256 the archive must have. */
     onExpectedChange: (String?) -> Unit = {},
 ) {
-    LaunchedEffect(settings.archiveRef, settings.mode) { onRefresh() }
+    LaunchedEffect(FirmwareAcquisitionStage.archiveRelPath(settings)) { onRefresh() }
     val expected = settings.expectedSha256?.takeIf { it.isNotBlank() }
         ?: settings.firmware.sha256?.takeIf { it.isNotBlank() }
     val measured = facts.measuredSha256
@@ -63,16 +64,19 @@ public fun IntegrityPane(
             "The SHA-256 is measured when the Acquire stage runs. Run the build through Acquire.",
             MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
         expected == null -> Triple(
             "Measured, nothing to compare",
             "No expected SHA-256 is set (the vendor publishes none). Set one below to verify future runs.",
             GlassTheme.diagnosticColors.warning,
         )
+
         measured.equals(expected, ignoreCase = true) -> Triple(
             "Verified",
             "The archive matches the expected SHA-256.",
             GlassTheme.diagnosticColors.success,
         )
+
         else -> Triple(
             "Mismatch",
             "The archive does not match the expected SHA-256; the Acquire stage fails until they agree.",

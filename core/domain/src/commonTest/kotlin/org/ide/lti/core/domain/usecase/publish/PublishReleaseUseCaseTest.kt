@@ -72,7 +72,9 @@ class PublishReleaseUseCaseTest {
                     ToolResult(0, "")
                 }
 
-                "mv" -> ToolResult(0, "").also { files[a[3]] = files.remove(a[2])!! }
+                "mv" -> ToolResult(0, "").also { files[a.last()] = files.remove(a[a.size - 2])!! }
+
+                "find" -> ToolResult(0, "")
 
                 "sha256sum" -> files[a.last()]?.let { ToolResult(0, "${sha(it)}  ${a.last()}") }
                     ?: ToolResult(1, "", "No such file")

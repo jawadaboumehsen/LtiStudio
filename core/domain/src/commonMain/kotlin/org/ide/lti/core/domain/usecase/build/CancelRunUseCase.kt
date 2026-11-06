@@ -15,6 +15,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.hasFinished
+import org.ide.lti.core.domain.ports.linkInWorkspace
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.BuildRun
@@ -54,13 +56,17 @@ public class CancelRunUseCase(
         if (cancelling.state.isTerminal) return@runCatching cancelling
 
         // 2. Cancel in-flight step
-        cancelling.steps.firstOrNull { it.state == StepState.RUNNING }?.serverRunId?.let { executionPort.cancel(it) }
+        val stopped = stopRunningStep(cancelling)
 
         // 3. A driver in this app stops its work and records the cancel itself; the run stays active (no new build
         // or edit is admitted) until it has. One that does not stop in time leaves the run cancelling.
         if (isDriving(run.id)) return@runCatching awaitDriver(workspaceId, cancelling)
 
-        // 4. No driver here: clean the stage temporary outputs and finish the run
+        // 4. No driver here. A refused stop of a step not known to have ended leaves the run cancelling: nothing new
+        // is admitted over a step that may be writing, and ReattachRunUseCase follows it from there.
+        if (!stopped) return@runCatching cancelling
+
+        // 5. Clean the stage temporary outputs and finish the run
         cleanStaging(workspaceId)
         val now = clock.now()
         runRepository.update(run.id) { current -> if (current.state.isTerminal) current else cancelled(current, now) }
@@ -80,9 +86,16 @@ public class CancelRunUseCase(
         return stopped ?: runRepository.getRun(cancelling.id) ?: cancelling
     }
 
+    /** False when the service refused to stop a step it does not report as finished. */
+    private suspend fun stopRunningStep(run: BuildRun): Boolean {
+        val step = run.steps.firstOrNull { it.state == StepState.RUNNING }?.serverRunId ?: return true
+        return executionPort.cancel(step) || executionPort.status(step)?.hasFinished == true
+    }
+
     private suspend fun cleanStaging(workspaceId: String) {
         val ws = workspaceRepository?.getWorkspace(workspaceId)
-        if (ws?.linuxPath != null) {
+        // A link, or a scan that failed: the cancel still finishes, this cleanup just waits for the next build's.
+        if (ws?.linuxPath != null && runCatching { executionPort.linkInWorkspace(ws) == null }.getOrDefault(false)) {
             executionPort.execute(
                 ws,
                 StepCommand("rm", listOf("-rf", "${ws.linuxPath}/out/package/.stage"), ws.linuxPath),

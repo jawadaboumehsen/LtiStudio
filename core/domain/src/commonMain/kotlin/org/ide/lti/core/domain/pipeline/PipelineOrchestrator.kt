@@ -34,6 +34,7 @@ import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.ports.appendCaptured
+import org.ide.lti.core.domain.ports.requireNoLinkInWorkspace
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.tools.ToolStorePort
@@ -339,6 +340,8 @@ public class PipelineOrchestrator(
 
                     val failure =
                         runCatching {
+                            // Before anything is cleared: a stage writes these folders from its first step.
+                            executionPort.requireNoLinkInWorkspace(driver.ws)
                             invalidateLaterStages(driver, stage)
                             executeStage(driver, stage, isResumeStage = false)
                         }.exceptionOrNull()
@@ -497,6 +500,8 @@ public class PipelineOrchestrator(
 
                     val failure =
                         runCatching {
+                            // Before anything is cleared: a stage writes these folders from its first step.
+                            executionPort.requireNoLinkInWorkspace(driver.ws)
                             invalidateLaterStages(driver, stage)
                             executeStage(driver, stage, isResumeStage = (index == startStageIndex))
                         }.exceptionOrNull()

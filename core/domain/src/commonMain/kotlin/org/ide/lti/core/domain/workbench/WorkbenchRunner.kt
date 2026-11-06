@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.linkInWorkspace
 import org.ide.lti.core.domain.ports.runToEnd
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -52,8 +53,16 @@ public class WorkbenchRunner(
     private suspend fun workspace(id: String): Workspace =
         checkNotNull(workspaces.getWorkspace(id)) { "Workspace $id not found" }
 
-    /** Runs [block] holding [workspaceId]'s job lock as [jobName]; refuses when another job holds it. */
-    public suspend fun <T> job(workspaceId: String, jobName: String, block: suspend Job.() -> T): T {
+    /**
+     * Runs [block] holding [workspaceId]'s job lock as [jobName]; refuses when another job holds it. Also refused
+     * while the workspace holds a link where the tools work ([checkLinks]: only freeing a folder goes without).
+     */
+    public suspend fun <T> job(
+        workspaceId: String,
+        jobName: String,
+        checkLinks: Boolean = true,
+        block: suspend Job.() -> T,
+    ): T {
         val ws = workspace(workspaceId)
         return when (val acquired = lock.acquire(ws, jobName)) {
             is LockResult.Locked -> throw RefusalException(RefusalCatalog.workspaceLocked(holder = acquired.holderName))
@@ -68,7 +77,9 @@ public class WorkbenchRunner(
                         ),
                     )
                 }
-                Job(ws).block()
+                val job = Job(ws)
+                if (checkLinks) job.requireNoLinks()
+                job.block()
             } finally {
                 // Released even when the job was cancelled: a cancelled coroutine cannot run the remote delete.
                 withContext(NonCancellable) { acquired.handle.release() }
@@ -106,18 +117,74 @@ public class WorkbenchRunner(
 
         /**
          * Whether the folder holding [rel], with every link on its way followed, lies inside [base] (workspace-
-         * relative, "" for the workspace). [rel] itself may be a link: it is replaced, never followed. Folders that
-         * do not exist yet are judged by the part that does.
+         * relative, "" for the workspace), and [base], resolved the same way, inside the workspace: a link at the
+         * base would otherwise move both out together. [rel] itself may be a link, which this does not judge: the
+         * caller replaces it (`rm` first, or `mv -T`), never writes through it. Folders that do not exist yet are
+         * judged by the part that does.
          */
         public suspend fun folderResolvesInside(rel: String, base: String): Boolean = tryRun(
             "sh",
             "-c",
             "r=$(realpath -m -- \"$(dirname -- \"$1\")\") && w=$(realpath -m -- \"$2\") && " +
+                "g=$(realpath -m -- \"$3\") && case \"\$w/\" in \"\$g\"/*) ;; *) exit 1;; esac && " +
                 "case \"\$r/\" in \"\$w\"/*) ;; *) exit 1;; esac",
             "sh",
             abs(rel),
             abs(base).trimEnd('/'),
+            root,
         ).exitCode == 0
+
+        /**
+         * The tools clear and write `workbench/` freely, so it must hold only their own folders and files: a link
+         * there would take an `rm -rf` or a redirect out of the workspace. Checked once for every tool, before any
+         * of them runs. Ramdisk and APEX contents are firmware, where links are normal; they are read or replaced
+         * as files (`find -type f`), never written through. The rest of the workspace is [linkInWorkspace]'s.
+         */
+        internal suspend fun requireNoLinks() {
+            val link = scratchLink() ?: port.linkInWorkspace(ws) ?: return
+            throw RefusalException(
+                Refusal(
+                    "The workspace holds a link where the tools work, which could lead them out of it.",
+                    link.removePrefix("$root/"),
+                    "Remove it, or free the folder in Workspace > Disk usage; nothing was changed.",
+                ),
+            )
+        }
+
+        private suspend fun scratchLink(): String? {
+            if (!exists(SCRATCH)) return null
+            val scan = tryRun(
+                "find",
+                abs(SCRATCH),
+                "(",
+                "-path",
+                "*/$SCRATCH/boot/*/ramdisk/*",
+                "-o",
+                "-path",
+                "*/$SCRATCH/apex/*/*",
+                ")",
+                "-prune",
+                "-o",
+                "-type",
+                "l",
+                "-print",
+            )
+            check(scan.exitCode == 0) { "The scratch folder could not be checked for links: ${scan.stderr.trim()}" }
+            return scan.stdout.lineSequence().firstOrNull(String::isNotBlank)
+        }
+
+        /** Refuses a write to [rel] unless [folderResolvesInside]. */
+        public suspend fun requireFolderInside(rel: String, base: String) {
+            if (!folderResolvesInside(rel, base)) {
+                throw RefusalException(
+                    Refusal(
+                        "This path leaves the workspace through a link.",
+                        rel,
+                        "Remove the link and try again; nothing was changed.",
+                    ),
+                )
+            }
+        }
 
         /** Runs a POSIX shell [script] whose inputs are passed as `$1..$n` ([args]), never spliced into it. */
         public suspend fun sh(script: String, vararg args: String): String = run("sh", "-c", script, "sh", *args)
@@ -169,6 +236,7 @@ public class WorkbenchRunner(
 
     private companion object {
         const val DETAILS_LIMIT = 4_000
+        const val SCRATCH = "workbench"
         const val TOOL_PATH_SCRIPT =
             """f="${'$'}HOME/.ltirom/tools.d/${'$'}1.json"; [ -f "${'$'}f" ] && sed -n 's/.*"executable" *: *"\([^"]*\)".*/\1/p' "${'$'}f" || true"""
     }

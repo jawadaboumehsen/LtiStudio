@@ -6,13 +6,15 @@
 #   detekt                         static analysis + lti-design-system rules, every module that has it
 #   verifyDesignSystemGuardrails   no raw colors/alpha/dp, no raw Material3 components in features
 #   checkArchitecture              module dependency direction (feature -> domain <- data)
+#   scripts/probes/workbench-paths.sh   workbench commands publish with `mv -T` (source check only here;
+#                                  its behaviour checks need Linux: see the script)
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
 TASKS="detekt verifyDesignSystemGuardrails checkArchitecture"
 
 echo "pre-push: checking project rules (./gradlew $TASKS)..."
-if ./gradlew $TASKS --continue --console=plain -q; then
+if sh scripts/probes/workbench-paths.sh --source-only && ./gradlew $TASKS --continue --console=plain -q; then
     echo "pre-push: all rules pass."
     exit 0
 fi

@@ -41,26 +41,36 @@ class FirmwareArchivesTest {
             val a = command.args
             return when (command.toolId) {
                 "mkdir" -> ToolResult(0, "")
+
                 "cp" -> if (failCopy || a[2] !in files) {
                     ToolResult(1, "", "cp: cannot stat '${a[2]}'")
                 } else {
                     files[a[3]] = files.getValue(a[2])
                     ToolResult(0, "")
                 }
-                "mv" -> ToolResult(0, "").also { files[a[3]] = files.remove(a[2])!! }
-                "find" -> ToolResult(
-                    0,
-                    files.filterKeys { it.startsWith(a[0] + "/") && !it.endsWith(".partial") }
-                        .map { (path, size) -> "$size\t${path.substringAfterLast('/')}" }
-                        .joinToString("\n", postfix = "\n"),
-                )
+
+                "mv" -> ToolResult(0, "").also { files[a.last()] = files.remove(a[a.size - 2])!! }
+
+                // The workspace's link scan finds none; any other find lists the archives.
+                "find" -> if ("-prune" in a) {
+                    ToolResult(0, "")
+                } else {
+                    ToolResult(
+                        0,
+                        files.filterKeys { it.startsWith(a[0] + "/") && !it.endsWith(".partial") }
+                            .map { (path, size) -> "$size\t${path.substringAfterLast('/')}" }
+                            .joinToString("\n", postfix = "\n"),
+                    )
+                }
+
                 else -> error("unexpected ${command.toolId}")
             }
         }
 
         override suspend fun stat(ws: Workspace, relPath: String): FileStat {
             val path = "${ws.linuxPath}/$relPath"
-            return FileStat(path, exists = path in files, sizeBytes = files[path] ?: 0L)
+            val exists = path in files || files.keys.any { it.startsWith("$path/") }
+            return FileStat(path, exists = exists, sizeBytes = files[path] ?: 0L)
         }
 
         override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle =

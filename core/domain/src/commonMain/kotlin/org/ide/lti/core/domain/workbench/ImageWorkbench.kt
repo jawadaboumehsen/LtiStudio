@@ -47,6 +47,7 @@ public class ImageWorkbench(
             val source = toLinuxPath(windowsPath)
             val dest = FirmwareExtractionStage.replacementPath(partition)
             val partial = "$dest.partial"
+            requireFolderInside(dest, "")
             run("mkdir", "-p", abs(FirmwareExtractionStage.REPLACEMENTS))
             // A leftover (or a link) under the side name is removed, never written through.
             run("rm", "-f", abs(partial))
@@ -64,7 +65,7 @@ public class ImageWorkbench(
                     ),
                 )
             }
-            run("mv", "-f", abs(partial), abs(dest))
+            run("mv", "-f", "-T", abs(partial), abs(dest))
             run("sha256sum", abs(dest)).trim().substringBefore(' ')
         }
 
@@ -142,11 +143,8 @@ public class ImageWorkbench(
             val rels = paths.map { it.trimEnd('/') }.distinct()
             rels.forEach { rel ->
                 val export = "out/toolkit/$partition/$rel"
-                if (".." in rel.split('/') || !folderResolvesInside(export, "out/toolkit/$partition")) {
-                    throw RefusalException(
-                        Refusal("This path leaves the export folder.", rel, "Pick an entry of the partition's tree."),
-                    )
-                }
+                require(".." !in rel.split('/')) { "This path leaves the export folder: $rel" }
+                requireFolderInside(export, "out/toolkit/$partition")
                 sh(
                     // A second export replaces the first: files removed since do not linger in the copy.
                     "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2\" && cp -a -T \"$1\" \"$2\"",
@@ -166,6 +164,7 @@ public class ImageWorkbench(
         runner.job(workspaceId, "Re-extract $partition") {
             val extracted = FirmwareExtractionStage.EXTRACTED
             val image = "$extracted/$partition.img"
+            requireFolderInside(image, "")
             replacementSha256?.let { expected ->
                 val own = FirmwareExtractionStage.replacementPath(partition)
                 val actual = run("sha256sum", abs(own)).trim().substringBefore(' ')
@@ -174,7 +173,7 @@ public class ImageWorkbench(
                         Refusal("$own is not the image imported for $partition.", own, "Import it again in Extract."),
                     )
                 }
-                run("cp", "-f", abs(own), abs(image))
+                run("cp", "-f", "--remove-destination", abs(own), abs(image))
             }
             // The user's own image was copied over the stock one; only a run of Extract brings the stock one back.
             val own = FirmwareExtractionStage.replacementPath(partition)
@@ -261,11 +260,12 @@ public class ImageWorkbench(
         runner.job(workspaceId, "Convert ${image.substringAfterLast('/')}") {
             val name = image.substringAfterLast('/').removeSuffix(".img")
             val dest = "out/toolkit/$name.${if (toSparse) "sparse" else "raw"}.img"
+            requireFolderInside(dest, "out/toolkit")
             run("mkdir", "-p", abs("out/toolkit"))
             // A side name until it is complete: a cancelled conversion never leaves an image that looks whole.
             run("rm", "-f", abs("$dest.partial"))
             run(if (toSparse) "img2simg" else "simg2img", abs(image), abs("$dest.partial"))
-            run("mv", "-f", abs("$dest.partial"), abs(dest))
+            run("mv", "-f", "-T", abs("$dest.partial"), abs(dest))
             dest
         }
 
@@ -278,6 +278,7 @@ public class ImageWorkbench(
             require(maxMegabytes > 0) { "The part size must be positive." }
             val name = "${image.substringAfterLast('/')}.part"
             val partial = "out/toolkit/.$name.partial"
+            requireFolderInside(partial, "out/toolkit")
             // Parts are made in a side folder and moved together, so a cancelled split leaves no partial set.
             sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(partial))
             // Enough suffix digits for any part count (split stops at 100 with two).

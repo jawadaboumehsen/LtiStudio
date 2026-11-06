@@ -245,13 +245,16 @@ public class RemoteCommandRunner(
                         transport.attachRun(runHandle.runId).collect { event ->
                             when (val ev = event.event) {
                                 is StreamEvent.OutputChunk -> send(ev.text.forLog())
+
                                 is StreamEvent.ExecutionFinished -> {
                                     finishedReason(ev.exitCode, ev.summary)?.let { send(it) }
                                     onSummary?.invoke(ev.summary)
                                     onFinished?.invoke(ev.exitCode)
                                     finished = true
                                 }
+
                                 is StreamEvent.ProgressUpdate -> {}
+
                                 is StreamEvent.Heartbeat -> {}
                             }
                         }
@@ -263,13 +266,16 @@ public class RemoteCommandRunner(
                         transport.stream(req).collect { event ->
                             when (event) {
                                 is StreamEvent.OutputChunk -> send(event.text.forLog())
+
                                 is StreamEvent.ExecutionFinished -> {
                                     finishedReason(event.exitCode, event.summary)?.let { send(it) }
                                     onSummary?.invoke(event.summary)
                                     onFinished?.invoke(event.exitCode)
                                     finished = true
                                 }
+
                                 is StreamEvent.ProgressUpdate -> {}
+
                                 is StreamEvent.Heartbeat -> {}
                             }
                         }
@@ -287,9 +293,9 @@ public class RemoteCommandRunner(
             // Our own deadline passed without a finish event: stop the run and report it as a timeout,
             // not as a user cancel.
             val currentId = activeExecutions[key] ?: execId
-            val stopped =
-                withContext(NonCancellable) { withTimeoutOrNull(STOP_CONFIRM_MS) { stopRemote(currentId) } }
-            if (stopped != true) send("[run] could not confirm that the timed-out process stopped")
+            if (!stopConfirmed(currentId, durable = currentId != execId)) {
+                send("[run] could not confirm that the timed-out process stopped")
+            }
             send("[run] exit -1: $TIMED_OUT_MARKER after ${timeoutSeconds}s")
             onSummary?.invoke("$TIMED_OUT_MARKER after ${timeoutSeconds}s")
             onFinished?.invoke(-1)
@@ -297,10 +303,18 @@ public class RemoteCommandRunner(
             // This coroutine is already cancelled: the request to stop the remote build has to run outside that
             // cancellation, or it is abandoned at its first suspension and the build keeps compiling unseen.
             val currentId = activeExecutions[key] ?: execId
-            val stopped =
-                withContext(NonCancellable) { withTimeoutOrNull(STOP_CONFIRM_MS) { stopRemote(currentId) } }
-            if (stopped != true) throw RemoteCancellationUnconfirmedException(currentId)
+            if (!stopConfirmed(currentId, durable = currentId != execId)) {
+                throw RemoteCancellationUnconfirmedException(currentId)
+            }
             throw ce
+        } catch (e: Exception) {
+            // Nobody reads this run any more and the caller is about to report a failure: it must not go on unseen.
+            val currentId = activeExecutions[key] ?: execId
+            // Unconfirmed goes first: the caller must keep the tool's slot while the process may still run.
+            if (!stopConfirmed(currentId, durable = currentId != execId)) {
+                throw RemoteCancellationUnconfirmedException(currentId).apply { addSuppressed(e) }
+            }
+            throw e
         } finally {
             activeExecutions.remove(key)
         }
@@ -327,14 +341,33 @@ public class RemoteCommandRunner(
         }
     }
 
-    /** Asks the service to stop [id] and waits until it reports the run finished; true only when it did. */
-    private suspend fun stopRemote(id: String): Boolean {
-        val response = runCatching { transport.cancelRun(id) }.getOrNull()
-        if (response == null || !response.accepted) return runCatching { transport.cancel(id) }.getOrDefault(false)
+    /** [stopRemote] outside any cancellation of the caller, for a bounded time; no answer in time is no. */
+    private suspend fun stopConfirmed(id: String, durable: Boolean): Boolean =
+        withContext(NonCancellable) { withTimeoutOrNull(STOP_CONFIRM_MS) { stopRemote(id, durable) } } == true
+
+    /**
+     * Asks the service to stop [id]; whether it did. A [durable] run has a record, so only that can say, whatever
+     * either request answered ([awaitFinished]); one that refused because it had just finished is confirmed too. A
+     * plain stream has none, and the answer to its cancel is all there is.
+     */
+    private suspend fun stopRemote(id: String, durable: Boolean): Boolean {
+        val accepted = runCatching { transport.cancelRun(id) }.getOrNull()?.accepted == true
+        val asked = accepted || runCatching { transport.cancel(id) }.getOrDefault(false)
+        return if (durable) awaitFinished(id) else asked
+    }
+
+    /**
+     * Whether [id] ends finished with nothing left alive. A status that could not be read is read again (every caller
+     * bounds this wait, and no answer is unconfirmed); one the service does not have proves nothing, so the callers
+     * keep the tool's slot.
+     */
+    private suspend fun awaitFinished(id: String): Boolean {
         while (true) {
-            // A transport without run status cannot say more than "accepted".
-            val status = runCatching { transport.getRun(id) }.getOrNull()
-            if (status == null || status.status in FINISHED_STATES) return status?.unconfirmedSurvivors.isNullOrEmpty()
+            val read = runCatching { transport.getRun(id) }
+            read.exceptionOrNull()?.let { if (it is CancellationException) throw it }
+            val status = read.getOrNull()
+            if (read.isSuccess && status == null) return false
+            if (status != null && status.status in FINISHED_STATES) return status.unconfirmedSurvivors.isEmpty()
             delay(STOP_POLL_MS)
         }
     }
@@ -350,20 +383,17 @@ public class RemoteCommandRunner(
     private fun finishedReason(exitCode: Int, summary: String?): String? =
         summary?.takeIf { exitCode != 0 && it.isNotBlank() }?.let { "[run] exit $exitCode: $it" }
 
-    @Suppress("ReturnCount")
+    /**
+     * Asks every requested run to stop, even after one refuses. The handles stay until each run's own stream ends
+     * ([stream]'s `finally`): a cancel that failed can be tried again, and its stream can still stop the right run.
+     */
     public suspend fun cancelActive(key: String? = null): Boolean {
-        if (key != null) {
-            val id = activeExecutions.remove(key) ?: return true
-            val runResult = runCatching { transport.cancelRun(id) }.getOrNull()
-            if (runResult != null && runResult.accepted) return true
-            return transport.cancel(id)
-        }
-        val ids = activeExecutions.values.toList()
-        activeExecutions.clear()
-        if (ids.isEmpty()) return true
-        return ids.all { id ->
-            val runResult = runCatching { transport.cancelRun(id) }.getOrNull()
-            if (runResult != null && runResult.accepted) true else transport.cancel(id)
-        }
+        val ids = if (key != null) listOfNotNull(activeExecutions[key]) else activeExecutions.values.toList()
+        return ids.map { requestStop(it) }.all { it }
+    }
+
+    private suspend fun requestStop(id: String): Boolean {
+        val runResult = runCatching { transport.cancelRun(id) }.getOrNull()
+        return runResult?.accepted == true || runCatching { transport.cancel(id) }.getOrDefault(false)
     }
 }

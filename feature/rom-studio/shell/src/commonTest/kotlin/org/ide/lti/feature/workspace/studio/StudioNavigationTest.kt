@@ -26,6 +26,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.Acknowledgements
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.JobLockHandle
 import org.ide.lti.core.domain.pipeline.toolkit.LockResult
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RestoreIndex
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
@@ -54,6 +55,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -573,8 +575,23 @@ class StudioNavigationTest {
         assertEquals("Restored system/system/app/SampleApp", viewModel.uiState.value.restoreMessage)
     }
 
+    @Test
+    fun aLinkInTheScratchFolderStopsAJobBeforeItsWorkAndOnlyFreeingTheFolderGoesOn() = runTest(testDispatcher) {
+        val stores = RestoreStores(RestoreIndex(emptyList()))
+        val service = RestoreService(scratchLink = "/ws/workbench/boot")
+        val runner = WorkbenchRunner(OneWorkspace, service, stores, stores, stores)
+        var worked = false
+
+        val refused = assertFailsWith<RefusalException> { runner.job(OneWorkspace.ID, "Unpack") { worked = true } }
+
+        assertFalse(worked, "no tool may run: unpack's first command is an rm -rf")
+        assertEquals("workbench/boot", refused.refusal.item)
+        runner.job(OneWorkspace.ID, "Free disk space", checkLinks = false) { worked = true }
+        assertTrue(worked)
+    }
+
     /** The build service of the restore test: every file exists and every command succeeds. */
-    private class RestoreService : PipelineExecutionPort {
+    private class RestoreService(private val scratchLink: String? = null) : PipelineExecutionPort {
         val ran = mutableListOf<StepCommand>()
 
         override suspend fun startStep(ws: Workspace, step: StepCommand, idempotencyKey: String): RunHandle {
@@ -582,7 +599,13 @@ class StudioNavigationTest {
             return RunHandle("run-${ran.size}", "RUNNING", 0L)
         }
 
-        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> = flowOf(StepEvent.Finished(0))
+        override fun observe(serverRunId: String, fromSeq: Long): Flow<StepEvent> =
+            if (scratchLink != null && ran.last().toolId == "find") {
+                flowOf(StepEvent.Output(1L, scratchLink), StepEvent.Finished(0))
+            } else {
+                flowOf(StepEvent.Finished(0))
+            }
+
         override suspend fun status(serverRunId: String): StepStatus? = null
         override suspend fun cancel(serverRunId: String): Boolean = true
         override suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean = true

@@ -10,9 +10,13 @@
 package org.ide.lti.core.data.repository.run
 
 import com.russhwolf.settings.MapSettings
+import com.russhwolf.settings.Settings
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.datastore.RunFileStorage
@@ -35,17 +39,40 @@ class RunRepositoryWritesTest {
         val runs = mutableMapOf<String, String>()
         var deleteFails = false
 
+        /** Holds the first read after taking its copy, as a slow disk would. */
+        var holdFirstRead = false
+        private var reads = 0
+        val readStarted = CompletableDeferred<Unit>()
+        val finishRead = CompletableDeferred<Unit>()
+
         override suspend fun saveRun(runId: String, json: String) {
             runs[runId] = json
         }
 
-        override suspend fun getRun(runId: String): String? = runs[runId]
+        override suspend fun getRun(runId: String): String? {
+            val copy = runs[runId]
+            if (holdFirstRead && ++reads == 1) {
+                readStarted.complete(Unit)
+                finishRead.await()
+            }
+            return copy
+        }
+
         override suspend fun appendEvents(runId: String, events: List<String>) {}
         override suspend fun getEvents(runId: String, fromSeq: Long): List<String> = emptyList()
 
         override suspend fun deleteRun(runId: String) {
             if (deleteFails) throw IOException("disk full")
             runs.remove(runId)
+        }
+    }
+
+    private class FailingIndex(private val base: MapSettings = MapSettings()) : Settings by base {
+        var fails = false
+
+        override fun putString(key: String, value: String) {
+            if (fails && key == RunRecordDataSource.KEY_RUNS) throw IOException("index unavailable")
+            base.putString(key, value)
         }
     }
 
@@ -76,6 +103,56 @@ class RunRepositoryWritesTest {
         storage.deleteFails = false
         repository.deleteRun(finished.id)
         assertNull(repository.getRun(finished.id))
+    }
+
+    @Test
+    fun aReadBegunBeforeADeleteCannotBringTheRunBack() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val storage = Storage()
+        val source = RunRecordDataSource(MapSettings(), fileStorage = storage, ioDispatcher = dispatcher)
+        source.saveRun(finished)
+        storage.holdFirstRead = true
+        val repository = RunRepositoryImpl(source, ioDispatcher = dispatcher, scope = CoroutineScope(dispatcher))
+        runCurrent()
+        storage.readStarted.await()
+
+        repository.deleteRun(finished.id)
+        storage.finishRead.complete(Unit)
+        runCurrent()
+
+        assertNull(repository.getRun(finished.id))
+    }
+
+    @Test
+    fun aFailedIndexWriteKeepsTheRunOnDisk() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val storage = Storage()
+        val settings = FailingIndex()
+        val source = RunRecordDataSource(settings, fileStorage = storage, ioDispatcher = dispatcher)
+        source.saveRun(finished)
+
+        settings.fails = true
+        assertFailsWith<IOException> { source.deleteRun(finished.id) }
+
+        assertNotNull(source.getRun(finished.id))
+        assertEquals(listOf(finished.id), source.currentSummaries.map { it.id })
+    }
+
+    @Test
+    fun aFailedFileDeleteKeepsTheRunListed() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val storage = Storage()
+        val settings = MapSettings()
+        val source = RunRecordDataSource(settings, fileStorage = storage, ioDispatcher = dispatcher)
+        source.saveRun(finished)
+
+        storage.deleteFails = true
+        assertFailsWith<IOException> { source.deleteRun(finished.id) }
+
+        // As a restart reads it: from the stored index, not from memory.
+        val reopened = RunRecordDataSource(settings, fileStorage = storage, ioDispatcher = dispatcher)
+        assertEquals(listOf(finished.id), reopened.currentSummaries.map { it.id })
+        assertNotNull(reopened.getRun(finished.id))
     }
 
     @Test

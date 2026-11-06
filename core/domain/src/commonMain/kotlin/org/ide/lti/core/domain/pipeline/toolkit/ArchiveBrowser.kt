@@ -76,7 +76,7 @@ public object ArchiveBrowser {
             if ! container "${'$'}peek"; then echo "magic ${'$'}peek"; echo "notarchive $1"; exit 0; fi
             # Its own side name: two reads of one member (reads take no job lock) never write the same file.
             p="${'$'}k.partial.${'$'}${'$'}"
-            cat_member "${'$'}f" "$1" > "${'$'}p" && mv "${'$'}p" "${'$'}k" || { rm -f "${'$'}p"; exit 1; }
+            cat_member "${'$'}f" "$1" > "${'$'}p" && mv -T "${'$'}p" "${'$'}k" || { rm -f "${'$'}p"; exit 1; }
           fi
           f="${'$'}k"; shift
         done

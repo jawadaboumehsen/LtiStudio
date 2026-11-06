@@ -24,6 +24,7 @@ public class ArchiveWorkbench(
     /** What [archive], or the member [chain] leads to inside it, holds. */
     public suspend fun list(workspaceId: String, archive: String, chain: List<String>): ArchiveListing =
         runner.read(workspaceId) {
+            requireFolderInside("$CACHE/member", CACHE)
             val output = sh(
                 ArchiveBrowser.SCRIPT,
                 "list",
@@ -43,6 +44,9 @@ public class ArchiveWorkbench(
         chain: List<String>,
         members: List<String>,
     ): String = runner.job(workspaceId, "Copy out of ${(chain.lastOrNull() ?: archive).substringAfterLast('/')}") {
+        // The script keeps members inside the folder; this keeps the folder inside the workspace.
+        requireFolderInside("$OUT/member", OUT)
+        requireFolderInside("$CACHE/member", CACHE)
         sh(
             ArchiveBrowser.SCRIPT,
             "extract",

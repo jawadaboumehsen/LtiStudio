@@ -247,9 +247,9 @@ internal class GithubReleaseSteps(
         val device = entry["device"]?.jsonPrimitive?.content
         val old = existing?.let { Json.parseToJsonElement(it).jsonObject["response"]?.jsonArray }.orEmpty()
             .map { it.jsonObject }
-            .filter { it["id"] != newEntry["id"] }
         val (mine, others) = old.partition { it["device"]?.jsonPrimitive?.content == device }
-        val kept = (listOf(newEntry) + mine)
+        // Replaces this device's entry of that id; another device's is not this publish's to touch.
+        val kept = (listOf(newEntry) + mine.filter { it["id"] != newEntry["id"] })
             .sortedByDescending { it["datetime"]?.jsonPrimitive?.longOrNull ?: 0L }
             .take(settings.retentionPerDevice.coerceAtLeast(1))
         return pretty.encodeToString(JsonObject.serializer(), JsonObject(mapOf("response" to JsonArray(others + kept))))

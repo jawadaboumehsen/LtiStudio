@@ -30,6 +30,12 @@ public data class StepStatus(
     val lastSeq: Long = 0L,
 )
 
+/** The service reports this step as over. Anything else, a null status too, does not say it has stopped. */
+public val StepStatus.hasFinished: Boolean
+    get() = status in FINISHED_STEP_STATES
+
+private val FINISHED_STEP_STATES = setOf("COMPLETED", "FAILED", "CANCELLED", "INTERRUPTED")
+
 public data class FileStat(
     val path: String,
     val exists: Boolean,

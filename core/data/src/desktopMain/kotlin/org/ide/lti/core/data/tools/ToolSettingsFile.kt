@@ -154,7 +154,9 @@ public class ToolSettingsFile(
         source: ResolvedSource?,
     ): Result<Unit> = when (choice) {
         ChoiceUpdate.Keep -> Result.success(Unit)
+
         ChoiceUpdate.Clear -> clear(group)
+
         ChoiceUpdate.Record ->
             if (source == null) {
                 Result.failure(
@@ -205,7 +207,7 @@ public class ToolSettingsFile(
             """
             mkdir -p ${shellQuote(baseDir)} && \
             echo '$b64' | base64 -d > ${shellQuote(tmpPath)}${'$'}${'$'} && \
-            mv ${shellQuote(tmpPath)}${'$'}${'$'} ${shellQuote(settingsPath)}
+            mv -T ${shellQuote(tmpPath)}${'$'}${'$'} ${shellQuote(settingsPath)}
             """.trimIndent()
         val res = runner.execute(script, CommandCategory.SHORT)
         return if (res.isSuccess && res.getOrThrow().exitCode == 0) {
@@ -232,6 +234,7 @@ public class ToolSettingsFile(
                 submodules = source.submodules,
             )
         }
+
         is ResolvedSource.Release ->
             ToolSourceDto(
                 kind = "release",
@@ -262,6 +265,7 @@ public class ToolSettingsFile(
                 submodules = dto.submodules,
             )
         }
+
         "release" -> {
             val ver = dto.version ?: return null
             val url = dto.url ?: return null
@@ -274,6 +278,7 @@ public class ToolSettingsFile(
                 member = member,
             )
         }
+
         else -> null
     }
 

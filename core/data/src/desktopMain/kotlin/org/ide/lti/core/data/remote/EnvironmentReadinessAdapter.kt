@@ -15,6 +15,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import org.ide.lti.core.data.setup.ToolchainReadinessPolicy
 import org.ide.lti.core.domain.ports.DaemonFailureCategory
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -26,6 +31,7 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.ide.lti.core.model.workspace.SigningPolicy
 import org.ide.lti.core.model.workspace.Workspace
 
 /**
@@ -103,12 +109,15 @@ public class EnvironmentReadinessAdapter(
                 DaemonFailureCategory.UNSUPPORTED_JAVA ->
                     EnvironmentReadinessState.TOOLS_INCOMPATIBLE to
                         "Install Java ${ToolchainReadinessPolicy.MIN_JAVA_VERSION}+ in WSL distribution"
+
                 DaemonFailureCategory.UNHEALTHY_STATUS,
                 DaemonFailureCategory.UNRECOGNIZED_STATUS,
                 -> EnvironmentReadinessState.SERVICE_UNHEALTHY to "Check daemon logs and restart the daemon"
+
                 DaemonFailureCategory.UNREACHABLE ->
                     EnvironmentReadinessState.SERVICE_UNREACHABLE to
                         "Start the LtiRomServer daemon or verify WSL connectivity"
+
                 DaemonFailureCategory.COMPATIBILITY_MODE ->
                     EnvironmentReadinessState.SERVICE_UNHEALTHY to
                         "Verify daemon version and check daemon logs"
@@ -177,16 +186,12 @@ public class EnvironmentReadinessAdapter(
             )
         }
 
-        val manifestContent = readFileContent(linuxPath, "workspace.json")
-        if (manifestContent != null) {
-            val match = Regex("\"layoutVersion\"\\s*:\\s*(\\d+)").find(manifestContent)
-            if (match != null && match.groupValues[1] != "1") {
-                return EnvironmentReadiness(
-                    state = EnvironmentReadinessState.WORKSPACE_INVALID,
-                    failingCheck = "Workspace manifest layoutVersion drift: expected 1, found ${match.groupValues[1]}",
-                    remediation = "Upgrade or re-provision the workspace",
-                )
-            }
+        manifestProblem(readFileContent(linuxPath, "workspace.json"))?.let { problem ->
+            return EnvironmentReadiness(
+                state = EnvironmentReadinessState.WORKSPACE_INVALID,
+                failingCheck = problem,
+                remediation = "Upgrade or re-provision the workspace",
+            )
         }
 
         if (!hasFile(linuxPath, "config.json")) {
@@ -197,15 +202,49 @@ public class EnvironmentReadinessAdapter(
             )
         }
 
-        if (!hasFile(linuxPath, "keys/avb.pem") && !hasFile(linuxPath, "keys/avb.avbpubkey")) {
+        val signing = readFileContent(linuxPath, "config.json")?.let(::signingOf) ?: return EnvironmentReadiness(
+            state = EnvironmentReadinessState.WORKSPACE_INVALID,
+            failingCheck = "Unreadable configuration snapshot at $linuxPath/config.json",
+            remediation = "Save a valid configuration snapshot",
+        )
+        requiredKeys(signing).firstOrNull { !hasFile(linuxPath, it) }?.let { missing ->
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
-                failingCheck = "Missing cryptographic signing keys at $linuxPath/keys",
+                failingCheck = "Missing cryptographic signing key: $missing",
                 remediation = "Provision signing keys for workspace",
             )
         }
 
         return EnvironmentReadiness(state = EnvironmentReadinessState.READY)
+    }
+
+    private val configJson = Json { ignoreUnknownKeys = true }
+
+    /** The signing settings of config.json, or null when it is not one: only they matter to this gate. */
+    private fun signingOf(config: String): SigningPolicy? = runCatching {
+        val signing = Json.parseToJsonElement(config).jsonObject.getValue("build").jsonObject.getValue("signing")
+        configJson.decodeFromJsonElement<SigningPolicy>(signing)
+    }.getOrNull()
+
+    /** Why workspace.json is not one this app can use, or null. */
+    private fun manifestProblem(content: String?): String? {
+        val manifest = content?.let { runCatching { Json.parseToJsonElement(it).jsonObject }.getOrNull() }
+        val version = (manifest?.get("layoutVersion") as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
+        return when {
+            manifest == null -> "Workspace manifest is unreadable or not JSON"
+            version == null -> "Workspace manifest has no layoutVersion"
+            version != 1 -> "Workspace manifest layoutVersion drift: expected 1, found $version"
+            else -> null
+        }
+    }
+
+    /** The private keys the workspace's own signing settings use, and only those. */
+    private fun requiredKeys(signing: SigningPolicy): List<String> = buildList {
+        if (signing.signImages) add(signing.avbKeyRef)
+        if (signing.signPackage) {
+            add("${signing.platformKeyRef}.x509.pem")
+            add("${signing.platformKeyRef}.pk8")
+        }
     }
 
     private suspend fun readFileContent(linuxPath: String, fileName: String): String? {
@@ -225,7 +264,7 @@ public class EnvironmentReadinessAdapter(
             transport.execute(
                 ToolExecutionRequest(
                     toolId = "test",
-                    arguments = listOf("-f", "$linuxPath/$fileName"),
+                    arguments = listOf("-f", if (fileName.startsWith("/")) fileName else "$linuxPath/$fileName"),
                     workingDirectory = "/",
                 ),
             )

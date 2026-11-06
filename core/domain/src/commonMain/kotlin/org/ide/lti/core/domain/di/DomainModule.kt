@@ -170,6 +170,7 @@ val DomainModule =
                 runRepository = get(),
                 orchestrator = get(),
                 scope = getOrNull(),
+                executionPort = getOrNull(),
             )
         }
         singleOf(::ObserveRunUseCase)

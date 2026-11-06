@@ -29,6 +29,7 @@ import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.withLock
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.requireNoLinkInWorkspace
 import org.ide.lti.core.domain.ports.runToEnd
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
@@ -191,6 +192,7 @@ public class PublishReleaseUseCase(
         val release = check.release
         val destination = check.destination
         if (ws == null || release == null || destination == null || check.problems.isNotEmpty()) return null
+        port.requireNoLinkInWorkspace(ws)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
         val requestKey = CacheKeys.sha256(
             json.encodeToString(PublishSettings.serializer(), settings.copy(collisionPolicy = CollisionPolicy.FAIL)) +
@@ -347,10 +349,10 @@ public class PublishReleaseUseCase(
         try {
             sampling(sample = { sizeOf(ws, partial) }, report = copied) { run(ws, "cp", "--", source, partial) }
             if (policy == CollisionPolicy.OVERWRITE) {
-                run(ws, "mv", "-f", "--", partial, "$dest/$name")
+                run(ws, "mv", "-f", "-T", "--", partial, "$dest/$name")
             } else {
                 // No-clobber: a file that appeared there meanwhile is never replaced.
-                run(ws, "mv", "-n", "--", partial, "$dest/$name")
+                run(ws, "mv", "-n", "-T", "--", partial, "$dest/$name")
                 check(port.runToEnd(ws, "stat", listOf("-c", "%s", partial)).exitCode != 0) {
                     "$dest/$name appeared while it was being copied (collision policy: ${policy.name.lowercase()})."
                 }

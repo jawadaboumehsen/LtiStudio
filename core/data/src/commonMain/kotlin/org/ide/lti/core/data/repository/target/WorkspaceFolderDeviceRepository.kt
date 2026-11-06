@@ -39,9 +39,11 @@ public class WorkspaceFolderDeviceRepository(
         .filter { it.first == workspaceId }
         .map { it.second }
 
-    // A successful read is shared with every observer, so a retry anywhere refreshes the whole app.
-    override suspend fun get(workspaceId: String): TargetDevice? =
+    // A successful read is shared with every observer, so a retry anywhere refreshes the whole app. In turn with the
+    // saves: a read begun before a save would otherwise announce the old device after it.
+    override suspend fun get(workspaceId: String): TargetDevice? = saving.withLock {
         read(workspace(workspaceId)).also { changes.emit(workspaceId to it) }
+    }
 
     /** One save at a time: two saves reading the same revision would both write the next one. */
     override suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice = saving.withLock {

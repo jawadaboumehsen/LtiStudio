@@ -79,6 +79,8 @@ public class AcquireViewModel(
         val facts = facts ?: return
         integrityJob?.cancel()
         val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
+        // Another file's hash is never shown next to this one's expected hash, not even while this one is read.
+        if (_integrity.value.archivePath != relPath) _integrity.value = IntegrityFacts()
         integrityJob = viewModelScope.launch {
             val stat = facts.stat(workspaceId, relPath)
             val measured = stat?.let { facts.sha256(workspaceId, relPath) }
@@ -119,9 +121,7 @@ public class AcquireViewModel(
     /** Uses [archive] for the build: the Acquire stage then checks it exists instead of downloading. */
     public fun selectArchive(archive: FirmwareArchive) {
         updateSettings(settings.value.copy(mode = AcquisitionMode.IMPORT_ARCHIVE, archiveRef = archive.ref))
-        if (archive.detectedFormat != null) {
-            _archiveState.update { it.copy(lastDetectedFormat = archive.detectedFormat) }
-        }
+        _archiveState.update { it.copy(lastDetectedFormat = archive.detectedFormat) }
     }
 
     private suspend fun archiveJob(block: suspend (FirmwareArchives) -> List<FirmwareArchive>) {

@@ -48,6 +48,43 @@ class AuthorTaskProcessAdapterTest {
     }
 
     @Test
+    fun aScriptTheBuildAppliesFromAnywhereIsPartOfTheFingerprint() = runTest {
+        Files.writeString(projectDir.resolve("build.gradle.kts"), "apply(from = \"extra.gradle.kts\")")
+        val extra = projectDir.resolve("extra.gradle.kts")
+        Files.writeString(extra, "println(\"before\")")
+        val before = adapter.fingerprint(projectDir.toString())
+
+        Files.writeString(extra, "println(\"after\")")
+        assertNotEquals(before, adapter.fingerprint(projectDir.toString()))
+    }
+
+    @Test
+    fun aSourcePackageNamedBuildIsNotBuildOutput() = runTest {
+        Files.writeString(projectDir.resolve("build.gradle.kts"), "plugins {}")
+        val source = projectDir.resolve("src/main/kotlin/sample/build/Generator.kt")
+        Files.createDirectories(source.parent)
+        Files.writeString(source, "fun payload() = 1")
+        val before = adapter.fingerprint(projectDir.toString())
+
+        Files.writeString(source, "fun payload() = 2")
+
+        assertNotEquals(before, adapter.fingerprint(projectDir.toString()))
+    }
+
+    @Test
+    fun aSubprojectsBuildOutputIsNotAnInput() = runTest {
+        val sub = projectDir.resolve("sub")
+        Files.createDirectories(sub.resolve("build"))
+        Files.writeString(sub.resolve("build.gradle.kts"), "plugins {}")
+        Files.writeString(sub.resolve("build/made.txt"), "first")
+        val before = adapter.fingerprint(projectDir.toString())
+
+        Files.writeString(sub.resolve("build/made.txt"), "second")
+
+        assertEquals(before, adapter.fingerprint(projectDir.toString()))
+    }
+
+    @Test
     fun testFingerprintChangesWhenAnyCoveredFileChangesAndIsStableOtherwise() = runTest {
         // Create initial project files
         Files.writeString(projectDir.resolve("build.gradle.kts"), "// build script\n")
@@ -66,8 +103,9 @@ class AuthorTaskProcessAdapterTest {
         Files.createDirectories(hooksDir)
         Files.writeString(hooksDir.resolve("Extra.kt"), "fun extra() = 1\n")
 
-        val readme = projectDir.resolve("README.md")
-        Files.writeString(readme, "# Project Documentation\n")
+        val made = projectDir.resolve("build/classes/Hook.class")
+        Files.createDirectories(made.parent)
+        Files.writeString(made, "made by a build\n")
 
         // 1. Initial fingerprint
         val fp1 = adapter.fingerprint(projectDir.toString())
@@ -77,8 +115,8 @@ class AuthorTaskProcessAdapterTest {
         val fp2 = adapter.fingerprint(projectDir.toString())
         assertEquals(fp1, fp2)
 
-        // 3. Modifying uncovered file (README.md) does not change fingerprint
-        Files.writeString(readme, "# Updated Documentation\n")
+        // 3. What a build makes is not covered: building does not ask for approval again
+        Files.writeString(made, "made by another build\n")
         val fp3 = adapter.fingerprint(projectDir.toString())
         assertEquals(fp1, fp3)
 

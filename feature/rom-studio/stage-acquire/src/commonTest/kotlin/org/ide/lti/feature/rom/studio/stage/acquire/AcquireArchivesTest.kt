@@ -50,8 +50,12 @@ class AcquireArchivesTest {
         var headers = mapOf<String, String>()
         override suspend fun execute(ws: Workspace, command: StepCommand): ToolResult = when {
             command.toolId == "cp" && copyError != null -> ToolResult(1, "", copyError!!)
-            command.toolId == "find" -> ToolResult(0, listed)
+
+            // Only the listing of the archives: the workspace's link scan finds none.
+            command.toolId == "find" -> ToolResult(0, if ("-prune" in command.args) "" else listed)
+
             command.toolId == "xxd" -> ToolResult(0, headers[command.args.last().substringAfterLast('/')].orEmpty())
+
             else -> ToolResult(0, "")
         }
         override suspend fun stat(ws: Workspace, relPath: String) = FileStat(relPath, exists = true, sizeBytes = 7L)

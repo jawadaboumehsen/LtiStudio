@@ -37,6 +37,7 @@ import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.workspace.Workspace
 import kotlin.test.Test
@@ -427,7 +428,7 @@ class EnvironmentReadinessAdapterTest {
                     ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
                 }
             } else {
-                ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+                workspaceFile(req)
             }
         }
 
@@ -442,16 +443,14 @@ class EnvironmentReadinessAdapterTest {
         val readiness = adapter.forWorkspace(ws)
 
         assertEquals(EnvironmentReadinessState.WORKSPACE_INVALID, readiness.state)
-        assertTrue(readiness.failingCheck?.contains("cryptographic signing keys") == true)
+        assertTrue(readiness.failingCheck?.contains("signing key: keys/avb.pem") == true)
     }
 
     @Test
     fun testWorkspaceReadyWhenAllFilesAndKeysPresent() = runTest {
         val toolchain = FakeToolchainProvisioningService()
         val transport = FakeRemoteTransport()
-        transport.customExecuteHandler = { req ->
-            ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
-        }
+        transport.customExecuteHandler = ::workspaceFile
 
         val adapter = EnvironmentReadinessAdapter(toolchain, transport)
         val ws =
@@ -464,6 +463,60 @@ class EnvironmentReadinessAdapterTest {
         val readiness = adapter.forWorkspace(ws)
 
         assertEquals(EnvironmentReadinessState.READY, readiness.state)
+    }
+
+    /** A manifest and configuration that pass, for `cat`; every other command succeeds. */
+    private fun workspaceFile(req: ToolExecutionRequest): ToolExecutionResponse {
+        val path = req.arguments.lastOrNull().orEmpty()
+        val content = when {
+            req.toolId != "cat" -> "ok"
+            path.endsWith("workspace.json") -> """{"layoutVersion":1}"""
+            else -> """{"build":{"signing":{}}}"""
+        }
+        return ToolExecutionResponse(exitCode = 0, stdout = content, stderr = "", durationMs = 5L)
+    }
+
+    private suspend fun readinessWith(manifest: String, config: String, missing: String? = null): EnvironmentReadiness {
+        val transport = FakeRemoteTransport()
+        transport.customExecuteHandler = { req ->
+            val path = req.arguments.lastOrNull().orEmpty()
+            when {
+                req.toolId == "cat" && path.endsWith("workspace.json") ->
+                    ToolExecutionResponse(exitCode = 0, stdout = manifest, stderr = "", durationMs = 5L)
+
+                req.toolId == "cat" ->
+                    ToolExecutionResponse(exitCode = 0, stdout = config, stderr = "", durationMs = 5L)
+
+                missing != null && path.endsWith(missing) ->
+                    ToolExecutionResponse(exitCode = 1, stdout = "", stderr = "", durationMs = 5L)
+
+                else -> ToolExecutionResponse(exitCode = 0, stdout = "ok", stderr = "", durationMs = 5L)
+            }
+        }
+        val ws = Workspace(id = "w", name = "w", path = "C:\\test", linuxPath = "/home/lti/w")
+        return EnvironmentReadinessAdapter(FakeToolchainProvisioningService(), transport).forWorkspace(ws)
+    }
+
+    @Test
+    fun aManifestThatIsNotOneIsNotReady() = runTest {
+        val config = """{"build":{"signing":{}}}"""
+        val notAVersion = listOf("""{"layoutVersion":{}}""", """{"layoutVersion":[1]}""", """{"layoutVersion":"1"}""")
+        for (manifest in listOf("not json", "{}", """{"layoutVersion":2}""") + notAVersion) {
+            assertEquals(EnvironmentReadinessState.WORKSPACE_INVALID, readinessWith(manifest, config).state, manifest)
+        }
+    }
+
+    @Test
+    fun theKeysAreTheOnesTheSigningSettingsUse() = runTest {
+        val manifest = """{"layoutVersion":1}"""
+        val custom = """{"build":{"signing":{"avbKeyRef":"keys/mine.pem"}}}"""
+        assertEquals(EnvironmentReadinessState.READY, readinessWith(manifest, custom, "keys/avb.pem").state)
+        assertEquals(
+            EnvironmentReadinessState.WORKSPACE_INVALID,
+            readinessWith(manifest, custom, "keys/mine.pem").state,
+        )
+        val unsigned = """{"build":{"signing":{"signImages":false,"signPackage":false}}}"""
+        assertEquals(EnvironmentReadinessState.READY, readinessWith(manifest, unsigned, "keys/avb.pem").state)
     }
 
     @Test

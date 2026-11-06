@@ -51,8 +51,11 @@ object XmlResourceEditor {
         val root = doc.documentElement
         val nodes = fragment(doc, root, change.fragment)
         if (change.kind == XmlChangeKind.APPEND && change.match == null) {
-            nodes.filterIsInstance<Element>().forEach { checkNotDeclared(root, it) }
-            nodes.forEach { appendIndented(root, it) }
+            // One at a time, so that a fragment's elements are checked against each other too.
+            nodes.forEach {
+                declare(root, root, it)
+                appendIndented(root, it)
+            }
             return
         }
         val match = change.match ?: throw Refused(ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND, "No element named")
@@ -60,13 +63,27 @@ object XmlResourceEditor {
         val parent = target.parentNode
         when (change.kind) {
             XmlChangeKind.APPEND -> nodes.forEach { appendIndented(target, it) }
-            XmlChangeKind.INSERT_BEFORE -> nodes.forEach { insertIndented(parent, it, target, like = target) }
-            XmlChangeKind.INSERT_AFTER ->
-                nodes.asReversed().forEach { insertIndented(parent, it, target.nextSibling, like = target) }
-            XmlChangeKind.REPLACE -> {
-                nodes.forEach { parent.insertBefore(it, target) }
-                parent.removeChild(target)
+
+            XmlChangeKind.INSERT_BEFORE -> nodes.forEach {
+                declare(root, parent, it)
+                insertIndented(parent, it, target, like = target)
             }
+
+            XmlChangeKind.INSERT_AFTER -> nodes.asReversed().forEach {
+                declare(root, parent, it)
+                insertIndented(parent, it, target.nextSibling, like = target)
+            }
+
+            XmlChangeKind.REPLACE -> {
+                // Out first: the replacement may declare the name it replaces.
+                val next = target.nextSibling
+                parent.removeChild(target)
+                nodes.forEach {
+                    declare(root, parent, it)
+                    parent.insertBefore(it, next)
+                }
+            }
+
             XmlChangeKind.REMOVE -> parent.removeChild(target)
         }
     }
@@ -76,10 +93,12 @@ object XmlResourceEditor {
         val hits = (listOf(root) + (0 until all.length).map { all.item(it) as Element }).filter { matches(it, match) }
         return when (hits.size) {
             1 -> hits.single()
+
             0 -> throw Refused(
                 ComponentPatchCodes.PATCH_CONTEXT_NOT_FOUND,
                 "No element ${describe(match)}" + near(root, match),
             )
+
             else -> throw Refused(
                 ComponentPatchCodes.PATCH_CONTEXT_AMBIGUOUS,
                 "${hits.size} elements ${describe(match)}",
@@ -118,6 +137,11 @@ object XmlResourceEditor {
 
     private fun describe(match: XmlMatch): String =
         "<${match.tag ?: "*"}" + match.attributes.entries.joinToString("") { " ${it.key}=\"${it.value}\"" } + ">"
+
+    /** Only a resource directly under the root declares anything. */
+    private fun declare(root: Element, parent: Node, added: Node) {
+        if (parent === root && added is Element) checkNotDeclared(root, added)
+    }
 
     /** A resource added to the root must not exist already: same tag, type and name, or the same public id. */
     private fun checkNotDeclared(root: Element, added: Element) {

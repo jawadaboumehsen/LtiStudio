@@ -12,6 +12,7 @@ package org.ide.lti.feature.rom.studio.stage.debloat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -122,11 +123,15 @@ public class DebloatViewModel(
         updateSettings(settings.value.copy(removeSelectors = settings.value.removeSelectors - selector))
     }
 
+    private var refreshJob: Job? = null
+
     /** Reads the apps of the assembled work tree and the last Debloat result. */
     public fun refresh() {
         val facts = workspaceFacts ?: return
         _facts.value = _facts.value.copy(loading = true)
-        viewModelScope.launch {
+        // A newer refresh replaces this one whole: its risks must never land on the newer inventory.
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
             val listing = facts.list(workspaceId, "work", maxDepth = INVENTORY_DEPTH, name = "*.apk")
                 .joinToString("\n") { "${it.sizeBytes}\t${it.path}" }
             val result = facts.read(workspaceId, DebloatStage.RESULT)?.let(DebloatStage::parseResult)

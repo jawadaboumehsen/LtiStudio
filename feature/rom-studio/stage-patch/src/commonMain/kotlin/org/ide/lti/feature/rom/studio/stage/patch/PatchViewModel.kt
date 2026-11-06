@@ -14,8 +14,12 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -72,7 +76,9 @@ public class PatchViewModel(
             } catch (e: RefusalException) {
                 "${e.refusal.cause} ${e.refusal.nextStep}"
             }
-            _scriptCheck.update { it + (name to result) }
+            // A check of content edited since says nothing about what is on screen now.
+            val unchanged = settings.value.scripts.firstOrNull { it.name == name }?.content == script.content
+            if (unchanged) _scriptCheck.update { it + (name to result) }
         }
     }
 
@@ -105,9 +111,20 @@ public class PatchViewModel(
                 _facts.update { it.copy(plans = plansOf(it.installed, enabled)) }
             }
         }
+        // Compatibility is with the device and firmware as they are saved, not as they were at the last Refresh.
+        viewModelScope.launch {
+            val saves = store?.changes?.filter { it == workspaceId }?.map { } ?: emptyFlow()
+            merge(device.map { }, saves).collectLatest {
+                val incompatible = incompatibleOf(_facts.value.installed)
+                _facts.update { it.copy(incompatible = incompatible) }
+            }
+        }
     }
 
     public fun updateSettings(updated: CustomizationSettings) {
+        val before = settings.value.scripts.associate { it.name to it.content }
+        val after = updated.scripts.associate { it.name to it.content }
+        _scriptCheck.update { checks -> checks.filterKeys { before[it] == after[it] } }
         sync.update(updated)
     }
 
@@ -117,12 +134,16 @@ public class PatchViewModel(
             // One row per plugin: older installed versions are never locked, so they are not offered either.
             val usable = port.installed().filter { !it.revoked && !it.archived }
             val installed = newestPerPlugin(usable, { it.key }) { it.identity.version }
-            _facts.value = _facts.value.copy(
-                loaded = true,
-                installed = installed,
-                plans = plansOf(installed, settings.value.enabledPackages),
-                incompatible = incompatibleOf(installed),
-            )
+            // Read before the plans, which are made last from the list as it is now: this read can take a while.
+            val incompatible = incompatibleOf(installed)
+            _facts.update {
+                it.copy(
+                    loaded = true,
+                    installed = installed,
+                    plans = plansOf(installed, settings.value.enabledPackages),
+                    incompatible = incompatible,
+                )
+            }
         }
     }
 
@@ -140,7 +161,11 @@ public class PatchViewModel(
         val wanted = if (key in enabled) enabled - key else enabled + key
         val installed = _facts.value.installed
         val packages = installed.map { it.toInstalledPackage() }
-        when (val result = PluginDependencyResolver.lock(wanted, packages, requestedOrder = emptyList())) {
+        // The list's own order stays (independent mods that touch the same files apply as chosen), unless the
+        // dependencies no longer allow it.
+        val locked = PluginDependencyResolver.lock(wanted, packages, requestedOrder = wanted)
+            .takeIf { it is LockResult.Locked } ?: PluginDependencyResolver.lock(wanted, packages, emptyList())
+        when (val result = locked) {
             is LockResult.Rejected -> _facts.value = _facts.value.copy(
                 lockError = result.report.errors.joinToString("; ") { it.message },
             )

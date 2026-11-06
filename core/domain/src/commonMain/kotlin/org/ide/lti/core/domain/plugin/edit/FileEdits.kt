@@ -20,17 +20,26 @@ object FileEdits {
 
     /** Why [key] cannot be a property key, or null when it can. */
     fun propertyKeyProblem(key: String): String? {
-        val invalid = key.isEmpty() || key.any { it in INVALID_KEY_CHARS }
-        return "Invalid property key '$key': must not be empty or contain '=', newline, or NUL".takeIf { invalid }
+        val invalid = key.isEmpty() || key.first() in COMMENT_STARTS ||
+            key.any { it in INVALID_KEY_CHARS || it.isWhitespace() }
+        return "Invalid property key '$key': must not be empty, start a comment, or contain '=', whitespace or NUL"
+            .takeIf { invalid }
     }
+
+    /** Why [value] cannot be one property's value, or null when it can: another line would be another property. */
+    fun propertyValueProblem(value: String): String? =
+        "Invalid value for a property: must not contain a line break or NUL".takeIf {
+            value.any { it in INVALID_VALUE_CHARS }
+        }
 
     /**
      * [existing] with `key=value` set: the first non-comment line of that key is replaced, else the line is added at
      * the end. Lines are rewritten with `\n`.
      */
     fun propertyPatch(existing: String, key: String, value: String): EditResult {
-        val problem = propertyKeyProblem(key)
-        if (problem != null) return EditResult.Failed(FileMutationCodes.PROPERTY_KEY_INVALID, problem)
+        val refused = propertyKeyProblem(key)?.let { EditResult.Failed(FileMutationCodes.PROPERTY_KEY_INVALID, it) }
+            ?: propertyValueProblem(value)?.let { EditResult.Failed(FileMutationCodes.PROPERTY_VALUE_INVALID, it) }
+        if (refused != null) return refused
         val lines = existing.replace("\r\n", "\n").split("\n").let { if (it.lastOrNull() == "") it.dropLast(1) else it }
         val at = lines.indexOfFirst { isKeyLine(it, key) }
         val patched = if (at == -1) lines + "$key=$value" else lines.toMutableList().also { it[at] = "$key=$value" }
@@ -38,6 +47,8 @@ object FileEdits {
     }
 
     private val INVALID_KEY_CHARS = setOf('=', '\n', '\r', '\u0000')
+    private val INVALID_VALUE_CHARS = setOf('\n', '\r', '\u0000')
+    private val COMMENT_STARTS = setOf('#', '!')
 
     private fun isKeyLine(line: String, key: String): Boolean {
         val eq = line.indexOf('=')
@@ -64,14 +75,17 @@ object FileEdits {
                 FileMutationCodes.PREIMAGE_MISMATCH,
                 "Preimage mismatch for '$member': expected $expectedSha256, actual $actualSha256",
             )
+
             count == 0 -> EditResult.Failed(
                 FileMutationCodes.TEXT_CONTEXT_NOT_FOUND,
                 "Context anchor '$context' not found in '$member'",
             )
+
             count > 1 -> EditResult.Failed(
                 FileMutationCodes.TEXT_CONTEXT_AMBIGUOUS,
                 "Context anchor '$context' is ambiguous (found $count times) in '$member'",
             )
+
             else -> {
                 val at = existing.indexOf(context)
                 val patched = existing.substring(0, at) + replacement + existing.substring(at + context.length)
@@ -88,7 +102,8 @@ object FileEdits {
             val found = text.indexOf(context, from)
             if (found == -1) return count
             count++
-            from = found + context.length
+            // One character on: `aa` occurs twice in `aaa`, so that context does not say where to patch.
+            from = found + 1
         }
     }
 }

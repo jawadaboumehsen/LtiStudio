@@ -12,8 +12,10 @@ package org.ide.lti.core.data.remote
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.data.repository.target.WorkspaceFolderDeviceRepository.Companion.DeviceJson
@@ -98,6 +100,11 @@ public class RemoteWorkspaceProvisioner(
         } catch (failure: StepFailure) {
             run(cwd, "rm", "-rf", tmp)
             emit(ProvisioningEvent.Failed(failure.step, failure.message.orEmpty()))
+        } catch (e: Exception) {
+            // Cancelled or cut off: the unfinished folder holds generated keys, and nothing else will remove it. A
+            // promoted workspace is at dest, so this cannot touch it.
+            withContext(NonCancellable) { runCatching { run(cwd, "rm", "-rf", tmp) } }
+            throw e
         } finally {
             cancelledSpecs.remove(spec.manifest.id)
             cancelledSpecs.remove(dest)

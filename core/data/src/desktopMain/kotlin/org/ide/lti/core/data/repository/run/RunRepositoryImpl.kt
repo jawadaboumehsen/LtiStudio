@@ -29,6 +29,7 @@ import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.datastore.RunRecordDataSource
+import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -171,9 +172,15 @@ public class RunRepositoryImpl(
         runRecordDataSource.getRun(runId)?.let(::cacheLoaded)
     }
 
-    /** A record read from disk goes in only when memory has none: what memory holds is as new or newer. */
-    private fun cacheLoaded(loaded: BuildRun): BuildRun =
-        runs.updateAndGet { if (loaded.id in it) it else it + (loaded.id to loaded) }.getValue(loaded.id)
+    /**
+     * A record read from disk goes in only when memory has none (what memory holds is as new or newer) and it is
+     * still listed: a read begun before a delete can end after it. Checked inside the update: a delete takes the run
+     * off the list before it takes it out of memory, so whichever comes first, it ends up gone.
+     */
+    private fun cacheLoaded(loaded: BuildRun): BuildRun? = runs.updateAndGet { cached ->
+        val listed = runRecordDataSource.currentSummaries.any { it.id == loaded.id }
+        if (loaded.id in cached || !listed) cached else cached + (loaded.id to loaded)
+    }[loaded.id]
 
     override suspend fun deleteRun(runId: String): Unit = withContext(ioDispatcher) {
         writes.withLock {
@@ -259,6 +266,13 @@ public class RunRepositoryImpl(
         }
     }
 
+    /** The end of [log] when it is over what one upload takes: the whole log stays in the app, this is a mirror. */
+    private fun withinUploadLimit(log: ByteArray): ByteArray {
+        if (log.size <= MAX_TRANSFER_CHUNK_BYTES) return log
+        val note = "[earlier output of this stage is in the app's run log]\n".encodeToByteArray()
+        return note + log.copyOfRange(log.size - MAX_TRANSFER_CHUNK_BYTES.toInt() + note.size, log.size)
+    }
+
     private suspend fun mirrorStageLogsToRemoteWorkspace(runId: String) {
         val port = executionPort ?: return
         val wsRepo = workspaceRepository ?: return
@@ -275,8 +289,8 @@ public class RunRepositoryImpl(
                 stageStart[runId]?.takeIf { it.first == activeStage.name }?.second
                     ?: (if (beganEarlier) 0 else allLogs.size).also { stageStart[runId] = activeStage.name to it }
             }
-            val logContent = allLogs.drop(from).joinToString("\n")
-            port.uploadFile(workspace, "stages/${activeStage.name.lowercase()}.log", logContent.encodeToByteArray())
+            val log = allLogs.drop(from).joinToString("\n").encodeToByteArray()
+            port.uploadFile(workspace, "stages/${activeStage.name.lowercase()}.log", withinUploadLimit(log))
         } catch (_: Exception) {
             // Non-critical mirror operation
         }
