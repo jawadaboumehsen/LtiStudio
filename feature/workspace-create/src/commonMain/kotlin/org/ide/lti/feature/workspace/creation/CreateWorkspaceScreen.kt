@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,6 +61,7 @@ import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeade
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.component.progress.GlassStepInfo
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
@@ -490,7 +490,7 @@ private fun CreateWorkspaceActions(uiState: CreateWorkspaceUiState, onCancel: ()
                 uiState.canCreate,
         ) {
             if (uiState.isProvisioning) {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Standard,
                     color = MaterialTheme.colorScheme.onSurface,

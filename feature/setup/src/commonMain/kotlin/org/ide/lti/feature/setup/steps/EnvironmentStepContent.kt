@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +44,7 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -221,11 +221,14 @@ fun EnvironmentStepContent(
                     val subtitle =
                         when {
                             toolchainSetupState.isChecking -> "Checking WSL and build tools…"
+
                             toolchainSetupState.steps.any { it.status == StepStatus.FAILED } -> {
                                 val count = toolchainSetupState.steps.count { it.status == StepStatus.FAILED }
                                 if (count == 1) "1 item needs attention" else "$count items need attention"
                             }
+
                             toolchainSetupState.isAllReady -> "Ready to build"
+
                             else -> "Verification pending"
                         }
                     Text(
@@ -255,7 +258,9 @@ fun EnvironmentStepContent(
                                     checked
                                 }
                             }
+
                             lastVerified != null -> lastVerified
+
                             else -> "Not checked yet"
                         }
                     Text(
@@ -582,24 +587,29 @@ private fun EnvironmentPrimaryActionButton(
     val isBusy = toolchainSetupState.isBusy
     when (presentation.primaryAction) {
         PrimaryAction.CHECKING -> CheckingActionButton()
+
         PrimaryAction.STAGE_PROGRESS -> StageProgressActionButton()
+
         PrimaryAction.OPEN_WORKSPACES ->
             OpenWorkspacesActionButton(
                 enabled = !isBusy,
                 onNavigateToProjects = onNavigateToProjects,
                 onProceedToLaunchpad = onProceedToLaunchpad,
             )
+
         PrimaryAction.RETRY_CONNECTION ->
             RetryConnectionActionButton(
                 enabled = !isBusy,
                 presentation = presentation,
                 onRetryStage = onRetryStage,
             )
+
         PrimaryAction.RECONNECT ->
             ReconnectActionButton(
                 enabled = !isBusy,
                 onReconnect = onReconnect,
             )
+
         PrimaryAction.RETRY_STAGE ->
             RetryStageActionButton(
                 enabled = !isBusy,
@@ -608,11 +618,13 @@ private fun EnvironmentPrimaryActionButton(
                 onPreviewSetup = onPreviewSetup,
                 focusRequester = previewInvokerFocusRequester,
             )
+
         PrimaryAction.CHECK ->
             CheckActionButton(
                 enabled = !isBusy,
                 onCheckEnvironment = onCheckEnvironment,
             )
+
         PrimaryAction.SET_UP ->
             SetUpActionButton(
                 enabled = !isBusy,
@@ -631,7 +643,7 @@ private fun CheckingActionButton() {
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             if (!isReducedMotion) {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -651,7 +663,7 @@ private fun StageProgressActionButton() {
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             if (!isReducedMotion) {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.onSurface,

@@ -158,9 +158,12 @@ private fun ImageCard(
 private fun ComponentsCard(parts: BootParts, actions: BootPaneActions, idle: Boolean) {
     Card("Components (FR-020)") {
         val h = parts.header
-        Mono("Header v${h.headerVersion}, page ${h.pageSize}, OS ${h.osVersion.ifBlank { "-" }} ${h.osPatchLevel}")
-        Mono("Kernel: ${parts.kernelPath ?: "none"} (${formatBytes(h.kernelSize)})")
-        Mono("Ramdisk: ${parts.ramdiskFolderPath ?: "none in this image"} (${formatBytes(h.ramdiskSize)})")
+        fun part(path: String?, size: Long) = path?.let { "$it (${formatBytes(size)})" } ?: "none in this image"
+        val os = "${h.osVersion} ${h.osPatchLevel}".trim().ifEmpty { "-" }
+        Mono("Header v${h.headerVersion}, page ${h.pageSize}, OS $os")
+        // unpack_bootimg writes an empty kernel file for an image that has none, as init_boot.
+        Mono("Kernel: ${part(parts.kernelPath.takeIf { h.kernelSize > 0 }, h.kernelSize)}")
+        Mono("Ramdisk: ${part(parts.ramdiskFolderPath, h.ramdiskSize)}")
         Mono("Command line: ${h.cmdline.ifBlank { "-" }}")
         val footer = parts.footer?.let { "${it.partitionName} ${it.algorithmName}, ${formatBytes(it.imageSize)}" }
         Mono("AVB footer: ${footer ?: "none"}")

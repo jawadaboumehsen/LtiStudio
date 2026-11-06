@@ -22,6 +22,8 @@ import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
+import org.ide.lti.core.model.plugin.Operation
+import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.DefaultTargetCatalog
@@ -55,6 +57,22 @@ class PatchStageEditorTest {
 
         vm.updateSettings(vm.settings.value.copy(enabledPackages = listOf("org.example:mod")))
         assertEquals(1, vm.settings.value.enabledPackages.size)
+    }
+}
+
+class PluginConflictsTest {
+    private val jar = PartitionPath("system", "framework/services.jar")
+    private val bytecode = Operation.ApkJarPatch("edit", jar, emptyList())
+    private val delete = Operation.Delete("delete", jar)
+
+    @Test
+    fun bytecodeEditsOfOneFileStackAndAWholeFileChangeOfItConflicts() {
+        assertTrue(conflictsOf(listOf("a:one" to bytecode, "a:two" to bytecode)).isEmpty())
+        assertEquals(
+            setOf("system/framework/services.jar"),
+            conflictsOf(listOf("a:one" to delete, "a:two" to delete)).keys,
+        )
+        assertTrue(conflictsOf(listOf("a:one" to delete, "a:one" to delete)).isEmpty())
     }
 }
 

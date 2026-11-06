@@ -47,6 +47,7 @@ import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginLifecycleUseCase
 import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.terminal.TerminalManager
+import org.ide.lti.core.domain.tools.AppShutdownPort
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
@@ -127,6 +128,7 @@ val DomainModule =
 
         // Pipeline & Build Use Cases
         single {
+            val koin = getKoin()
             PipelineOrchestrator(
                 executionPort = get(),
                 runRepository = get(),
@@ -138,6 +140,7 @@ val DomainModule =
                         .associateBy { it.id },
                 ),
                 hostSteps = getOrNull(),
+                appClosing = { koin.getOrNull<AppShutdownPort>()?.closing == true },
             )
         }
         single {

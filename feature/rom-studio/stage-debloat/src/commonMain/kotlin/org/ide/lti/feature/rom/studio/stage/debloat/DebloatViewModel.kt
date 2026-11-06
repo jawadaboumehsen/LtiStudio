@@ -29,6 +29,7 @@ import org.ide.lti.core.domain.debloat.DebloatRisk
 import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalCatalog
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RemovalItem
 import org.ide.lti.core.domain.pipeline.toolkit.RemovalList
@@ -180,9 +181,8 @@ public class DebloatViewModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            val busy = e.message.orEmpty().let { "Run conflict" in it || "locked by active run" in it }
             _facts.value = _facts.value.copy(
-                refusal = if (busy) {
+                refusal = if (RefusalCatalog.BUILD_RUNNING in e.message.orEmpty()) {
                     Refusal(
                         "A build is running in this workspace, so app names, signers and risks cannot be read now.",
                         "work/",

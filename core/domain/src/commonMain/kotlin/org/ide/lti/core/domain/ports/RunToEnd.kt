@@ -24,9 +24,14 @@ import java.util.UUID
  * caller, or a read that fails, cancels the command on the service too: the caller's job lock is released next, so
  * nothing may go on changing the workspace behind it.
  */
-public suspend fun PipelineExecutionPort.runToEnd(ws: Workspace, tool: String, args: List<String>): ToolResult {
+public suspend fun PipelineExecutionPort.runToEnd(
+    ws: Workspace,
+    tool: String,
+    args: List<String>,
+    exclusive: Boolean = true,
+): ToolResult {
     val root = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
-    val handle = startStep(ws, stepCommand(tool, args, root), "host-${UUID.randomUUID()}")
+    val handle = startStep(ws, stepCommand(tool, args, root).copy(exclusive = exclusive), "host-${UUID.randomUUID()}")
     val stdout = StringBuilder()
     val stderr = StringBuilder()
     val exitCode = try {

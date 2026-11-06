@@ -29,7 +29,10 @@ internal class DesktopAppEnvironment : AppEnvironmentPort {
     }
 
     override fun openFolder(path: String): Boolean {
-        if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) return false
-        return runCatching { Desktop.getDesktop().open(File(path).apply { mkdirs() }) }.isSuccess
+        val folder = File(path)
+        // A WSL path is not absolute on Windows: it would make, and open, an empty C:\home\... instead.
+        val canOpen = folder.isAbsolute && Desktop.isDesktopSupported() &&
+            Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
+        return canOpen && runCatching { Desktop.getDesktop().open(folder.apply { mkdirs() }) }.isSuccess
     }
 }

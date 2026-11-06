@@ -154,7 +154,9 @@ public class PublishReleaseUseCase(
         }
         val release = releaseOf(ws, problems)
         val destination = destinationOf(settings, problems)
-        return PublishPreflight(release, problems, destination, readJournal(ws))
+        // A journal of another package says nothing about this one: its "Published" must not show next to a new build.
+        val journal = readJournal(ws)?.takeIf { it.sha256 == release?.sha256 }
+        return PublishPreflight(release, problems, destination, journal)
     }
 
     /**

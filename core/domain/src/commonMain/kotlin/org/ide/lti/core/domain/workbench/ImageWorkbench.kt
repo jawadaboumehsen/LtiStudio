@@ -306,7 +306,20 @@ public class ImageWorkbench(
             ?: throw RefusalException(
                 Refusal("No super image in the workspace.", "super.img", "Run the build through Extract or Build."),
             )
-        SuperTool.parseLpdumpOutput(run("lpdump", abs(image)))
+        // lpdump reads raw images only: a sparse one (Build's sparse output) is expanded for the read and dropped.
+        val sparse = run("xxd", "-p", "-l", "4", abs(image)).trim() == SPARSE_MAGIC_LE
+        SuperTool.parseLpdumpOutput(
+            if (sparse) {
+                sh(
+                    "t=$(mktemp) && trap 'rm -f \"\$t\"' EXIT && \"$1\" \"$3\" \"\$t\" >&2 && \"$2\" \"\$t\"",
+                    toolPath("simg2img"),
+                    toolPath("lpdump"),
+                    abs(image),
+                )
+            } else {
+                run("lpdump", abs(image))
+            },
+        )
     }
 
     private companion object {

@@ -40,6 +40,8 @@ fun LtiSharedApp(
     modifier: Modifier = Modifier,
     openSettingsRequest: Long = 0,
     appSettingsState: AppSettingsState = koinInject(),
+    /** Dialogs the window itself raises: they need the theme as much as any screen does. */
+    windowDialogs: @Composable () -> Unit = {},
 ) {
     val appTheme = AppTheme.fromId(appSettingsState.theme)
 
@@ -66,6 +68,7 @@ fun LtiSharedApp(
                     openSettingsRequest = openSettingsRequest,
                     modifier = Modifier.fillMaxSize(),
                 )
+                windowDialogs()
             }
         }
     }

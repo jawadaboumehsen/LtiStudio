@@ -41,6 +41,8 @@ public class WorkbenchRunner(
     private val acknowledgements: AckStore,
     /** A workbench job never changes a workspace while one of its builds is queued or running. */
     private val runs: RunRepository? = null,
+    /** The active WSL distribution: a workspace found in the work folder records none of its own. */
+    private val distro: () -> String? = { null },
 ) {
     /** Whether [feature] (a [RiskyFeature]) was acknowledged in [workspaceId]; asked once per workspace (FR-035). */
     public suspend fun isAcknowledged(workspaceId: String, feature: String): Boolean =
@@ -68,15 +70,7 @@ public class WorkbenchRunner(
             is LockResult.Locked -> throw RefusalException(RefusalCatalog.workspaceLocked(holder = acquired.holderName))
 
             is LockResult.Acquired -> try {
-                runs?.latestActive(workspaceId)?.let { run ->
-                    throw RefusalException(
-                        Refusal(
-                            "A build is running in this workspace.",
-                            run.id,
-                            "Wait for it to finish, or cancel it, then try again.",
-                        ),
-                    )
-                }
+                refuseDuringBuild(workspaceId)
                 val job = Job(ws)
                 if (checkLinks) job.requireNoLinks()
                 job.block()
@@ -87,11 +81,18 @@ public class WorkbenchRunner(
         }
     }
 
-    /** Reads without taking the job lock (listing, viewing). */
+    /**
+     * Reads without the job lock or the service's workspace lock (listing, viewing): a build's next step must never
+     * find the workspace held by a page that only looks at it. Its commands are refused while a build runs.
+     */
     public suspend fun <T> read(workspaceId: String, block: suspend Job.() -> T): T =
-        Job(workspace(workspaceId)).block()
+        Job(workspace(workspaceId), exclusive = false).block()
 
-    public inner class Job internal constructor(public val ws: Workspace) {
+    private suspend fun refuseDuringBuild(workspaceId: String) {
+        runs?.latestActive(workspaceId)?.let { throw RefusalException(RefusalCatalog.buildRunning(it.id)) }
+    }
+
+    public inner class Job internal constructor(public val ws: Workspace, private val exclusive: Boolean = true) {
         public val root: String = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
 
         public fun abs(rel: String): String = if (rel.startsWith("/")) rel else "$root/$rel"
@@ -112,8 +113,10 @@ public class WorkbenchRunner(
             return result.stdout
         }
 
-        public suspend fun tryRun(tool: String, vararg args: String): ToolResult =
-            port.runToEnd(ws, tool, args.toList())
+        public suspend fun tryRun(tool: String, vararg args: String): ToolResult {
+            if (!exclusive) refuseDuringBuild(ws.id)
+            return port.runToEnd(ws, tool, args.toList(), exclusive)
+        }
 
         /**
          * Whether the folder holding [rel], with every link on its way followed, lies inside [base] (workspace-
@@ -190,8 +193,8 @@ public class WorkbenchRunner(
         public suspend fun sh(script: String, vararg args: String): String = run("sh", "-c", script, "sh", *args)
 
         /** [rel] as Windows sees it (`\\wsl.localhost\<distro>\…`), for opening in Explorer; null without a distro. */
-        public fun hostPath(rel: String): String? = ws.environmentId?.distro?.let { distro ->
-            "\\\\wsl.localhost\\$distro\\" + abs(rel).trim('/').replace('/', '\\')
+        public fun hostPath(rel: String): String? = (ws.environmentId?.distro ?: distro())?.let { name ->
+            "\\\\wsl.localhost\\$name\\" + abs(rel).trim('/').replace('/', '\\')
         }
 
         /**

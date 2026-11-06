@@ -9,6 +9,9 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
@@ -18,8 +21,18 @@ import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
 
+private const val RESTORED_BUFFER = 16
+
+/** [itemPath], as its restore point names it, is back in [workspaceId]. */
+public data class RestoredItem(val workspaceId: String, val itemPath: String)
+
 /** The workspace's restore points, and putting a backed-up item back where it was (FR-027, FR-038). */
 public class RestoreWorkbench(private val runner: WorkbenchRunner, private val store: RestorePointStore) {
+    private val restoredItems = MutableSharedFlow<RestoredItem>(extraBufferCapacity = RESTORED_BUFFER)
+
+    /** Each item put back, so a pane still reporting the change it undid can drop that report. */
+    public val restored: SharedFlow<RestoredItem> = restoredItems.asSharedFlow()
+
     /** Every restore point, with [RestorePointState.BackupMissing] for one whose backup was deleted. */
     public suspend fun list(workspaceId: String): RestoreIndex = runner.read(workspaceId) {
         val index = store.readIndex(ws)
@@ -35,7 +48,7 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
 
     /** Copies [pointId]'s backup over its item and marks it restored. */
     public suspend fun restore(workspaceId: String, pointId: String): RestorePoint =
-        runner.job(workspaceId, "Restore") { restoreOne(this, pointId) }
+        runner.job(workspaceId, "Restore") { restoreOne(this, pointId) }.also { announce(workspaceId, it) }
 
     /** Restores every available point of [tool] (all tools when null); returns the restored points. */
     public suspend fun restoreAll(workspaceId: String, tool: String? = null): List<RestorePoint> =
@@ -44,7 +57,11 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
                 .filter { it.state == RestorePointState.Available && (tool == null || it.tool == tool) }
                 .asReversed()
                 .map { restoreOne(this, it.id) }
-        }
+        }.onEach { announce(workspaceId, it) }
+
+    private fun announce(workspaceId: String, point: RestorePoint) {
+        restoredItems.tryEmit(RestoredItem(workspaceId, point.itemPath))
+    }
 
     private suspend fun restoreOne(job: WorkbenchRunner.Job, pointId: String): RestorePoint = with(job) {
         val point = store.readIndex(ws).findById(pointId)

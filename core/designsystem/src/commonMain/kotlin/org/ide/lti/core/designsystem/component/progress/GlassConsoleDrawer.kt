@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -193,7 +192,7 @@ private fun ConsoleDrawerHeader(
             )
 
             if (isRunning) {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.primary,

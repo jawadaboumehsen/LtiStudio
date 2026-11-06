@@ -15,6 +15,15 @@ import kotlin.test.assertEquals
 class BootWorkbenchArgsTest {
 
     @Test
+    fun aHeaderFieldTheImageDoesNotHaveIsEmpty() {
+        val header = BootWorkbench.parseHeader("boot image header version: 4\nos version: None\nos patch level: None\n")
+        assertEquals(4, header.headerVersion)
+        assertEquals("", header.osVersion)
+        assertEquals("", header.osPatchLevel)
+        assertEquals("15.0.0", BootWorkbench.parseHeader("os version: 15.0.0").osVersion)
+    }
+
+    @Test
     fun anEmptyCommandLineStaysAnArgumentAndOnlyTheTrailingNewlineGoes() {
         // PQ84P01's init_boot, as unpack_bootimg --format mkbootimg -0 writes it.
         val initBoot = listOf("--header_version", "4", "--kernel", "k", "--ramdisk", "r", "--cmdline", "")

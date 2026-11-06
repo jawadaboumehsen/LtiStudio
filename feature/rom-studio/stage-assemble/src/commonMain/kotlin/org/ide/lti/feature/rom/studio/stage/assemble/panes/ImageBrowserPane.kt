@@ -311,6 +311,8 @@ private fun ToolsPanel(state: ImagePaneState, actions: ImagePaneActions) {
                 value = megabytes,
                 onValueChange = { megabytes = it.filter(Char::isDigit) },
                 placeholder = "MB",
+                // What the buttons leave: a field takes the whole width otherwise, and they get none.
+                modifier = Modifier.weight(1f),
             )
             GlassButton(
                 onClick = { megabytes.toIntOrNull()?.let { actions.split(image, it) } },

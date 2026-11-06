@@ -11,6 +11,7 @@ package org.ide.lti.core.model.run
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 enum class StageState {
@@ -52,6 +53,8 @@ data class StepCommand(
     val args: List<String> = emptyList(),
     val workingDir: String? = null,
     val timeoutMs: Long = 0L,
+    /** Holds the service's workspace lock while it runs; false for a command that only reads. */
+    @Transient val exclusive: Boolean = true,
 )
 
 @Serializable

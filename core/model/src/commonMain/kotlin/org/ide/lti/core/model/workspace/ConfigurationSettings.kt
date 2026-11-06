@@ -198,10 +198,13 @@ public data class SigningPolicy(
 public data class ReleaseSettings(
     val channel: String = "internal",
     val changelog: String = "",
-    val otaBaseUrl: String = "https://example.com/updates",
+    /** Where devices download a release from; empty until there is one: the manifest then lists no download. */
+    val otaBaseUrl: String = "",
 ) {
     init {
-        require(otaBaseUrl.startsWith("https://")) { "otaBaseUrl must start with https://, was '$otaBaseUrl'" }
+        require(
+            otaBaseUrl.isEmpty() || otaBaseUrl.startsWith("https://"),
+        ) { "otaBaseUrl must start with https://, was '$otaBaseUrl'" }
         require(!otaBaseUrl.endsWith("/")) {
             "otaBaseUrl must not end with a trailing slash, was '$otaBaseUrl'"
         }

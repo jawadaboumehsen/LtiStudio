@@ -41,6 +41,11 @@ public class RefusalException(public val refusal: Refusal) :
  * Standard catalog of refusals across the ROM Workbench Toolkit (contract: `contracts/messages.md`, SC-009).
  */
 public object RefusalCatalog {
+    public const val BUILD_RUNNING: String = "A build is running in this workspace."
+
+    public fun buildRunning(runId: String): Refusal =
+        Refusal(BUILD_RUNNING, runId, "Wait for it to finish, or cancel it, then try again.")
+
     public fun incrementalPayload(item: String = "payload.bin"): Refusal = Refusal(
         cause = "The package is an incremental update.",
         item = item,

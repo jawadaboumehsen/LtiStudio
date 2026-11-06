@@ -659,7 +659,7 @@ public class BootWorkbench(
         public fun parseHeader(info: String): BootHeaderFacts {
             val fields = info.lines().mapNotNull { line ->
                 line.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim().lowercase() to it[1].trim() }
-            }.toMap()
+            }.toMap().filterValues { it != "None" } // How unpack_bootimg writes a field this image does not have.
             fun long(vararg keys: String) = keys.firstNotNullOfOrNull {
                 fields[it]?.substringBefore(
                     ' ',

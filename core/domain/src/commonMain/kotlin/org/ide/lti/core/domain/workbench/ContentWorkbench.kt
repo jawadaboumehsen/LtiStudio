@@ -328,7 +328,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         /** `$1` = work tree. One line per app: status, app folder, reason (tab separated). */
         private const val DEODEX_SCRIPT = """
 find "$1" -mindepth 3 -maxdepth 5 -type f -name '*.apk' -path '*app/*' | while read -r apk; do
-  dir=${'$'}{apk%/*}; app=${'$'}{dir#"$1"/}
+  dir=${'$'}{apk%/*}; app=${'$'}{apk#"$1"/}
   if unzip -l "${'$'}apk" 2>/dev/null | grep -q ' classes[0-9]*\.dex${'$'}'; then
     if [ -d "${'$'}dir/oat" ]; then rm -rf "${'$'}dir/oat"; printf 'AlreadyDone\t%s\tdex is in the APK; removed the stale oat folder\n' "${'$'}app"
     else printf 'AlreadyDone\t%s\tdex is in the APK\n' "${'$'}app"; fi

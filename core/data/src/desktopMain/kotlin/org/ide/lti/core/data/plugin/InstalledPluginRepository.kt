@@ -278,16 +278,27 @@ class InstalledPluginRepository(
                     }.getOrNull()?.let { records.add(it to path.parent) }
                 }
         }
-        return records.map { (record, dir) -> withNames(record, dir) }.sortedWith(
+        return records.map { (record, dir) -> withPackageFacts(record, dir) }.sortedWith(
             compareBy({ it.identity.publisher }, { it.identity.id }, { it.identity.version }),
         )
     }
 
-    /** A record installed before names were kept gets them from its package. */
-    private suspend fun withNames(record: InstalledRecord, versionDir: Path): InstalledRecord {
-        if (record.displayName.isNotBlank()) return record
+    /**
+     * The record as its package says. The package defines the digest and the build reads it from there, so a record
+     * that disagrees (written when the digest covered less) would lock a digest no build accepts, and "enable it
+     * again" could never help. An unreadable package keeps its record.
+     */
+    private suspend fun withPackageFacts(record: InstalledRecord, versionDir: Path): InstalledRecord {
         val inspection = inspect(versionDir.resolve("package.lti-mod.zip"))
-        return record.copy(displayName = inspection.displayName, summary = inspection.summary)
+        val digest = inspection.identity?.contentDigest ?: return record
+        val named = if (record.displayName.isNotBlank()) {
+            record
+        } else {
+            record.copy(displayName = inspection.displayName, summary = inspection.summary)
+        }
+        val current = named.copy(identity = named.identity.copy(contentDigest = digest))
+        if (current.identity != record.identity) updateRecord(current)
+        return current
     }
 
     override suspend fun remove(identity: PackageIdentity): Boolean {

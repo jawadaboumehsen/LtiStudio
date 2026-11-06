@@ -121,7 +121,7 @@ private fun DeodexCard(state: ContentToolsState, viewModel: ContentToolsViewMode
                 if (count > 0) Mono("$s: $count")
             }
             LazyColumn(Modifier.fillMaxWidth().height(ComponentSize.MaxPanelHeight)) {
-                items(results.filter { it.status != DeodexStatus.AlreadyDone }, key = { it.app }) { r ->
+                items(results.filter { it.status != DeodexStatus.AlreadyDone }) { r ->
                     Mono("${r.status}  ${r.app}  ${r.reason.orEmpty()}")
                 }
             }

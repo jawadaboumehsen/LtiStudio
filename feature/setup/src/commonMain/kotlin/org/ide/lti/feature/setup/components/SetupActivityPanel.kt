@@ -32,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -62,6 +61,7 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideGeneralExport
@@ -402,7 +402,7 @@ private fun ActivityHeaderLeftBadges(
                     color = MaterialTheme.colorScheme.primary,
                 )
             } else {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
                     color = MaterialTheme.colorScheme.primary,
@@ -413,11 +413,7 @@ private fun ActivityHeaderLeftBadges(
 }
 
 @Composable
-private fun ActivityFollowButton(
-    followingLatest: Boolean,
-    onPauseFollow: () -> Unit,
-    onJumpToLatest: () -> Unit,
-) {
+private fun ActivityFollowButton(followingLatest: Boolean, onPauseFollow: () -> Unit, onJumpToLatest: () -> Unit) {
     if (followingLatest) {
         GlassSecondaryButton(onClick = onPauseFollow) {
             Text(
@@ -494,10 +490,7 @@ private fun ActivitySelectionActions(
 }
 
 @Composable
-private fun ActivityCopyAllButton(
-    isCopiedAll: Boolean,
-    onCopyAll: () -> Unit,
-) {
+private fun ActivityCopyAllButton(isCopiedAll: Boolean, onCopyAll: () -> Unit) {
     val diagnostics = GlassTheme.diagnosticColors
 
     GlassTooltipArea(tooltipText = if (isCopiedAll) "Copied all logs!" else "Copy all") {
@@ -573,20 +566,19 @@ private fun ActivityPanelViewport(
 }
 
 @Composable
-private fun ActivityLogItemRow(
-    event: SetupLogEvent,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun ActivityLogItemRow(event: SetupLogEvent, isSelected: Boolean, onClick: () -> Unit) {
     val diagnostics = GlassTheme.diagnosticColors
     val line = event.text
 
     val lineTint = when {
         line.contains("ERROR", ignoreCase = true) ||
             line.contains("FAILED", ignoreCase = true) -> diagnostics.error
+
         line.contains("WARNING", ignoreCase = true) -> diagnostics.warning
+
         line.contains("Step", ignoreCase = true) ||
             line.contains("Complete", ignoreCase = true) -> MaterialTheme.colorScheme.primary
+
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 

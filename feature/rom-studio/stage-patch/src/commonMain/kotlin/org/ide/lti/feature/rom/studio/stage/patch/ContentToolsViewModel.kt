@@ -16,6 +16,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
@@ -36,6 +39,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.WorkspaceDiff
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
 import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
+import org.ide.lti.core.domain.workbench.RestoreWorkbench
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
@@ -89,6 +93,7 @@ public class ContentToolsViewModel(
     private val runner: WorkbenchRunner? = null,
     private val environment: AppEnvironmentPort? = null,
     private val store: WorkspaceSettingsStore? = null,
+    restore: RestoreWorkbench? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContentToolsState())
@@ -96,6 +101,15 @@ public class ContentToolsViewModel(
 
     private var job: Job? = null
     private var afterAck: (() -> Unit)? = null
+
+    init {
+        restore?.restored
+            ?.filter { it.workspaceId == workspaceId }
+            ?.onEach { item ->
+                _state.update { if (it.rebuilt?.file == item.itemPath) it.copy(rebuilt = null, message = null) else it }
+            }
+            ?.launchIn(viewModelScope)
+    }
 
     public fun deodex() {
         task("Deodexing") { tools ->

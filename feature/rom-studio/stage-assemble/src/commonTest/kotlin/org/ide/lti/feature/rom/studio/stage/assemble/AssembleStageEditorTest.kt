@@ -18,12 +18,15 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.Acknowledgements
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.JobLockHandle
 import org.ide.lti.core.domain.pipeline.toolkit.LockResult
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalCatalog
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RestoreIndex
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
@@ -34,10 +37,13 @@ import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.RunHandle
 import org.ide.lti.core.domain.ports.StepEvent
 import org.ide.lti.core.domain.ports.StepStatus
+import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workbench.BootWorkbench
+import org.ide.lti.core.domain.workbench.ImageWorkbench
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
+import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.AssemblySettings
@@ -45,10 +51,13 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
+import java.lang.reflect.Proxy
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -169,6 +178,53 @@ class AssembleStageEditorTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
+    fun `a workspace with no distribution of its own opens through the active one`() = runTest {
+        val service = Service { ToolResult(0, "", "") }
+        val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores, distro = { "Ubuntu" })
+        assertEquals("\\\\wsl.localhost\\Ubuntu\\ws\\out\\toolkit", runner.read("ws") { hostPath("out/toolkit") })
+    }
+
+    @Test
+    fun `only a job holds the workspace, so a page that reads cannot fail the build's next step`() = runTest {
+        val service = Service { ToolResult(0, "", "") }
+        val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores)
+
+        runner.read("ws") { run("ls") }
+        assertFalse(service.ran.last().exclusive)
+        runner.job("ws", "Edit") { run("ls") }
+        assertTrue(service.ran.last().exclusive)
+    }
+
+    @Test
+    fun `a read is refused while a build runs, and starts no command`() = runTest {
+        val service = Service { ToolResult(0, "", "") }
+        val building = BuildRun("run", "ws", "snap", startedAt = Instant.fromEpochMilliseconds(0))
+        val runs = Proxy.newProxyInstance(javaClass.classLoader, arrayOf(RunRepository::class.java)) { _, _, _ ->
+            building
+        } as RunRepository
+        val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores, runs)
+
+        val refused = assertFailsWith<RefusalException> { runner.read("ws") { run("ls") } }
+
+        assertEquals(RefusalCatalog.BUILD_RUNNING, refused.refusal.cause)
+        assertTrue(service.ran.isEmpty())
+    }
+
+    @Test
+    fun `a sparse super image is expanded before lpdump reads it`() = runTest {
+        val service = Service { cmd ->
+            ToolResult(0, if (cmd.toolId == "xxd") "3aff26ed\n" else "/tools/bin\n", "")
+        }
+        service.files["out/extra/super.img"] = "sparse"
+        val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores)
+
+        ImageWorkbench(runner).superLayout("ws")
+
+        assertTrue(service.ran.none { it.toolId == "lpdump" })
+        assertTrue(service.ran.any { it.toolId == "sh" && "/ws/out/extra/super.img" in it.args }, "${service.ran}")
+    }
+
+    @Test
     fun descriptorMatchesCanonicalStage() {
         val editor = AssembleStageEditor()
         assertEquals(StageId.WORK_TREE_ASSEMBLY, editor.stageId)
@@ -241,9 +297,12 @@ class AssembleStageEditorTest {
                         "drwxr-xr-x   1 0        0               0 Jan  1  1970 system\n",
                     "",
                 )
+
                 cmd.toolId == "find" && "-mindepth" in cmd.args ->
                     ToolResult(0, "f 3228728 init\nd 4096 system\nf 10 added.rc\n", "")
+
                 cmd.toolId == "sh" && "tools.d" in cmd.args.first { it != "-c" } -> ToolResult(0, "/bin/mkbootfs\n", "")
+
                 else -> ToolResult(0, "", "")
             }
         }

@@ -88,4 +88,24 @@ class SidecarCapabilitiesTest {
         assertEquals("1.0 \"beta\"\n", entry.getValue("version").jsonPrimitive.content)
         assertEquals("https://x/rom%20%231%3F.zip", entry.getValue("urls").jsonArray.first().jsonPrimitive.content)
     }
+
+    @Test
+    fun aManifestWithoutADownloadAddressListsNoDownload() {
+        val json = OtaManifestWriter.generate(
+            datetime = 1L,
+            device = "PQ84P01",
+            filename = "rom.zip",
+            patch = "1",
+            size = 10L,
+            otaBaseUrl = "",
+            version = "1",
+            incremental = "1",
+            sha256 = "ab",
+            changelog = "",
+            ota = OtaManifestWriter.OtaPackage("ota.zip", 5L, "cd"),
+        )
+        val entry = Json.parseToJsonElement(json).jsonObject.getValue("response").jsonArray.first().jsonObject
+        assertTrue(entry.getValue("urls").jsonArray.isEmpty())
+        assertTrue(entry.getValue("ota").jsonObject.getValue("urls").jsonArray.isEmpty())
+    }
 }

@@ -165,6 +165,7 @@ fun main(args: Array<String>) {
                         is org.ide.lti.core.domain.tools.ShutdownReport.Stopped -> {
                             exitApplication()
                         }
+
                         is org.ide.lti.core.domain.tools.ShutdownReport.Unconfirmed -> {
                             unconfirmedShutdown = report
                         }
@@ -177,10 +178,28 @@ fun main(args: Array<String>) {
             }
         }
 
+        var buildsAtExit by remember { mutableStateOf(emptyList<String>()) }
+
         val requestExit: () -> Unit = {
             if (!isShuttingDown) {
                 isShuttingDown = true
-                performShutdown()
+                coroutineScope.launch {
+                    // Asking must not stop the app from closing: no answer means no warning.
+                    val builds = runCatching {
+                        kotlinx.coroutines.withTimeoutOrNull(2_000L) {
+                            org.koin.core.context.GlobalContext.getOrNull()
+                                ?.getOrNull<AppShutdownPort>()
+                                ?.activeBuilds()
+                        }
+                    }.getOrNull().orEmpty()
+                    if (builds.isEmpty()) {
+                        performShutdown()
+                    } else {
+                        // Tray Exit comes here with the window hidden, and the question is asked in it.
+                        restoreWindow(windowState, mainWinRef)
+                        buildsAtExit = builds
+                    }
+                }
             }
         }
 
@@ -242,63 +261,98 @@ fun main(args: Array<String>) {
                 }
                 LtiSharedApp(
                     openSettingsRequest = openSettingsRequest,
-                )
-
-                unconfirmedShutdown?.let { report ->
-                    org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                        onDismissRequest = {
-                            // Nondismissible: must choose Retry Shutdown or Exit Anyway
-                        },
-                        title = "Shutdown Unconfirmed",
-                        confirmButton = {
-                            org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                onClick = {
-                                    unconfirmedShutdown = null
-                                    performShutdown()
-                                },
-                            ) {
-                                androidx.compose.material3.Text("Retry Shutdown")
+                    windowDialogs = {
+                        if (buildsAtExit.isNotEmpty()) {
+                            val stay = {
+                                buildsAtExit = emptyList()
+                                isShuttingDown = false
                             }
-                        },
-                        dismissButton = {
-                            org.ide.lti.core.designsystem.component.actions.GlassTextButton(
-                                onClick = {
-                                    val coordinator =
-                                        org.koin.core.context.GlobalContext.getOrNull()
-                                            ?.getOrNull<AppShutdownPort>()
-                                    coroutineScope.launch {
-                                        coordinator?.forceShutdown()
-                                        exitApplication()
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = stay,
+                                title = "A build is running",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(onClick = stay) {
+                                        androidx.compose.material3.Text("Keep the app open")
+                                    }
+                                },
+                                dismissButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassTextButton(
+                                        onClick = {
+                                            buildsAtExit = emptyList()
+                                            performShutdown()
+                                        },
+                                    ) {
+                                        androidx.compose.material3.Text("Close anyway")
                                     }
                                 },
                             ) {
-                                androidx.compose.material3.Text("Exit Anyway")
+                                androidx.compose.material3.Text(
+                                    text = buildsAtExit.joinToString(", ") +
+                                        ": closing the app stops the build. Starting it again reuses the work " +
+                                        "that is still valid.",
+                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                )
                             }
-                        },
-                    ) {
-                        androidx.compose.foundation.layout.Column(
-                            verticalArrangement =
-                            androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                org.ide.lti.core.designsystem.theme.Spacing.Small,
-                            ),
-                        ) {
-                            val ids = report.executionIds
-                            val message =
-                                if (ids.isEmpty()) {
-                                    "Background executions or build services did not confirm clean termination. Exiting now may leave processes running in WSL."
-                                } else {
-                                    "The following executions did not confirm termination: ${ids.joinToString(
-                                        ", ",
-                                    )}. Exiting now may leave background processes running in WSL."
-                                }
-                            androidx.compose.material3.Text(
-                                text = message,
-                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                            )
                         }
-                    }
-                }
+
+                        unconfirmedShutdown?.let { report ->
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = {
+                                    // Nondismissible: must choose Retry Shutdown or Exit Anyway
+                                },
+                                title = "Shutdown Unconfirmed",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = {
+                                            unconfirmedShutdown = null
+                                            performShutdown()
+                                        },
+                                    ) {
+                                        androidx.compose.material3.Text("Retry Shutdown")
+                                    }
+                                },
+                                dismissButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassTextButton(
+                                        onClick = {
+                                            val coordinator =
+                                                org.koin.core.context.GlobalContext.getOrNull()
+                                                    ?.getOrNull<AppShutdownPort>()
+                                            coroutineScope.launch {
+                                                coordinator?.forceShutdown()
+                                                exitApplication()
+                                            }
+                                        },
+                                    ) {
+                                        androidx.compose.material3.Text("Exit Anyway")
+                                    }
+                                },
+                            ) {
+                                androidx.compose.foundation.layout.Column(
+                                    verticalArrangement =
+                                    androidx.compose.foundation.layout.Arrangement.spacedBy(
+                                        org.ide.lti.core.designsystem.theme.Spacing.Small,
+                                    ),
+                                ) {
+                                    val ids = report.executionIds
+                                    val message =
+                                        if (ids.isEmpty()) {
+                                            "Background executions or build services did not confirm clean termination. Exiting now may leave processes running in WSL."
+                                        } else {
+                                            "The following executions did not confirm termination: ${ids.joinToString(
+                                                ", ",
+                                            )}. Exiting now may leave background processes running in WSL."
+                                        }
+                                    androidx.compose.material3.Text(
+                                        text = message,
+                                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        }
+                    },
+                )
             }
         }
     }

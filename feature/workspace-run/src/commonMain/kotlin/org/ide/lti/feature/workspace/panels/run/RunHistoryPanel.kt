@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.actions.GlassButton
@@ -33,6 +36,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -44,6 +48,18 @@ import org.ide.lti.core.model.run.Presence
 public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
     val typography = GlassTheme.typography
+    var pendingDelete by remember { mutableStateOf<BuildRun?>(null) }
+
+    pendingDelete?.let { run ->
+        DeleteRunDialog(
+            run = run,
+            onDelete = {
+                viewModel.deleteRun(run.id)
+                pendingDelete = null
+            },
+            onDismiss = { pendingDelete = null },
+        )
+    }
 
     Column(
         modifier = modifier
@@ -125,7 +141,7 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                             run = run,
                             isSelected = isSelected,
                             onSelect = { viewModel.selectRun(run) },
-                            onDelete = { viewModel.deleteRun(run.id) },
+                            onDelete = { pendingDelete = run },
                         )
                     }
                 }
@@ -192,6 +208,26 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DeleteRunDialog(run: BuildRun, onDelete: () -> Unit, onDismiss: () -> Unit) {
+    GlassDialog(
+        onDismissRequest = onDismiss,
+        title = "Delete this run?",
+        confirmButton = {
+            GlassButton(onClick = onDelete, variant = GlassButtonVariant.Primary) { Text("Delete") }
+        },
+        dismissButton = {
+            GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Secondary) { Text("Cancel") }
+        },
+    ) {
+        Text(
+            text = "Run ${run.id} and its log leave the history. Files it built stay in the workspace.",
+            style = GlassTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 

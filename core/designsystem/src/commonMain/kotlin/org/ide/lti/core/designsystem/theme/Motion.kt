@@ -20,6 +20,9 @@ import androidx.compose.animation.core.tween
  */
 @Suppress("PropertyName") // Design-system tokens use PascalCase per CLAUDE.md token catalog
 object MotionDuration {
+    /** One step of a busy spinner: eight turns of a second, far below the display rate (125ms). */
+    const val SpinnerStep: Int = 125
+
     /** Instant micro-transition for rapid gestures and quick-tap liquid reveals (80ms). */
     const val Instant: Int = 80
 

@@ -108,6 +108,74 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun aHostStepCutOffPartWayIsNotAppliedAgainOnResume() = runTest {
+        val original = DefaultPipelineStages.all.first()
+        val stage = object : StageDefinition by original {
+            override fun outputs(ctx: StageContext): List<String> = emptyList()
+            override fun plan(ctx: StageContext): List<PipelineStep> =
+                listOf(PipelineStep.Host("Apply modules", "host-result", object : HostRequest {}))
+        }
+        val repo = InMemoryRunRepository()
+        val port = globalPort()
+        var calls = 0
+        val entered = CompletableDeferred<Unit>()
+        val orchestrator = PipelineOrchestrator(
+            port,
+            repo,
+            FakeVendoredFiles(true),
+            registry = PipelineDefinitionRegistry(
+                DefaultPipelineStages.all.associateBy { it.id } + (stage.id to stage),
+            ),
+            toolStore = PipelinePinnedToolStore(),
+            hostSteps = HostStepPort { _, _ ->
+                calls++
+                entered.complete(Unit)
+                CompletableDeferred<String>().await()
+            },
+        )
+        val running = async { orchestrator.drive("run-cut", fixture.globalOtaContext(), "driver").toList() }
+        entered.await()
+        running.cancel()
+        running.join()
+
+        val events = orchestrator.resume(
+            assertNotNull(repo.getRun("run-cut")),
+            fixture.globalOtaContext(),
+            "driver",
+        ).toList()
+
+        assertEquals(1, calls, "the step must not run a second time")
+        assertEquals(PipelineEvent.RunFinished(RunState.INTERRUPTED), events.last())
+        assertEquals(0, port.files.getValue("$ws/.cache/WORK_TREE_ASSEMBLY.key").size, "the next build assembles anew")
+    }
+
+    @Test
+    fun aStepBrokenByTheAppClosingInterruptsTheRunRatherThanFailingIt() = runTest {
+        val original = DefaultPipelineStages.all.first()
+        val stage = object : StageDefinition by original {
+            override fun outputs(ctx: StageContext): List<String> = emptyList()
+            override fun plan(ctx: StageContext): List<PipelineStep> =
+                listOf(PipelineStep.Host("Apply modules", "host-result", object : HostRequest {}))
+        }
+        for ((closing, expected) in listOf(true to RunState.INTERRUPTED, false to RunState.FAILED)) {
+            val repo = InMemoryRunRepository()
+            val events = PipelineOrchestrator(
+                globalPort(),
+                repo,
+                FakeVendoredFiles(true),
+                registry = PipelineDefinitionRegistry(
+                    DefaultPipelineStages.all.associateBy { it.id } + (stage.id to stage),
+                ),
+                toolStore = PipelinePinnedToolStore(),
+                hostSteps = HostStepPort { _, _ -> error("Build service is stopping or cancelling executions") },
+                appClosing = { closing },
+            ).drive("run-closed", fixture.globalOtaContext(), "driver").toList()
+            assertEquals(PipelineEvent.RunFinished(expected), events.last())
+            assertEquals(expected, assertNotNull(repo.getRun("run-closed")).state)
+        }
+    }
+
+    @Test
     fun fullRunSucceedsWithCapturedValuesAndArtifacts() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()

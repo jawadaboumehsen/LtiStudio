@@ -133,6 +133,8 @@ public val toolingModule =
                 heartbeatMonitor = getOrNull<io.ltirom.tooling.client.resilience.DaemonHeartbeatMonitor>(),
                 toolManager = getOrNull<org.ide.lti.core.domain.tools.ToolManager>(),
                 toolStore = getOrNull<org.ide.lti.core.domain.tools.ToolStorePort>(),
+                workspaces = getOrNull(),
+                runs = getOrNull(),
             )
         } bind org.ide.lti.core.domain.tools.AppShutdownPort::class
 

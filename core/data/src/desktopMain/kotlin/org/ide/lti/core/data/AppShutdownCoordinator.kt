@@ -11,7 +11,10 @@ package org.ide.lti.core.data
 
 import io.ltirom.tooling.client.resilience.DaemonHeartbeatMonitor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.tools.AppShutdownPort
 import org.ide.lti.core.domain.tools.ShutdownReport
 import org.ide.lti.core.domain.tools.ToolManager
@@ -24,10 +27,17 @@ public class AppShutdownCoordinator(
     private val heartbeatMonitor: DaemonHeartbeatMonitor? = null,
     private val toolManager: ToolManager? = null,
     private val toolStore: ToolStorePort? = null,
+    private val workspaces: WorkspaceRepository? = null,
+    private val runs: RunRepository? = null,
 ) : AppShutdownPort {
+    @Volatile
+    override var closing: Boolean = false
+        private set
+
     override suspend fun shutdown(): ShutdownReport = shutdown(10.seconds)
 
     public suspend fun shutdown(timeout: Duration): ShutdownReport = withTimeoutOrNull(timeout) {
+        closing = true
         // The tools' cleanup runs uninterruptibly, so it gets its own share of the deadline, not all of it.
         val toolBudgetMs = timeout.inWholeMilliseconds * TOOL_SHARE_PERCENT / PERCENT
         if (toolManager != null) {
@@ -58,6 +68,13 @@ public class AppShutdownCoordinator(
         const val TOOL_SHARE_PERCENT = 60L
         const val PERCENT = 100L
         const val FORCE_SHUTDOWN_MS = 2_000L
+    }
+
+    override suspend fun activeBuilds(): List<String> {
+        val builds = runs ?: return emptyList()
+        return workspaces?.getWorkspaces()?.first().orEmpty()
+            .filter { builds.latestActive(it.id) != null }
+            .map { it.name }
     }
 
     override suspend fun forceShutdown() {

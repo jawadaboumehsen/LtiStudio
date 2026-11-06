@@ -147,6 +147,7 @@ internal actual val platformRepositoryModule =
                 restorePoints = get(),
                 acknowledgements = get(),
                 runs = getOrNull(),
+                distro = { getOrNull<ToolchainProvisioningService>()?.state?.value?.activeDistro },
             )
         }
         single { RestoreWorkbench(runner = get(), store = get()) }

@@ -55,7 +55,7 @@ public class StepExecutionAdapter(
             StartRunRequest(
                 request = toolRequest,
                 idempotencyKey = idempotencyKey,
-                workspaceLock = workingDir,
+                workspaceLock = workingDir.takeIf { step.exclusive },
             )
         val handle = transport.startRun(startReq)
         return RunHandle(
@@ -77,9 +77,11 @@ public class StepExecutionAdapter(
                     is CoreStreamEvent.OutputChunk -> {
                         emit(StepEvent.Output(sequenced.seq, event.text, event.isError))
                     }
+
                     is CoreStreamEvent.Heartbeat -> {
                         emit(StepEvent.Heartbeat)
                     }
+
                     is CoreStreamEvent.ExecutionFinished -> {
                         val run = runCatching { transport.getRun(serverRunId) }.getOrNull()
                         val exitCode =
@@ -90,6 +92,7 @@ public class StepExecutionAdapter(
                             }
                         emit(StepEvent.Finished(exitCode))
                     }
+
                     is CoreStreamEvent.ProgressUpdate -> {
                         // Ignored for pipeline steps
                     }

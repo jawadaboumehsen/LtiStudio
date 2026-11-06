@@ -81,6 +81,10 @@ public class WorkspaceStorageViewModel(
         mutableState.update { s -> s.copy(folders = folders, message = "Freed ${formatBytes(freed)} ($path).") }
     }
 
+    public fun dismissMessage() {
+        mutableState.update { it.copy(message = null) }
+    }
+
     private fun task(name: String, block: suspend (WorkspaceStorage) -> Unit) {
         val storage = storage ?: return
         if (state.value.busy != null) return
@@ -116,7 +120,13 @@ public fun WorkspaceStoragePanel(viewModel: WorkspaceStorageViewModel, modifier:
         ) {
             item { Summary(state, onRefresh = viewModel::refresh) }
             state.message?.let { message ->
-                item { GlassBanner(severity = GlassBannerSeverity.INFO, title = message, onDismiss = {}) }
+                item {
+                    GlassBanner(
+                        severity = GlassBannerSeverity.INFO,
+                        title = message,
+                        onDismiss = viewModel::dismissMessage,
+                    )
+                }
             }
             items(state.folders, key = { it.path }) { folder ->
                 FolderRow(folder, busy = state.busy, onClean = { viewModel.clean(folder.path) })

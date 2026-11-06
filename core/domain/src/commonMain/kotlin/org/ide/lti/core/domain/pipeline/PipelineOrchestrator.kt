@@ -94,6 +94,8 @@ public class PipelineOrchestrator(
     private val toolStore: ToolStorePort? = null,
     private val toolUsageCoordinator: ToolUsageCoordinator? = null,
     private val hostSteps: HostStepPort? = null,
+    /** The app is closing: the service stops under the running step, which says nothing about the build. */
+    private val appClosing: () -> Boolean = { false },
 ) {
     /** The stages this run executes: all of them, or up to and including [BuildRun.throughStage]. */
     private fun stagesOf(run: BuildRun?): List<StageDefinition> {
@@ -348,6 +350,10 @@ public class PipelineOrchestrator(
                             ?.also { if (it is CancellationException) throw it }
                             ?: outputDigestOrFailure(driver, stage)
                     if (failure != null) {
+                        if (closedByApp(driver)) {
+                            handleInterruption(driver, index, stage, "The app was closed during this stage")
+                            return@flow
+                        }
                         if (failure is StageInterruptedFailure) {
                             handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
                             return@flow
@@ -509,6 +515,10 @@ public class PipelineOrchestrator(
                             ?: outputDigestOrFailure(driver, stage)
 
                     if (failure != null) {
+                        if (closedByApp(driver)) {
+                            handleInterruption(driver, index, stage, "The app was closed during this stage")
+                            return@flow
+                        }
                         if (failure is StageInterruptedFailure) {
                             handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
                             return@flow
@@ -563,6 +573,10 @@ public class PipelineOrchestrator(
         runRepository.upsert(run.copy(state = RunState.PAUSED_WAITING_FOR_APP))
         return true
     }
+
+    /** A run the person cancelled stays cancelled, even when they then close the app. */
+    private suspend fun closedByApp(driver: Driver): Boolean =
+        appClosing() && runRepository.getRun(driver.runId)?.state != RunState.CANCELLING
 
     private suspend fun FlowCollector<PipelineEvent>.handleInterruption(
         driver: Driver,
@@ -910,9 +924,25 @@ public class PipelineOrchestrator(
     /** Only a step whose output is used keeps it: a log-only step's (possibly huge) output just streams. */
     private fun PipelineStep.Tool.keepsOutput() = resultKey != null || expectStdoutContains.isNotEmpty()
 
+    /**
+     * Records that [step] started, under the key this returns. A host step is not all-or-nothing: finding that record
+     * on a resume means what it did is in the tree, and a second go would apply it on top of that.
+     */
+    private suspend fun markHostStarted(driver: Driver, step: PipelineStep.Host): String {
+        val started = "host.started.${step.resultKey}"
+        if (driver.runtimeValues.containsKey(started)) {
+            executionPort.uploadFile(driver.ws, stageCacheFile(StageId.WORK_TREE_ASSEMBLY), ByteArray(0))
+            throw StageInterruptedFailure("${step.label} was cut off part way: start the build again")
+        }
+        driver.runtimeValues[started] = "true"
+        driver.persist { it }
+        return started
+    }
+
     /** Returns true (re-plan) once the result is recorded; a result already present is never redone. */
     private suspend fun runHost(driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Host): Boolean {
         if (driver.runtimeValues.containsKey(step.resultKey)) return true
+        val started = markHostStarted(driver, step)
         val output = runCatching {
             coroutineScope {
                 val work = async {
@@ -940,6 +970,7 @@ public class PipelineOrchestrator(
             }
         }
         driver.checkCancellation()
+        driver.runtimeValues -= started
         driver.runtimeValues[step.resultKey] = output
         driver.collector.emit(PipelineEvent.StepOutput(stage.id, output))
         return true

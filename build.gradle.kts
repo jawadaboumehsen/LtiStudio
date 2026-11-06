@@ -344,6 +344,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             "import androidx.compose.material3.Slider" to "GlassSlider",
             "import androidx.compose.material3.RangeSlider" to "GlassSlider",
             "import androidx.compose.material3.AlertDialog" to "GlassDialog",
+            "import androidx.compose.material3.CircularProgressIndicator" to "GlassSpinner",
             "import androidx.compose.material3.Card" to "GlassCard",
             "import androidx.compose.material3.ElevatedCard" to "GlassCard",
             "import androidx.compose.material3.OutlinedCard" to "GlassCard",

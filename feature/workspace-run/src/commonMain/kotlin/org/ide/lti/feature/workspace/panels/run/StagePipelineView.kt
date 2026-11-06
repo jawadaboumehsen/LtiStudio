@@ -9,14 +9,18 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.ide.lti.core.designsystem.component.progress.GlassStepInfo
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
 import org.ide.lti.core.designsystem.component.progress.GlassStepperOrientation
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.model.run.BuildRun
@@ -45,14 +49,20 @@ public fun StagePipelineView(
         )
     }
 
-    GlassStepper(
-        steps = stepInfos,
-        orientation = orientation,
-        isBusy = isBusy,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.Small),
-    )
+    Column(modifier = modifier.fillMaxWidth()) {
+        GlassStepper(
+            steps = stepInfos,
+            orientation = orientation,
+            isBusy = isBusy,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Spacing.Small),
+        )
+        // A step's label is one short line: the reason, and what to do about it, needs the room.
+        latestRun?.stages?.firstOrNull { it.state == StageState.FAILED }?.message?.let { reason ->
+            Text(text = reason, style = GlassTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
 }
 
 /** Resolves the glass stepper status for a given stage state. */
@@ -70,7 +80,7 @@ private fun resolveStepStatus(state: StageState?): GlassStepStatus = when (state
 private fun resolveStepLabel(outcome: StageOutcome?): String = when (outcome?.state) {
     StageState.SKIPPED -> "Skipped"
     StageState.EXECUTED -> outcome.durationMs?.let { "${it / 1000}s" } ?: "Complete"
-    StageState.FAILED -> outcome.message ?: "Failed"
+    StageState.FAILED -> "Failed"
     StageState.RUNNING -> "Running..."
     StageState.CANCELLED -> "Cancelled"
     StageState.INTERRUPTED -> "Interrupted"

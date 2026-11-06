@@ -171,6 +171,8 @@ To prevent design system drift and ensure strict token adherence, two automated 
    - Rules: `NoRawColorLiteral`, `NoRawAlphaLiteral`, `NoRawDimensionLiteral`, `NoRawMotionLiteral`,
      `NoUnprotectedTextClip`, `NoWeightInScrollableContainer`.
 
+Busy spinners are `GlassSpinner` (8 steps a second), never `CircularProgressIndicator` (guardrail): a spinner animating at the display rate redraws the whole glass window every frame, 159% of a core against 23% during a real build.
+
 ## Haze Glass System
 
 All glass (blur, refraction, tint) is rendered by the vendored **Haze** library
@@ -813,6 +815,7 @@ per stage; a failed stage marks every later stage pending and stops.
   stage's commands change. Once a stage really runs, every later stage runs too: they share `work/`.
 - Captured values over 512 characters are not kept between runs. A stage that needs a long value (a whole
   `build.prop`) reads it itself, never from an earlier stage that may come from cache.
+- Closing the app during a build asks first (`AppShutdownPort.activeBuilds`, the dialog in `main.kt`). `closing` is set before the service is told to stop, so a step that stop breaks ends the run as INTERRUPTED, not FAILED; a half-applied stage is never resumed in place. Dialogs the window raises go in `LtiSharedApp(windowDialogs = ...)`: glass components throw outside `LtiTheme`.
 - One driver per run in the app (`PipelineOrchestrator.exclusive`). A step's exit code comes from its `Finished`
   event, or from `status()` when the stream ended without one.
 - Sidecars: `work/configs/fs_config-<p>` and `file_context-<p>`. For system (`--mount-point /`), paths are

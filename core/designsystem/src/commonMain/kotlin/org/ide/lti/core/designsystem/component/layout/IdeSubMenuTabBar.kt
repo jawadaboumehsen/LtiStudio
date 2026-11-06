@@ -11,6 +11,7 @@
 
 package org.ide.lti.core.designsystem.component.layout
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +46,7 @@ import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassFontFamily
@@ -74,7 +78,7 @@ fun IdeSubMenuTabBar(
     val scrollState = rememberScrollState()
 
     Row(
-        modifier = modifier.horizontalScroll(scrollState),
+        modifier = modifier.wheelScrollsRow(scrollState).horizontalScroll(scrollState),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
@@ -86,6 +90,21 @@ fun IdeSubMenuTabBar(
                 tag = "${tagPrefix}${item.id}",
                 onClick = { onSelectItem(item.id) },
             )
+        }
+    }
+}
+
+/** A plain mouse wheel moves the row: `horizontalScroll` alone answers only to Shift + wheel. */
+private fun Modifier.wheelScrollsRow(state: ScrollState): Modifier = pointerInput(state) {
+    val step = ComponentSize.ButtonMinWidth.toPx()
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull()
+            if (event.type == PointerEventType.Scroll && change != null && change.scrollDelta.y != 0f) {
+                state.dispatchRawDelta(change.scrollDelta.y * step)
+                change.consume()
+            }
         }
     }
 }
@@ -194,6 +213,8 @@ private fun subMenuTabContentColor(
         isBlue -> BrandColors.OnLogoBadge
         else -> colors.onSurface
     }
+
     isHoveredOrFocused -> colors.onSurface
+
     else -> colors.onSurfaceVariant
 }

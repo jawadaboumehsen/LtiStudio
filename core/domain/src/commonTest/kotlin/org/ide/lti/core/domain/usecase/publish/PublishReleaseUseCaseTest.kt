@@ -212,6 +212,16 @@ class PublishReleaseUseCaseTest {
     }
 
     @Test
+    fun anEarlierPublishIsNotShownForADifferentPackageOfTheSameName() = runTest {
+        built()
+        assertNotNull(publish.publish("ws"))
+        assertNotNull(publish.preflight("ws").journal)
+
+        built(content = "new")
+        assertNull(publish.preflight("ws").journal)
+    }
+
+    @Test
     fun theOtaIsExportedAndVerifiedWithThePackage() = runTest {
         builtWithOta()
         val journal = assertNotNull(publish.publish("ws"))

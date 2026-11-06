@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,6 +50,7 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusError
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
@@ -276,12 +276,19 @@ private fun handleTrackerAction(
             } else {
                 onRetryStage(stage)
             }
+
         SetupRowAction.INSTALL_PACKAGES -> onInstallPackages()
+
         SetupRowAction.CONTINUE_SETUP -> onShowHandoffSheet()
+
         SetupRowAction.OPEN_DISTRO -> actionDistro?.let(onOpenDistro)
+
         SetupRowAction.SHOW_DIAGNOSTICS, SetupRowAction.SHOW_LOG -> onShowDiagnostics()
+
         SetupRowAction.CANCEL -> onShowCancelDialog(extractToolName(stepDescription))
+
         SetupRowAction.INSTALL_UBUNTU -> onInstallUbuntu(actionDistro ?: "Ubuntu-24.04")
+
         SetupRowAction.USE_DISTRO -> actionDistro?.let(onSelectDistro) ?: onVerify()
     }
 }
@@ -666,13 +673,14 @@ private fun VerticalStageRow(
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                             } else {
-                                CircularProgressIndicator(
+                                GlassSpinner(
                                     modifier = Modifier.size(IconSize.Small),
                                     strokeWidth = StrokeWidth.Focused,
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                             }
                         }
+
                         isSuccess -> {
                             Icon(
                                 painter = AppIcons.ideStatusSuccess(),
@@ -681,6 +689,7 @@ private fun VerticalStageRow(
                                 modifier = Modifier.size(IconSize.Small),
                             )
                         }
+
                         else -> {
                             // Pending is neutral, not a warning: a muted dot.
                             Box(

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -299,10 +298,15 @@ private fun stepBackgroundColor(
         GlassStepStatus.WARNING -> colors.surfaceContainerHigh
         else -> colors.surfaceContainer
     }
+
     status == GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+
     status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Faint)
+
     status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Faint)
+
     status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Faint)
+
     else -> colors.surfaceContainer
 }
 
@@ -322,10 +326,15 @@ private fun stepBorderColor(
         GlassStepStatus.WARNING -> diagnostics.warning
         else -> colors.outlineVariant
     }
+
     status == GlassStepStatus.RUNNING -> colors.primary
+
     status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.Border)
+
     status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.Border)
+
     status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Border)
+
     else -> colors.outline
 }
 
@@ -345,10 +354,15 @@ private fun stepIconBgColor(
         GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.Hover)
         else -> colors.surfaceContainerHighest
     }
+
     status == GlassStepStatus.RUNNING -> colors.primary.copy(alpha = AlphaTokens.GlassSecondaryTint)
+
     status == GlassStepStatus.SUCCESS -> diagnostics.success.copy(alpha = AlphaTokens.GlassSecondaryTint)
+
     status == GlassStepStatus.FAILED -> diagnostics.error.copy(alpha = AlphaTokens.GlassSecondaryTint)
+
     status == GlassStepStatus.WARNING -> diagnostics.warning.copy(alpha = AlphaTokens.GlassSecondaryTint)
+
     else -> colors.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
 }
 
@@ -375,58 +389,66 @@ private fun StepStatusIndicator(
     modifier: Modifier = Modifier,
 ) {
     when (status) {
-        GlassStepStatus.RUNNING -> CircularProgressIndicator(
+        GlassStepStatus.RUNNING -> GlassSpinner(
             modifier = modifier.size(IconSize.Small),
             strokeWidth = StrokeWidth.Hairline,
             color = MaterialTheme.colorScheme.primary,
         )
+
         GlassStepStatus.SUCCESS -> Icon(
             painter = AppIcons.CheckPainterResource(),
             contentDescription = null,
             tint = diagnostics.success,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.FAILED -> Icon(
             painter = AppIcons.ClearPainterResource(),
             contentDescription = null,
             tint = diagnostics.error,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.WARNING -> Icon(
             painter = AppIcons.ideStatusWarning(),
             contentDescription = null,
             tint = diagnostics.warning,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.PENDING -> Text(
             text = "$index",
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier,
         )
+
         GlassStepStatus.SKIPPED -> Icon(
             painter = AppIcons.ChevronRightPainterResource(),
             contentDescription = "Skipped",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.CANCELLED -> Icon(
             painter = AppIcons.ClearPainterResource(),
             contentDescription = "Cancelled",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.INTERRUPTED -> Icon(
             painter = AppIcons.ideStatusWarning(),
             contentDescription = "Interrupted",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.size(IconSize.Small),
         )
+
         GlassStepStatus.RESTORED -> Box(
             modifier = modifier,
             contentAlignment = Alignment.Center,
         ) {
-            CircularProgressIndicator(
+            GlassSpinner(
                 modifier = Modifier.size(IconSize.Small),
                 strokeWidth = StrokeWidth.Hairline,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

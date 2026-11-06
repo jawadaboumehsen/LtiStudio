@@ -74,15 +74,20 @@ public fun PatchEditor(
             item {
                 when (selectedObjectId.lowercase()) {
                     "enabled-ordered-modules", "enabled_ordered_modules" -> EnabledCard(settings, facts, onToggle)
+
                     "file-changes", "file_changes" -> ChangesCard(
                         "File changes",
                         changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch },
                     )
+
                     "text-patches", "text_patches" ->
                         ChangesCard("Text patches", changes.filter { (_, op) -> op is Operation.TextPatch })
+
                     "property-patches", "property_patches" ->
                         ChangesCard("Property patches", changes.filter { (_, op) -> op is Operation.PropertyPatch })
+
                     "conflicts" -> ConflictsCard(changes)
+
                     else -> CatalogCard(settings, facts, onToggle, onOpenPlugins)
                 }
             }
@@ -173,12 +178,18 @@ private fun ChangesCard(title: String, changes: List<Pair<String, Operation>>) {
     }
 }
 
-/** Whole-file changes (add, replace, delete, bytecode) to one path from two plugins: only the last one would win. */
+/**
+ * Whole-file changes (add, replace, delete) to one path from two plugins: only the last one would win. Text,
+ * property and bytecode edits are not among them: each plugin's edits apply on top of the one before it.
+ */
+internal fun conflictsOf(changes: List<Pair<String, Operation>>): Map<String, List<Pair<String, Operation>>> = changes
+    .filter { (_, op) -> op is Operation.Copy || op is Operation.Replace || op is Operation.Delete }
+    .groupBy { (_, op) -> targetOf(op) }
+    .filterValues { ops -> ops.map { it.first }.distinct().size > 1 }
+
 @Composable
 private fun ConflictsCard(changes: List<Pair<String, Operation>>) {
-    val wholeFile = changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch }
-    val conflicts = wholeFile.groupBy { (_, op) -> targetOf(op) }
-        .filterValues { ops -> ops.map { it.first }.distinct().size > 1 }
+    val conflicts = conflictsOf(changes)
     Card("Conflicts", "PatchConflicts") {
         if (conflicts.isEmpty()) Hint("No two enabled plugins replace the same file.")
         conflicts.forEach { (path, ops) -> Problem("$path: ${ops.joinToString { it.first.substringAfter(':') }}") }
@@ -199,10 +210,15 @@ private fun describe(op: Operation): String = when (op) {
         val meta = op.metadata?.let { " (${it.mode}, ${it.label ?: "folder label"})" }
         "add ${targetOf(op)}${meta.orEmpty()}"
     }
+
     is Operation.Replace -> "replace ${targetOf(op)}"
+
     is Operation.Delete -> "delete ${targetOf(op)}"
+
     is Operation.PropertyPatch -> "${targetOf(op)}: ${op.key}=${valueOf(op.value)}"
+
     is Operation.TextPatch -> "${targetOf(op)}: at \"${op.context.take(CONTEXT_PREVIEW)}…\""
+
     is Operation.ApkJarPatch -> "smali ${targetOf(op)} (${op.edits.size} edits)"
 }
 

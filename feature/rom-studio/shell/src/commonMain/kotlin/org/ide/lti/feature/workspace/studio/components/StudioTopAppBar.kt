@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -247,7 +247,7 @@ internal fun TopBarActionButton(
             horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
+                GlassSpinner(
                     modifier = Modifier.size(IconSize.Small),
                     strokeWidth = StrokeWidth.Hairline,
                     color = if (isPrimary) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primary,

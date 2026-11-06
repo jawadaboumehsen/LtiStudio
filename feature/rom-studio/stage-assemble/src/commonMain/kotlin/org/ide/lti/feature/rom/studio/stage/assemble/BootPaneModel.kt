@@ -169,9 +169,7 @@ public class BootPaneModel(
                         val mounts = BootWorkbench.deviceTreeMounts(r, workspaceId)
                         mutableState.update { it.copy(dtMounts = mounts) }
                     } catch (e: RefusalException) {
-                        val busy = e.refusal.cause.let { "Run conflict" in it || "locked by active run" in it }
-                        val why = if (busy) BUILD_RUNNING else e.refusal.cause
-                        mutableState.update { it.copy(dtUnread = why) }
+                        mutableState.update { it.copy(dtUnread = e.refusal.cause) }
                     }
                 }
             }
@@ -405,5 +403,3 @@ public class BootPaneModel(
         }
     }
 }
-
-private const val BUILD_RUNNING = "A build is running in this workspace: read again when it has finished."

@@ -237,4 +237,21 @@ class InstalledPluginRepositoryTest {
         assertTrue(removed)
         assertTrue(repo.installed().isEmpty())
     }
+
+    @Test
+    fun aRecordThatDisagreesWithItsPackageTakesThePackagesDigest() = runTest {
+        val repo = InstalledPluginRepository(tempStoreDir)
+        val zip = tempWorkDir.resolve("stale.lti-mod.zip")
+        val identity = buildPackageZip(zip, payloadBytes = "data".toByteArray(Charsets.UTF_8))
+        val quarantined = assertNotNull(repo.quarantine(zip.toString()))
+        assertTrue(repo.promote(quarantined, identity))
+        val stale = repo.installed().single().let { it.copy(identity = it.identity.copy(contentDigest = "sha256:old")) }
+        assertTrue(repo.updateRecord(stale))
+
+        assertEquals(identity.contentDigest, repo.installed().single().identity.contentDigest)
+
+        // Written back: what reads the record itself (a reinstall of the same package) agrees too.
+        val again = assertNotNull(repo.quarantine(zip.toString()))
+        assertTrue(repo.promote(again, identity))
+    }
 }

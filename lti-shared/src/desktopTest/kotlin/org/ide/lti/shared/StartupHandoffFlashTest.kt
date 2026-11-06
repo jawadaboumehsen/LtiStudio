@@ -9,13 +9,16 @@
  */
 package org.ide.lti.shared
 
+import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.shared.di.initKoin
 import org.junit.After
 import org.junit.Before
@@ -49,6 +52,15 @@ class StartupHandoffFlashTest {
         // Assert frame 1 composition directly without waiting for coroutine idle
         onNodeWithTag("SplashCard").assertDoesNotExist()
         onNodeWithTag("GlobalAppTopBar").assertIsDisplayed()
+    }
+
+    @Test
+    fun windowDialogsAreComposedInsideTheTheme() = runDesktopComposeUiTest(width = 1120, height = 700) {
+        // A glass button outside LtiTheme throws, as the exit dialogs did from the window scope.
+        setContent {
+            LtiSharedApp(windowDialogs = { GlassPrimaryButton(onClick = {}) { Text("Close anyway") } })
+        }
+        onNodeWithText("Close anyway").assertExists()
     }
 
     @Test

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -37,6 +36,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
@@ -164,6 +164,7 @@ fun GlassLoadingDialog(visibilityState: LoadingDialogState, modifier: Modifier =
 
     when (visibilityState) {
         is LoadingDialogState.Hidden -> Unit
+
         is LoadingDialogState.Shown -> {
             val theme = GlassTheme.appTheme
             val loadingSurfaceModifier = if (GlassTheme.effectsEnabled &&
@@ -210,7 +211,7 @@ fun GlassLoadingDialog(visibilityState: LoadingDialogState, modifier: Modifier =
                             color = colors.onSurface,
                             modifier = Modifier.padding(bottom = Spacing.Medium),
                         )
-                        CircularProgressIndicator(
+                        GlassSpinner(
                             color = colors.primary,
                         )
                     }

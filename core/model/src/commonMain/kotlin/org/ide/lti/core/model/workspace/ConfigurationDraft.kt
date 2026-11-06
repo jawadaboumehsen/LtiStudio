@@ -25,7 +25,7 @@ data class ConfigurationDraft(
     val importedArchiveName: String? = null,
     val buildType: String = "user",
     val romVersion: String = "1.0.0",
-    val otaBaseUrl: String = "https://example.com/updates",
+    val otaBaseUrl: String = "",
 ) {
     fun toSnapshot(
         id: String,

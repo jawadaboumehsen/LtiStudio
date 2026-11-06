@@ -32,7 +32,7 @@ class MetadataStageEditorTest {
         assertEquals("test-ws", vm.workspaceId)
         assertNotNull(vm.settings.value)
         assertEquals("internal", vm.settings.value.channel)
-        assertEquals("https://example.com/updates", vm.settings.value.otaBaseUrl)
+        assertEquals("", vm.settings.value.otaBaseUrl)
 
         vm.updateSettings(vm.settings.value.copy(channel = "stable"))
         assertEquals("stable", vm.settings.value.channel)

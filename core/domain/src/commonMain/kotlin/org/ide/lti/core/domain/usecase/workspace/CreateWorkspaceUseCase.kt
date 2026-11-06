@@ -165,9 +165,6 @@ class CreateWorkspaceUseCase(
                 buildType = "user",
                 romVersion = "1.0.0",
             ),
-            release = org.ide.lti.core.model.workspace.ReleaseSettings(
-                otaBaseUrl = "https://example.com/updates",
-            ),
             createdAt = Clock.System.now(),
         )
     }

@@ -32,6 +32,11 @@ public object OtaManifestWriter {
         ota: OtaPackage? = null,
     ): String {
         val cleanBaseUrl = otaBaseUrl.removeSuffix("/")
+        fun urls(name: String, indent: String) = if (cleanBaseUrl.isEmpty()) {
+            "[]"
+        } else {
+            "[\n$indent    \"${jsonText("$cleanBaseUrl/${urlSegment(name)}")}\"\n$indent]"
+        }
         val idInput = "$sha256$datetime"
         val md = MessageDigest.getInstance("SHA-256")
         val id = md.digest(idInput.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
@@ -42,9 +47,7 @@ public object OtaManifestWriter {
                 "filename": "${jsonText(it.filename)}",
                 "size": ${it.size},
                 "sha256": "${jsonText(it.sha256)}",
-                "urls": [
-                    "${jsonText("$cleanBaseUrl/${urlSegment(it.filename)}")}"
-                ]
+                "urls": ${urls(it.filename, " ".repeat(OTA_INDENT))}
             },"""
         }.orEmpty()
 
@@ -57,9 +60,7 @@ public object OtaManifestWriter {
             "id": "${jsonText(id)}",
             "patch": "${jsonText(patch)}",
             "size": $size,
-            "urls": [
-                "${jsonText("$cleanBaseUrl/${urlSegment(filename)}")}"
-            ],
+            "urls": ${urls(filename, " ".repeat(ENTRY_INDENT))},
             "version": "${jsonText(version)}",
             "incremental": "${jsonText(incremental)}",
             "sha256": "${jsonText(sha256)}",$otaField
@@ -69,6 +70,9 @@ public object OtaManifestWriter {
 }
 """
     }
+
+    private const val ENTRY_INDENT = 12
+    private const val OTA_INDENT = 16
 
     /** [text] escaped for use between JSON quotes (any quote, backslash or control character). */
     public fun jsonText(text: String): String = JsonPrimitive(text).toString().removeSurrounding("\"")

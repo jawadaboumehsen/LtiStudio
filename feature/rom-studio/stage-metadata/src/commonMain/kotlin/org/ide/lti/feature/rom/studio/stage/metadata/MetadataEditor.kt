@@ -81,15 +81,19 @@ public fun MetadataEditor(
                 "ota-url", "ota_url" -> item {
                     OtaCard(settings, errors, dirtyPaths, onChange)
                 }
+
                 "changelog" -> item {
                     ChangelogCard(settings, errors, dirtyPaths, onChange)
                 }
+
                 "compatibility" -> item {
                     CompatibilityCard(target, dirtyPaths)
                 }
+
                 "manifest-preview", "manifest_preview" -> item {
                     ManifestCard(manifest)
                 }
+
                 else -> item {
                     IdentityCard(settings, target, dirtyPaths, onChange)
                 }
@@ -177,7 +181,8 @@ private fun OtaCard(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "Base URL must use HTTPS and must not end with a slash.",
+            text = "HTTPS, with no slash at the end. Empty: the manifest lists no download. A GitHub publish " +
+                "sets its own.",
             fontSize = FontSize.Micro,
             fontFamily = ideFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
