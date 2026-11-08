@@ -61,6 +61,8 @@ public fun MountTablePane(
     onAddMountLines: () -> Unit = {},
     onRemoveIntegrityFlags: () -> Unit = {},
     onReadDeviceTree: () -> Unit = {},
+    onReadMountTables: () -> Unit = {},
+    onRemoveFirstStageFlag: (String, String) -> Unit = { _, _ -> },
 ) {
     LaunchedEffect(Unit) { onReadDeviceTree() }
     Column(
@@ -130,6 +132,20 @@ public fun MountTablePane(
             boot.busy?.let { Muted("$it…") }
             boot.message?.let { GlassBanner(severity = GlassBannerSeverity.INFO, title = it) }
             boot.refusal?.let { RefusalView(refusal = it) }
+        }
+        Section(
+            "Mount tables, line by line",
+            "Each mount point and filesystem with its flags. A verity or encryption flag can be removed on its own: " +
+                "from vendor_boot at once (saved as an override), from the work tree in every build.",
+        ) {
+            MountTableRows(
+                tables = boot.mountTables,
+                settings = settings,
+                onChange = onChange,
+                idle = boot.busy == null,
+                onRead = onReadMountTables,
+                onRemoveFirstStage = onRemoveFirstStageFlag,
+            )
         }
         DeviceTreeMounts(boot.dtMounts, boot.dtUnread, onReadDeviceTree)
     }

@@ -116,6 +116,8 @@ public fun AssembleEditor(
                             onAddMountLines = bootActions.addMountLines,
                             onRemoveIntegrityFlags = bootActions.removeIntegrityFlags,
                             onReadDeviceTree = bootActions.readDeviceTree,
+                            onReadMountTables = bootActions.readMountTables,
+                            onRemoveFirstStageFlag = bootActions.removeFirstStageFlag,
                         )
                         BootAckDialog(bootState, bootActions)
                     }

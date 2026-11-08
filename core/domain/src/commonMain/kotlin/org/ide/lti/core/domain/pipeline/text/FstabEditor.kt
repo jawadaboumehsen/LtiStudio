@@ -51,6 +51,48 @@ public object FstabEditor {
         if (kept.size == parts.size) line else line.replaceRange(flags.range, shown)
     }
 
+    /** One line of a mount table: where from, where to, as what, how, and its fs_mgr flags. */
+    public data class Row(
+        val source: String,
+        val mountPoint: String,
+        val type: String,
+        val mountOptions: String,
+        val flags: List<String>,
+    )
+
+    /** The lines of [fstab] that mount something (comments and short lines left out), in order. */
+    public fun rows(fstab: String): List<Row> = fstab.lines().mapNotNull { line ->
+        if (line.trimStart().startsWith("#")) return@mapNotNull null
+        val t = TOKEN.findAll(line).map { it.value }.toList()
+        if (t.size <= MOUNT_OPTIONS) return@mapNotNull null
+        Row(t[0], t[MOUNT_POINT], t[TYPE], t[MOUNT_OPTIONS], t.getOrNull(FS_MGR_FLAGS)?.split(',').orEmpty())
+    }
+
+    /** Whether [flag] (`avb=vbmeta_system`, `verify`) makes a partition verified. */
+    public fun isIntegrity(flag: String): Boolean = flag.substringBefore('=') in INTEGRITY_FLAGS
+
+    /** Whether [flag] (`fileencryption=…`, `forceencrypt`) makes a partition encrypted. */
+    public fun isEncryption(flag: String): Boolean = flag.substringBefore('=') in ENCRYPTION_FLAGS
+
+    /** Whether [flag] can be removed on its own: a verity or an encryption flag (nothing a line needs to mount). */
+    public fun isRemovable(flag: String): Boolean = isIntegrity(flag) || isEncryption(flag)
+
+    /**
+     * [fstab] without each `mount point -> flag name` of [removals] on every line of that mount point (a flag is
+     * matched by its name, before any `=`). Other lines stay byte for byte.
+     */
+    public fun withoutFlags(fstab: String, removals: List<Pair<String, String>>): String =
+        fstab.lines().joinToString("\n") { line ->
+            val point = mountPoint(line)
+            val names = removals.filter { it.first == point }.map { it.second.substringBefore('=') }.toSet()
+            val flags = TOKEN.findAll(line).elementAtOrNull(FS_MGR_FLAGS)
+            if (names.isEmpty() || flags == null) return@joinToString line
+            val parts = flags.value.split(',')
+            val kept = parts.filterNot { it.substringBefore('=') in names }
+            val shown = kept.joinToString(",").ifEmpty { "defaults" }
+            if (kept.size == parts.size) line else line.replaceRange(flags.range, shown)
+        }
+
     /** Whether [fstab] has a line mounting `/data`. */
     public fun mountsData(fstab: String): Boolean = fstab.lines().any { mountPoint(it) == DATA }
 

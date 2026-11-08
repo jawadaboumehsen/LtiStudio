@@ -70,6 +70,7 @@ public object CacheKeys {
             snapshot.assembly.kernelOverrides.keyField(),
             snapshot.assembly.disableDataEncryption.toString(),
             snapshot.assembly.removeIntegrityFlags.toString(),
+            snapshot.assembly.fstabFlagRemovals.joinToString(";") { "${it.mountPoint} ${it.flag}" },
         ).joinToString("|")
         return sha256(raw)
     }
@@ -93,6 +94,7 @@ public object CacheKeys {
             stage4Key,
             deviceDigest,
             snapshot.build.filesystem,
+            snapshot.build.keepStock.sorted().joinToString(","),
             snapshot.build.compression,
             snapshot.build.level?.toString().orEmpty(),
             snapshot.build.blockSize.toString(),

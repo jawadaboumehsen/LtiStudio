@@ -154,6 +154,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
 
         if (ctx.snapshot.assembly.disableDataEncryption) steps += dataEncryptionSteps(ctx)
         if (ctx.snapshot.assembly.removeIntegrityFlags) steps += integritySteps(ctx)
+        if (ctx.snapshot.assembly.fstabFlagRemovals.isNotEmpty()) steps += flagRemovalSteps(ctx)
 
         val baseStamper = BuildPropStamper.stamper(ctx)
         val overrides = ctx.snapshot.assembly.propertyOverrides
@@ -251,6 +252,20 @@ public class WorkTreeAssemblyStage : StageDefinition {
         val files = ctx.value(VERIFIED_FSTABS_KEY)?.lines()?.map(String::trim)?.filter(String::isNotEmpty).orEmpty()
         return listOf(find) + files.map { rel ->
             PipelineStep.EditFile("work/$rel", FstabEditor::withoutIntegrity, "remove integrity flags in $rel")
+        }
+    }
+
+    /** Every fstab in work/ loses the single flags removed in Assemble > Mount table ([FstabEditor.withoutFlags]). */
+    private fun flagRemovalSteps(ctx: StageContext): List<PipelineStep> {
+        val find = PipelineStep.Tool(
+            command = stepCommand("sh", listOf("-c", FIND_FSTABS, "sh", ctx.abs("work")), ctx.wsPath),
+            label = "find fstabs",
+            resultKey = FSTABS_KEY,
+        )
+        val removals = ctx.snapshot.assembly.fstabFlagRemovals.map { it.mountPoint to it.flag }
+        val files = ctx.value(FSTABS_KEY)?.lines()?.map(String::trim)?.filter(String::isNotEmpty).orEmpty()
+        return listOf(find) + files.map { rel ->
+            PipelineStep.EditFile("work/$rel", { FstabEditor.withoutFlags(it, removals) }, "remove flags in $rel")
         }
     }
 
@@ -360,6 +375,11 @@ public class WorkTreeAssemblyStage : StageDefinition {
             "cd \"\$1\" && grep -rlE '^[^#[:space:]]+[[:space:]]+/data[[:space:]]' --include='fstab*' . " +
                 "| sed 's#^\\./##' || true"
         private const val VERIFIED_FSTABS_KEY = "assembly.verified.fstabs"
+        private const val FSTABS_KEY = "assembly.fstabs"
+
+        /** `sh -c FIND_FSTABS sh <work>`: every fstab file (relative to work/) of the partitions' `etc/` folders. */
+        private const val FIND_FSTABS =
+            "cd \"\$1\" && find . -path './*/etc/fstab*' -type f | sed 's#^\\./##' || true"
 
         /** `sh -c FIND_VERIFIED_FSTABS sh <work>`: fstab files (relative to work/) with an avb/verify fs_mgr flag. */
         private const val FIND_VERIFIED_FSTABS =

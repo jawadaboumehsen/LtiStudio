@@ -228,11 +228,7 @@ public class BuildFlashableZipStage : StageDefinition {
 
     private fun imageSteps(ctx: StageContext, p: String): List<PipelineStep> {
         val steps = mutableListOf<PipelineStep>()
-        val built = when (BuildFilesystems.of(ctx.snapshot.build, p)) {
-            BuildFilesystems.EXT4 -> FilesystemImageSteps.ext4(ctx, p, steps)
-            BuildFilesystems.F2FS -> FilesystemImageSteps.f2fs(ctx, p, steps)
-            else -> erofsSteps(ctx, p)?.let { steps += it } != null
-        }
+        val built = FilesystemImageSteps.image(ctx, p, steps) { erofsSteps(ctx, p) }
         if (!built) return steps
         val ws = ctx.wsPath
         val img = ctx.abs("out/images/$p.img")

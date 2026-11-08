@@ -20,10 +20,12 @@ import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
+import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
+import org.ide.lti.core.domain.workbench.ImageWorkbench
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.ide.lti.core.domain.workspace.WorkspaceFile
@@ -51,6 +53,8 @@ public data class BuildFacts(
     val contentAndImage: Map<String, Pair<Long, Long>> = emptyMap(),
     /** EROFS compressions the boot kernel reads; null when it cannot be read (no extracted boot image yet). */
     val erofsCompressions: List<String>? = null,
+    /** Per partition: the superblock of its stock image and of its last built one. */
+    val superblocks: Map<String, ImageInfo> = emptyMap(),
 )
 
 /** The coverage check of the Build & Sign stage: running, its result, or why it could not run. */
@@ -73,6 +77,7 @@ public class BuildViewModel(
     private val workspaceFacts: WorkspaceFacts? = null,
     private val content: ContentWorkbench? = null,
     private val boot: BootWorkbench? = null,
+    private val images: ImageWorkbench? = null,
 ) : ViewModel() {
 
     public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
@@ -176,6 +181,17 @@ public class BuildViewModel(
         }
     }
 
+    /** Each partition's stock and built superblock; a partition whose images cannot be read is left out. */
+    private suspend fun superblocks(): Map<String, ImageInfo> = images?.let { tools ->
+        partitions().mapNotNull { p ->
+            try {
+                p to tools.imageInfo(workspaceId, p)
+            } catch (_: RefusalException) {
+                null
+            }
+        }.toMap()
+    }.orEmpty()
+
     public fun refresh() {
         val facts = workspaceFacts ?: return
         viewModelScope.launch {
@@ -206,6 +222,7 @@ public class BuildViewModel(
                 } catch (_: RefusalException) {
                     null
                 },
+                superblocks = superblocks(),
             )
             store?.current(workspaceId)?.customization?.let { custom ->
                 _coverage.value = _coverage.value.copy(fillInEveryBuild = custom.fillMissingSidecars)

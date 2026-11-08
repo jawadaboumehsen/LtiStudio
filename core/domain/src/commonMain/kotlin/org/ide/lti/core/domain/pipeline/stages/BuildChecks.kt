@@ -87,7 +87,9 @@ internal object BuildChecks {
             ),
         )
         val entries = ctx.value(MOUNT_TABLES_KEY)?.let(MountTable::parse) ?: return steps
-        val wanted = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
+        // A partition kept as shipped mounts as it always did: the stock fstab lines are its own.
+        val wanted = ctx.target.dynamicPartitions.filterNot { it in ctx.snapshot.build.keepStock }
+            .associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
         val (inTree, inImages) = MountTable.missing(entries, wanted).partition { it.source.startsWith("work/") }
         inTree.groupBy { it.source }.forEach { (source, gaps) ->
             val lines = gaps.associate { "/${it.partition}" to it.filesystem }
@@ -135,7 +137,8 @@ internal object BuildChecks {
         )
         // An output with no CONFIG_ line at all (not the boot kernel's config) says nothing either.
         val facts = ctx.value(KERNEL_KEY)?.let(KernelFacts::parse)?.takeUnless { it.config.isNullOrEmpty() }
-        val built = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
+        val built = ctx.target.dynamicPartitions.filterNot { it in ctx.snapshot.build.keepStock }
+            .associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
         val unmountable = built.filterValues { facts?.mounts(it) == false }
         val kernel = "the boot kernel${facts?.version?.let { " $it" }.orEmpty()}"
         if (facts != null && unmountable.isNotEmpty()) {
@@ -260,7 +263,7 @@ internal object BuildChecks {
         val selinuxKey = "verify.$p.selinux"
         val fsKey = "verify.$p.fs_config"
         val ctxKey = "verify.$p.file_context"
-        val fs = BuildFilesystems.of(ctx.snapshot.build, p)
+        val fs = KeptPartition.imageFilesystem(ctx, p)
         val steps = mutableListOf<PipelineStep>()
         if (fs == BuildFilesystems.F2FS) {
             // No F2FS FUSE driver: dump.f2fs copies the image out, fakeroot keeps what it sets (one session).

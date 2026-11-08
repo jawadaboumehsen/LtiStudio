@@ -37,6 +37,25 @@ public object BuildFilesystems {
         "zstd" to (0..22).toSet(),
     )
 
+    /** The levels Build & Sign offers for [compressor] (empty: it takes none), lowest to highest. */
+    public fun levels(compressor: String): List<Int> = when (compressor) {
+        // 0 is lz4hc's own default; 1-12 as the tool names its levels.
+        "lz4hc" -> (1..12).toList()
+        "lzma" -> (0..9).toList()
+        "deflate" -> (1..9).toList()
+        "zstd" -> (1..22).toList()
+        else -> emptyList()
+    }
+
+    /** mkfs.erofs's own level for [compressor] when none is given: picking the compressor starts there. */
+    public fun defaultLevel(compressor: String): Int? = when (compressor) {
+        "lz4hc" -> 9
+        "lzma" -> 6
+        "deflate" -> 1
+        "zstd" -> 3
+        else -> null
+    }
+
     /** Why [value] cannot be a `-z` value, or null when it can. */
     public fun compressionProblem(value: String): String? {
         val name = value.substringBefore(',')

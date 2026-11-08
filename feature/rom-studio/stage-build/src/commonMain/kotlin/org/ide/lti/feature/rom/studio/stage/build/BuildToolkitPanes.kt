@@ -51,8 +51,8 @@ import org.ide.lti.core.ui.toolkit.RefusalView
 
 /** Per-partition `mkfs.erofs -z` choices; absent from the map means the stage-wide setting (FR-014). */
 internal val PARTITION_COMPRESSION = listOf(
-    "lz4" to "Fast (lz4)",
-    "lz4hc,12" to "Smallest (lz4hc 12)",
+    "lz4" to "lz4",
+    "lz4hc" to "lz4hc",
     "none" to "None",
 )
 

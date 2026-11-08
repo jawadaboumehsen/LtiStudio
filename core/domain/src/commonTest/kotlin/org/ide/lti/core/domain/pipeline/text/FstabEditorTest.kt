@@ -60,4 +60,32 @@ class FstabEditorTest {
         assertEquals(true, FstabEditor.mountsData(plain))
         assertEquals(false, FstabEditor.mountsData(system))
     }
+
+    /** PQ84P01's work/vendor/etc/fstab.qcom: system (AVB and GSI keys) and /data (file and metadata encryption). */
+    private val qcom = listOf(
+        "system  /system  erofs  ro  wait,slotselect,avb=vbmeta_system,logical,first_stage_mount," +
+            "avb_keys=/avb/q-gsi.avbpubkey:/avb/v-gsi.avbpubkey",
+        "/dev/block/bootdevice/by-name/userdata  /data  f2fs  noatime,nosuid  latemount,wait,check,formattable," +
+            "fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0," +
+            "keydirectory=/metadata/vold/metadata_encryption,metadata_encryption=aes-256-xts:wrappedkey_v0,quota",
+    ).joinToString("\n")
+
+    @Test
+    fun rowsCarryTheFlagsAndOneFlagIsRemovedFromItsMountPointOnly() {
+        val rows = FstabEditor.rows(qcom)
+        assertEquals(listOf("/system", "/data"), rows.map { it.mountPoint })
+        assertEquals(true, rows[0].flags.any(FstabEditor::isIntegrity))
+        assertEquals(true, rows[1].flags.any(FstabEditor::isEncryption))
+
+        val edited = FstabEditor.withoutFlags(qcom, listOf("/system" to "avb_keys", "/data" to "fileencryption"))
+        val after = FstabEditor.rows(edited)
+        assertEquals(
+            listOf("wait", "slotselect", "avb=vbmeta_system", "logical", "first_stage_mount"),
+            after[0].flags,
+        )
+        // Only fileencryption goes: the metadata encryption flags of /data stay until removed themselves.
+        assertEquals(false, after[1].flags.any { it.startsWith("fileencryption") })
+        assertEquals(true, after[1].flags.any { it.startsWith("metadata_encryption") })
+        assertEquals(qcom, FstabEditor.withoutFlags(qcom, listOf("/vendor" to "avb")))
+    }
 }

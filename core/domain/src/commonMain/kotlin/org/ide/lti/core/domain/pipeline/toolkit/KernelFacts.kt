@@ -43,11 +43,47 @@ public data class KernelFacts(val version: String?, val config: Map<String, Stri
     /** dm-verity's error correction (`fec` data in AVB hashtrees). */
     public val dmVerityFec: Boolean? get() = config?.on("CONFIG_DM_VERITY_FEC")
 
+    /** F2FS compressions the kernel reads (`CONFIG_F2FS_FS_COMPRESSION` and each algorithm); null if unknown. */
+    public val f2fsCompressions: List<String>?
+        get() = config?.let { c ->
+            if (!c.on("CONFIG_F2FS_FS_COMPRESSION")) {
+                emptyList()
+            } else {
+                F2FS_ALGORITHMS.filter { (key, _) -> c.on("CONFIG_F2FS_FS_$key") }.map { it.second }
+            }
+        }
+
+    /** The kernel's page size in KiB (`CONFIG_ARM64_<n>K_PAGES`); null when the config does not say. */
+    public val pageSizeKib: Int?
+        get() = config?.let { c -> PAGE_SIZES.firstOrNull { c.on("CONFIG_ARM64_${it}K_PAGES") } }
+
+    /** The hardening the kernel was built with, in words (CFI, shadow call stack, KASLR, …); null if unknown. */
+    public val protections: List<String>?
+        get() = config?.let { c -> PROTECTIONS.filter { (key, _) -> c.on("CONFIG_$key") }.map { it.second } }
+
     /** Whether the kernel mounts [filesystem] (`erofs`, `ext4`, `f2fs`), built in or a module; null if unknown. */
     public fun mounts(filesystem: String): Boolean? = config?.on("CONFIG_${filesystem.uppercase()}_FS")
 
     public companion object {
         private const val RD = "CONFIG_RD_"
+        private val F2FS_ALGORITHMS = listOf(
+            "LZ4" to "lz4",
+            "LZ4HC" to "lz4hc",
+            "LZO" to "lzo",
+            "LZORLE" to "lzo-rle",
+            "ZSTD" to "zstd",
+        )
+        private val PAGE_SIZES = listOf(4, 16, 64)
+        private val PROTECTIONS = listOf(
+            "CFI_CLANG" to "control-flow integrity (CFI)",
+            "SHADOW_CALL_STACK" to "shadow call stack",
+            "RANDOMIZE_BASE" to "address randomisation (KASLR)",
+            "STACKPROTECTOR_STRONG" to "strong stack protector",
+            "ARM64_BTI_KERNEL" to "branch target identification",
+            "ARM64_PTR_AUTH_KERNEL" to "pointer authentication",
+            "ARM64_MTE" to "memory tagging (MTE)",
+            "INIT_STACK_ALL_ZERO" to "zeroed stack variables",
+        )
 
         /** `sh -c SCRIPT sh <boot image> <unpack_bootimg>`: the lines [parse] reads. */
         public const val SCRIPT: String = """
@@ -67,7 +103,7 @@ public data class KernelFacts(val version: String?, val config: Map<String, Stri
             o=$(grep -abo IKCFG_ST "${'$'}k" | head -n1 | cut -d: -f1)
             if [ -n "${'$'}o" ]; then
               tail -c +$((o + 9)) "${'$'}k" | gzip -dc 2>/dev/null |
-                grep -E '^CONFIG_(EROFS_FS|EXT4_FS|RD_|F2FS_FS|FS_VERITY|DM_VERITY)[A-Z0-9_]*=' || true
+                grep -E '^CONFIG_(EROFS_FS|EXT4_FS|RD_|F2FS_FS|FS_VERITY|DM_VERITY|ARM64_[0-9]+K_PAGES|CFI_CLANG|SHADOW_CALL_STACK|RANDOMIZE_BASE|STACKPROTECTOR_STRONG|ARM64_BTI_KERNEL|ARM64_PTR_AUTH_KERNEL|ARM64_MTE|INIT_STACK_ALL_ZERO)[A-Z0-9_]*=' || true
             else
               echo "noconfig"
             fi

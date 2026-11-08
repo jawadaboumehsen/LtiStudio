@@ -68,7 +68,7 @@ public enum class FstabEdit(public val title: String) {
  * `dtc`, `avbtool`; APatch with KernelPatch's `kptools`.
  */
 public class BootWorkbench(
-    private val runner: WorkbenchRunner,
+    internal val runner: WorkbenchRunner,
     /** A Windows path as WSL sees it (`C:\boot.img` -> `/mnt/c/boot.img`). */
     private val toLinuxPath: (String) -> String,
 ) {
@@ -124,6 +124,7 @@ public class BootWorkbench(
             val partitionSize = (footerOf(this, "firmware/extracted/$partition.img") ?: footer)?.imageSize
             val state = BootState(source, ramdisk, compression, partitionSize, fingerprintOf(this, dir))
             writeText("$dir/$STATE", json.encodeToString(BootState.serializer(), state))
+            writeText("$dir/$MANIFEST", sh(MANIFEST_SCRIPT, abs(dir)))
             BootParts(
                 imageName = partition,
                 kernelPath = "$dir/unpacked/kernel".takeIf { exists(it) },
@@ -161,31 +162,6 @@ public class BootWorkbench(
                 .lines().filter { it.isNotBlank() }
             found.forEach { run("rm", "-f", it) }
             VerityRemovalResult(removedKeys = found.map { it.removePrefix("$folder/") }, restorePointId = null)
-        }
-
-    /**
-     * Applies [edit] to every fstab of [partition]'s unpacked ramdisk (the first-stage mount table in vendor_boot).
-     * Returns the fstab files changed; repack to keep the change.
-     */
-    public suspend fun editFstabs(workspaceId: String, partition: String, edit: FstabEdit): List<String> =
-        runner.job(workspaceId, edit.title) {
-            val folder = "${dir(partition)}/$RAMDISK_DIR"
-            if (!exists(folder)) {
-                throw RefusalException(Refusal("$partition.img is not unpacked.", "$partition.img", "Unpack it first."))
-            }
-            run(
-                "find",
-                abs(folder),
-                "-type",
-                "f",
-                "-name",
-                "fstab.*",
-            ).lines().filter { it.isNotBlank() }.mapNotNull { f ->
-                val rel = "$folder/${f.removePrefix(abs(folder) + "/")}"
-                val text = readText(rel) ?: return@mapNotNull null
-                val edited = edit.apply(text)
-                rel.takeIf { edited != text }?.also { writeText(it, edited) }
-            }
         }
 
     /** The device tree source of the unpacked image, for editing (FR-022). */
@@ -284,6 +260,7 @@ public class BootWorkbench(
                 "$dir/$STATE",
                 json.encodeToString(BootState.serializer(), state.copy(fingerprint = fingerprintOf(this, dir))),
             )
+            writeText("$dir/$MANIFEST", sh(MANIFEST_SCRIPT, abs(dir)))
             saved
         }
 
@@ -532,7 +509,7 @@ public class BootWorkbench(
         ).trim().toLong(HEX).toInt()
     }
 
-    private fun dir(partition: String): String = "workbench/boot/$partition"
+    internal fun dir(partition: String): String = "workbench/boot/$partition"
 
     public companion object {
         public const val TOOL: String = "boot"
@@ -560,6 +537,42 @@ public class BootWorkbench(
 
         private suspend fun fingerprintOf(job: WorkbenchRunner.Job, dir: String): String =
             job.sh(FINGERPRINT_SCRIPT, job.abs(dir)).trim()
+
+        /** The per-file list ([MANIFEST_SCRIPT]) of an unpacked image as it was unpacked or last repacked. */
+        private const val MANIFEST = "manifest.tsv"
+
+        /**
+         * `sh -c MANIFEST_SCRIPT sh <unpacked dir>`: per entry of the ramdisk folder, and for the device tree source
+         * and the kernel, `path, mode, link, sha256` tab-separated (`-` for what is not a regular file);
+         * [ManifestDiff] compares two.
+         */
+        internal const val MANIFEST_SCRIPT: String = """
+            cd "$1" || exit 0
+            if [ -d ramdisk ]; then
+              (cd ramdisk && find . -mindepth 1 | LC_ALL=C sort | while IFS= read -r f; do
+                h=-
+                if [ -f "${'$'}f" ] && [ ! -L "${'$'}f" ]; then h=${'$'}(sha256sum < "${'$'}f" | cut -c1-64); fi
+                m=${'$'}(stat -c %a "${'$'}f"); l=${'$'}(readlink "${'$'}f")
+                printf 'ramdisk/%s\t%s\t%s\t%s\n' "${'$'}{f#./}" "${'$'}m" "${'$'}l" "${'$'}h"
+              done)
+            fi
+            for f in dtb.dts unpacked/kernel; do
+              [ -f "${'$'}f" ] && printf '%s\t\t\t%s\n' "${'$'}f" "${'$'}(sha256sum < "${'$'}f" | cut -c1-64)"
+            done
+            exit 0
+        """
+
+        /**
+         * For each image [unbuiltEdits] names, the files that differ from when it was unpacked or last repacked; null
+         * for an image unpacked before the app kept that list.
+         */
+        public suspend fun unbuiltFiles(runner: WorkbenchRunner, workspaceId: String): Map<String, ManifestDiff?> =
+            unbuiltEdits(runner, workspaceId).associateWith { image ->
+                runner.read(workspaceId) {
+                    val dir = "workbench/boot/$image"
+                    readText("$dir/$MANIFEST")?.let { ManifestDiff.of(it, sh(MANIFEST_SCRIPT, abs(dir))) }
+                }
+            }
 
         /**
          * `unpack_bootimg --format mkbootimg -0` output as arguments: NUL-separated, then one newline. Only that last
@@ -643,7 +656,7 @@ public class BootWorkbench(
             { cat dtb.first; tail -c +${'$'}((first + 1)) dtb.orig; } > unpacked/dtb
             rm -f dtb.first
         """
-        private const val RAMDISK_DIR = "ramdisk"
+        internal const val RAMDISK_DIR = "ramdisk"
         private val RAMDISK_NAMES = listOf("ramdisk", "vendor_ramdisk00", "vendor_ramdisk")
         private const val BOOT_MAGIC_HEX = "414e44524f494421" // ANDROID!
         private const val VENDOR_BOOT_MAGIC_HEX = "564e4452424f4f54" // VNDRBOOT
@@ -751,6 +764,26 @@ private data class BootState(
     /** [BootWorkbench.FINGERPRINT_SCRIPT] of the folder when it was unpacked or last repacked. */
     val fingerprint: String? = null,
 )
+
+/** The entries of an unpacked boot image changed, added and removed since it was unpacked or last repacked. */
+public data class ManifestDiff(val changed: Int, val added: Int, val removed: Int) {
+    public val total: Int get() = changed + added + removed
+
+    public companion object {
+        /** [before] and [after] as `BootWorkbench.MANIFEST_SCRIPT` prints them. */
+        public fun of(before: String, after: String): ManifestDiff {
+            fun entries(text: String) = text.lineSequence().filter(String::isNotBlank)
+                .associate { it.substringBefore('\t') to it.substringAfter('\t') }
+            val old = entries(before)
+            val new = entries(after)
+            return ManifestDiff(
+                changed = old.keys.intersect(new.keys).count { old[it] != new[it] },
+                added = (new.keys - old.keys).size,
+                removed = (old.keys - new.keys).size,
+            )
+        }
+    }
+}
 
 /** A ramdisk's compression, from its first bytes; the scripts take the input as `$1` and the output as `$2`. */
 @Serializable

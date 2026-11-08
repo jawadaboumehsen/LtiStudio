@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.text.FstabEditor
 import org.ide.lti.core.domain.pipeline.toolkit.BootFlagDiff
 import org.ide.lti.core.domain.pipeline.toolkit.BootParts
 import org.ide.lti.core.domain.pipeline.toolkit.DeviceTreeDiff
@@ -27,11 +28,16 @@ import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.RootStatus
 import org.ide.lti.core.domain.pipeline.toolkit.VbmetaFlag
+import org.ide.lti.core.domain.pipeline.toolkit.VerifiedBootMode
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
 import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.FstabEdit
+import org.ide.lti.core.domain.workbench.ManifestDiff
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
+import org.ide.lti.core.domain.workbench.editFstabs
+import org.ide.lti.core.domain.workbench.ramdiskFstabs
+import org.ide.lti.core.domain.workbench.workFstabs
 import org.ide.lti.core.model.workspace.SigningPolicy
 
 /** The boot-chain workbench as the pane shows it (FR-020..FR-026). */
@@ -54,8 +60,12 @@ public data class BootPaneState(
     val kernelRead: Boolean = false,
     /** Unpacked images edited since they were unpacked or last repacked: not in the next build yet. */
     val unbuilt: List<String> = emptyList(),
+    /** For each [unbuilt] image, its files changed since unpacked or repacked (null: not recorded for it). */
+    val unbuiltFiles: Map<String, ManifestDiff?> = emptyMap(),
     /** The device tree's fstab of the boot images; null until read. */
     val dtMounts: MountTable.DeviceTree? = null,
+    /** The mount tables as files, path -> text: vendor_boot's (first stage) and the work tree's; null before read. */
+    val mountTables: Map<String, String>? = null,
     /** Why the device trees could not be read (a build holds the workspace, a tool is missing); null otherwise. */
     val dtUnread: String? = null,
 ) {
@@ -83,6 +93,7 @@ public class BootPaneActions(
     public val patchApatch: (String) -> Unit = {},
     public val loadVbmeta: () -> Unit = {},
     public val toggleVbmeta: (VbmetaFlag) -> Unit = {},
+    public val setVerifiedBoot: (VerifiedBootMode) -> Unit = {},
     public val writeVbmeta: () -> Unit = {},
     public val cancel: () -> Unit = {},
     public val dismiss: () -> Unit = {},
@@ -96,6 +107,9 @@ public class BootPaneActions(
     /** Looks for unpacked images edited but not repacked ([BootPaneState.unbuilt]). */
     public val checkUnbuilt: () -> Unit = {},
     public val readDeviceTree: () -> Unit = {},
+    public val readMountTables: () -> Unit = {},
+    /** Removes one fs_mgr flag (mount point, flag) from vendor_boot's first-stage mount table. */
+    public val removeFirstStageFlag: (String, String) -> Unit = { _, _ -> },
 )
 
 /**
@@ -143,8 +157,8 @@ public class BootPaneModel(
         saveDeviceTree = ::saveDeviceTree,
         setSign = { sign -> mutableState.update { it.copy(signWithWorkspaceKey = sign) } },
         repack = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::repack) },
-        addMountLines = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::addMountLines) },
-        removeIntegrityFlags = { withAck(RiskyFeature.KERNEL_OVERRIDE, ::removeIntegrityFlags) },
+        addMountLines = { withAck(RiskyFeature.KERNEL_OVERRIDE) { editFirstStage(MOUNT_LINES) } },
+        removeIntegrityFlags = { withAck(RiskyFeature.KERNEL_OVERRIDE) { editFirstStage(NO_INTEGRITY) } },
         dropOverride = ::dropOverride,
         importPatched = { withAck(RiskyFeature.ROOT_PATCH, ::importPatched) },
         patchApatch = { key -> withAck(RiskyFeature.ROOT_PATCH) { patchApatch(key) } },
@@ -158,12 +172,19 @@ public class BootPaneModel(
                 } ?: s
             }
         },
+        setVerifiedBoot = { mode ->
+            mutableState.update { s -> s.vbmetaEdited?.let { s.copy(vbmetaEdited = mode.applyTo(it)) } ?: s }
+        },
         writeVbmeta = ::writeVbmeta,
         cancel = { job?.cancel() },
         dismiss = { mutableState.update { it.copy(message = null, refusal = null) } },
         acknowledge = ::acknowledge,
         readKernel = ::readKernel,
         checkUnbuilt = ::checkUnbuilt,
+        readMountTables = ::readMountTables,
+        removeFirstStageFlag = { point, flag ->
+            withAck(RiskyFeature.KERNEL_OVERRIDE) { editFirstStage(flagRemoval(point, flag)) }
+        },
         readDeviceTree = {
             runner?.let { r ->
                 scope.launch {
@@ -228,37 +249,39 @@ public class BootPaneModel(
         }
     }
 
-    /**
-     * Lets the phone mount every dynamic partition as ext4 or EROFS from its first stage: the fstab inside
-     * vendor_boot (boot where there is none) gets the missing lines, and the image is repacked as its override.
-     */
-    private fun addMountLines() = editFirstStage(
-        FstabEdit.MOUNT_LINES,
-        unchanged = "already mounts every partition as each filesystem",
-        done = "Added mount lines to",
-    )
-
-    /** Strips the AVB/verity flags from the first-stage fstab and saves the image as an override. */
-    private fun removeIntegrityFlags() = editFirstStage(
-        FstabEdit.NO_INTEGRITY,
-        unchanged = "has no AVB or verity flags",
-        done = "Removed the AVB/verity flags from",
-    )
+    /** Both mount tables as files: the work tree's, and the first-stage one (vendor_boot unpacked if it is not). */
+    private fun readMountTables() = task("Reading the mount tables") { boot ->
+        val image = MOUNT_TABLE_IMAGES.firstOrNull { it in bootImages() }
+        val firstStage = image?.let {
+            try {
+                boot.ramdiskFstabs(workspaceId, it)
+            } catch (_: RefusalException) {
+                boot.unpack(workspaceId, it)
+                boot.ramdiskFstabs(workspaceId, it)
+            }
+        }.orEmpty()
+        mutableState.update { it.copy(mountTables = firstStage + boot.workFstabs(workspaceId)) }
+    }
 
     /** Edits the fstabs of vendor_boot (boot where there is none) with [edit] and repacks it as its override. */
-    private fun editFirstStage(edit: FstabEdit, unchanged: String, done: String) = task(edit.title) { boot ->
+    private fun editFirstStage(edit: FirstStageEdit) = task(edit.title) { boot ->
         val image = MOUNT_TABLE_IMAGES.firstOrNull { it in bootImages() } ?: return@task
         // Unpacking again would wipe ramdisk, kernel and device tree edits still waiting for a repack.
         val edited = runner?.let { BootWorkbench.unbuiltEdits(it, workspaceId) }.orEmpty()
         if (image !in edited) boot.unpack(workspaceId, image)
-        val changed = boot.editFstabs(workspaceId, image, edit)
+        val changed = boot.editFstabs(workspaceId, image, edit.title, edit.transform)
         if (changed.isEmpty()) {
-            mutableState.update { it.copy(message = "The $image fstab $unchanged.") }
+            mutableState.update { it.copy(message = "The $image fstab ${edit.unchanged}.") }
             return@task
         }
         repackAs(boot, image)
+        val tables = boot.ramdiskFstabs(workspaceId, image) + boot.workFstabs(workspaceId)
+        val files = changed.joinToString { f -> f.substringAfterLast('/') }
         mutableState.update {
-            it.copy(message = "$done ${changed.joinToString { f -> f.substringAfterLast('/') }}; " + (it.message ?: ""))
+            it.copy(
+                message = "${edit.done} $files; " + (it.message ?: ""),
+                mountTables = tables,
+            )
         }
     }
 
@@ -418,9 +441,44 @@ public class BootPaneModel(
     private fun checkUnbuilt() {
         val runner = runner ?: return
         scope.launch {
-            val unbuilt = runCatching { BootWorkbench.unbuiltEdits(runner, workspaceId) }
-                .getOrDefault(state.value.unbuilt)
-            mutableState.update { it.copy(unbuilt = unbuilt) }
+            val files = runCatching { BootWorkbench.unbuiltFiles(runner, workspaceId) }
+                .getOrDefault(state.value.unbuiltFiles)
+            mutableState.update { it.copy(unbuilt = files.keys.sorted(), unbuiltFiles = files) }
         }
     }
 }
+
+/** An edit of the first-stage mount table: what it does to an fstab, and what is said when done or not needed. */
+private class FirstStageEdit(
+    val title: String,
+    val transform: (String) -> String,
+    val unchanged: String,
+    val done: String,
+)
+
+/**
+ * Lets the phone mount every dynamic partition as ext4 or EROFS from its first stage: the fstab inside vendor_boot
+ * (boot where there is none) gets the missing lines.
+ */
+private val MOUNT_LINES = FirstStageEdit(
+    FstabEdit.MOUNT_LINES.title,
+    FstabEdit.MOUNT_LINES::apply,
+    unchanged = "already mounts every partition as each filesystem",
+    done = "Added mount lines to",
+)
+
+/** Strips the AVB/verity flags from the first-stage fstab. */
+private val NO_INTEGRITY = FirstStageEdit(
+    FstabEdit.NO_INTEGRITY.title,
+    FstabEdit.NO_INTEGRITY::apply,
+    unchanged = "has no AVB or verity flags",
+    done = "Removed the AVB/verity flags from",
+)
+
+/** Removes [flag] from every line of [mountPoint] in the first-stage mount table. */
+private fun flagRemoval(mountPoint: String, flag: String) = FirstStageEdit(
+    "Remove $flag from $mountPoint",
+    { FstabEditor.withoutFlags(it, listOf(mountPoint to flag)) },
+    unchanged = "has no $flag on $mountPoint",
+    done = "Removed $flag from $mountPoint in",
+)

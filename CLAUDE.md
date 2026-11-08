@@ -1035,6 +1035,26 @@ nothing is shown as done before its job finished.
 - Unbuilt boot edits: `BootWorkbench` keeps a fingerprint of the unpacked ramdisk folder and dts (`FINGERPRINT_SCRIPT`,
   in `state.json`, renewed on repack); `BootWorkbench.unbuiltEdits(runner, ws)` lists images edited since, shown as a
   warning in Assemble > Boot preparation.
+- Keep as shipped (`BuildSettings.keepStock`, `KeptPartition`): a dynamic partition packaged from its stock image
+  instead of built, so a build rebuilds only what changed. The build first compares `work/<p>` with
+  `firmware/extracted/<p>` (kind, size, time, mode, link of every entry, and both sidecar files) and refuses
+  (`KEPT_PARTITION_CHANGED`) any difference; then it copies the stock image, erases the vendor's AVB footer, and the
+  image goes through the same read-back verify, hash and workspace-key footer as a built one. Its filesystem is the
+  stock superblock's (`KeptPartition.imageFilesystem`); the mount-table and kernel checks skip it. Build & Sign >
+  Compression: per row the stock filesystem and size, the choices that differ from stock ("Changed: …",
+  `changesFromStock`), "Reset to stock" (`asExtracted`), "Keep as shipped", and a level per EROFS compressor
+  (`BuildFilesystems.levels`/`defaultLevel`). Images shows each built image's superblock read back.
+- F2FS compression is not offered: android-tools' sload_f2fs writes it (lz4 only, no LZO), but f2fs-tools 1.17's
+  dump.f2fs hangs on compressed files, so such an image could not be read back and verified.
+- Verified boot (Assemble > Boot preparation > vbmeta flags): four modes in words (`VerifiedBootMode`: what is
+  checked, what no longer is, whether a locked bootloader boots it); DO_NOT_USE_AB stays a separate flag.
+- Mount tables as rows (Assemble > Mount table, `MountTableRows`, `FstabEditor.rows`): every fstab of vendor_boot's
+  ramdisk and of work/ that has a verity or encryption flag, per mount point and filesystem. One flag is removed on
+  its own: from vendor_boot at once (repacked as an override, `BootFstabs.kt`), from work/ in every build
+  (`AssemblySettings.fstabFlagRemovals`, `FstabEditor.withoutFlags`, Assemble's `flagRemovalSteps`).
+- Boot images list what changed since unpacked or repacked (`manifest.tsv`, `BootWorkbench.MANIFEST_SCRIPT`,
+  `ManifestDiff`), and say a repacked image no longer matches the stock vbmeta's digest. Kernel facts add page size,
+  F2FS compressions and hardening (CFI, shadow call stack, KASLR, PAC, MTE, …).
 - Labels for new files (`PlatformMetadata`, `pipeline/text/`): what a file the build adds gets when no line or
   rule says otherwise. SELinux: the ROM's own rules (`FileContextRules` over `plat_`/`system_ext_`/`product_`/
   `vendor_`/`odm_file_contexts` in work/, as restorecon reads them: exact paths first, then the last matching regex,

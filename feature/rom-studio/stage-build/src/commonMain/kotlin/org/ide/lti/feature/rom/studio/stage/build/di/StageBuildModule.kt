@@ -27,6 +27,7 @@ public val stageBuildModule: Module = module {
             workspaceFacts = getOrNull(),
             content = getOrNull(),
             boot = getOrNull(),
+            images = getOrNull(),
         )
     }
 }

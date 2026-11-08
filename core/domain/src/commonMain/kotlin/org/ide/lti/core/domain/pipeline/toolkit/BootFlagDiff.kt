@@ -22,6 +22,61 @@ public enum class VbmetaFlag(public val bitMask: Int, public val flagName: Strin
 }
 
 /**
+ * The four ways vbmeta's two verification flags can be set, in words: what the phone checks, what it stops
+ * checking, and whether a locked bootloader still boots it. The flags sit in vbmeta's signed header, so changing
+ * them breaks the signature; a locked bootloader also refuses disabled verification outright (libavb).
+ */
+public enum class VerifiedBootMode(
+    public val flags: Int,
+    public val title: String,
+    public val checks: String,
+    public val stops: String,
+    public val locked: String,
+) {
+    VERIFY_ALL(
+        0,
+        "Verify everything",
+        "vbmeta's signature, the hash of every image it names (boot, init_boot, vendor_boot, dtbo), and every block " +
+            "of system, vendor and the other dynamic partitions as it is read (dm-verity).",
+        "Nothing.",
+        "Boots only when everything is signed with the key the bootloader trusts: a rebuilt image does not boot.",
+    ),
+    NO_VERITY(
+        VbmetaFlag.DISABLE_VERITY.bitMask,
+        "Turn off dm-verity",
+        "vbmeta's signature and the hashes of the boot images.",
+        "The dynamic partitions mount without dm-verity: a changed system boots, its blocks are not checked.",
+        "Refused: the changed flag breaks vbmeta's signature. Unlock the bootloader.",
+    ),
+    NO_VERIFICATION(
+        VbmetaFlag.DISABLE_VERIFICATION.bitMask,
+        "Turn off verification",
+        "Only vbmeta's layout: which partitions there are.",
+        "Every signature and hash; dm-verity is not set up either, as its trees are no longer trusted.",
+        "Refused outright: a locked bootloader never boots with verification turned off.",
+    ),
+    NONE(
+        VbmetaFlag.DISABLE_VERITY.bitMask or VbmetaFlag.DISABLE_VERIFICATION.bitMask,
+        "Turn off both",
+        "Nothing.",
+        "Everything: any image boots. What fastboot --disable-verity --disable-verification flashes, and what " +
+            "this ROM expects (vbmeta is never in the package).",
+        "Refused: unlock the bootloader first.",
+    ),
+    ;
+
+    /** [current] flags with this mode's two bits, the others (DO_NOT_USE_AB) kept. */
+    public fun applyTo(current: Int): Int = (current and MASK.inv()) or flags
+
+    public companion object {
+        private val MASK = VbmetaFlag.DISABLE_VERITY.bitMask or VbmetaFlag.DISABLE_VERIFICATION.bitMask
+
+        /** The mode [flags] are in. */
+        public fun of(flags: Int): VerifiedBootMode = entries.first { it.flags == flags and MASK }
+    }
+}
+
+/**
  * A change in a single Verified Boot flag.
  */
 @Serializable

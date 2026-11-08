@@ -73,6 +73,8 @@ public data class AssemblySettings(
     val disableDataEncryption: Boolean = false,
     /** Remove the AVB/verity fs_mgr flags (`avb`, `avb_keys`, `verify`) from every line of the work tree's fstabs. */
     val removeIntegrityFlags: Boolean = false,
+    /** Single fs_mgr flags removed from the work tree's fstabs in every build (Assemble > Mount table). */
+    val fstabFlagRemovals: List<FstabFlagRemoval> = emptyList(),
     /** Renames and deletions made in the Image browser, applied to the work tree in every build. */
     val treeEdits: List<TreeEdit> = emptyList(),
 ) {
@@ -177,6 +179,11 @@ public data class BuildSettings(
      * reads on the device decompress more. Absent means one block (4 KiB), as AOSP builds.
      */
     val partitionClusterKib: Map<String, Int> = emptyMap(),
+    /**
+     * Dynamic partitions packaged as shipped: the stock image is used instead of building one from work/, so only the
+     * others are rebuilt. The build refuses when such a partition's tree or sidecars differ from stock.
+     */
+    val keepStock: Set<String> = emptySet(),
     /** Which install package the build writes: the recovery flashable zip, the A/B OTA (payload.bin), or both. */
     val packageType: PackageType = PackageType.FLASHABLE,
 )
@@ -242,3 +249,7 @@ public data class PublishSettings(
     val localExportFolder: String? = null,
     val collisionPolicy: CollisionPolicy = CollisionPolicy.FAIL,
 )
+
+/** An fs_mgr [flag] (`avb`, `fileencryption`, …) removed from every line of [mountPoint] in the work tree's fstabs. */
+@Serializable
+public data class FstabFlagRemoval(val mountPoint: String, val flag: String)

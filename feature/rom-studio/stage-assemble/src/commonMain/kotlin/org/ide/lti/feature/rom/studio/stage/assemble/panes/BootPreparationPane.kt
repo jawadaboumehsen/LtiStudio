@@ -47,6 +47,7 @@ import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.BootParts
 import org.ide.lti.core.domain.pipeline.toolkit.RootStatus
 import org.ide.lti.core.domain.pipeline.toolkit.VbmetaFlag
+import org.ide.lti.core.domain.pipeline.toolkit.VerifiedBootMode
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
@@ -80,8 +81,10 @@ public fun BootPreparationPane(
         if (state.unbuilt.isNotEmpty()) {
             GlassBanner(
                 severity = GlassBannerSeverity.WARNING,
-                title = "Edited but not repacked: ${state.unbuilt.joinToString { "$it.img" }}. Those edits are not " +
-                    "in the next build until you repack.",
+                title = "Edited but not repacked: ${state.unbuilt.joinToString { unbuiltLine(it, state) }}. Those " +
+                    "edits are not in the next build until you repack.",
+                description = "A repacked image no longer matches the digest the stock vbmeta recorded for it: it " +
+                    "boots only with verification turned off (vbmeta flags below), as this ROM expects.",
                 modifier = Modifier.testTag("UnbuiltBootEdits"),
             )
         }
@@ -240,6 +243,10 @@ private fun KernelCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
                 if (kernel.config != null) {
                     val dm = if (kernel.dmVerityFec == true) "yes, with error correction" else yesNo(kernel.dmVerity)
                     Mono("dm-verity: $dm · fs-verity: ${yesNo(kernel.fsVerity)}")
+                    val f2fs = kernel.f2fsCompressions.orEmpty().joinToString().ifEmpty { "nothing" }
+                    Mono("F2FS: ${yesNo(kernel.mounts("f2fs"))} · F2FS compression can use: $f2fs")
+                    Mono("Page size: ${kernel.pageSizeKib?.let { "$it KiB" } ?: "not stated"}")
+                    Mono("Hardening: ${kernel.protections.orEmpty().joinToString().ifEmpty { "none stated" }}")
                 }
                 if (kernel.config == null) Hint("This kernel carries no config, so what it reads is not known.")
             }
@@ -323,15 +330,25 @@ private fun VbmetaCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
                 Text("Read vbmeta.img", fontSize = FontSize.BodySmall)
             }
         } else {
+            val mode = VerifiedBootMode.of(flags)
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                VbmetaFlag.entries.forEach { flag ->
+                VerifiedBootMode.entries.forEach { m ->
                     GlassChip(
-                        label = flag.flagName,
-                        selected = (flags and flag.bitMask) != 0,
-                        onClick = { actions.toggleVbmeta(flag) },
+                        label = m.title,
+                        selected = m == mode,
+                        onClick = { actions.setVerifiedBoot(m) },
+                        modifier = Modifier.testTag("VerifiedBoot_$m"),
                     )
                 }
             }
+            Mono("Checked: ${mode.checks}")
+            Mono("No longer checked: ${mode.stops}")
+            Mono("Locked bootloader: ${mode.locked}")
+            GlassChip(
+                label = "Do not use A/B (${VbmetaFlag.DO_NOT_USE_AB.flagName})",
+                selected = (flags and VbmetaFlag.DO_NOT_USE_AB.bitMask) != 0,
+                onClick = { actions.toggleVbmeta(VbmetaFlag.DO_NOT_USE_AB) },
+            )
             state.vbmetaDiff?.takeIf { it.hasChanges }?.describe()?.forEach { Mono(it) }
             GlassButton(onClick = actions.writeVbmeta, enabled = idle && state.vbmetaDiff?.hasChanges == true) {
                 Text("Write the edited vbmeta", fontSize = FontSize.BodySmall)
@@ -422,4 +439,15 @@ private fun Mono(text: String) {
         fontSize = FontSize.BodySmall,
         fontFamily = codeFontFamily(),
     )
+}
+
+/** `vendor_boot.img (3 files changed, 1 added)`: an image edited since unpacked or repacked, and how much. */
+private fun unbuiltLine(image: String, state: BootPaneState): String {
+    val d = state.unbuiltFiles[image] ?: return "$image.img"
+    val parts = listOfNotNull(
+        "${d.changed} changed".takeIf { d.changed > 0 },
+        "${d.added} added".takeIf { d.added > 0 },
+        "${d.removed} removed".takeIf { d.removed > 0 },
+    )
+    return "$image.img" + (if (parts.isEmpty()) "" else " (${parts.joinToString()} file(s))")
 }

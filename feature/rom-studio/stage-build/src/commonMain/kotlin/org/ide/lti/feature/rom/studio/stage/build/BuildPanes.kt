@@ -52,6 +52,7 @@ import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
+import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.PackageType
@@ -124,7 +125,9 @@ internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: Bu
                 val pair = facts.contentAndImage[p]
                 IdeTableRow(modifier = Modifier.testTag("ImageRow_$p")) {
                     Cell(0) { Mono(p) }
-                    Cell(1) { Hint(BuildFilesystems.of(settings, p)) }
+                    // What the built image is, as its superblock says; the setting until it is built.
+                    val fs = facts.superblocks[p]?.built?.fs?.name?.lowercase()
+                    Cell(1) { Hint(fs ?: BuildFilesystems.of(settings, p)) }
                     Cell(2) { Mono(pair?.first?.let(::mb) ?: "—") }
                     Cell(3) { Mono(built?.let { mb(it.sizeBytes) } ?: "—") }
                     Cell(4) {
@@ -143,24 +146,60 @@ internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: Bu
                 }
             }
         }
-        val total = target.dynamicPartitions.sumOf { p ->
-            facts.images.firstOrNull { it.path == "$p.img" }?.sizeBytes
-                ?: 0L
-        }
-        if (total > 0 && target.superGroupBytes > 0) {
-            Detail("Images in total", "${mb(total)} of ${mb(target.superGroupBytes)} (${target.superGroupName})")
-            GlassProgressBar(
-                progress = (total.toFloat() / target.superGroupBytes).coerceIn(0f, 1f),
-                modifier = Modifier.fillMaxWidth(),
-                contentDescription = "Images fill ${total * PERCENT / target.superGroupBytes}% of the super group",
-            )
-        }
+        ReadBack(target, facts)
+        SuperFill(target, facts)
+    }
+}
+
+/** Each built image as its superblock says, after the build mounted it and compared it with work/. */
+@Composable
+private fun ReadBack(target: TargetDevice, facts: BuildFacts) {
+    val readBack = target.dynamicPartitions.mapNotNull { p -> facts.superblocks[p]?.built?.let { p to it } }
+    if (readBack.isNotEmpty()) {
+        Hint(
+            "Read back from each built image's superblock. The build also mounted every image and compared its " +
+                "files, owners, modes and labels with work/ before packaging it.",
+        )
+        readBack.forEach { (p, sb) -> Mono(readBackLine(p, sb)) }
+    }
+}
+
+/** How much of the super group the built images take. */
+@Composable
+private fun SuperFill(target: TargetDevice, facts: BuildFacts) {
+    val total = target.dynamicPartitions.sumOf { p ->
+        facts.images.firstOrNull { it.path == "$p.img" }?.sizeBytes
+            ?: 0L
+    }
+    if (total > 0 && target.superGroupBytes > 0) {
+        Detail("Images in total", "${mb(total)} of ${mb(target.superGroupBytes)} (${target.superGroupName})")
+        GlassProgressBar(
+            progress = (total.toFloat() / target.superGroupBytes).coerceIn(0f, 1f),
+            modifier = Modifier.fillMaxWidth(),
+            contentDescription = "Images fill ${total * PERCENT / target.superGroupBytes}% of the super group",
+        )
     }
 }
 
 @Composable
 private fun RowScope.Cell(column: Int, content: @Composable () -> Unit) {
     Box(modifier = Modifier.weight(IMAGE_COLUMNS[column].second)) { content() }
+}
+
+/** One built image in a line: filesystem, size, label, UUID, how full (ext4 says), features. */
+internal fun readBackLine(p: String, sb: Superblock): String {
+    val f = sb.fields.toMap()
+    val used = f["Block count"]?.toLongOrNull()?.let { count ->
+        f["Free blocks"]?.toLongOrNull()?.let { free -> "${(count - free) * PERCENT / count}% used" }
+    }
+    return listOfNotNull(
+        "$p: ${sb.fs.name.lowercase()}",
+        mb(sb.sizeBytes),
+        f["Filesystem volume name"]?.takeUnless { it == "<none>" }?.let { "label $it" },
+        f["Filesystem UUID"]?.let { "UUID $it" },
+        used,
+        (f["Filesystem features"] ?: f["superblock features"])?.let { "features $it" },
+    ).joinToString(" · ")
 }
 
 private val IMAGE_COLUMNS = listOf(

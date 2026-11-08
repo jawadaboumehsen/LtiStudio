@@ -23,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -31,12 +34,14 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
+import org.ide.lti.feature.rom.studio.api.formatBytes
 
 /**
  * Every per-partition build choice in one table: filesystem, EROFS compression, deduplication and cluster, and the
@@ -69,7 +74,16 @@ internal fun PartitionsPane(
             target.dynamicPartitions.forEach { p ->
                 IdeTableRow(
                     modifier = Modifier.testTag("PartitionRow_$p"),
-                ) { PartitionRow(settings, p, stock[p], facts.erofsCompressions, onChange) }
+                ) {
+                    PartitionRow(
+                        settings,
+                        p,
+                        stock[p],
+                        facts.superblocks[p]?.stock?.fs?.name?.lowercase(),
+                        facts.erofsCompressions,
+                        onChange,
+                    )
+                }
             }
         }
         AboutPartitions()
@@ -81,20 +95,15 @@ private fun RowScope.PartitionRow(
     settings: BuildSettings,
     p: String,
     stockBytes: Long?,
+    stockFs: String?,
     kernelReads: List<String>?,
     onChange: (BuildSettings) -> Unit,
 ) {
     val fs = BuildFilesystems.of(settings, p)
     val erofs = fs == BuildFilesystems.EROFS
-    val compressed = erofs && BuildFilesystems.erofsCompression(settings, p) != BuildFilesystems.NO_COMPRESSION
-    Text(
-        text = p,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontWeight = FontWeight.SemiBold,
-        fontFamily = codeFontFamily(),
-        modifier = Modifier.weight(COLUMNS[0].second),
-    )
+    val kept = p in settings.keepStock
+    val compressed = !kept && erofs && BuildFilesystems.erofsCompression(settings, p) != BuildFilesystems.NO_COMPRESSION
+    Cell(0) { NameCell(settings, p, stockBytes, stockFs, onChange) }
     Cell(1) {
         SelectField(
             selected = settings.partitionFilesystem[p],
@@ -102,18 +111,36 @@ private fun RowScope.PartitionRow(
                 BuildFilesystems.SUPPORTED.map { SelectOption(it, it, FILESYSTEM_DETAIL[it]) },
             onSelect = { onChange(settings.copy(partitionFilesystem = settings.partitionFilesystem.with(p, it))) },
             tag = "Filesystem_$p",
+            disabledText = AS_SHIPPED.takeIf { kept },
         )
     }
     Cell(2) {
-        SelectField(
-            selected = settings.partitionCompression[p],
-            options = listOf(SelectOption<String?>(null, "Stage setting (${settings.compression})")) +
-                (PARTITION_COMPRESSION + KERNEL_COMPRESSION.filter { it.first in kernelReads.orEmpty() })
-                    .map { (v, label) -> SelectOption(v, label, COMPRESSION_DETAIL[v]) },
-            onSelect = { onChange(settings.copy(partitionCompression = settings.partitionCompression.with(p, it))) },
-            tag = "Compression_$p",
-            disabledText = "— ($fs)".takeUnless { erofs },
-        )
+        val own = settings.partitionCompression[p]
+        val compressor = own?.substringBefore(',')
+        fun set(value: String?) =
+            onChange(settings.copy(partitionCompression = settings.partitionCompression.with(p, value)))
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+            SelectField(
+                selected = compressor,
+                options = listOf(SelectOption<String?>(null, "Stage setting (${settings.compression})")) +
+                    (PARTITION_COMPRESSION + KERNEL_COMPRESSION.filter { it.first in kernelReads.orEmpty() })
+                        .map { (v, label) -> SelectOption(v, label, COMPRESSION_DETAIL[v]) },
+                // A compressor that takes levels starts at mkfs.erofs's own one.
+                onSelect = { c -> set(c?.let { BuildFilesystems.defaultLevel(it)?.let { l -> "$it,$l" } ?: it }) },
+                tag = "Compression_$p",
+                disabledText = if (kept) AS_SHIPPED else "— ($fs)".takeUnless { erofs },
+            )
+            val levels = compressor?.let(BuildFilesystems::levels).orEmpty()
+            if (!kept && erofs && levels.isNotEmpty()) {
+                val level = own?.substringAfter(',', "")?.removePrefix("level=")?.toIntOrNull()
+                SelectField(
+                    selected = level,
+                    options = levels.map { SelectOption<Int?>(it, "Level $it", levelDetail(it, levels)) },
+                    onSelect = { set(if (it == null) compressor else "$compressor,$it") },
+                    tag = "Level_$p",
+                )
+            }
+        }
     }
     Cell(3) {
         SelectField(
@@ -121,7 +148,7 @@ private fun RowScope.PartitionRow(
             options = DEDUPE_OPTIONS,
             onSelect = { onChange(settings.copy(partitionDedupe = settings.partitionDedupe.with(p, it))) },
             tag = "Dedupe_$p",
-            disabledText = "—".takeUnless { compressed },
+            disabledText = if (kept) AS_SHIPPED else "—".takeUnless { compressed },
         )
     }
     Cell(4) {
@@ -130,10 +157,92 @@ private fun RowScope.PartitionRow(
             options = CLUSTER_OPTIONS,
             onSelect = { onChange(settings.copy(partitionClusterKib = settings.partitionClusterKib.with(p, it))) },
             tag = "Cluster_$p",
-            disabledText = "—".takeUnless { compressed },
+            disabledText = if (kept) AS_SHIPPED else "—".takeUnless { compressed },
         )
     }
-    Cell(5) { SizeCell(settings, p, fs, stockBytes, onChange) }
+    Cell(5) { if (kept) Body(AS_SHIPPED) else SizeCell(settings, p, fs, stockBytes, onChange) }
+}
+
+/**
+ * [p]'s name, its stock image (filesystem and size), what differs from that stock image, and a button that puts the
+ * partition back as it was extracted.
+ */
+@Composable
+private fun NameCell(
+    settings: BuildSettings,
+    p: String,
+    stockBytes: Long?,
+    stockFs: String?,
+    onChange: (BuildSettings) -> Unit,
+) {
+    val changed = changesFromStock(settings, p, stockFs, stockBytes)
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+        Text(
+            text = p,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = codeFontFamily(),
+        )
+        val stock = listOfNotNull(stockFs, stockBytes?.let(::formatBytes)).joinToString(" · ")
+        if (stock.isNotEmpty()) Body("Stock: $stock")
+        val kept = p in settings.keepStock
+        GlassChip(
+            label = if (kept) "Kept as shipped" else "Keep as shipped",
+            selected = kept,
+            onClick = {
+                onChange(settings.copy(keepStock = if (kept) settings.keepStock - p else settings.keepStock + p))
+            },
+            modifier = Modifier.testTag("KeepStock_$p"),
+        )
+        if (changed.isNotEmpty()) {
+            Text(
+                text = "Changed: ${changed.joinToString()}",
+                color = GlassTheme.diagnosticColors.warning,
+                fontSize = FontSize.Micro,
+                fontFamily = ideFontFamily(),
+                modifier = Modifier.testTag("PartitionChanged_$p"),
+            )
+            GlassButton(
+                onClick = { onChange(asExtracted(settings, p, stockFs)) },
+                variant = GlassButtonVariant.Secondary,
+                modifier = Modifier.testTag("PartitionReset_$p"),
+            ) { Text("Reset to stock", fontSize = FontSize.Micro) }
+        }
+    }
+}
+
+/** What [p] is built with that its stock image was not: the filesystem, and every choice of its own. */
+internal fun changesFromStock(settings: BuildSettings, p: String, stockFs: String?, stockBytes: Long?): List<String> =
+    listOfNotNull(
+        "filesystem".takeIf { stockFs != null && BuildFilesystems.of(settings, p) != stockFs },
+        "compression".takeIf { p in settings.partitionCompression },
+        "deduplication".takeIf { p in settings.partitionDedupe },
+        "cluster".takeIf { p in settings.partitionClusterKib },
+        "size".takeIf {
+            val stock = stockBytes?.let { it - it % settings.blockSize }
+            settings.partitionSizeBytes[p]?.let { it != stock } == true
+        },
+        "free space".takeIf { p in settings.partitionFreeMib },
+    )
+
+/** [settings] with [p] as extracted: its own choices dropped, and its stock filesystem when the stage's is another. */
+internal fun asExtracted(settings: BuildSettings, p: String, stockFs: String?): BuildSettings = settings.copy(
+    partitionFilesystem = settings.partitionFilesystem.with(
+        p,
+        stockFs?.takeIf { it != settings.filesystem.lowercase() },
+    ),
+    partitionCompression = settings.partitionCompression.with(p, null),
+    partitionDedupe = settings.partitionDedupe.with(p, null),
+    partitionClusterKib = settings.partitionClusterKib.with(p, null),
+    partitionSizeBytes = settings.partitionSizeBytes.with(p, null),
+    partitionFreeMib = settings.partitionFreeMib.with(p, null),
+)
+
+private fun levelDetail(level: Int, levels: List<Int>): String? = when (level) {
+    levels.first() -> "Fastest to build, larger"
+    levels.last() -> "Smallest, slowest to build"
+    else -> null
 }
 
 /**
@@ -302,7 +411,7 @@ private val FILESYSTEM_DETAIL = mapOf(
 
 private val COMPRESSION_DETAIL = mapOf(
     "lz4" to "Fastest to read and build, larger",
-    "lz4hc,12" to "Smallest lz4, slower to build",
+    "lz4hc" to "Smaller lz4, slower to build; same speed to read",
     "none" to "No compression: the largest image",
     "lzma" to "Smallest; slowest to read and build",
     "deflate" to "Between lz4hc and lzma",
@@ -344,5 +453,8 @@ private const val SIZE_FREE = "free"
 private const val KIB = 1024L
 private const val DEFAULT_FIXED = 64L * 1024 * 1024
 private const val DEFAULT_FREE_MIB = 64
+
+/** What a cell of a partition kept as shipped says: its stock image is packaged, nothing is built. */
+private const val AS_SHIPPED = "As shipped"
 private const val ABOUT_TITLE_WEIGHT = 1f
 private const val ABOUT_TEXT_WEIGHT = 5f

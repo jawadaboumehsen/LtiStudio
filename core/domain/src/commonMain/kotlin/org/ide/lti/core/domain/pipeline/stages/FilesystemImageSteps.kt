@@ -16,6 +16,7 @@ import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.f2fsPrepareKey
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.f2fsTrialKey
 import org.ide.lti.core.domain.pipeline.stepCommand
+import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.Ext4Image
 import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
 
@@ -23,6 +24,25 @@ import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
 internal object FilesystemImageSteps {
     private const val MIB = 1024L * 1024
     private const val INODES_PER_MIB = 64
+
+    /**
+     * Adds the steps that put [p]'s image in out/images to [steps]: the stock one for a partition kept as shipped,
+     * else one built as its filesystem ([erofs] builds EROFS; null until it can be planned). True: an image is there
+     * for the steps that follow.
+     */
+    fun image(
+        ctx: StageContext,
+        p: String,
+        steps: MutableList<PipelineStep>,
+        erofs: () -> List<PipelineStep>?,
+    ): Boolean = when {
+        p in ctx.snapshot.build.keepStock -> KeptPartition.steps(ctx, p, steps)
+        else -> when (BuildFilesystems.of(ctx.snapshot.build, p)) {
+            BuildFilesystems.EXT4 -> ext4(ctx, p, steps)
+            BuildFilesystems.F2FS -> f2fs(ctx, p, steps)
+            else -> erofs()?.let { steps += it } != null
+        }
+    }
 
     /**
      * [p] as a read-only ext4 image (`Ext4Image`): measured, built once to learn its size, then built at that
