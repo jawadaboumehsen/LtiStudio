@@ -83,7 +83,7 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                     text = if (uiState.currentWorkspace != null) {
                         "${uiState.runs.size} previous runs recorded"
                     } else {
-                        "No workspace opened"
+                        "Loading the workspace…"
                     },
                     style = typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -130,7 +130,7 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
                     text = if (uiState.currentWorkspace != null) {
                         "Workspace: ${uiState.currentWorkspace?.name}"
                     } else {
-                        "No workspace opened"
+                        "Loading the workspace…"
                     },
                     style = typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
