@@ -263,6 +263,7 @@ private fun MapTitle(text: String) {
 
 private const val MATCHES = 12
 private const val SHOWN = 24
+
 // Labels left and right a quarter each, the app in the middle quarter, the arrows in between.
 private const val COLUMNS = 4f
 private const val HALF = 0.5f
