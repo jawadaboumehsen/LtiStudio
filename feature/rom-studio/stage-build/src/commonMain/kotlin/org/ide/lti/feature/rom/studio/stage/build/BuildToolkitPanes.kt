@@ -215,8 +215,9 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
     ToolCard("Permission and label coverage", tag = "CoveragePane") {
         Note(
             "Every file of the assembled tree needs an fs_config line and a file_contexts line, or the image does " +
-                "not boot; the build refuses a tree with gaps. Adding entries gives a file the owner, mode and " +
-                "label of its closest listed folder, in every build (the Patches stage does it last).",
+                "not boot; the build refuses a tree with gaps. Adding entries labels a file as Android's build " +
+                "would: your coverage rules, then the ROM's own SELinux rules and fs_config tables (else Android's " +
+                "defaults), then its closest listed folder, in every build (the Patches stage does it last).",
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(
@@ -231,9 +232,20 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
         }
         state.result?.let { result ->
             val missing = (result.uncoveredFsConfig + result.uncoveredContexts).distinct().sorted()
-            if (missing.isEmpty()) {
+            if (result.unbuildableNames.isNotEmpty()) {
+                RefusalView(
+                    refusal = Refusal(
+                        cause = "${result.unbuildableNames.size} name(s) hold a space, which no permission or " +
+                            "SELinux line can describe.",
+                        item = "work/",
+                        nextStep = "Rename or delete them in Assemble > Image browser (kept for every build).",
+                    ),
+                )
+                result.unbuildableNames.take(MAX_SHOWN).forEach { Mono(it) }
+            }
+            if (missing.isEmpty() && result.unbuildableNames.isEmpty()) {
                 GlassBanner(severity = GlassBannerSeverity.INFO, title = "Every file is covered.")
-            } else {
+            } else if (missing.isNotEmpty()) {
                 RefusalView(
                     refusal = Refusal(
                         cause = "${missing.size} file(s) have no permission or SELinux label entry.",

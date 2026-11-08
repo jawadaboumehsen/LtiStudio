@@ -14,6 +14,10 @@ import org.ide.lti.core.domain.pipeline.HostRequest
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.stages.CoverageFixRequest
+import org.ide.lti.core.domain.pipeline.stages.TreeEditSidecars
+import org.ide.lti.core.domain.pipeline.stages.TreeEdits
+import org.ide.lti.core.domain.pipeline.text.EntryKind
+import org.ide.lti.core.domain.pipeline.text.PlatformMetadata
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageCheckRequest
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageFix
@@ -36,6 +40,7 @@ import org.ide.lti.core.model.workspace.Workspace
 import java.io.IOException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
@@ -59,6 +64,7 @@ class ModuleHostSteps(
             is ApplyModules -> applyModules(workspace, request)
             is CoverageCheckRequest -> checkCoverage(workspace, request)
             is CoverageFixRequest -> fixCoverage(workspace, request)
+            is TreeEditSidecars -> moveTreeEditSidecars(workspace, request)
             else -> error("unsupported host request ${request::class.simpleName}")
         }
     }
@@ -286,15 +292,24 @@ class ModuleHostSteps(
                 val ctxFile = work.resolve("configs").resolve("file_context-$partition")
                 var fs = Files.readString(fsFile)
                 var ctx = Files.readString(ctxFile)
+                val platform = platformOf(work)
                 changes.forEach { change ->
                     if (change.kind == EffectKind.DELETED) {
                         fs = SidecarEditor.withoutFsConfig(fs, partition, listOf(change.relativePath))
                         ctx = SidecarEditor.withoutFileContext(ctx, partition, listOf(change.relativePath))
                     } else {
-                        val isDir = Files.isDirectory(work.resolve(partition).resolve(change.relativePath))
+                        val entry = work.resolve(partition).resolve(change.relativePath)
+                        val isDir = Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS)
                         val meta = metadata[change.operationId]
-                        fs = SidecarEditor.withFsConfig(fs, partition, change.relativePath, isDir, meta)
-                        ctx = SidecarEditor.withFileContext(ctx, partition, change.relativePath, meta?.label)
+                        fs = SidecarEditor.withFsConfig(fs, partition, change.relativePath, isDir, meta, platform)
+                        ctx = SidecarEditor.withFileContext(
+                            ctx,
+                            partition,
+                            change.relativePath,
+                            meta?.label,
+                            kindOf(entry),
+                            platform,
+                        )
                     }
                 }
                 Files.writeString(fsFile, fs)
@@ -317,6 +332,8 @@ class ModuleHostSteps(
         val configs = work.resolve("configs")
         // The validator refuses bad lines before a build starts; any left here are skipped.
         val rules = CoverageRule.parse(request.rules).first
+        // The ROM's own file_contexts rules and fs_config tables label new files as Android's build would.
+        val platform = platformOf(work)
         var added = 0
         for (partition in request.partitions.filter { Files.isDirectory(work.resolve(it)) }) {
             val partDir = work.resolve(partition)
@@ -332,17 +349,44 @@ class ModuleHostSteps(
                     fsText,
                     partition,
                     missing.uncoveredFsConfig,
-                    isDirectory = { Files.isDirectory(partDir.resolve(it)) },
+                    isDirectory = { Files.isDirectory(partDir.resolve(it), LinkOption.NOFOLLOW_LINKS) },
                     rules = rules,
+                    platform = platform,
                 ),
             )
             Files.writeString(
                 ctxFile,
-                CoverageFix.fixFileContexts(ctxText, partition, missing.uncoveredContexts, rules = rules),
+                CoverageFix.fixFileContexts(
+                    ctxText,
+                    partition,
+                    missing.uncoveredContexts,
+                    rules = rules,
+                    kindOf = { kindOf(partDir.resolve(it)) },
+                    platform = platform,
+                ),
             )
             added += (missing.uncoveredFsConfig + missing.uncoveredContexts).distinct().size
         }
         return """{"added":$added}"""
+    }
+
+    /** The fs_config and SELinux lines follow each renamed or deleted item (the files were moved in WSL). */
+    private fun moveTreeEditSidecars(workspace: Workspace, request: TreeEditSidecars): String {
+        val configs = workTree(workspace).resolve("configs")
+        request.edits.map { it.partition }.distinct().forEach { partition ->
+            val fsFile = configs.resolve("fs_config-$partition")
+            val ctxFile = configs.resolve("file_context-$partition")
+            if (!Files.isRegularFile(fsFile) || !Files.isRegularFile(ctxFile)) return@forEach
+            val (fs, ctx) = TreeEdits.sidecars(
+                partition,
+                request.edits,
+                Files.readString(fsFile),
+                Files.readString(ctxFile),
+            )
+            Files.writeString(fsFile, fs)
+            Files.writeString(ctxFile, ctx)
+        }
+        return """{"edits":${request.edits.size}}"""
     }
 
     private fun checkCoverage(workspace: Workspace, request: CoverageCheckRequest): String {
@@ -350,6 +394,7 @@ class ModuleHostSteps(
         val configs = work.resolve("configs")
         val uncoveredFs = mutableListOf<String>()
         val uncoveredCtx = mutableListOf<String>()
+        val unbuildable = mutableListOf<String>()
 
         for (partition in request.partitions) {
             val partDir = work.resolve(partition)
@@ -361,11 +406,13 @@ class ModuleHostSteps(
             val result = CoverageGate.check(partition, treePaths(partDir), fsText, ctxText)
             uncoveredFs += result.uncoveredFsConfig
             uncoveredCtx += result.uncoveredContexts
+            unbuildable += result.unbuildableNames.map { "$partition/$it" }
         }
         return CoverageResult.encode(
             CoverageResult(
                 uncoveredFsConfig = uncoveredFs.distinct(),
                 uncoveredContexts = uncoveredCtx.distinct(),
+                unbuildableNames = unbuildable.distinct(),
             ),
         )
     }
@@ -399,4 +446,15 @@ class ModuleHostSteps(
         )
         return paths.toList()
     }
+}
+
+/** The work tree's labelling rules (absent files are skipped; links are never followed out of work/). */
+private fun platformOf(work: Path): PlatformMetadata = PlatformMetadata.load { rel ->
+    work.resolve(rel).takeIf { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }?.let(Files::readAllBytes)
+}
+
+private fun kindOf(entry: Path): EntryKind = when {
+    Files.isSymbolicLink(entry) -> EntryKind.Link
+    Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS) -> EntryKind.Directory
+    else -> EntryKind.File
 }

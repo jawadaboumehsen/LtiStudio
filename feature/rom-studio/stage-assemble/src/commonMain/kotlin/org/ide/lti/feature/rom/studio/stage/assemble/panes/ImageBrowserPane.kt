@@ -14,17 +14,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,7 +46,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -50,6 +55,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -61,6 +67,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
 import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.workspace.TreeEdit
 import org.ide.lti.core.ui.toolkit.RefusalView
 import org.ide.lti.feature.rom.studio.api.formatBytes
 import org.ide.lti.feature.rom.studio.stage.assemble.ImagePaneActions
@@ -68,8 +75,10 @@ import org.ide.lti.feature.rom.studio.stage.assemble.ImagePaneModel
 import org.ide.lti.feature.rom.studio.stage.assemble.ImagePaneState
 
 /**
- * A partition's files with owner, mode and SELinux label as Extract read them off the image (FR-008), plus
- * sparse/raw conversion (FR-010) and the super layout (FR-011).
+ * A partition's files with owner, mode and SELinux label (FR-008): the project's trees, or any image of the
+ * workspace read straight from its file (read-only). A row's details say what the build records for it; rename
+ * and delete are kept as changes the build makes every time. Plus sparse/raw conversion (FR-010) and the super
+ * layout (FR-011).
  */
 @Composable
 public fun ImageBrowserPane(
@@ -77,26 +86,17 @@ public fun ImageBrowserPane(
     state: ImagePaneState,
     actions: ImagePaneActions,
     modifier: Modifier = Modifier,
+    /** The renames and deletions kept for every build (Assemble settings). */
+    edits: List<TreeEdit> = emptyList(),
 ) {
     Column(
         modifier = modifier.fillMaxSize().testTag("ImageBrowserPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Panel {
-            Title("Image browser")
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                target.dynamicPartitions.forEach { partition ->
-                    GlassChip(
-                        label = partition,
-                        selected = partition == state.partition && state.tree != null,
-                        onClick = { actions.selectPartition(partition) },
-                        modifier = Modifier.testTag("PartitionChip_$partition"),
-                    )
-                }
-            }
+        // Capped: messages, kept changes and the super's partitions scroll here, the file table keeps its height.
+        ImagePanel(Modifier.heightIn(max = GlassDimens.BrowserControlsMaxHeight), scroll = true) {
+            ImageTitle("Image browser")
+            SourcePicker(target, state, actions)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically,
@@ -127,7 +127,10 @@ public fun ImageBrowserPane(
             ) {
                 state.tree?.let {
                     val where = if (state.partition == ImagePaneModel.ALL) "every partition" else it.source
-                    Hint("${it.tree.entries.size} entries from $where. Click rows to select several.")
+                    ImageHint(
+                        "${it.tree.entries.size} entries from $where. Click a row for its details; tick rows to " +
+                            "copy several.",
+                    )
                 }
                 if (state.selected.isNotEmpty()) {
                     GlassButton(
@@ -140,49 +143,80 @@ public fun ImageBrowserPane(
                     }
                 }
             }
-            state.imageInfo?.takeIf { it.stock != null || it.built != null }?.let { SuperblockPanel(it) }
-            Feedback(state, actions)
+            val info = state.imageInfo?.takeIf { state.image == null && (it.stock != null || it.built != null) }
+            info?.let { SuperblockPanel(it) }
+            ImageFeedback(state, actions)
+            if (edits.isNotEmpty()) KeptChanges(edits, actions)
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .clip(GlassShapes.ShellCard)
-                .ideCardSurface(shape = GlassShapes.ShellCard)
-                .padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        Row(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
-            IdeTable(modifier = Modifier.fillMaxWidth()) {
-                IdeTableHeader {
-                    IdeTableHeaderCell(text = "Path", modifier = Modifier.weight(PATH_WEIGHT))
-                    IdeTableHeaderCell(text = "Size", modifier = Modifier.weight(SIZE_WEIGHT))
-                    IdeTableHeaderCell(text = "Mode", modifier = Modifier.weight(1f))
-                    IdeTableHeaderCell(text = "Owner", modifier = Modifier.weight(1f))
-                    IdeTableHeaderCell(text = "SELinux label", modifier = Modifier.weight(LABEL_WEIGHT))
-                    IdeTableHeaderCell(text = "", modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth))
-                }
+            EntryTable(state, actions, edits, Modifier.weight(1f))
+            state.focused?.let { entry ->
+                ItemDetails(entry, state, actions, Modifier.width(ComponentSize.PluginInspectorWidth))
             }
-            val entries = state.entries
-            if (entries.isEmpty()) {
-                Box(Modifier.fillMaxSize().padding(Spacing.Large).testTag("ImageTreeEmptyView"), Alignment.Center) {
-                    Hint(
-                        when {
-                            state.tree == null -> "Pick a partition to read its tree."
-                            state.filter.isNotBlank() -> "No entries match '${state.filter}'."
-                            else -> "The ${state.partition} tree is empty."
-                        },
+        }
+    }
+    EditDialogs(state, actions)
+}
+
+@Composable
+private fun EntryTable(
+    state: ImagePaneState,
+    actions: ImagePaneActions,
+    edits: List<TreeEdit>,
+    modifier: Modifier = Modifier,
+) {
+    // A row's kept change, by its tree path: "-> NewName" or "deleted".
+    val marks = edits.filter { it.partition == state.partition && state.editable }
+        .associate { (it.path.trim('/')) to (it.renameTo?.let { name -> "renamed to $name" } ?: "deleted") }
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        IdeTable(modifier = Modifier.fillMaxWidth()) {
+            IdeTableHeader {
+                IdeTableHeaderCell(text = "", modifier = Modifier.width(IconSize.ExtraLarge))
+                IdeTableHeaderCell(text = "Path", modifier = Modifier.weight(PATH_WEIGHT))
+                IdeTableHeaderCell(text = "Size", modifier = Modifier.weight(SIZE_WEIGHT))
+                IdeTableHeaderCell(text = "Mode", modifier = Modifier.weight(1f))
+                IdeTableHeaderCell(text = "Owner", modifier = Modifier.weight(1f))
+                IdeTableHeaderCell(text = "SELinux label", modifier = Modifier.weight(LABEL_WEIGHT))
+            }
+        }
+        val entries = state.entries
+        if (entries.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(Spacing.Large).testTag("ImageTreeEmptyView"), Alignment.Center) {
+                ImageHint(
+                    when {
+                        state.tree == null && state.busy != null -> "${state.busy}…"
+                        state.tree == null && state.members != null -> "Pick a partition of the super image above."
+                        state.tree == null -> "Pick a partition, or Browse an image, to read its files."
+                        state.filter.isNotBlank() -> "No entries match '${state.filter}'."
+                        else -> "The ${state.partition} tree is empty."
+                    },
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().testTag("ImageTreeLazyList"),
+                contentPadding = PaddingValues(vertical = Spacing.ExtraSmall),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                items(items = entries, key = { it.path }) { entry ->
+                    EntryRow(
+                        entry = entry,
+                        ticked = entry.path in state.selected,
+                        focused = entry == state.focused,
+                        mark = marks[entry.path.trimEnd('/')],
+                        actions = actions,
                     )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().testTag("ImageTreeLazyList"),
-                    contentPadding = PaddingValues(vertical = Spacing.ExtraSmall),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                ) {
-                    items(items = entries, key = { it.path }) { entry ->
-                        EntryRow(entry, entry.path in state.selected, actions)
-                    }
                 }
             }
         }
@@ -190,40 +224,50 @@ public fun ImageBrowserPane(
 }
 
 @Composable
-private fun EntryRow(entry: ImageTreeEntry, selected: Boolean, actions: ImagePaneActions) {
+private fun EntryRow(
+    entry: ImageTreeEntry,
+    ticked: Boolean,
+    focused: Boolean,
+    mark: String?,
+    actions: ImagePaneActions,
+) {
     val isDirectory = entry.path.endsWith("/")
     IdeTableRow(
-        isSelected = selected,
-        onClick = { actions.toggleSelected(entry) },
+        isSelected = focused,
+        onClick = { actions.focus(entry) },
         modifier = Modifier.testTag("ImageTreeRow_${entry.path}"),
     ) {
+        Box(Modifier.width(IconSize.ExtraLarge), Alignment.Center) {
+            Checkbox(checked = ticked, onCheckedChange = { actions.toggleSelected(entry) })
+        }
         Row(
             modifier = Modifier.weight(PATH_WEIGHT),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Icon(
-                imageVector = if (isDirectory) Icons.Default.Folder else Icons.Default.Description,
+                imageVector = when {
+                    entry.target != null -> Icons.Default.Link
+                    isDirectory -> Icons.Default.Folder
+                    else -> Icons.Default.Description
+                },
                 contentDescription = null,
                 tint = with(MaterialTheme.colorScheme) { if (isDirectory) primary else onSurfaceVariant },
                 modifier = Modifier.size(IconSize.Small),
             )
-            Cell(entry.target?.let { "${entry.path} -> $it" } ?: entry.path)
+            ImageCell(
+                (entry.target?.let { "${entry.path} -> $it" } ?: entry.path) +
+                    (mark?.let { "  ($it in every build)" } ?: ""),
+            )
         }
-        Cell(if (isDirectory) "" else formatBytes(entry.size), Modifier.weight(SIZE_WEIGHT))
-        Cell(entry.mode.toString(OCTAL).padStart(MODE_DIGITS, '0'), Modifier.weight(1f))
+        ImageCell(if (isDirectory) "" else formatBytes(entry.size), Modifier.weight(SIZE_WEIGHT))
+        ImageCell(
+            if (entry.hasOwner) entry.mode.toString(OCTAL).padStart(MODE_DIGITS, '0') else "",
+            Modifier.weight(1f),
+        )
         val caps = if (entry.capabilities != 0L) " caps 0x${entry.capabilities.toString(HEX)}" else ""
-        Cell(if (entry.hasOwner) "${entry.uid}:${entry.gid}$caps" else "no fs_config line", Modifier.weight(1f))
-        Cell(entry.label, Modifier.weight(LABEL_WEIGHT))
-        Box(modifier = Modifier.width(GlassDimens.AcquireTableActionColWidth), contentAlignment = Alignment.CenterEnd) {
-            GlassButton(
-                variant = GlassButtonVariant.Secondary,
-                onClick = { actions.extract(entry) },
-                modifier = Modifier.testTag("ExtractEntryButton_${entry.path}"),
-            ) {
-                Text(text = "Copy out", fontSize = FontSize.Micro)
-            }
-        }
+        ImageCell(if (entry.hasOwner) "${entry.uid}:${entry.gid}$caps" else "no fs_config line", Modifier.weight(1f))
+        ImageCell(entry.label, Modifier.weight(LABEL_WEIGHT))
     }
 }
 
@@ -240,7 +284,7 @@ private fun SuperblockPanel(info: ImageInfo) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.testTag("SuperblockPanel"),
         ) {
-            Hint("Superblock: stock ${describe(info.stock)} · built ${describe(info.built)}")
+            ImageHint("Superblock: stock ${describe(info.stock)} · built ${describe(info.built)}")
             GlassButton(onClick = { open = !open }, variant = GlassButtonVariant.Secondary) {
                 Text(if (open) "Hide fields" else "Show fields", fontSize = FontSize.Micro)
             }
@@ -248,9 +292,9 @@ private fun SuperblockPanel(info: ImageInfo) {
         if (!open) return@Column
         val keys = (info.stock?.fields.orEmpty() + info.built?.fields.orEmpty()).map { it.first }.distinct()
         Row(Modifier.fillMaxWidth()) {
-            Cell("", Modifier.weight(SB_KEY_WEIGHT))
-            Cell("Stock (firmware/extracted)", Modifier.weight(1f))
-            Cell("Built (out/images)", Modifier.weight(1f))
+            ImageCell("", Modifier.weight(SB_KEY_WEIGHT))
+            ImageCell("Stock (firmware/extracted)", Modifier.weight(1f))
+            ImageCell("Built (out/images)", Modifier.weight(1f))
         }
         keys.forEach { key ->
             SuperblockRow(
@@ -265,9 +309,9 @@ private fun SuperblockPanel(info: ImageInfo) {
 @Composable
 private fun SuperblockRow(key: String, stock: String, built: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-        Cell(key, Modifier.weight(SB_KEY_WEIGHT))
-        Cell(stock, Modifier.weight(1f))
-        Cell(built, Modifier.weight(1f))
+        ImageCell(key, Modifier.weight(SB_KEY_WEIGHT))
+        ImageCell(stock, Modifier.weight(1f))
+        ImageCell(built, Modifier.weight(1f))
     }
 }
 
@@ -278,7 +322,7 @@ public fun ImageToolsPane(state: ImagePaneState, actions: ImagePaneActions, modi
         modifier = modifier.fillMaxWidth().testTag("ImageToolsPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Panel { Feedback(state, actions) }
+        ImagePanel { ImageFeedback(state, actions) }
         ToolsPanel(state, actions)
     }
 }
@@ -288,9 +332,9 @@ private fun ToolsPanel(state: ImagePaneState, actions: ImagePaneActions) {
     var image by remember { mutableStateOf("firmware/raw/super.img") }
     var megabytes by remember { mutableStateOf("1024") }
     val idle = state.busy == null
-    Panel {
-        Title("Images")
-        Hint(
+    ImagePanel {
+        ImageTitle("Images")
+        ImageHint(
             "A path in the workspace, for example firmware/raw/super.img or out/images/system.img. " +
                 "Results go to out/toolkit/.",
         )
@@ -326,15 +370,15 @@ private fun ToolsPanel(state: ImagePaneState, actions: ImagePaneActions) {
             ) { Text("Read super layout", fontSize = FontSize.BodySmall) }
         }
         state.superLayout?.let { layout ->
-            Cell(
+            ImageCell(
                 "super ${formatBytes(
                     layout.superSize,
                 )}, free ${formatBytes(layout.freeBytes)}" + (layout.reason?.let { " - $it" } ?: ""),
             )
             layout.groups.forEach { g ->
-                Cell("group ${g.name}: max ${formatBytes(g.maxSize)}")
+                ImageCell("group ${g.name}: max ${formatBytes(g.maxSize)}")
                 layout.partitions.filter { it.group == g.name }.forEach { p ->
-                    Cell(
+                    ImageCell(
                         "  ${p.name}: ${formatBytes(p.size)}",
                     )
                 }
@@ -344,13 +388,13 @@ private fun ToolsPanel(state: ImagePaneState, actions: ImagePaneActions) {
 }
 
 @Composable
-private fun Feedback(state: ImagePaneState, actions: ImagePaneActions) {
+internal fun ImageFeedback(state: ImagePaneState, actions: ImagePaneActions) {
     state.busy?.let { busy ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Hint("$busy…")
+            ImageHint("$busy…")
             GlassButton(
                 onClick = actions.cancel,
                 variant = GlassButtonVariant.Secondary,
@@ -362,13 +406,14 @@ private fun Feedback(state: ImagePaneState, actions: ImagePaneActions) {
 }
 
 @Composable
-private fun Panel(content: @Composable () -> Unit) {
+internal fun ImagePanel(modifier: Modifier = Modifier, scroll: Boolean = false, content: @Composable () -> Unit) {
+    val inner = Modifier.padding(Spacing.Medium)
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(GlassShapes.ShellCard)
             .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .then(if (scroll) inner.verticalScroll(rememberScrollState()) else inner),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         content()
@@ -376,7 +421,7 @@ private fun Panel(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Title(text: String) {
+internal fun ImageTitle(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurface,
@@ -387,7 +432,7 @@ private fun Title(text: String) {
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun ImageHint(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -397,7 +442,7 @@ private fun Hint(text: String) {
 }
 
 @Composable
-private fun Cell(text: String, modifier: Modifier = Modifier) {
+internal fun ImageCell(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

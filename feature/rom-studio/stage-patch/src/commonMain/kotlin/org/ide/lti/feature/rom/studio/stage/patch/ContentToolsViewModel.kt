@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
 import org.ide.lti.core.domain.pipeline.toolkit.ApexPatchResult
 import org.ide.lti.core.domain.pipeline.toolkit.ApkPatchResult
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveDiff
@@ -34,9 +33,9 @@ import org.ide.lti.core.domain.pipeline.toolkit.FileDiff
 import org.ide.lti.core.domain.pipeline.toolkit.OmcInfo
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
-import org.ide.lti.core.domain.pipeline.toolkit.TreeDiff
 import org.ide.lti.core.domain.pipeline.toolkit.WorkspaceDiff
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
+import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
@@ -79,11 +78,7 @@ public data class ContentToolsState(
     val folderDiff: WorkspaceDiff? = null,
     val codeDiff: CodePackageDiff? = null,
     val csc: OmcInfo? = null,
-    /** Partitions that have a stock tree to compare the build with, and the last such comparison. */
-    val comparable: List<String>? = null,
-    val stockDiff: TreeDiff? = null,
-    /** The package of [stockDiff] last compared method by method, and that comparison. */
-    val stockCode: Pair<String, CodePackageDiff>? = null,
+    val trees: TreeCompareState = TreeCompareState(),
 )
 
 public class ContentToolsViewModel(
@@ -94,10 +89,21 @@ public class ContentToolsViewModel(
     private val environment: AppEnvironmentPort? = null,
     private val store: WorkspaceSettingsStore? = null,
     restore: RestoreWorkbench? = null,
+    /** The workspaces a compared side can come from. */
+    private val workspaces: WorkspaceRepository? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContentToolsState())
     public val state: StateFlow<ContentToolsState> = _state.asStateFlow()
+
+    /** Patches > Compare: two trees of any workspaces. */
+    public val trees: TreeCompareModel = TreeCompareModel(
+        workspaceId = workspaceId,
+        workspaces = workspaces,
+        current = { _state.value.trees },
+        update = { change -> _state.update { it.copy(trees = change(it.trees)) } },
+        task = ::compareTask,
+    )
 
     private var job: Job? = null
     private var afterAck: (() -> Unit)? = null
@@ -210,33 +216,6 @@ public class ContentToolsViewModel(
                     _state.update { it.copy(codeDiff = d) }
                 }
             }
-        }
-    }
-
-    public fun loadComparable() {
-        compareTask("Looking for partitions to compare") { tools ->
-            val partitions = tools.comparablePartitions(workspaceId)
-            _state.update { it.copy(comparable = partitions) }
-        }
-    }
-
-    /** What the build changed in [partition] compared with the stock firmware. */
-    public fun compareWithStock(partition: String) {
-        compareTask("Comparing $partition with stock") { tools ->
-            val diff = tools.compareWithStock(workspaceId, partition)
-            _state.update { it.copy(stockDiff = diff) }
-        }
-    }
-
-    /** The code of a package the build changed ([path] in [partition]) against the stock one, method by method. */
-    public fun compareStockCode(partition: String, path: String) {
-        compareTask("Comparing the code of ${path.substringAfterLast('/')}") { tools ->
-            val diff = tools.compareCodeFiles(
-                workspaceId,
-                "${FirmwareExtractionStage.EXTRACTED}/$partition/$path",
-                "work/$partition/$path",
-            )
-            _state.update { it.copy(stockCode = path to diff) }
         }
     }
 

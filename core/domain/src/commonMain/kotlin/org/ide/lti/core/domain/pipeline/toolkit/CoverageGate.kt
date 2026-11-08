@@ -11,6 +11,9 @@ package org.ide.lti.core.domain.pipeline.toolkit
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.domain.pipeline.text.EntryKind
+import org.ide.lti.core.domain.pipeline.text.OwnerRules
+import org.ide.lti.core.domain.pipeline.text.PlatformMetadata
 import org.ide.lti.core.domain.pipeline.text.SidecarEditor
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 import org.ide.lti.core.model.plugin.FileMetadata
@@ -24,8 +27,14 @@ import org.ide.lti.core.model.plugin.FileMetadata
 public data class CoverageResult(
     val uncoveredFsConfig: List<String> = emptyList(),
     val uncoveredContexts: List<String> = emptyList(),
+    /**
+     * Paths whose name holds whitespace: fs_config and file_contexts lines are split on it, so such a file cannot be
+     * given an owner or label. Rename or remove it.
+     */
+    val unbuildableNames: List<String> = emptyList(),
 ) {
-    val isClean: Boolean get() = uncoveredFsConfig.isEmpty() && uncoveredContexts.isEmpty()
+    val isClean: Boolean
+        get() = uncoveredFsConfig.isEmpty() && uncoveredContexts.isEmpty() && unbuildableNames.isEmpty()
 
     public companion object {
         private val json = Json {
@@ -73,6 +82,7 @@ public object CoverageGate {
 
         val uncoveredFsConfig = mutableListOf<String>()
         val uncoveredContexts = mutableListOf<String>()
+        val unbuildable = paths.map { it.trim('/') }.filter { path -> path.any(Char::isWhitespace) }
 
         // The partition root is never in a tree listing, yet mkfs needs its lines: it is always checked.
         for (rawPath in paths + ROOT) {
@@ -92,6 +102,7 @@ public object CoverageGate {
         return CoverageResult(
             uncoveredFsConfig = uncoveredFsConfig.distinct().sorted(),
             uncoveredContexts = uncoveredContexts.distinct().sorted(),
+            unbuildableNames = unbuildable.distinct().sorted(),
         )
     }
 }
@@ -165,10 +176,12 @@ public object CoverageFix {
         uncoveredPaths: Collection<String>,
         isDirectory: (String) -> Boolean = { false },
         rules: List<CoverageRule> = emptyList(),
+        platform: PlatformMetadata = PlatformMetadata.NONE,
     ): String {
         var current = fsConfigText
         // A root's owner and mode cannot be taken from a folder above it: a missing root stays refused.
         for (path in uncoveredPaths - CoverageGate.ROOT) {
+            if (path.any(Char::isWhitespace)) continue
             val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
             current = SidecarEditor.withFsConfig(
                 text = current,
@@ -176,6 +189,7 @@ public object CoverageFix {
                 path = path,
                 isDirectory = isDirectory(path),
                 metadata = rule?.let { FileMetadata(it.uid, it.gid, it.mode) },
+                platform = platform,
             )
         }
         return current
@@ -187,18 +201,63 @@ public object CoverageFix {
         uncoveredPaths: Collection<String>,
         defaultLabel: String? = null,
         rules: List<CoverageRule> = emptyList(),
+        kindOf: (String) -> EntryKind = { EntryKind.File },
+        platform: PlatformMetadata = PlatformMetadata.NONE,
     ): String {
         var current = fileContextsText
         for (path in uncoveredPaths - CoverageGate.ROOT) {
+            if (path.any(Char::isWhitespace)) continue
+            val kind = kindOf(path)
             val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
-            val label = rule?.label ?: defaultLabel ?: findNearestLabel(current, partition, path)
+            val label = rule?.label ?: defaultLabel ?: platform.label(partition, path, kind)
+                ?: findNearestLabel(current, partition, path)
             current = SidecarEditor.withFileContext(
                 text = current,
                 partition = partition,
                 path = path,
                 label = label,
+                kind = kind,
+                platform = platform,
             )
         }
         return current
+    }
+
+    /** Where an owner or label the build adds comes from. */
+    public enum class Source(public val said: String) {
+        YourRule("your coverage rule"),
+        RomRules("the ROM's SELinux rules"),
+        RomTable("the ROM's fs_config table"),
+        Android("Android's default"),
+        Folder("its folder"),
+    }
+
+    /** What the build gives a path with no line, and where each part comes from. */
+    public data class Preview(val owner: String, val ownerFrom: Source, val label: String, val labelFrom: Source)
+
+    /** The owner (`uid gid mode`) and label the build would give [path] (inside `work/<partition>/`). */
+    public fun preview(
+        fileContextsText: String,
+        partition: String,
+        path: String,
+        kind: EntryKind,
+        rules: List<CoverageRule> = emptyList(),
+        platform: PlatformMetadata = PlatformMetadata.NONE,
+    ): Preview {
+        val rule = CoverageRule.match(rules, SidecarNormalizer.fileContextPath(partition, path))
+        val (owner, ownerFrom) = if (rule != null) {
+            "${rule.uid} ${rule.gid} ${rule.mode}" to Source.YourRule
+        } else {
+            val (o, source) = platform.owner(partition, path, kind == EntryKind.Directory)
+            val from = if (source == OwnerRules.Source.Device) Source.RomTable else Source.Android
+            o.fsConfigFields.removeSuffix(" capabilities=0x0") to from
+        }
+        val romLabel = platform.label(partition, path, kind)
+        val (label, labelFrom) = when {
+            rule != null -> rule.label to Source.YourRule
+            romLabel != null -> romLabel to Source.RomRules
+            else -> findNearestLabel(fileContextsText, partition, path) to Source.Folder
+        }
+        return Preview(owner, ownerFrom, label, labelFrom)
     }
 }

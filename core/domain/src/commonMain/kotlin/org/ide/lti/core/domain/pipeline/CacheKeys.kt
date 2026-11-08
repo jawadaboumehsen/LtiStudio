@@ -20,7 +20,7 @@ public object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-11-07.1"
+    public const val PIPELINE_VERSION: String = "2026-11-08.1"
 
     /** Each field with its length: `a=b,c=d` as one value must not read like `a=b` and `c=d` as two. */
     private fun keyOf(fields: List<String>): String = sha256(fields.joinToString("") { "${it.length}:$it" })

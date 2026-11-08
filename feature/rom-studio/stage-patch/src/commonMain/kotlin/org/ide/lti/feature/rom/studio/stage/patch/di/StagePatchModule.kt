@@ -40,6 +40,7 @@ public val stagePatchModule: Module = module {
             environment = getOrNull(),
             store = getOrNull(),
             restore = getOrNull(),
+            workspaces = getOrNull(),
         )
     }
 }

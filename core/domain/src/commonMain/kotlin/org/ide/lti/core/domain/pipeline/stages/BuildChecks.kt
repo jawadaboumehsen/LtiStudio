@@ -235,12 +235,17 @@ internal object BuildChecks {
         // Not checked yet, or clean. An unreadable result is refused like a gap: the build must not go on blind.
         if (json == null || coverage?.isClean == true) return null
         val missing = coverage?.let { (it.uncoveredFsConfig + it.uncoveredContexts).distinct().sorted() }.orEmpty()
-        return PipelineStep.Check("coverage gate") {
+        val spaced = coverage?.unbuildableNames.orEmpty()
+        fun listed(paths: List<String>) = paths.take(COVERAGE_SHOWN).joinToString() +
+            (if (paths.size > COVERAGE_SHOWN) " and ${paths.size - COVERAGE_SHOWN} more" else "")
+        val reason = if (missing.isEmpty() && spaced.isNotEmpty()) {
+            "COVERAGE_REFUSAL: ${spaced.size} name(s) hold a space, which no permission or SELinux line can " +
+                "describe: ${listed(spaced)}. Rename or delete them (Assemble > Image browser) and build again."
+        } else {
             "COVERAGE_REFUSAL: ${missing.size} file(s) have no permission or SELinux label entry, so the " +
-                "image would not boot: ${missing.take(COVERAGE_SHOWN).joinToString()}" +
-                (if (missing.size > COVERAGE_SHOWN) " and ${missing.size - COVERAGE_SHOWN} more" else "") +
-                ". Add the entries in Build & Sign (Coverage) and build again."
+                "image would not boot: ${listed(missing)}. Add the entries in Build & Sign (Coverage) and build again."
         }
+        return PipelineStep.Check("coverage gate") { reason }
     }
 
     /**

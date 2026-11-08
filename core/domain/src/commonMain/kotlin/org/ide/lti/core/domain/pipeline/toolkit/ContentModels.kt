@@ -132,6 +132,11 @@ public data class MethodDifference(
     public val changeKind: MethodChangeKind,
     /** For a modified method, its changed instructions (`- old`, `+ new`); empty when too large to diff. */
     public val lines: List<String> = emptyList(),
+    /** Instructions on each side; null where the method is absent (and for the class-level entry). */
+    public val instructionsA: Int? = null,
+    public val instructionsB: Int? = null,
+    /** Modified only in the compiler's numbering (labels, registers, synthetic class indices). */
+    public val renumberedOnly: Boolean = false,
 )
 
 /**
@@ -141,6 +146,11 @@ public data class MethodDifference(
 public data class CodePackageDiff(
     public val classDifferences: List<String> = emptyList(),
     public val methodDifferences: List<MethodDifference> = emptyList(),
+    /** The dex files of the two packages that differ: `changed classes2.dex`, `added classes4.dex`. */
+    public val dexDifferences: List<String> = emptyList(),
 ) {
     public val identical: Boolean get() = classDifferences.isEmpty() && methodDifferences.isEmpty()
+
+    /** The methods that really changed, without those [MethodDifference.renumberedOnly]. */
+    public val realChanges: List<MethodDifference> get() = methodDifferences.filterNot { it.renumberedOnly }
 }

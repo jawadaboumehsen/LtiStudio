@@ -66,7 +66,12 @@ public fun AssembleEditor(
                     .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                     .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             ) {
-                ImageBrowserPane(target = target, state = imageState, actions = imageActions)
+                ImageBrowserPane(
+                    target = target,
+                    state = imageState,
+                    actions = imageActions,
+                    edits = settings.treeEdits,
+                )
             }
         } else {
             Column(

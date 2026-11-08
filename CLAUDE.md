@@ -859,7 +859,7 @@ per stage; a failed stage marks every later stage pending and stops.
   while its declared outputs still exist, so a freed folder is rebuilt; `firmware/raw` is not an output of Extract,
   so freeing it clears Extract's cache record instead).
 - Patches scripts (`CustomizationSettings.scripts`, `ProjectScripts`): run after the plugins from `work/`; then
-  `CoverageFixRequest` gives new files the sidecar lines of their folder. Never fix sidecars by writing
+  `CoverageFixRequest` labels new files by the ROM's rules (`PlatformMetadata`), else like their folder. Never fix sidecars by writing
   `work/configs` between builds: Assemble's cache covers them, so the next build re-assembles and drops the fix;
   set `fillMissingSidecars` instead (what Build & Sign's Coverage button does).
 - Patches/Mods: plugins installed in the app (`InstalledPluginCatalog`, `<LOCALAPPDATA>/LtiRomGui/plugins/installed`).
@@ -988,11 +988,19 @@ nothing is shown as done before its job finished.
   name, links into system's empty top-level folders such as `/apex`, `/data`, `/mnt` are run-time and skipped);
   only links dangling in the build but not in stock refuse it (`BROKEN_LINKS`), unless
   `BuildWarningKind.BrokenLinks` is accepted (Build & Sign > Coverage).
-- Compare (`CompareWorkbench`, Patches > Compare): files, archives, folders, decoded code; two JARs/APKs decoded
-  with `apktool d -r --no-debug-info` and diffed method by method with their changed instructions (`LineDiff`,
-  an LCS diff); and "What the build changed": a partition of `work/` against `firmware/extracted/` (`TreeCompare`):
-  added, removed, content, metadata (owner, mode, caps, label, link target from each side's sidecars) and type
-  changes. Content uses rsync's quick check (same size and mtime = same; Assemble keeps the stock times).
+- Compare (`CompareWorkbench`, Patches > Compare). Two trees (`compareSides`, `SideCompare.kt`, the view's
+  `TreeCompareModel`): each side (`CompareSide`) is a partition tree (`firmware/extracted/<p>` or `work/<p>`, with
+  that folder's sidecars) or an image read straight from its file (EROFS/ext4 mounted read-only, F2FS dumped,
+  sparse expanded, a super member taken out: `ImageReading.kt`), in any workspace; each side is read in its own
+  workspace's job. `TreeCompare` marks added, removed, content, metadata (owner, mode, caps, label, link target)
+  and kind changes; files of the same size are hashed on both sides (`HASH_SCRIPT` inside the mount), or only
+  those whose time differs when "trust size and time" is on. Both superblocks side by side (`Superblock.compare`,
+  shared field names across filesystems). A content row opens (`compareEntry`): text = line diff (`LineDiff`, an
+  LCS diff, 1 MiB / 3000 lines a side), zip = entries by CRC, JAR/APK = changed dex files, then methods via
+  `apktool d -r --no-debug-info` and `SmaliCompare` (classes keyed by name across `smali_classesN`; instruction
+  counts both sides; a method differing only by a consistent renumbering of labels, registers or synthetic class
+  indices is `renumberedOnly`, counted apart; string literals and field types are never renamed), else sizes and
+  sha256. Also two files, archives, folders or decoded code of one workspace by path.
 - Replacement images (Extract > Dynamic partitions, `ExtractionSettings.replacementImages`): EROFS, ext4 or F2FS, stored
   raw in `firmware/replacements/`, pinned by sha256. ext4 mounts with `fuse2fs -o ro,fakeroot` (fuse2fs checks
   permissions, erofsfuse does not; without fakeroot a root-only `lost+found` stops the stat dump).
@@ -1027,6 +1035,23 @@ nothing is shown as done before its job finished.
 - Unbuilt boot edits: `BootWorkbench` keeps a fingerprint of the unpacked ramdisk folder and dts (`FINGERPRINT_SCRIPT`,
   in `state.json`, renewed on repack); `BootWorkbench.unbuiltEdits(runner, ws)` lists images edited since, shown as a
   warning in Assemble > Boot preparation.
+- Labels for new files (`PlatformMetadata`, `pipeline/text/`): what a file the build adds gets when no line or
+  rule says otherwise. SELinux: the ROM's own rules (`FileContextRules` over `plat_`/`system_ext_`/`product_`/
+  `vendor_`/`odm_file_contexts` in work/, as restorecon reads them: exact paths first, then the last matching regex,
+  `--`/`-d`/`-l` type filter, `<<none>>` = none), else the nearest listed folder. Owner, mode, capabilities: the
+  device's `etc/fs_config_dirs|files` tables (`OwnerRules.decodeTable`), then Android's built-in table (`bin/`
+  folders `0 2000 751`, their files `0 2000 755`, everything under `vendor/` group shell), then root `0755`/`0644`.
+  PQ84P01's stock sidecars match these exactly. Android 7 and older ship the rules compiled (`file_contexts.bin`):
+  `CompiledFileContexts.decode` reads formats 1-5, PCRE or PCRE2. Used by mod-added files (`ModuleHostSteps`), the
+  coverage fill and the toolkit; `CoverageFix.preview` says what a missing line becomes and where it comes from.
+  A name holding whitespace cannot be written to fs_config or file_contexts: `CoverageResult.unbuildableNames`
+  refuses the build until it is renamed or deleted.
+- Image browser (Assemble): a row's details (`ImageWorkbench.details`) show its fs_config and SELinux lines, or what
+  the build adds and why, and where a link resolves (`LinkCheck`). "Browse an image…" reads any EROFS/ext4/F2FS or
+  super image of the workspace straight from its file (`ImageWorkbench.images` / `open` / `browse`,
+  `ImageReading.kt`): mounted read-only, never unpacked into the project; only `workbench/browse` is written (a sparse
+  image expanded, a super member taken out with lpunpack, an F2FS image dumped). Rename and delete are kept as
+  `AssemblySettings.treeEdits` and applied by every build (see stage-settings.md); links are not renamed.
 - Coverage rules (`CustomizationSettings.coverageRules`, `CoverageRule`): `<regex> <uid> <gid> <mode> <label>` lines,
   matched against the device path, tried before "like its folder" when missing sidecar lines are added
   (`CoverageFixRequest.rules`); bad lines are `INVALID_COVERAGE_RULE`. Edited in Build & Sign > Coverage.
@@ -1052,7 +1077,8 @@ nothing is shown as done before its job finished.
   kernel has their decoder (`BootWorkbench.kernelFacts` -> `KernelFacts.erofsCompressions`, read by `BuildViewModel`;
   run values over 512 characters are not kept, so the build's own kernel read cannot be used). PQ84P01 reads lz4 only.
 - Image browser rows show a symlink's target, fs_config capabilities (`ImageTreeEntry.capabilities`) and files with no
-  fs_config line. Read-only by design: `work/` is rebuilt by Assemble, so edits there belong in mods or scripts.
+  fs_config line. `work/` itself is never edited from the browser (Assemble rebuilds it): a rename or delete is kept
+  as a `treeEdits` entry the next build applies.
 - EROFS cluster (`BuildSettings.partitionClusterKib`, `BuildFilesystems.erofsCluster`, `CLUSTER_KIB` 16/64/128):
   `mkfs.erofs -C <bytes>`; absent = one block as AOSP. PQ84P01 vendor 1275 -> 1161 MiB at 64 KiB in 40 s. Other
   values are `INVALID_PACKAGE_OPTION`; never for uncompressed images.

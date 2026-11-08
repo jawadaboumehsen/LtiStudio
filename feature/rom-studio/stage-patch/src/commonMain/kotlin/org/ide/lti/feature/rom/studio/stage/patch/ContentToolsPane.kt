@@ -49,11 +49,8 @@ import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
-import org.ide.lti.core.domain.pipeline.toolkit.CodePackageDiff
 import org.ide.lti.core.domain.pipeline.toolkit.ConfigKind
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexStatus
-import org.ide.lti.core.domain.pipeline.toolkit.TreeChange
-import org.ide.lti.core.domain.pipeline.toolkit.TreeChangeKind
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.ui.GlassCodeEditor
 import org.ide.lti.core.ui.toolkit.AcknowledgementDialog
@@ -89,8 +86,8 @@ public fun ContentToolsPane(
                 ContentTools.CONFIGS -> ConfigCard(state, viewModel)
 
                 ContentTools.COMPARE -> {
-                    StockCompareCard(state, viewModel)
-                    CompareCard(state, viewModel)
+                    TreeCompareCard(state, viewModel)
+                    PathCompareCard(state, viewModel)
                 }
 
                 ContentTools.CSC -> CscCard(state, viewModel)
@@ -233,14 +230,14 @@ private fun ConfigCard(state: ContentToolsState, viewModel: ContentToolsViewMode
 }
 
 @Composable
-private fun CompareCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
+private fun PathCompareCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     var kind by remember { mutableStateOf(CompareKind.FILES) }
     var a by remember { mutableStateOf("") }
     var b by remember { mutableStateOf("") }
-    Card("Compare (FR-033)") {
+    Card("Compare two files by path") {
         Hint(
-            "Paths in the workspace. Code compares two folders decoded with apktool, " +
-                "class by class and method by method.",
+            "Any two paths in this workspace: files line by line, archives by entry, folders by content, code as two " +
+                "decoded folders (or two JARs/APKs) class by class and method by method.",
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             CompareKind.entries.forEach { k ->
@@ -255,9 +252,14 @@ private fun CompareCard(state: ContentToolsState, viewModel: ContentToolsViewMod
         ) {
             Text("Compare", fontSize = FontSize.BodySmall)
         }
-        val lines = compareLines(kind, state)
-        lines?.take(MAX_LINES)?.forEach { Mono(it) }
-        if ((lines?.size ?: 0) > MAX_LINES) Hint("…and ${lines!!.size - MAX_LINES} more")
+        val code = state.codeDiff
+        if (kind == CompareKind.CODE && code != null) {
+            if (code.identical) Mono("Identical") else CodeDiff(code, entries = null)
+        } else {
+            val lines = compareLines(kind, state)
+            lines?.take(MAX_LINES)?.forEach { Mono(it) }
+            if ((lines?.size ?: 0) > MAX_LINES) Hint("…and ${lines!!.size - MAX_LINES} more")
+        }
     }
 }
 
@@ -266,93 +268,8 @@ private fun compareLines(kind: CompareKind, state: ContentToolsState): List<Stri
     CompareKind.FILES -> state.fileDiff?.let { if (it.identical) listOf("Identical") else it.lineDifferences }
     CompareKind.ARCHIVES -> state.archiveDiff?.let { d -> sets(d.missingInB, d.extraInB, d.modified) }
     CompareKind.FOLDERS -> state.folderDiff?.let { d -> sets(d.missingInB, d.extraInB, d.modified) }
-    CompareKind.CODE -> state.codeDiff?.let(::codeLines)
-}
-
-/** A code comparison as lines: classes added or removed, then each changed method with its changed instructions. */
-private fun codeLines(d: CodePackageDiff): List<String> = if (d.identical) {
-    listOf("Identical")
-} else {
-    d.classDifferences + d.methodDifferences.flatMap { m ->
-        listOf("${m.changeKind} ${m.className} ${m.methodName}") + m.lines.map { "    $it" }
-    }
-}
-
-/** What the build changed in one partition compared with the stock firmware. */
-@Composable
-private fun StockCompareCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
-    LaunchedEffect(Unit) { if (state.comparable == null) viewModel.loadComparable() }
-    var partition by remember { mutableStateOf<String?>(null) }
-    var shown by remember { mutableStateOf<TreeChangeKind?>(null) }
-    Card("What the build changed") {
-        Hint(
-            "A partition of the assembled tree against the stock firmware: files added, removed or changed, and " +
-                "changes of owner, mode, capabilities, SELinux label or link target. A changed jar or APK can be " +
-                "compared method by method.",
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            state.comparable.orEmpty().forEach { p ->
-                GlassChip(label = p, selected = partition == p, onClick = { partition = p })
-            }
-        }
-        if (state.comparable?.isEmpty() == true) Hint("Run the build through Assemble first.")
-        GlassButton(
-            onClick = { partition?.let(viewModel::compareWithStock) },
-            enabled = state.busy == null && partition != null,
-            modifier = Modifier.testTag("CompareWithStockButton"),
-        ) {
-            Text("Compare with stock", fontSize = FontSize.BodySmall)
-        }
-        state.stockDiff?.let { diff ->
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                TreeChangeKind.entries.forEach { k ->
-                    GlassChip(
-                        label = "${k.name.lowercase()} ${diff.count(k)}",
-                        selected = shown == k,
-                        onClick = { shown = if (shown == k) null else k },
-                    )
-                }
-            }
-            Hint("${diff.partition}: ${diff.changes.size} changed, ${diff.unchanged} unchanged")
-            val rows = diff.changes.filter { shown == null || it.kind == shown }
-            rows.take(MAX_LINES).forEach { change -> ChangeRow(diff.partition, change, state, viewModel) }
-            if (rows.size > MAX_LINES) Hint("…and ${rows.size - MAX_LINES} more")
-        }
-        val code = state.stockCode
-        if (code != null) {
-            Hint("Code of ${code.first}, stock against the build:")
-            val lines = codeLines(code.second)
-            lines.take(MAX_LINES).forEach { Mono(it) }
-            if (lines.size > MAX_LINES) Hint("…and ${lines.size - MAX_LINES} more")
-        }
-    }
-}
-
-@Composable
-private fun ChangeRow(
-    partition: String,
-    change: TreeChange,
-    state: ContentToolsState,
-    viewModel: ContentToolsViewModel,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-        Box(Modifier.weight(1f)) {
-            Mono("${change.kind.name.lowercase()} ${change.path}" + change.details.joinToString("") { " · $it" })
-        }
-        val code = change.kind == TreeChangeKind.CONTENT && (
-            change.path.endsWith(
-                ".jar",
-            ) || change.path.endsWith(".apk")
-            )
-        if (code) {
-            GlassButton(
-                onClick = { viewModel.compareStockCode(partition, change.path) },
-                enabled = state.busy == null,
-            ) {
-                Text("Compare code", fontSize = FontSize.BodySmall)
-            }
-        }
-    }
+    // Shown by CodeDiff instead.
+    CompareKind.CODE -> null
 }
 
 @Composable

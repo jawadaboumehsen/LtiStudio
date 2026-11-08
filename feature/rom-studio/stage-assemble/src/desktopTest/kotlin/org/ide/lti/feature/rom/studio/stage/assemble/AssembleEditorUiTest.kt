@@ -50,7 +50,11 @@ class AssembleEditorUiTest {
                     target = target,
                     onChange = {},
                     selectedObjectId = selectedSubobject,
-                    imageState = ImagePaneState(tree = PartitionTree(ImageTree(sampleEntries), "work/system", null)),
+                    // The row whose details are open: Copy out sits in its details panel.
+                    imageState = ImagePaneState(
+                        tree = PartitionTree(ImageTree(sampleEntries), "work/system", null),
+                        focused = sampleEntries.first(),
+                    ),
                     imageActions = ImagePaneActions(extract = { extractedPath = it.path }),
                 )
             }
@@ -65,7 +69,8 @@ class AssembleEditorUiTest {
         composeTestRule.onNodeWithTag("ImageBrowserPane").assertIsDisplayed()
         composeTestRule.onNodeWithTag("ImageTreeRow_system/bin/sh").assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag("ExtractEntryButton_system/bin/sh").performClick()
+        composeTestRule.onNodeWithTag("ImageItemDetails").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("CopyOutButton").performClick()
         assertEquals("system/bin/sh", extractedPath)
 
         selectedSubobject = "image-conversion"

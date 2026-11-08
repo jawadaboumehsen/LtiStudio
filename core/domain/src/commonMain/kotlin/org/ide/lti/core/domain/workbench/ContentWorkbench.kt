@@ -287,7 +287,11 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 readText("work/configs/file_context-$p").orEmpty(),
             )
         }.fold(CoverageResult()) { all, r ->
-            CoverageResult(all.uncoveredFsConfig + r.uncoveredFsConfig, all.uncoveredContexts + r.uncoveredContexts)
+            CoverageResult(
+                all.uncoveredFsConfig + r.uncoveredFsConfig,
+                all.uncoveredContexts + r.uncoveredContexts,
+                all.unbuildableNames + r.unbuildableNames,
+            )
         }
     }
 
@@ -297,10 +301,14 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         val path = rel.substringAfter('/')
         val fsName = "work/configs/fs_config-$partition"
         val ctxName = "work/configs/file_context-$partition"
-        readText(
-            fsName,
-        )?.let { writeText(fsName, SidecarEditor.withFsConfig(it, partition, path, isDirectory = false)) }
-        readText(ctxName)?.let { writeText(ctxName, SidecarEditor.withFileContext(it, partition, path)) }
+        // Labelled as Android's build would: the ROM's own rules, then its folder.
+        val platform = platformMetadata()
+        readText(fsName)?.let {
+            writeText(fsName, SidecarEditor.withFsConfig(it, partition, path, isDirectory = false, platform = platform))
+        }
+        readText(ctxName)?.let {
+            writeText(ctxName, SidecarEditor.withFileContext(it, partition, path, platform = platform))
+        }
     }
 
     private fun requireInWork(path: String) {

@@ -50,6 +50,14 @@ public data class ExtractionSettings(
     val replacementImages: Map<String, String> = emptyMap(),
 )
 
+/**
+ * A change to the work tree kept for every build: [path] (inside `work/<partition>/`) is deleted, or renamed to
+ * [renameTo] in the same folder. The Patches stage applies it last, after the mods and scripts, with its
+ * fs_config and SELinux lines.
+ */
+@Serializable
+public data class TreeEdit(val partition: String, val path: String, val renameTo: String? = null)
+
 @Serializable
 public data class AssemblySettings(
     val includedPartitions: List<String> = emptyList(),
@@ -65,6 +73,8 @@ public data class AssemblySettings(
     val disableDataEncryption: Boolean = false,
     /** Remove the AVB/verity fs_mgr flags (`avb`, `avb_keys`, `verify`) from every line of the work tree's fstabs. */
     val removeIntegrityFlags: Boolean = false,
+    /** Renames and deletions made in the Image browser, applied to the work tree in every build. */
+    val treeEdits: List<TreeEdit> = emptyList(),
 ) {
     init {
         propertyOverrides.forEach { (k, v) ->

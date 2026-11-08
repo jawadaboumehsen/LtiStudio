@@ -221,6 +221,9 @@ object GlassDimens {
     val ReadinessStatusColumnWidth: Dp = 110.dp
     val StatusBadgeIconSize: Dp = 10.dp
     val OverviewMaxContentWidth: Dp = 1152.dp
+
+    /** The most a browser's controls take above its table; more of them scroll, the table keeps its height. */
+    val BrowserControlsMaxHeight: Dp = 300.dp
     val OverviewStageIconBoxSize: Dp = 32.dp
     val OverviewEmptyStateHeight: Dp = 136.dp
     val OverviewTargetCardWidth: Dp = 340.dp

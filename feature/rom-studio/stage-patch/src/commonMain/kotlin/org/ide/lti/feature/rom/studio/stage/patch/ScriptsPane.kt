@@ -83,8 +83,9 @@ public fun ScriptsPane(
         Card("Scripts") {
             Hint(
                 "Shell scripts run on the work tree after the modules, top to bottom: \$1 is work/, \$2 the " +
-                    "workspace. Files a script adds get the owner, mode and SELinux label of their folder. A script " +
-                    "that exits with an error stops the build.",
+                    "workspace. Files a script adds are labelled as Android's build would: the ROM's own SELinux " +
+                    "rules and fs_config tables (else Android's defaults), then their folder. A script that exits " +
+                    "with an error stops the build.",
             )
             scripts.forEachIndexed { index, script ->
                 ScriptRow(

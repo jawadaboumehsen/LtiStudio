@@ -10,22 +10,42 @@
 package org.ide.lti.core.domain.workbench
 
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.text.EntryKind
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageFix
+import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.pipeline.toolkit.F2fsImage
-import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
 import org.ide.lti.core.domain.pipeline.toolkit.FsType
-import org.ide.lti.core.domain.pipeline.toolkit.FsTypes
 import org.ide.lti.core.domain.pipeline.toolkit.ImageInfo
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTree
-import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
+import org.ide.lti.core.domain.pipeline.toolkit.LinkCheck
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.SuperLayout
 import org.ide.lti.core.domain.pipeline.toolkit.SuperTool
-import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 
 /** A browsed partition: its entries and where its files are, as Windows sees them (to open in Explorer). */
 public data class PartitionTree(val tree: ImageTree, val source: String, val hostFolder: String?)
+
+/** An image opened read-only: the partitions of a super image, or a filesystem's files. */
+public sealed interface OpenedImage {
+    public data class Super(val layout: SuperLayout) : OpenedImage
+
+    public data class Files(val tree: PartitionTree) : OpenedImage
+}
+
+/**
+ * What the build records for one item: its device path, its fs_config line and SELinux label (null when it has
+ * none yet), and, when one is missing, what the build gives it ([preview]).
+ */
+public data class EntryDetails(
+    val devicePath: String,
+    val fsConfigLine: String?,
+    val label: String?,
+    val preview: CoverageFix.Preview?,
+    /** For a symbolic link: where it ends on the phone, said in words. */
+    val resolves: String? = null,
+)
 
 /**
  * Partition images (FR-008..FR-012). A partition is browsed from the tree Extract unpacked from its image (or
@@ -53,7 +73,7 @@ public class ImageWorkbench(
             run("rm", "-f", abs(partial))
             val sparse = run("xxd", "-p", "-l", "4", source).trim() == SPARSE_MAGIC_LE
             if (sparse) run("simg2img", source, abs(partial)) else run("cp", "-f", source, abs(partial))
-            val fs = fsOf(this, partial)
+            val fs = fsOfImage(partial)
             if (fs !in listOf(FsType.Erofs, FsType.Ext4, FsType.F2fs)) {
                 run("rm", "-f", abs(partial))
                 throw RefusalException(
@@ -81,32 +101,12 @@ public class ImageWorkbench(
             )
         }
         val listing = run("find", abs(dir), "-mindepth", "1", "-printf", "%y\\t%s\\t%l\\t%P\\n")
-        val owners = readText("$configs/fs_config-$partition").orEmpty().lineSequence()
-            .map { it.trim().split(WHITESPACE) }.filter { it.size >= OWNER_FIELDS }
-            .associate { it[0] to it }
-        val labels = readText("$configs/file_context-$partition").orEmpty().lineSequence()
-            .map { it.trim().split(WHITESPACE) }.filter { it.size >= 2 }
-            .associate { it[0] to it.last() }
-        val entries = listing.lineSequence().mapNotNull { line ->
-            // type, size, link target, path
-            val fields = line.split('\t', limit = 4).takeIf { it.size == 4 } ?: return@mapNotNull null
-            val (type, size, target) = fields
-            val path = fields[3]
-            val owner = owners[SidecarNormalizer.fsConfigPath(partition, path)]
-            ImageTreeEntry(
-                path = if (type == "d") "$path/" else path,
-                size = if (type == "d") 0L else size.toLongOrNull() ?: 0L,
-                mode = owner?.get(MODE)?.toIntOrNull(OCTAL) ?: 0,
-                uid = owner?.get(UID)?.toIntOrNull() ?: 0,
-                gid = owner?.get(GID)?.toIntOrNull() ?: 0,
-                label = labels[SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path))]
-                    ?: NO_LABEL,
-                capabilities = owner?.getOrNull(CAPABILITIES)?.substringAfter("capabilities=0x", "")
-                    ?.toLongOrNull(HEX) ?: 0L,
-                target = target.takeIf { type == "l" },
-                hasOwner = owner != null,
-            )
-        }.sortedBy { it.path }.toList()
+        val entries = treeEntries(
+            partition,
+            listing,
+            readText("$configs/fs_config-$partition").orEmpty(),
+            readText("$configs/file_context-$partition").orEmpty(),
+        )
         PartitionTree(ImageTree(entries), dir, hostPath(dir))
     }
 
@@ -194,7 +194,7 @@ public class ImageWorkbench(
                 )
             }
             val tree = abs("$extracted/$partition")
-            val (prefix, stat, labels) = when (val fs = fsOf(this, image)) {
+            val (prefix, stat, labels) = when (val fs = fsOfImage(image)) {
                 FsType.F2fs -> {
                     val dump = toolPath("dump.f2fs")
                     val script = F2fsImage.READBACK_SCRIPT
@@ -224,36 +224,11 @@ public class ImageWorkbench(
 
     /** The superblock of [partition]'s stock image and of its last built one. */
     public suspend fun imageInfo(workspaceId: String, partition: String): ImageInfo = runner.read(workspaceId) {
-        suspend fun of(rel: String): Superblock? {
-            if (!exists(rel)) return null
-            val fs = fsOf(this, rel)
-            val dump = when (fs) {
-                FsType.Erofs -> tryRun("dump.erofs", abs(rel)).stdout
-                FsType.Ext4 -> tryRun("dumpe2fs", "-h", abs(rel)).stdout
-                FsType.F2fs -> tryRun("dump.f2fs", abs(rel)).stdout
-                else -> ""
-            }
-            return Superblock(fs, run("stat", "-c", "%s", abs(rel)).trim().toLong(), Superblock.fields(fs, dump))
-        }
         ImageInfo(
-            stock = of("${FirmwareExtractionStage.EXTRACTED}/$partition.img"),
-            built = of("out/images/$partition.img"),
+            stock = superblockOf("${FirmwareExtractionStage.EXTRACTED}/$partition.img"),
+            built = superblockOf("out/images/$partition.img"),
         )
     }
-
-    private suspend fun fsOf(job: WorkbenchRunner.Job, rel: String): FsType = FsTypes.fromSuperblock(
-        FormatDetector.fromHex(
-            job.run(
-                "xxd",
-                "-p",
-                "-s",
-                "${FsTypes.SUPERBLOCK_OFFSET}",
-                "-l",
-                "${FsTypes.SUPERBLOCK_BYTES}",
-                job.abs(rel),
-            ),
-        ),
-    )
 
     /** Converts a sparse image to raw, or raw to sparse, into `out/toolkit/` (FR-010). */
     public suspend fun convert(workspaceId: String, image: String, toSparse: Boolean): String =
@@ -292,6 +267,119 @@ public class ImageWorkbench(
                 .lines().filter { it.isNotBlank() }.sorted()
             sh("rm -rf \"$2\" && mv -T \"$1\" \"$2\"", abs(partial), abs(folder))
             parts.map { "$folder/$it" }
+        }
+
+    /** The EROFS, ext4, F2FS and super images in the workspace (firmware, the user's own, the built ones). */
+    public suspend fun images(workspaceId: String): List<WorkspaceImage> = runner.read(
+        workspaceId,
+    ) { workspaceImages() }
+
+    /**
+     * Opens [image] read-only: a super image (also a sparse one, once expanded) gives the partitions inside it to
+     * pick from; a filesystem image gives its files at once.
+     */
+    public suspend fun open(workspaceId: String, image: String): OpenedImage =
+        runner.job(workspaceId, "Read ${image.substringAfterLast('/')}") {
+            val img = readableImage(image, member = null)
+            if (isSuperImage(img)) {
+                OpenedImage.Super(SuperTool.parseLpdumpOutput(run("lpdump", abs(img))))
+            } else {
+                val entries = readImage(img, partitionOf(image, null), fsOfImage(img))
+                OpenedImage.Files(PartitionTree(ImageTree(entries), "$image (read-only)", null))
+            }
+        }
+
+    /**
+     * [image]'s files with owner, mode, SELinux label and capabilities read straight off the image, without
+     * unpacking it into the project; with [member], that partition of a super image. Only [BROWSE_CACHE] is written
+     * (a sparse image expanded, a partition taken out of super, an F2FS image dumped).
+     */
+    public suspend fun browse(workspaceId: String, image: String, member: String? = null): PartitionTree =
+        runner.job(workspaceId, "Read ${member ?: image.substringAfterLast('/')}") {
+            val img = readableImage(image, member)
+            val entries = readImage(img, partitionOf(image, member), fsOfImage(img))
+            val name = member?.let { "$it in ${image.substringAfterLast('/')}" } ?: image
+            PartitionTree(ImageTree(entries), "$name (read-only)", null)
+        }
+
+    /** Copies [paths] out of [image] (or its [member]) to `out/toolkit/<partition>/`; returns that folder. */
+    public suspend fun extractFromImage(
+        workspaceId: String,
+        image: String,
+        member: String?,
+        paths: List<String>,
+    ): String = runner.job(workspaceId, "Copy out of ${member ?: image.substringAfterLast('/')}") {
+        val img = readableImage(image, member)
+        val folder = partitionOf(image, member)
+        copyOutOfImage(img, fsOfImage(img), folder, paths.map { it.trimEnd('/') }.distinct())
+        hostPath("out/toolkit/$folder") ?: abs("out/toolkit/$folder")
+    }
+
+    /**
+     * What the build records for [path] of [partition] in the tree at [source] (`work/<p>` or the extracted one):
+     * its fs_config and SELinux lines, and for a missing one what the build adds and why ([coverageRules] first,
+     * then the ROM's own rules, then Android's defaults or the folder).
+     */
+    public suspend fun details(
+        workspaceId: String,
+        partition: String,
+        path: String,
+        kind: EntryKind,
+        source: String,
+        coverageRules: String = "",
+    ): EntryDetails = runner.read(workspaceId) {
+        val tree = source.substringBeforeLast('/')
+        val configs = if (tree == "work") "work/configs" else tree
+        val clean = path.trim('/')
+        val fsKey = SidecarNormalizer.fsConfigPath(partition, clean)
+        val ctxKey = SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, clean))
+        val fsText = readText("$configs/fs_config-$partition").orEmpty()
+        val ctxText = readText("$configs/file_context-$partition").orEmpty()
+        val fsLine = fsText.lineSequence().firstOrNull { it.substringBefore(' ') == fsKey }
+        val ctxLine = ctxText.lineSequence().firstOrNull { it.substringBefore(' ') == ctxKey }
+        val preview = if (fsLine == null || ctxLine == null) {
+            CoverageFix.preview(
+                ctxText,
+                partition,
+                clean,
+                kind,
+                CoverageRule.parse(coverageRules).first,
+                platformMetadata(tree),
+            )
+        } else {
+            null
+        }
+        val resolves = if (kind == EntryKind.Link) resolution(this, tree, partition, clean) else null
+        EntryDetails(
+            SidecarNormalizer.fileContextPath(partition, clean),
+            fsLine,
+            ctxLine?.substringAfter(' ')?.trim(),
+            preview,
+            resolves,
+        )
+    }
+
+    /** Where the link [path] of [partition] ends, as the phone resolves it across the partitions of [tree]. */
+    private suspend fun resolution(job: WorkbenchRunner.Job, tree: String, partition: String, path: String): String =
+        with(job) {
+            val parts = run("find", abs(tree), "-mindepth", "1", "-maxdepth", "1", "-type", "d", "-printf", "%f\\n")
+                .lines().filter { it.isNotBlank() && it != "configs" && it != "kernel" }
+            val listing = LinkCheck.parse(sh(LinkCheck.LISTING_SCRIPT, abs(tree), *parts.toTypedArray()))
+            val device = if (partition == "system") "/$path" else "/$partition/$path"
+            when (val end = LinkCheck.resolve(listing)[device]) {
+                null -> "unknown (not a link of this tree)"
+
+                LinkCheck.Ending.Loop -> "no: it loops back on itself"
+
+                LinkCheck.Ending.Runtime -> "provided at boot, not on disk"
+
+                is LinkCheck.Ending.InTree -> {
+                    val missing = sh(LinkCheck.EXISTS_SCRIPT, abs(tree), end.treePath).isNotBlank()
+                    // On the phone: system's tree is the root, every other partition is mounted on /<name>.
+                    val onDevice = "/" + end.treePath.removePrefix("system/")
+                    if (missing) "no: $onDevice is not in the tree" else "yes: $onDevice"
+                }
+            }
         }
 
     /** The groups, partitions and free space of the workspace's super image (FR-011), from `lpdump`. */
@@ -339,17 +427,8 @@ public class ImageWorkbench(
             cp -r --no-dereference --preserve=links,timestamps -T "${'$'}mnt" "${'$'}tree"
             rm -rf "${'$'}tree/lost+found"
         """
-        const val NO_LABEL = "(no label)"
         const val SEARCH_LIMIT = 2000
         const val SPARSE_MAGIC_LE = "3aff26ed"
-        const val OWNER_FIELDS = 4
-        const val UID = 1
-        const val GID = 2
-        const val MODE = 3
-        const val CAPABILITIES = 4
-        const val HEX = 16
-        const val OCTAL = 8
-        val WHITESPACE = Regex("""\s+""")
         val SUPER_CANDIDATES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img", "out/extra/super.img")
     }
 }

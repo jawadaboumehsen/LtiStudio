@@ -17,16 +17,16 @@ public enum class TreeChangeKind { ADDED, REMOVED, CONTENT, META, TYPE }
 /** One changed path (relative to the partition's tree) and, for metadata, what changed (`mode 644 -> 755`). */
 public data class TreeChange(val path: String, val kind: TreeChangeKind, val details: List<String> = emptyList())
 
-/** A partition of the build compared with the stock firmware. */
+/** Two trees of a partition compared (A, the older or stock side, against B). */
 public data class TreeDiff(val partition: String, val changes: List<TreeChange>, val unchanged: Int) {
     public fun count(kind: TreeChangeKind): Int = changes.count { it.kind == kind }
 }
 
 /**
- * Compares a partition's stock tree (`firmware/extracted/<p>`) with the build's (`work/<p>`): files added, removed,
- * changed in content, or in owner, mode, capabilities, SELinux label or link target (from the sidecars of each
- * side). Content is compared like rsync's quick check: a different size is a change; the same size and
- * modification time is no change (Assemble keeps the stock times); only the rest is hashed.
+ * Compares two trees of a partition (a folder of a workspace or an image read straight from its file): files added,
+ * removed, changed in content, or in owner, mode, capabilities, SELinux label or link target (from each side's own
+ * sidecars), or changed kind. A different size is a change of content; files of the same size are hashed, all of
+ * them, or with [hashCandidates]' `trustTimes` only those whose modification time differs (rsync's quick check).
  */
 public object TreeCompare {
     /** `sh -c LISTING_SCRIPT sh <tree>`: `<type>\t<size>\t<mtime>\t<path>\t<link target>` per entry. */
@@ -46,12 +46,18 @@ public object TreeCompare {
         f[3] to Entry(f[0][0], f[1].toLongOrNull() ?: 0L, f[2], f[4])
     }.toMap()
 
-    /** Regular files on both sides whose size matches but whose modification time does not: they need hashing. */
-    public fun hashCandidates(stock: Map<String, Entry>, build: Map<String, Entry>): List<String> =
-        build.filter { (path, b) ->
-            val s = stock[path]
-            s != null && s.type == 'f' && b.type == 'f' && s.size == b.size && s.mtime != b.mtime
-        }.keys.sorted()
+    /**
+     * Regular files on both sides of the same size: they need hashing. With [trustTimes], only those whose
+     * modification time differs (the same size and time count as the same content).
+     */
+    public fun hashCandidates(
+        stock: Map<String, Entry>,
+        build: Map<String, Entry>,
+        trustTimes: Boolean = true,
+    ): List<String> = build.filter { (path, b) ->
+        val s = stock[path]
+        s != null && s.type == 'f' && b.type == 'f' && s.size == b.size && !(trustTimes && s.mtime == b.mtime)
+    }.keys.sorted()
 
     /** sha256sum output as path -> hash. */
     public fun parseHashes(output: String): Map<String, String> = output.lines().mapNotNull { line ->
@@ -111,8 +117,8 @@ public object TreeCompare {
 
                 else -> {
                     val meta = metaDetails(path, s, b, stockSidecars, buildSidecars)
-                    val content = s.type == 'f' &&
-                        (s.size != b.size || (s.mtime != b.mtime && stockHashes[path] != buildHashes[path]))
+                    // A file not hashed (same size and time, trusted) has no hash on either side: the same.
+                    val content = s.type == 'f' && (s.size != b.size || stockHashes[path] != buildHashes[path])
                     when {
                         content -> TreeChange(
                             path,

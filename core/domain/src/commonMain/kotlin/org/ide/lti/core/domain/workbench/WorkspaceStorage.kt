@@ -70,7 +70,12 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
             Folder("restore", false, "Backups behind the restore points: without them nothing can be restored."),
             Folder("overrides", false, "Boot images edited in the Studio and used by the build."),
             Folder("firmware/replacements", false, "Your own partition images, used instead of the stock ones."),
-            Folder("workbench", true, "Scratch of the boot, image, content and debloat tools; unsaved boot edits go."),
+            Folder(
+                "workbench",
+                true,
+                "Scratch of the boot, image, content and debloat tools, and images expanded for the Image browser; " +
+                    "unsaved boot edits go.",
+            ),
         )
 
         /**

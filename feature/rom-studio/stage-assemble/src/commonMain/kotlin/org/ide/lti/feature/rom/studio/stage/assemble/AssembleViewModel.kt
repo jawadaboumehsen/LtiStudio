@@ -67,9 +67,16 @@ public class AssembleViewModel(
         avbKeyRef = { store?.current(workspaceId)?.build?.signing?.avbKeyRef ?: SigningPolicy().avbKeyRef },
     )
 
-    public val imagePane: ImagePaneModel = ImagePaneModel(viewModelScope, workspaceId, images, environment) {
-        (device.value ?: targetDevice).dynamicPartitions
-    }
+    public val imagePane: ImagePaneModel = ImagePaneModel(
+        scope = viewModelScope,
+        workspaceId = workspaceId,
+        images = images,
+        environment = environment,
+        partitions = { (device.value ?: targetDevice).dynamicPartitions },
+        edits = { settings.value.treeEdits },
+        setEdits = { updateSettings(settings.value.copy(treeEdits = it)) },
+        coverageRules = { store?.current(workspaceId)?.customization?.coverageRules.orEmpty() },
+    )
 
     public fun updateSettings(updated: AssemblySettings) {
         sync.update(updated)

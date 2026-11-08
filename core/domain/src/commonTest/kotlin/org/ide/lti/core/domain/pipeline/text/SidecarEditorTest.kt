@@ -21,7 +21,8 @@ class SidecarEditorTest {
     fun anAddedFileGetsItsMissingParentsAndKeepsExistingEntries() {
         val fs = SidecarEditor.withFsConfig(fsConfig, "vendor", "etc/init/x.rc", isDirectory = false)
         assertEquals(
-            fsConfig + "vendor/etc/init 0 0 755 capabilities=0x0\nvendor/etc/init/x.rc 0 0 644 capabilities=0x0\n",
+            // Android's defaults, as PQ84P01 has them: folders under vendor/ are root:shell.
+            fsConfig + "vendor/etc/init 0 2000 755 capabilities=0x0\nvendor/etc/init/x.rc 0 0 644 capabilities=0x0\n",
             fs,
         )
         assertEquals(fs, SidecarEditor.withFsConfig(fs, "vendor", "etc/init/x.rc", isDirectory = false))
@@ -42,8 +43,9 @@ class SidecarEditorTest {
         val root = " 0 0 755 capabilities=0x0\n"
         val fs = SidecarEditor.withFsConfig(root, "system", "system/bin/x", isDirectory = false)
         assertEquals(
-            " 0 0 755 capabilities=0x0\nsystem 0 0 755 capabilities=0x0\nsystem/bin 0 0 755 capabilities=0x0\n" +
-                "system/bin/x 0 0 644 capabilities=0x0\n",
+            // bin/ is root:shell 0751 and its files 0755, as Android builds them.
+            " 0 0 755 capabilities=0x0\nsystem 0 0 755 capabilities=0x0\nsystem/bin 0 2000 751 capabilities=0x0\n" +
+                "system/bin/x 0 2000 755 capabilities=0x0\n",
             fs,
         )
     }

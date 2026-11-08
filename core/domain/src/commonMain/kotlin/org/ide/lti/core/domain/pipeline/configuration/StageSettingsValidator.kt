@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.pipeline.configuration
 
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.stages.ProjectScripts
+import org.ide.lti.core.domain.pipeline.stages.TreeEdits
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
@@ -237,6 +238,7 @@ public object StageSettingsValidator {
                 message = "Unsupported boot footer policy '${settings.bootFooterPolicy}'",
             )
         }
+        errors += TreeEdits.validationErrors(settings.treeEdits, target?.dynamicPartitions)
         // Newline/NUL rejection in propertyOverrides keys/values is already enforced by
         // AssemblySettings' own constructor - an instance reaching this function can never violate
         // it, so only the reserved-key rule (not a constructor invariant) is checked here.

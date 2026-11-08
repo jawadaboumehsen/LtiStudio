@@ -60,5 +60,35 @@ public data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: Li
             }
             return wanted.mapNotNull { key -> all[key]?.takeIf { it.isNotEmpty() }?.let { key to it } }
         }
+
+        /** Field names that mean the same on every filesystem, so two images of different kinds line up. */
+        private val SHARED = mapOf(
+            "Filesystem blocksize" to "Block size",
+            "Filesystem blocks" to "Block count",
+            "Filesystem inode count" to "Inode count",
+            "Filesystem features" to "Features",
+            "superblock features" to "Features",
+            "Filesystem created" to "Created",
+            "Filesystem UUID" to "UUID",
+        )
+
+        /**
+         * [a] and [b] side by side: filesystem, image size, then every field either prints (names shared across
+         * filesystems where they mean the same), in [a]'s order then [b]'s; a side without the field shows null.
+         */
+        public fun compare(a: Superblock?, b: Superblock?): List<SuperblockRow> {
+            fun fields(s: Superblock?) = s?.let {
+                listOf("Filesystem" to it.fs.name.lowercase(), "Image size" to "${it.sizeBytes} bytes") +
+                    it.fields.map { (k, v) -> (SHARED[k] ?: k) to v }
+            }.orEmpty()
+            val left = fields(a).toMap()
+            val right = fields(b).toMap()
+            return (left.keys + right.keys).map { SuperblockRow(it, left[it], right[it]) }
+        }
     }
+}
+
+/** One superblock field of two images. */
+public data class SuperblockRow(val field: String, val a: String?, val b: String?) {
+    public val differs: Boolean get() = a != b
 }

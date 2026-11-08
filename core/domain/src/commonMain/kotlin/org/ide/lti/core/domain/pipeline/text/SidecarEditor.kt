@@ -28,6 +28,26 @@ public object SidecarEditor {
         paths.map { SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, it)) },
     )
 
+    /** fs_config [text] with the lines of [from] and below it (inside `work/<partition>/`) moved to [to]. */
+    public fun withRenamedFsConfig(text: String, partition: String, from: String, to: String): String =
+        renameKeys(text, SidecarNormalizer.fsConfigPath(partition, from), SidecarNormalizer.fsConfigPath(partition, to))
+
+    /** file_context [text] with the lines of [from] and below it (inside `work/<partition>/`) moved to [to]. */
+    public fun withRenamedFileContext(text: String, partition: String, from: String, to: String): String = renameKeys(
+        text,
+        SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, from)),
+        SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, to)),
+    )
+
+    private fun renameKeys(text: String, from: String, to: String): String = text.lineSequence().joinToString("\n") {
+        val key = it.substringBefore(' ')
+        when {
+            key == from -> to + it.removePrefix(key)
+            key.startsWith("$from/") -> to + it.removePrefix(from)
+            else -> it
+        }
+    }
+
     /** fs_config [text] with [backup]'s lines for [path] (inside `work/<partition>/`) and below it put back. */
     public fun withRestoredFsConfig(text: String, backup: String, partition: String, path: String): String =
         restoreLines(text, backup, SidecarNormalizer.fsConfigPath(partition, path))
@@ -37,9 +57,10 @@ public object SidecarEditor {
         restoreLines(text, backup, SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path)))
 
     /**
-     * fs_config [text] with an entry for [path] and each missing parent folder: root-owned, 0755 for folders,
-     * 0644 for a file (as LtiRom's ADD_TO_WORK_DIR defaults). Existing entries are kept, except that [path]'s
-     * own entry is replaced when [metadata] says what it must be.
+     * fs_config [text] with an entry for [path] and each missing parent folder. Existing entries are kept, except
+     * that [path]'s own entry is replaced when [metadata] says what it must be. Otherwise owner and mode come from
+     * [platform] (the ROM's fs_config tables, then Android's defaults: `bin/` folders `0 2000 751`, their files
+     * `0 2000 755`); without it, root-owned `0755` folders and `0644` files.
      */
     public fun withFsConfig(
         text: String,
@@ -47,27 +68,36 @@ public object SidecarEditor {
         path: String,
         isDirectory: Boolean,
         metadata: FileMetadata? = null,
+        platform: PlatformMetadata = PlatformMetadata.NONE,
     ): String {
         val leafKey = SidecarNormalizer.fsConfigPath(partition, path)
         val base = if (metadata == null) text else filterExact(text, leafKey)
         val known = base.lineSequence().map { it.substringBefore(' ') }.toSet()
         val added = chain(path).mapNotNull { (rel, isLeaf) ->
             val key = SidecarNormalizer.fsConfigPath(partition, rel)
-            val owner = when {
-                isLeaf && metadata != null -> "${metadata.uid} ${metadata.gid} ${metadata.mode}"
-                isLeaf && !isDirectory -> "0 0 644"
-                else -> "0 0 755"
+            val fields = if (isLeaf && metadata != null) {
+                "${metadata.uid} ${metadata.gid} ${metadata.mode} capabilities=0x0"
+            } else {
+                platform.owner(partition, rel, isDirectory = !isLeaf || isDirectory).first.fsConfigFields
             }
-            "$key $owner capabilities=0x0".takeIf { key !in known }
+            "$key $fields".takeIf { key !in known }
         }
         return append(base, added)
     }
 
     /**
-     * file_context [text] with [path] and each missing parent folder, labelled like their closest listed parent;
-     * [label], when given, is [path]'s own label (replacing an existing one).
+     * file_context [text] with [path] and each missing parent folder. [label], when given, is [path]'s own label
+     * (replacing an existing one); otherwise a new entry gets what [platform]'s rules (the ROM's file_contexts) say,
+     * else the label of its closest listed parent, as restorecon would.
      */
-    public fun withFileContext(text: String, partition: String, path: String, label: String? = null): String {
+    public fun withFileContext(
+        text: String,
+        partition: String,
+        path: String,
+        label: String? = null,
+        kind: EntryKind = EntryKind.File,
+        platform: PlatformMetadata = PlatformMetadata.NONE,
+    ): String {
         val leafKey = SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path))
         val base = if (label == null) text else filterExact(text, leafKey)
         val labels = base.lineSequence().filter { it.isNotBlank() }
@@ -76,14 +106,18 @@ public object SidecarEditor {
         val added = chain(path).mapNotNull { (rel, isLeaf) ->
             val key = SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, rel))
             val existing = labels[key]
-            when {
-                existing != null -> {
-                    inherited = existing
-                    null
-                }
-                isLeaf && label != null -> "$key $label"
-                else -> inherited?.let { "$key $it" }
+            if (existing != null) {
+                inherited = existing
+                return@mapNotNull null
             }
+            val own = if (isLeaf) {
+                label ?: platform.label(partition, rel, kind)
+            } else {
+                platform.label(partition, rel, EntryKind.Directory)
+            }
+            val chosen = own ?: inherited
+            if (!isLeaf && chosen != null) inherited = chosen
+            chosen?.let { "$key $it" }
         }
         return append(base, added)
     }

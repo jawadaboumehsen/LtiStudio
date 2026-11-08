@@ -57,12 +57,15 @@ public object ProjectScripts {
         }
         // Also on its own: a sidecar fix made in work/configs between builds is lost when Assemble runs again.
         val custom = ctx.snapshot.customization
-        val fill = scripts.isNotEmpty() || custom.fillMissingSidecars || custom.coverageRules.isNotBlank()
+        val edits = TreeEdits.steps(ctx)
+        // A renamed item keeps its lines; one that had none (a name with a space) gets them from the fill.
+        val fill = scripts.isNotEmpty() || custom.fillMissingSidecars || custom.coverageRules.isNotBlank() ||
+            edits.isNotEmpty()
         val sidecars = PipelineStep.Host(
             "add missing sidecar lines",
             SIDECARS_KEY,
             CoverageFixRequest(ctx.target.dynamicPartitions, custom.coverageRules),
         )
-        return runs + listOfNotNull(sidecars.takeIf { fill })
+        return runs + edits + listOfNotNull(sidecars.takeIf { fill })
     }
 }
