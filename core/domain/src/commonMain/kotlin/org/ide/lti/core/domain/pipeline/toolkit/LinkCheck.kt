@@ -90,22 +90,31 @@ public object LinkCheck {
         return build.filter { it.path !in before }
     }
 
+    /** Walks [link] one part at a time, as the kernel does: a link is followed before a later `..` applies to it. */
     private fun follow(link: String, listing: Listing): Ending {
-        var path = link
-        repeat(MAX_HOPS) {
-            val parts = path.split('/').filter(String::isNotEmpty)
-            val hop = parts.indices.firstOrNull {
-                listing.links.containsKey(
-                    "/" + parts.take(it + 1).joinToString("/"),
-                )
+        val done = ArrayDeque<String>()
+        val rest = ArrayDeque(link.split('/'))
+        var hops = 0
+        while (rest.isNotEmpty()) {
+            val part = rest.removeFirst()
+            when (part) {
+                "", "." -> continue
+
+                ".." -> done.removeLastOrNull()
+
+                else -> {
+                    val target = listing.links["/" + (done + part).joinToString("/")]
+                    if (target == null) {
+                        done.addLast(part)
+                    } else {
+                        if (++hops > MAX_HOPS) return Ending.Loop
+                        if (target.startsWith("/")) done.clear()
+                        rest.addAll(0, target.split('/'))
+                    }
+                }
             }
-                ?: return ending(path, listing)
-            val at = "/" + parts.take(hop + 1).joinToString("/")
-            val target = listing.links.getValue(at)
-            val base = if (target.startsWith("/")) target else at.substringBeforeLast('/') + "/" + target
-            path = normalize((listOf(base) + parts.drop(hop + 1)).joinToString("/"))
         }
-        return Ending.Loop
+        return ending("/" + done.joinToString("/"), listing)
     }
 
     private fun ending(path: String, listing: Listing): Ending {
@@ -120,19 +129,6 @@ public object LinkCheck {
 
     private fun devicePath(partition: String, path: String): String =
         if (partition == SYSTEM) "/$path" else "/$partition/$path"
-
-    /** `/a/./b/../c` -> `/a/c`; `..` never climbs above `/`. */
-    private fun normalize(path: String): String {
-        val out = ArrayDeque<String>()
-        path.split('/').forEach { c ->
-            when (c) {
-                "", "." -> Unit
-                ".." -> out.removeLastOrNull()
-                else -> out.addLast(c)
-            }
-        }
-        return "/" + out.joinToString("/")
-    }
 
     private const val SYSTEM = "system"
 }

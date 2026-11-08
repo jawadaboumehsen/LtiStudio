@@ -41,6 +41,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.feature.rom.studio.stage.acquire.IntegrityFacts
 
@@ -58,31 +59,7 @@ public fun IntegrityPane(
     val expected = settings.expectedSha256?.takeIf { it.isNotBlank() }
         ?: settings.firmware.sha256?.takeIf { it.isNotBlank() }
     val measured = facts.measuredSha256
-    val (title, detail, color) = when {
-        measured == null -> Triple(
-            "Not measured yet",
-            "The SHA-256 is measured when the Acquire stage runs. Run the build through Acquire.",
-            MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        expected == null -> Triple(
-            "Measured, nothing to compare",
-            "No expected SHA-256 is set (the vendor publishes none). Set one below to verify future runs.",
-            GlassTheme.diagnosticColors.warning,
-        )
-
-        measured.equals(expected, ignoreCase = true) -> Triple(
-            "Verified",
-            "The archive matches the expected SHA-256.",
-            GlassTheme.diagnosticColors.success,
-        )
-
-        else -> Triple(
-            "Mismatch",
-            "The archive does not match the expected SHA-256; the Acquire stage fails until they agree.",
-            GlassTheme.diagnosticColors.error,
-        )
-    }
+    val (title, detail, color) = integrityStatus(settings, facts, expected)
     Column(
         modifier = modifier.fillMaxWidth().testTag("IntegrityPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -104,9 +81,13 @@ public fun IntegrityPane(
             )
         }
         Card {
-            Detail("Archive", facts.archivePath ?: "not in the workspace yet")
+            Detail("Archive", facts.archivePath ?: if (facts.measuring) "reading…" else "not in the workspace yet")
             Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
-            Detail("Source URL", settings.firmware.acquisitionUrl ?: "none (imported archive)")
+            Detail(
+                "Source URL",
+                settings.firmware.acquisitionUrl.takeIf { settings.mode == AcquisitionMode.DOWNLOAD }
+                    ?: "not used (an archive of the workspace)",
+            )
             Detail("Expected SHA-256", expected ?: "not set")
             Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
             GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, shape = GlassShapes.ShellControl) {
@@ -114,6 +95,48 @@ public fun IntegrityPane(
             }
         }
         ExpectedCard(settings.expectedSha256.orEmpty(), measured, onExpectedChange)
+    }
+}
+
+/** What the integrity card says: measuring, no archive, nothing to compare, verified or a mismatch. */
+@Composable
+private fun integrityStatus(
+    settings: AcquisitionSettings,
+    facts: IntegrityFacts,
+    expected: String?,
+): Triple<String, String, Color> {
+    val measured = facts.measuredSha256
+    return when {
+        facts.measuring -> Triple(
+            "Measuring the archive…",
+            "Reading and hashing ${FirmwareAcquisitionStage.archiveRelPath(settings)}; a large archive takes a while.",
+            MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        measured == null -> Triple(
+            "No archive yet",
+            "There is no archive at ${FirmwareAcquisitionStage.archiveRelPath(settings)}: download it by running the " +
+                "build through Acquire, or pick one in Existing archives.",
+            MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        expected == null -> Triple(
+            "Measured, nothing to compare",
+            "No expected SHA-256 is set (the vendor publishes none). Set one below to verify future runs.",
+            GlassTheme.diagnosticColors.warning,
+        )
+
+        measured.equals(expected, ignoreCase = true) -> Triple(
+            "Verified",
+            "The archive matches the expected SHA-256.",
+            GlassTheme.diagnosticColors.success,
+        )
+
+        else -> Triple(
+            "Mismatch",
+            "The archive does not match the expected SHA-256; the Acquire stage fails until they agree.",
+            GlassTheme.diagnosticColors.error,
+        )
     }
 }
 

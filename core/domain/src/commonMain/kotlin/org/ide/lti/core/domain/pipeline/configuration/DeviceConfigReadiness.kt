@@ -207,6 +207,24 @@ public object DeviceConfigReadiness {
                     "'$it' is not one of this device's boot partitions, so the package must not write it",
                 )
             }
+            // Every dynamic partition is written exactly once: the update step makes room for all of them.
+            val flashable = t.packagePolicy.flashablePartitions
+            val field = "packagePolicy.flashablePartitions"
+            flashable.filter { it !in t.dynamicPartitions }.distinct().forEach {
+                rule(true, stage, field, UNKNOWN_PARTITION, "'$it' is not a dynamic partition of this device")
+            }
+            flashable.groupBy { it }.filterValues { it.size > 1 }.keys.forEach {
+                rule(
+                    true,
+                    stage,
+                    field,
+                    UNKNOWN_PARTITION,
+                    "'$it' is listed twice, so the package would write it twice",
+                )
+            }
+            (t.dynamicPartitions - flashable.toSet()).forEach {
+                rule(true, stage, field, UNKNOWN_PARTITION, "'$it' would be left empty: the package must write it")
+            }
             val relative = !t.bootDevicePath.startsWith("/")
             rule(relative, stage, "bootDevicePath", INVALID_FORMAT, "Boot device path must be absolute")
         }

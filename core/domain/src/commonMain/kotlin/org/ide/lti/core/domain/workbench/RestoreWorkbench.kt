@@ -102,12 +102,15 @@ public class RestoreWorkbench(private val runner: WorkbenchRunner, private val s
             return@with point.copy(state = RestorePointState.Restored)
         }
         sh(
-            "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2.restoring\" && cp -a -T \"$1\" \"$2.restoring\" && " +
-                // Swapped, not deleted first: stopped midway, the old item is still there as "$2.old".
-                "rm -rf \"$2.old\" && { [ ! -e \"$2\" ] && [ ! -L \"$2\" ] || mv \"$2\" \"$2.old\"; } && " +
-                "mv \"$2.restoring\" \"$2\" && rm -rf \"$2.old\"",
+            "mkdir -p \"$(dirname \"$2\")\" \"$3\" && t=$(mktemp -d \"$3/restore.XXXXXX\") && " +
+                "cp -a -T \"$1\" \"\$t/new\" && " +
+                // Swapped, not deleted first: stopped midway, the old item is still in that folder. The folder is
+                // outside work/, where anything left beside the item would go into the image.
+                "{ [ ! -e \"$2\" ] && [ ! -L \"$2\" ] || mv \"$2\" \"\$t/old\"; } && " +
+                "mv \"\$t/new\" \"$2\" && rm -rf \"\$t\"",
             abs(point.backupPath),
             abs(target),
+            abs("workbench"),
         )
         if (point.tool == DebloatStage.TOOL) restoreSidecars(job, point.itemPath)
         store.updateRestorePointState(ws, point.id, RestorePointState.Restored)

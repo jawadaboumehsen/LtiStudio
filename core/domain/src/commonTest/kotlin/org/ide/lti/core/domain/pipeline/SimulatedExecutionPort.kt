@@ -41,6 +41,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     }
 
     val files = mutableMapOf<String, ByteArray>()
+
+    /** Trees the scripted tools never write as files; they exist unless a test names them here. */
+    val removedTrees = mutableSetOf<String>()
     val durableSteps = mutableListOf<StepCommand>()
     val syncCalls = mutableListOf<StepCommand>()
     val exitCodes = mutableMapOf<String, Int>()
@@ -109,7 +112,9 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
     override suspend fun readFile(ws: Workspace, relPath: String): String? = text(relPath)
 
     override suspend fun stat(ws: Workspace, relPath: String): FileStat {
-        val bytes = files["$wsRoot/$relPath"] ?: return FileStat(relPath, exists = false)
+        if (relPath in removedTrees) return FileStat(relPath, exists = false)
+        val tree = relPath.startsWith("work/") || relPath.startsWith("firmware/extracted/")
+        val bytes = files["$wsRoot/$relPath"] ?: return FileStat(relPath, exists = tree)
         val name = relPath.substringAfterLast('/').removeSuffix(".img")
         val size = if (name in BOOT) bootBytes(name).toLong() else bytes.size.toLong()
         return FileStat(relPath, exists = true, sizeBytes = size)

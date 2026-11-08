@@ -81,6 +81,7 @@ public class AcquireViewModel(
         val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
         // Another file's hash is never shown next to this one's expected hash, not even while this one is read.
         if (_integrity.value.archivePath != relPath) _integrity.value = IntegrityFacts()
+        _integrity.value = _integrity.value.copy(measuring = true)
         integrityJob = viewModelScope.launch {
             val stat = facts.stat(workspaceId, relPath)
             val measured = stat?.let { facts.sha256(workspaceId, relPath) }
@@ -167,4 +168,6 @@ public data class IntegrityFacts(
     val archivePath: String? = null,
     val archiveSizeBytes: Long? = null,
     val measuredSha256: String? = null,
+    /** True while the archive is read and hashed: a large one takes a while, and nothing above is final yet. */
+    val measuring: Boolean = false,
 )

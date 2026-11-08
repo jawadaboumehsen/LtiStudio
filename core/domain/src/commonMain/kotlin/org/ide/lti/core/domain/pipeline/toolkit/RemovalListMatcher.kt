@@ -111,18 +111,17 @@ public object RemovalListMatcher {
     ): RemovalMatchResult {
         val byId = availableItems.associateBy { it.id }
         val byPath = availableItems.associateBy { normalize(it.path) }
-        val byPackage = availableItems.filter { !it.packageId.isNullOrBlank() }.associateBy { it.packageId!! }
+        val byPackage = availableItems.filter { !it.packageId.isNullOrBlank() }.groupBy { it.packageId!! }
 
         val matchedItems = mutableListOf<RemovalItem>()
         val unknownEntries = mutableListOf<String>()
 
         for (entry in list.entries) {
             val normalized = normalize(entry)
-            val item = byId[entry] ?: byPath[normalized] ?: byPackage[entry]
-            if (item != null) {
-                if (!matchedItems.contains(item)) {
-                    matchedItems.add(item)
-                }
+            // A package name means every installed copy of it, in whichever partition.
+            val items = (byId[entry] ?: byPath[normalized])?.let(::listOf) ?: byPackage[entry]
+            if (items != null) {
+                items.filterNot(matchedItems::contains).forEach(matchedItems::add)
             } else {
                 unknownEntries.add(entry)
             }

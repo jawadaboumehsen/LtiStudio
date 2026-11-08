@@ -26,10 +26,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -198,6 +199,8 @@ private fun StudioPreviewTitleBar(activeAccent: Color, textColor: Color) {
         Text(
             text = "LtiRom Studio",
             fontSize = FontSize.LabelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.Bold,
             color = textColor,
         )
@@ -237,16 +240,18 @@ private fun StudioPreviewSidebar(
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
-                text = "Projects",
+                text = "Setup",
                 fontSize = FontSize.LabelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
                 color = textColor,
             )
         }
 
         MiniNavItem(icon = Icons.Default.Schedule, label = "Recent", textColor = textMutedColor)
-        MiniNavItem(icon = Icons.Default.StarOutline, label = "Starred", textColor = textMutedColor)
-        MiniNavItem(icon = Icons.Default.Widgets, label = "Templates", textColor = textMutedColor)
+        MiniNavItem(icon = Icons.Default.Build, label = "Tools", textColor = textMutedColor)
+        MiniNavItem(icon = Icons.Default.Widgets, label = "Plugins", textColor = textMutedColor)
     }
 }
 
@@ -261,15 +266,17 @@ private fun RowScope.StudioPreviewForm(textColor: Color, textMutedColor: Color, 
         verticalArrangement = Arrangement.spacedBy(contentSpacing),
     ) {
         Text(
-            text = "Project",
+            text = "Workspace",
             fontSize = FontSize.BodySmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.Bold,
             color = textColor,
         )
 
         MiniFormInput(
             label = "Name",
-            value = "Aurora",
+            value = "my-rom",
             textColor = textColor,
             labelColor = textMutedColor,
             bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -277,7 +284,7 @@ private fun RowScope.StudioPreviewForm(textColor: Color, textMutedColor: Color, 
 
         MiniFormInput(
             label = "Location",
-            value = "/Users/jordan/Projects/Aurora",
+            value = "~/LtiRomWorkDir/workspaces/my-rom",
             trailingIcon = Icons.Default.FolderOpen,
             textColor = textColor,
             labelColor = textMutedColor,
@@ -285,9 +292,8 @@ private fun RowScope.StudioPreviewForm(textColor: Color, textMutedColor: Color, 
         )
 
         MiniFormInput(
-            label = "Description",
-            value = "A modern ROM toolkit for creators.",
-            multiline = true,
+            label = "Device",
+            value = "REDMAGIC Astra Gaming Tablet",
             textColor = textColor,
             labelColor = textMutedColor,
             bgColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -313,6 +319,8 @@ private fun MiniNavItem(icon: androidx.compose.ui.graphics.vector.ImageVector, l
         Text(
             text = label,
             fontSize = FontSize.LabelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             color = textColor,
         )
     }
@@ -327,12 +335,13 @@ private fun MiniFormInput(
     bgColor: Color,
     borderColor: Color = MaterialTheme.colorScheme.outline,
     trailingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    multiline: Boolean = false,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
         Text(
             text = label,
             fontSize = FontSize.LabelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             color = labelColor,
         )
         Row(
@@ -347,7 +356,7 @@ private fun MiniFormInput(
                 )
                 .padding(
                     horizontal = Spacing.Small,
-                    vertical = if (multiline) Spacing.SmallMedium else Spacing.ExtraSmall,
+                    vertical = Spacing.ExtraSmall,
                 ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -355,6 +364,8 @@ private fun MiniFormInput(
             Text(
                 text = value,
                 fontSize = FontSize.LabelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 color = textColor,
                 modifier = Modifier.weight(1f),
             )
@@ -381,6 +392,7 @@ private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier
                     StudioBackdropColors.SidebarEnd,
                 ),
             )
+
             isDark -> Brush.verticalGradient(
                 listOf(
                     WallpaperColors.DarkSkyTop,
@@ -388,6 +400,7 @@ private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier
                     WallpaperColors.DarkSkyHorizon,
                 ),
             )
+
             else -> Brush.verticalGradient(
                 listOf(
                     WallpaperColors.LightSkyTop,

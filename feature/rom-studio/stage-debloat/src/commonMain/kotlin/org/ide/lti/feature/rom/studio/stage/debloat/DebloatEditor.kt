@@ -363,6 +363,9 @@ private fun Facts(facts: List<Pair<String, String>>) {
 
 private const val DETAIL_NAMES = 3
 
+/** Vector icons are drawn at this many pixels (twice the shown size, for sharp edges). */
+private const val ICON_PX = 96
+
 /** The app's name and icon file (as Windows reads it), when its APK has them. */
 private data class ShownApp(val name: String?, val iconFile: String?)
 
@@ -378,7 +381,13 @@ private fun AppIcon(file: String?) {
     val bitmap by produceState<ImageBitmap?>(null, file) {
         value = file?.let {
             withContext(Dispatchers.IO) {
-                runCatching { SkiaImage.makeFromEncoded(File(it).readBytes()).toComposeImageBitmap() }.getOrNull()
+                runCatching {
+                    if (it.endsWith(".vec")) {
+                        drawVectorIcon(File(it), ICON_PX)
+                    } else {
+                        SkiaImage.makeFromEncoded(File(it).readBytes()).toComposeImageBitmap()
+                    }
+                }.getOrNull()
             }
         }
     }

@@ -247,8 +247,13 @@ public class BootWorkbench(
                     folderEntries(listed).map { it.path },
                 )?.let { throw RefusalException(it) }
                 val initHead = sh(
-                    "if [ -L \"$1/init\" ]; then echo link; elif [ -f \"$1/init\" ]; then " +
-                        "h=$(xxd -p -l 4 \"$1/init\"); echo \"${'$'}{h:-empty}\"; " +
+                    // A link is read as the device reads it: an absolute target is inside the ramdisk.
+                    "if [ -L \"$1/init\" ]; then t=$(readlink \"$1/init\"); case \"\$t\" in " +
+                        "/*) f=\"$1\$t\";; *) f=\"$1/\$t\";; esac; " +
+                        "if [ -f \"\$f\" ] && [ -x \"\$f\" ]; then echo link; else echo dangling; fi; " +
+                        "elif [ -f \"$1/init\" ]; then h=$(xxd -p -l 4 \"$1/init\"); " +
+                        "if [ -n \"\$h\" ] && [ ! -x \"$1/init\" ]; then echo notexecutable; " +
+                        "else echo \"${'$'}{h:-empty}\"; fi; " +
                         "elif [ -e \"$1/init\" ]; then echo notfile; fi",
                     folder,
                 )
@@ -363,11 +368,12 @@ public class BootWorkbench(
 
     /**
      * Patches the unpacked kernel with KernelPatch (APatch) and [superKey]. The key reaches `kptools` through
-     * a file descriptor, never the command line, and the file is removed afterwards. Repack to save.
+     * a file descriptor, never the command line, and the file is removed afterwards. Repack to save. Returns the
+     * patched kernel's size.
      */
-    public suspend fun patchApatch(workspaceId: String, partition: String, superKey: String) {
+    public suspend fun patchApatch(workspaceId: String, partition: String, superKey: String): Long? {
         require(superKey.length >= MIN_SUPERKEY) { "The superkey needs at least $MIN_SUPERKEY characters." }
-        runner.job(workspaceId, "APatch $partition") {
+        return runner.job(workspaceId, "APatch $partition") {
             val kernel = "${dir(partition)}/unpacked/kernel"
             if (!exists(kernel)) {
                 throw RefusalException(
@@ -403,6 +409,7 @@ public class BootWorkbench(
             } finally {
                 withContext(NonCancellable) { tryRun("rm", "-f", abs(keyFile)) }
             }
+            run("stat", "-c", "%s", "--", abs(kernel)).trim().toLongOrNull()
         }
     }
 
@@ -477,7 +484,8 @@ public class BootWorkbench(
     }
 
     private suspend fun sourceOf(job: WorkbenchRunner.Job, partition: String): String =
-        listOf(KernelOverrides.path(partition), "work/kernel/$partition.img", "firmware/extracted/$partition.img")
+        // Stock before work/: Assemble's copy is the last build's image, which may be an override dropped since.
+        listOf(KernelOverrides.path(partition), "firmware/extracted/$partition.img", "work/kernel/$partition.img")
             .firstOrNull { job.exists(it) }
             ?: throw RefusalException(
                 Refusal(

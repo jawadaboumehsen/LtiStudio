@@ -34,6 +34,7 @@ import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.domain.tools.ResolvedSourceCheck
 import org.ide.lti.core.domain.tools.ToolManager
 import org.ide.lti.core.model.setup.ToolRef
+import org.ide.lti.core.model.setup.ToolSelection
 
 public enum class PrimaryButtonAction {
     Use,
@@ -159,10 +160,13 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
         return when {
             gState == null -> PrimaryButtonAction.Disabled
+
             // Repair is for the version in use; an explicitly chosen other version is installed or used instead.
             gState.status == GroupStatus.NeedsRepair && (vId == null || vId == gState.current?.id) ->
                 PrimaryButtonAction.Repair
+
             usable -> PrimaryButtonAction.Use
+
             else -> PrimaryButtonAction.InstallAndUse
         }
     }
@@ -305,8 +309,11 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
             val message =
                 when (val result = change()) {
                     is OperationResult.Failed -> ToolsPresentationMapper.mapError(result.error).message
+
                     is OperationResult.Interrupted -> result.reason
+
                     is OperationResult.TrustRequired -> "Trust ${result.url} before using it"
+
                     is OperationResult.Reused,
                     is OperationResult.Installed,
                     is OperationResult.Used,
@@ -492,6 +499,11 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         val group = selectedGroup.value
         val groupDef = ToolGroupCatalog.group(group)
         val recommended = (groupDef?.source as? ToolSource.Git)?.recommendedUrl
+        // Asked before trust: a name that is no repository URL must not be trusted, nor handed to git as a path.
+        if (url != recommended && runCatching { ToolSelection(group.value, url, ToolRef.Branch("main")) }.isFailure) {
+            _resolveError.value = "Enter the repository as https://… or ssh://…"
+            return
+        }
         if (url != recommended && !isTrusted(url)) {
             pendingTrust = PendingTrust(group, url, onTrusted)
             _untrustedRepoUrl.value = url

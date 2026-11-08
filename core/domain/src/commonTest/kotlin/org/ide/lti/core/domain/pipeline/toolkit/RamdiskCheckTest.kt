@@ -156,4 +156,11 @@ class RamdiskCheckTest {
         assertNull(RamdiskCheck.badInit("init_boot", "7f454c46"))
         assertNull(RamdiskCheck.badInit("init_boot", "link"))
     }
+
+    @Test
+    fun anInitTheKernelCannotStartIsRefused() {
+        assertNotNull(RamdiskCheck.badInit("init_boot", "dangling"))
+        assertNotNull(RamdiskCheck.badInit("init_boot", "notexecutable"))
+        assertNull(RamdiskCheck.badInit("init_boot", "link"))
+    }
 }

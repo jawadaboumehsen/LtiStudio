@@ -14,6 +14,7 @@ import org.ide.lti.core.domain.pipeline.stages.ProjectScripts
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
+import org.ide.lti.core.domain.plugin.edit.FileEdits
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionSettings
@@ -47,6 +48,10 @@ public object StageSettingsValidator {
     public const val INVALID_SCHEMA_VERSION: String = "INVALID_SCHEMA_VERSION"
     public const val INVALID_DIGEST: String = "INVALID_DIGEST"
     public const val INVALID_BLOCK_SIZE: String = "INVALID_BLOCK_SIZE"
+    public const val INVALID_BUILD_TYPE: String = "INVALID_BUILD_TYPE"
+    public const val INVALID_PROPERTY: String = "INVALID_PROPERTY"
+    private val BLOCK_SIZES = 1024..65536
+    private val BUILD_TYPES = listOf("user", "userdebug", "eng")
     public const val INVALID_ALIGNMENT: String = "INVALID_ALIGNMENT"
     public const val INCOMPATIBLE_FILESYSTEM: String = "INCOMPATIBLE_FILESYSTEM"
     public const val UNSUPPORTED_FILESYSTEM: String = "UNSUPPORTED_FILESYSTEM"
@@ -189,6 +194,28 @@ public object StageSettingsValidator {
                 severity = Severity.ERROR,
                 message = "The ROM version names the package file, so it cannot hold '/', '\\' or control characters",
             )
+        }
+        if (settings.buildType !in BUILD_TYPES) {
+            errors += ValidationError(
+                stageId = StageId.WORK_TREE_ASSEMBLY,
+                objectId = null,
+                fieldPath = "buildType",
+                code = INVALID_BUILD_TYPE,
+                severity = Severity.ERROR,
+                message = "The build type must be ${BUILD_TYPES.joinToString(", ")}, was '${settings.buildType}'",
+            )
+        }
+        settings.propertyOverrides.forEach { (key, value) ->
+            (FileEdits.propertyKeyProblem(key) ?: FileEdits.propertyValueProblem(value))?.let {
+                errors += ValidationError(
+                    stageId = StageId.WORK_TREE_ASSEMBLY,
+                    objectId = null,
+                    fieldPath = "propertyOverrides.$key",
+                    code = INVALID_PROPERTY,
+                    severity = Severity.ERROR,
+                    message = it,
+                )
+            }
         }
         if (settings.systemExtMode.lowercase() !in SUPPORTED_SYSTEM_EXT_MODES) {
             errors += ValidationError(
@@ -355,14 +382,15 @@ public object StageSettingsValidator {
                 message = "The package name must be a file name ending in .zip, was '$rendered'",
             )
         }
-        if (settings.blockSize <= 0 || (settings.blockSize and (settings.blockSize - 1)) != 0) {
+        if (settings.blockSize !in BLOCK_SIZES || (settings.blockSize and (settings.blockSize - 1)) != 0) {
             errors += ValidationError(
                 stageId = StageId.BUILD_FLASHABLE_ZIP,
                 objectId = null,
                 fieldPath = "blockSize",
                 code = INVALID_BLOCK_SIZE,
                 severity = Severity.ERROR,
-                message = "blockSize must be a positive power of 2, was ${settings.blockSize}",
+                message = "blockSize must be a power of 2 from ${BLOCK_SIZES.first} to ${BLOCK_SIZES.last}, " +
+                    "was ${settings.blockSize}",
             )
         }
         val alignment = settings.alignment
@@ -388,6 +416,7 @@ public object StageSettingsValidator {
             }
         }
         errors += unsupportedFilesystems(settings)
+        errors += unsupportedCompressions(settings)
         errors += packageSpace(settings)
         if (target != null && target.filesystemType.isNotBlank()) {
             if (!settings.filesystem.equals(target.filesystemType, ignoreCase = true)) {
@@ -402,7 +431,7 @@ public object StageSettingsValidator {
                 )
             }
         }
-        target?.let { errors += bootImagesLeftOut(it) }
+        target?.let { errors += bootImagesLeftOut(it) + unknownStandaloneImages(settings, it) }
         errors += validateSigning(settings.signing).errors
         return ValidationReport(errors = errors)
     }
@@ -465,6 +494,41 @@ public object StageSettingsValidator {
             )
         }
         return brotli + free + sizes + sparse + clusters
+    }
+
+    /** The images package holds partitions of the device; any other name would fail when the package is made. */
+    private fun unknownStandaloneImages(settings: BuildSettings, device: TargetDevice): List<ValidationError> {
+        val known = device.dynamicPartitions + device.bootPartitions
+        return settings.standaloneImages.filter { it !in known }.map {
+            ValidationError(
+                stageId = StageId.BUILD_FLASHABLE_ZIP,
+                objectId = device.id,
+                fieldPath = "standaloneImages.$it",
+                code = INVALID_PACKAGE_OPTION,
+                severity = Severity.ERROR,
+                message = "$it is not a partition of this device, so the images package cannot hold it",
+            )
+        }
+    }
+
+    /** A compression mkfs.erofs would refuse only after the stages before it have run. */
+    private fun unsupportedCompressions(settings: BuildSettings): List<ValidationError> {
+        val build = settings.level?.let { "${settings.compression.substringBefore(',')},$it" } ?: settings.compression
+        val chosen = mapOf("compression" to build) + settings.partitionCompression.mapKeys {
+            "partitionCompression.${it.key}"
+        }
+        return chosen.mapNotNull { (field, value) ->
+            BuildFilesystems.compressionProblem(value)?.let {
+                ValidationError(
+                    stageId = StageId.BUILD_FLASHABLE_ZIP,
+                    objectId = null,
+                    fieldPath = field,
+                    code = INVALID_PACKAGE_OPTION,
+                    severity = Severity.ERROR,
+                    message = it,
+                )
+            }
+        }
     }
 
     /** A filesystem the build cannot make, for the stage or for one partition. */

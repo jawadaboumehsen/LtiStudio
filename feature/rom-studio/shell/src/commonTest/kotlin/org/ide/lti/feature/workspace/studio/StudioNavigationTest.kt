@@ -568,8 +568,12 @@ class StudioNavigationTest {
         // The backup is copied over the item in work/ (a debloat item lives under work/<partition>/).
         val copy = service.ran.last { it.toolId == "sh" }.args
         assertEquals(
-            listOf("/ws/restore/debloat/system/system/app/SampleApp", "/ws/work/system/system/app/SampleApp"),
-            copy.takeLast(2),
+            listOf(
+                "/ws/restore/debloat/system/system/app/SampleApp",
+                "/ws/work/system/system/app/SampleApp",
+                "/ws/workbench",
+            ),
+            copy.takeLast(3),
         )
         assertEquals(RestorePointState.Restored, viewModel.uiState.value.restoreIndex.items.single().state)
         assertEquals("Restored system/system/app/SampleApp", viewModel.uiState.value.restoreMessage)

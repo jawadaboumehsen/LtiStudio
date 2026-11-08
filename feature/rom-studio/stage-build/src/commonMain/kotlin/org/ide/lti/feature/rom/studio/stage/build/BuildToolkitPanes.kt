@@ -70,7 +70,7 @@ internal val KERNEL_COMPRESSION = listOf(
 @Composable
 internal fun ExtraPackagesPane(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
     ToolCard("Extra packages", tag = "ExtraPackagesPane") {
-        Note("The flashable zip (block-based OTA) is always built; these are built next to it in out/package/.")
+        Note("Built next to the install package (Flashable members) in out/package/.")
         EXTRA_PACKAGES.forEach { (kind, text) ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -86,10 +86,7 @@ internal fun ExtraPackagesPane(settings: BuildSettings, target: TargetDevice, on
                 Mono(text)
             }
         }
-        Note(
-            "Seamless (A/B payload) OTA is not offered: it needs delta_generator from AOSP update_engine, which no " +
-                "tool group installs.",
-        )
+        Note("An A/B OTA (full payload) is chosen in Flashable members, as the install package.")
         if (PackageKind.FullPackage.name in settings.extraPackages) {
             Note(
                 "super.img and the boot images are always in the fastboot zip. A partition can also go in as its " +
@@ -229,6 +226,9 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
         }
         state.busy?.let { Mono("$it…") }
         state.refusal?.let { RefusalView(refusal = it) }
+        state.saveError?.let {
+            RefusalView(refusal = Refusal(it, "Coverage settings", "Change the setting again to retry."))
+        }
         state.result?.let { result ->
             val missing = (result.uncoveredFsConfig + result.uncoveredContexts).distinct().sorted()
             if (missing.isEmpty()) {
@@ -263,12 +263,15 @@ internal fun CoverageRulesPane(rules: String, onChange: (String) -> Unit) {
                 "path. A file without sidecar lines gets the first rule that matches, else its folder's lines. " +
                 "Example: /system/app/MyApp(/.*)? 0 0 0644 u:object_r:system_file:s0",
         )
+        // Above the editor: below it, a long card pushes a mistake out of sight while it is being typed.
+        CoverageRule.parse(
+            rules,
+        ).second.forEach { RefusalView(refusal = Refusal(it, "Coverage rules", "Correct the line.")) }
         GlassCodeEditor(
             content = rules,
             onContentChange = onChange,
             modifier = Modifier.fillMaxWidth().height(ComponentSize.ActionCardHeight).testTag("CoverageRulesEditor"),
         )
-        CoverageRule.parse(rules).second.forEach { Mono(it) }
     }
 }
 

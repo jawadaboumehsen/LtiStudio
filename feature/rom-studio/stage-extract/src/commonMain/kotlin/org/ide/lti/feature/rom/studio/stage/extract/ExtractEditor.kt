@@ -112,7 +112,7 @@ public fun ExtractEditor(
                 }
 
                 else -> {
-                    item { ArchiveLayoutCard(settings, errors, dirtyPaths, onChange) }
+                    item { ArchiveLayoutCard(errors) }
                     item { ArchiveContentsCard(facts) }
                     item { ArchiveBrowserCard(facts.browse, archiveActions) }
                 }
@@ -123,12 +123,7 @@ public fun ExtractEditor(
 }
 
 @Composable
-private fun ArchiveLayoutCard(
-    settings: ExtractionSettings,
-    errors: List<ValidationError>,
-    dirtyPaths: Set<String>,
-    onChange: (ExtractionSettings) -> Unit,
-) {
+private fun ArchiveLayoutCard(errors: List<ValidationError>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,28 +140,11 @@ private fun ArchiveLayoutCard(
             fontFamily = ideFontFamily(),
         )
         Text(
-            text = "How the firmware archive is unpacked. Auto picks the tool from what the archive holds.",
+            text = "How the firmware archive is unpacked: its first bytes say what it is, and that picks the tool.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
         )
-        Text(
-            text = "Adapter",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.Medium,
-            fontFamily = ideFontFamily(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            listOf("AUTO", "payload-dumper-go", "lpunpack").forEach { adapter ->
-                GlassChip(
-                    label = adapter,
-                    selected = settings.adapter.equals(adapter, ignoreCase = true),
-                    onClick = { onChange(settings.copy(adapter = adapter)) },
-                )
-            }
-        }
-        Meta("adapter", dirtyPaths, "Target capability", "Auto selects a supported archive adapter.")
         Diagnostics(errors.filter { it.fieldPath.endsWith("adapter") })
     }
 }

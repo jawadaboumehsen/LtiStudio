@@ -123,6 +123,17 @@ public data class PublishJournal(
     }
 }
 
+/** What would stop the OTA manifest's last step, found before anything is uploaded. */
+private fun otaManifestProblems(settings: PublishSettings, release: ReleaseFiles?): List<String> = buildList {
+    if (settings.provider != PublishProvider.GITHUB_RELEASE || settings.manifestRepository.isNullOrBlank()) {
+        return@buildList
+    }
+    if (settings.manifestPath.isNullOrBlank()) add("Set the manifest path, or clear the manifest repository.")
+    if (listOfNotNull(release, release?.ota).any { it.size > settings.partSizeBytes }) {
+        add("A package in parts cannot be an OTA download: raise the part size, or clear the manifest repository.")
+    }
+}
+
 /**
  * Publish stage: copies the signed package and its manifest to their destination and verifies them there. It
  * only ever runs when the person confirms it (the build never publishes by itself). Modelled on LtiRom's
@@ -154,8 +165,15 @@ public class PublishReleaseUseCase(
         }
         val release = releaseOf(ws, problems)
         val destination = destinationOf(settings, problems)
-        // A journal of another package says nothing about this one: its "Published" must not show next to a new build.
-        val journal = readJournal(ws)?.takeIf { it.sha256 == release?.sha256 }
+        problems += otaManifestProblems(settings, release)
+        // A journal of another package or destination says nothing about this one: its "Published" must not show next
+        // to a new build, and its "Resume" would really start a new publish.
+        val key = requestKey(ws, settings)
+        val journal = if (release != null && destination != null) {
+            readJournal(ws)?.takeIf { it.matches(settings.provider, destination, release, key) }
+        } else {
+            null
+        }
         return PublishPreflight(release, problems, destination, journal)
     }
 
@@ -196,13 +214,8 @@ public class PublishReleaseUseCase(
         if (ws == null || release == null || destination == null || check.problems.isNotEmpty()) return null
         port.requireNoLinkInWorkspace(ws)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
-        val requestKey = CacheKeys.sha256(
-            json.encodeToString(PublishSettings.serializer(), settings.copy(collisionPolicy = CollisionPolicy.FAIL)) +
-                "\n" + port.readFile(ws, MANIFEST),
-        )
-        val previous = check.journal?.takeIf {
-            it.matches(settings.provider, destination, release, requestKey)
-        }
+        val requestKey = requestKey(ws, settings)
+        val previous = check.journal
         // A finished publish asked for again checks its destination again: files there may be gone or changed.
         var journal =
             previous?.let { if (it.finished) it.reverifying() else it.retryingFailedCopies() } ?: PublishJournal(
@@ -236,6 +249,11 @@ public class PublishReleaseUseCase(
         }
         return journal
     }
+
+    private suspend fun requestKey(ws: Workspace, settings: PublishSettings): String = CacheKeys.sha256(
+        json.encodeToString(PublishSettings.serializer(), settings.copy(collisionPolicy = CollisionPolicy.FAIL)) +
+            "\n" + port.readFile(ws, MANIFEST),
+    )
 
     private fun PublishJournal.with(step: PublishJournalStep) =
         copy(steps = steps.map { if (it.id == step.id) step else it })

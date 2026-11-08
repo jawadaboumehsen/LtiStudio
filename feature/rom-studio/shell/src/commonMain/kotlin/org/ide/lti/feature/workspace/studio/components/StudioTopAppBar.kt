@@ -76,24 +76,7 @@ public fun StudioTopAppBar(
         },
         contextLabel = "",
         centerContent = {},
-        actions = {
-            // User Profile Badge
-            Box(
-                modifier = Modifier
-                    .size(IconSize.ActionCard)
-                    .clip(GlassShapes.Circle)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "JD",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.Micro,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = ideFontFamily(),
-                )
-            }
-        },
+        actions = {},
         windowControls = windowControls,
         onDragWindow = onDragWindow,
     )

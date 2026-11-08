@@ -11,6 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.extract
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -117,6 +118,10 @@ public class ExtractViewModel(
     private val _facts = MutableStateFlow(ExtractFacts())
     public val facts: StateFlow<ExtractFacts> = _facts.asStateFlow()
 
+    /** A failure no tool reported (the service gone, a hash that could not run), said in the pane instead of lost. */
+    private fun failure(e: Exception, partition: String): Refusal =
+        Refusal(e.message ?: "Unknown error", partition, "Check the build service and try again.")
+
     /** Uses an image the user picks instead of the firmware's for [partition]. */
     public fun replacePartition(partition: String) {
         val workbench = images ?: return
@@ -128,8 +133,12 @@ public class ExtractViewModel(
                 updateSettings(
                     settings.value.copy(replacementImages = settings.value.replacementImages + (partition to sha256)),
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: RefusalException) {
                 _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
+            } catch (e: Exception) {
+                _facts.value = _facts.value.copy(replaceRefusal = failure(e, partition))
             } finally {
                 _facts.value = _facts.value.copy(replacing = null)
             }
@@ -147,8 +156,12 @@ public class ExtractViewModel(
             try {
                 workbench.reextract(workspaceId, partition, settings.value.replacementImages[partition])
                 _facts.value = _facts.value.copy(reextractMessage = "$partition was extracted again.")
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: RefusalException) {
                 _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
+            } catch (e: Exception) {
+                _facts.value = _facts.value.copy(replaceRefusal = failure(e, partition))
             } finally {
                 _facts.value = _facts.value.copy(reextracting = null)
             }

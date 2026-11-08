@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -78,7 +79,12 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
  * - Design System Guardrails: 100% token usage (zero raw dp or alpha float literals).
  */
 @Composable
-fun GlassConsoleDrawer(logs: List<String>, isRunning: Boolean, modifier: Modifier = Modifier) {
+fun GlassConsoleDrawer(
+    logs: List<String>,
+    isRunning: Boolean,
+    modifier: Modifier = Modifier,
+    logMaxHeight: Dp = ComponentSize.DialogDefaultHeight,
+) {
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
     var isExpanded by remember { mutableStateOf(false) }
@@ -131,6 +137,7 @@ fun GlassConsoleDrawer(logs: List<String>, isRunning: Boolean, modifier: Modifie
                 ConsoleDrawerLogs(
                     logs = logs,
                     listState = listState,
+                    maxHeight = logMaxHeight,
                 )
             }
         }
@@ -244,14 +251,19 @@ private fun ConsoleDrawerHeader(
  * Expandable monospaced log output container for [GlassConsoleDrawer].
  */
 @Composable
-private fun ConsoleDrawerLogs(logs: List<String>, listState: LazyListState, modifier: Modifier = Modifier) {
+private fun ConsoleDrawerLogs(
+    logs: List<String>,
+    listState: LazyListState,
+    maxHeight: Dp,
+    modifier: Modifier = Modifier,
+) {
     val diagnostics = GlassTheme.diagnosticColors
     val horizontalScrollState = rememberScrollState()
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(max = ComponentSize.DialogDefaultHeight)
+            .heightIn(max = maxHeight)
             .clip(GlassShapes.Small)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .glassOutlineBorder(
@@ -263,8 +275,7 @@ private fun ConsoleDrawerLogs(logs: List<String>, listState: LazyListState, modi
     ) {
         if (logs.isEmpty()) {
             Text(
-                text = "No execution output generated yet. " +
-                    "Run setup or diagnostics to capture terminal streams.",
+                text = "No output yet.",
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

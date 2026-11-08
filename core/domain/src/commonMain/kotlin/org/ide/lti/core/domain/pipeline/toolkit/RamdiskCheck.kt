@@ -80,6 +80,8 @@ public object RamdiskCheck {
             val what = when (head) {
                 "empty" -> "it is empty"
                 "notfile" -> "it is not a file"
+                "dangling" -> "its link points at nothing it can run"
+                "notexecutable" -> "it is not executable"
                 else -> "it starts $head"
             }
             Refusal(

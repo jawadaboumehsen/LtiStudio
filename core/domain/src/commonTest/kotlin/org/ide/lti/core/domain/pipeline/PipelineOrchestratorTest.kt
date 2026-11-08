@@ -361,6 +361,18 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun anExtractedTreeThatIsGoneIsNotCached() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        port.removedTrees += "firmware/extracted/vendor"
+
+        orchestrator(port, repo).drive("run-2", fixture.globalOtaContext(), "d2").toList()
+        val extract = repo.getRun("run-2")!!.stages.first { it.stageId == StageId.FIRMWARE_EXTRACTION }
+        assertTrue(extract.state != StageState.SKIPPED, "Extract made that tree and must run again")
+    }
+
+    @Test
     fun aRunStoppedAfterAnEarlierStageClearsTheLaterStagesCachedResults() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()

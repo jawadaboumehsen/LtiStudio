@@ -27,8 +27,8 @@ public data class StageContext(
 ) {
     val wsPath: String get() = requireNotNull(workspace.linuxPath) { "Workspace ${workspace.id} has no Linux path" }
 
-    /** Absolute path of a workspace-relative file. */
-    public fun abs(relPath: String): String = "$wsPath/$relPath"
+    /** Absolute path of a workspace-relative file; a path that is already absolute (a key kept elsewhere) stays. */
+    public fun abs(relPath: String): String = if (relPath.startsWith("/")) relPath else "$wsPath/$relPath"
 
     public fun value(key: String): String? = runtimeValues[key]
 
@@ -51,6 +51,9 @@ public interface StageDefinition {
     /** Tool ids this stage invokes; the union across stages must equal the readiness set. */
     public val requiredToolIds: Set<String>
 
+    /** Tools only some settings use (another filesystem): never required, but a new version still means a new key. */
+    public val optionalToolIds: Set<String> get() = emptySet()
+
     /** Digest of every declared input; the stage is skipped when input and output digests match. */
     public fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String = ""): String
 
@@ -59,6 +62,9 @@ public interface StageDefinition {
 
     /** Workspace-relative files that must exist (and are digested) once the stage succeeded. */
     public fun outputs(ctx: StageContext): List<String>
+
+    /** What the stage made that a digest does not cover (folders, files later stages rewrite): it must still exist. */
+    public fun requiredPaths(ctx: StageContext): List<String> = emptyList()
 
     public fun plan(ctx: StageContext): List<PipelineStep>
 }

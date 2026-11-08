@@ -387,10 +387,10 @@ private fun VerificationCard(state: PublishUiState) {
             preflight == null -> Hint("Checking the last build…")
 
             preflight.problems.isEmpty() -> {
-                Hint("Ready: the package matches its manifest and has a destination.")
+                Hint("Ready: a signed build and a destination. Publishing checks the package against its hash first.")
                 listOfNotNull(preflight.release, preflight.release?.ota)
                     .forEach { Mono("${it.zip}  ${size(it.size)}  sha256 ${it.sha256}") }
-                preflight.destination?.let { Mono("to $it") }
+                preflight.destination?.let { Mono("to ${shownPath(it)}") }
             }
 
             else -> preflight.problems.forEach { Problem(it) }
@@ -411,13 +411,13 @@ private fun ReviewCard(state: PublishUiState, onPublish: () -> Unit, onCancel: (
         if (state.publishing && journal != null) PublishProgress(journal, state.transfer, state.bytesPerSecond)
         if (resumes && !state.publishing) Hint("Publishing again resumes here; finished steps are not redone.")
         // The result first: a finished publish says where it went, above the steps that got it there.
-        journal?.outcome?.takeIf { !state.publishing }?.let { Success(it) }
+        journal?.outcome?.takeIf { !state.publishing }?.let { Success(withShownPaths(it)) }
         journal?.let { JournalSteps(it, state.transfer?.stepId.takeIf { state.publishing }) }
     }
     val release = preflight?.release
     if (confirming && release != null) {
         val what = release.ota?.let { "${release.zip} and ${it.zip} go" } ?: "${release.zip} goes"
-        ConfirmPublish("$what to ${preflight.destination}.", onDismiss = { confirming = false }) {
+        ConfirmPublish("$what to ${preflight.destination?.let(::shownPath)}.", onDismiss = { confirming = false }) {
             confirming = false
             onPublish()
         }
@@ -436,7 +436,8 @@ private fun JournalSteps(journal: PublishJournal, runningId: String?) {
         Mono("${step.label}: $mark")
         // A running step's detail is its last attempt's result; the progress above says how it goes now.
         step.detail?.takeIf { step.id != runningId }?.let {
-            if (step.state == PublishStepState.FAILED) Problem(it) else Hint(it)
+            val detail = withShownPaths(it)
+            if (step.state == PublishStepState.FAILED) Problem(detail) else Hint(detail)
         }
     }
 }

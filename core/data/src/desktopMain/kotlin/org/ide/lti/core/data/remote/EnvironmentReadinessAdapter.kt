@@ -31,6 +31,7 @@ import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.ide.lti.core.model.workspace.PackageType
 import org.ide.lti.core.model.workspace.SigningPolicy
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -202,12 +203,13 @@ public class EnvironmentReadinessAdapter(
             )
         }
 
-        val signing = readFileContent(linuxPath, "config.json")?.let(::signingOf) ?: return EnvironmentReadiness(
+        val config = readFileContent(linuxPath, "config.json")
+        val signing = config?.let(::signingOf) ?: return EnvironmentReadiness(
             state = EnvironmentReadinessState.WORKSPACE_INVALID,
             failingCheck = "Unreadable configuration snapshot at $linuxPath/config.json",
             remediation = "Save a valid configuration snapshot",
         )
-        requiredKeys(signing).firstOrNull { !hasFile(linuxPath, it) }?.let { missing ->
+        requiredKeys(signing, buildsAbOta(config)).firstOrNull { !hasFile(linuxPath, it) }?.let { missing ->
             return EnvironmentReadiness(
                 state = EnvironmentReadinessState.WORKSPACE_INVALID,
                 failingCheck = "Missing cryptographic signing key: $missing",
@@ -238,13 +240,20 @@ public class EnvironmentReadinessAdapter(
         }
     }
 
+    private fun buildsAbOta(config: String): Boolean = runCatching {
+        val type = Json.parseToJsonElement(config).jsonObject.getValue("build").jsonObject["packageType"]
+        PackageType.valueOf((type as JsonPrimitive).content).abOta
+    }.getOrDefault(false)
+
     /** The private keys the workspace's own signing settings use, and only those. */
-    private fun requiredKeys(signing: SigningPolicy): List<String> = buildList {
+    private fun requiredKeys(signing: SigningPolicy, abOta: Boolean): List<String> = buildList {
         if (signing.signImages) add(signing.avbKeyRef)
         if (signing.signPackage) {
             add("${signing.platformKeyRef}.x509.pem")
             add("${signing.platformKeyRef}.pk8")
         }
+        // The A/B payload is signed with the key as a PEM, whichever way the package is.
+        if (abOta) add("${signing.platformKeyRef}.key.pem")
     }
 
     private suspend fun readFileContent(linuxPath: String, fileName: String): String? {

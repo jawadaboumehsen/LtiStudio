@@ -212,6 +212,31 @@ class PublishReleaseUseCaseTest {
     }
 
     @Test
+    fun anEarlierPublishIsNotShownForAnotherDestination() = runTest {
+        built()
+        assertNotNull(publish.publish("ws"))
+        assertNotNull(publish.preflight("ws").journal)
+
+        settings.publish = settings.publish.copy(localExportFolder = "D:\\Other")
+        assertNull(publish.preflight("ws").journal)
+    }
+
+    @Test
+    fun aManifestThatCouldNotBePublishedIsSaidBeforeAnythingIsUploaded() = runTest {
+        built()
+        settings.publish = PublishSettings(
+            provider = PublishProvider.GITHUB_RELEASE,
+            repository = "me/rom",
+            manifestRepository = "me/ota",
+            partSizeBytes = 2,
+        )
+        val problems = publish.preflight("ws").problems
+        assertTrue(problems.any { "manifest path" in it } && problems.any { "in parts" in it }, "$problems")
+        assertNull(publish.publish("ws"))
+        assertTrue(folder.releases.isEmpty())
+    }
+
+    @Test
     fun anEarlierPublishIsNotShownForADifferentPackageOfTheSameName() = runTest {
         built()
         assertNotNull(publish.publish("ws"))

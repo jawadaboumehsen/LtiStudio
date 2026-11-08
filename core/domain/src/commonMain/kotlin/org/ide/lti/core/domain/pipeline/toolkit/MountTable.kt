@@ -89,7 +89,7 @@ public object MountTable {
      */
     public fun parse(output: String): List<Entry> {
         val rows = rows(output)
-        val ramdisk = rows.any { !it.source.startsWith("work/") && !isDeviceTree(it.source) }
+        val ramdisk = ramdiskHasMounts(rows)
         return rows.filter { !(ramdisk && isDeviceTree(it.source)) }.mapNotNull { row ->
             val tokens = row.tokens
             // A short or commented line has no fs_mgr flags token, or a first token starting with '#'.
@@ -97,6 +97,12 @@ public object MountTable {
                 !tokens.first().startsWith("#")
             if (logical) Entry(row.source, tokens[MOUNT_POINT], tokens[TYPE]) else null
         }
+    }
+
+    /** Whether a boot image's ramdisk has a mount line: an fstab of comments alone leaves the device tree in use. */
+    private fun ramdiskHasMounts(rows: List<Row>): Boolean = rows.any {
+        !it.source.startsWith("work/") && !isDeviceTree(it.source) && it.tokens.size > FS_MGR_FLAGS &&
+            !it.tokens.first().startsWith("#")
     }
 
     /** One mount of the device tree's fstab. */
@@ -130,8 +136,7 @@ public object MountTable {
                 disabled = t[0].startsWith("#"),
             )
         }
-        val ramdisk = rows.any { !it.source.startsWith("work/") && !isDeviceTree(it.source) }
-        return DeviceTree(mounts, inUse = mounts.any { !it.disabled } && !ramdisk)
+        return DeviceTree(mounts, inUse = mounts.any { !it.disabled } && !ramdiskHasMounts(rows))
     }
 
     private data class Row(val source: String, val tokens: List<String>)

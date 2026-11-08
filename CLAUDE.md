@@ -812,10 +812,15 @@ per stage; a failed stage marks every later stage pending and stops.
   after a stage (`BuildRun.throughStage`, the Run panel's "Run through" chips). Field map:
   `specs/004-rom-stage-studio/contracts/stage-settings.md`.
 - Caching: each stage has a cache key (inputs, tool pins, `CacheKeys.PIPELINE_VERSION`). Bump that version when a
-  stage's commands change. Once a stage really runs, every later stage runs too: they share `work/`.
+  stage's commands change. Once a stage really runs, every later stage runs too: they share `work/`. Tools only some
+  settings use go in `optionalToolIds` (in the key, not required); `requiredPaths` are folders and files a digest does
+  not cover: a stage whose path is gone runs again.
+- Partitions: Build writes every partition of the device. One left out of Extract or Assemble refuses Build
+  (`PARTITIONS_LEFT_OUT`; a run stopped earlier may use such a selection). A folded system_ext stops being a partition
+  for Build, super and the package (`WorkTreeAssemblyStage.afterFolding`).
 - Captured values over 512 characters are not kept between runs. A stage that needs a long value (a whole
   `build.prop`) reads it itself, never from an earlier stage that may come from cache.
-- Closing the app during a build asks first (`AppShutdownPort.activeBuilds`, the dialog in `main.kt`). `closing` is set before the service is told to stop, so a step that stop breaks ends the run as INTERRUPTED, not FAILED; a half-applied stage is never resumed in place. Dialogs the window raises go in `LtiSharedApp(windowDialogs = ...)`: glass components throw outside `LtiTheme`.
+- Closing the app during a build asks first (`AppShutdownPort.activeWork`: builds and any job such as a publish, the dialog in `main.kt`). `closing` is set before the service is told to stop, so a step that stop breaks ends the run as INTERRUPTED, not FAILED; a host step cut off part way is never applied again (`markHostStarted`): the run ends INTERRUPTED and the next build re-assembles. Dialogs the window raises go in `LtiSharedApp(windowDialogs = ...)`: glass components throw outside `LtiTheme`.
 - One driver per run in the app (`PipelineOrchestrator.exclusive`). A step's exit code comes from its `Finished`
   event, or from `status()` when the stream ended without one.
 - Sidecars: `work/configs/fs_config-<p>` and `file_context-<p>`. For system (`--mount-point /`), paths are
@@ -847,7 +852,8 @@ per stage; a failed stage marks every later stage pending and stops.
   that into blockers (provides a library a kept app needs, last home screen, last keyboard), warnings (persistent,
   system UID) and notes (boot receiver, overlays). The stage refuses a blocked pick (`DEBLOAT_BREAKS_DEVICE`);
   the editor shows the reasons per app, and each app's name and bitmap icon (`AppManifests.LABELS_SCRIPT`, aapt2
-  badging; adaptive XML icons have no bitmap, so only some apps get one).
+  badging; an XML icon, adaptive or vector, is a `.vec` bundle of its layers that `VectorIcons` parses and
+  `drawVectorIcon` draws with Skia SVG).
 - Disk usage (Studio > Workspace > Disk usage, `WorkspaceStorage`): `du -sb` of the known workspace folders; only
   folders the next build makes again can be freed, never while a run is active (a stage counts as cached only
   while its declared outputs still exist, so a freed folder is rebuilt; `firmware/raw` is not an output of Extract,
@@ -954,7 +960,7 @@ nothing is shown as done before its job finished.
 - Boot: unpack with `unpack_bootimg`, the ramdisk as a folder, repack with `mkbootfs` + `RamdiskCheck` (any
   difference stops it), AVB footer re-signed with `keys/avb.pem` for the stock image's partition size
   (`firmware/extracted/<p>.img`'s footer; work/kernel's copy has none under the "erase" footer policy). "Use the stock
-  image again" also deletes the override file, which Unpack would otherwise open first. The result is the partition's override
+  image again" also deletes the override file, which Unpack would otherwise open first (Unpack takes the stock image before Assemble's `work/kernel` copy, which may be a dropped override). The result is the partition's override
   (`KernelOverrides.path`, sha256 in `AssemblySettings.kernelOverrides`); Assemble copies it and refuses it when the
   hash no longer matches. APatch via `kptools`; Magisk only by importing an image patched on the phone (there is no
   Linux magiskboot). vbmeta flags: an edited copy in `out/toolkit/`, never packaged.
@@ -1054,7 +1060,8 @@ nothing is shown as done before its job finished.
   files vs image and the % saved. A package over 4 GiB gets a zip64 note in Flashable members.
 - Boot ramdisks unpack and repack inside `fakeroot` (`workbench/boot/<p>/fakeroot.state`): an init_boot ramdisk
   holds `/dev/console`, `/dev/null`, `/dev/urandom` device nodes a user cannot create; without the state, mkbootfs
-  wrote them as empty files. Repack also refuses an `/init` that is neither ELF nor a symlink (`RamdiskCheck.badInit`).
+  wrote them as empty files. Repack also refuses an `/init` that is not an executable ELF or a link to an executable file inside the ramdisk
+  (`RamdiskCheck.badInit`).
   `mkbootimgArgs` drops only the trailing newline of the args file (an empty `--cmdline` value stays; init_boot has one).
 - A/B OTA (`BuildSettings.packageType` FLASHABLE / AB_OTA / BOTH, `AbOtaSteps`, `AbOtaPackage.SCRIPT`): a Python 3
   (stdlib + openssl) payload writer in WSL, written to `work/package/ab/`. Full payload, major version 2, 2 MiB
@@ -1095,8 +1102,8 @@ nothing is shown as done before its job finished.
   (never persist/efs); leaving a boot image out warns (`BOOT_IMAGE_LEFT_OUT`); a boot or init_boot ramdisk
   without `/init` is not repacked (`RamdiskCheck.missingInit`).
 - Build: coverage gate (`BuildChecks.coverageRefusal`, refuses when a work-tree file has no fs_config or
-  file_contexts entry), every built image is mounted and its sidecars compared with `work/configs`
-  (`IMAGE_VERIFY_FAILED`), per-partition compression (`BuildSettings.partitionCompression`: `lz4`, `lz4hc,12` or `none`),
+  file_contexts entry), every built image is mounted, its sidecars (owner, mode, capabilities, label) compared with
+  `work/configs` and its file list with `work/<p>` (`IMAGE_VERIFY_FAILED`), per-partition compression (`BuildSettings.partitionCompression`: `lz4`, `lz4hc,12` or `none`),
   extra packages (`BuildSettings.extraPackages`: `FullPackage` fastboot images zip, `Odin` AP tar with md5 trailer,
   both from a full `super.img`; `SUPER_OVERLAP` unless accepted in `acknowledgedWarnings`).
 - Debloat presets (Debloat > Remove selections, `DebloatPresetStore` -> `FileDebloatPresetStore`,

@@ -136,14 +136,17 @@ fun ProjectsStepContent(
                             actions.onCreateWorkspace()
                             true
                         }
+
                         Key.O -> {
                             actions.onOpenFolder()
                             true
                         }
+
                         Key.F -> {
                             searchFocusRequester.requestFocus()
                             true
                         }
+
                         else -> false
                     }
                 } else {
@@ -207,6 +210,7 @@ fun ProjectsStepContent(
             searchQuery = state.searchQuery,
             onSearchQueryChange = actions.onSearchQueryChange,
             totalCount = state.recentProjects.size,
+            shownCount = state.filteredProjects.size,
             searchFocusRequester = searchFocusRequester,
         )
 
@@ -578,6 +582,7 @@ private fun WorkspaceSearchSection(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     totalCount: Int,
+    shownCount: Int,
     searchFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
@@ -600,7 +605,7 @@ private fun WorkspaceSearchSection(
                 overflow = TextOverflow.Ellipsis,
             )
             GlassChip(
-                label = "$totalCount",
+                label = if (searchQuery.isBlank()) "$totalCount" else "$shownCount of $totalCount",
                 selected = false,
             )
         }
@@ -625,10 +630,7 @@ private fun WorkspaceSearchSection(
 }
 
 @Composable
-private fun WorkspaceEmptyStateSection(
-    searchQuery: String,
-    modifier: Modifier = Modifier,
-) {
+private fun WorkspaceEmptyStateSection(searchQuery: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()

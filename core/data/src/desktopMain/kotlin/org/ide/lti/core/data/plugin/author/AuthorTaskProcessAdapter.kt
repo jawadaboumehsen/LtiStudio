@@ -27,6 +27,7 @@ import org.ide.lti.core.domain.plugin.TrustApproval
 import org.ide.lti.core.domain.plugin.TrustCheck
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -52,9 +53,13 @@ class AuthorTaskProcessAdapter(
     /**
      * Every file of the project but what a build or an IDE makes. A task can execute any of them (a script applied
      * from anywhere, a subproject, `gradlew.cmd`), and a list of the known ones would always miss one; a change that
-     * could not matter only asks for approval again. [madeByTools] says what is left out.
+     * could not matter only asks for approval again. [madeByTools] says what is left out. Linked folders are followed,
+     * since Gradle runs what is behind them; a link back into itself throws, so such a project is not trusted.
      */
-    private fun inputsOf(projectDir: Path): List<String> = Files.walk(projectDir).use { stream ->
+    private fun inputsOf(projectDir: Path): List<String> = Files.walk(
+        projectDir,
+        FileVisitOption.FOLLOW_LINKS,
+    ).use { stream ->
         stream.filter { file ->
             Files.isRegularFile(file) && !file.startsWith(trustStoreDir.toAbsolutePath().normalize()) &&
                 !madeByTools(projectDir, file)

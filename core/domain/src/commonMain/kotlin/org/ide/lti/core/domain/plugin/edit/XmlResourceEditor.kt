@@ -62,7 +62,10 @@ object XmlResourceEditor {
         val target = single(root, match)
         val parent = target.parentNode
         when (change.kind) {
-            XmlChangeKind.APPEND -> nodes.forEach { appendIndented(target, it) }
+            XmlChangeKind.APPEND -> nodes.forEach {
+                declare(root, target, it)
+                appendIndented(target, it)
+            }
 
             XmlChangeKind.INSERT_BEFORE -> nodes.forEach {
                 declare(root, parent, it)
@@ -148,8 +151,7 @@ object XmlResourceEditor {
         val name = added.getAttribute("name").takeIf { it.isNotEmpty() } ?: return
         val siblings = (0 until root.childNodes.length).map { root.childNodes.item(it) }.filterIsInstance<Element>()
         val clash = siblings.firstOrNull { e ->
-            e.nodeName == added.nodeName && e.getAttribute("type") == added.getAttribute("type") &&
-                e.getAttribute("name") == name
+            resourceType(e) == resourceType(added) && e.getAttribute("name") == name
         } ?: siblings.firstOrNull { e ->
             added.nodeName == "public" && e.nodeName == "public" && added.getAttribute("id").isNotEmpty() &&
                 e.getAttribute("id").equals(added.getAttribute("id"), ignoreCase = true)
@@ -162,6 +164,13 @@ object XmlResourceEditor {
                     clash.getAttribute("id").takeIf { it.isNotEmpty() }?.let { " id=\"$it\"" }.orEmpty() + ">",
             )
         }
+    }
+
+    /** What Android sees: `<item type="string">` is a `<string>`; a `<public>` is only ever compared with one. */
+    private fun resourceType(e: Element): String = when (e.nodeName) {
+        "item" -> e.getAttribute("type").ifEmpty { "item" }
+        "public" -> "public ${e.getAttribute("type")}"
+        else -> e.nodeName
     }
 
     /** [fragment]'s nodes, parsed with the root's namespace prefixes (`android:`, `app:`) in scope. */

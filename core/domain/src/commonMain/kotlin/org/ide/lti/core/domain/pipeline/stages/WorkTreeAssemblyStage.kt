@@ -50,12 +50,12 @@ public class WorkTreeAssemblyStage : StageDefinition {
     override fun cacheInputFiles(ctx: StageContext): List<String> =
         BuildFlashableZipStage.PLATFORM_KEY_FILES.map { "${ctx.snapshot.build.signing.platformKeyRef}.$it" }
 
-    override fun outputs(ctx: StageContext): List<String> {
-        val partitions = effectiveDynamicPartitions(ctx)
-        return listOf(BUILD_PROP) + syncedPartitions(ctx, partitions).flatMap { p ->
-            listOf("work/configs/fs_config-$p", "work/configs/file_context-$p")
-        }
+    override fun outputs(ctx: StageContext): List<String> = listOf(BUILD_PROP) + assembledPartitions(ctx).flatMap { p ->
+        listOf("work/configs/fs_config-$p", "work/configs/file_context-$p")
     }
+
+    override fun requiredPaths(ctx: StageContext): List<String> =
+        assembledPartitions(ctx).map { "work/$it" } + ctx.target.bootPartitions.map { "work/kernel/$it.img" }
 
     private fun validate(ctx: StageContext): PipelineStep.Check? {
         val included = ctx.snapshot.assembly.includedPartitions
@@ -112,7 +112,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
             "mkdir work",
         )
 
-        syncedPartitions(ctx, dynamicPartitions).forEach { p ->
+        assembledPartitions(ctx).forEach { p ->
             steps += PipelineStep.Tool(
                 stepCommand("rsync", listOf("-a", "--delete", "$extracted/$p/", "$work/$p/"), ws),
                 "rsync $p",
@@ -303,19 +303,6 @@ public class WorkTreeAssemblyStage : StageDefinition {
         }
     }
 
-    private fun foldsSystemExt(ctx: StageContext, dynamicPartitions: List<String>): Boolean {
-        if ("system_ext" !in dynamicPartitions) return false
-        return when (ctx.snapshot.assembly.systemExtMode.lowercase()) {
-            "auto" -> !ctx.target.hasStandaloneSystemExt
-            "fold" -> true
-            "standalone" -> false
-            else -> !ctx.target.hasStandaloneSystemExt
-        }
-    }
-
-    private fun syncedPartitions(ctx: StageContext, dynamicPartitions: List<String>): List<String> =
-        dynamicPartitions.filter { it != "system_ext" || !foldsSystemExt(ctx, dynamicPartitions) }
-
     private fun applyPropertyOverrides(text: String, overrides: Map<String, String>): String {
         val remaining = overrides.toMutableMap()
         val lines = text.lineSequence().map { line ->
@@ -337,6 +324,35 @@ public class WorkTreeAssemblyStage : StageDefinition {
     }
 
     public companion object {
+        /** The dynamic partitions Assemble lays out as their own tree: selected ones, without a folded system_ext. */
+        internal fun assembledPartitions(ctx: StageContext): List<String> =
+            selectedPartitions(ctx).filter { it != "system_ext" || !foldsSystemExt(ctx, selectedPartitions(ctx)) }
+
+        private fun selectedPartitions(ctx: StageContext): List<String> =
+            ctx.snapshot.assembly.includedPartitions.ifEmpty { ctx.target.dynamicPartitions }
+
+        /** [ctx] for the stages after Assemble: a system_ext folded into system is no longer a partition. */
+        internal fun afterFolding(ctx: StageContext): StageContext {
+            if (!foldsSystemExt(ctx, selectedPartitions(ctx))) return ctx
+            val policy = ctx.target.packagePolicy
+            return ctx.copy(
+                target = ctx.target.copy(
+                    dynamicPartitions = ctx.target.dynamicPartitions - "system_ext",
+                    packagePolicy = policy.copy(flashablePartitions = policy.flashablePartitions - "system_ext"),
+                ),
+            )
+        }
+
+        private fun foldsSystemExt(ctx: StageContext, dynamicPartitions: List<String>): Boolean {
+            if ("system_ext" !in dynamicPartitions) return false
+            return when (ctx.snapshot.assembly.systemExtMode.lowercase()) {
+                "auto" -> !ctx.target.hasStandaloneSystemExt
+                "fold" -> true
+                "standalone" -> false
+                else -> !ctx.target.hasStandaloneSystemExt
+            }
+        }
+
         private const val DATA_FSTABS_KEY = "assembly.data.fstabs"
 
         /** `sh -c FIND_DATA_FSTABS sh <work>`: fstab files (relative to work/) with a line mounting `/data`. */

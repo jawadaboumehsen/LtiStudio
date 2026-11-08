@@ -62,6 +62,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -199,6 +200,36 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                     )
                 }
 
+                // Tools outputs: near the top, so the version fields below never push it out of sight
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+                    Text(
+                        text = "Tools",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val outputs = groupDef?.outputs.orEmpty()
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                    ) {
+                        for (tool in outputs) {
+                            val isIntact = currentGroup.current?.intact == true
+                            val symbol = if (isIntact) "✓" else "✕"
+                            Text(
+                                text = "${tool.toolId} $symbol",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = codeFontFamily(),
+                                color = if (isIntact) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                            )
+                        }
+                    }
+                }
+
                 // Studio's version section (offered when group has a pick)
                 if (currentGroup.selection != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
@@ -216,10 +247,12 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         is ToolRef.Commit -> ref.sha.take(7)
                                         is ToolRef.ReleaseVersion -> ref.version
                                     }
+
                                 is ToolSource.Release -> {
                                     val rec = groupDef.recipe as? org.ide.lti.core.domain.setup.RecipeConfig.Release
                                     rec?.versions?.firstOrNull()?.version ?: "pinned"
                                 }
+
                                 null -> "pinned"
                             }
                         GlassCard(
@@ -746,6 +779,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         },
                                         placeholder = "Commit SHA (40 hex)",
                                         enabled = !isInstalling,
+                                        state = if (commitInput.isNotBlank() && commitSha(commitInput) == null) {
+                                            TextFieldState.Error("A commit is 40 hex characters.")
+                                        } else {
+                                            TextFieldState.Default
+                                        },
                                         modifier = Modifier.weight(1f),
                                     )
                                     GlassSecondaryButton(
@@ -753,13 +791,13 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                             coroutineScope.launch {
                                                 val repo =
                                                     repoFor(isCustomUrlMode, customUrlInput, state.recommendedUrl)
-                                                val ref = ToolRef.Commit(commitInput)
+                                                val ref = ToolRef.Commit(commitSha(commitInput) ?: return@launch)
                                                 state.requestWithTrustCheck(repo) {
                                                     state.resolveRef(ref, repo)
                                                 }
                                             }
                                         },
-                                        enabled = commitInput.isNotBlank() && !isInstalling,
+                                        enabled = commitSha(commitInput) != null && !isInstalling,
                                     ) {
                                         Text("Resolve", style = MaterialTheme.typography.labelSmall)
                                     }
@@ -807,38 +845,6 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-
-                HorizontalDivider()
-
-                // Tools outputs
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-                    Text(
-                        text = "Tools",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    val outputs = groupDef?.outputs.orEmpty()
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        for (tool in outputs) {
-                            val isIntact = currentGroup.current?.intact == true
-                            val symbol = if (isIntact) "✓" else "✕"
-                            Text(
-                                text = "${tool.toolId} $symbol",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = codeFontFamily(),
-                                color = if (isIntact) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.error
-                                },
-                            )
-                        }
-                    }
-                }
             }
 
             // Pinned Action Footer
@@ -872,6 +878,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 Text("Use", style = MaterialTheme.typography.labelMedium)
                             }
                         }
+
                         PrimaryButtonAction.InstallAndUse -> {
                             GlassPrimaryButton(
                                 onClick = { state.installResolved() },
@@ -881,6 +888,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 Text("Install & use", style = MaterialTheme.typography.labelMedium)
                             }
                         }
+
                         PrimaryButtonAction.Repair -> {
                             GlassPrimaryButton(
                                 onClick = { state.repair() },
@@ -890,6 +898,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 Text("Repair", style = MaterialTheme.typography.labelMedium)
                             }
                         }
+
                         PrimaryButtonAction.Disabled -> {
                             GlassPrimaryButton(
                                 onClick = {},
@@ -931,6 +940,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** [input] as the lowercase SHA [ToolRef.Commit] takes (it refuses anything else), or null when it is not one. */
+private fun commitSha(input: String): String? = input.trim().lowercase().takeIf { COMMIT_SHA.matches(it) }
+
+private val COMMIT_SHA = Regex("[0-9a-f]{40}")
 
 private fun repoFor(isCustom: Boolean, customInput: String, recommended: String?): String =
     if (isCustom) customInput else recommended.orEmpty()

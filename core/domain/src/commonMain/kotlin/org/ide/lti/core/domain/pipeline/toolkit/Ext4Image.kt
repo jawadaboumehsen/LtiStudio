@@ -28,6 +28,31 @@ public object BuildFilesystems {
     public fun of(build: BuildSettings, p: String): String =
         (build.partitionFilesystem[p] ?: build.filesystem).lowercase()
 
+    /** The compressors of `mkfs.erofs -z`, with the levels each takes (`lz4` takes none). */
+    private val COMPRESSOR_LEVELS: Map<String, Set<Int>> = mapOf(
+        "lz4" to emptySet(),
+        "lz4hc" to (0..12).toSet(),
+        "lzma" to ((0..9) + (100..109)).toSet(),
+        "deflate" to (0..9).toSet(),
+        "zstd" to (0..22).toSet(),
+    )
+
+    /** Why [value] cannot be a `-z` value, or null when it can. */
+    public fun compressionProblem(value: String): String? {
+        val name = value.substringBefore(',')
+        val level = value.substringAfter(',', "").removePrefix("level=")
+        return when {
+            value == NO_COMPRESSION -> null
+
+            name !in COMPRESSOR_LEVELS -> "Unknown compression '$value': use ${COMPRESSOR_LEVELS.keys.joinToString()}"
+
+            ',' in value && level.toIntOrNull() !in COMPRESSOR_LEVELS.getValue(name) ->
+                "Compression level '$level' is not one $name takes"
+
+            else -> null
+        }
+    }
+
     /** mkfs.erofs's `-z` for [p] (`lz4hc,9`, `lz4`, [NO_COMPRESSION]): its own choice, else the build's. */
     public fun erofsCompression(build: BuildSettings, p: String): String =
         build.partitionCompression[p] ?: build.level?.let { "${build.compression.substringBefore(',')},$it" }

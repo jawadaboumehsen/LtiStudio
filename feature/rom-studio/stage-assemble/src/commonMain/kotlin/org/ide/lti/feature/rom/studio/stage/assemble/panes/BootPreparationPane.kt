@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -131,7 +133,7 @@ private fun ImageCard(
         }
         Hint(
             "Unpacks the image the next build would use " +
-                "(an earlier edit, the assembled one, or the extracted one).",
+                "(an earlier edit, else the extracted one).",
         )
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -340,20 +342,31 @@ private fun VbmetaCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
 
 @Composable
 private fun Status(state: BootPaneState, actions: BootPaneActions) {
-    state.busy?.let { busy ->
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Mono("$busy…")
-            GlassButton(onClick = actions.cancel, variant = GlassButtonVariant.Secondary) {
-                Text("Cancel", fontSize = FontSize.BodySmall)
+    // The pane is long: an outcome of a button further down must come into view here. Not while busy: a button
+    // that shows its result in its own card would be left behind.
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(state.refusal, state.message) {
+        if (state.refusal != null || state.message != null) requester.bringIntoView()
+    }
+    Column(
+        modifier = Modifier.bringIntoViewRequester(requester),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        state.busy?.let { busy ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Mono("$busy…")
+                GlassButton(onClick = actions.cancel, variant = GlassButtonVariant.Secondary) {
+                    Text("Cancel", fontSize = FontSize.BodySmall)
+                }
             }
         }
-    }
-    state.refusal?.let { RefusalView(refusal = it, actionLabel = "Dismiss", onAction = actions.dismiss) }
-    state.message?.let {
-        GlassBanner(severity = GlassBannerSeverity.INFO, title = it, onDismiss = actions.dismiss)
+        state.refusal?.let { RefusalView(refusal = it, actionLabel = "Dismiss", onAction = actions.dismiss) }
+        state.message?.let {
+            GlassBanner(severity = GlassBannerSeverity.INFO, title = it, onDismiss = actions.dismiss)
+        }
     }
 }
 

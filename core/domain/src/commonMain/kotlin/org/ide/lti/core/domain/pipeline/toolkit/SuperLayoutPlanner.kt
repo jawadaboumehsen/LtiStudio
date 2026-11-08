@@ -76,6 +76,15 @@ public object SuperLayoutPlanner {
         return if (remainder == 0L) size else size + (alignment - remainder)
     }
 
+    /** Why [groups] and [partitions] cannot describe one unambiguous super, or null when they can. */
+    private fun structureProblem(groups: List<SuperGroup>, partitions: List<SuperPartition>): String? {
+        val names = groups.map { it.name }
+        val parts = partitions.map { it.name }
+        return names.firstOrNull { name -> names.count { it == name } > 1 }?.let { "Group '$it' is listed twice" }
+            ?: partitions.firstOrNull { it.group !in names }?.let { "'${it.name}' is in unknown group '${it.group}'" }
+            ?: parts.firstOrNull { name -> parts.count { it == name } > 1 }?.let { "Partition '$it' is listed twice" }
+    }
+
     public fun plan(
         superSize: Long,
         groups: List<SuperGroup>,
@@ -87,6 +96,8 @@ public object SuperLayoutPlanner {
         require(superSize >= 0L) { "superSize must be non-negative" }
         require(reserve >= 0L) { "reserve must be non-negative" }
         require(alignment > 0L) { "alignment must be positive" }
+
+        val invalid = structureProblem(groups, partitions)
 
         val partitionsByGroup = partitions.groupBy { it.group }
 
@@ -106,7 +117,7 @@ public object SuperLayoutPlanner {
         val superShortBy = maxOf(0L, totalRequired - superSize)
         val freeBytes = maxOf(0L, superSize - totalRequired)
 
-        val fits = superShortBy == 0L && groupOverflow == null
+        val fits = superShortBy == 0L && groupOverflow == null && invalid == null
         val shortBy = if (superShortBy > 0L) {
             superShortBy
         } else {
@@ -114,6 +125,7 @@ public object SuperLayoutPlanner {
         }
 
         val reason = when {
+            invalid != null -> invalid
             superShortBy > 0L -> "Super partition is short by $superShortBy bytes"
             groupOverflow != null -> "Group '${groupOverflow.first.name}' is short by ${groupOverflow.second} bytes"
             else -> null

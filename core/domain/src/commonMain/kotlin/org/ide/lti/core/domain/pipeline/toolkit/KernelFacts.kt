@@ -82,7 +82,8 @@ public data class KernelFacts(val version: String?, val config: Map<String, Stri
             val version = lines.firstOrNull { it.startsWith("version ") }?.substringAfter(' ')?.ifBlank { null }
             val config = lines.filter { it.startsWith("CONFIG_") && '=' in it }
                 .associate { it.substringBefore('=') to it.substringAfter('=') }
-            return KernelFacts(version, config.takeUnless { "noconfig" in lines })
+            // No CONFIG_ line at all: the embedded config could not be read, which says nothing about the kernel.
+            return KernelFacts(version, config.takeUnless { "noconfig" in lines || it.isEmpty() })
         }
     }
 }

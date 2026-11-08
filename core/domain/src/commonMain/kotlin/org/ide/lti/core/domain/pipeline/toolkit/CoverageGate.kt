@@ -113,8 +113,8 @@ public data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, v
                 val line = raw.trim()
                 if (line.isEmpty() || line.startsWith("#")) return@forEachIndexed
                 val f = line.split(Regex("\\s+"))
-                val uid = f.getOrNull(1)?.toIntOrNull()
-                val gid = f.getOrNull(2)?.toIntOrNull()
+                val uid = f.getOrNull(1)?.toIntOrNull()?.takeIf { it >= 0 }
+                val gid = f.getOrNull(2)?.toIntOrNull()?.takeIf { it >= 0 }
                 val regex = runCatching { Regex(f[0]) }.getOrNull()
                 val wellFormed = f.size == FIELDS && MODE.matches(f[3])
                 if (!wellFormed || uid == null || gid == null || regex == null) {

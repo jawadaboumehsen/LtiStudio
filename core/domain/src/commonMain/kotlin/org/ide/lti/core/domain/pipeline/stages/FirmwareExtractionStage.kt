@@ -47,6 +47,8 @@ public class FirmwareExtractionStage : StageDefinition {
         "unpack_bootimg", "avbtool", "xxd", "truncate", "getfattr", "find", "stat", "cp", "mv", "rm", "mkdir", "cat",
     )
 
+    override val optionalToolIds: Set<String> = setOf("fuse2fs", "dump.f2fs", "7zz")
+
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String =
         CacheKeys.stage2ExtractionKey(previousStageCacheKey, ctx.target, ctx.snapshot)
 
@@ -57,6 +59,9 @@ public class FirmwareExtractionStage : StageDefinition {
             listOf("$EXTRACTED/$p.img", "$EXTRACTED/fs_config-$p", "$EXTRACTED/file_context-$p")
         } + bootPartitions.map { "$EXTRACTED/$it.img" }
     }
+
+    override fun requiredPaths(ctx: StageContext): List<String> =
+        effectiveDynamicPartitions(ctx).map { "$EXTRACTED/$it" }
 
     private fun validate(ctx: StageContext): PipelineStep.Check? {
         val adapter = ctx.snapshot.extraction.adapter

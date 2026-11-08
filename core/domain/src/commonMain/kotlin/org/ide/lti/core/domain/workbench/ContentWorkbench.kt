@@ -41,14 +41,21 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
 
     /**
      * Brings every app of the work tree back to a self-contained package (FR-028). An APK that already carries
-     * its dex is reported as such (stale `oat/` next to it is removed); one with no `.vdex` in `oat/` has nothing to
-     * convert. An app whose code is only in a vdex needs `vdexExtractor`, which LtiRom does not install, so it
-     * is reported failed with that reason rather than half-converted.
+     * its dex is reported as such (stale `oat/` next to it is removed, with a restore point); one with no `.vdex`
+     * in `oat/` has nothing to convert. An app whose code is only in a vdex needs `vdexExtractor`, which LtiRom does
+     * not install, so it is reported failed with that reason rather than half-converted.
      */
     public suspend fun deodex(workspaceId: String): List<DeodexAppResult> = runner.job(workspaceId, "Deodex") {
         sh(DEODEX_SCRIPT, abs("work")).lines().mapNotNull { line ->
             val (status, app, reason) = line.split('\t', limit = 3).takeIf { it.size == 3 } ?: return@mapNotNull null
-            DeodexAppResult(app = app, status = DeodexStatus.valueOf(status), reason = reason)
+            if (status == STALE_OAT) {
+                val oat = "work/${app.substringBeforeLast('/')}/oat"
+                val point = backup(TOOL, oat)
+                run("rm", "-rf", "--", abs(oat))
+                DeodexAppResult(app, DeodexStatus.AlreadyDone, "$reason (restore point ${point.id})")
+            } else {
+                DeodexAppResult(app = app, status = DeodexStatus.valueOf(status), reason = reason)
+            }
         }
     }
 
@@ -157,6 +164,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         require(replace.all { it in HEX_DIGITS }) { "The replace hex must be plain hex digits." }
         requireInWork(apex)
         requireInWork(systemDest)
+        require(!library.startsWith("/") && ".." !in library.split('/')) { "The library is a path inside the APEX." }
         val tmp = "workbench/apex/${apex.substringAfterLast('/')}"
         sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(tmp))
         run("unzip", "-o", abs(apex), "apex_payload.img", "-d", abs(tmp))
@@ -165,7 +173,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
             run("fsck.erofs", "--extract=${abs("$tmp/payload")}", abs("$tmp/apex_payload.img"))
         }
         val lib = "$tmp/payload/$library"
-        if (!exists(lib)) {
+        if (!exists(lib) || !folderResolvesInside(lib, "$tmp/payload")) {
             throw RefusalException(Refusal("The library is not in this APEX.", library, "Check the library path."))
         }
         val state = sh(HEXPATCH_SCRIPT, abs(lib), find, replace, abs("$lib.patched")).trim()
@@ -181,7 +189,13 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         // A new destination gets a point too: restoring it removes the added library.
         requireResolvedInWork(this, systemDest)
         val point = backup(TOOL, systemDest)
-        sh("mkdir -p \"$(dirname \"$2\")\" && cp -f \"$1\" \"$2\"", abs("$lib.patched"), abs(systemDest))
+        // Moved in whole from the same disk: a stopped job leaves the old library, never part of a new one.
+        sh(
+            "mkdir -p \"$(dirname \"$2\")\" && { [ ! -f \"$2\" ] || chmod --reference=\"$2\" \"$1\"; } && " +
+                "mv -f -T \"$1\" \"$2\"",
+            abs("$lib.patched"),
+            abs(systemDest),
+        )
         addSidecars(this, systemDest)
         ApexPatchResult(
             apex,
@@ -324,13 +338,14 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         private const val DETAILS = 4_000
         private const val HEX_DIGITS = "0123456789abcdef"
         private const val DECODED_HASH_BYTES = 6
+        private const val STALE_OAT = "StaleOat"
 
         /** `$1` = work tree. One line per app: status, app folder, reason (tab separated). */
         private const val DEODEX_SCRIPT = """
 find "$1" -mindepth 3 -maxdepth 5 -type f -name '*.apk' -path '*app/*' | while read -r apk; do
   dir=${'$'}{apk%/*}; app=${'$'}{apk#"$1"/}
   if unzip -l "${'$'}apk" 2>/dev/null | grep -q ' classes[0-9]*\.dex${'$'}'; then
-    if [ -d "${'$'}dir/oat" ]; then rm -rf "${'$'}dir/oat"; printf 'AlreadyDone\t%s\tdex is in the APK; removed the stale oat folder\n' "${'$'}app"
+    if [ -d "${'$'}dir/oat" ]; then printf 'StaleOat\t%s\tdex is in the APK; removed the stale oat folder\n' "${'$'}app"
     else printf 'AlreadyDone\t%s\tdex is in the APK\n' "${'$'}app"; fi
   elif ls "${'$'}dir"/oat/*/*.vdex >/dev/null 2>&1; then
     printf 'Failed\t%s\tthe code is only in oat/*.vdex; extracting it needs vdexExtractor, which is not installed\n' "${'$'}app"
@@ -346,12 +361,13 @@ done"""
          */
         private const val HEXPATCH_SCRIPT = """
 hex=${'$'}(xxd -p "$1" | tr -d '\n')
-m=${'$'}(printf '%s' "${'$'}hex" | grep -ob "$2" | awk -F: '${'$'}1 % 2 == 0 { print; exit }')
+# A space after each byte: a match can only start on a byte, and one at an odd digit cannot hide a later true one.
+m=${'$'}(printf '%s' "${'$'}hex" | sed 's/../& /g' | grep -ob "${'$'}(printf '%s' "$2" | sed 's/../& /g')" | head -n1)
 if [ -z "${'$'}m" ]; then
   echo notfound
   exit 0
 fi
-printf '%s' "${'$'}hex" | awk -v o="${'$'}{m%%:*}" -v r="$3" '{ printf "%s%s%s", substr(${'$'}0, 1, o), r, substr(${'$'}0, o + length(r) + 1) }' | xxd -r -p > "$4"
+printf '%s' "${'$'}hex" | awk -v o="${'$'}((${'$'}{m%%:*} / 3 * 2))" -v r="$3" '{ printf "%s%s%s", substr(${'$'}0, 1, o), r, substr(${'$'}0, o + length(r) + 1) }' | xxd -r -p > "$4"
 echo patched"""
 
         /** Changed lines at the same position, as `L<n>: - old | + new`. */

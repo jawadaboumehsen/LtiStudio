@@ -64,6 +64,7 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
             Folder("out/images", true, "Built partition images; the next build makes them again."),
             Folder("out/verify", true, "Mount points of the image check; the next build makes them again."),
             Folder("out/extra", true, "Full super.img and Odin parts; the next build makes them again."),
+            Folder("out/publish/parts", true, "Split parts of a GitHub upload; publishing makes them again."),
             Folder("out/package", false, "Your built packages: delete old ones yourself."),
             Folder("out/toolkit", false, "Files you extracted or wrote with the tools."),
             Folder("restore", false, "Backups behind the restore points: without them nothing can be restored."),

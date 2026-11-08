@@ -53,11 +53,8 @@ internal fun RootNavGraph(
     },
 ) {
     val currentWorkspace by workspaceManager.currentWorkspace.collectAsState()
-    val toolchainState by (
-        toolchainService?.state ?: remember {
-            MutableStateFlow(ToolchainSetupState())
-        }
-        ).collectAsState()
+    val toolchainFlow = toolchainService?.state ?: remember { MutableStateFlow(ToolchainSetupState()) }
+    val toolchainState by toolchainFlow.collectAsState()
     val canLaunchWorkspace = toolchainState.canLaunchWorkspace
 
     LaunchedEffect(currentWorkspace, canLaunchWorkspace) {
@@ -110,7 +107,8 @@ internal fun RootNavGraph(
         setupScreen(
             onOpenWorkspace = { workspace ->
                 coroutineScope.launch(Dispatchers.Main.immediate) {
-                    navHostController.openStudioOrSetup(workspace.id, canLaunchWorkspace)
+                    // Read now: a click queued during the start-up check runs this callback from before it ended.
+                    navHostController.openStudioOrSetup(workspace.id, toolchainFlow.value.canLaunchWorkspace)
                 }
             },
             onOpenSettings = navigateToSettings,

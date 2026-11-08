@@ -395,6 +395,12 @@ public fun ActiveRunContent(
             logs = uiState.logs,
             isRunning = uiState.isRunning,
             modifier = Modifier.fillMaxWidth(),
+            // The artifact list takes what is left: an open log must not take all of it.
+            logMaxHeight = if (artifacts.isEmpty()) {
+                ComponentSize.DialogDefaultHeight
+            } else {
+                ComponentSize.ActionCardHeight
+            },
         )
     }
 }

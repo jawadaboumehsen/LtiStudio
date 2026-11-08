@@ -59,6 +59,10 @@ public class BuildFlashableZipStage : StageDefinition {
         "python3", "openssl",
     )
 
+    override val optionalToolIds: Set<String> = setOf(
+        "mke2fs", "e2fsdroid", "dumpe2fs", "e2fsck", "fuse2fs", "make_f2fs", "sload_f2fs", "fsck.f2fs", "dump.f2fs",
+    )
+
     // Key digests are captured inside the stage, so the input key uses the key *references*;
     // the output digest (which covers the footered images) catches a key swap.
     override fun computeCacheKey(ctx: StageContext, previousStageCacheKey: String): String =
@@ -75,14 +79,19 @@ public class BuildFlashableZipStage : StageDefinition {
         return listOf(ctx.snapshot.build.signing.avbKeyRef) + PLATFORM_KEY_FILES.map { "$platform.$it" }
     }
 
-    override fun outputs(ctx: StageContext): List<String> = ctx.target.dynamicPartitions.map { "out/images/$it.img" } +
+    override fun outputs(ctx: StageContext): List<String> = WorkTreeAssemblyStage.afterFolding(ctx).target
+        .dynamicPartitions.map { "out/images/$it.img" } +
         listOfNotNull(flashableRelPath(ctx).takeIf { ctx.snapshot.build.packageType.flashable })
             .plus(listOfNotNull(otaRelPath(ctx).takeIf { ctx.snapshot.build.packageType.abOta }))
             .flatMap { listOf(it, "$it.sha256") } +
         (if (!ctx.snapshot.build.signing.signPackage) listOf(UNSIGNED_MARKER) else emptyList()) +
         BuildChecks.extraPackageFiles(ctx)
 
-    override fun plan(ctx: StageContext): List<PipelineStep> {
+    override fun plan(ctx: StageContext): List<PipelineStep> = WorkTreeAssemblyStage.afterFolding(ctx).let { built ->
+        leftOutPartitions(built)?.let(::listOf) ?: planBuild(built)
+    }
+
+    private fun planBuild(ctx: StageContext): List<PipelineStep> {
         val coverage = PipelineStep.Host(
             label = "check coverage",
             resultKey = COVERAGE_RESULT_KEY,
@@ -104,6 +113,21 @@ public class BuildFlashableZipStage : StageDefinition {
             refusal != null -> listOf(coverage, refusal)
 
             else -> buildSteps(ctx, coverage)
+        }
+    }
+
+    /**
+     * Build writes every partition of the device, so one Extract or Assemble left out would be missing from super, or
+     * come from an older tree. Such a selection stays usable for a run that stops before Build.
+     */
+    private fun leftOutPartitions(ctx: StageContext): PipelineStep.Check? {
+        val assembled = WorkTreeAssemblyStage.assembledPartitions(ctx)
+        val extracted = ctx.snapshot.extraction.dynamicPartitions.ifEmpty { ctx.target.dynamicPartitions }
+        val leftOut = ctx.target.dynamicPartitions.filter { it !in assembled || it !in extracted }
+        if (leftOut.isEmpty()) return null
+        return PipelineStep.Check("every partition is assembled") {
+            "PARTITIONS_LEFT_OUT: ${leftOut.joinToString()} left out of Extract or Assemble: the phone needs every " +
+                "partition. Select them again, or stop the run before Build & Sign."
         }
     }
 
@@ -151,11 +175,13 @@ public class BuildFlashableZipStage : StageDefinition {
             label = "sha1 avb pubkey",
             resultKey = RuntimeKeys.AVB_PUBKEY_SHA1,
         )
-        steps += PipelineStep.Tool(
-            command = stepCommand("sha1sum", listOf(platformKey(ctx, "x509.pem")), ws),
-            label = "sha1 platform cert",
-            resultKey = PLATFORM_CERT_SHA1,
-        )
+        if (ctx.snapshot.build.signing.signPackage) {
+            steps += PipelineStep.Tool(
+                command = stepCommand("sha1sum", listOf(platformKey(ctx, "x509.pem")), ws),
+                label = "sha1 platform cert",
+                resultKey = PLATFORM_CERT_SHA1,
+            )
+        }
         // The device reports this build as build_info.txt names it (the updater compares ro.lti.timestamp).
         ctx.longValue(RuntimeKeys.RUN_TIMESTAMP)?.let { timestamp ->
             steps += PipelineStep.EditFile(

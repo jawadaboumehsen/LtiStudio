@@ -62,6 +62,8 @@ public data class CoverageState(
     val fillInEveryBuild: Boolean = false,
     /** The user's coverage rules (`CustomizationSettings.coverageRules`), tried before "like its folder". */
     val rules: String = "",
+    /** Why the coverage settings were not saved, or null. */
+    val saveError: String? = null,
 )
 
 public class BuildViewModel(
@@ -116,7 +118,8 @@ public class BuildViewModel(
         val store = store ?: return
         viewModelScope.launch {
             store.update(workspaceId) { it.copy(customization = it.customization.copy(fillMissingSidecars = on)) }
-                .onSuccess { _coverage.value = _coverage.value.copy(fillInEveryBuild = on) }
+                .onSuccess { _coverage.value = _coverage.value.copy(fillInEveryBuild = on, saveError = null) }
+                .onFailure { _coverage.value = _coverage.value.copy(saveError = it.message ?: "It was not saved.") }
         }
     }
 
@@ -136,6 +139,7 @@ public class BuildViewModel(
 
     init {
         viewModelScope.launch { rulesSync.settings.collect { _coverage.value = _coverage.value.copy(rules = it) } }
+        viewModelScope.launch { rulesSync.saveError.collect { _coverage.value = _coverage.value.copy(saveError = it) } }
     }
 
     /** Saves the user's coverage rules (tried before "like its folder" when lines are added). */

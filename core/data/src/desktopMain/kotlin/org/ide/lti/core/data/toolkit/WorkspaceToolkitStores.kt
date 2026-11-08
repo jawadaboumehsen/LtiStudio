@@ -39,6 +39,7 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
     JobLock {
 
     private val lockMutex = Mutex()
+    private val acknowledgementMutex = Mutex()
 
     /** This app run: a lock written by an earlier run (the app crashed or was killed) is stale, not held. */
     private val session = java.util.UUID.randomUUID().toString()
@@ -93,12 +94,12 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         }
     }
 
-    override suspend fun acknowledge(workspace: Workspace, featureId: String, acceptedAt: String): Acknowledgements {
-        val current = readAcknowledgements(workspace)
-        val updated = current.accept(featureId, acceptedAt)
-        writeFile(workspace, ACKNOWLEDGEMENTS_FILE, updated.toJson())
-        return updated
-    }
+    override suspend fun acknowledge(workspace: Workspace, featureId: String, acceptedAt: String): Acknowledgements =
+        acknowledgementMutex.withLock {
+            val updated = readAcknowledgements(workspace).accept(featureId, acceptedAt)
+            writeFile(workspace, ACKNOWLEDGEMENTS_FILE, updated.toJson())
+            updated
+        }
 
     override suspend fun isAcknowledged(workspace: Workspace, featureId: String): Boolean =
         readAcknowledgements(workspace).isAcknowledged(featureId)
@@ -121,8 +122,10 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
                     override val workspace: Workspace = workspace
 
                     override suspend fun release() {
-                        if (released.compareAndSet(false, true)) {
+                        // Marked only once it is gone: a delete that failed can be tried again.
+                        if (!released.get()) {
                             this@WorkspaceToolkitStores.release(workspace, holderName)
+                            released.set(true)
                         }
                     }
 
@@ -145,7 +148,9 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         lockMutex.withLock {
             val current = currentHolder(workspace)
             if (current != null && (holderName == null || current == holderName.trim())) {
-                deleteFile(workspace, JOB_LOCK_FILE)
+                check(
+                    deleteFile(workspace, JOB_LOCK_FILE),
+                ) { "The job lock of ${workspace.name} could not be removed." }
             }
         }
     }

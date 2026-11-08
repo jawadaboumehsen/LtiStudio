@@ -51,6 +51,15 @@ class TransportCliExecutorTest {
     }
 
     @Test
+    fun `without a known home it runs from the root, which every WSL user has`() {
+        val transport = RecordingRemoteTransport()
+
+        TransportCliExecutor(transport = transport).execute("Ubuntu", listOf("true"), timeoutSeconds = 5)
+
+        assertEquals("/", transport.capturedRequests.single().workingDirectory)
+    }
+
+    @Test
     fun `execute transforms command into ToolExecutionRequest with absolute workingDirectory and timeout`() {
         val transport = RecordingRemoteTransport()
         val executor = TransportCliExecutor(transport = transport, defaultWorkingDirectory = "/home/lti")

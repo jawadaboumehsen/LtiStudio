@@ -89,8 +89,9 @@ public data class ImageVerify(
 
         /**
          * What a built image's sidecars (read back from the image) get wrong against the ones the build asked
-         * for: a path with no expected entry, another owner or mode, or another SELinux label (FR-009). Expected
-         * entries for files the tree no longer has are not reported; the image only holds the tree's files.
+         * for: a path with no expected entry, another owner, mode or capabilities, or another SELinux label (FR-009).
+         * Expected entries for files the tree no longer has are not reported: [missingFromImage] is what finds a file
+         * of the tree that the image lost.
          */
         public fun sidecarDifferences(
             expectedFsConfig: String,
@@ -117,11 +118,24 @@ public data class ImageVerify(
             return owners + contexts
         }
 
-        /** fs_config lines as path -> "uid gid mode" (mode without leading zeros). */
+        /** The paths of [treeListing] (`find -printf %P`) with no line in [statDump] (stat `%n` under [mountPoint]). */
+        public fun missingFromImage(treeListing: String, statDump: String, mountPoint: String): List<String> {
+            val built = statDump.lineSequence().map { it.substringAfter(" $mountPoint/", "") }.toSet()
+            return treeListing.lines().filter { it.isNotEmpty() && it !in built }
+        }
+
+        /** fs_config lines as path -> "uid gid mode" (mode without leading zeros), then any capabilities. */
         private fun owners(text: String): Map<String, String> = text.lineSequence()
             .map { it.trim().split(WHITESPACE) }
             .filter { it.size >= OWNER_FIELDS }
-            .associate { t -> t[0] to "${t[1]} ${t[2]} ${t[3].trimStart('0').ifEmpty { "0" }}" }
+            .associate { t -> t[0] to "${t[1]} ${t[2]} ${t[3].trimStart('0').ifEmpty { "0" }}${capabilities(t)}" }
+
+        /** ` capabilities=0x400` of an fs_config line; nothing for none (`0x0`, or no such field). */
+        private fun capabilities(fields: List<String>): String {
+            val mask = fields.getOrNull(OWNER_FIELDS)?.substringAfter("capabilities=", "").orEmpty()
+                .removePrefix("0x").trimStart('0')
+            return if (mask.isEmpty()) "" else " capabilities=0x$mask"
+        }
 
         /** file_contexts lines as path regex -> label. */
         private fun labels(text: String): Map<String, String> = text.lineSequence()

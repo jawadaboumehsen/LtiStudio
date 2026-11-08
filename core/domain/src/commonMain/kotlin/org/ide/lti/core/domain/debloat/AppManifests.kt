@@ -123,7 +123,7 @@ public object AppManifests {
 
     /**
      * `sh -c LABELS_SCRIPT sh <work dir> <icon dir>`: `@ <apk path>` then `label <name>` and `icon <file>`, the icon
-     * copied into the icon dir. Adaptive (XML) icons have no bitmap to copy, so only some apps get one.
+     * copied into the icon dir. An XML icon (adaptive or vector) is written as a `.vec` bundle [VectorIcons] reads.
      */
     public const val LABELS_SCRIPT: String = """
         set -e
@@ -144,11 +144,32 @@ public object AppManifests {
         if [ -z "${'$'}i" ]; then
           n=$(printf "%s\n" "${'$'}b" | sed -n "s/^application-icon-[0-9]*:.\(.*\).$/\1/p" | tail -n1 | sed "s#.*/##; s#\.[a-z]*\$##")
           [ -n "${'$'}n" ] && i=$(unzip -Z1 "$1" 2>/dev/null | grep -E "^res/(mipmap|drawable)[^/]*/${'$'}n\.(png|webp)$" | sort | tail -n1)
+        x=$(printf "%s\n" "${'$'}b" | sed -n "s/^application-icon-[0-9]*:.\(.*\.xml\).$/\1/p" | tail -n1)
+        if [ -z "${'$'}i" ] && [ -n "${'$'}x" ]; then
+          r=$("${'$'}A" dump resources "${'$'}1" 2>/dev/null || true)
+          v="${'$'}D/${'$'}h.vec"
+          { echo "== root"; "${'$'}A" dump xmltree --file "${'$'}x" "${'$'}1" 2>/dev/null; } > "${'$'}v"
+          for p in 1 2 3; do
+            for id in $(sed -n "s/.*=@\(0x7f[0-9a-f]*\).*/\1/p" "${'$'}v" | sort -u); do
+              grep -q "^== ${'$'}id " "${'$'}v" && continue
+              e=$(printf "%s\n" "${'$'}r" | sed -n "/resource ${'$'}id /,/^ *\(resource\|type\) /p" | grep -E "\(file\)|#[0-9a-f]" || true)
+              f=$(printf "%s\n" "${'$'}e" | grep -oE "res/[^ ]*\.(png|webp)" | tail -n1 || true)
+              [ -n "${'$'}f" ] || f=$(printf "%s\n" "${'$'}e" | grep -oE "res/[^ ]*\.xml" | tail -n1 || true)
+              c=$(printf "%s\n" "${'$'}e" | grep -oE "#[0-9a-f]{6,8}" | tail -n1 || true)
+              case "${'$'}f" in
+                *.xml) { echo "== ${'$'}id xml"; "${'$'}A" dump xmltree --file "${'$'}f" "${'$'}1" 2>/dev/null; } >> "${'$'}v" ;;
+                ?*) n="${'$'}h-$(printf %s "${'$'}f" | sha1sum | cut -c1-8).img"
+                    unzip -p "${'$'}1" "${'$'}f" > "${'$'}D/${'$'}n" 2>/dev/null && echo "== ${'$'}id img ${'$'}n" >> "${'$'}v" ;;
+                *) [ -z "${'$'}c" ] || echo "== ${'$'}id color ${'$'}c" >> "${'$'}v" ;;
+              esac
+            done
+          done
+        fi
         fi
         {
           echo "@ ${'$'}{1#${'$'}W/}"
           [ -n "${'$'}l" ] && echo "label ${'$'}l"
-          if [ -n "${'$'}i" ] && unzip -p "$1" "${'$'}i" > "${'$'}D/${'$'}h.img" 2>/dev/null && [ -s "${'$'}D/${'$'}h.img" ]; then echo "icon ${'$'}h.img"; else rm -f "${'$'}D/${'$'}h.img"; fi
+          if [ -n "${'$'}i" ] && unzip -p "$1" "${'$'}i" > "${'$'}D/${'$'}h.img" 2>/dev/null && [ -s "${'$'}D/${'$'}h.img" ]; then echo "icon ${'$'}h.img"; elif [ -s "${'$'}D/${'$'}h.vec" ]; then echo "icon ${'$'}h.vec"; else rm -f "${'$'}D/${'$'}h.img"; fi
         } > "${'$'}T/${'$'}h"
         ' sh
         cat "${'$'}t"/* 2>/dev/null || true

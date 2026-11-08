@@ -313,8 +313,22 @@ class FileMutationAdapter : FileMutationPort {
                 )
             } else if (errors.isEmpty()) {
                 val text = staged[targetPath] ?: Files.readString(targetPath, Charsets.UTF_8)
-                (FileEdits.propertyPatch(text, op.key, op.value) as? EditResult.Changed)
-                    ?.let { staged[targetPath] = it.content }
+                when (val result = FileEdits.propertyPatch(text, op.key, op.value)) {
+                    is EditResult.Changed -> staged[targetPath] = result.content
+
+                    is EditResult.Failed -> errors.add(
+                        ValidationError(
+                            stageId = StageId.MODULE_APPLICATION,
+                            objectId = op.id,
+                            fieldPath = op.target.relativePath,
+                            code = result.code,
+                            severity = Severity.ERROR,
+                            message = result.message,
+                        ),
+                    )
+
+                    else -> Unit
+                }
             }
         }
         return errors

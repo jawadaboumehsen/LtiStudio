@@ -20,7 +20,13 @@ public object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-10-31.1"
+    public const val PIPELINE_VERSION: String = "2026-11-07.1"
+
+    /** Each field with its length: `a=b,c=d` as one value must not read like `a=b` and `c=d` as two. */
+    private fun keyOf(fields: List<String>): String = sha256(fields.joinToString("") { "${it.length}:$it" })
+
+    private fun Map<String, Any>.keyField(): String =
+        toSortedMap().entries.joinToString("") { (k, v) -> "${k.length}:$k${v.toString().length}:$v" }
 
     public fun sha256(text: String): String {
         val md = MessageDigest.getInstance("SHA-256")
@@ -42,7 +48,7 @@ public object CacheKeys {
             extraction.bootPartitions.sorted().joinToString(","),
             extraction.slot.orEmpty(),
             extraction.reuseVerifiedExtraction.toString(),
-            extraction.replacementImages.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            extraction.replacementImages.keyField(),
         ).joinToString("|")
         return sha256(raw)
     }
@@ -60,8 +66,8 @@ public object CacheKeys {
             snapshot.assembly.systemExtMode,
             snapshot.assembly.bootFooterPolicy,
             snapshot.assembly.baselineCleanup.toString(),
-            snapshot.assembly.propertyOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
-            snapshot.assembly.kernelOverrides.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.assembly.propertyOverrides.keyField(),
+            snapshot.assembly.kernelOverrides.keyField(),
             snapshot.assembly.disableDataEncryption.toString(),
             snapshot.assembly.removeIntegrityFlags.toString(),
         ).joinToString("|")
@@ -99,12 +105,12 @@ public object CacheKeys {
             avbPubkeySha1,
             platformCertSha1,
             snapshot.assembly.romVersion,
-            snapshot.build.partitionCompression.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
-            snapshot.build.partitionFilesystem.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.build.partitionCompression.keyField(),
+            snapshot.build.partitionFilesystem.keyField(),
             snapshot.build.extraPackages.sorted().joinToString(","),
             snapshot.build.standaloneImages.sorted().joinToString(","),
             snapshot.build.brotliLevel.toString(),
-            snapshot.build.partitionFreeMib.toSortedMap().entries.joinToString(",") { "${it.key}=${it.value}" },
+            snapshot.build.partitionFreeMib.keyField(),
         ) + listOfNotNull(
             // Only when set, so builds made before these settings existed stay cached.
             snapshot.build.partitionSizeBytes.takeIf { it.isNotEmpty() }

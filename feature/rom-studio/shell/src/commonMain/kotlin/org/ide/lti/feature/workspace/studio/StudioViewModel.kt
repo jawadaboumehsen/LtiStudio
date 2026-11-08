@@ -591,6 +591,14 @@ public class StudioViewModel(
                 val updated = current.copy(validationReport = report, snapshot = snapshot)
                 updated.copy(overviewState = recomputeOverview(updated))
             }
+            // A Validate result was about the settings before this change: it is not shown as if it still held.
+            _shellState.update { current ->
+                if (current.validateOperation is OperationUiState.Succeeded) {
+                    current.copy(validateOperation = OperationUiState.Idle)
+                } else {
+                    current
+                }
+            }
             updateShellState()
             // The open stage became locked (an earlier one now has errors): show what to finish first.
             (_uiState.value.entry as? StudioEntry.Editor)?.stageId?.takeIf { isLocked(it, report) }?.let(::selectStage)

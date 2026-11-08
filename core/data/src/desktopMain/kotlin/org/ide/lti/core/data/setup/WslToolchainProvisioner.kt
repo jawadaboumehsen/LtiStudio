@@ -424,7 +424,7 @@ public class WslToolchainProvisioner(
             currentEnvironment?.home
                 ?: usableEnv?.home
                 ?: resolveHome(distro)
-        val cleanHome = if (home.startsWith("/")) home else "/home/lti"
+        val cleanHome = if (home.startsWith("/")) home else resolveHome(distro)
         val env =
             if (wanted != null && currentEnvironment?.distro != wanted && wantedEnv != null) {
                 wantedEnv
@@ -434,7 +434,7 @@ public class WslToolchainProvisioner(
                     wslVersion = 2,
                     osId = "ubuntu",
                     osVersionId = "24.04",
-                    user = usableEnv?.user ?: "lti",
+                    user = cleanHome.substringAfterLast('/'),
                     home = cleanHome,
                 )
             }
@@ -562,13 +562,16 @@ public class WslToolchainProvisioner(
                     desc = "Waiting for build service",
                 )
             }
+
             is ToolRegistryResult.ServiceError ->
                 // The service is there; its tool list is what failed. The bridge stays connected.
                 failToolsStep("Couldn't read the tool list from the build service: ${registryResult.reason}")
+
             is ToolRegistryResult.Tools ->
                 if (unpublished.isNotEmpty() && toolsStepSucceeded()) {
                     failToolsStep("The build service does not offer: ${unpublished.sorted().joinToString(", ")}")
                 }
+
             null -> Unit
         }
     }
@@ -1044,7 +1047,9 @@ public class WslToolchainProvisioner(
                     val planOutcome =
                         when (currentPlan.kind) {
                             SetupPlanKind.CACHE_RESET -> executeCacheReset()
+
                             SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
+
                             SetupPlanKind.FULL_SETUP,
                             SetupPlanKind.STAGE_RETRY,
                             SetupPlanKind.REPAIR_TOOL,
@@ -1120,22 +1125,20 @@ public class WslToolchainProvisioner(
             }
         }
 
-    private suspend fun resolveHome(distro: String): String = (
-        currentEnvironment?.takeIf { it.distro == distro }?.home
-            ?: runCatching {
-                val res =
-                    transport.execute(
-                        ToolExecutionRequest(
-                            toolId = "printenv",
-                            arguments = listOf("HOME"),
-                            workingDirectory = "/",
-                            purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
-                        ),
-                    )
-                if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
-            }.onFailure { if (it is CancellationException) throw it }.getOrNull()
-            ?: runInterruptible(dispatcher) { detector.resolveWslUserHome(distro) }
-        ).takeIf { it.startsWith("/") } ?: "/home/lti"
+    private suspend fun resolveHome(distro: String): String = currentEnvironment?.takeIf { it.distro == distro }?.home
+        ?: runCatching {
+            val res =
+                transport.execute(
+                    ToolExecutionRequest(
+                        toolId = "printenv",
+                        arguments = listOf("HOME"),
+                        workingDirectory = "/",
+                        purpose = io.ltirom.tooling.core.remote.RunPurpose.SETUP,
+                    ),
+                )
+            if (res.exitCode == 0 && res.stdout.trim().startsWith("/")) res.stdout.trim() else null
+        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
+        ?: runInterruptible(dispatcher) { detector.resolveWslUserHome(distro) }
 
     /**
      * Resumes a package handoff: probes the attempt's own environment (never the current selection),
@@ -1200,6 +1203,7 @@ public class WslToolchainProvisioner(
         val missing = probeReport.missingPackages
         return when {
             checkFailure != null -> SetupOutcome.Interrupted("Couldn't check packages: ${checkFailure.reason}")
+
             unavailable.isNotEmpty() -> {
                 val reason = "${unavailable.joinToString(", ")} isn't available on Ubuntu ${env.osVersionId}"
                 setStepStatus(
@@ -1210,7 +1214,9 @@ public class WslToolchainProvisioner(
                 )
                 SetupOutcome.Failed(stage = SetupStepStage.SYSTEM_PACKAGES.name, reason = reason)
             }
+
             missing.isNotEmpty() -> keepHandoffOpen(repo, active, handoff, planId, distro, missing)
+
             else ->
                 archiveAttempt(active.attemptId, SetupOutcome.Succeeded()).also { archived ->
                     if (archived is SetupOutcome.Succeeded) {
@@ -1274,6 +1280,7 @@ public class WslToolchainProvisioner(
         actions.map { act ->
             when (act.type) {
                 "INSTALL_PACKAGES" -> SetupPlanAction.InstallPackages(packages = act.payload)
+
                 "SWITCH_TOOLCHAIN" -> {
                     // Frozen inputs are persisted in the full PersistedPlanAction.switchInputs field.
                     val persistedInputs =
@@ -1296,6 +1303,7 @@ public class WslToolchainProvisioner(
                         forceRebuildGroups = forceGroups,
                     )
                 }
+
                 else -> {
                     appendLog(
                         "[Resume] Unsupported action type '${act.type}' in persisted plan — re-plan required.",
@@ -1330,6 +1338,7 @@ public class WslToolchainProvisioner(
                     ?: throw IllegalStateException("Git input '${groupId.value}' has no resolution timestamp"),
             )
         }
+
         "release" -> {
             val v = version ?: error("Release input '${groupId.value}' has no version")
             val u = url ?: error("Release input '${groupId.value}' has no URL")
@@ -1345,6 +1354,7 @@ public class WslToolchainProvisioner(
                 platform = p,
             )
         }
+
         else -> throw IllegalArgumentException("Unknown frozen input kind '$kind'")
     }
 
@@ -1548,6 +1558,7 @@ public class WslToolchainProvisioner(
         if (originalOutcome !is SetupOutcome.Succeeded) return originalOutcome
         return when (plan.kind) {
             SetupPlanKind.CACHE_RESET -> originalOutcome
+
             SetupPlanKind.FULL_SETUP -> {
                 if (state.canLaunchWorkspace) {
                     originalOutcome
@@ -1559,6 +1570,7 @@ public class WslToolchainProvisioner(
                     )
                 }
             }
+
             SetupPlanKind.STAGE_RETRY -> {
                 val target = plan.targetStageOrToolId
                 val step = state.steps.firstOrNull { it.stage.name == target }
@@ -1583,6 +1595,7 @@ public class WslToolchainProvisioner(
                     }
                 }
             }
+
             SetupPlanKind.REPAIR_TOOL -> {
                 val toolId = plan.targetStageOrToolId
                 val tool = state.toolsMatrix.firstOrNull { it.id == toolId }
@@ -1595,6 +1608,7 @@ public class WslToolchainProvisioner(
                     )
                 }
             }
+
             SetupPlanKind.BOOTSTRAP_PACKAGES -> {
                 val action = plan.orderedActions.filterIsInstance<SetupPlanAction.InstallPackages>().firstOrNull()
                 val expectedPackages = action?.packages.orEmpty()
@@ -1649,6 +1663,7 @@ public class WslToolchainProvisioner(
         val status =
             when (outcome) {
                 is SetupOutcome.Succeeded -> AttemptStatus.SUCCEEDED
+
                 is SetupOutcome.Cancelled ->
                     if (active.status == AttemptStatus.AWAITING_USER_ACTION &&
                         active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
@@ -1657,9 +1672,13 @@ public class WslToolchainProvisioner(
                     } else {
                         AttemptStatus.CANCELLED
                     }
+
                 is SetupOutcome.Failed -> AttemptStatus.FAILED
+
                 is SetupOutcome.Interrupted -> AttemptStatus.INTERRUPTED
+
                 is SetupOutcome.Busy -> AttemptStatus.INTERRUPTED
+
                 is SetupOutcome.AwaitingUserAction -> return outcome
             }
         repo.recordAttemptTerminal(attemptId, status, outcome).onFailure { failure ->

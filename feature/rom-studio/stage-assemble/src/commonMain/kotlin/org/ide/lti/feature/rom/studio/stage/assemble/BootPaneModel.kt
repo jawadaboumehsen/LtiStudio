@@ -128,9 +128,12 @@ public class BootPaneModel(
     private var afterAck: (() -> Unit)? = null
 
     public val actions: BootPaneActions = BootPaneActions(
+        // Not during a task: its results and its lock belong to the image it started on.
         selectImage = { image ->
-            job?.cancel()
-            mutableState.value = BootPaneState(image = image, signWithWorkspaceKey = state.value.signWithWorkspaceKey)
+            if (state.value.busy == null) {
+                val sign = state.value.signWithWorkspaceKey
+                mutableState.value = BootPaneState(image = image, signWithWorkspaceKey = sign)
+            }
         },
         unpack = ::unpack,
         openRamdisk = ::openRamdisk,
@@ -245,7 +248,9 @@ public class BootPaneModel(
     /** Edits the fstabs of vendor_boot (boot where there is none) with [edit] and repacks it as its override. */
     private fun editFirstStage(edit: FstabEdit, unchanged: String, done: String) = task(edit.title) { boot ->
         val image = MOUNT_TABLE_IMAGES.firstOrNull { it in bootImages() } ?: return@task
-        boot.unpack(workspaceId, image)
+        // Unpacking again would wipe ramdisk, kernel and device tree edits still waiting for a repack.
+        val edited = runner?.let { BootWorkbench.unbuiltEdits(it, workspaceId) }.orEmpty()
+        if (image !in edited) boot.unpack(workspaceId, image)
         val changed = boot.editFstabs(workspaceId, image, edit)
         if (changed.isEmpty()) {
             mutableState.update { it.copy(message = "The $image fstab $unchanged.") }
@@ -297,9 +302,17 @@ public class BootPaneModel(
     /** Patches the unpacked kernel with APatch and [superKey]; repack to keep it (FR-026). */
     private fun patchApatch(superKey: String) = task("Patching with APatch") { boot ->
         val image = state.value.image
-        boot.patchApatch(workspaceId, image, superKey)
+        val size = boot.patchApatch(workspaceId, image, superKey)
         val root = boot.rootStatus(workspaceId, image)
-        mutableState.update { it.copy(rootStatus = root, message = "Kernel patched. Repack to keep it.") }
+        mutableState.update { s ->
+            s.copy(
+                rootStatus = root,
+                message = "Kernel patched. Repack to keep it.",
+                parts = s.parts?.let { p ->
+                    if (size == null) p else p.copy(header = p.header.copy(kernelSize = size))
+                },
+            )
+        }
     }
 
     /** Uses the stock image again for [image]: the override is no longer named in the settings. */
@@ -313,7 +326,15 @@ public class BootPaneModel(
                     "Use the stock $image",
                 ) { sh("rm -f \"$1\"", abs(KernelOverrides.path(image))) }
                 setOverrides(overrides() - image)
-                mutableState.update { it.copy(message = "$image uses the extracted image again.") }
+                // What is on screen was unpacked from the dropped image.
+                mutableState.update {
+                    it.copy(
+                        message = "$image uses the extracted image again.",
+                        parts = it.parts.takeUnless { _ -> it.image == image },
+                        deviceTree = it.deviceTree.takeUnless { _ -> it.image == image },
+                        deviceTreeDiff = it.deviceTreeDiff.takeUnless { _ -> it.image == image },
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RefusalException) {

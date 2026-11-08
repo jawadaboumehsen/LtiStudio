@@ -201,6 +201,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_SOURCE_BLOCKING,
             )
+
             firstError != null -> ReadinessItemUi(
                 id = ReadinessId.SOURCE,
                 title = "Source firmware",
@@ -212,6 +213,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_SOURCE_ERROR,
             )
+
             firstWarning != null -> ReadinessItemUi(
                 id = ReadinessId.SOURCE,
                 title = "Source firmware",
@@ -223,6 +225,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_SOURCE_WARNING,
             )
+
             else -> ReadinessItemUi(
                 id = ReadinessId.SOURCE,
                 title = "Source firmware",
@@ -261,6 +264,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_DEBLOAT_ERROR,
             )
+
             firstWarning != null -> ReadinessItemUi(
                 id = ReadinessId.DEBLOAT,
                 title = "Debloat",
@@ -272,6 +276,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_DEBLOAT_WARNING,
             )
+
             isConfigured && debloat != null -> {
                 val label = if (debloat.removeSelectors.isNotEmpty()) {
                     "${debloat.removeSelectors.size} rules active"
@@ -290,6 +295,7 @@ public object WorkspaceOverviewMapper {
                     priority = PRIORITY_DEFAULT_READY,
                 )
             }
+
             else -> ReadinessItemUi(
                 id = ReadinessId.DEBLOAT,
                 title = "Debloat",
@@ -330,6 +336,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_PATCHES_ERROR,
             )
+
             firstWarning != null -> ReadinessItemUi(
                 id = ReadinessId.PATCHES,
                 title = "Patches",
@@ -341,6 +348,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_PATCHES_WARNING,
             )
+
             hasPatches && customization != null -> {
                 val count = customization.enabledPackages.size.coerceAtLeast(customization.lockfile.entries.size)
                 ReadinessItemUi(
@@ -355,6 +363,7 @@ public object WorkspaceOverviewMapper {
                     priority = PRIORITY_DEFAULT_READY,
                 )
             }
+
             else -> ReadinessItemUi(
                 id = ReadinessId.PATCHES,
                 title = "Patches",
@@ -388,17 +397,19 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_SIGNING_ERROR,
             )
+
             !signingVerified -> ReadinessItemUi(
                 id = ReadinessId.SIGNING,
                 title = "Signing key",
                 contextLabel = "Security context",
-                severity = ReadinessSeverity.Warning,
-                statusLabel = "Key required",
-                description = "Release and AVB keypair not verified for production.",
+                severity = ReadinessSeverity.Neutral,
+                statusLabel = "Not used yet",
+                description = "The first signed build checks the keys.",
                 action = WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
-                reviewRequired = true,
+                reviewRequired = false,
                 priority = PRIORITY_SIGNING_WARNING,
             )
+
             else -> ReadinessItemUi(
                 id = ReadinessId.SIGNING,
                 title = "Signing key",
@@ -435,6 +446,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_PUBLICATION_ERROR,
             )
+
             firstWarning != null -> ReadinessItemUi(
                 id = ReadinessId.PUBLICATION,
                 title = "Publication",
@@ -446,6 +458,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = true,
                 priority = PRIORITY_PUBLICATION_WARNING,
             )
+
             publish != null && publish.provider != PublishProvider.NONE -> ReadinessItemUi(
                 id = ReadinessId.PUBLICATION,
                 title = "Publication",
@@ -464,6 +477,7 @@ public object WorkspaceOverviewMapper {
                 reviewRequired = false,
                 priority = PRIORITY_DEFAULT_READY,
             )
+
             else -> ReadinessItemUi(
                 id = ReadinessId.PUBLICATION,
                 title = "Publication",
@@ -491,12 +505,16 @@ public object WorkspaceOverviewMapper {
         return when {
             !hasExplicitValidSource ->
                 WorkspaceActionUi.OpenStage(StageId.FIRMWARE_ACQUISITION)
+
             !hasTargetBinding ->
                 WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.TargetProfile)
+
             unresolvedItem != null ->
                 unresolvedItem.action
+
             // Everything is set: build it, or publish what the last build produced.
             built -> WorkspaceActionUi.OpenStage(StageId.PUBLISH_RELEASE, "publish-review-and-recovery")
+
             else -> WorkspaceActionUi.OpenWorkspaceSection(WorkspaceSection.RunHistory)
         }
     }
@@ -510,12 +528,14 @@ public object WorkspaceOverviewMapper {
                     stageLabel = latestRun.stages.lastOrNull()?.stageId?.let(::stageTitle) ?: "Building",
                     progress = null,
                 )
+
             RunState.SUCCEEDED ->
                 BuildStateUi.Succeeded(
                     runId = latestRun.id,
                     completedAt = latestRun.endedAt?.toString() ?: "",
                     artifactCount = latestRun.artifacts.size,
                 )
+
             RunState.FAILED, RunState.CANCELLED, RunState.INTERRUPTED ->
                 BuildStateUi.Failed(
                     runId = latestRun.id,
@@ -523,6 +543,7 @@ public object WorkspaceOverviewMapper {
                     stageLabel = latestRun.stages.lastOrNull()?.stageId?.let(::stageTitle) ?: "Pipeline",
                     errorMessage = latestRun.stages.lastOrNull()?.message ?: "Build failed",
                 )
+
             RunState.CANCELLING ->
                 BuildStateUi.InProgress(
                     runId = latestRun.id,

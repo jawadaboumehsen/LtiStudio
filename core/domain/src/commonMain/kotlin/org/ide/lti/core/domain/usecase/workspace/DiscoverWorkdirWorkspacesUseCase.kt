@@ -105,12 +105,16 @@ class DiscoverWorkdirWorkspacesUseCase(
 
         val recents = repository.getRecentProjects().first()
         if (recents.none { it.workspaceId == workspace.id }) {
-            val deviceName = device?.let { field(it, "name") }
+            // A copy of a known workspace is scanned here too: the row describes the folder its id opens.
+            val home = workspace.linuxPath ?: dir
+            val deviceFile = WorkspaceDeviceRepository.FILE_NAME
+            val shownDevice = if (home == dir) device else files.readFile(workspace, deviceFile)
+            val deviceName = shownDevice?.let { field(it, "name") }
             repository.addRecentProject(
                 RecentProject(
                     workspaceId = workspace.id,
                     name = workspace.name,
-                    path = dir,
+                    path = home,
                     lastOpened = Clock.System.now(),
                     type = WorkspaceType.REMOTE_WSL,
                     targetBinding = workspace.targetBinding,

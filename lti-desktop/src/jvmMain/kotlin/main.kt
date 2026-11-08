@@ -118,7 +118,7 @@ private fun buildWindowControlActions(
 
 fun main(args: Array<String>) {
     StartupTiming.log("Process started")
-    val instance = SingleInstanceGuard.acquire(SingleInstanceGuard.defaultLockFile())
+    val instance = SingleInstanceGuard.acquireOrExplain(SingleInstanceGuard.defaultLockFile())
     if (instance == null) {
         System.err.println("LtiRom Studio is already running; close the other window first.")
         kotlin.system.exitProcess(1)
@@ -186,10 +186,10 @@ fun main(args: Array<String>) {
                 coroutineScope.launch {
                     // Asking must not stop the app from closing: no answer means no warning.
                     val builds = runCatching {
-                        kotlinx.coroutines.withTimeoutOrNull(2_000L) {
+                        kotlinx.coroutines.withTimeoutOrNull(5_000L) {
                             org.koin.core.context.GlobalContext.getOrNull()
                                 ?.getOrNull<AppShutdownPort>()
-                                ?.activeBuilds()
+                                ?.activeWork()
                         }
                     }.getOrNull().orEmpty()
                     if (builds.isEmpty()) {
@@ -269,7 +269,7 @@ fun main(args: Array<String>) {
                             }
                             org.ide.lti.core.designsystem.component.feedback.GlassDialog(
                                 onDismissRequest = stay,
-                                title = "A build is running",
+                                title = "Work is still running",
                                 confirmButton = {
                                     org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(onClick = stay) {
                                         androidx.compose.material3.Text("Keep the app open")
@@ -288,8 +288,8 @@ fun main(args: Array<String>) {
                             ) {
                                 androidx.compose.material3.Text(
                                     text = buildsAtExit.joinToString(", ") +
-                                        ": closing the app stops the build. Starting it again reuses the work " +
-                                        "that is still valid.",
+                                        ": closing the app stops it. Starting it again reuses the work that is " +
+                                        "still valid.",
                                     style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                                 )

@@ -98,6 +98,26 @@ class WslToolchainProvisionerTest {
     }
 
     @Test
+    fun `every path comes from the WSL user's own home`() = runTest {
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val fakeCli = FakeWslCliExecutor().apply { userHome = "/home/alice" }
+        val provisioner =
+            WslToolchainProvisioner(
+                supervisor = FakeDaemonSupervisor(),
+                transport = FakeRemoteTransport(),
+                repository = inMemoryToolchainRepository(),
+                detector = WslEnvironmentDetector(cli = fakeCli),
+                cli = fakeCli,
+                dispatcher = testDispatcher,
+            )
+
+        val state = provisioner.checkStatus()
+
+        assertEquals("/home/alice", state.userHome)
+        assertEquals("/home/alice/LtiRomWorkDir", state.workDirLinuxPath)
+    }
+
+    @Test
     fun `checkStatus reports failure when no distro is installed`() = runTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val fakeCli = FakeWslCliExecutor().apply { hostDistros = emptyList() }

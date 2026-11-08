@@ -259,7 +259,6 @@ public class WorkspacePreferencesDataSource(
 
         public fun isSystemStagingPath(path: String): Boolean {
             val normalized = path.trim().trimEnd('/', '\\').replace('\\', '/')
-            if (normalized in listOf("~/LtiRomWorkDir", "/home/lti/LtiRomWorkDir", "LtiRomWorkDir")) return true
             val isWorkDirRoot = normalized.endsWith("/LtiRomWorkDir") || normalized.endsWith("LtiRomWorkDir")
             val isSubTargetOrProject = normalized.contains("/target/") || normalized.contains("/projects/")
             return isWorkDirRoot && !isSubTargetOrProject

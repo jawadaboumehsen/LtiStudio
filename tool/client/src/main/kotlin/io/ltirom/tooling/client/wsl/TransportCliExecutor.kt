@@ -17,7 +17,8 @@ import java.nio.charset.Charset
  */
 public class TransportCliExecutor(
     private val transport: RemoteTransportPort,
-    private val defaultWorkingDirectory: String = "/home/lti",
+    /** The user's home when the caller knows it; the root exists for every WSL user. */
+    private val defaultWorkingDirectory: String = "/",
     private val purpose: RunPurpose = RunPurpose.SETUP,
     private val commandValidator: ((List<String>) -> Unit)? = null,
 ) : WslCliExecutor() {
@@ -75,8 +76,10 @@ public class TransportCliExecutor(
         }
         val effectiveCommand = when {
             user == "root" && first != "sudo" -> listOf("sudo", "-n") + command
+
             user == "root" && first == "sudo" && command.getOrNull(1) != "-n" ->
                 listOf("sudo", "-n") + command.drop(1)
+
             else -> command
         }
         return ToolExecutionRequest(

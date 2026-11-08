@@ -37,6 +37,7 @@ import org.ide.lti.core.model.workspace.SigningPolicy
 import org.ide.lti.core.model.workspace.Workspace
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -246,7 +247,6 @@ class WorkspaceOverviewMapperTest {
     fun testReadinessItems_reviewCountMatchesItemsRequiringReview() {
         val draft = createDraft()
         // SOURCE blocking -> reviewRequired = true
-        // SIGNING warning -> reviewRequired = true
         val state = WorkspaceOverviewMapper.map(
             workspace = testWorkspace,
             targetDevice = testTargetDevice,
@@ -326,8 +326,8 @@ class WorkspaceOverviewMapperTest {
         assertTrue(debloatItem.reviewRequired)
 
         val signingItem = state.readinessItems[3]
-        assertEquals(ReadinessSeverity.Warning, signingItem.severity)
-        assertTrue(signingItem.reviewRequired)
+        assertEquals(ReadinessSeverity.Neutral, signingItem.severity)
+        assertFalse(signingItem.reviewRequired)
 
         assertEquals(
             WorkspaceActionUi.OpenStage(StageId.DEBLOAT),
@@ -336,8 +336,7 @@ class WorkspaceOverviewMapperTest {
     }
 
     @Test
-    fun testReadinessItems_signingWarningSetsNextActionWhenDebloatAndPatchesAreNeutral() {
-        // Warning
+    fun testReadinessItems_keysNoSignedBuildHasUsedDoNotHoldUpTheBuild() {
         val state = WorkspaceOverviewMapper.map(
             workspace = testWorkspace,
             targetDevice = testTargetDevice,
@@ -347,12 +346,9 @@ class WorkspaceOverviewMapperTest {
         )
 
         val signingItem = state.readinessItems[3]
-        assertEquals(ReadinessSeverity.Warning, signingItem.severity)
-        assertTrue(signingItem.reviewRequired)
-        assertEquals(
-            WorkspaceActionUi.OpenStage(StageId.BUILD_FLASHABLE_ZIP, "package-signing"),
-            state.nextAction,
-        )
+        assertEquals(ReadinessSeverity.Neutral, signingItem.severity)
+        assertFalse(signingItem.reviewRequired)
+        assertEquals(WorkspaceActionUi.OpenStage(StageId.DEBLOAT), state.nextAction)
     }
 
     @Test

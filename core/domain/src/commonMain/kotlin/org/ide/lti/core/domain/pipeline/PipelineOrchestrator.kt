@@ -1055,7 +1055,7 @@ public class PipelineOrchestrator(
     private suspend fun computeStageCacheKey(driver: Driver, stage: StageDefinition, previousKey: String): String {
         val baseCacheKey = stage.computeCacheKey(driver.context(), previousKey)
         val stageToolsFingerprint =
-            stage.requiredToolIds.sorted().joinToString(";") { toolId ->
+            (stage.requiredToolIds + stage.optionalToolIds).sorted().joinToString(";") { toolId ->
                 val pin = driver.run.pinnedTools[toolId] ?: ""
                 val ver = driver.run.toolVersions[toolId] ?: ""
                 "$toolId=$pin@$ver"
@@ -1083,7 +1083,8 @@ public class PipelineOrchestrator(
         val recordedValues = fields["values"]?.let { runCatching { json.decodeFromString(valuesSerializer, it) } }
             ?.getOrNull().orEmpty()
         val context = driver.context().let { it.copy(runtimeValues = it.runtimeValues + recordedValues) }
-        val valid = fields["input"] == cacheKey && fields["output"] == outputDigest(driver, stage.outputs(context))
+        val valid = fields["input"] == cacheKey && fields["output"] == outputDigest(driver, stage.outputs(context)) &&
+            stage.requiredPaths(context).all { executionPort.stat(driver.ws, it).exists }
         // The run's own identity stays this run's: only a cached Build brings back the date its package is named
         // by; the device revision a resume is checked against is never an older run's.
         if (valid) {

@@ -91,18 +91,22 @@ public fun ToolGroupRow(
                             onMoveUp()
                             true
                         }
+
                         Key.DirectionDown -> {
                             onMoveDown()
                             true
                         }
+
                         Key.Enter, Key.NumPadEnter -> {
                             onOpenInspector()
                             true
                         }
+
                         Key.Escape -> {
                             onCloseInspector()
                             true
                         }
+
                         else -> false
                     }
                 } else {
@@ -151,17 +155,15 @@ public fun ToolGroupRow(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Licence
-            if (row.licenceLabel != null) {
-                Text(
-                    text = row.licenceLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            // Licence: always present, so a group without one keeps the columns aligned.
+            Text(
+                text = row.licenceLabel.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
 
             // Status
             Text(
@@ -170,9 +172,13 @@ public fun ToolGroupRow(
                 color =
                 when (row.statusKind) {
                     ToolRowStatusKind.Ready -> MaterialTheme.colorScheme.primary
+
                     ToolRowStatusKind.Failed -> MaterialTheme.colorScheme.error
+
                     ToolRowStatusKind.NeedsRepair -> MaterialTheme.colorScheme.error
+
                     ToolRowStatusKind.Installing -> MaterialTheme.colorScheme.primary
+
                     ToolRowStatusKind.NotInstalled,
                     ToolRowStatusKind.Unknown,
                     ToolRowStatusKind.Interrupted,

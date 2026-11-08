@@ -11,14 +11,19 @@ package org.ide.lti.core.data
 
 import io.ltirom.tooling.client.resilience.DaemonHeartbeatMonitor
 import io.ltirom.tooling.core.ports.RemoteTransportPort
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.tools.AppShutdownPort
 import org.ide.lti.core.domain.tools.ShutdownReport
 import org.ide.lti.core.domain.tools.ToolManager
 import org.ide.lti.core.domain.tools.ToolStorePort
+import org.ide.lti.core.model.workspace.Workspace
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -29,6 +34,7 @@ public class AppShutdownCoordinator(
     private val toolStore: ToolStorePort? = null,
     private val workspaces: WorkspaceRepository? = null,
     private val runs: RunRepository? = null,
+    private val jobLock: JobLock? = null,
 ) : AppShutdownPort {
     @Volatile
     override var closing: Boolean = false
@@ -68,13 +74,24 @@ public class AppShutdownCoordinator(
         const val TOOL_SHARE_PERCENT = 60L
         const val PERCENT = 100L
         const val FORCE_SHUTDOWN_MS = 2_000L
+        const val JOB_READ_TIMEOUT = 1_000L
     }
 
-    override suspend fun activeBuilds(): List<String> {
-        val builds = runs ?: return emptyList()
-        return workspaces?.getWorkspaces()?.first().orEmpty()
-            .filter { builds.latestActive(it.id) != null }
-            .map { it.name }
+    /** All at once: one unreadable workspace must not use up the caller's time before a later one is reached. */
+    override suspend fun activeWork(): List<String> = coroutineScope {
+        workspaces?.getWorkspaces()?.first().orEmpty().map { workspace ->
+            async {
+                when {
+                    runs?.latestActive(workspace.id) != null -> workspace.name
+                    else -> runningJob(workspace)?.let { "${workspace.name} ($it)" }
+                }
+            }
+        }.awaitAll().filterNotNull()
+    }
+
+    /** The job this app runs in [workspace]; one that cannot be read in time does not hold up closing. */
+    private suspend fun runningJob(workspace: Workspace): String? = withTimeoutOrNull(JOB_READ_TIMEOUT) {
+        runCatching { jobLock?.currentHolder(workspace) }.getOrNull()
     }
 
     override suspend fun forceShutdown() {

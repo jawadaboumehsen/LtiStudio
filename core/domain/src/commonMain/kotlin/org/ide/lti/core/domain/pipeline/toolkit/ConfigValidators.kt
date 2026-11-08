@@ -18,6 +18,11 @@ public object ConfigValidators {
     private val MODE_RANGE = 0..0b111_111_111_111
     private val WHITESPACE = "\\s+".toRegex()
     private const val OCTAL = 8
+    private const val FS_CONFIG_FIELDS = 5
+    private val CAPABILITIES = Regex("capabilities=(0x[0-9a-fA-F]{1,16}|[0-9]{1,20})")
+    private val SELINUX_CONTEXT = Regex("[^:\\s]+:[^:\\s]+:[^:\\s]+:\\S+")
+    private const val NO_CONTEXT = "<<none>>"
+    private const val MAX_CONTEXT_FIELDS = 3
 
     /** The non-empty, non-comment lines of [content] with their 1-based line numbers. */
     private fun entries(content: String): List<Pair<Int, String>> = content.lines()
@@ -49,6 +54,10 @@ public object ConfigValidators {
                 "Line $n: Invalid UID number '${tokens[1]}'".takeIf { tokens[1].toLongOrNull() !in ID_RANGE },
                 "Line $n: Invalid GID number '${tokens[2]}'".takeIf { tokens[2].toLongOrNull() !in ID_RANGE },
                 "Line $n: Invalid octal mode '${tokens[3]}'".takeIf { tokens[3].toIntOrNull(OCTAL) !in MODE_RANGE },
+                tokens.getOrNull(FS_CONFIG_FIELDS - 1)?.takeIf { !CAPABILITIES.matches(it) }
+                    ?.let { "Line $n: Invalid capabilities '$it'" },
+                "Line $n: fs_config has at most $FS_CONFIG_FIELDS fields, found ${tokens.size}"
+                    .takeIf { tokens.size > FS_CONFIG_FIELDS },
             )
         }
     }
@@ -56,9 +65,12 @@ public object ConfigValidators {
     public fun validateFileContexts(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
         val tokens = line.split(WHITESPACE)
         when {
-            tokens.size < 2 -> "Line $n: file_contexts requires <regex_path> and <selinux_context>"
+            tokens.size !in 2..MAX_CONTEXT_FIELDS ->
+                "Line $n: file_contexts requires <regex_path> [file_type] <selinux_context>"
 
-            ':' !in tokens.last() ->
+            runCatching { Regex(tokens.first()) }.isFailure -> "Line $n: Invalid path regex '${tokens.first()}'"
+
+            tokens.last() != NO_CONTEXT && !SELINUX_CONTEXT.matches(tokens.last()) ->
                 "Line $n: Invalid SELinux context format '${tokens.last()}' (expected user:role:type:level)"
 
             else -> null

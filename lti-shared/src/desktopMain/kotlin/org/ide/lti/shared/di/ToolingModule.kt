@@ -135,6 +135,7 @@ public val toolingModule =
                 toolStore = getOrNull<org.ide.lti.core.domain.tools.ToolStorePort>(),
                 workspaces = getOrNull(),
                 runs = getOrNull(),
+                jobLock = getOrNull(),
             )
         } bind org.ide.lti.core.domain.tools.AppShutdownPort::class
 

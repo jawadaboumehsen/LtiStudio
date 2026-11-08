@@ -166,11 +166,10 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
 
     /** path -> sha256 of each file, or `link:<target>` of each symlink (a link changed or added is a difference). */
     private suspend fun hashes(job: WorkbenchRunner.Job, dir: String): Map<String, String> = job.sh(
-        "cd \"$1\" && find . -type f -exec sha256sum {} + && find . -type l -printf 'link:%l  %p\\n'",
+        "cd \"$1\" && find . -type f -exec sha256sum {} + && find . -type l -printf 'link:%l  %p\\n' && " +
+            "find . -mindepth 1 -type d -empty -printf 'empty folder  %p\\n'",
         job.abs(dir),
-    ).lines().mapNotNull { line ->
-        line.split("  ", limit = 2).takeIf { it.size == 2 }?.let { it[1].removePrefix("./") to it[0] }
-    }.toMap()
+    ).lines().mapNotNull(::checksumLine).toMap()
 
     /**
      * method signature -> its `.method` line and body, in one smali file; [CLASS_LEVEL] holds every line outside
@@ -213,13 +212,31 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
         Refusal("The file does not exist.", path, "Pick another file."),
     )
 
-    private companion object {
+    internal companion object {
         private const val DETAILS = 4_000
         private const val HASH_BATCH = 2_000
+        private val ESCAPE = Regex("""\\(.)""")
         private val WHITESPACE = Regex("""\s+""")
         private const val ZIP_COLUMNS = 8
 
         /** The lines of a class outside its methods, compared as one entry. */
         private const val CLASS_LEVEL = "(class header and fields)"
+
+        /** A `sha256sum` line as path -> hash; a leading `\` says the name is escaped (a backslash, a line break). */
+        internal fun checksumLine(line: String): Pair<String, String>? {
+            val (hash, name) = line.split("  ", limit = 2).takeIf { it.size == 2 } ?: return null
+            val path = if (line.startsWith("\\")) {
+                ESCAPE.replace(name) { m ->
+                    when (val c = m.groupValues[1]) {
+                        "n" -> "\n"
+                        "r" -> "\r"
+                        else -> c
+                    }
+                }
+            } else {
+                name
+            }
+            return path.removePrefix("./") to hash.removePrefix("\\")
+        }
     }
 }

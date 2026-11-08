@@ -67,6 +67,8 @@ public fun ContentToolsPane(
     viewModel: ContentToolsViewModel,
     modifier: Modifier = Modifier,
 ) {
+    // A message or refusal belongs to the tool that made it: another tool's tab starts clean.
+    LaunchedEffect(toolId) { viewModel.dismiss() }
     Box(modifier.fillMaxSize().testTag("ContentToolsPane"), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
@@ -137,7 +139,8 @@ private fun PackageCard(state: ContentToolsState, viewModel: ContentToolsViewMod
         Hint(
             "Decode a package of the work tree with apktool, edit its smali or resources in the folder that opens, " +
                 "then rebuild: an APK is aligned and signed with the workspace platform key, the archive is tested, " +
-                "and the original is kept as a restore point.",
+                "and the original is kept as a restore point. This changes the assembled tree only: a build that " +
+                "assembles again replaces it, so an edit for every build belongs in a mod or a Patches script.",
         )
         GlassTextField(value = path, onValueChange = { path = it }, placeholder = "work/…/Name.apk or .jar")
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
@@ -166,8 +169,9 @@ private fun LibraryCard(state: ContentToolsState, viewModel: ContentToolsViewMod
         Hint(
             "Takes a library out of an APEX payload, replaces the find bytes with the replace bytes (hex; \".\" in " +
                 "find matches any digit) and puts the patched copy in the tree, as a module overlay does. A library " +
-                "that already holds the replace bytes is left alone. The patterns depend on the device and Android " +
-                "version (for Samsung Bluetooth, see the BluetoothLibraryPatcher project).",
+                "without the find bytes is refused, also one patched before. The patterns depend on the device and " +
+                "Android version (for Samsung Bluetooth, see the BluetoothLibraryPatcher project). Like every edit " +
+                "here, it lasts until a build assembles again.",
         )
         GlassTextField(value = apex, onValueChange = { apex = it }, label = "APEX in the work tree")
         GlassTextField(value = library, onValueChange = { library = it }, label = "Library inside the APEX payload")

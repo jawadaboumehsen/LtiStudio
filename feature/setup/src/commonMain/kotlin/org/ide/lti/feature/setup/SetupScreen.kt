@@ -403,18 +403,22 @@ fun SetupScreenContent(
                                 actions.onCreateWorkspace()
                                 true
                             }
+
                             Key.O -> {
                                 actions.onOpenFolder()
                                 true
                             }
+
                             Key.F -> {
                                 when (effectiveTab) {
                                     SetupTab.PROJECTS -> {
                                         searchFocusRequester.requestFocus()
                                     }
+
                                     SetupTab.TOOLS -> {
                                         toolSearchFocusRequester.requestFocus()
                                     }
+
                                     else -> {
                                         pendingSearchFocus = true
                                         onTabChange(SetupTab.PROJECTS)
@@ -422,6 +426,7 @@ fun SetupScreenContent(
                                 }
                                 true
                             }
+
                             else -> false
                         }
                     } else if (event.key == Key.Escape) {
@@ -572,6 +577,7 @@ fun SetupScreenContent(
                                         previewInvokerFocusRequester = previewInvokerFocusRequester,
                                     )
                                 }
+
                                 SetupTab.PROJECTS -> {
                                     ProjectsStepContent(
                                         state = state,
@@ -582,6 +588,7 @@ fun SetupScreenContent(
                                         lazyListState = workspacesListState,
                                     )
                                 }
+
                                 SetupTab.TOOLS -> {
                                     ToolsStepContent(
                                         state = state,
@@ -590,6 +597,7 @@ fun SetupScreenContent(
                                         scrollState = toolsScrollState,
                                     )
                                 }
+
                                 SetupTab.RECOVERY -> {
                                     RecoveryStepContent(
                                         state = state,
@@ -838,7 +846,7 @@ private fun SetupStatusBar(leadingText: String, failureText: String?, modifier: 
                 }
             } else {
                 Text(
-                    text = "LtiRom Studio v0.9.0 • Ready",
+                    text = "LtiRom Studio • Ready",
                     fontSize = FontSize.Micro,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = GlassFontFamily.ide(),

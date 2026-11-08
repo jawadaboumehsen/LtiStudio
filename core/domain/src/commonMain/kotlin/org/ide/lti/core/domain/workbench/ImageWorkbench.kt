@@ -270,7 +270,7 @@ public class ImageWorkbench(
         }
 
     /**
-     * Cuts [image] into parts of at most [maxMegabytes] (`<name>.img.part00`, `part01`, …; join them with `cat`)
+     * Cuts [image] into parts of at most [maxMegabytes] (`<name>.img.parts/<name>.img.part00`, …; join them with `cat`)
      * (FR-010). These are byte parts, not sparse chunks: the tool groups build no `simg2simg`.
      */
     public suspend fun split(workspaceId: String, image: String, maxMegabytes: Int): List<String> =
@@ -278,8 +278,10 @@ public class ImageWorkbench(
             require(maxMegabytes > 0) { "The part size must be positive." }
             val name = "${image.substringAfterLast('/')}.part"
             val partial = "out/toolkit/.$name.partial"
+            val folder = "out/toolkit/${name}s"
             requireFolderInside(partial, "out/toolkit")
-            // Parts are made in a side folder and moved together, so a cancelled split leaves no partial set.
+            requireFolderInside(folder, "out/toolkit")
+            // Parts are made in a side folder that becomes the set in one rename: never a partial or mixed one.
             sh("rm -rf \"$1\" && mkdir -p \"$1\"", abs(partial))
             // Enough suffix digits for any part count (split stops at 100 with two).
             val bytes = run("stat", "-c", "%s", abs(image)).trim().toLong()
@@ -288,16 +290,8 @@ public class ImageWorkbench(
             run("split", "-b", "${maxMegabytes}M", "-d", "-a", "$digits", abs(image), abs("$partial/$name"))
             val parts = run("find", abs(partial), "-maxdepth", "1", "-name", "$name*", "-printf", "%P\\n")
                 .lines().filter { it.isNotBlank() }.sorted()
-            // An earlier split of the same image may have had more parts: they go, so `cat` joins only this one.
-            sh(
-                // Only numbered parts: a name that merely starts like one (`part01.backup`) is not this tool's.
-                "for f in \"$2\"/\"$3\"[0-9]*; do case \"\${f##*.part}\" in *[!0-9]*) ;; " +
-                    "*) rm -f \"\$f\" ;; esac; done; mv -f \"$1\"/* \"$2\" && rmdir \"$1\"",
-                abs(partial),
-                abs("out/toolkit"),
-                name,
-            )
-            parts.map { "out/toolkit/$it" }
+            sh("rm -rf \"$2\" && mv -T \"$1\" \"$2\"", abs(partial), abs(folder))
+            parts.map { "$folder/$it" }
         }
 
     /** The groups, partitions and free space of the workspace's super image (FR-011), from `lpdump`. */

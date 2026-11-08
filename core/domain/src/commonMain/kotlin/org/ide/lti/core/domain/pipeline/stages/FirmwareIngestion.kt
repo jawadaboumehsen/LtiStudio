@@ -78,6 +78,8 @@ internal object FirmwareIngestion {
                     ArchiveExtractor.extractionCommand(format, archive, raw, ws),
                     "extract archive ($format)",
                 ),
+                // A compressor holds one file: a `.tar.gz` is only a tar so far.
+                PipelineStep.Tool(stepCommand("sh", listOf("-c", UNPACK_TARS, "sh", raw), ws), "unpack inner tar"),
             ) + listingSteps(
                 ctx,
                 PipelineStep.Tool(
@@ -88,6 +90,14 @@ internal object FirmwareIngestion {
             ) { members -> layoutSteps(ctx, archive, members, fromZip = false, parts) }
         }
     }
+
+    /** `sh -c UNPACK_TARS sh <dir>`: unpacks each file of the folder that holds `ustar` where a tar header does. */
+    private const val UNPACK_TARS = """
+for f in "$1"/*; do
+  if [ "${'$'}(dd if="${'$'}f" bs=1 skip=257 count=5 2>/dev/null)" = ustar ]; then
+    tar -xf "${'$'}f" -C "$1" && rm -f "${'$'}f" || exit 1
+  fi
+done"""
 
     /** `payload.bin` straight from a zip OTA (the legacy path, no package manifest). */
     fun otaSteps(ctx: StageContext, archive: String): List<PipelineStep> {

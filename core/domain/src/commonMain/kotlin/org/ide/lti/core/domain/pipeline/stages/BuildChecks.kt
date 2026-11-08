@@ -298,7 +298,14 @@ internal object BuildChecks {
             )
             steps += PipelineStep.Tool(stepCommand("fusermount3", listOf("-u", mnt), ws), "unmount built $p")
         }
+        val treeKey = "build.$p.tree"
         steps += listOf(
+            PipelineStep.Tool(
+                command = stepCommand("find", listOf(ctx.abs("work/$p"), "-mindepth", "1", "-printf", "%P\\n"), ws),
+                label = "list tree of $p",
+                resultKey = treeKey,
+                allowFailure = true,
+            ),
             PipelineStep.Tool(
                 command = stepCommand("cat", listOf(ctx.abs("work/configs/fs_config-$p")), ws),
                 label = "read fs_config $p",
@@ -335,7 +342,9 @@ internal object BuildChecks {
                 builtFsConfig = built.fsConfigContent,
                 builtFileContexts = built.fileContextContent,
             )
-            diffs.takeIf { it.isNotEmpty() }?.let {
+            val lost = ImageVerify.missingFromImage(values[treeKey].orEmpty(), statDump, mnt)
+                .map { "$it is in work/$p but not in the image" }
+            (lost + diffs).takeIf { it.isNotEmpty() }?.let {
                 "IMAGE_VERIFY_FAILED: out/images/$p.img does not match work/$p: " +
                     it.take(COVERAGE_SHOWN).joinToString("; ") +
                     if (it.size > COVERAGE_SHOWN) " and ${it.size - COVERAGE_SHOWN} more" else ""

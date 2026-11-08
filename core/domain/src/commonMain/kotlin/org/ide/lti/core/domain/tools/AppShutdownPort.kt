@@ -23,6 +23,6 @@ public interface AppShutdownPort {
 
     public suspend fun forceShutdown() {}
 
-    /** The names of the workspaces with a build queued or running, which closing the app would stop. */
-    public suspend fun activeBuilds(): List<String> = emptyList()
+    /** The workspaces with a build or a job (a publish, say) that closing the app would stop. */
+    public suspend fun activeWork(): List<String> = emptyList()
 }
