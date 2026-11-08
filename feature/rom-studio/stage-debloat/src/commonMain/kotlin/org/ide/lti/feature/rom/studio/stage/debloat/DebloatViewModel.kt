@@ -20,14 +20,17 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.domain.debloat.AppFacts
 import org.ide.lti.core.domain.debloat.AppManifests
+import org.ide.lti.core.domain.debloat.AppMap
 import org.ide.lti.core.domain.debloat.AppRisk
 import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatDecision
 import org.ide.lti.core.domain.debloat.DebloatInventory
+import org.ide.lti.core.domain.debloat.DebloatMap
 import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.debloat.DebloatRisk
 import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
+import org.ide.lti.core.domain.pipeline.toolkit.CommunityOpinion
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalCatalog
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -36,6 +39,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.RemovalList
 import org.ide.lti.core.domain.pipeline.toolkit.RemovalListMatcher
 import org.ide.lti.core.domain.pipeline.toolkit.RemovalMatchResult
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
+import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.StageSettingsSync
@@ -61,13 +65,24 @@ public data class DebloatFacts(
     val iconFolder: String? = null,
     /** The permission/sysconfig files of work/ and the packages each names (`PackageMentions`). */
     val mentions: Map<String, PackageMentions.Mentions> = emptyMap(),
-    /** The app's saved presets (`DebloatPresetStore`), by name. */
+    /** The app's saved presets (`DebloatPresetStore`), by name: own lists, community lists and per-phone picks. */
     val presets: List<RemovalList> = emptyList(),
+    /** This workspace's phone (its codename), whose picks are kept for its next workspaces; null when unknown. */
+    val device: String? = null,
+    /** Picks kept for this phone from another workspace, offered while this one has none. */
+    val devicePicks: RemovalList? = null,
     val message: String? = null,
     val refusal: Refusal? = null,
 ) {
     /** What removing each app would do while the apps in [picked] go too. */
     public fun risks(picked: Set<String>): Map<String, AppRisk> = DebloatRisk.assess(inventory, apps, picked)
+
+    /** Every community list's opinion of [packageId], by list name; shown beside the verdict, never part of it. */
+    public fun opinions(packageId: String?): List<Pair<String, CommunityOpinion>> =
+        packageId?.let { pkg -> presets.mapNotNull { list -> list.opinions[pkg]?.let { list.name to it } } }.orEmpty()
+
+    /** The map of the app [selector] names: what relies on it and what it relies on, as the manifests declare. */
+    public fun map(selector: String): AppMap? = DebloatMap.of(selector, apps)
 }
 
 public class DebloatViewModel(
@@ -78,6 +93,8 @@ public class DebloatViewModel(
     private val restore: RestoreWorkbench? = null,
     private val runner: WorkbenchRunner? = null,
     private val presets: DebloatPresetStore? = null,
+    /** The workspace's device, whose codename keys the picks kept for that phone. */
+    private val devices: WorkspaceDeviceRepository? = null,
     private val pickFile: suspend () -> String? = {
         DialogUtils.selectFilePath("Pick a removal list (.json, uad_lists.json, or text with one package per line)")
     },
@@ -102,7 +119,25 @@ public class DebloatViewModel(
     public val facts: StateFlow<DebloatFacts> = _facts.asStateFlow()
 
     public fun updateSettings(updated: DebloatSettings) {
+        val before = settings.value.removeSelectors
         sync.update(updated)
+        val device = _facts.value.device
+        val store = presets
+        if (device == null || store == null || updated.removeSelectors == before) return
+        // The picks of this phone, kept for its next workspaces (matched there by package name).
+        guarded {
+            val kept = portableList("Picks for $device").copy(device = device)
+            val saved = store.update { all -> all.filter { it.device != device } + kept }
+            _facts.value = _facts.value.copy(presets = saved)
+        }
+    }
+
+    /** Picks the apps another workspace of this phone picked ([DebloatFacts.devicePicks]). */
+    public fun applyDevicePicks() {
+        _facts.value.devicePicks?.let {
+            pick(it, "Applied the picks kept for ${it.device}:")
+            _facts.value = _facts.value.copy(devicePicks = null)
+        }
     }
 
     /** Picks or un-picks [candidate] for removal; a protected app, or one the device needs, is never picked. */
@@ -148,7 +183,13 @@ public class DebloatViewModel(
             )
             readApps(inventory)
         }
-        guarded { _facts.value = _facts.value.copy(presets = presets?.load().orEmpty()) }
+        guarded {
+            val saved = presets?.load().orEmpty()
+            val device = devices?.get(workspaceId)?.codename
+            val offered = saved.firstOrNull { it.device != null && it.device == device && it.entries.isNotEmpty() }
+                ?.takeIf { settings.value.removeSelectors.isEmpty() }
+            _facts.value = _facts.value.copy(presets = saved, device = device, devicePicks = offered)
+        }
     }
 
     /** Reads the manifests of [inventory]'s apps (aapt2 in WSL, a few seconds for a whole ROM). */
@@ -230,7 +271,12 @@ public class DebloatViewModel(
             val path = pickFile() ?: return@launch
             guarded {
                 val file = File(path)
-                pick(RemovalList.parse(file.nameWithoutExtension, file.readText()), "Imported")
+                val list = RemovalList.parse(file.nameWithoutExtension, file.readText())
+                if (list.opinions.isEmpty()) {
+                    pick(list, "Imported")
+                } else {
+                    keepCommunityList(list)
+                }
             }
         }
     }
@@ -270,6 +316,24 @@ public class DebloatViewModel(
     /** The picks as list entries: each app's package name where it is known, else `partition:path`. */
     private fun portableList(name: String): RemovalList =
         RemovalList(name, settings.value.removeSelectors.map { packageOf(it) ?: it })
+
+    /**
+     * Keeps a community list (a package map with a rating per package) in the app: its opinion shows beside each
+     * app's own verdict and picks nothing; applying it, like a preset, picks what it recommends.
+     */
+    private suspend fun keepCommunityList(list: RemovalList) {
+        val store = presets ?: return
+        val saved = store.update { all ->
+            (all.filter { it.name != list.name } + list).sortedBy { it.name.lowercase() }
+        }
+        val here = _facts.value.apps.values.mapNotNull { it.packageId }.toSet()
+        _facts.value = _facts.value.copy(
+            presets = saved,
+            message = "Kept the community list ${list.name}: ${list.opinions.size} packages rated, " +
+                "${list.opinions.keys.count { it in here }} of them in this ROM. Its opinion shows beside each app; " +
+                "nothing was picked.",
+        )
+    }
 
     /** Saves the current picks as a removal list in a folder the user picks. */
     public fun exportList() {

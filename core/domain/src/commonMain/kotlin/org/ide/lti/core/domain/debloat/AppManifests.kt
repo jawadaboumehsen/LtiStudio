@@ -23,8 +23,14 @@ public data class AppFacts(
     val bootReceiver: Boolean = false,
     /** Libraries it cannot start without (`<uses-library>` that is not `required="false"`). */
     val requiredLibraries: Set<String> = emptySet(),
+    /** Libraries it uses when they are there and starts without (`<uses-library required="false">`). */
+    val optionalLibraries: Set<String> = emptySet(),
     /** Libraries it provides to other apps (`<library>`). */
     val providedLibraries: Set<String> = emptySet(),
+    /** Permissions it declares (`<permission>`): other apps that ask for one lose it when this app goes. */
+    val definedPermissions: Set<String> = emptySet(),
+    /** Permissions it asks for (`<uses-permission>`). */
+    val usedPermissions: Set<String> = emptySet(),
     /** Packages this app is a resource overlay for. */
     val overlayTargets: Set<String> = emptySet(),
     /** `versionName`, as the manifest gives it. */
@@ -61,7 +67,10 @@ public data class AppFacts(
         inputMethod = inputMethod || other.inputMethod,
         bootReceiver = bootReceiver || other.bootReceiver,
         requiredLibraries = requiredLibraries + other.requiredLibraries,
+        optionalLibraries = optionalLibraries + other.optionalLibraries,
         providedLibraries = providedLibraries + other.providedLibraries,
+        definedPermissions = definedPermissions + other.definedPermissions,
+        usedPermissions = usedPermissions + other.usedPermissions,
         overlayTargets = overlayTargets + other.overlayTargets,
         version = version ?: other.version,
         targetSdk = targetSdk ?: other.targetSdk,
@@ -108,6 +117,8 @@ public object AppManifests {
           else if (e == \"uses-library\" && name == \"required\" && (v == \"false\" || v == \"0x0\")) print \"optional \" lib
           else if (e == \"library\" && name == \"name\") print \"lib \" v
           else if (e == \"overlay\" && name == \"targetPackage\") print \"overlay \" v
+          else if (e == \"permission\" && p == \"manifest\" && name == \"name\") print \"perm \" v
+          else if (e == \"uses-permission\" && p == \"manifest\" && name == \"name\") print \"needs \" v
           else if (e == \"manifest\" && name == \"versionName\") print \"ver \" v
           else if (e == \"uses-sdk\" && name == \"targetSdkVersion\") { s = a; sub(/.*\\)/, \"\", s); print \"sdk \" s }
           else if (e == \"package\" && p == \"queries\" && name == \"name\") print \"asks \" v
@@ -315,7 +326,10 @@ JAVA
             inputMethod = "ime" in lines,
             bootReceiver = "boot" in lines,
             requiredLibraries = values("uses") - values("optional"),
+            optionalLibraries = values("optional"),
             providedLibraries = values("lib"),
+            definedPermissions = values("perm"),
+            usedPermissions = values("needs"),
             overlayTargets = values("overlay"),
             version = values("ver").firstOrNull(),
             // What follows the attribute's `)`: `=31` from aapt2 2.19, a typed `0x22` (hex) from older ones.

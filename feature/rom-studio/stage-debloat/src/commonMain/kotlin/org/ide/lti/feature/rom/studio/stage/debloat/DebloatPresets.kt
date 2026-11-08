@@ -43,9 +43,23 @@ internal fun DebloatPresets(facts: DebloatFacts, canSave: Boolean, actions: Debl
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Line("${preset.name} (${preset.entries.size} apps)")
+                Line(
+                    when {
+                        preset.device != null -> "${preset.name} (${preset.entries.size} apps, kept for this phone)"
+
+                        preset.opinions.isNotEmpty() ->
+                            "${preset.name} (community list: ${preset.opinions.size} rated, " +
+                                "${preset.entries.size} recommended)"
+
+                        else -> "${preset.name} (${preset.entries.size} apps)"
+                    },
+                )
                 GlassButton(onClick = { actions.applyPreset(preset.name) }, variant = GlassButtonVariant.Standard) {
-                    Text("Apply", fontSize = FontSize.BodySmall)
+                    // A community list picks only what it recommends, and only when asked.
+                    Text(
+                        if (preset.opinions.isNotEmpty()) "Pick what it recommends" else "Apply",
+                        fontSize = FontSize.BodySmall,
+                    )
                 }
                 GlassButton(onClick = { actions.deletePreset(preset.name) }, variant = GlassButtonVariant.Text) {
                     Text("Delete", fontSize = FontSize.BodySmall)

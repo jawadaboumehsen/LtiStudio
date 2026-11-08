@@ -144,9 +144,21 @@ class RemovalListMatcherTest {
             "com.google.android.youtube": {"list": "Google", "removal": "Advanced"}}"""
         assertEquals(listOf("com.facebook.appmanager"), RemovalList.parse("uad_lists", map).entries)
         val array = """[{"id": "com.a", "removal": "Recommended"}, {"id": "com.b", "removal": "Expert"}]"""
-        assertEquals(RemovalList("old", listOf("com.a")), RemovalList.parse("old", array))
+        assertEquals(listOf("com.a"), RemovalList.parse("old", array).entries)
         // A plain package map rates nothing: every package is taken.
         assertEquals(listOf("com.x", "com.y"), RemovalList.parse("m", """{"com.x": "bloat", "com.y": 1}""").entries)
+    }
+
+    @Test
+    fun aCommunityListKeepsEveryRatingAndNoteAsItsOpinion() {
+        val map = """{"com.facebook.appmanager": {"list": "Oem", "description": "Facebook updater.\n", "removal": "Recommended"},
+            "com.android.systemui": {"list": "Aosp", "removal": "Unsafe"}}"""
+        val list = RemovalList.parse("uad", map)
+        assertEquals(listOf("com.facebook.appmanager"), list.entries)
+        assertEquals(CommunityOpinion("Recommended", "Facebook updater."), list.opinions["com.facebook.appmanager"])
+        assertEquals(CommunityOpinion("Unsafe"), list.opinions["com.android.systemui"])
+        // A plain list carries no opinion: importing it still picks its apps.
+        assertEquals(emptyMap(), RemovalList.parse("mine", "com.a\ncom.b").opinions)
     }
 
     @Test

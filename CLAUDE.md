@@ -1160,6 +1160,9 @@ nothing is shown as done before its job finished.
   Universal Android Debloater's `uad_lists.json` (only its `Recommended` packages; PQ84P01 has 69 of them).
   Imported or applied apps go through the same checks as a pick by hand: protected apps and ones the device needs
   (`DebloatRisk` blockers) are listed, not picked. `etc/security/` (fs-verity BuildManifest.apk) is protected.
+- Debloat > App map (`DebloatMap`, `DebloatMapPane`): for one app, the apps relying on it (left, arrows in) and what it relies on (right), coloured by the loss: stops starting (a required library), loses a feature (an optional one), loses a permission (`<uses-permission>` of a `<permission>` it declares), loses a skin (an overlay). A library or permission another app also declares or provides is no arrow (the framework redeclares many permissions); the framework (`android`) is never one. Run-time links (intents, bound services, providers) are in no file, so not drawn.
+- Community lists: importing a package map with ratings (`uad_lists.json`) keeps it as a preset with `RemovalList.opinions` (rating + description per package) and picks nothing; each app row shows the rating beside its own verdict. "Pick what it recommends" applies it like a preset.
+- Per-phone picks: every change of the picks is kept as the preset with `RemovalList.device` = the workspace device's codename; a new workspace of that phone with no picks offers them in a banner, matched by package name.
 - Debloat backups: `restore/debloat/<partition>/<path>` plus the sidecars in `restore/debloat/configs`; points in
   `restore/index.json` (`RestoreIndex`). Restoring copies the app back and merges its sidecar lines back.
 - Risky features (`RiskyFeature`: kernel override, root patch, vbmeta flags, library patch, package

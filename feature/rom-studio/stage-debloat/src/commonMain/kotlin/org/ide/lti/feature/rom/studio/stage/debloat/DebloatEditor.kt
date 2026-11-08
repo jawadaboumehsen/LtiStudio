@@ -49,6 +49,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
+import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
@@ -69,6 +70,7 @@ import org.ide.lti.core.domain.debloat.DebloatCandidate
 import org.ide.lti.core.domain.debloat.DebloatInventory
 import org.ide.lti.core.domain.debloat.DebloatRisk
 import org.ide.lti.core.domain.debloat.PackageMentions
+import org.ide.lti.core.domain.pipeline.toolkit.CommunityOpinion
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
 import org.ide.lti.core.model.workspace.DebloatSettings
@@ -118,6 +120,8 @@ public fun DebloatEditor(
 
                 "results" -> results(facts, actions)
 
+                "app-map", "app_map" -> appMap(facts)
+
                 else -> {
                     item {
                         GlassTextField(
@@ -142,6 +146,7 @@ public fun DebloatEditor(
                             facts.app(selector),
                             details,
                             onToggle,
+                            facts.opinions(facts.apps[selector]?.packageId),
                         )
                     }
                 }
@@ -159,6 +164,7 @@ public class DebloatActions(
     public val savePreset: (String) -> Unit = {},
     public val applyPreset: (String) -> Unit = {},
     public val deletePreset: (String) -> Unit = {},
+    public val applyDevicePicks: () -> Unit = {},
     public val dismiss: () -> Unit = {},
 )
 
@@ -166,6 +172,15 @@ public class DebloatActions(
 private fun Feedback(facts: DebloatFacts, actions: DebloatActions) {
     facts.refusal?.let { RefusalView(refusal = it, actionLabel = "Dismiss", onAction = actions.dismiss) }
     facts.message?.let { GlassBanner(severity = GlassBannerSeverity.INFO, title = it, onDismiss = actions.dismiss) }
+    facts.devicePicks?.let { kept ->
+        GlassBanner(
+            severity = GlassBannerSeverity.INFO,
+            title = "${kept.entries.size} app(s) were picked for this phone (${kept.device}) in another workspace.",
+            description = "Matched here by package name; protected apps and those the device needs are not picked.",
+            primaryAction = GlassBannerAction("Pick them", actions.applyDevicePicks),
+            modifier = Modifier.testTag("DevicePicksBanner"),
+        )
+    }
 }
 
 @Composable
@@ -237,6 +252,7 @@ private fun InventoryRow(
     app: ShownApp,
     details: List<Pair<String, String>>?,
     onToggle: (DebloatCandidate) -> Unit,
+    opinions: List<Pair<String, CommunityOpinion>> = emptyList(),
 ) {
     val protected = DebloatInventory.isProtected(candidate)
     val needed = !risk?.blockers.isNullOrEmpty()
@@ -274,6 +290,14 @@ private fun InventoryRow(
                 )
             }
             if (protected || needed) GlassChip(label = if (protected) "Protected" else "Needed", selected = false)
+            // A community list's opinion, beside the verdict above and never part of it.
+            opinions.forEach { (list, opinion) ->
+                GlassChip(
+                    label = "$list: ${opinion.rating}",
+                    selected = false,
+                    modifier = Modifier.testTag("CommunityOpinion_$list"),
+                )
+            }
             Text(
                 text = formatBytes(candidate.sizeBytes),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -282,6 +306,7 @@ private fun InventoryRow(
             )
         }
         risk?.let { Reasons(it) }
+        opinions.mapNotNull { (list, opinion) -> opinion.note?.let { "$list says: $it" } }.forEach { Hint(it) }
         details?.let { Facts(it) }
     }
 }

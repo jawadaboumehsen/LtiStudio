@@ -124,7 +124,7 @@ class StudioNavigationTest {
             StageId.FIRMWARE_ACQUISITION to 5,
             StageId.FIRMWARE_EXTRACTION to 5,
             StageId.WORK_TREE_ASSEMBLY to 8,
-            StageId.DEBLOAT to 5,
+            StageId.DEBLOAT to 6,
             StageId.MODULE_APPLICATION to 13,
             StageId.BUILD_FLASHABLE_ZIP to 9,
             StageId.GENERATE_OTA_MANIFEST to 5,
@@ -149,7 +149,7 @@ class StudioNavigationTest {
         val uniqueIds = allIds.toSet()
 
         assertEquals(allIds.size, uniqueIds.size, "Duplicate subobject IDs found: ${allIds - uniqueIds}")
-        assertEquals(58, allSubobjects.size)
+        assertEquals(59, allSubobjects.size)
     }
 
     @Test

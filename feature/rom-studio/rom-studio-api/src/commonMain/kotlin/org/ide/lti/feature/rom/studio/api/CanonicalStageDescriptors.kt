@@ -64,6 +64,7 @@ public object CanonicalStageDescriptors {
         iconKey = StudioIconKey.DEBLOAT,
         subobjects = listOf(
             StudioSubobject(StudioSubobjectId("inventory"), "Inventory"),
+            StudioSubobject(StudioSubobjectId("app-map"), "App map"),
             StudioSubobject(StudioSubobjectId("remove-selections"), "Remove selections"),
             StudioSubobject(StudioSubobjectId("keep-rules"), "Keep rules"),
             StudioSubobject(StudioSubobjectId("risk-review"), "Risk review"),

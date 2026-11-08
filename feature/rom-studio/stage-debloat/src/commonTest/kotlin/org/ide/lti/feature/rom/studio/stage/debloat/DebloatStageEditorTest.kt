@@ -24,7 +24,7 @@ class DebloatStageEditorTest {
         val editor = DebloatStageEditor()
         assertEquals(StageId.DEBLOAT, editor.stageId)
         assertEquals(CanonicalStageDescriptors.DEBLOAT, editor.descriptor)
-        assertEquals(5, editor.descriptor.subobjects.size)
+        assertEquals(6, editor.descriptor.subobjects.size)
         assertNotNull(editor.descriptor.subobject(CanonicalStageDescriptors.DEBLOAT.subobjects.first().id))
     }
 

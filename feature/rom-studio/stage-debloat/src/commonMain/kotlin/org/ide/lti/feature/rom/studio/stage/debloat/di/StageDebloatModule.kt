@@ -28,6 +28,7 @@ public val stageDebloatModule: Module = module {
             restore = getOrNull(),
             runner = getOrNull(),
             presets = getOrNull(),
+            devices = getOrNull(),
         )
     }
 }

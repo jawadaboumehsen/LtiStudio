@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Scanned removable application or component in the ROM (FR-027).
@@ -29,11 +29,22 @@ public data class RemovalItem(
     public val isProtected: Boolean = false,
 )
 
+/** A community list's opinion of one package (Universal Android Debloater: `Recommended`, `Advanced`, …). */
+@Serializable
+public data class CommunityOpinion(public val rating: String, public val note: String? = null)
+
 /**
- * Saved or preset list of removal entries (package IDs or relative paths).
+ * Saved or preset list of removal entries (package IDs or relative paths). A community list also keeps its
+ * [opinions] per package, shown beside each app's own verdict; [device] marks the picks kept automatically for one
+ * phone (its codename), offered to the next workspace of that phone.
  */
 @Serializable
-public data class RemovalList(public val name: String, public val entries: List<String> = emptyList()) {
+public data class RemovalList(
+    public val name: String,
+    public val entries: List<String> = emptyList(),
+    public val opinions: Map<String, CommunityOpinion> = emptyMap(),
+    public val device: String? = null,
+) {
     public companion object {
         private val json = Json {
             ignoreUnknownKeys = true
@@ -61,24 +72,32 @@ public data class RemovalList(public val name: String, public val entries: List<
 
                 root is JsonObject && "entries" in root -> fromJson(text)
 
-                else -> RemovalList(name, recommendedPackages(root))
+                else -> communityList(name, root)
             }
         }
 
-        /** A package map's packages rated `Recommended`, or all of them when it rates none. */
-        private fun recommendedPackages(root: JsonElement): List<String> {
-            fun removal(o: JsonElement?) = (o as? JsonObject)?.get("removal")?.jsonPrimitive?.content
+        /**
+         * A package map as a community list: every package's rating and description as its opinion, and as entries
+         * (what applying it picks) the packages it rates `Recommended`, or all of them when it rates none.
+         */
+        private fun communityList(name: String, root: JsonElement): RemovalList {
+            fun field(o: JsonElement?, key: String) =
+                (o as? JsonObject)?.get(key)?.let { (it as? JsonPrimitive)?.content }
             val rated = when (root) {
-                is JsonObject -> root.map { (id, v) -> id to removal(v) }
+                is JsonObject -> root.map { (id, v) -> Triple(id, field(v, "removal"), field(v, "description")) }
 
                 is JsonArray -> root.mapNotNull { e ->
-                    (e as? JsonObject)?.get("id")?.jsonPrimitive?.content?.let { it to removal(e) }
+                    field(e, "id")?.let { Triple(it, field(e, "removal"), field(e, "description")) }
                 }
 
                 else -> emptyList()
             }
             require(rated.isNotEmpty()) { "This file is neither a removal list nor a list of packages." }
-            return rated.filter { it.second == RECOMMENDED }.ifEmpty { rated }.map { it.first }
+            val opinions = rated.mapNotNull { (id, rating, note) ->
+                rating?.let { id to CommunityOpinion(it, note?.trim()?.ifEmpty { null }) }
+            }.toMap()
+            val entries = rated.filter { it.second == RECOMMENDED }.ifEmpty { rated }.map { it.first }
+            return RemovalList(name, entries, opinions)
         }
 
         private const val RECOMMENDED = "Recommended"

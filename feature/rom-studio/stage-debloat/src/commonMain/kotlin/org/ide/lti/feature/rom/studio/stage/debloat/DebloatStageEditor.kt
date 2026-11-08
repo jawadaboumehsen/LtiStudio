@@ -47,6 +47,7 @@ public class DebloatStageEditor : StageEditor {
                 savePreset = viewModel::savePreset,
                 applyPreset = viewModel::applyPreset,
                 deletePreset = viewModel::deletePreset,
+                applyDevicePicks = viewModel::applyDevicePicks,
                 dismiss = viewModel::dismissMessage,
             ),
             modifier = modifier,
