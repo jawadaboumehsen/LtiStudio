@@ -40,7 +40,7 @@ public object ChangelogDraft {
                     "Mods\n" + p.lockfileEntries.joinToString("\n") { "- ${it.id} ${it.version}" } +
                         p.operations.map { it.target.substringAfterLast('/') }.distinct().takeIf { it.isNotEmpty() }
                             ?.let { files ->
-                                "\n  ${p.operations.size} change(s) to ${files.take(FILES_SHOWN).joinToString()}" +
+                                "\n\n${p.operations.size} change(s) to ${files.take(FILES_SHOWN).joinToString()}" +
                                     if (files.size > FILES_SHOWN) " and ${files.size - FILES_SHOWN} more" else ""
                             }.orEmpty(),
                 )

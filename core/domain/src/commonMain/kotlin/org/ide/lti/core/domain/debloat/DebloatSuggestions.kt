@@ -44,13 +44,15 @@ public object DebloatSuggestions {
                 app.unreadable || app.bootReceiver || app.overlayTargets.isNotEmpty() || !quiet -> null
 
                 DebloatMap.of(selector, apps)?.reliedOnBy?.isNotEmpty() != false -> null
+                // Another app looks for it by name when it runs (`<queries>`): likely a part it calls.
+                apps.values.any { it.packageId != pkg && pkg in it.queries } -> null
 
                 else -> DebloatSuggestion(
                     c,
                     pkg,
                     app.label,
                     listOf(
-                        "nothing in the ROM relies on it",
+                        "nothing in the ROM relies on it or looks for it",
                         "not part of the system (not persistent, no system user id)",
                         "does not start at boot",
                     ),

@@ -121,6 +121,9 @@ public class PipelineOrchestrator(
         lateinit var baseContext: StageContext
         val ws: Workspace get() = baseContext.workspace
 
+        /** Each stage's output files and their digests as last read (cache check or after running). */
+        val outputFiles: MutableMap<StageId, Map<String, String>> = mutableMapOf()
+
         fun context(): StageContext = baseContext.copy(
             runtimeValues = runtimeValues.toMap(),
             toolPaths = run.pinnedTools,
@@ -375,7 +378,8 @@ public class PipelineOrchestrator(
                     executionPort.uploadFile(
                         driver.ws,
                         cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver, inputs).encodeToByteArray(),
+                        cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
+                            .encodeToByteArray(),
                     )
                     driver.persist {
                         it.withStage(index) { s ->
@@ -545,7 +549,8 @@ public class PipelineOrchestrator(
                     executionPort.uploadFile(
                         driver.ws,
                         cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver, inputs).encodeToByteArray(),
+                        cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
+                            .encodeToByteArray(),
                     )
                     driver.persist {
                         it.withStage(index) { s ->
@@ -634,7 +639,7 @@ public class PipelineOrchestrator(
     /** Digests the stage outputs into a scratch value, or returns the failure to report. */
     private suspend fun outputDigestOrFailure(driver: Driver, stage: StageDefinition): Throwable? {
         val digest =
-            outputDigest(driver, stage.outputs(driver.context()))
+            outputDigest(driver, stage.outputs(driver.context()), stage.id)
                 ?: return StageFailure(
                     -1,
                     -1,
@@ -1079,7 +1084,7 @@ public class PipelineOrchestrator(
     private suspend fun fileDigest(driver: Driver, rel: String): String {
         val cmd = StepCommand("sha256sum", listOf(driver.baseContext.abs(rel)), driver.ws.linuxPath)
         val result = executionPort.execute(driver.ws, cmd)
-        return if (result.exitCode == 0) result.stdout.digestToken() else "missing"
+        return if (result.exitCode == 0) result.stdout.digestToken() else MISSING
     }
 
     private suspend fun isCacheValid(driver: Driver, stage: StageDefinition, cacheKey: String): Boolean {
@@ -1092,7 +1097,8 @@ public class PipelineOrchestrator(
         val recordedValues = fields["values"]?.let { runCatching { json.decodeFromString(valuesSerializer, it) } }
             ?.getOrNull().orEmpty()
         val context = driver.context().let { it.copy(runtimeValues = it.runtimeValues + recordedValues) }
-        val valid = fields["input"] == cacheKey && fields["output"] == outputDigest(driver, stage.outputs(context)) &&
+        val valid = fields["input"] == cacheKey &&
+            fields["output"] == outputDigest(driver, stage.outputs(context), stage.id) &&
             stage.requiredPaths(context).all { executionPort.stat(driver.ws, it).exists }
         // The run's own identity stays this run's: only a cached Build brings back the date its package is named
         // by; the device revision a resume is checked against is never an older run's.
@@ -1109,12 +1115,14 @@ public class PipelineOrchestrator(
         outputDigest: String,
         driver: Driver,
         inputs: Map<String, String>,
+        outputs: Map<String, String>,
     ): String {
         val values = driver.runtimeValues.filter { (k, v) ->
             k != OUTPUT_DIGEST_SCRATCH && v.length <= CACHED_VALUE_LIMIT
         }
         return "input=$cacheKey\noutput=$outputDigest\nvalues=${json.encodeToString(valuesSerializer, values)}\n" +
-            "inputs=${json.encodeToString(valuesSerializer, inputs)}\n"
+            "inputs=${json.encodeToString(valuesSerializer, inputs)}\n" +
+            "outputs=${json.encodeToString(valuesSerializer, outputs)}\n"
     }
 
     /**
@@ -1142,7 +1150,9 @@ public class PipelineOrchestrator(
         val recorded = if (upstreamExecuted) "" else executionPort.readFile(driver.ws, cacheFile(stage)).orEmpty()
         val fields = recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
             .associate { it[0].trim() to it[1].trim() }
-        val before = fields["inputs"]?.let { runCatching { json.decodeFromString(valuesSerializer, it) }.getOrNull() }
+        fun decoded(key: String) =
+            fields[key]?.let { runCatching { json.decodeFromString(valuesSerializer, it) }.getOrNull() }
+        val before = decoded("inputs")
         return when {
             upstreamExecuted -> "an earlier stage ran in this run, and they share work/"
 
@@ -1150,24 +1160,18 @@ public class PipelineOrchestrator(
 
             before == null -> "its cache record is older than the reasons kept now"
 
-            else -> StageInputs.changes(before, inputs).ifEmpty { listOf("its outputs changed or are missing") }
+            else -> StageInputs.changes(before, inputs)
+                .ifEmpty { changedOutputs(decoded("outputs").orEmpty(), driver.outputFiles[stage.id].orEmpty()) }
                 .joinToString("; ")
         }
     }
 
     /** sha256 over the sorted `sha256sum` lines of every declared output; empty outputs digest to a constant. */
-    private suspend fun outputDigest(driver: Driver, outputs: List<String>): String? {
-        val lines =
-            outputs.sorted().map { rel ->
-                val result =
-                    executionPort.execute(
-                        driver.ws,
-                        StepCommand("sha256sum", listOf(driver.baseContext.abs(rel)), driver.ws.linuxPath),
-                    )
-                if (result.exitCode != 0) return null
-                "${result.stdout.digestToken()} $rel"
-            }
-        return CacheKeys.sha256(lines.joinToString("\n"))
+    private suspend fun outputDigest(driver: Driver, outputs: List<String>, stage: StageId): String? {
+        val files = outputs.sorted().associateWith { rel -> fileDigest(driver, rel) }
+        driver.outputFiles[stage] = files
+        if (MISSING in files.values) return null
+        return CacheKeys.sha256(files.entries.joinToString("\n") { (rel, digest) -> "$digest $rel" })
     }
 
     private fun resolvePinnedCommand(driver: Driver, cmd: StepCommand): StepCommand {
@@ -1284,7 +1288,18 @@ public class PipelineOrchestrator(
     }
 }
 
-/** The workspace file that holds [id]'s cache record; an empty record never matches a key. */
 private const val KEY_SHOWN = 12
+private const val OUTPUTS_SHOWN = 3
+private const val MISSING = "missing"
 
+/** The workspace file that holds [id]'s cache record; an empty record never matches a key. */
 internal fun stageCacheFile(id: StageId): String = ".cache/${id.name}.key"
+
+/** The output files whose digest differs from the cache record's: a later stage edited them, or they are gone. */
+internal fun changedOutputs(recorded: Map<String, String>, now: Map<String, String>): List<String> {
+    val changed = now.filter { (rel, digest) -> recorded[rel] != null && recorded[rel] != digest }.keys
+    if (changed.isEmpty()) return listOf("its outputs changed or are missing")
+    val named = changed.take(OUTPUTS_SHOWN).joinToString() +
+        if (changed.size > OUTPUTS_SHOWN) " and ${changed.size - OUTPUTS_SHOWN} more" else ""
+    return listOf("$named changed after it ran (a later stage edits them) or are missing")
+}

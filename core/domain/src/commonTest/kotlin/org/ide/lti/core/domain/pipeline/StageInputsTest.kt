@@ -51,4 +51,16 @@ class StageInputsTest {
             changes,
         )
     }
+
+    @Test
+    fun assembleNamesTheOutputsALaterStageEdited() {
+        // Debloat and the mods rewrite Assemble's sidecars and build.prop: its cache record can never match.
+        val recorded = mapOf("work/system/system/build.prop" to "a1", "work/configs/fs_config-odm" to "b1")
+        val now = mapOf("work/system/system/build.prop" to "a2", "work/configs/fs_config-odm" to "b1")
+        assertEquals(
+            listOf("work/system/system/build.prop changed after it ran (a later stage edits them) or are missing"),
+            changedOutputs(recorded, now),
+        )
+        assertEquals(listOf("its outputs changed or are missing"), changedOutputs(emptyMap(), now))
+    }
 }

@@ -18,6 +18,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -34,6 +38,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.workspace.studio.PreflightUiState
 import org.ide.lti.feature.workspace.studio.PreflightViewModel
 
@@ -108,6 +113,8 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
 @Composable
 private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
     if (state.samePhone.isEmpty()) return
+    // Replacing four settings groups cannot be undone from here: it is confirmed first.
+    var asked by remember { mutableStateOf<Workspace?>(null) }
     Text(
         "Same phone: take the assembly, debloat, mods and build settings of another workspace (kernel overrides, " +
             "image-browser edits and kept partitions belong to its firmware and stay there).",
@@ -126,10 +133,36 @@ private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
                 modifier = Modifier.weight(1f),
             )
             GlassButton(
-                onClick = { vm.carryFrom(other) },
+                onClick = { asked = other },
                 variant = GlassButtonVariant.Standard,
                 modifier = Modifier.testTag("CarryFrom_${other.id}"),
             ) { Text("Use its settings", fontSize = FontSize.BodySmall) }
+        }
+    }
+    asked?.let { other ->
+        GlassDialog(
+            onDismissRequest = { asked = null },
+            title = "Use the settings of ${other.name}?",
+            confirmButton = {
+                GlassButton(
+                    onClick = {
+                        asked = null
+                        vm.carryFrom(other)
+                    },
+                    variant = GlassButtonVariant.Primary,
+                    modifier = Modifier.testTag("CarryConfirm"),
+                ) { Text("Replace them") }
+            },
+            dismissButton = {
+                GlassButton(onClick = { asked = null }, variant = GlassButtonVariant.Text) { Text("Cancel") }
+            },
+        ) {
+            Text(
+                "This workspace's assembly, debloat, mods and build settings are replaced by those of ${other.name}. " +
+                    "The current ones are not kept anywhere.",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = FontSize.BodySmall,
+            )
         }
     }
 }

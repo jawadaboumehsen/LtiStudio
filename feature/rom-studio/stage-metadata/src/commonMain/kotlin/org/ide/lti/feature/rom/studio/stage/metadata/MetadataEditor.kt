@@ -34,6 +34,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
@@ -245,12 +246,39 @@ private fun ChangelogCard(
             config = TextFieldConfig(singleLine = false, maxLines = 10),
             state = fieldState(errors, "changelog"),
         )
+        // The draft replaces the notes: written ones are confirmed first.
+        var asking by remember { mutableStateOf(false) }
         GlassButton(
-            onClick = onDraft,
+            onClick = { if (settings.changelog.isBlank()) onDraft() else asking = true },
             variant = GlassButtonVariant.Standard,
             modifier = Modifier.testTag("DraftChangelog"),
         ) {
             Text("Draft from the last build", fontSize = FontSize.BodySmall)
+        }
+        if (asking) {
+            GlassDialog(
+                onDismissRequest = { asking = false },
+                title = "Replace the release notes?",
+                confirmButton = {
+                    GlassButton(
+                        onClick = {
+                            asking = false
+                            onDraft()
+                        },
+                        variant = GlassButtonVariant.Primary,
+                        modifier = Modifier.testTag("DraftChangelogConfirm"),
+                    ) { Text("Replace them") }
+                },
+                dismissButton = {
+                    GlassButton(onClick = { asking = false }, variant = GlassButtonVariant.Text) { Text("Cancel") }
+                },
+            ) {
+                Text(
+                    "The notes written now are replaced by a draft from the last build.",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = FontSize.BodySmall,
+                )
+            }
         }
         Meta("changelog", dirtyPaths, "Changelog", "Shown by the updater on the device. Empty: a generated summary.")
     }

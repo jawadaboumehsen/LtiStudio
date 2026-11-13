@@ -111,7 +111,10 @@ internal fun SizeAdvisorCard(
             "Builds one partition a few ways in workbench/trial (and deletes it), then says which to use: the " +
                 "fastest that fits the room left in the super group, else the smallest. Dedupe takes minutes.",
         )
-        budget.rows.filter { it.filesystem == BuildFilesystems.EROFS }.forEach { row ->
+        // A kept partition is packaged from its stock image: its settings are not used.
+        val tried = budget.rows
+            .filter { it.filesystem == BuildFilesystems.EROFS && it.partition !in settings.keepStock }
+        tried.forEach { row ->
             val room = budget.groupBytes - (budget.usedBytes - (row.bytes ?: 0L))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -150,7 +153,7 @@ private fun TrialResults(p: String, state: SizeAdvisorState, onUse: (String, Tri
         ) {
             Detail(
                 r.option.label + if (r == best) " (advised)" else "",
-                bytes?.let { "${mb(it)} in ${r.seconds?.roundToInt() ?: "?"} s" } ?: "failed: ${r.error}",
+                bytes?.let { "${mb(it)} in ${r.seconds?.let(::seconds) ?: "?"}" } ?: "failed: ${r.error}",
                 GlassTheme.diagnosticColors.error.takeIf { bytes == null || bytes > room },
             )
             if (bytes != null) {
@@ -161,3 +164,13 @@ private fun TrialResults(p: String, state: SizeAdvisorState, onUse: (String, Tri
         }
     }
 }
+
+/** "0.4 s" under ten seconds (trials of small partitions take a fraction of one), else whole seconds. */
+private fun seconds(s: Double): String = when {
+    s < TENTH -> "< 0.1 s"
+    s < TEN -> "${(s * TEN).roundToInt() / TEN} s"
+    else -> "${s.roundToInt()} s"
+}
+
+private const val TEN = 10.0
+private const val TENTH = 0.1

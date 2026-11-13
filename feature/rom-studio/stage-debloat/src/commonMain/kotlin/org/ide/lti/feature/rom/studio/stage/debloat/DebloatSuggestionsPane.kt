@@ -40,8 +40,9 @@ internal fun LazyListScope.suggestions(facts: DebloatFacts, picked: Set<String>,
             if (suggested.isEmpty()) {
                 "No suggestions: every app left is relied on, warned about or starts at boot."
             } else {
-                "Suggested by the ROM (${suggested.size}, $total): nothing the ROM declares relies on them. " +
-                    "What they do at run time is not in any file."
+                "Suggested by the ROM (${suggested.size}, $total): nothing in the ROM relies on them or looks for " +
+                    "them, they are not part of the system and do not start at boot. What they do at run time is " +
+                    "not in any file."
             },
         )
     }
@@ -53,7 +54,7 @@ internal fun LazyListScope.suggestions(facts: DebloatFacts, picked: Set<String>,
         ) {
             Column(Modifier.weight(1f)) {
                 Line("${s.label ?: s.packageId}  ${formatBytes(s.candidate.sizeBytes)}")
-                Hint("${s.packageId} · ${s.reasons.joinToString("; ")}")
+                if (s.label != null) Hint(s.packageId)
             }
             GlassButton(onClick = { onToggle(s.candidate) }, variant = GlassButtonVariant.Standard) {
                 Text("Pick", fontSize = FontSize.BodySmall)

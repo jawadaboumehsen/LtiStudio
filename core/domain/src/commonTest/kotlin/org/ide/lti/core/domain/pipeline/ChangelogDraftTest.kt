@@ -38,7 +38,8 @@ class ChangelogDraftTest {
             Mods
             - adb 1.4.0
             - hma 1.4.0
-              3 change(s) to framework.jar, services.jar, build.prop
+
+            3 change(s) to framework.jar, services.jar, build.prop
 
             Removed apps (116 MB freed)
             - YouTube (com.google.android.youtube)

@@ -53,4 +53,17 @@ class DebloatSuggestionsTest {
         )
         assertEquals(listOf("com.google.android.calculator"), afterPick.map { it.packageId })
     }
+
+    @Test
+    fun theLastCameraAndAnAppLookedForByNameAreNotSuggested() {
+        // PQ84P01: com.android.camera is the only app answering IMAGE_CAPTURE; GameSpace asks for gamelab by name.
+        val camera = DebloatCandidate("product", "app/Camera", 125_000_000, "com.android.camera")
+        val gamelab = DebloatCandidate("product", "app/GameLab", 148_000_000, "cn.nubia.gamelab")
+        val facts = mapOf(
+            "product:app/Camera" to AppFacts(packageId = "com.android.camera", camera = true),
+            "product:app/GameLab" to AppFacts(packageId = "cn.nubia.gamelab"),
+            "product:app/GameSpace" to AppFacts(packageId = "cn.nubia.gamespace", queries = setOf("cn.nubia.gamelab")),
+        )
+        assertEquals(emptyList(), DebloatSuggestions.of(listOf(camera, gamelab), facts, picked = emptySet()))
+    }
 }

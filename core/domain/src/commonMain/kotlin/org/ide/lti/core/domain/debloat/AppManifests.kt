@@ -19,6 +19,8 @@ public data class AppFacts(
     val home: Boolean = false,
     /** A service for `android.view.InputMethod`: a keyboard or other input method. */
     val inputMethod: Boolean = false,
+    /** An activity that takes photos for other apps (`STILL_IMAGE_CAMERA` or `IMAGE_CAPTURE`): a camera. */
+    val camera: Boolean = false,
     /** A receiver for `BOOT_COMPLETED`: it starts by itself after every boot. */
     val bootReceiver: Boolean = false,
     /** Libraries it cannot start without (`<uses-library>` that is not `required="false"`). */
@@ -65,6 +67,7 @@ public data class AppFacts(
         persistent = persistent || other.persistent,
         home = home || other.home,
         inputMethod = inputMethod || other.inputMethod,
+        camera = camera || other.camera,
         bootReceiver = bootReceiver || other.bootReceiver,
         requiredLibraries = requiredLibraries + other.requiredLibraries,
         optionalLibraries = optionalLibraries + other.optionalLibraries,
@@ -125,6 +128,7 @@ public object AppManifests {
           else if (name == \"name\" && p == \"intent-filter\") {
             if (e == \"category\" && v == \"android.intent.category.HOME\" && (g == \"activity\" || g == \"activity-alias\")) print \"home\"
             else if (e == \"action\" && v == \"android.view.InputMethod\" && g == \"service\") print \"ime\"
+            else if (e == \"action\" && (v == \"android.media.action.STILL_IMAGE_CAMERA\" || v == \"android.media.action.IMAGE_CAPTURE\") && (g == \"activity\" || g == \"activity-alias\")) print \"camera\"
             else if (e == \"action\" && v ~ /^android\\.intent\\.action\\.(LOCKED_)?BOOT_COMPLETED\$/ && g == \"receiver\") print \"boot\"
           }
         }" | sort -u; } > "${'$'}o"
@@ -324,6 +328,7 @@ JAVA
             persistent = "persistent" in lines,
             home = "home" in lines,
             inputMethod = "ime" in lines,
+            camera = "camera" in lines,
             bootReceiver = "boot" in lines,
             requiredLibraries = values("uses") - values("optional"),
             optionalLibraries = values("optional"),

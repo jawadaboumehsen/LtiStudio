@@ -21,13 +21,14 @@ import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
  * not built again. The image left in out/images by that build has its footer erased and then goes through the same
  * read-back verify, hash and footer steps as a new one, so a stale image is still caught by the verify.
  *
- * The fingerprint is each entry's path, kind, size, time, mode and link target, both sidecar files and the recipe
+ * The fingerprint is each entry's path, kind, size, mode and link target, every file's content (md5, 8 at a time:
+ * PQ84P01 system 6 s), both sidecar files and the recipe
  * (filesystem, compression, dedupe, cluster, block size, tool paths). It is removed before an image is built and
  * written only after its footer, so an image from a build that stopped part way is never reused.
  */
 internal object ReusedImage {
-    // ponytail: size and time stand for the content (hashing every file costs tens of seconds a build); a file
-    // rewritten with the same size and an old time is missed. Hash the files whose time is newer if that bites.
+    // Content, not times: Assemble, Debloat and the mods remake work/ on every build, so every time is new while
+    // the files are the same (time-based fingerprints never matched in a real two-build run).
 
     fun key(p: String): String = "build.reuse.$p"
 
@@ -113,6 +114,6 @@ internal object ReusedImage {
      * image is there and was built from this fingerprint, else `changed <fp>`.
      */
     private const val FINGERPRINT_SCRIPT = """
-fp=${'$'}( { printf '%s\n' "$6"; (cd "$1" && find . -printf '%P\t%y\t%s\t%T@\t%m\t%l\n' | LC_ALL=C sort); cat "$2" "$3"; } | sha256sum | cut -d' ' -f1)
+fp=${'$'}( { printf '%s\n' "$6"; (cd "$1" && find . -printf '%P\t%y\t%s\t%m\t%l\n' | LC_ALL=C sort; find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum | LC_ALL=C sort); cat "$2" "$3"; } | sha256sum | cut -d' ' -f1)
 if [ -f "$4" ] && [ -f "$5" ] && [ "${'$'}(cat "$5")" = "${'$'}fp" ]; then echo "same ${'$'}fp"; else echo "changed ${'$'}fp"; fi"""
 }

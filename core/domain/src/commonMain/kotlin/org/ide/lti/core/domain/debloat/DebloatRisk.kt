@@ -125,6 +125,9 @@ public object DebloatRisk {
         if (app.inputMethod && kept.none { it.inputMethod }) {
             add("It is the last keyboard: nothing could be typed, not even the screen-lock PIN.")
         }
+        if (app.camera && kept.none { it.camera }) {
+            add("It is the last camera: no app could take a photo, and others that ask for one would fail.")
+        }
     }
 
     private fun warnings(app: AppFacts): List<String> = buildList {
