@@ -368,7 +368,7 @@ class StageDefinitionsTest {
         // mkfs.erofs/sha256sum/stat per partition — nothing else.
         val s5 = tools(
             BuildFlashableZipStage().plan(
-                ctx.copy(runtimeValues = mapOf(BuildChecks.KERNEL_KEY to "version 5.15.0\nnoconfig")),
+                built(ctx.copy(runtimeValues = mapOf(BuildChecks.KERNEL_KEY to "version 5.15.0\nnoconfig"))),
             ),
         )
         val mkfs = s5.first { it.toolId == "mkfs.erofs" }

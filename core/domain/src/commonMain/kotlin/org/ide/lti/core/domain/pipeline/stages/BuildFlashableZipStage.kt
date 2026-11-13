@@ -98,36 +98,11 @@ public class BuildFlashableZipStage : StageDefinition {
             request = CoverageCheckRequest(ctx.target.dynamicPartitions),
         )
         val refusal = BuildChecks.coverageRefusal(ctx)
-        val unsupported = ctx.target.dynamicPartitions.associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
-            .filterValues { it !in BuildFilesystems.SUPPORTED }
+        val unsupported = filesystemCheck(ctx)
         return when {
-            unsupported.isNotEmpty() -> listOf(
-                PipelineStep.Check("verify filesystem") {
-                    "UNSUPPORTED_FILESYSTEM: ${unsupported.entries.joinToString {
-                        "${it.key} as ${it.value}"
-                    }} cannot " +
-                        "be built; choose ${BuildFilesystems.SUPPORTED.joinToString(" or ")}"
-                },
-            )
-
+            unsupported != null -> listOf(unsupported)
             refusal != null -> listOf(coverage, refusal)
-
             else -> buildSteps(ctx, coverage)
-        }
-    }
-
-    /**
-     * Build writes every partition of the device, so one Extract or Assemble left out would be missing from super, or
-     * come from an older tree. Such a selection stays usable for a run that stops before Build.
-     */
-    private fun leftOutPartitions(ctx: StageContext): PipelineStep.Check? {
-        val assembled = WorkTreeAssemblyStage.assembledPartitions(ctx)
-        val extracted = ctx.snapshot.extraction.dynamicPartitions.ifEmpty { ctx.target.dynamicPartitions }
-        val leftOut = ctx.target.dynamicPartitions.filter { it !in assembled || it !in extracted }
-        if (leftOut.isEmpty()) return null
-        return PipelineStep.Check("every partition is assembled") {
-            "PARTITIONS_LEFT_OUT: ${leftOut.joinToString()} left out of Extract or Assemble: the phone needs every " +
-                "partition. Select them again, or stop the run before Build & Sign."
         }
     }
 
@@ -253,7 +228,10 @@ public class BuildFlashableZipStage : StageDefinition {
         val salt = ctx.value(RuntimeKeys.imageSha256(p))?.digestToken()
         if (imageSize != null && salt != null) {
             steps += PipelineStep.AvbSizeSearch(imageSize, RuntimeKeys.partitionSize(p), "avb size search $p")
-            ctx.longValue(RuntimeKeys.partitionSize(p))?.let { steps += footerSteps(ctx, p, salt, it) }
+            ctx.longValue(RuntimeKeys.partitionSize(p))?.let {
+                steps += footerSteps(ctx, p, salt, it)
+                ReusedImage.record(ctx, p)?.let(steps::add)
+            }
         }
         return steps
     }
@@ -697,6 +675,33 @@ public class BuildFlashableZipStage : StageDefinition {
         }
 
     public companion object {
+        /**
+         * Build writes every partition of the device, so one Extract or Assemble left out would be missing from super,
+         * or come from an older tree. Such a selection stays usable for a run that stops before Build.
+         */
+        internal fun leftOutPartitions(ctx: StageContext): PipelineStep.Check? {
+            val assembled = WorkTreeAssemblyStage.assembledPartitions(ctx)
+            val extracted = ctx.snapshot.extraction.dynamicPartitions.ifEmpty { ctx.target.dynamicPartitions }
+            val leftOut = ctx.target.dynamicPartitions.filter { it !in assembled || it !in extracted }
+            if (leftOut.isEmpty()) return null
+            return PipelineStep.Check("every partition is assembled") {
+                "PARTITIONS_LEFT_OUT: ${leftOut.joinToString()} left out of Extract or Assemble: the phone needs " +
+                    "every partition. Select them again, or stop the run before Build & Sign."
+            }
+        }
+
+        /** Refuses a partition set to a filesystem the build cannot write (`UNSUPPORTED_FILESYSTEM`). */
+        internal fun filesystemCheck(ctx: StageContext): PipelineStep.Check? {
+            val unsupported = ctx.target.dynamicPartitions
+                .associateWith { BuildFilesystems.of(ctx.snapshot.build, it) }
+                .filterValues { it !in BuildFilesystems.SUPPORTED }
+            if (unsupported.isEmpty()) return null
+            return PipelineStep.Check("verify filesystem") {
+                "UNSUPPORTED_FILESYSTEM: ${unsupported.entries.joinToString { "${it.key} as ${it.value}" }} cannot " +
+                    "be built; choose ${BuildFilesystems.SUPPORTED.joinToString(" or ")}"
+            }
+        }
+
         public const val STAGE_DIR: String = "out/package/.stage"
         public const val UNSIGNED_MARKER: String = "out/package/UNSIGNED"
         private const val AVB_PUBKEY = "work/package/avb.avbpubkey"

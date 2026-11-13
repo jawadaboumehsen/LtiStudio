@@ -35,6 +35,8 @@ data class StageOutcome(
     val durationMs: Long? = null,
     val message: String? = null,
     val cacheKey: String? = null,
+    /** Why the stage ran instead of coming from cache: what changed since it last ran; null when it was cached. */
+    val whyRan: String? = null,
 )
 
 @Serializable

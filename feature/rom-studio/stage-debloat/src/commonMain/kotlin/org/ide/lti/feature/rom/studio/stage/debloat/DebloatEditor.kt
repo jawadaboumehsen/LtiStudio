@@ -112,7 +112,10 @@ public fun DebloatEditor(
             item { Header(settings, facts, onChange, onRefresh) }
             item { Feedback(facts, actions) }
             when (selectedObjectId.lowercase()) {
-                "remove-selections", "remove_selections" -> removeSelections(settings, facts, picked, actions, onUnpick)
+                "remove-selections", "remove_selections" -> {
+                    suggestions(facts, picked, onToggle)
+                    removeSelections(settings, facts, picked, actions, onUnpick)
+                }
 
                 "keep-rules", "keep_rules" -> keepRules(facts, risks)
 

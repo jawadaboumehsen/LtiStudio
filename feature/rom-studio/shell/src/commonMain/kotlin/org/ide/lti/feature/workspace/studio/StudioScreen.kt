@@ -70,6 +70,7 @@ import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.run.RunPanel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
 import org.ide.lti.feature.workspace.studio.components.OutputPanel
+import org.ide.lti.feature.workspace.studio.components.PreflightCard
 import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
@@ -256,6 +257,15 @@ private fun StudioContent(
             onReload = { viewModel.onEntry(workspaceId) },
             onEditProfile = { viewModel.selectWorkspaceSection(WorkspaceSection.RomConfig) },
             onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
+            preflight = {
+                PreflightCard(
+                    vm = koinViewModel<PreflightViewModel> { parametersOf(workspaceId) },
+                    onOpen = { stage, objectId ->
+                        viewModel.selectStage(stage)
+                        if (objectId.isNotEmpty()) viewModel.selectObject(stage, objectId)
+                    },
+                )
+            },
         )
     }
 }

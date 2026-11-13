@@ -63,7 +63,7 @@ fun WorkspaceDeviceSection(
         DeviceSuperPartition(state, device, viewModel)
         DeviceBootChain(state, device, viewModel)
         DeviceFirmwareCard(state, viewModel)
-        phone?.let { PhoneCard(state, device, it) }
+        phone?.let { PhoneCard(state, device, it, onUsePhoneValue = viewModel::update) }
         DeviceActions(state, viewModel)
     }
 }

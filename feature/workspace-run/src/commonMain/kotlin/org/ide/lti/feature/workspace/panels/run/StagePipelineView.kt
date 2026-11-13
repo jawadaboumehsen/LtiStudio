@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.progress.GlassStepInfo
 import org.ide.lti.core.designsystem.component.progress.GlassStepStatus
 import org.ide.lti.core.designsystem.component.progress.GlassStepper
@@ -62,6 +63,15 @@ public fun StagePipelineView(
         latestRun?.stages?.firstOrNull { it.state == StageState.FAILED }?.message?.let { reason ->
             Text(text = reason, style = GlassTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
+        // Why the first stage that ran was not taken from cache; the ones after it ran because it did.
+        latestRun?.stages?.firstOrNull { it.whyRan != null }?.let { first ->
+            Text(
+                text = "Why ${stageLabel(first.stageId)} ran: ${first.whyRan}",
+                style = GlassTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("WhyStageRan"),
+            )
+        }
     }
 }
 
@@ -78,7 +88,7 @@ private fun resolveStepStatus(state: StageState?): GlassStepStatus = when (state
 
 /** Resolves the human-readable display label for a stage outcome. */
 private fun resolveStepLabel(outcome: StageOutcome?): String = when (outcome?.state) {
-    StageState.SKIPPED -> "Skipped"
+    StageState.SKIPPED -> "From cache"
     StageState.EXECUTED -> outcome.durationMs?.let { "${it / 1000}s" } ?: "Complete"
     StageState.FAILED -> "Failed"
     StageState.RUNNING -> "Running..."

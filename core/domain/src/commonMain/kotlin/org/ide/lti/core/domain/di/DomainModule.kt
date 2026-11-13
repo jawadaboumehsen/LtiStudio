@@ -78,6 +78,7 @@ import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceByPathUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.RemoveRecentWorkspaceUseCase
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
+import org.ide.lti.core.domain.workspace.SamePhoneSettings
 import org.ide.lti.core.domain.workspace.SnapshotSettingsStore
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
@@ -124,6 +125,7 @@ val DomainModule =
 
         singleOf(::RemoveRecentWorkspaceUseCase)
         single<WorkspaceSettingsStore> { SnapshotSettingsStore(get(), get(), get(), get()) }
+        single { SamePhoneSettings(workspaces = get(), settings = get()) }
         single { PluginWorkspaceUsage(get(), get()) }
 
         // Pipeline & Build Use Cases

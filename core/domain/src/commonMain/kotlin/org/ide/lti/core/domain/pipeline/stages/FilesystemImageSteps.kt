@@ -37,7 +37,8 @@ internal object FilesystemImageSteps {
         erofs: () -> List<PipelineStep>?,
     ): Boolean = when {
         p in ctx.snapshot.build.keepStock -> KeptPartition.steps(ctx, p, steps)
-        else -> when (BuildFilesystems.of(ctx.snapshot.build, p)) {
+
+        else -> ReusedImage.steps(ctx, p, steps) ?: when (BuildFilesystems.of(ctx.snapshot.build, p)) {
             BuildFilesystems.EXT4 -> ext4(ctx, p, steps)
             BuildFilesystems.F2FS -> f2fs(ctx, p, steps)
             else -> erofs()?.let { steps += it } != null

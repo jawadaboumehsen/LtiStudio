@@ -42,6 +42,8 @@ public fun BuildEditor(
     onFixCoverage: () -> Unit = {},
     modifier: Modifier = Modifier,
     onCoverageRules: (String) -> Unit = {},
+    /** The size advisor (`SizeAdvisorCard`), under Partition layout. */
+    advisor: (@Composable () -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
     Box(modifier = modifier.fillMaxSize().testTag("BuildEditor"), contentAlignment = Alignment.TopCenter) {
@@ -55,7 +57,10 @@ public fun BuildEditor(
             when (selectedObjectId.lowercase().replace('_', '-').replace(' ', '-')) {
                 "images" -> ImagesPane(target, settings, facts)
 
-                "partition-layout" -> PartitionLayoutPane(target, settings, facts)
+                "partition-layout" -> {
+                    PartitionLayoutPane(target, settings, facts)
+                    advisor?.invoke()
+                }
 
                 "flashable-members" -> FlashableMembersPane(target, facts, settings, onChange)
 

@@ -45,6 +45,15 @@ public class BuildStageEditor : StageEditor {
             onFixCoverage = { viewModel.setFillInEveryBuild(true) },
             onCoverageRules = viewModel::setCoverageRules,
             modifier = modifier,
+            advisor = {
+                SizeAdvisorCard(
+                    vm = koinViewModel<SizeAdvisorViewModel> { parametersOf(context.workspaceId) },
+                    target = device ?: viewModel.targetDevice,
+                    settings = settings,
+                    facts = facts,
+                    onUse = { p, option -> viewModel.updateSettings(option.applyTo(settings, p)) },
+                )
+            },
         )
     }
 }

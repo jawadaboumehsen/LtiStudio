@@ -49,6 +49,8 @@ public fun WorkspaceOverview(
     onReload: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
+    /** Will it build? (`PreflightCard`), under the readiness checklist. */
+    preflight: (@Composable () -> Unit)? = null,
 ) {
     val scrollState = rememberScrollState()
 
@@ -98,6 +100,8 @@ public fun WorkspaceOverview(
                     modifier = Modifier.width(GlassDimens.OverviewTargetCardWidth),
                 )
             }
+
+            preflight?.invoke()
 
             // 3. Prominent CTA bar
             OverviewCallToAction(

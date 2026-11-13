@@ -12,6 +12,7 @@ package org.ide.lti.feature.rom.studio.stage.build.di
 import org.ide.lti.feature.rom.studio.api.StageEditor
 import org.ide.lti.feature.rom.studio.stage.build.BuildStageEditor
 import org.ide.lti.feature.rom.studio.stage.build.BuildViewModel
+import org.ide.lti.feature.rom.studio.stage.build.SizeAdvisorViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
@@ -20,6 +21,9 @@ import org.koin.dsl.module
 public val stageBuildModule: Module = module {
     single<StageEditor>(named("build")) { BuildStageEditor() }
 
+    viewModel { params ->
+        SizeAdvisorViewModel(workspaceId = params.getOrNull<String>() ?: "", advisor = getOrNull(), boot = getOrNull())
+    }
     viewModel { params ->
         BuildViewModel(
             workspaceId = params.getOrNull<String>() ?: "",

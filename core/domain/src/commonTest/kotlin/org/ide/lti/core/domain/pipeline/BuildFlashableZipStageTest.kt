@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.domain.pipeline.stages.BuildChecks
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.stages.ReusedImage
 import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.toolkit.AbOtaPackage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
@@ -31,7 +32,11 @@ import kotlin.test.assertTrue
 class BuildFlashableZipStageTest {
 
     private val fx = PipelineFixture()
-    private val stage = BuildFlashableZipStage()
+
+    /** The stage, every partition's fingerprint "changed" (built) unless the test says otherwise. */
+    private val stage: StageDefinition = object : StageDefinition by BuildFlashableZipStage() {
+        override fun plan(ctx: StageContext) = BuildFlashableZipStage().plan(built(ctx))
+    }
     private val prevKey = "prev-build-cache-key"
 
     private fun fullContext(): StageContext {
@@ -575,6 +580,25 @@ class BuildFlashableZipStageTest {
         val noOta = plan(PackageType.FLASHABLE, PackageKind.Payload).filterIsInstance<PipelineStep.Check>()
             .single { it.label == "payload alone" }.verify(emptyMap())!!
         assertTrue(noOta.startsWith("PAYLOAD_NEEDS_AB_OTA"), noOta)
+    }
+
+    @Test
+    fun `an image whose tree and recipe did not change since the last build is reused, not built`() {
+        val base = fullContext()
+        fun labels(odm: String) = stage.plan(
+            base.copy(runtimeValues = base.runtimeValues + (ReusedImage.key("odm") to odm)),
+        ).filterIsInstance<PipelineStep.Tool>().map { it.label }
+
+        val same = labels("same 4a1f")
+        assertTrue("reuse odm from the last build" in same, same.toString())
+        assertTrue(same.none { it == "mkfs.erofs odm" || it == "forget odm recipe" }, same.toString())
+        // A reused image is still read back and checked against work/ like a built one.
+        assertTrue(
+            same.any { it.startsWith("verify") && it.contains("odm") } || same.contains("sha256 odm"),
+            same.toString(),
+        )
+        val changed = labels("changed 4a1f")
+        assertTrue("forget odm recipe" in changed && "reuse odm from the last build" !in changed, changed.toString())
     }
 
     @Test

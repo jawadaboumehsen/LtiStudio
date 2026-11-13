@@ -37,6 +37,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.workbench.FlashPlan
 import org.ide.lti.core.domain.workbench.FlashPlanner
+import org.ide.lti.core.domain.workbench.PhoneDeviceCheck
 import org.ide.lti.core.domain.workbench.PhoneFacts
 import org.ide.lti.core.domain.workbench.PhoneMode
 import org.ide.lti.core.domain.workbench.PlanRow
@@ -49,7 +50,12 @@ import org.ide.lti.core.model.target.TargetDevice
  * reason one would be refused. Nothing is written from here; flashing stays the user's.
  */
 @Composable
-internal fun PhoneCard(state: WorkspaceDeviceUiState, device: TargetDevice, vm: PhoneViewModel) {
+internal fun PhoneCard(
+    state: WorkspaceDeviceUiState,
+    device: TargetDevice,
+    vm: PhoneViewModel,
+    onUsePhoneValue: ((TargetDevice) -> TargetDevice) -> Unit = {},
+) {
     val phone by vm.state.collectAsStateWithLifecycle()
     val workspaceId = state.workspaceId ?: return
     Column(
@@ -79,6 +85,7 @@ internal fun PhoneCard(state: WorkspaceDeviceUiState, device: TargetDevice, vm: 
         if (phone.phones.isEmpty()) NoPhone()
         Phones(phone, vm)
         phone.phone?.let { Facts(it, workspaceId, vm) }
+        phone.phone?.let { MeasuredVsConfigured(it, device, enabled = !state.locked, onUsePhoneValue) }
         Images(phone, vm)
         val picked = phone.images.filter { it.path in phone.picked }
         Plan(FlashPlanner.plan(phone.phone, device, picked))
@@ -153,6 +160,39 @@ private fun Partitions(phone: PhoneFacts) {
     phone.partitions.forEach { p ->
         Code("${p.name}  ${p.sizeBytes?.let(::formatSize) ?: "?"}${if (p.logical) "  logical" else ""}")
     }
+}
+
+/** The device configuration against what the phone measured, each difference with "Use phone value". */
+@Composable
+private fun MeasuredVsConfigured(
+    phone: PhoneFacts,
+    device: TargetDevice,
+    enabled: Boolean,
+    onUse: ((TargetDevice) -> TargetDevice) -> Unit,
+) {
+    val facts = PhoneDeviceCheck.facts(phone, device)
+    if (facts.isEmpty()) return
+    Title("Compared with the device configuration")
+    facts.forEach { fact ->
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("PhoneFact_${fact.label}")) {
+            Fact(fact.label, if (fact.differs) "${fact.configured} → phone ${fact.measured}" else fact.measured)
+            if (fact.differs) {
+                GlassButton(
+                    onClick = { onUse(fact.apply) },
+                    variant = GlassButtonVariant.Secondary,
+                    enabled = enabled,
+                ) {
+                    Text("Use phone value")
+                }
+            }
+        }
+    }
+    val differing = facts.count { it.differs }
+    val matches = differing == 0
+    Note(
+        if (matches) "The configuration matches the phone." else "$differing value(s) differ; the phone measured them.",
+        if (matches) MaterialTheme.colorScheme.onSurfaceVariant else GlassTheme.diagnosticColors.warning,
+    )
 }
 
 @Composable

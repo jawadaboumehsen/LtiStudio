@@ -46,7 +46,7 @@ internal object KeptPartition {
     """
 
     /** `sh -c ERASE_SCRIPT sh <avbtool> <image>`: the image's AVB footer and hashtree removed, when it has one. */
-    private const val ERASE_SCRIPT: String =
+    const val ERASE_SCRIPT: String =
         "\"\$1\" info_image --image \"\$2\" >/dev/null 2>&1 || exit 0; \"\$1\" erase_footer --image \"\$2\""
 
     /** Adds [p]'s steps to [steps]; true: an image is in out/images for the steps that follow. */

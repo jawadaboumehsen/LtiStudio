@@ -11,6 +11,7 @@ package org.ide.lti.feature.workspace.studio.di
 
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.shell.registry.DefaultStageEditorRegistry
+import org.ide.lti.feature.workspace.studio.PreflightViewModel
 import org.ide.lti.feature.workspace.studio.StudioViewModel
 import org.ide.lti.feature.workspace.studio.components.WorkspaceStorageViewModel
 import org.koin.core.module.Module
@@ -25,6 +26,14 @@ public val romStudioShellModule: Module = module {
         )
     }
 
+    viewModel { params ->
+        PreflightViewModel(
+            workspaceId = params.getOrNull<String>() ?: "",
+            preflight = getOrNull(),
+            settings = getOrNull(),
+            samePhone = getOrNull(),
+        )
+    }
     viewModel { params ->
         WorkspaceStorageViewModel(workspaceId = params.getOrNull<String>() ?: "", storage = getOrNull())
     }

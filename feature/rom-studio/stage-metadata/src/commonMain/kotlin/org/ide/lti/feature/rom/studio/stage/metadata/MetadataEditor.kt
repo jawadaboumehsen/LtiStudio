@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
@@ -61,6 +63,8 @@ public fun MetadataEditor(
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
     modifier: Modifier = Modifier,
+    /** Fills the changelog from what the last build did. */
+    onDraftChangelog: () -> Unit = {},
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("release.") || !it.fieldPath.contains('.') }
 
@@ -83,7 +87,7 @@ public fun MetadataEditor(
                 }
 
                 "changelog" -> item {
-                    ChangelogCard(settings, errors, dirtyPaths, onChange)
+                    ChangelogCard(settings, errors, dirtyPaths, onChange, onDraftChangelog)
                 }
 
                 "compatibility" -> item {
@@ -211,6 +215,7 @@ private fun ChangelogCard(
     errors: List<ValidationError>,
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
+    onDraft: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -240,6 +245,13 @@ private fun ChangelogCard(
             config = TextFieldConfig(singleLine = false, maxLines = 10),
             state = fieldState(errors, "changelog"),
         )
+        GlassButton(
+            onClick = onDraft,
+            variant = GlassButtonVariant.Standard,
+            modifier = Modifier.testTag("DraftChangelog"),
+        ) {
+            Text("Draft from the last build", fontSize = FontSize.BodySmall)
+        }
         Meta("changelog", dirtyPaths, "Changelog", "Shown by the updater on the device. Empty: a generated summary.")
     }
 }

@@ -51,7 +51,6 @@ import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
-import org.ide.lti.core.domain.pipeline.toolkit.SuperBudget
 import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
@@ -217,13 +216,7 @@ private val IMAGE_COLUMNS = listOf(
  */
 @Composable
 internal fun PartitionLayoutPane(target: TargetDevice, settings: BuildSettings, facts: BuildFacts) {
-    val budget = SuperBudget.of(
-        partitions = target.dynamicPartitions,
-        filesystems = target.dynamicPartitions.associateWith { BuildFilesystems.of(settings, it) },
-        built = facts.images.associate { it.path.removeSuffix(".img") to it.sizeBytes },
-        stock = facts.stockImages.associate { it.path.removeSuffix(".img") to it.sizeBytes },
-        groupBytes = target.superGroupBytes,
-    )
+    val budget = superBudget(target, settings, facts)
     val error = GlassTheme.diagnosticColors.error
     Card("Super partition", tag = "PartitionLayoutPane") {
         Detail("Super size", mb(target.superPartitionBytes))
@@ -396,7 +389,7 @@ internal fun OutputNamingPane(
 }
 
 @Composable
-private fun Card(title: String, tag: String? = null, content: @Composable () -> Unit) {
+internal fun Card(title: String, tag: String? = null, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -419,7 +412,7 @@ private fun Card(title: String, tag: String? = null, content: @Composable () -> 
 }
 
 @Composable
-private fun Detail(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
+internal fun Detail(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         Text(
             text = label,
@@ -448,7 +441,7 @@ private fun Mono(text: String) {
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun Hint(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -480,7 +473,7 @@ internal fun NumberField(label: String, value: Int?, onChange: (Int?) -> Unit) {
     )
 }
 
-private fun mb(bytes: Long): String = formatBytes(bytes)
+internal fun mb(bytes: Long): String = formatBytes(bytes)
 
 private val COMPRESSORS = listOf("lz4hc", "lz4")
 private val BLOCK_SIZES = listOf(4096)

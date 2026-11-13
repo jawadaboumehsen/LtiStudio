@@ -30,6 +30,7 @@ import org.ide.lti.core.data.repository.run.RunRepositoryImpl
 import org.ide.lti.core.data.toolkit.WorkspaceToolkitStores
 import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.pipeline.HostStepPort
+import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePointStore
@@ -57,6 +58,7 @@ import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
 import org.ide.lti.core.domain.workbench.ImageWorkbench
 import org.ide.lti.core.domain.workbench.PhoneProbe
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
+import org.ide.lti.core.domain.workbench.SizeAdvisor
 import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
@@ -172,4 +174,6 @@ internal actual val platformRepositoryModule =
         single { WorkspaceStorage(runner = get(), runs = get()) }
         single { DeviceFirmwareCheck(runner = get()) }
         single { PhoneProbe(runner = get()) }
+        single { SizeAdvisor(runner = get()) }
+        single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
     }

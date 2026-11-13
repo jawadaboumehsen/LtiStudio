@@ -43,6 +43,7 @@ public class MetadataStageEditor : StageEditor {
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
             modifier = modifier,
+            onDraftChangelog = viewModel::draftChangelog,
         )
     }
 }

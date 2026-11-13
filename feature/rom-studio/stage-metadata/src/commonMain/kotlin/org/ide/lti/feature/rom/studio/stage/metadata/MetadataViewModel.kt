@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.stages.ChangelogDraft
+import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.workspace.StageSettingsSync
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
@@ -25,7 +27,7 @@ import org.ide.lti.core.model.workspace.ReleaseSettings
 public class MetadataViewModel(
     public val workspaceId: String,
     initialSettings: ReleaseSettings? = null,
-    store: WorkspaceSettingsStore? = null,
+    private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
 ) : ViewModel() {
 
@@ -56,6 +58,22 @@ public class MetadataViewModel(
 
     /** The manifest the last build wrote (`out/manifest.json`), or null before Release metadata has run. */
     public val manifest: StateFlow<String?> = _manifest.asStateFlow()
+
+    /**
+     * Puts a changelog drafted from the last build into the field: its mods and the files they changed, the apps
+     * Debloat removed, the build type and property overrides (`ChangelogDraft`). Nothing changes when there is none.
+     */
+    public fun draftChangelog() {
+        val facts = workspaceFacts ?: return
+        viewModelScope.launch {
+            val draft = ChangelogDraft.of(
+                facts.read(workspaceId, ChangelogDraft.PLAN),
+                facts.read(workspaceId, DebloatStage.RESULT),
+                store?.current(workspaceId),
+            )
+            if (draft.isNotBlank()) updateSettings(settings.value.copy(changelog = draft))
+        }
+    }
 
     public fun refreshManifest() {
         val facts = workspaceFacts ?: return

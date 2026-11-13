@@ -26,6 +26,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ApplyModules
+import org.ide.lti.core.domain.plugin.CheckModules
 import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.EffectKind
@@ -62,6 +63,7 @@ class ModuleHostSteps(
         yield()
         return when (request) {
             is ApplyModules -> applyModules(workspace, request)
+            is CheckModules -> checkModules(workspace, request.apply)
             is CoverageCheckRequest -> checkCoverage(workspace, request)
             is CoverageFixRequest -> fixCoverage(workspace, request)
             is TreeEditSidecars -> moveTreeEditSidecars(workspace, request)
@@ -101,6 +103,27 @@ class ModuleHostSteps(
             throw e
         }
         return "ok: $changes change(s) from ${request.plans.size} module(s)"
+    }
+
+    /** Each plugin whose file operations would be refused by this work tree, with why; `ok` when none. */
+    private suspend fun checkModules(workspace: Workspace, request: ApplyModules): String {
+        val work = workTree(workspace)
+        val ctx = MutationContext(
+            workTreeRelPath = work.toString(),
+            partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
+        )
+        val refused = request.plans.mapNotNull { plan ->
+            yield()
+            val key = "${plan.publisher}:${plan.id}:${plan.version}"
+            val fileOps = plan.operations.filterNot { it.isComponentEdit() }
+            val outcome = files.preview(plan.copy(operations = fileOps), ctx, request.assetRoots[key].orEmpty())
+            (outcome as? MutationOutcome.Refused)?.report?.errors?.takeIf { it.isNotEmpty() }?.let { errors ->
+                "${plan.id} ${plan.version}: " + errors.take(
+                    ERRORS_SHOWN,
+                ).joinToString("; ") { "${it.code} ${it.fieldPath}" }
+            }
+        }
+        return if (refused.isEmpty()) "ok" else refused.joinToString("\n")
     }
 
     /** Consecutive runs of operations of one kind, in plan order: a later copy still lands after an earlier edit. */
@@ -458,3 +481,5 @@ private fun kindOf(entry: Path): EntryKind = when {
     Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS) -> EntryKind.Directory
     else -> EntryKind.File
 }
+
+private const val ERRORS_SHOWN = 3

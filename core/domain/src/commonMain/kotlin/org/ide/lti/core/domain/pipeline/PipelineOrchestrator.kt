@@ -51,6 +51,7 @@ import org.ide.lti.core.model.run.StageStep
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.run.StepState
 import org.ide.lti.core.model.run.VerificationState
+import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.PackageType
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -340,6 +341,10 @@ public class PipelineOrchestrator(
                         continue
                     }
 
+                    // Read before the stage clears its record: what changed since it last ran.
+                    val inputs = cacheInputs(driver, stage, previousKey)
+                    val whyRan = whyRan(driver, stage, inputs, upstreamExecuted)
+                    driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
                     val failure =
                         runCatching {
                             // Before anything is cleared: a stage writes these folders from its first step.
@@ -370,7 +375,7 @@ public class PipelineOrchestrator(
                     executionPort.uploadFile(
                         driver.ws,
                         cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver).encodeToByteArray(),
+                        cacheRecord(cacheKey, outputDigest, driver, inputs).encodeToByteArray(),
                     )
                     driver.persist {
                         it.withStage(index) { s ->
@@ -504,6 +509,10 @@ public class PipelineOrchestrator(
                         continue
                     }
 
+                    // Read before the stage clears its record: what changed since it last ran.
+                    val inputs = cacheInputs(driver, stage, previousKey)
+                    val whyRan = whyRan(driver, stage, inputs, upstreamExecuted)
+                    driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
                     val failure =
                         runCatching {
                             // Before anything is cleared: a stage writes these folders from its first step.
@@ -536,7 +545,7 @@ public class PipelineOrchestrator(
                     executionPort.uploadFile(
                         driver.ws,
                         cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver).encodeToByteArray(),
+                        cacheRecord(cacheKey, outputDigest, driver, inputs).encodeToByteArray(),
                     )
                     driver.persist {
                         it.withStage(index) { s ->
@@ -1095,11 +1104,55 @@ public class PipelineOrchestrator(
     }
 
     /** A stage's cache file: its input key, its outputs' digest, and the run's values when it ran. */
-    private fun cacheRecord(cacheKey: String, outputDigest: String, driver: Driver): String {
+    private fun cacheRecord(
+        cacheKey: String,
+        outputDigest: String,
+        driver: Driver,
+        inputs: Map<String, String>,
+    ): String {
         val values = driver.runtimeValues.filter { (k, v) ->
             k != OUTPUT_DIGEST_SCRATCH && v.length <= CACHED_VALUE_LIMIT
         }
-        return "input=$cacheKey\noutput=$outputDigest\nvalues=${json.encodeToString(valuesSerializer, values)}\n"
+        return "input=$cacheKey\noutput=$outputDigest\nvalues=${json.encodeToString(valuesSerializer, values)}\n" +
+            "inputs=${json.encodeToString(valuesSerializer, inputs)}\n"
+    }
+
+    /**
+     * What a stage's cache key is made of, by name, so a later run can say what changed: the pipeline version, the
+     * earlier stage's key, the pinned tools, the input files and the stage's own settings, field by field.
+     */
+    private suspend fun cacheInputs(driver: Driver, stage: StageDefinition, previousKey: String): Map<String, String> {
+        val ctx = driver.context()
+        val tools = (stage.requiredToolIds + stage.optionalToolIds).associate { id ->
+            "tool $id" to "${driver.run.pinnedTools[id].orEmpty()}@${driver.run.toolVersions[id].orEmpty()}"
+        }
+        val files = stage.cacheInputFiles(ctx).associate { rel -> "file $rel" to fileDigest(driver, rel) }
+        return mapOf("pipeline version" to CacheKeys.PIPELINE_VERSION, "earlier stage" to previousKey.take(KEY_SHOWN)) +
+            tools + files + StageInputs.settings(stage.id, ctx.snapshot, json) +
+            ("device" to CacheKeys.sha256(json.encodeToString(TargetDevice.serializer(), ctx.target)).take(KEY_SHOWN))
+    }
+
+    /** Why [stage] runs instead of coming from cache (`StageOutcome.whyRan`). */
+    private suspend fun whyRan(
+        driver: Driver,
+        stage: StageDefinition,
+        inputs: Map<String, String>,
+        upstreamExecuted: Boolean,
+    ): String {
+        val recorded = if (upstreamExecuted) "" else executionPort.readFile(driver.ws, cacheFile(stage)).orEmpty()
+        val fields = recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
+            .associate { it[0].trim() to it[1].trim() }
+        val before = fields["inputs"]?.let { runCatching { json.decodeFromString(valuesSerializer, it) }.getOrNull() }
+        return when {
+            upstreamExecuted -> "an earlier stage ran in this run, and they share work/"
+
+            fields["input"].isNullOrEmpty() -> "it has no cache record (first run, or an earlier run cleared it)"
+
+            before == null -> "its cache record is older than the reasons kept now"
+
+            else -> StageInputs.changes(before, inputs).ifEmpty { listOf("its outputs changed or are missing") }
+                .joinToString("; ")
+        }
     }
 
     /** sha256 over the sorted `sha256sum` lines of every declared output; empty outputs digest to a constant. */
@@ -1232,4 +1285,6 @@ public class PipelineOrchestrator(
 }
 
 /** The workspace file that holds [id]'s cache record; an empty record never matches a key. */
+private const val KEY_SHOWN = 12
+
 internal fun stageCacheFile(id: StageId): String = ".cache/${id.name}.key"

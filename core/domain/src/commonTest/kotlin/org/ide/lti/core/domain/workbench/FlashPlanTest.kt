@@ -127,4 +127,14 @@ class FlashPlanTest {
         )
         assertEquals(listOf("xbl_config_a", "persist", "super"), assumed.rows.map { it.destination })
     }
+
+    @Test
+    fun theDeviceConfigurationIsComparedWithWhatThePhoneMeasured() {
+        val facts = PhoneDeviceCheck.facts(phone, device.copy(bootPartitionBytes = 1))
+        val boot = facts.single { it.label == "boot (bytes)" }
+        assertTrue(boot.differs)
+        assertEquals(0x6000000L, boot.apply(device).bootPartitionBytes)
+        assertFalse(facts.single { it.label == "Fastboot product" }.differs)
+        assertEquals(0x400000000L.toString(), facts.single { it.label.startsWith("Super") }.measured)
+    }
 }
