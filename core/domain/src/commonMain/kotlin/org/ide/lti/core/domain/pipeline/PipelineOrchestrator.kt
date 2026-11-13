@@ -124,6 +124,12 @@ public class PipelineOrchestrator(
         /** Each stage's output files and their digests as last read (cache check or after running). */
         val outputFiles: MutableMap<StageId, Map<String, String>> = mutableMapOf()
 
+        /** The work-tree stages' cache decision, made once per run when the first of them is reached. */
+        var workGroup: WorkGroupCheck? = null
+
+        /** Why the work-tree stages run, once: only the first of them reports it. */
+        fun takeWorkGroupReason(): String? = workGroup?.reason?.also { workGroup = workGroup?.copy(reason = null) }
+
         fun context(): StageContext = baseContext.copy(
             runtimeValues = runtimeValues.toMap(),
             toolPaths = run.pinnedTools,
@@ -327,7 +333,7 @@ public class PipelineOrchestrator(
                     runRepository.heartbeatDriver(runId, driverInstanceId, startedStage.toEpochMilliseconds())
 
                     val cacheKey = computeStageCacheKey(driver, stage, previousKey)
-                    if (!upstreamExecuted && isCacheValid(driver, stage, cacheKey)) {
+                    if (!upstreamExecuted && isCached(driver, stages, index, cacheKey, previousKey)) {
                         val ended = clock.now()
                         driver.persist {
                             it.withStage(index) { s ->
@@ -346,7 +352,7 @@ public class PipelineOrchestrator(
 
                     // Read before the stage clears its record: what changed since it last ran.
                     val inputs = cacheInputs(driver, stage, previousKey)
-                    val whyRan = whyRan(driver, stage, inputs, upstreamExecuted)
+                    val whyRan = driver.takeWorkGroupReason() ?: whyRan(driver, stage, inputs, upstreamExecuted)
                     driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
                     val failure =
                         runCatching {
@@ -381,6 +387,7 @@ public class PipelineOrchestrator(
                         cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
                             .encodeToByteArray(),
                     )
+                    recordWorkTree(driver, stages, index)
                     driver.persist {
                         it.withStage(index) { s ->
                             s.copy(
@@ -496,7 +503,7 @@ public class PipelineOrchestrator(
                     runRepository.heartbeatDriver(driver.runId, driverInstanceId, clock.now().toEpochMilliseconds())
 
                     val cacheKey = computeStageCacheKey(driver, stage, previousKey)
-                    if (!upstreamExecuted && isCacheValid(driver, stage, cacheKey)) {
+                    if (!upstreamExecuted && isCached(driver, stages, index, cacheKey, previousKey)) {
                         val ended = clock.now()
                         driver.persist {
                             it.withStage(index) { s ->
@@ -515,7 +522,7 @@ public class PipelineOrchestrator(
 
                     // Read before the stage clears its record: what changed since it last ran.
                     val inputs = cacheInputs(driver, stage, previousKey)
-                    val whyRan = whyRan(driver, stage, inputs, upstreamExecuted)
+                    val whyRan = driver.takeWorkGroupReason() ?: whyRan(driver, stage, inputs, upstreamExecuted)
                     driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
                     val failure =
                         runCatching {
@@ -552,6 +559,7 @@ public class PipelineOrchestrator(
                         cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
                             .encodeToByteArray(),
                     )
+                    recordWorkTree(driver, stages, index)
                     driver.persist {
                         it.withStage(index) { s ->
                             s.copy(
@@ -1087,7 +1095,120 @@ public class PipelineOrchestrator(
         return if (result.exitCode == 0) result.stdout.digestToken() else MISSING
     }
 
-    private suspend fun isCacheValid(driver: Driver, stage: StageDefinition, cacheKey: String): Boolean {
+    /** Whether the stage at [index] comes from cache: the work-tree stages decide together ([workGroupCheck]). */
+    private suspend fun isCached(
+        driver: Driver,
+        stages: List<StageDefinition>,
+        index: Int,
+        cacheKey: String,
+        previousKey: String,
+    ): Boolean {
+        val stage = stages[index]
+        if (stage.id !in WORK_GROUP) return isCacheValid(driver, stage, cacheKey)
+        val check = driver.workGroup
+            ?: workGroupCheck(driver, stages, index, previousKey).also { driver.workGroup = it }
+        return check.cachedThrough?.let { order(stage.id) <= order(it) } == true
+    }
+
+    /**
+     * Assemble, Debloat and the mods edit one work tree and cannot be applied twice to it (a text patch would land
+     * again, an app picked back could not come back). `WORK_RECORD` says which stage the last run left work/ after:
+     * the work-tree stages up to it come from cache when each one's inputs match its record and work/ is still what
+     * that run left; the ones after it run on that tree. A run that stops before it needs a tree assembled again.
+     * Their own output files are not compared: the later stages edit Assemble's sidecars and build.prop.
+     */
+    private suspend fun workGroupCheck(
+        driver: Driver,
+        stages: List<StageDefinition>,
+        index: Int,
+        previousKey: String,
+    ): WorkGroupCheck {
+        val before = driver.runtimeValues.toMap()
+        val recorded = executionPort.readFile(driver.ws, WORK_RECORD)?.trim().orEmpty()
+        val leftAfter = StageId.entries.firstOrNull { it.name == recorded.substringBefore(' ') }
+        val last = lastWorkEditor(stages, index)
+        val stopsBefore = leftAfter != null && last != null && order(last) < order(leftAfter)
+        val group = if (leftAfter == null || last == null || stopsBefore) {
+            emptyList()
+        } else {
+            stages.drop(index).takeWhile { it.id in WORK_GROUP && order(it.id) <= order(leftAfter) }
+        }
+        val stale = staleStage(driver, group, previousKey)
+        val unchanged = group.isNotEmpty() && stale == null &&
+            recorded.substringAfter(' ') == workTreeFingerprint(driver)
+        if (unchanged) return WorkGroupCheck(cachedThrough = group.last().id, reason = null)
+        driver.runtimeValues.clear()
+        driver.runtimeValues.putAll(before)
+        val reason = when {
+            stopsBefore -> "work/ holds what ${leftAfter?.let(::label)} did, and this run stops before it"
+
+            // The first stage says why itself; a later one is why the whole group runs again.
+            stale != null -> stale.first.takeUnless { it == stages[index] }?.let { s ->
+                val why = whyRan(driver, s, cacheInputs(driver, s, stale.second), upstreamExecuted = false)
+                "${label(s.id)} must run ($why), and it needs a freshly assembled work/"
+            }
+
+            group.isEmpty() -> null
+
+            else -> "work/ changed since the last run left it (a toolkit edit, or a run that stopped part way)"
+        }
+        return WorkGroupCheck(cachedThrough = null, reason = reason)
+    }
+
+    /** The first of [group] whose record does not match its inputs, and the key before it; null when all match. */
+    private suspend fun staleStage(
+        driver: Driver,
+        group: List<StageDefinition>,
+        previousKey: String,
+    ): Pair<StageDefinition, String>? {
+        var key = previousKey
+        for (stage in group) {
+            val previous = key
+            key = computeStageCacheKey(driver, stage, previous)
+            if (!isCacheValid(driver, stage, key, compareOutputs = false)) return stage to previous
+        }
+        return null
+    }
+
+    private fun order(id: StageId): Int = registry.executableStages().indexOfFirst { it.id == id }
+
+    /** After the last stage of this run that edits work/, what it left there (read back by [workGroupCheck]). */
+    private suspend fun recordWorkTree(driver: Driver, stages: List<StageDefinition>, index: Int) {
+        val stage = stages[index]
+        if (stage.id !in WORK_EDITORS || lastWorkEditor(stages, index) != stage.id) return
+        val fingerprint = workTreeFingerprint(driver) ?: return
+        executionPort.uploadFile(driver.ws, WORK_RECORD, "${stage.id.name} $fingerprint\n".encodeToByteArray())
+    }
+
+    /** The last stage from [index] on, in this run, that edits work/ (Build edits it too, idempotently). */
+    private fun lastWorkEditor(stages: List<StageDefinition>, index: Int): StageId? =
+        stages.drop(index).lastOrNull { it.id in WORK_EDITORS }?.id
+
+    /** Content fingerprint of work/ without work/package (Build's own output); null when it cannot be read. */
+    private suspend fun workTreeFingerprint(driver: Driver): String? {
+        val cmd = StepCommand(
+            "sh",
+            listOf("-c", WORK_FINGERPRINT_SCRIPT, "sh", driver.baseContext.abs("work")),
+            driver.ws.linuxPath,
+        )
+        val result = executionPort.execute(driver.ws, cmd)
+        return result.stdout.trim().takeIf { result.exitCode == 0 && it.isNotEmpty() }
+    }
+
+    private fun label(id: StageId): String = when (id) {
+        StageId.WORK_TREE_ASSEMBLY -> "Assemble"
+        StageId.DEBLOAT -> "Debloat"
+        StageId.MODULE_APPLICATION -> "Patches & mods"
+        StageId.BUILD_FLASHABLE_ZIP -> "Build & sign"
+        else -> id.name
+    }
+
+    private suspend fun isCacheValid(
+        driver: Driver,
+        stage: StageDefinition,
+        cacheKey: String,
+        compareOutputs: Boolean = true,
+    ): Boolean {
         val recorded = executionPort.readFile(driver.ws, cacheFile(stage)) ?: return false
         val fields =
             recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
@@ -1098,7 +1219,7 @@ public class PipelineOrchestrator(
             ?.getOrNull().orEmpty()
         val context = driver.context().let { it.copy(runtimeValues = it.runtimeValues + recordedValues) }
         val valid = fields["input"] == cacheKey &&
-            fields["output"] == outputDigest(driver, stage.outputs(context), stage.id) &&
+            (!compareOutputs || fields["output"] == outputDigest(driver, stage.outputs(context), stage.id)) &&
             stage.requiredPaths(context).all { executionPort.stat(driver.ws, it).exists }
         // The run's own identity stays this run's: only a cached Build brings back the date its package is named
         // by; the device revision a resume is checked against is never an older run's.
@@ -1289,6 +1410,24 @@ public class PipelineOrchestrator(
 }
 
 private const val KEY_SHOWN = 12
+
+/** Stages that edit work/ and run together from Assemble (see `workGroupCheck`). */
+private val WORK_GROUP = setOf(StageId.WORK_TREE_ASSEMBLY, StageId.DEBLOAT, StageId.MODULE_APPLICATION)
+
+/** Every stage that edits work/: the group, and Build (it replaces its `ro.lti.*` lines, adds fstab lines once). */
+private val WORK_EDITORS = WORK_GROUP + StageId.BUILD_FLASHABLE_ZIP
+
+/** `<last editing stage> <fingerprint>` of work/ as the last run left it. */
+private const val WORK_RECORD = ".cache/work.fp"
+
+/** `$1` work/: every entry's path, kind, size, mode and link, and every file's md5, without package/. */
+private const val WORK_FINGERPRINT_SCRIPT = """cd "$1" || exit 1
+{ find . -path ./package -prune -o -printf '%P\t%y\t%s\t%m\t%l\n' | LC_ALL=C sort
+  find . -path ./package -prune -o -type f -print0 | xargs -0 -r -P8 -n64 md5sum | LC_ALL=C sort
+} | sha256sum | cut -d' ' -f1"""
+
+/** The work-tree stages' cache decision: those up to [cachedThrough] come from cache; [reason] is why they run. */
+private data class WorkGroupCheck(val cachedThrough: StageId?, val reason: String?)
 private const val OUTPUTS_SHOWN = 3
 private const val MISSING = "missing"
 

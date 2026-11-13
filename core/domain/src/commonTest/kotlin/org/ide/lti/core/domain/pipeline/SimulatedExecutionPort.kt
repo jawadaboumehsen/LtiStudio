@@ -143,8 +143,12 @@ class SimulatedExecutionPort(private val wsRoot: String) : PipelineExecutionPort
         return ToolResult(forced ?: 0, stdout)
     }
 
+    /** What the orchestrator's work/ fingerprint reads; a test changes it to edit work/ between runs. */
+    var workFingerprint: String = "work-tree-1"
+
     private fun defaultStdout(cmd: StepCommand): String {
         val args = cmd.args
+        if (cmd.toolId == "sh" && args.getOrNull(1)?.contains("./package -prune") == true) return workFingerprint
         return when (cmd.toolId) {
             "curl" -> "".also { files[args[args.indexOf("-o") + 1]] = ByteArray(1_000_000) }
 

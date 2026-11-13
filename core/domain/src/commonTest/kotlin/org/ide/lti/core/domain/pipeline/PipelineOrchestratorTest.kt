@@ -361,6 +361,43 @@ class PipelineOrchestratorTest {
     }
 
     @Test
+    fun aBuildSettingRebuildsFromBuildOnTheSameWorkTree() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        val ctx = fixture.globalOtaContext().let { c ->
+            c.copy(snapshot = c.snapshot.copy(build = c.snapshot.build.copy(brotliLevel = 9)))
+        }
+
+        val events = orchestrator(port, repo).drive("run-2", ctx, "d2").toList()
+        // Build's work/ edits are idempotent: it reruns on the tree the work-tree stages left.
+        assertEquals(
+            listOf(
+                StageId.FIRMWARE_ACQUISITION,
+                StageId.FIRMWARE_EXTRACTION,
+                StageId.WORK_TREE_ASSEMBLY,
+                StageId.DEBLOAT,
+                StageId.MODULE_APPLICATION,
+            ),
+            events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId },
+        )
+    }
+
+    @Test
+    fun aLaterWorkTreeStageThatMustRunAssemblesAgainAndSaysWhy() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        port.files[port.files.keys.first { it.endsWith(".cache/DEBLOAT.key") }] = ByteArray(0)
+
+        orchestrator(port, repo).drive("run-2", fixture.globalOtaContext(), "d2").toList()
+        val assemble = repo.getRun("run-2")!!.stages.first { it.stageId == StageId.WORK_TREE_ASSEMBLY }
+        // Debloat cannot be applied to a tree it already changed: the group starts again from Assemble.
+        assertEquals(StageState.EXECUTED, assemble.state)
+        assertTrue(assemble.whyRan.orEmpty().startsWith("Debloat must run"), assemble.whyRan)
+    }
+
+    @Test
     fun anExtractedTreeThatIsGoneIsNotCached() = runTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()
@@ -409,7 +446,8 @@ class PipelineOrchestratorTest {
         val port = globalPort()
         val repo = InMemoryRunRepository()
         orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
-        port.stdoutOverrides["sha256sum $ws/work/system/system/build.prop"] = "deadbeef  build.prop"
+        // work/ edited between runs (a toolkit edit): its fingerprint no longer matches what run-1 left.
+        port.workFingerprint = "work-tree-edited"
 
         val events = orchestrator(port, repo).drive("run-2", fixture.globalOtaContext(), "d2").toList()
         val skipped = events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId }

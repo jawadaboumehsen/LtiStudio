@@ -815,6 +815,12 @@ per stage; a failed stage marks every later stage pending and stops.
   stage's commands change. Once a stage really runs, every later stage runs too: they share `work/`. Tools only some
   settings use go in `optionalToolIds` (in the key, not required); `requiredPaths` are folders and files a digest does
   not cover: a stage whose path is gone runs again.
+- Work-tree stages (`WORK_GROUP`: Assemble, Debloat, Patches) come from cache only together (`workGroupCheck`):
+  Debloat and the mods cannot be applied twice to one tree. `.cache/work.fp` is `<stage> <fingerprint>` of work/
+  (contents, without work/package) after the last stage of a run that edits it (Build too: its `ro.lti.*` stamp and
+  fstab lines are idempotent, so Build may rerun alone). The group stages up to that stage are cached when their
+  input keys match and work/ is unchanged; their own output files are not compared (later stages edit them). A run
+  stopping before that stage assembles again.
 - Partitions: Build writes every partition of the device. One left out of Extract or Assemble refuses Build
   (`PARTITIONS_LEFT_OUT`; a run stopped earlier may use such a selection). A folded system_ext stops being a partition
   for Build, super and the package (`WorkTreeAssemblyStage.afterFolding`).
