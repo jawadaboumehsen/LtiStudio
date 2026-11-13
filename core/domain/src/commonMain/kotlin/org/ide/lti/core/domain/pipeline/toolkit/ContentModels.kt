@@ -22,6 +22,15 @@ public enum class DeodexStatus {
     Failed,
 }
 
+/** Which packages the deodexer looks at. */
+@Serializable
+public enum class DeodexScope(public val words: String) {
+    SERVICES("services.jar only"),
+    FRAMEWORK("every jar and apk in framework/"),
+    APPS("every app"),
+    FILE("one file"),
+}
+
 /**
  * Result of de-odex operation per application.
  *

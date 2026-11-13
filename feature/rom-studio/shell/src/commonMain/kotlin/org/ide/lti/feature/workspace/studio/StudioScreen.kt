@@ -55,6 +55,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
+import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
@@ -68,6 +69,7 @@ import org.ide.lti.feature.workspace.panels.run.ArtifactsPanel
 import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
 import org.ide.lti.feature.workspace.panels.run.RunPanel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationPanel
+import org.ide.lti.feature.workspace.studio.components.OutputPanel
 import org.ide.lti.feature.workspace.studio.components.StudioStatusBar
 import org.ide.lti.feature.workspace.studio.components.StudioTopAppBar
 import org.ide.lti.feature.workspace.studio.components.TopBarActionButton
@@ -75,6 +77,7 @@ import org.ide.lti.feature.workspace.studio.components.TopBarTargetSpecifier
 import org.ide.lti.feature.workspace.studio.components.WorkspaceRestorePointsPanel
 import org.ide.lti.feature.workspace.studio.components.WorkspaceStoragePanel
 import org.ide.lti.feature.workspace.studio.components.WorkspaceStorageViewModel
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -106,6 +109,7 @@ public fun StudioScreen(
     onOpenEditConfiguration: (targetId: String) -> Unit = {},
     viewModel: StudioViewModel = koinViewModel { parametersOf(workspaceId) },
     workspaceManager: WorkspaceManager = koinInject(),
+    workbenchLog: WorkbenchLog? = getKoin().getOrNull(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val shellState by viewModel.shellState.collectAsState()
@@ -155,6 +159,7 @@ public fun StudioScreen(
         iconsOnly = true,
         onOpenProblems = { viewModel.selectWorkspaceSection(WorkspaceSection.Overview) },
         onOpenActivity = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
+        output = workbenchLog?.let { log -> { OutputPanel(log) } },
         content = {
             StudioContent(
                 uiState = uiState,
@@ -298,6 +303,8 @@ public fun StudioShellContent(
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
     iconsOnly: Boolean = false,
+    /** The workbench jobs' Output panel, under the content. */
+    output: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val breadcrumbItems: List<String> = remember(
@@ -490,6 +497,7 @@ public fun StudioShellContent(
                         StageContinueBar(next = next, onContinue = { onSelectStage(next.stageId) })
                     }
                 }
+                output?.invoke()
             }
         },
         statusBar = {

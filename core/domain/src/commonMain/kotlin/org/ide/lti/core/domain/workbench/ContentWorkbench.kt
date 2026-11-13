@@ -18,6 +18,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.ConfigValidators
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageGate
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexAppResult
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexScope
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexStatus
 import org.ide.lti.core.domain.pipeline.toolkit.OmcDecode
 import org.ide.lti.core.domain.pipeline.toolkit.OmcInfo
@@ -40,24 +41,77 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
     }
 
     /**
-     * Brings every app of the work tree back to a self-contained package (FR-028). An APK that already carries
-     * its dex is reported as such (stale `oat/` next to it is removed, with a restore point); one with no `.vdex`
-     * in `oat/` has nothing to convert. An app whose code is only in a vdex needs `vdexExtractor`, which LtiRom does
-     * not install, so it is reported failed with that reason rather than half-converted.
+     * Checks the packages of [scope] in work/ ([file] for [DeodexScope.FILE]): a package whose dex is inside it is
+     * already deodexed, and its precompiled files (oat/, odex, vdex, art) are stale; they are removed with a restore
+     * point unless [keepPrecompiled]. A package whose code is only in a VDEX cannot be converted here (that needs
+     * vdexExtractor) and is reported with the VDEX version. A [dryRun] changes nothing and says what it would do.
+     * Every finding and a summary go to the Output panel.
      */
-    public suspend fun deodex(workspaceId: String): List<DeodexAppResult> = runner.job(workspaceId, "Deodex") {
-        sh(DEODEX_SCRIPT, abs("work")).lines().mapNotNull { line ->
-            val (status, app, reason) = line.split('\t', limit = 3).takeIf { it.size == 3 } ?: return@mapNotNull null
-            if (status == STALE_OAT) {
-                val oat = "work/${app.substringBeforeLast('/')}/oat"
-                val point = backup(TOOL, oat)
-                run("rm", "-rf", "--", abs(oat))
-                DeodexAppResult(app, DeodexStatus.AlreadyDone, "$reason (restore point ${point.id})")
-            } else {
-                DeodexAppResult(app = app, status = DeodexStatus.valueOf(status), reason = reason)
+    public suspend fun deodex(
+        workspaceId: String,
+        scope: DeodexScope = DeodexScope.APPS,
+        file: String? = null,
+        dryRun: Boolean = false,
+        keepPrecompiled: Boolean = false,
+    ): List<DeodexAppResult> = runner.job(workspaceId, if (dryRun) "Deodex (dry run)" else "Deodex") {
+        if (scope == DeodexScope.FILE) {
+            requireInWork(checkNotNull(file) { "Pick the file to deodex" })
+            if (!exists(file)) {
+                throw RefusalException(Refusal("There is no such file.", file, "Pick a jar or apk inside work/."))
             }
         }
+        val target = file?.removePrefix("work/").orEmpty()
+        val results = sh(DEODEX_SCRIPT, abs("work"), scope.name, target).lines().mapNotNull { line ->
+            val f = line.split('\t').takeIf { it.size == DEODEX_FIELDS } ?: return@mapNotNull null
+            val result = if (f[0] == STALE) {
+                staleResult(f[1], f[2], f[STALE_FILES].split(' ').filter(String::isNotEmpty), dryRun, keepPrecompiled)
+            } else {
+                DeodexAppResult(f[1], DeodexStatus.valueOf(f[0]), f[2])
+            }
+            report(
+                if (result.status == DeodexStatus.Failed) LogLevel.WRN else LogLevel.INF,
+                "${result.app}: ${result.reason}",
+            )
+            result
+        }
+        val counts = results.groupingBy { it.status }.eachCount()
+        report(
+            LogLevel.OK,
+            "Deodex ${scope.words}: ${results.size} checked, " +
+                "${counts[DeodexStatus.AlreadyDone] ?: 0} already deodexed, " +
+                "${counts[DeodexStatus.Failed] ?: 0} only in a VDEX, " +
+                "${counts[DeodexStatus.NoCompanion] ?: 0} with no code" +
+                if (dryRun) " (dry run: nothing was changed)" else "",
+        )
+        results
     }
+
+    /** A package with its dex inside and precompiled files beside it: removed, backed up, unless kept. */
+    private suspend fun WorkbenchRunner.Job.staleResult(
+        pkg: String,
+        reason: String,
+        stale: List<String>,
+        dryRun: Boolean,
+        keep: Boolean,
+    ): DeodexAppResult = DeodexAppResult(
+        pkg,
+        DeodexStatus.AlreadyDone,
+        when {
+            keep -> "$reason; kept its ${stale.size} precompiled file(s)"
+
+            dryRun -> "$reason; would remove ${stale.size} stale precompiled file(s): ${stale.joinToString()}"
+
+            else -> {
+                // An app's oat/ folder is its own: it goes whole; a framework jar's files sit among the others'.
+                val app = !pkg.contains("/framework/")
+                val items = if (app) listOf("work/${pkg.substringBeforeLast('/')}/oat") else stale.map { "work/$it" }
+                val points = items.map { item -> backup(TOOL, item).also { run("rm", "-rf", "--", abs(item)) } }
+                "$reason; removed ${stale.size} stale precompiled file(s) (restore point ${points.joinToString {
+                    it.id
+                }})"
+            }
+        },
+    )
 
     /** Decodes [path] (an APK or JAR in the work tree) with apktool into `workbench/apk/`; returns that folder. */
     public suspend fun decode(workspaceId: String, path: String): String = runner.job(workspaceId, "Decode") {
@@ -346,21 +400,36 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         private const val DETAILS = 4_000
         private const val HEX_DIGITS = "0123456789abcdef"
         private const val DECODED_HASH_BYTES = 6
-        private const val STALE_OAT = "StaleOat"
+        private const val STALE = "Stale"
 
-        /** `$1` = work tree. One line per app: status, app folder, reason (tab separated). */
+        /**
+         * `$1` work/, `$2` the scope, `$3` the file for FILE. One line per package: status, its path under work/,
+         * reason, and its precompiled files (oat/<arch>/<name>.odex|vdex|art, and a framework jar's boot image
+         * files) space-separated. A VDEX's version is its bytes 4 to 7.
+         */
         private const val DEODEX_SCRIPT = """
-find "$1" -mindepth 3 -maxdepth 5 -type f -name '*.apk' -path '*app/*' | while read -r apk; do
-  dir=${'$'}{apk%/*}; app=${'$'}{apk#"$1"/}
-  if unzip -l "${'$'}apk" 2>/dev/null | grep -q ' classes[0-9]*\.dex${'$'}'; then
-    if [ -d "${'$'}dir/oat" ]; then printf 'StaleOat\t%s\tdex is in the APK; removed the stale oat folder\n' "${'$'}app"
-    else printf 'AlreadyDone\t%s\tdex is in the APK\n' "${'$'}app"; fi
-  elif ls "${'$'}dir"/oat/*/*.vdex >/dev/null 2>&1; then
-    printf 'Failed\t%s\tthe code is only in oat/*.vdex; extracting it needs vdexExtractor, which is not installed\n' "${'$'}app"
+cd "$1" || exit 1
+case "$2" in
+  SERVICES) find . -type f -path '*/framework/services.jar' ;;
+  FRAMEWORK) find . -type f -path '*/framework/*' ! -path '*/framework/*/*' \( -name '*.jar' -o -name '*.apk' \) ;;
+  APPS) find . -mindepth 3 -maxdepth 5 -type f -name '*.apk' -path '*app/*' ;;
+  FILE) echo "./$3" ;;
+esac | sort | while read -r f; do
+  f=${'$'}{f#./}; dir=${'$'}{f%/*}; base=${'$'}{f##*/}; name=${'$'}{base%.*}
+  pre=${'$'}(ls -d "${'$'}dir"/oat/*/"${'$'}name".odex "${'$'}dir"/oat/*/"${'$'}name".vdex "${'$'}dir"/oat/*/"${'$'}name".art "${'$'}dir"/boot-"${'$'}name".vdex "${'$'}dir"/*/boot-"${'$'}name".vdex 2>/dev/null | tr '\n' ' ')
+  vdex=${'$'}(ls "${'$'}dir"/oat/*/"${'$'}name".vdex "${'$'}dir"/boot-"${'$'}name".vdex "${'$'}dir"/*/boot-"${'$'}name".vdex 2>/dev/null | head -n1)
+  if unzip -l "${'$'}f" 2>/dev/null | grep -q ' classes[0-9]*\.dex${'$'}'; then
+    if [ -n "${'$'}pre" ]; then printf 'Stale\t%s\tdex is in the package\t%s\n' "${'$'}f" "${'$'}pre"
+    else printf 'AlreadyDone\t%s\tdex is in the package\t\n' "${'$'}f"; fi
+  elif [ -n "${'$'}vdex" ]; then
+    v=${'$'}(head -c 8 "${'$'}vdex" | tail -c 4 | tr -d '\000')
+    printf 'Failed\t%s\tthe code is only in %s (VDEX %s); extracting it needs vdexExtractor, which is not installed\t\n' "${'$'}f" "${'$'}vdex" "${'$'}v"
   else
-    printf 'NoCompanion\t%s\tno dex in the APK and no oat/*.vdex next to it\n' "${'$'}app"
+    printf 'NoCompanion\t%s\tno dex in the package and no VDEX beside it (resources only)\t\n' "${'$'}f"
   fi
 done"""
+        private const val DEODEX_FIELDS = 4
+        private const val STALE_FILES = 3
 
         /**
          * `$1` library, `$2` find hex (`.` = any digit), `$3` replace hex, `$4` output; the match must start on a

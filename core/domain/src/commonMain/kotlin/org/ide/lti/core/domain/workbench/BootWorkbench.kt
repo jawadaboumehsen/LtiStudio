@@ -238,7 +238,13 @@ public class BootWorkbench(
                 if (!check.ok) return@job SavedOverride(partition, "", check)
                 sh(state.compression.compress, abs("$dir/ramdisk.new.cpio"), abs("$dir/unpacked/${state.ramdisk}"))
             }
-            if (exists("$dir/$DTS")) sh(DTB_REPACK_SCRIPT, abs(dir), "dtc")
+            if (exists("$dir/$DTS") && "rewritten" in sh(DTB_REPACK_SCRIPT, abs(dir), "dtc")) {
+                report(
+                    LogLevel.WRN,
+                    "$partition: the edited device tree does not compile back to its original bytes, so dtc rewrote " +
+                        "the whole first tree in its own layout",
+                )
+            }
             // Empty values stay (`--ramdisk_name ''` of a v4 vendor ramdisk); only the trailing newline goes.
             val args = mkbootimgArgs(readText("$dir/$ARGS").orEmpty())
             // A vendor_boot is written with --vendor_boot: with --output, mkbootimg refuses its ramdisk fragments.
@@ -614,10 +620,15 @@ public class BootWorkbench(
             }
         private const val DTS = "dtb.dts"
 
+        /** `same` or `differs`: whether the unpacked first device tree compiles back to its own bytes. */
+        public const val DTB_ROUND_TRIP: String = "dtb.roundtrip"
+
         /**
          * `sh -c DTB_UNPACK_SCRIPT sh <unpacked dir> <dtc>`: keeps the dtb as found (`dtb.orig`; a vendor_boot dtb is
          * often several device trees back to back), writes the first one as `dtb.dts` for editing, headed by how many
-         * there are, and records its hash so repack can tell whether it was edited.
+         * there are, and records its hash so repack can tell whether it was edited. The dts is compiled back and
+         * compared with the first tree byte for byte ([DTB_ROUND_TRIP]: `same` or `differs`), and its header says
+         * which: when it differs, an edit rewrites the whole tree in dtc's own layout.
          */
         public const val DTB_UNPACK_SCRIPT: String = """
             set -e
@@ -630,13 +641,22 @@ public class BootWorkbench(
               off=${'$'}((off + sz)); n=${'$'}((n + 1))
             done
             "$2" -q -I dtb -O dts -o dtb.first.dts dtb.orig
+            "$2" -q -I dts -O dtb -o dtb.check dtb.first.dts
+            first=${'$'}((0x${'$'}(xxd -p -s 4 -l 4 dtb.orig)))
+            if head -c ${'$'}first dtb.orig | cmp -s - dtb.check; then rt=same; else rt=differs; fi
+            echo ${'$'}rt > dtb.roundtrip
             {
               if [ ${'$'}n -gt 1 ]; then
                 echo "// This dtb holds ${'$'}n device trees; this is the first. Repack keeps the others as they are."
               fi
+              if [ ${'$'}rt = same ]; then
+                echo "// Compiled back, this tree gives the same bytes: an edit changes only what you change."
+              else
+                echo "// Compiled back, this tree does not give the same bytes (dtc lays it out its own way): an edit rewrites the whole tree. Leave it unedited to keep the original bytes."
+              fi
               cat dtb.first.dts
             } > dtb.dts
-            rm -f dtb.first.dts
+            rm -f dtb.first.dts dtb.check
             sha256sum dtb.dts > dtb.dts.sha
         """
 
@@ -655,6 +675,7 @@ public class BootWorkbench(
             first=${'$'}((0x${'$'}(xxd -p -s 4 -l 4 dtb.orig)))
             { cat dtb.first; tail -c +${'$'}((first + 1)) dtb.orig; } > unpacked/dtb
             rm -f dtb.first
+            if [ "${'$'}(cat dtb.roundtrip 2>/dev/null)" = differs ]; then echo rewritten; fi
         """
         internal const val RAMDISK_DIR = "ramdisk"
         private val RAMDISK_NAMES = listOf("ramdisk", "vendor_ramdisk00", "vendor_ramdisk")

@@ -12,10 +12,13 @@ package org.ide.lti.feature.rom.studio.stage.patch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,6 +45,7 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -50,6 +54,8 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.ConfigKind
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexAppResult
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexScope
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexStatus
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.ui.GlassCodeEditor
@@ -104,29 +110,105 @@ public fun ContentToolsPane(
     }
 }
 
+/**
+ * The deodexer: a scope, a dry run that says what it found and would do, then the run itself, which backs up every
+ * precompiled file it removes; the backups are listed here and restore with one click.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DeodexCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
-    Card("Deodex (FR-028)") {
+    LaunchedEffect(Unit) { viewModel.refreshDeodexBackups() }
+    val idle = state.busy == null
+    Card("Deodexer") {
         Hint(
-            "Checks every app of the assembled tree: an APK that carries its dex is already standalone (a stale oat/ " +
-                "next to it is removed); an app whose code is only in a vdex is listed.",
+            "A package whose dex is inside it is already deodexed: its precompiled files (oat/, odex, vdex, art) are " +
+                "stale and would stop changed code from loading, so they are removed, each with a backup. Code that " +
+                "is only in a VDEX cannot be converted here (vdexExtractor is not available).",
         )
-        GlassButton(onClick = viewModel::deodex, enabled = state.busy == null, variant = GlassButtonVariant.Primary) {
-            Text("Check and deodex the work tree", fontSize = FontSize.BodySmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            DeodexScope.entries.forEach { scope ->
+                GlassChip(
+                    label = scope.words,
+                    selected = scope == state.deodexScope,
+                    onClick = { viewModel.setDeodex(scope = scope) },
+                    modifier = Modifier.testTag("DeodexScope_${scope.name}"),
+                )
+            }
         }
-        state.deodex?.let { results ->
-            DeodexStatus.entries.forEach { s ->
-                val count = results.count { it.status == s }
-                if (count > 0) Mono("$s: $count")
-            }
-            LazyColumn(Modifier.fillMaxWidth().height(ComponentSize.MaxPanelHeight)) {
-                items(results.filter { it.status != DeodexStatus.AlreadyDone }) { r ->
-                    Mono("${r.status}  ${r.app}  ${r.reason.orEmpty()}")
-                }
-            }
+        if (state.deodexScope == DeodexScope.FILE) {
+            GlassTextField(
+                value = state.deodexFile,
+                onValueChange = { viewModel.setDeodex(file = it) },
+                placeholder = "work/system/system/framework/services.jar",
+                modifier = Modifier.fillMaxWidth().testTag("DeodexFile"),
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassToggle(
+                checked = state.keepPrecompiled,
+                onCheckedChange = { viewModel.setDeodex(keepPrecompiled = it) },
+                activeColor = MaterialTheme.colorScheme.primary,
+            )
+            Text("Keep precompiled files", fontSize = FontSize.BodySmall, color = MaterialTheme.colorScheme.onSurface)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            GlassButton(
+                onClick = { viewModel.deodex(dryRun = true) },
+                enabled = idle,
+                variant = GlassButtonVariant.Standard,
+                modifier = Modifier.testTag("DeodexAnalyze"),
+            ) { Text("Analyze (dry run)", fontSize = FontSize.BodySmall) }
+            GlassButton(
+                onClick = { viewModel.deodex() },
+                enabled = idle,
+                variant = GlassButtonVariant.Primary,
+                modifier = Modifier.testTag("DeodexRun"),
+            ) { Text("Deodex", fontSize = FontSize.BodySmall) }
+        }
+        state.deodex?.let { DeodexResults(it, state.deodexDryRun) }
+        DeodexBackups(state, viewModel)
+    }
+}
+
+@Composable
+private fun DeodexResults(results: List<DeodexAppResult>, dryRun: Boolean) {
+    val counts = results.groupingBy { it.status }.eachCount()
+    Mono(
+        "${results.size} checked: ${counts[DeodexStatus.AlreadyDone] ?: 0} already deodexed, " +
+            "${counts[DeodexStatus.Failed] ?: 0} only in a VDEX, " +
+            "${counts[DeodexStatus.NoCompanion] ?: 0} with no code" +
+            if (dryRun) " (dry run: nothing was changed)" else "",
+    )
+    // Packages with nothing to say are counted, not listed; every line is also in the Output panel.
+    val shown = results.filter { it.status != DeodexStatus.AlreadyDone || it.reason != "dex is in the package" }
+    LazyColumn(Modifier.fillMaxWidth().heightIn(max = ComponentSize.MaxPanelHeight)) {
+        items(shown) { r -> Mono("${r.status}  ${r.app}  ${r.reason.orEmpty()}") }
+    }
+}
+
+@Composable
+private fun DeodexBackups(state: ContentToolsState, viewModel: ContentToolsViewModel) {
+    Hint("Backups (${state.deodexBackups.size})")
+    if (state.deodexBackups.isEmpty()) Hint("No backups yet.")
+    state.deodexBackups.forEach { point ->
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f)) { Mono("${point.itemPath}  ${point.createdAt.take(DATE_TIME)}") }
+            GlassButton(
+                onClick = { viewModel.restoreDeodexBackup(point) },
+                enabled = state.busy == null,
+                variant = GlassButtonVariant.Text,
+            ) { Text("Restore", fontSize = FontSize.BodySmall) }
         }
     }
 }
+
+private const val DATE_TIME = 16
 
 @Composable
 private fun PackageCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
@@ -266,8 +348,11 @@ private fun PathCompareCard(state: ContentToolsState, viewModel: ContentToolsVie
 /** The last result of a [kind] comparison as lines, or null before one ran. */
 private fun compareLines(kind: CompareKind, state: ContentToolsState): List<String>? = when (kind) {
     CompareKind.FILES -> state.fileDiff?.let { if (it.identical) listOf("Identical") else it.lineDifferences }
+
     CompareKind.ARCHIVES -> state.archiveDiff?.let { d -> sets(d.missingInB, d.extraInB, d.modified) }
+
     CompareKind.FOLDERS -> state.folderDiff?.let { d -> sets(d.missingInB, d.extraInB, d.modified) }
+
     // Shown by CodeDiff instead.
     CompareKind.CODE -> null
 }

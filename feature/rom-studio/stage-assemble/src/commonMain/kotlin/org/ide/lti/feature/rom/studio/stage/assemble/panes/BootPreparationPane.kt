@@ -41,6 +41,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
+import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -186,6 +187,16 @@ private fun ComponentsCard(parts: BootParts, actions: BootPaneActions, idle: Boo
 @Composable
 private fun DeviceTreeCard(dts: String, state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
     Card("Device tree (FR-022)") {
+        // Unpack compiles the tree back and says in the dts whether it gives the same bytes.
+        dts.lineSequence().take(HEADER_LINES).firstOrNull { it.startsWith(ROUND_TRIP) }?.let { line ->
+            val colors = GlassTheme.diagnosticColors
+            Text(
+                text = line.removePrefix("// "),
+                color = if ("does not" in line) colors.warning else colors.success,
+                fontSize = FontSize.BodySmall,
+                modifier = Modifier.testTag("DeviceTreeRoundTrip"),
+            )
+        }
         GlassCodeEditor(
             content = dts,
             onContentChange = actions.editDeviceTree,
@@ -451,3 +462,6 @@ private fun unbuiltLine(image: String, state: BootPaneState): String {
     )
     return "$image.img" + (if (parts.isEmpty()) "" else " (${parts.joinToString()} file(s))")
 }
+
+private const val ROUND_TRIP = "// Compiled back"
+private const val HEADER_LINES = 3

@@ -22,6 +22,8 @@ import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.Acknowledgements
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexScope
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexStatus
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.JobLockHandle
 import org.ide.lti.core.domain.pipeline.toolkit.LockResult
@@ -40,7 +42,9 @@ import org.ide.lti.core.domain.ports.StepStatus
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workbench.BootWorkbench
+import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.ImageWorkbench
+import org.ide.lti.core.domain.workbench.LogLevel
 import org.ide.lti.core.domain.workbench.RiskyFeature
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.model.run.BuildRun
@@ -182,6 +186,60 @@ class AssembleStageEditorTest {
         val service = Service { ToolResult(0, "", "") }
         val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores, distro = { "Ubuntu" })
         assertEquals("\\\\wsl.localhost\\Ubuntu\\ws\\out\\toolkit", runner.read("ws") { hostPath("out/toolkit") })
+    }
+
+    @Test
+    fun `a job's start, end and refusal go to the Output panel`() = runTest {
+        val runner = WorkbenchRunner(
+            Workspaces,
+            Service { if (it.toolId == "cp") ToolResult(1, "", "no space") else ToolResult(0, "", "") },
+            stores,
+            stores,
+            stores,
+        )
+        runner.job("ws", "Edit") { report(LogLevel.INF, "found 3") }
+        assertFailsWith<RefusalException> { runner.job("ws", "Write") { run("cp", "/ws/a") } }
+        val lines = runner.log.lines.value.map { "${it.level} ${it.text}" }
+        assertEquals(
+            listOf("INF Edit: started in ws", "INF found 3", "OK Edit: done", "INF Write: started in ws"),
+            lines.take(4),
+        )
+        assertTrue(lines.last().startsWith("ERR Write: cp failed (exit 1)."), lines.last())
+    }
+
+    @Test
+    fun `a deodex dry run changes nothing and the run backs up what it removes`() = runTest {
+        // What the deodex script printed for PQ84P01's stock framework.
+        val found = listOf(
+            "Stale@product/framework/extphonelib-product.jar@dex is in the package@" +
+                "product/framework/oat/arm64/extphonelib-product.odex " +
+                "product/framework/oat/arm64/extphonelib-product.vdex ",
+            "AlreadyDone@product/framework/com.google.android.dialer.support.jar@dex is in the package@",
+            "NoCompanion@system/system/framework/framework-res-zpub.apk@no dex in the package and no VDEX beside it@",
+        ).joinToString("\n") { it.replace('@', '\t') }
+        val service = Service { cmd ->
+            ToolResult(0, if ("FRAMEWORK" in cmd.args) found else "", "")
+        }
+        service.files["work/product/framework/oat/arm64/extphonelib-product.odex"] = ""
+        val runner = WorkbenchRunner(Workspaces, service, stores, stores, stores)
+        val content = ContentWorkbench(runner)
+
+        val dry = content.deodex("ws", DeodexScope.FRAMEWORK, dryRun = true)
+        assertEquals(
+            listOf(DeodexStatus.AlreadyDone, DeodexStatus.AlreadyDone, DeodexStatus.NoCompanion),
+            dry.map { it.status },
+        )
+        assertTrue(dry.first().reason!!.contains("would remove 2 stale precompiled file(s)"), dry.first().reason)
+        assertTrue(service.ran.none { it.toolId == "rm" }, service.ran.joinToString { it.toolId })
+        assertTrue(runner.log.lines.value.any { it.text.endsWith("(dry run: nothing was changed)") })
+
+        val done = content.deodex("ws", DeodexScope.FRAMEWORK)
+        assertTrue(
+            done.first().reason!!.contains("removed 2 stale precompiled file(s) (restore point"),
+            done.first().reason,
+        )
+        assertEquals(2, service.ran.count { it.toolId == "rm" })
+        assertEquals(2, stores.index.items.count { it.tool == ContentWorkbench.TOOL })
     }
 
     @Test

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -43,6 +44,8 @@ public class WorkbenchRunner(
     private val runs: RunRepository? = null,
     /** The active WSL distribution: a workspace found in the work folder records none of its own. */
     private val distro: () -> String? = { null },
+    /** Where every job's start, end and reported lines go (the Studio's Output panel). */
+    public val log: WorkbenchLog = WorkbenchLog(),
 ) {
     /** Whether [feature] (a [RiskyFeature]) was acknowledged in [workspaceId]; asked once per workspace (FR-035). */
     public suspend fun isAcknowledged(workspaceId: String, feature: String): Boolean =
@@ -70,10 +73,18 @@ public class WorkbenchRunner(
             is LockResult.Locked -> throw RefusalException(RefusalCatalog.workspaceLocked(holder = acquired.holderName))
 
             is LockResult.Acquired -> try {
+                log.add(LogLevel.INF, "$jobName: started in ${ws.name}")
                 refuseDuringBuild(workspaceId)
                 val job = Job(ws)
                 if (checkLinks) job.requireNoLinks()
-                job.block()
+                job.block().also { log.add(LogLevel.OK, "$jobName: done") }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                when (e) {
+                    is CancellationException -> log.add(LogLevel.WRN, "$jobName: cancelled")
+                    is RefusalException -> log.add(LogLevel.ERR, "$jobName: ${e.refusal.cause} (${e.refusal.item})")
+                    else -> log.add(LogLevel.ERR, "$jobName: ${e.message ?: e::class.simpleName}")
+                }
+                throw e
             } finally {
                 // Released even when the job was cancelled: a cancelled coroutine cannot run the remote delete.
                 withContext(NonCancellable) { acquired.handle.release() }
@@ -96,6 +107,11 @@ public class WorkbenchRunner(
         public val root: String = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
 
         public fun abs(rel: String): String = if (rel.startsWith("/")) rel else "$root/$rel"
+
+        /** A line of this job's own in the Output panel. */
+        public fun report(level: LogLevel, text: String) {
+            log.add(level, text)
+        }
 
         /** Runs [tool] to the end (cancelling the job stops it); refuses with its error output on failure. */
         public suspend fun run(tool: String, vararg args: String): String {

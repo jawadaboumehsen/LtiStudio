@@ -57,6 +57,7 @@ import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
 import org.ide.lti.core.domain.workbench.ImageWorkbench
 import org.ide.lti.core.domain.workbench.PhoneProbe
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
+import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.FirmwareArchives
@@ -149,8 +150,10 @@ internal actual val platformRepositoryModule =
                 acknowledgements = get(),
                 runs = getOrNull(),
                 distro = { getOrNull<ToolchainProvisioningService>()?.state?.value?.activeDistro },
+                log = get(),
             )
         }
+        single { WorkbenchLog() }
         single { RestoreWorkbench(runner = get(), store = get()) }
         single<DebloatPresetStore> { FileDebloatPresetStore() }
         single {

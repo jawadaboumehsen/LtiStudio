@@ -29,10 +29,12 @@ import org.ide.lti.core.domain.pipeline.toolkit.ConfigEditDiff
 import org.ide.lti.core.domain.pipeline.toolkit.ConfigKind
 import org.ide.lti.core.domain.pipeline.toolkit.ConfigValidators
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexAppResult
+import org.ide.lti.core.domain.pipeline.toolkit.DeodexScope
 import org.ide.lti.core.domain.pipeline.toolkit.FileDiff
 import org.ide.lti.core.domain.pipeline.toolkit.OmcInfo
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
 import org.ide.lti.core.domain.pipeline.toolkit.WorkspaceDiff
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -65,6 +67,14 @@ public data class ContentToolsState(
     val refusal: Refusal? = null,
     val pendingAck: String? = null,
     val deodex: List<DeodexAppResult>? = null,
+    /** What the deodexer looks at, the one file for [DeodexScope.FILE], and whether stale precompiled files stay. */
+    val deodexScope: DeodexScope = DeodexScope.FRAMEWORK,
+    val deodexFile: String = "work/system/system/framework/services.jar",
+    val keepPrecompiled: Boolean = false,
+    /** Whether [deodex] came from a dry run (nothing changed). */
+    val deodexDryRun: Boolean = false,
+    /** The deodexer's backups (precompiled files it removed), each restorable here. */
+    val deodexBackups: List<RestorePoint> = emptyList(),
     val decodedFolder: String? = null,
     val rebuilt: ApkPatchResult? = null,
     val library: ApexPatchResult? = null,
@@ -88,7 +98,7 @@ public class ContentToolsViewModel(
     private val runner: WorkbenchRunner? = null,
     private val environment: AppEnvironmentPort? = null,
     private val store: WorkspaceSettingsStore? = null,
-    restore: RestoreWorkbench? = null,
+    private val restore: RestoreWorkbench? = null,
     /** The workspaces a compared side can come from. */
     private val workspaces: WorkspaceRepository? = null,
 ) : ViewModel() {
@@ -117,10 +127,42 @@ public class ContentToolsViewModel(
             ?.launchIn(viewModelScope)
     }
 
-    public fun deodex() {
-        task("Deodexing") { tools ->
-            val results = tools.deodex(workspaceId)
-            _state.update { it.copy(deodex = results) }
+    public fun setDeodex(scope: DeodexScope? = null, file: String? = null, keepPrecompiled: Boolean? = null) {
+        _state.update {
+            it.copy(
+                deodexScope = scope ?: it.deodexScope,
+                deodexFile = file ?: it.deodexFile,
+                keepPrecompiled = keepPrecompiled ?: it.keepPrecompiled,
+            )
+        }
+    }
+
+    /** Analyze (dry run) when [dryRun], else deodex: the scope and options set with [setDeodex]. */
+    public fun deodex(dryRun: Boolean = false) {
+        val s = _state.value
+        task(if (dryRun) "Analyzing" else "Deodexing") { tools ->
+            val results = tools.deodex(workspaceId, s.deodexScope, s.deodexFile, dryRun, s.keepPrecompiled)
+            _state.update { it.copy(deodex = results, deodexDryRun = dryRun) }
+            refreshDeodexBackups()
+        }
+    }
+
+    /** The content tool's backups of precompiled files (what deodexing removed). */
+    public fun refreshDeodexBackups() {
+        val workbench = restore ?: return
+        viewModelScope.launch {
+            val points = runCatching { workbench.list(workspaceId).items }.getOrDefault(emptyList())
+                .filter { it.tool == ContentWorkbench.TOOL && PRECOMPILED.containsMatchIn(it.itemPath) }
+            _state.update { it.copy(deodexBackups = points) }
+        }
+    }
+
+    public fun restoreDeodexBackup(point: RestorePoint) {
+        val workbench = restore ?: return
+        task("Restoring ${point.itemPath}") {
+            workbench.restore(workspaceId, point.id)
+            _state.update { it.copy(message = "Restored ${point.itemPath}.") }
+            refreshDeodexBackups()
         }
     }
 
@@ -312,3 +354,6 @@ public class ContentToolsViewModel(
         }
     }
 }
+
+/** What a deodex backup holds: an app's oat/ folder or a precompiled file. */
+private val PRECOMPILED = Regex("(/oat$|\\.(odex|vdex|art)$)")
