@@ -40,7 +40,11 @@ import org.ide.lti.core.model.target.TargetDevice
  * shows its own problem; while a run is active the whole section is read-only.
  */
 @Composable
-fun WorkspaceDeviceSection(viewModel: WorkspaceDeviceViewModel, modifier: Modifier = Modifier) {
+fun WorkspaceDeviceSection(
+    viewModel: WorkspaceDeviceViewModel,
+    modifier: Modifier = Modifier,
+    phone: PhoneViewModel? = null,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val device = state.draft
     val loadError = state.loadError
@@ -59,6 +63,7 @@ fun WorkspaceDeviceSection(viewModel: WorkspaceDeviceViewModel, modifier: Modifi
         DeviceSuperPartition(state, device, viewModel)
         DeviceBootChain(state, device, viewModel)
         DeviceFirmwareCard(state, viewModel)
+        phone?.let { PhoneCard(state, device, it) }
         DeviceActions(state, viewModel)
     }
 }

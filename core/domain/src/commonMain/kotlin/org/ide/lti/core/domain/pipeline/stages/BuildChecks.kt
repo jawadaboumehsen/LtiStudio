@@ -19,6 +19,7 @@ import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage.Companion.
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.domain.pipeline.text.FstabEditor
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
+import org.ide.lti.core.domain.pipeline.toolkit.AbOtaPackage
 import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatures
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
@@ -33,7 +34,12 @@ import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 
 /** The Build stage's toolkit checks and extra packages (spec 010): coverage gate, image verify, fastboot/Odin. */
 internal object BuildChecks {
-    private const val ODIN_MD5 = "cd \"\$1\" && md5sum \"\$2\" >> \"\$2\" && mv -f \"\$2\" \"\$2.md5\""
+    // The tar stays when the plain one is asked for too: the verified form is a copy with the md5sum line appended.
+    private const val ODIN_MD5 =
+        "cd \"\$1\" && cp -f \"\$2\" \"\$2.part\" && md5sum \"\$2\" >> \"\$2.part\" && mv -f \"\$2.part\" \"\$2.md5\""
+
+    // The checksum file beside each extra package; its line also goes into the build log.
+    private const val CHECKSUM = "cd \"\$1\" && sha256sum \"\$2\" | tee \"\$2.sha256\""
     private const val COVERAGE_SHOWN = 20
     private const val LINKS_SHOWN = 20
     private const val MOUNT_TABLES_KEY = "build.mount.tables"
@@ -364,14 +370,28 @@ internal object BuildChecks {
     /** The extra packages asked for, workspace-relative: Build's outputs (a deleted one rebuilds) and artifacts. */
     fun extraPackageFiles(ctx: StageContext): List<String> {
         val base = zipName(ctx).removeSuffix(".zip")
-        return ctx.snapshot.build.extraPackages.mapNotNull { name ->
+        return ctx.snapshot.build.extraPackages.flatMap { name ->
             when (name) {
-                PackageKind.FullPackage.name -> "out/package/$base-images.zip"
-                PackageKind.Odin.name -> "out/package/AP_$base.tar.md5"
-                else -> null
+                PackageKind.FullPackage.name -> listOf("out/package/$base-images.zip")
+
+                PackageKind.Odin.name -> listOf("out/package/AP_$base.tar.md5")
+
+                PackageKind.OdinTar.name -> listOf("out/package/AP_$base.tar")
+
+                PackageKind.OdinLz4.name -> odinMembers(ctx).map { "out/package/odin/$it.lz4" }
+
+                PackageKind.Payload.name -> listOf(
+                    "out/package/$base-payload.bin",
+                    "out/package/$base-payload_properties.txt",
+                )
+
+                else -> emptyList()
             }
         }
     }
+
+    private fun odinMembers(ctx: StageContext) =
+        listOf("super.img") + ctx.target.packagePolicy.flashableBootPartitions.map { "$it.img" }
 
     /**
      * The packages built besides the flashable zip: a fastboot images zip ([PackageKind.FullPackage]) and a
@@ -385,6 +405,14 @@ internal object BuildChecks {
         return when {
             extras.isEmpty() -> emptyList()
 
+            // The payload alone is copied out of the A/B OTA, which only an A/B package type builds.
+            PackageKind.Payload in extras && !ctx.snapshot.build.packageType.abOta -> listOf(
+                PipelineStep.Check("payload alone") {
+                    "PAYLOAD_NEEDS_AB_OTA: payload.bin alone is copied out of the A/B OTA. Set the package type to " +
+                        "A/B OTA or both, or untick it."
+                },
+            )
+
             overlaps.isNotEmpty() && !overlapAccepted -> listOf(
                 PipelineStep.Check("super overlap") {
                     "SUPER_OVERLAP: ${overlaps.joinToString()} are inside super.img and also chosen as standalone " +
@@ -392,9 +420,37 @@ internal object BuildChecks {
                 },
             )
 
-            else -> fullSuperSteps(ctx) +
+            else -> (if (extras.any { it != PackageKind.Payload }) fullSuperSteps(ctx) else emptyList()) +
                 (if (PackageKind.FullPackage in extras) imagesZipSteps(ctx) else emptyList()) +
-                (if (PackageKind.Odin in extras) odinSteps(ctx) else emptyList())
+                odinSteps(ctx, extras) +
+                (if (PackageKind.Payload in extras) payloadSteps(ctx) else emptyList()) +
+                extraPackageFiles(ctx).map { rel ->
+                    PipelineStep.Tool(
+                        stepCommand(
+                            "sh",
+                            listOf(
+                                "-c",
+                                CHECKSUM,
+                                "sh",
+                                ctx.abs(rel.substringBeforeLast('/')),
+                                rel.substringAfterLast('/'),
+                            ),
+                            ctx.wsPath,
+                        ),
+                        "sha256 ${rel.substringAfterLast('/')}",
+                    )
+                }
+        }
+    }
+
+    /** The A/B OTA's payload as it was signed into the OTA zip, copied out under the package's name. */
+    private fun payloadSteps(ctx: StageContext): List<PipelineStep> {
+        val base = ctx.abs("out/package/${zipName(ctx).removeSuffix(".zip")}")
+        return listOf("payload.bin", "payload_properties.txt").map { name ->
+            PipelineStep.Tool(
+                stepCommand("cp", listOf("-f", ctx.abs("${AbOtaPackage.DIR}/$name"), "$base-$name"), ctx.wsPath),
+                "copy $name",
+            )
         }
     }
 
@@ -451,33 +507,63 @@ internal object BuildChecks {
         )
     }
 
-    private fun odinSteps(ctx: StageContext): List<PipelineStep> {
+    private fun odinSteps(ctx: StageContext, extras: List<PackageKind>): List<PipelineStep> {
         val ws = ctx.wsPath
         val extra = ctx.abs(EXTRA_DIR)
         val stage = ctx.abs(STAGE_DIR)
-        val members = listOf("super.img") + ctx.target.packagePolicy.flashableBootPartitions.map { "$it.img" }
+        val members = odinMembers(ctx)
         val tar = "AP_${zipName(ctx).removeSuffix(".zip")}.tar"
-        return members.map { m ->
+        val tarred = PackageKind.Odin in extras || PackageKind.OdinTar in extras
+        if (!tarred && PackageKind.OdinLz4 !in extras) return emptyList()
+        val lz4 = members.map { m ->
             val source = if (m == "super.img") "$extra/super.img" else "$stage/$m"
             PipelineStep.Tool(
                 stepCommand("lz4", listOf("-B6", "--content-size", "-f", source, "$extra/odin/$m.lz4"), ws),
                 "lz4 $m",
             )
-        } + listOf(
-            PipelineStep.Tool(
-                stepCommand(
-                    "tar",
-                    listOf("-H", "ustar", "-cf", ctx.abs("out/package/$tar"), "-C", "$extra/odin") +
-                        members.map { "$it.lz4" },
-                    ws,
+        }
+        val alone = if (PackageKind.OdinLz4 in extras) {
+            val dir = ctx.abs("out/package/odin")
+            listOf(
+                PipelineStep.Tool(stepCommand("rm", listOf("-rf", dir), ws), "clear odin lz4"),
+                PipelineStep.Tool(stepCommand("cp", listOf("-r", "$extra/odin", dir), ws), "copy odin lz4"),
+            )
+        } else {
+            emptyList()
+        }
+        val tarSteps = if (tarred) {
+            listOf(
+                PipelineStep.Tool(
+                    stepCommand(
+                        "tar",
+                        listOf("-H", "ustar", "-cf", ctx.abs("out/package/$tar"), "-C", "$extra/odin") +
+                            members.map { "$it.lz4" },
+                        ws,
+                    ),
+                    "tar odin AP",
                 ),
-                "tar odin AP",
-            ),
-            // Odin checks the md5sum line appended to the tar ("<hash>  <name>"), so it is computed in that folder.
-            PipelineStep.Tool(
-                stepCommand("sh", listOf("-c", ODIN_MD5, "sh", ctx.abs("out/package"), tar), ws),
-                "md5 odin AP",
-            ),
-        )
+            )
+        } else {
+            emptyList()
+        }
+        // Odin checks the md5sum line appended to the tar ("<hash>  <name>"), so it is computed in that folder.
+        val md5 = if (PackageKind.Odin in extras) {
+            listOf(
+                PipelineStep.Tool(
+                    stepCommand("sh", listOf("-c", ODIN_MD5, "sh", ctx.abs("out/package"), tar), ws),
+                    "md5 odin AP",
+                ),
+            )
+        } else {
+            emptyList()
+        }
+        val plain = if (PackageKind.OdinTar !in extras && tarred) {
+            listOf(
+                PipelineStep.Tool(stepCommand("rm", listOf("-f", ctx.abs("out/package/$tar")), ws), "drop plain tar"),
+            )
+        } else {
+            emptyList()
+        }
+        return lz4 + alone + tarSteps + md5 + plain
     }
 }

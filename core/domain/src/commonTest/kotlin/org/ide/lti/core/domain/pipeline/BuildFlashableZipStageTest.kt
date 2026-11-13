@@ -17,6 +17,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.KernelFacts
+import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 import org.ide.lti.core.model.target.MetadataPolicy
 import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.core.model.workspace.PackageType
@@ -545,6 +546,35 @@ class BuildFlashableZipStageTest {
         assertTrue(zip.any { it.endsWith("/out/extra/vendor_dlkm.img") }, zip.toString())
         assertTrue(zip.any { it.endsWith("/out/images/odm.img") }, zip.toString())
         assertTrue(tools.none { it.label == "sparse odm" })
+    }
+
+    @Test
+    fun `odin comes verified, as a plain tar or as lz4 images, the payload alone, each with a checksum`() {
+        val base = fullContext()
+        fun plan(type: PackageType, vararg kinds: PackageKind) = stage.plan(
+            base.copy(
+                snapshot = base.snapshot.copy(
+                    build = base.snapshot.build.copy(packageType = type, extraPackages = kinds.map { it.name }.toSet()),
+                ),
+            ),
+        )
+        fun labels(vararg kinds: PackageKind, type: PackageType = PackageType.FLASHABLE) =
+            plan(type, *kinds).filterIsInstance<PipelineStep.Tool>().map { it.label }
+
+        val verified = labels(PackageKind.Odin)
+        assertTrue("md5 odin AP" in verified && "drop plain tar" in verified, verified.toString())
+        assertTrue(verified.any { it.startsWith("sha256 AP_") && it.endsWith(".tar.md5") }, verified.toString())
+        val both = labels(PackageKind.Odin, PackageKind.OdinTar)
+        assertTrue("drop plain tar" !in both && both.count { it.startsWith("sha256 AP_") } == 2, both.toString())
+        val lz4 = labels(PackageKind.OdinLz4)
+        assertTrue("copy odin lz4" in lz4 && "tar odin AP" !in lz4, lz4.toString())
+        assertTrue("sha256 super.img.lz4" in lz4, lz4.toString())
+        // The payload is copied out of the A/B OTA: no full super is made for it.
+        val payload = labels(PackageKind.Payload, type = PackageType.BOTH)
+        assertTrue("copy payload.bin" in payload && "lpmake full super" !in payload, payload.toString())
+        val noOta = plan(PackageType.FLASHABLE, PackageKind.Payload).filterIsInstance<PipelineStep.Check>()
+            .single { it.label == "payload alone" }.verify(emptyMap())!!
+        assertTrue(noOta.startsWith("PAYLOAD_NEEDS_AB_OTA"), noOta)
     }
 
     @Test

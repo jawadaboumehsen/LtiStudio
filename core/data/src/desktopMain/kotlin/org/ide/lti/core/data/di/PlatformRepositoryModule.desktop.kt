@@ -55,6 +55,7 @@ import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
 import org.ide.lti.core.domain.workbench.ImageWorkbench
+import org.ide.lti.core.domain.workbench.PhoneProbe
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
@@ -167,4 +168,5 @@ internal actual val platformRepositoryModule =
         single { CompareWorkbench(runner = get()) }
         single { WorkspaceStorage(runner = get(), runs = get()) }
         single { DeviceFirmwareCheck(runner = get()) }
+        single { PhoneProbe(runner = get()) }
     }

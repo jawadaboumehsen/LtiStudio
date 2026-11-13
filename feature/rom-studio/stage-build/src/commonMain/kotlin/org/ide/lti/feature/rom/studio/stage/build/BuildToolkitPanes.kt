@@ -290,6 +290,9 @@ internal fun CoverageRulesPane(rules: String, onChange: (String) -> Unit) {
 private val EXTRA_PACKAGES = listOf(
     PackageKind.FullPackage to "Fastboot images zip (super.img + boot images)",
     PackageKind.Odin to "Samsung Odin AP (.tar.md5 with super.img.lz4 and the boot images)",
+    PackageKind.OdinTar to "Samsung Odin AP as a plain .tar (no MD5 line)",
+    PackageKind.OdinLz4 to "The LZ4 images alone (super.img.lz4 and the boot images)",
+    PackageKind.Payload to "payload.bin alone (signed, with payload_properties.txt; needs the A/B OTA)",
 )
 private const val MAX_SHOWN = 200
 

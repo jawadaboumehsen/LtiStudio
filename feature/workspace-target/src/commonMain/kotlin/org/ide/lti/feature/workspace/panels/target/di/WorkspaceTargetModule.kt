@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.workspace.panels.target.di
 
+import org.ide.lti.feature.workspace.panels.target.PhoneViewModel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceConfigurationViewModel
 import org.ide.lti.feature.workspace.panels.target.WorkspaceDeviceViewModel
 import org.koin.core.module.Module
@@ -35,4 +36,5 @@ public val workspaceTargetModule: Module = module {
             firmwareCheck = getOrNull(),
         )
     }
+    viewModel { PhoneViewModel(probe = getOrNull()) }
 }

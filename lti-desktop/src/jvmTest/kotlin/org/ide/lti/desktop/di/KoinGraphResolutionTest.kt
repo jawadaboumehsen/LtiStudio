@@ -95,6 +95,7 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<org.ide.lti.core.domain.workbench.CompareWorkbench>())
         assertNotNull(koin.get<org.ide.lti.core.domain.workbench.WorkspaceStorage>())
         assertNotNull(koin.get<org.ide.lti.core.domain.workbench.DeviceFirmwareCheck>())
+        assertNotNull(koin.get<org.ide.lti.core.domain.workbench.PhoneProbe>())
         assertNotNull(koin.get<org.ide.lti.core.domain.workbench.RestoreWorkbench>())
         assertNotNull(koin.get<RestorePointStore>())
         assertNotNull(koin.get<AckStore>())

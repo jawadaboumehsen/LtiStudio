@@ -57,6 +57,7 @@ fun WorkspaceConfigurationPanel(
     modifier: Modifier = Modifier,
     viewModel: WorkspaceConfigurationViewModel = koinViewModel(),
     deviceViewModel: WorkspaceDeviceViewModel = koinViewModel(),
+    phoneViewModel: PhoneViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draft = uiState.draft
@@ -83,7 +84,7 @@ fun WorkspaceConfigurationPanel(
             ConfigurationHeader(uiState)
             ConfigurationNotices(uiState)
             uiState.currentTarget?.let { TargetProfileCard(it) }
-            WorkspaceDeviceSection(deviceViewModel)
+            WorkspaceDeviceSection(deviceViewModel, phone = phoneViewModel)
             GlassHorizontalDivider()
             // One place per value: these are edited in their pipeline stage, not here.
             Text(

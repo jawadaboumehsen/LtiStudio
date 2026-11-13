@@ -10,12 +10,24 @@
 package org.ide.lti.core.domain.pipeline.toolkit
 
 /**
- * Packages the Build stage makes besides the flashable zip (FR-013): a fastboot images zip and a Samsung Odin AP.
- * Their names are what `BuildSettings.extraPackages` stores.
+ * Packages the Build stage makes besides the flashable zip (FR-013). Their names are what
+ * `BuildSettings.extraPackages` stores.
  */
 public enum class PackageKind {
+    /** A fastboot images zip: the full super.img and the boot images. */
     FullPackage,
+
+    /** A Samsung Odin AP in its verified form: the LZ4 images in a ustar tar with the MD5 line appended. */
     Odin,
+
+    /** The same AP tar without the MD5 line. */
+    OdinTar,
+
+    /** The LZ4 images alone (`out/package/odin/`), each as Odin flashes it. */
+    OdinLz4,
+
+    /** The A/B OTA's signed payload.bin and payload_properties.txt alone (needs the A/B OTA package). */
+    Payload,
 }
 
 /** Build warnings the user accepts by name (`BuildSettings.acknowledgedWarnings`) (FR-017). */
