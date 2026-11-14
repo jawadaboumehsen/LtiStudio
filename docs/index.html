@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LtiRom Studio – build custom Android ROMs from stock firmware</title>
+<meta name="description" content="LtiRom Studio is a free Windows desktop app that builds custom Android ROMs from stock firmware: extract, debloat, patch with Kotlin mods, and build signed flashable zips and A/B OTAs, with every step running for real in WSL.">
+<meta name="keywords" content="custom ROM builder, Android ROM kitchen, debloat Android firmware, flashable zip, A/B OTA, EROFS, super image, AVB, Android modding, WSL">
+<link rel="canonical" href="https://jawadaboumehsen.github.io/LtiStudio/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LtiRom Studio – build custom Android ROMs from stock firmware">
+<meta property="og:description" content="Extract, debloat, patch and build signed flashable zips and A/B OTAs in one desktop app.">
+<meta property="og:url" content="https://jawadaboumehsen.github.io/LtiStudio/">
+<meta property="og:image" content="https://jawadaboumehsen.github.io/LtiStudio/screenshots/overview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LtiRom Studio">
+<meta name="twitter:description" content="Build custom Android ROMs from stock firmware, in one desktop app.">
+<meta name="twitter:image" content="https://jawadaboumehsen.github.io/LtiStudio/screenshots/overview.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LtiRom Studio",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows 11 with WSL 2",
+  "description": "A desktop app that builds custom Android ROMs from stock firmware: extract, debloat, patch with Kotlin mods, and build signed flashable zips and A/B OTAs.",
+  "url": "https://jawadaboumehsen.github.io/LtiStudio/",
+  "codeRepository": "https://github.com/jawadaboumehsen/LtiStudio",
+  "license": "https://www.mozilla.org/en-US/MPL/2.0/",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "screenshot": "https://jawadaboumehsen.github.io/LtiStudio/screenshots/overview.png"
+}
+</script>
+<style>
+:root {
+  --bg: #0b1020; --panel: #121a30; --line: #24304d; --text: #e6ebf5; --muted: #9aa6c2;
+  --accent: #38bdf8; --accent-2: #6d7cff; --radius: 14px;
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f5f7fb; --panel: #ffffff; --line: #dde3ee; --text: #121826; --muted: #566179; --accent: #0284c7; --accent-2: #4f46e5; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header.top { border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+.brand { font-weight: 700; color: var(--text); }
+nav a { margin-left: 18px; color: var(--muted); font-size: 15px; }
+.hero { padding: 64px 0 40px; text-align: center; }
+.hero h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.15; margin: 0 0 16px; }
+.hero h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: var(--muted); font-size: 18px; max-width: 700px; margin: 0 auto 28px; }
+.btn { display: inline-block; padding: 12px 22px; border-radius: 999px; font-weight: 600; margin: 4px; }
+.btn.primary { background: var(--accent); color: #04121c; }
+.btn.ghost { border: 1px solid var(--line); color: var(--text); }
+.btn:hover { text-decoration: none; filter: brightness(1.08); }
+.shot { margin: 40px auto 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.shot img { display: block; width: 100%; height: auto; }
+section { padding: 56px 0; border-top: 1px solid var(--line); }
+h2 { font-size: 28px; margin: 0 0 8px; }
+.lead { color: var(--muted); margin: 0 0 28px; max-width: 760px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.card h3 { margin: 0 0 6px; font-size: 17px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+ol.stages { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); counter-reset: s; }
+ol.stages li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px 16px 56px; position: relative; }
+ol.stages li::before { content: counter(s); position: absolute; left: 16px; top: 16px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #04121c; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+ol.stages b { display: block; }
+ol.stages span { color: var(--muted); font-size: 14px; }
+.gallery { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { padding: 10px 14px; color: var(--muted); font-size: 14px; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; overflow-x: auto; font-size: 14px; }
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+.note { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; }
+@media (max-width: 600px) { nav a:not(.gh) { display: none; } .hero { padding-top: 40px; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./">LtiRom Studio</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#screens">Screens</a>
+      <a href="#start">Get started</a>
+      <a class="gh" href="https://github.com/jawadaboumehsen/LtiStudio">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <h1>Build custom <span>Android ROMs</span><br>from stock firmware</h1>
+    <p>LtiRom Studio is a free desktop app for Windows. Import a firmware archive, remove the apps you don't want,
+      apply mods, and get a signed flashable zip or A/B OTA. Every step runs for real in WSL, and you can see and
+      check each one.</p>
+    <a class="btn primary" href="https://github.com/jawadaboumehsen/LtiStudio">View on GitHub</a>
+    <a class="btn ghost" href="#start">Get started</a>
+    <div class="shot"><img src="screenshots/overview.png" alt="The LtiRom Studio workspace overview: build readiness, the target device and the last build" width="1280" height="680"></div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Why LtiRom Studio</h2>
+      <p class="lead">Building a ROM by hand means juggling dozens of tools and hoping the result boots. LtiRom Studio
+        turns that into a guided workflow that checks your work before it builds.</p>
+      <div class="grid">
+        <div class="card"><h3>One place for the whole build</h3><p>From the stock firmware archive to the signed package and the GitHub release.</p></div>
+        <div class="card"><h3>Will it build?</h3><p>Runs the build's own checks against your settings in seconds, and most problems come with a one-click fix.</p></div>
+        <div class="card"><h3>Safe by default</h3><p>Refuses a tree that would not boot: missing permissions or SELinux labels, broken links, unsigned apps, a full super partition.</p></div>
+        <div class="card"><h3>Debloat with care</h3><p>Every app's name, icon, signer and what relies on it; the last home screen, keyboard or camera can't be removed.</p></div>
+        <div class="card"><h3>Mods in Kotlin</h3><p>A typed SDK for file, property, smali and resource edits, checked against the firmware before a build.</p></div>
+        <div class="card"><h3>Fast rebuilds</h3><p>Unchanged stages and images come from cache: a rebuild with no changes takes about 90 seconds.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pipeline">
+    <div class="wrap">
+      <h2>The ROM pipeline</h2>
+      <p class="lead">Eight stages, each cached by its inputs. Run the whole build or stop after any stage.</p>
+      <ol class="stages">
+        <li><b>Acquire</b><span>Download or import the stock firmware and check its SHA-256.</span></li>
+        <li><b>Extract</b><span>zip, 7z, payload.bin, sparse, block OTA and Odin; EROFS, ext4 and F2FS images.</span></li>
+        <li><b>Assemble</b><span>Work tree, boot images, mount tables and build properties.</span></li>
+        <li><b>Debloat</b><span>Remove the apps you pick, after checking what the device still needs.</span></li>
+        <li><b>Patches &amp; mods</b><span>Installed Kotlin mods and your own scripts.</span></li>
+        <li><b>Build &amp; sign</b><span>Partition images and super, the signed boot chain, flashable zip and A/B OTA.</span></li>
+        <li><b>Release metadata</b><span>The OTA manifest and a changelog drafted from the build.</span></li>
+        <li><b>Publish</b><span>Local export or a GitHub release, after you confirm.</span></li>
+      </ol>
+      <p class="note">The package never contains firmware images (radio, bootloader) or vbmeta. Flashing the result is up to you.</p>
+    </div>
+  </section>
+
+  <section id="screens">
+    <div class="wrap">
+      <h2>A look inside</h2>
+      <p class="lead">A professional, IDE-like workspace: dense where you work, calm everywhere else.</p>
+      <div class="gallery">
+        <figure><img src="screenshots/pipeline-run.png" alt="A pipeline run with stage durations and verified artifacts" loading="lazy"><figcaption>Run the pipeline and see why each stage ran.</figcaption></figure>
+        <figure><img src="screenshots/build-images.png" alt="Build and sign: partition images with sizes, savings and status" loading="lazy"><figcaption>Every image built, verified and measured.</figcaption></figure>
+        <figure><img src="screenshots/debloat.png" alt="Debloat: app inventory with icons, versions, signers and dependencies" loading="lazy"><figcaption>Debloat with each app's risks in view.</figcaption></figure>
+        <figure><img src="screenshots/patches.png" alt="Patches and mods: installed plugins enabled per workspace" loading="lazy"><figcaption>Mods enabled per workspace.</figcaption></figure>
+        <figure><img src="screenshots/tools.png" alt="Setup: tool versions with licences and the version inspector" loading="lazy"><figcaption>Every tool built from source, pinned per run.</figcaption></figure>
+        <figure><img src="screenshots/workspaces.png" alt="Recent workspaces with search" loading="lazy"><figcaption>One workspace per firmware.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <p class="lead">You need Windows 11 with WSL 2 and an Ubuntu LTS distribution, JDK 21, and the build service
+        checked out next to the app.</p>
+<pre><code>LtiRomProject/
+├── LtiRomGui/      (the app)
+└── LtiRomServer/   (the build service that runs inside WSL)
+
+./gradlew :lti-desktop:run</code></pre>
+      <p class="lead">Setup checks WSL, installs the build service and builds every tool. Then create a workspace,
+        import your firmware, press "Check now" under "Will it build?", and start the pipeline.</p>
+      <a class="btn primary" href="https://github.com/jawadaboumehsen/LtiStudio#getting-started">Read the full guide</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    LtiRom Studio is open source under the <a href="https://github.com/jawadaboumehsen/LtiStudio/blob/main/LICENSE">Mozilla Public License 2.0</a>.
+    Mods: <a href="https://github.com/jawadaboumehsen/LtiRomMods">LtiRomMods</a>.
+  </div>
+</footer>
+</body>
+</html>

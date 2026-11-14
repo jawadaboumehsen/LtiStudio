@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jawadaboumehsen.github.io/LtiStudio/sitemap.xml
