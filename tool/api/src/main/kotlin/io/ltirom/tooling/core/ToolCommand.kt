@@ -9,26 +9,26 @@ public data class CommandExecutionResult(
     val stdout: String,
     val stderr: String,
     val durationMs: Long,
-    val stdoutBytes: ByteArray? = null
+    val stdoutBytes: ByteArray? = null,
 )
 
 public enum class StdinMode {
     EMPTY,
     INHERIT,
-    PIPE_TEXT
+    PIPE_TEXT,
 }
 
 public enum class StdoutMode {
     CAPTURE_TEXT,
     INHERIT,
-    DISCARD
+    DISCARD,
 }
 
 public enum class ToolRisk {
     READ_ONLY,
     HOST_WRITE,
     DEVICE_WRITE,
-    IRREVERSIBLE
+    IRREVERSIBLE,
 }
 
 public enum class ArtifactKind { FILE, DIRECTORY }
@@ -40,7 +40,7 @@ public data class ArtifactRequirement(
     val path: File,
     val kind: ArtifactKind,
     val direction: ArtifactDirection,
-    val required: Boolean = true
+    val required: Boolean = true,
 )
 
 public object ArtifactValidator {
@@ -48,8 +48,11 @@ public object ArtifactValidator {
         for (requirement in requirements) {
             if (!requirement.required || requirement.direction == ArtifactDirection.OUTPUT) continue
             if (!matchesKind(requirement.path, requirement.kind) || hasSymlinkComponent(requirement.path)) {
-                throw ToolArtifactException(toolId, requirement.path,
-                    "Required ${requirement.kind.name.lowercase()} input '${requirement.name}' does not exist: ${requirement.path}")
+                throw ToolArtifactException(
+                    toolId,
+                    requirement.path,
+                    "Required ${requirement.kind.name.lowercase()} input '${requirement.name}' does not exist: ${requirement.path}",
+                )
             }
         }
         validateDistinct(toolId, requirements)
@@ -59,8 +62,11 @@ public object ArtifactValidator {
         for (requirement in requirements) {
             if (!requirement.required || requirement.direction == ArtifactDirection.INPUT) continue
             if (!matchesKind(requirement.path, requirement.kind) || hasSymlinkComponent(requirement.path)) {
-                throw ToolArtifactException(toolId, requirement.path,
-                    "Expected ${requirement.kind.name.lowercase()} output '${requirement.name}' was not created: ${requirement.path}")
+                throw ToolArtifactException(
+                    toolId,
+                    requirement.path,
+                    "Expected ${requirement.kind.name.lowercase()} output '${requirement.name}' was not created: ${requirement.path}",
+                )
             }
         }
     }
@@ -71,8 +77,11 @@ public object ArtifactValidator {
         for (output in requirements.filter { it.direction != ArtifactDirection.INPUT }) {
             val normalized = output.path.toPath().toAbsolutePath().normalize()
             if (normalized in inputPaths && output.direction != ArtifactDirection.IN_PLACE) {
-                throw ToolArtifactException(toolId, output.path,
-                    "Input and output artifacts must be distinct unless direction is IN_PLACE: ${output.path}")
+                throw ToolArtifactException(
+                    toolId,
+                    output.path,
+                    "Input and output artifacts must be distinct unless direction is IN_PLACE: ${output.path}",
+                )
             }
         }
     }
@@ -95,7 +104,7 @@ public object ArtifactValidator {
 public interface ToolCommand<out R> {
     val toolId: ToolId
     val risk: ToolRisk
-    
+
     fun getArguments(): List<String>
 
     /** Stable, operation-specific token used for non-interactive confirmation. */
@@ -109,11 +118,11 @@ public interface ToolCommand<out R> {
             .digest(canonical.toByteArray(Charsets.UTF_8))
         return "lti-confirm-" + digest.joinToString("") { "%02x".format(it) }
     }
-    
+
     val stdinMode: StdinMode get() = StdinMode.EMPTY
     val stdoutMode: StdoutMode get() = StdoutMode.CAPTURE_TEXT
     val stderrMode: StdoutMode get() = StdoutMode.CAPTURE_TEXT
-    
+
     val stdinText: String? get() = null
     val timeoutMs: Long get() = 900000L // Default 15 mins
 
@@ -125,15 +134,13 @@ public interface ToolCommand<out R> {
 
     public fun validateInputArtifacts() = ArtifactValidator.validateInputs(toolId, artifactRequirements)
     public fun validateOutputArtifacts() = ArtifactValidator.validateOutputs(toolId, artifactRequirements)
-    
+
     fun parseResult(result: CommandExecutionResult): R
 }
 
 /** Binds the selected device at the last possible point before process execution. */
-public class SerialBoundCommand<R>(
-    private val delegate: ToolCommand<R>,
-    private val serial: String
-) : ToolCommand<R> by delegate {
+public class SerialBoundCommand<R>(private val delegate: ToolCommand<R>, private val serial: String) :
+    ToolCommand<R> by delegate {
     init {
         require(serial.isNotBlank()) { "Device serial must not be blank" }
     }
@@ -178,16 +185,14 @@ public class RawToolCommand(
     override val toolId: ToolId,
     private val args: List<String>,
     override val risk: ToolRisk = ToolRisk.READ_ONLY,
-    override val timeoutMs: Long = 900000L
+    override val timeoutMs: Long = 900000L,
 ) : ToolCommand<CommandExecutionResult> {
     override fun getArguments(): List<String> = args
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
-public class RemoteCommand(
-    public val shellCommand: String,
-    override val risk: ToolRisk = ToolRisk.DEVICE_WRITE
-) : ToolCommand<CommandExecutionResult> {
+public class RemoteCommand(public val shellCommand: String, override val risk: ToolRisk = ToolRisk.DEVICE_WRITE) :
+    ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.ADB
     override fun getArguments(): List<String> {
         // Escaping check: verify command contains no unescaped control characters
@@ -199,21 +204,17 @@ public class RemoteCommand(
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
-public class OemCommand(
-    public val oemArgs: List<String>,
-    override val risk: ToolRisk = ToolRisk.IRREVERSIBLE
-) : ToolCommand<CommandExecutionResult> {
+public class OemCommand(public val oemArgs: List<String>, override val risk: ToolRisk = ToolRisk.IRREVERSIBLE) :
+    ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.FASTBOOT
-    override fun getArguments(): List<String> {
-        return listOf("oem") + oemArgs
-    }
+    override fun getArguments(): List<String> = listOf("oem") + oemArgs
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
 public class GhExtensionCommand(
     public val extensionName: String,
     public val extensionArgs: List<String>,
-    override val risk: ToolRisk = ToolRisk.READ_ONLY
+    override val risk: ToolRisk = ToolRisk.READ_ONLY,
 ) : ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.GH
     override fun getArguments(): List<String> {
@@ -223,4 +224,37 @@ public class GhExtensionCommand(
         return listOf(extensionName) + extensionArgs
     }
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
+}
+
+/** [SerialBoundCommand] for a command whose stdout is bytes: it stays a [BinaryToolCommand]. */
+public class BinarySerialBoundCommand<R>(private val delegate: BinaryToolCommand<R>, serial: String) :
+    BinaryToolCommand<R> by delegate {
+    private val bound = SerialBoundCommand(delegate, serial)
+
+    override fun getArguments(): List<String> = bound.getArguments()
+
+    override fun operationToken(): String = bound.operationToken()
+}
+
+/**
+ * This command bound to the device [context] selects (`-s <serial>` first, as adb and fastboot read it). A command
+ * naming another device itself is refused: it would write to a phone other than the one approved.
+ */
+public fun <R> ToolCommand<R>.boundTo(context: ExecutionContext): ToolCommand<R> {
+    val serial = when (toolId) {
+        ToolId.ADB -> context.adbSerial?.value
+        ToolId.FASTBOOT -> context.fastbootSerial?.value
+        else -> null
+    } ?: return this
+    val args = getArguments()
+    val own = args.indices.filter { args[it] == "-s" }.mapNotNull { args.getOrNull(it + 1) }
+    if (own.any { it != serial }) {
+        throw ToolSafetyException(toolId, "SERIAL_CONFLICT", "The command names device ${own.first()}, not $serial")
+    }
+    @Suppress("UNCHECKED_CAST")
+    return if (this is BinaryToolCommand<*>) {
+        BinarySerialBoundCommand(this as BinaryToolCommand<R>, serial)
+    } else {
+        SerialBoundCommand(this, serial)
+    }
 }

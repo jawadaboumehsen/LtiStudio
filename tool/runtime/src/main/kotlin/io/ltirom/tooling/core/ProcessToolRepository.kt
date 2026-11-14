@@ -12,13 +12,13 @@ public class ProcessToolRepository(
     private val redactor: Redactor,
     private val auditLogger: (AuditRecord) -> Unit = {},
     private val maxCaptureBytes: Int = 10 * 1024 * 1024,
-    private val onOutput: ((String, String) -> Unit)? = null
+    private val onOutput: ((String, String) -> Unit)? = null,
 ) : ToolRepository {
 
-    override suspend fun <R> execute(
-        command: ToolCommand<R>,
-        context: ExecutionContext
-    ): R {
+    override suspend fun <R> execute(command: ToolCommand<R>, context: ExecutionContext): R =
+        executeBound(command.boundTo(context), context)
+
+    private suspend fun <R> executeBound(command: ToolCommand<R>, context: ExecutionContext): R {
         // 1. Safety Check
         safetyPolicy.checkSafety(command, context)
         command.validateInputArtifacts()
@@ -29,7 +29,7 @@ public class ProcessToolRepository(
             throw ToolResolutionException(
                 command.toolId,
                 listOf(binary.file),
-                "Binary path ${binary.file.absolutePath} is not a valid executable file"
+                "Binary path ${binary.file.absolutePath} is not a valid executable file",
             )
         }
 
@@ -80,15 +80,20 @@ public class ProcessToolRepository(
                         val stdoutJob = async(Dispatchers.IO) { readStreamBytes(p.inputStream, maxCaptureBytes) }
                         val stderrJob = async(Dispatchers.IO) { readStreamBytes(p.errorStream, maxCaptureBytes) }
 
-                        exitCode = withTimeout(command.timeoutMs) {
-                            runInterruptible(Dispatchers.IO) {
-                                p.waitFor()
-                            }
+                        // The deadline covers the readers too: a child that keeps the pipes open after the
+                        // process exits must not hold the call past its time (cleanup below ends that child).
+                        val (code, stdoutData, stderrData) = withTimeout(command.timeoutMs) {
+                            val code = runInterruptible(Dispatchers.IO) { p.waitFor() }
+                            Triple(code, stdoutJob.await(), stderrJob.await())
                         }
+                        exitCode = code
                         processExited = true
-
-                        val stdoutData = stdoutJob.await()
-                        val stderrData = stderrJob.await()
+                        if (command is BinaryToolCommand<*> && stdoutData.size >= maxCaptureBytes) {
+                            throw ToolingException(
+                                "${command.toolId.logicalName}: binary output reached the $maxCaptureBytes-byte " +
+                                    "capture limit; it would be cut short",
+                            )
+                        }
                         stdout = stdoutData.toString(Charsets.UTF_8)
                         stderr = stderrData.toString(Charsets.UTF_8)
                         stdoutBytes = if (command is BinaryToolCommand<*>) stdoutData else null
@@ -107,14 +112,14 @@ public class ProcessToolRepository(
                 command.toolId,
                 command.timeoutMs,
                 "Command ${cmd.first()} timed out after ${command.timeoutMs}ms",
-                e
+                e,
             )
         } catch (e: CancellationException) {
             cleanupProcess(process, knownDescendants)
             throw ToolCancellationException(
                 command.toolId,
                 "Command execution cancelled",
-                e
+                e,
             )
         } catch (e: Exception) {
             cleanupProcess(process, knownDescendants)
@@ -126,7 +131,7 @@ public class ProcessToolRepository(
             stdout = stdout,
             stderr = stderr,
             durationMs = durationMs,
-            stdoutBytes = stdoutBytes
+            stdoutBytes = stdoutBytes,
         )
 
         // 3. Log Audit Record
@@ -140,7 +145,7 @@ public class ProcessToolRepository(
                 executionResult.stdout,
                 executionResult.stderr,
                 "${command.toolId.logicalName} exited with status ${executionResult.exitCode} " +
-                    "(accepted: ${command.acceptedExitCodes.sorted().joinToString()})"
+                    "(accepted: ${command.acceptedExitCodes.sorted().joinToString()})",
             )
         }
 
@@ -154,7 +159,7 @@ public class ProcessToolRepository(
                 command.toolId,
                 stdout,
                 "Failed to parse command result",
-                e
+                e,
             )
         }
     }

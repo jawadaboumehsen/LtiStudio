@@ -44,17 +44,8 @@ public data class ShellCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("shell")
-        if (disableExitSeparation) args.add("-x")
-        if (disablePty) args.add("-T")
-        escapeChar?.let { val value = it
-            args.add("-e")
-            args.add(value.toString())
-        }
         if (exitOnWriteError) args.add("--exit-on-write-error")
-        if (forcePty) args.add("-t")
         if (listenAll) args.add("-a")
-        if (noStdin) args.add("-n")
         oneDevice?.let { val value = it
             args.add("--one-device")
             args.add(value.toString())
@@ -81,6 +72,15 @@ public data class ShellCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("shell")
+        if (disableExitSeparation) args.add("-x")
+        if (disablePty) args.add("-T")
+        escapeChar?.let { val value = it
+            args.add("-e")
+            args.add(value.toString())
+        }
+        if (forcePty) args.add("-t")
+        if (noStdin) args.add("-n")
         for (item in command) {
             args.add(item.toString())
         }

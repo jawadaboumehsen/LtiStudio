@@ -43,19 +43,12 @@ public data class PullCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("pull")
-        compression?.let { val value = it
-            args.add("-z")
-            args.add(value.toString())
-        }
-        if (disableCompression) args.add("-Z")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
             args.add("--one-device")
             args.add(value.toString())
         }
-        if (preserveMetadata) args.add("-a")
         serial?.let { val value = it
             args.add("-s")
             args.add(value.toString())
@@ -78,6 +71,13 @@ public data class PullCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("pull")
+        compression?.let { val value = it
+            args.add("-z")
+            args.add(value.toString())
+        }
+        if (disableCompression) args.add("-Z")
+        if (preserveMetadata) args.add("-a")
         args.add(remote.toString())
         args.add(local.toString())
         return args

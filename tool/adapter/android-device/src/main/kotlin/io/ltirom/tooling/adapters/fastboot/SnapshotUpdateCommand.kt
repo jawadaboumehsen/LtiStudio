@@ -45,7 +45,6 @@ public data class SnapshotUpdateCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("snapshot-update")
         if (disableFastbootInfo) args.add("--disable-fastboot-info")
         if (disableSuperOptimization) args.add("--disable-super-optimization")
         if (disableVerification) args.add("--disable-verification")
@@ -77,6 +76,7 @@ public data class SnapshotUpdateCommand(
         if (unbufferedOutput) args.add("--unbuffered")
         if (verboseMode) args.add("--verbose")
         if (wipeUserdata) args.add("-w")
+        args.add("snapshot-update")
         args.add(action.toString())
         return args
     }

@@ -39,7 +39,6 @@ public data class ReconnectCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("reconnect")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -68,6 +67,7 @@ public data class ReconnectCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("reconnect")
         for (item in args) {
             args.add(item.toString())
         }

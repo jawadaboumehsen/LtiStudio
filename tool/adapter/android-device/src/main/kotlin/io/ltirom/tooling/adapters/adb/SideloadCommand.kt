@@ -39,7 +39,6 @@ public data class SideloadCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("sideload")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -68,6 +67,7 @@ public data class SideloadCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("sideload")
         args.add(packagePath.toString())
         return args
     }

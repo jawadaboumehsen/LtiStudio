@@ -45,7 +45,6 @@ public data class SetActiveCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("set_active")
         if (disableFastbootInfo) args.add("--disable-fastboot-info")
         if (disableSuperOptimization) args.add("--disable-super-optimization")
         if (disableVerification) args.add("--disable-verification")
@@ -77,6 +76,7 @@ public data class SetActiveCommand(
         if (unbufferedOutput) args.add("--unbuffered")
         if (verboseMode) args.add("--verbose")
         if (wipeUserdata) args.add("-w")
+        args.add("set_active")
         args.add(slot.toString())
         return args
     }

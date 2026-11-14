@@ -126,8 +126,13 @@ class FileMutationAdapter : FileMutationPort {
         val seenPaths = mutableMapOf<Path, ConcreteOperation>()
 
         for (op in plan.operations) {
-            errors += validateOperation(op, ctx, assetRoot, staged)
-            when (val resolved = resolveOperationPath(op, ctx)) {
+            val opErrors = validateOperation(op, ctx, assetRoot, staged)
+            errors += opErrors
+            val resolvedPath = resolveOperationPath(op, ctx)
+            if (opErrors.isEmpty() && resolvedPath is ResolvedTarget.Valid) {
+                stageWrite(op, resolvedPath.path, assetRoot, staged)
+            }
+            when (val resolved = resolvedPath) {
                 is ResolvedTarget.Invalid -> Unit
 
                 // already reported by validateOperation
@@ -149,6 +154,20 @@ class FileMutationAdapter : FileMutationPort {
             }
         }
         return if (errors.isEmpty()) CheckedPlan.Ready(planned) else CheckedPlan.Refused(ValidationReport(errors))
+    }
+
+    /**
+     * What a copy or replace leaves at [target], for the edits after it (of this plan or a later one): the asset's
+     * text when it is small text, else [UNREAD] (they cannot be checked against it, and are not refused for it).
+     */
+    private fun stageWrite(op: ConcreteOperation, target: Path, assetRoot: String, staged: MutableMap<Path, String>) {
+        val asset = when (op) {
+            is ConcreteOperation.Copy -> op.source.path
+            is ConcreteOperation.Replace -> op.source.path
+            else -> return
+        }
+        val bytes = runCatching { Files.readAllBytes(Path.of(assetRoot).resolve(asset).normalize()) }.getOrNull()
+        staged[target] = bytes?.takeIf { it.size <= STAGED_TEXT_LIMIT && 0.toByte() !in it }?.decodeToString() ?: UNREAD
     }
 
     private fun validateOperation(
@@ -321,8 +340,8 @@ class FileMutationAdapter : FileMutationPort {
             is ResolvedTarget.Valid -> resolved.path
         }
 
-        if (targetPath != null) {
-            if (!Files.exists(targetPath) || !Files.isRegularFile(targetPath)) {
+        if (targetPath != null && staged[targetPath] != UNREAD) {
+            if (targetPath !in staged && (!Files.exists(targetPath) || !Files.isRegularFile(targetPath))) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -372,8 +391,8 @@ class FileMutationAdapter : FileMutationPort {
             is ResolvedTarget.Valid -> resolved.path
         }
 
-        if (targetPath != null) {
-            if (!Files.exists(targetPath) || !Files.isRegularFile(targetPath)) {
+        if (targetPath != null && staged[targetPath] != UNREAD) {
+            if (targetPath !in staged && (!Files.exists(targetPath) || !Files.isRegularFile(targetPath))) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -570,3 +589,7 @@ class FileMutationAdapter : FileMutationPort {
         return md.digest().joinToString("") { "%02x".format(it) }
     }
 }
+
+/** Staged for a file an earlier copy or replace wrote with content that is not read (binary, or large). */
+private const val UNREAD = "\u0000unread"
+private const val STAGED_TEXT_LIMIT = 1024 * 1024

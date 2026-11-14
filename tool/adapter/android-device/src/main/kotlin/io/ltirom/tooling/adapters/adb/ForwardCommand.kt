@@ -39,7 +39,6 @@ public data class ForwardCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("forward")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -68,6 +67,7 @@ public data class ForwardCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("forward")
         for (item in args) {
             args.add(item.toString())
         }

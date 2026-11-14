@@ -38,7 +38,6 @@ public data class StartServerCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("start-server")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -67,6 +66,7 @@ public data class StartServerCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("start-server")
         return args
     }
 }

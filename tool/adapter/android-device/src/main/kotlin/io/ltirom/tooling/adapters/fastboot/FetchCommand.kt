@@ -46,7 +46,6 @@ public data class FetchCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("fetch")
         if (disableFastbootInfo) args.add("--disable-fastboot-info")
         if (disableSuperOptimization) args.add("--disable-super-optimization")
         if (disableVerification) args.add("--disable-verification")
@@ -78,6 +77,7 @@ public data class FetchCommand(
         if (unbufferedOutput) args.add("--unbuffered")
         if (verboseMode) args.add("--verbose")
         if (wipeUserdata) args.add("-w")
+        args.add("fetch")
         args.add(partition.toString())
         args.add(outputPath.toString())
         return args

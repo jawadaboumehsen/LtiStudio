@@ -38,7 +38,6 @@ public data class EnableVerityCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("enable-verity")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -67,6 +66,7 @@ public data class EnableVerityCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("enable-verity")
         return args
     }
 }

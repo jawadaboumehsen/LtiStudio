@@ -39,7 +39,6 @@ public data class SyncCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("sync")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -68,6 +67,7 @@ public data class SyncCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("sync")
         for (item in args) {
             args.add(item.toString())
         }

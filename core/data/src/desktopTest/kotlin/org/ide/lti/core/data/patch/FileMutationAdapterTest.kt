@@ -743,4 +743,42 @@ class FileMutationAdapterTest {
         // Nothing was written.
         assertEquals("A\n", Files.readString(workTree.resolve("system/etc/notes.txt")))
     }
+
+    @Test
+    fun anEditOfAFileAnEarlierPlanCopiedIsCheckedAgainstTheCopiedText() = runBlocking<Unit> {
+        Files.writeString(assetRoot.resolve("rules.txt"), "keep\n")
+        Files.write(assetRoot.resolve("blob.bin"), byteArrayOf(0, 1, 2))
+        fun plan(id: String, vararg ops: ConcreteOperation) =
+            ConcreteMutationPlan("p", id, "1.0.0", ops.toList(), notApplicable = emptyList(), digest = id)
+        fun edit(id: String, file: String, from: String) = ConcreteOperation.TextPatch(
+            id = id,
+            target = PartitionPath("system", file),
+            context = from,
+            replacement = "x",
+            expectedSha256 = "",
+        )
+        val staged = mutableMapOf<String, String>()
+        val copies = plan(
+            "copies",
+            ConcreteOperation.Copy("c1", AssetRef("rules.txt"), PartitionPath("system", "etc/rules.txt")),
+            ConcreteOperation.Copy("c2", AssetRef("blob.bin"), PartitionPath("system", "etc/blob.bin")),
+        )
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(copies, ctx, assetRoot.toString(), staged))
+        // The copied text has "keep": an edit of it applies, an edit of an absent anchor is refused.
+        assertIs<MutationOutcome.Applied>(
+            adapter.previewAfter(plan("ok", edit("e1", "etc/rules.txt", "keep\n")), ctx, assetRoot.toString(), staged),
+        )
+        assertIs<MutationOutcome.Refused>(
+            adapter.previewAfter(
+                plan("bad", edit("e2", "etc/rules.txt", "absent\n")),
+                ctx,
+                assetRoot.toString(),
+                staged,
+            ),
+        )
+        // A binary copy is not read: its edit is neither refused nor checked.
+        assertIs<MutationOutcome.Applied>(
+            adapter.previewAfter(plan("bin", edit("e3", "etc/blob.bin", "z\n")), ctx, assetRoot.toString(), staged),
+        )
+    }
 }

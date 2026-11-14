@@ -105,6 +105,9 @@ public object FlashPlanner {
         val picked: List<ProjectImage>,
     ) {
         val name = image.partition
+
+        /** [name] without a slot suffix: `persist_a` is still the identity partition `persist`. */
+        val base = name.removeSuffix("_a").removeSuffix("_b")
         val measured = phone?.partitions?.isNotEmpty() == true
         private val slot = phone?.currentSlot ?: device?.activeSlotSuffix
         val target = phone?.takeIf { measured }?.let { it.partition(name) ?: slot?.let { s -> it.partition(name + s) } }
@@ -138,23 +141,26 @@ public object FlashPlanner {
     private val RULES: List<(Landing) -> Pair<PlanVerdict, String>?> = listOf(
         { l ->
             (PlanVerdict.REFUSED to "holds the phone's identity, calibration or factory keys: nothing puts it back")
-                .takeIf { l.name in IDENTITY }
+                .takeIf { l.name in IDENTITY || l.base in IDENTITY }
         },
         { l ->
             (
                 PlanVerdict.NAMED_CONFIRMATION to
                     "holds the bootloader: a wrong image costs you fastboot; " +
                     "it would take typing \"${l.name}\" to confirm"
-                ).takeIf { l.name in BOOTLOADER }
+                ).takeIf { l.name in BOOTLOADER || l.base in BOOTLOADER }
         },
         { l ->
             when {
-                !l.measured || l.target != null -> null
+                !l.measured -> null
 
-                l.inSuper && l.phone?.mode == PhoneMode.BOOTLOADER ->
+                // Whether or not the bootloader lists it, a logical partition is written by fastbootd only.
+                (l.inSuper || l.target?.logical == true) && l.phone?.mode == PhoneMode.BOOTLOADER ->
                     PlanVerdict.REFUSED to
                         "lives inside ${l.phone.superName ?: "super"} on this phone: " +
                         "the bootloader has no partition of that name (fastbootd has)"
+
+                l.target != null -> null
 
                 else -> PlanVerdict.REFUSED to "the phone has no partition named ${l.name}"
             }

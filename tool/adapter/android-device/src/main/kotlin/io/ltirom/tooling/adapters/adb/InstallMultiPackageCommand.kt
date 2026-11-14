@@ -39,7 +39,6 @@ public data class InstallMultiPackageCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("install-multi-package")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -68,6 +67,7 @@ public data class InstallMultiPackageCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("install-multi-package")
         for (item in packages) {
             args.add(item.toString())
         }

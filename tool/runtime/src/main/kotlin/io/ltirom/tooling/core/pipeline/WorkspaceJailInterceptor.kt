@@ -1,6 +1,5 @@
 package io.ltirom.tooling.core.pipeline
 
-import io.ltirom.tooling.core.ExecutionContext
 import io.ltirom.tooling.core.ToolResult
 import java.io.File
 
@@ -14,7 +13,7 @@ import java.io.File
  */
 public class WorkspaceJailInterceptor(
     public val allowedRoots: List<File> = emptyList(),
-    public val allowRelativePathsWithoutEscape: Boolean = true
+    public val allowRelativePathsWithoutEscape: Boolean = true,
 ) : ToolExecutionInterceptor {
 
     private val canonicalRoots: List<File> by lazy {
@@ -33,12 +32,20 @@ public class WorkspaceJailInterceptor(
             val violation = checkArgument(arg, roots)
             if (violation != null) {
                 return ToolResult.Failure.SecurityViolation(
-                    "Workspace jail violation for tool '${chain.command.toolId.logicalName}' in argument '$arg': $violation"
+                    "Workspace jail violation for tool '${chain.command.toolId.logicalName}' in argument '$arg': $violation",
                 )
             }
         }
 
         return chain.proceed()
+    }
+
+    /** Why [command] may not run (an argument outside the allowed roots), or null; the check [intercept] makes. */
+    public fun violation(command: io.ltirom.tooling.core.ToolCommand<*>): String? {
+        if (allowedRoots.isEmpty()) return null
+        return command.getArguments().firstNotNullOfOrNull { arg ->
+            checkArgument(arg, canonicalRoots)?.let { "Workspace jail violation in argument '$arg': $it" }
+        }
     }
 
     public fun checkArgument(arg: String, roots: List<File>): String? {
@@ -65,7 +72,9 @@ public class WorkspaceJailInterceptor(
                         canonical.toPath().startsWith(root.toPath())
                     }
                     if (!isContained) {
-                        return "Absolute path '$canonical' is outside approved workspace roots: ${roots.joinToString { it.absolutePath }}"
+                        return "Absolute path '$canonical' is outside approved workspace roots: ${roots.joinToString {
+                            it.absolutePath
+                        }}"
                     }
                 }
             }
@@ -83,19 +92,15 @@ public class WorkspaceJailInterceptor(
         }
     }
 
-    private fun containsTraversal(str: String): Boolean {
-        return str == ".." ||
-               str.contains("../") ||
-               str.contains("..\\") ||
-               str.startsWith("../") ||
-               str.startsWith("..\\") ||
-               str.endsWith("/..") ||
-               str.endsWith("\\..")
-    }
+    private fun containsTraversal(str: String): Boolean = str == ".." ||
+        str.contains("../") ||
+        str.contains("..\\") ||
+        str.startsWith("../") ||
+        str.startsWith("..\\") ||
+        str.endsWith("/..") ||
+        str.endsWith("\\..")
 
-    private fun isPathLike(str: String): Boolean {
-        return str.startsWith("/") ||
-               str.startsWith("\\") ||
-               (str.length >= 3 && str[1] == ':' && (str[2] == '\\' || str[2] == '/'))
-    }
+    private fun isPathLike(str: String): Boolean = str.startsWith("/") ||
+        str.startsWith("\\") ||
+        (str.length >= 3 && str[1] == ':' && (str[2] == '\\' || str[2] == '/'))
 }

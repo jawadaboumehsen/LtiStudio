@@ -18,21 +18,18 @@ private const val TRANSFER_CHUNK_SIZE = 256 * 1024
 public data class TransferProgress(
     val bytesTransferred: Long,
     val totalBytes: Long,
-    val fraction: Float = if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes else 0f
+    val fraction: Float = if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes else 0f,
 )
 
 /**
  * High-performance client for dual-channel zero-copy binary streaming
  * of multi-gigabyte Android ROM images (super.img, payload.bin, boot.img).
  */
-public class BinaryTransportClient(
-    private val supervisor: DaemonSupervisorPort,
-    private val httpClient: HttpClient
-) {
+public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort, private val httpClient: HttpClient) {
     public suspend fun uploadFile(
         localFile: File,
         remotePath: String,
-        onProgress: ((TransferProgress) -> Unit)? = null
+        onProgress: ((TransferProgress) -> Unit)? = null,
     ): BinaryTransferResponse = withContext(Dispatchers.IO) {
         val conn = supervisor.ensureStarted()
         val totalSize = localFile.length()
@@ -56,7 +53,9 @@ public class BinaryTransportClient(
             }
         }
 
-        val response = httpClient.post("${conn.httpBaseUrl}/api/v1/binary/upload?path=$remotePath") {
+        val response = httpClient.post(
+            "${conn.httpBaseUrl}/api/v1/binary/upload?path=${remotePath.encodeURLParameter()}",
+        ) {
             header(HttpHeaders.Authorization, "Bearer ${conn.token}")
             setBody(content)
         }
@@ -66,19 +65,24 @@ public class BinaryTransportClient(
     public suspend fun downloadFile(
         remotePath: String,
         destinationFile: File,
-        onProgress: ((TransferProgress) -> Unit)? = null
+        onProgress: ((TransferProgress) -> Unit)? = null,
     ): Long = withContext(Dispatchers.IO) {
         val conn = supervisor.ensureStarted()
         destinationFile.parentFile?.mkdirs()
 
-        httpClient.prepareGet("${conn.httpBaseUrl}/api/v1/binary/download?path=$remotePath") {
+        httpClient.prepareGet("${conn.httpBaseUrl}/api/v1/binary/download?path=${remotePath.encodeURLParameter()}") {
             header(HttpHeaders.Authorization, "Bearer ${conn.token}")
         }.execute { response ->
+            if (!response.status.isSuccess()) {
+                throw java.io.IOException("Download of $remotePath failed: HTTP ${response.status.value}")
+            }
             val totalSize = response.contentLength() ?: -1L
             val channel = response.bodyAsChannel()
             var bytesReceived = 0L
+            // Written beside it and moved over it only when complete: a cut transfer never replaces the file.
+            val partial = File(destinationFile.path + ".partial")
 
-            destinationFile.outputStream().use { output ->
+            partial.outputStream().use { output ->
                 val buffer = ByteArray(TRANSFER_CHUNK_SIZE)
                 while (!channel.isClosedForRead) {
                     val read = channel.readAvailable(buffer, 0, buffer.size)
@@ -88,6 +92,16 @@ public class BinaryTransportClient(
                     onProgress?.invoke(TransferProgress(bytesReceived, totalSize))
                 }
             }
+            if (totalSize >= 0 && bytesReceived != totalSize) {
+                partial.delete()
+                throw java.io.IOException("Download of $remotePath ended at $bytesReceived of $totalSize bytes")
+            }
+            java.nio.file.Files.move(
+                partial.toPath(),
+                destinationFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+            )
             bytesReceived
         }
     }

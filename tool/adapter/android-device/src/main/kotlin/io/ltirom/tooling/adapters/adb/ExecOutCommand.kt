@@ -35,7 +35,6 @@ public data class ExecOutCommand(
     override fun parseBinaryResult(stdout: ByteArray, stderr: String): ByteArray = stdout
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("exec-out")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -64,6 +63,7 @@ public data class ExecOutCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("exec-out")
         for (item in command) {
             args.add(item.toString())
         }

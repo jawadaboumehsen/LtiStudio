@@ -39,47 +39,51 @@ public data class TrialResult(
  * and says which to use: the fastest that fits the room left in the super group, else the smallest.
  */
 public class SizeAdvisor(private val runner: WorkbenchRunner) {
-    public suspend fun trial(workspaceId: String, p: String, options: List<TrialOption>): List<TrialResult> =
-        runner.job(workspaceId, "Size trial $p") {
-            val out = "workbench/trial/$p.img"
-            run("mkdir", "-p", abs("workbench/trial"))
-            options.map { option ->
-                val compress = option.compression.takeIf { it != BuildFilesystems.NO_COMPRESSION }
-                val args = listOf("--quiet") +
-                    compress?.let { listOf("-z", it) }.orEmpty() +
-                    listOf("-Ededupe,fragments").takeIf { option.dedupe }.orEmpty() +
-                    option.clusterKib?.let { listOf("-C", (it * KIB).toString()) }.orEmpty() +
-                    listOf(
-                        "-b", BLOCK.toString(),
-                        "--mount-point", if (p == "system") "/" else p,
-                        "--fs-config-file", abs("work/configs/fs_config-$p"),
-                        "--file-contexts", abs("work/configs/file_context-$p"),
-                        abs(out), abs("work/$p"),
-                    )
-                val printed = tryRun(
-                    "sh",
-                    "-c",
-                    TIMED_SCRIPT,
-                    "sh",
-                    toolPath("mkfs.erofs"),
-                    abs(out),
-                    *args.toTypedArray(),
+    public suspend fun trial(
+        workspaceId: String,
+        p: String,
+        options: List<TrialOption>,
+        blockSize: Int = BLOCK,
+    ): List<TrialResult> = runner.job(workspaceId, "Size trial $p") {
+        val out = "workbench/trial/$p.img"
+        run("mkdir", "-p", abs("workbench/trial"))
+        options.map { option ->
+            val compress = option.compression.takeIf { it != BuildFilesystems.NO_COMPRESSION }
+            val args = listOf("--quiet") +
+                compress?.let { listOf("-z", it) }.orEmpty() +
+                listOf("-Ededupe,fragments").takeIf { option.dedupe }.orEmpty() +
+                option.clusterKib?.let { listOf("-C", (it * KIB).toString()) }.orEmpty() +
+                listOf(
+                    "-b", blockSize.toString(),
+                    "--mount-point", if (p == "system") "/" else p,
+                    "--fs-config-file", abs("work/configs/fs_config-$p"),
+                    "--file-contexts", abs("work/configs/file_context-$p"),
+                    abs(out), abs("work/$p"),
                 )
-                val (size, seconds) = printed.stdout.trim().lines().lastOrNull().orEmpty().split(' ') + listOf("", "")
-                val result = TrialResult(
-                    option,
-                    size.toLongOrNull()?.takeIf { printed.exitCode == 0 },
-                    seconds.toDoubleOrNull(),
-                    printed.stderr.trim().takeIf { printed.exitCode != 0 }?.takeLast(ERROR_SHOWN),
-                )
-                report(
-                    if (result.error == null) LogLevel.INF else LogLevel.WRN,
-                    "Size trial $p ${option.label}: " +
-                        (result.bytes?.let { "${it / MIB} MiB in ${seconds}s" } ?: "failed: ${result.error}"),
-                )
-                result
-            }
+            val printed = tryRun(
+                "sh",
+                "-c",
+                TIMED_SCRIPT,
+                "sh",
+                toolPath("mkfs.erofs"),
+                abs(out),
+                *args.toTypedArray(),
+            )
+            val (size, seconds) = printed.stdout.trim().lines().lastOrNull().orEmpty().split(' ') + listOf("", "")
+            val result = TrialResult(
+                option,
+                size.toLongOrNull()?.takeIf { printed.exitCode == 0 },
+                seconds.toDoubleOrNull(),
+                printed.stderr.trim().takeIf { printed.exitCode != 0 }?.takeLast(ERROR_SHOWN),
+            )
+            report(
+                if (result.error == null) LogLevel.INF else LogLevel.WRN,
+                "Size trial $p ${option.label}: " +
+                    (result.bytes?.let { "${it / MIB} MiB in ${seconds}s" } ?: "failed: ${result.error}"),
+            )
+            result
         }
+    }
 
     public companion object {
         private const val KIB = 1024L

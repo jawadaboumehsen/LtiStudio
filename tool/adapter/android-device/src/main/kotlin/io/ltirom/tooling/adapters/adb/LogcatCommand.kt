@@ -43,21 +43,10 @@ public data class LogcatCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("logcat")
-        if (clearLogs) args.add("-c")
-        if (dumpLogs) args.add("-d")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
-        logFormat?.let { val value = it
-            args.add("-v")
-            args.add(value.toString())
-        }
         oneDevice?.let { val value = it
             args.add("--one-device")
-            args.add(value.toString())
-        }
-        outputFile?.let { val value = it
-            args.add("-f")
             args.add(value.toString())
         }
         serial?.let { val value = it
@@ -82,6 +71,17 @@ public data class LogcatCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("logcat")
+        if (clearLogs) args.add("-c")
+        if (dumpLogs) args.add("-d")
+        logFormat?.let { val value = it
+            args.add("-v")
+            args.add(value.toString())
+        }
+        outputFile?.let { val value = it
+            args.add("-f")
+            args.add(value.toString())
+        }
         for (item in filters) {
             args.add(item.toString())
         }

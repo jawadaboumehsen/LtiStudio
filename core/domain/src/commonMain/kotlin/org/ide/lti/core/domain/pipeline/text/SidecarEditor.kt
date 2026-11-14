@@ -40,7 +40,7 @@ public object SidecarEditor {
     )
 
     private fun renameKeys(text: String, from: String, to: String): String = text.lineSequence().joinToString("\n") {
-        val key = it.substringBefore(' ')
+        val key = keyOf(it)
         when {
             key == from -> to + it.removePrefix(key)
             key.startsWith("$from/") -> to + it.removePrefix(from)
@@ -72,7 +72,7 @@ public object SidecarEditor {
     ): String {
         val leafKey = SidecarNormalizer.fsConfigPath(partition, path)
         val base = if (metadata == null) text else filterExact(text, leafKey)
-        val known = base.lineSequence().map { it.substringBefore(' ') }.toSet()
+        val known = base.lineSequence().map { keyOf(it) }.toSet()
         val added = chain(path).mapNotNull { (rel, isLeaf) ->
             val key = SidecarNormalizer.fsConfigPath(partition, rel)
             val fields = if (isLeaf && metadata != null) {
@@ -101,7 +101,7 @@ public object SidecarEditor {
         val leafKey = SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path))
         val base = if (label == null) text else filterExact(text, leafKey)
         val labels = base.lineSequence().filter { it.isNotBlank() }
-            .associate { it.substringBefore(' ') to it.substringAfter(' ').trim() }
+            .associate { keyOf(it) to it.drop(keyOf(it).length).trim() }
         var inherited = labels[SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, ""))]
         val added = chain(path).mapNotNull { (rel, isLeaf) ->
             val key = SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, rel))
@@ -123,7 +123,7 @@ public object SidecarEditor {
     }
 
     private fun filterExact(text: String, key: String): String {
-        val kept = text.lineSequence().filter { it.substringBefore(' ') != key }.toList().dropLastWhile { it.isBlank() }
+        val kept = text.lineSequence().filter { keyOf(it) != key }.toList().dropLastWhile { it.isBlank() }
         return if (kept.isEmpty()) "" else kept.joinToString("\n", postfix = "\n")
     }
 
@@ -140,9 +140,9 @@ public object SidecarEditor {
     }
 
     private fun restoreLines(text: String, backup: String, prefix: String): String {
-        val known = text.lineSequence().map { it.substringBefore(' ') }.toSet()
+        val known = text.lineSequence().map { keyOf(it) }.toSet()
         val lines = backup.lineSequence().filter { line ->
-            val path = line.substringBefore(' ')
+            val path = keyOf(line)
             line.isNotBlank() && (path == prefix || path.startsWith("$prefix/")) && path !in known
         }.toList()
         return append(text, lines)
@@ -151,9 +151,12 @@ public object SidecarEditor {
     private fun filterLines(text: String, prefixes: List<String>): String {
         if (prefixes.isEmpty()) return text
         val kept = text.lineSequence().filter { line ->
-            val path = line.substringBefore(' ')
+            val path = keyOf(line)
             line.isBlank() || prefixes.none { path == it || path.startsWith("$it/") }
         }.toList().dropLastWhile { it.isBlank() }
         return if (kept.isEmpty()) "" else kept.joinToString("\n", postfix = "\n")
     }
+
+    /** A sidecar line's path: up to the first space or tab. */
+    private fun keyOf(line: String): String = line.takeWhile { !it.isWhitespace() }
 }

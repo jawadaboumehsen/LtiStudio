@@ -39,10 +39,8 @@ public data class DevicesCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("devices")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
-        if (longListing) args.add("-l")
         oneDevice?.let { val value = it
             args.add("--one-device")
             args.add(value.toString())
@@ -69,6 +67,8 @@ public data class DevicesCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("devices")
+        if (longListing) args.add("-l")
         return args
     }
 }

@@ -221,6 +221,15 @@ class PlatformMetadataTest {
         assertEquals(0, OwnerRules.decodeTable(unterminated).size)
     }
 
+    @Test
+    fun aTabSeparatedSidecarLineIsRenamed() {
+        val text = "vendor/bin/a\t0 2000 0755\nvendor/bin/z 0 0 0644\n"
+        assertEquals(
+            "vendor/bin/b\t0 2000 0755\nvendor/bin/z 0 0 0644\n",
+            SidecarEditor.withRenamedFsConfig(text, "vendor", "bin/a", "bin/b"),
+        )
+    }
+
     private fun table(path: String, mode: Int, uid: Int, gid: Int, caps: Long): ByteArray {
         val name = path.encodeToByteArray()
         val length = (HEADER + name.size + 1 + 7) / 8 * 8

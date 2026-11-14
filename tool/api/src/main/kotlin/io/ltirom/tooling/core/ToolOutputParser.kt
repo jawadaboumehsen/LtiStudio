@@ -5,10 +5,7 @@ public interface ToolOutputParser<out T> {
 }
 
 /** Lossless-enough representation for text metadata emitted by image/container tools. */
-public data class ParsedToolMetadata(
-    val fields: Map<String, String>,
-    val lines: List<String>
-)
+public data class ParsedToolMetadata(val fields: Map<String, String>, val lines: List<String>)
 
 public data class AvbImageInfo(
     val fields: ParsedToolMetadata,
@@ -16,7 +13,7 @@ public data class AvbImageInfo(
     val hashAlgorithm: String? = fields.fields["Hash Algorithm"],
     val partitionName: String? = fields.fields["Partition Name"],
     val imageSize: Long? = fields.fields["Image Size"]?.toLongOrNull(),
-    val rollbackIndex: Long? = fields.fields["Rollback Index"]?.toLongOrNull()
+    val rollbackIndex: Long? = fields.fields["Rollback Index"]?.toLongOrNull(),
 ) {
     public fun validate() {
         require(imageSize == null || imageSize >= 0) { "AVB image size cannot be negative" }
@@ -33,7 +30,7 @@ public data class DynamicPartitionMetadata(
         .mapNotNull { Regex("^\\s*Partition(?: name)?:\\s*(\\S+)").matchEntire(it)?.groupValues?.get(1) },
     val groups: List<String> = fields.lines
         .mapNotNull { Regex("^\\s*Group name:\\s*(\\S+)").matchEntire(it)?.groupValues?.get(1) },
-    val partitionDescriptors: List<DynamicPartitionDescriptor> = parsePartitionDescriptors(fields.lines)
+    val partitionDescriptors: List<DynamicPartitionDescriptor> = parsePartitionDescriptors(fields.lines),
 ) {
     public fun validateGeometry() {
         require(metadataSize == null || metadataSize > 0) { "Metadata size must be positive" }
@@ -64,7 +61,7 @@ public data class DynamicPartitionDescriptor(
     val group: String? = null,
     val size: Long? = null,
     val attributes: Set<String> = emptySet(),
-    val extents: List<DynamicPartitionExtent> = emptyList()
+    val extents: List<DynamicPartitionExtent> = emptyList(),
 )
 
 public data class DynamicPartitionExtent(val startBlock: Long, val endBlock: Long, val target: String? = null)
@@ -72,7 +69,9 @@ public data class DynamicPartitionExtent(val startBlock: Long, val endBlock: Lon
 private fun parsePartitionDescriptors(lines: List<String>): List<DynamicPartitionDescriptor> {
     val result = mutableListOf<DynamicPartitionDescriptor>()
     var current: DynamicPartitionDescriptor? = null
-    fun flush() { current?.let(result::add) }
+    fun flush() {
+        current?.let(result::add)
+    }
     for (line in lines) {
         val name = Regex("^\\s*Partition name:\\s*(\\S+)").matchEntire(line)?.groupValues?.get(1)
         if (name != null) {
@@ -86,13 +85,17 @@ private fun parsePartitionDescriptors(lines: List<String>): List<DynamicPartitio
         val attrs = Regex("^\\s*Attributes:\\s*(.*)").matchEntire(line)?.groupValues?.get(1)
             ?.split(Regex("\\s+"))?.filter(String::isNotBlank)?.toSet()
         val extent = Regex("^\\s*(\\d+)\\s*\\.\\.\\s*(\\d+)(?:\\s+(\\S+))?").matchEntire(line)?.let {
-            DynamicPartitionExtent(it.groupValues[1].toLong(), it.groupValues[2].toLong(), it.groupValues.getOrNull(3)?.ifBlank { null })
+            DynamicPartitionExtent(
+                it.groupValues[1].toLong(),
+                it.groupValues[2].toLong(),
+                it.groupValues.getOrNull(3)?.ifBlank { null },
+            )
         }
         current = existing.copy(
             group = group ?: existing.group,
             size = size ?: existing.size,
             attributes = attrs ?: existing.attributes,
-            extents = if (extent != null) existing.extents + extent else existing.extents
+            extents = if (extent != null) existing.extents + extent else existing.extents,
         )
     }
     flush()
@@ -108,10 +111,12 @@ public data class BootImageMetadata(
         )?.toIntOrNull(),
     val osVersion: String? = fields.fields["os version"]?.takeIf { it != "None" },
     val ramdiskFormat: String? = fields.fields["ramdisk format"],
-    val bootMagic: String? = fields.fields["boot magic"]
+    val bootMagic: String? = fields.fields["boot magic"],
 ) {
     public fun validate() {
-        require(headerVersion == null || headerVersion in 0..4) { "Unsupported boot image header version: $headerVersion" }
+        require(
+            headerVersion == null || headerVersion in 0..4,
+        ) { "Unsupported boot image header version: $headerVersion" }
         require(!bootMagic.isNullOrBlank() || !osVersion.isNullOrBlank() || !ramdiskFormat.isNullOrBlank()) {
             "Boot metadata is empty"
         }
@@ -139,7 +144,9 @@ public object ToolMetadataParser : ToolOutputParser<ParsedToolMetadata> {
 }
 
 public object AvbImageInfoParser : ToolOutputParser<AvbImageInfo> {
-    override fun parse(stdout: String, stderr: String): AvbImageInfo = AvbImageInfo(ToolMetadataParser.parse(stdout, stderr)).also { it.validate() }
+    override fun parse(stdout: String, stderr: String): AvbImageInfo = AvbImageInfo(
+        ToolMetadataParser.parse(stdout, stderr),
+    ).also { it.validate() }
 }
 
 /** Parses avbtool's numeric output from `add_hashtree_footer --calc_max_image_size`. */
@@ -154,26 +161,34 @@ public object AvbMaxImageSizeParser : ToolOutputParser<Long?> {
 }
 
 public object DynamicPartitionMetadataParser : ToolOutputParser<DynamicPartitionMetadata> {
-    override fun parse(stdout: String, stderr: String): DynamicPartitionMetadata = DynamicPartitionMetadata(ToolMetadataParser.parse(stdout, stderr)).also { it.validateGeometry() }
+    override fun parse(stdout: String, stderr: String): DynamicPartitionMetadata = DynamicPartitionMetadata(
+        ToolMetadataParser.parse(stdout, stderr),
+    ).also { it.validateGeometry() }
 }
 
 public object BootImageMetadataParser : ToolOutputParser<BootImageMetadata> {
-    override fun parse(stdout: String, stderr: String): BootImageMetadata = BootImageMetadata(ToolMetadataParser.parse(stdout, stderr)).also { it.validate() }
+    override fun parse(stdout: String, stderr: String): BootImageMetadata = BootImageMetadata(
+        ToolMetadataParser.parse(stdout, stderr),
+    ).also { it.validate() }
 }
 
 /** Stable representation of fastboot's key/value diagnostics, which are commonly emitted on stderr. */
 public object FastbootVariablesParser : ToolOutputParser<Map<String, String>> {
-    private val variable = Regex("^\\s*(?:\\(bootloader\\)\\s*)?getvar:([^: ]+):\\s*(.*?)\\s*$")
+    /** Variables whose name is followed by a partition (`partition-size:boot_a:0x6000000`). */
+    private val perPartition =
+        setOf("partition-size", "partition-type", "is-logical", "has-slot", "slot-successful", "slot-unbootable")
 
     override fun parse(stdout: String, stderr: String): Map<String, String> {
         val result = linkedMapOf<String, String>()
-        (stdout + "\n" + stderr).lineSequence().forEach { line ->
-            val match = variable.matchEntire(line) ?: return@forEach
-            val key = match.groupValues[1]
-            val value = match.groupValues[2]
-            if (value.isNotEmpty() && !value.startsWith("FAILED")) {
-                result[key] = value
-            }
+        (stdout + "\n" + stderr).lineSequence().forEach { raw ->
+            // `name: value` as fastboot prints it; `getvar:` heads only its error lines, which a FAILED value drops.
+            val line = raw.trim().removePrefix("(bootloader)").trim().removePrefix("getvar:")
+            val name = line.substringBefore(':', "")
+            if (name.isEmpty() || name == "all" || name.any { it.isWhitespace() }) return@forEach
+            val keyEnd = if (name in perPartition) line.indexOf(':', name.length + 1) else name.length
+            if (keyEnd <= 0) return@forEach
+            val value = line.substring(keyEnd + 1).trim()
+            if (value.isNotEmpty() && !value.startsWith("FAILED")) result[line.substring(0, keyEnd)] = value
         }
         return result.toMap()
     }
@@ -184,19 +199,26 @@ public object ToolOutputParserRegistry {
 
     init {
         // Register default stub parser for tests or common patterns
-        register("identity", object : ToolOutputParser<String> {
+        register(
+            "identity",
+            object : ToolOutputParser<String> {
             override fun parse(stdout: String, stderr: String): String = stdout
-        })
-        register("default", object : ToolOutputParser<Unit> {
-            override fun parse(stdout: String, stderr: String): Unit {}
-        })
-        register("adb-devices", object : ToolOutputParser<List<String>> {
-            override fun parse(stdout: String, stderr: String): List<String> {
-                return stdout.lines()
-                    .filter { it.contains("\tdevice") }
-                    .map { it.substringBefore("\t") }
-            }
-        })
+        }
+        )
+        register(
+            "default",
+            object : ToolOutputParser<Unit> {
+            override fun parse(stdout: String, stderr: String) {}
+        }
+        )
+        register(
+            "adb-devices",
+            object : ToolOutputParser<List<String>> {
+            override fun parse(stdout: String, stderr: String): List<String> = stdout.lines()
+                .filter { it.contains("\tdevice") }
+                .map { it.substringBefore("\t") }
+        }
+        )
         register("fastboot-vars", FastbootVariablesParser)
         register("metadata", ToolMetadataParser)
         register("avb-info", AvbImageInfoParser)
@@ -213,11 +235,8 @@ public object ToolOutputParserRegistry {
         }
     }
 
-    public fun get(id: String): ToolOutputParser<*> {
-        return parsers[id] ?: throw IllegalArgumentException("No output parser registered with ID '$id'")
-    }
+    public fun get(id: String): ToolOutputParser<*> =
+        parsers[id] ?: throw IllegalArgumentException("No output parser registered with ID '$id'")
 
-    public fun getRegisteredIds(): Set<String> {
-        return parsers.keys.toSet()
-    }
+    public fun getRegisteredIds(): Set<String> = parsers.keys.toSet()
 }

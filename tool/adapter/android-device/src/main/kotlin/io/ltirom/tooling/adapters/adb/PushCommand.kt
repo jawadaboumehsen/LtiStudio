@@ -43,12 +43,6 @@ public data class PushCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("push")
-        compression?.let { val value = it
-            args.add("-z")
-            args.add(value.toString())
-        }
-        if (disableCompression) args.add("-Z")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -71,13 +65,19 @@ public data class PushCommand(
             args.add("-L")
             args.add(value.toString())
         }
-        if (sync) args.add("--sync")
         transportId?.let { val value = it
             args.add("-t")
             args.add(value.toString())
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("push")
+        compression?.let { val value = it
+            args.add("-z")
+            args.add(value.toString())
+        }
+        if (disableCompression) args.add("-Z")
+        if (sync) args.add("--sync")
         args.add(local.toString())
         args.add(remote.toString())
         return args

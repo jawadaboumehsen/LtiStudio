@@ -185,7 +185,10 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 abs(path),
                 abs(output),
             )
-            sh(STALE_COMPANIONS_SCRIPT, abs(path))
+            // Each precompiled file or profile that goes gets its own restore point, as Deodex does.
+            sh(STALE_COMPANIONS_SCRIPT, abs(path), "list").lines().filter { it.isNotBlank() }
+                .forEach { backup(TOOL, it.removePrefix("$root/")) }
+            sh(STALE_COMPANIONS_SCRIPT, abs(path), "remove")
             ApkPatchResult(file = path, status = "Rebuilt", restorePointId = point.id)
         }
 
@@ -399,17 +402,22 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         private const val STALE = "Stale"
 
         /**
-         * `$1` a rebuilt package: removes its precompiled files and profiles, which no longer fit it. A folder of its
-         * own loses its whole oat/; in a shared folder (framework/) only this package's files go, never a sibling's.
+         * `$1` a rebuilt package, `$2` `list` or `remove`: its precompiled files and profiles, which no longer fit it.
+         * A folder of its own loses its whole oat/; in a shared folder (framework/) only this package's files go,
+         * never a sibling's.
          */
         private const val STALE_COMPANIONS_SCRIPT = """
-d=${'$'}(dirname "$1"); b=${'$'}(basename "$1"); n=${'$'}{b%.*}
+d=${'$'}(dirname "$1"); b=${'$'}(basename "$1"); n=${'$'}{b%.*}; mode="$2"
 if [ -z "${'$'}(find "${'$'}d" -maxdepth 1 -type f \( -name '*.apk' -o -name '*.jar' \) ! -name "${'$'}b" | head -n 1)" ]; then
-  rm -rf "${'$'}d/oat"; find "${'$'}d" -maxdepth 1 \( -name '*.prof' -o -name '*.bprof' \) -delete
+  set -- "${'$'}d/oat" ${'$'}(find "${'$'}d" -maxdepth 1 \( -name '*.prof' -o -name '*.bprof' \))
 else
-  rm -f "${'$'}d"/oat/*/"${'$'}n".odex "${'$'}d"/oat/*/"${'$'}n".vdex "${'$'}d"/oat/*/"${'$'}n".art \
+  set -- "${'$'}d"/oat/*/"${'$'}n".odex "${'$'}d"/oat/*/"${'$'}n".vdex "${'$'}d"/oat/*/"${'$'}n".art \
     "${'$'}d/${'$'}n.prof" "${'$'}d/${'$'}b.prof" "${'$'}d/${'$'}n.bprof" "${'$'}d/${'$'}b.bprof"
-fi"""
+fi
+for t; do
+  [ -e "${'$'}t" ] || continue
+  if [ "${'$'}mode" = list ]; then printf '%s\n' "${'$'}t"; else rm -rf -- "${'$'}t"; fi
+done"""
 
         /**
          * `$1` work/, `$2` the scope, `$3` the file for FILE. One line per package: status, its path under work/,

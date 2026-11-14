@@ -38,7 +38,6 @@ public data class GetSerialnoCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("get-serialno")
         if (exitOnWriteError) args.add("--exit-on-write-error")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
@@ -67,6 +66,7 @@ public data class GetSerialnoCommand(
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("get-serialno")
         return args
     }
 }

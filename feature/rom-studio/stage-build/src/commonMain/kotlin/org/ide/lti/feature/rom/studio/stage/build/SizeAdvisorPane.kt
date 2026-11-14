@@ -67,7 +67,8 @@ public class SizeAdvisorViewModel(
         viewModelScope.launch {
             try {
                 val kernel = runCatching { boot?.kernelFacts(workspaceId)?.version }.getOrNull()
-                val results = tools.trial(workspaceId, p, SizeAdvisor.options(settings, p, kernel, decoders))
+                val options = SizeAdvisor.options(settings, p, kernel, decoders)
+                val results = tools.trial(workspaceId, p, options, settings.blockSize)
                 _state.update { it.copy(results = results) }
             } catch (e: CancellationException) {
                 throw e

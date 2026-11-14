@@ -2,6 +2,8 @@ package io.ltirom.tooling.client
 
 import io.ltirom.tooling.client.transport.KtorRemoteTransportAdapter
 import io.ltirom.tooling.core.*
+import io.ltirom.tooling.core.events.ToolEventBus
+import io.ltirom.tooling.core.pipeline.*
 import io.ltirom.tooling.core.ports.PathTranslatorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.StreamEvent
@@ -9,8 +11,6 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import kotlinx.coroutines.flow.Flow
 import java.security.MessageDigest
-import io.ltirom.tooling.core.events.ToolEventBus
-import io.ltirom.tooling.core.pipeline.*
 
 /**
  * Remote tool repository that executes commands via a remote server bridge.
@@ -29,16 +29,18 @@ public class RemoteWslToolRepository(
     private val onOutput: ((stdoutLine: String, stderrLine: String) -> Unit)? = null,
     eventBus: ToolEventBus? = null,
     allowedRoots: List<java.io.File> = emptyList(),
-    customInterceptors: List<ToolExecutionInterceptor> = emptyList()
+    customInterceptors: List<ToolExecutionInterceptor> = emptyList(),
 ) : StreamingToolRepository {
+
+    private val jail = WorkspaceJailInterceptor(allowedRoots)
 
     private val pipeline: ToolExecutionPipeline = ToolExecutionPipeline(
         listOfNotNull(
-            WorkspaceJailInterceptor(allowedRoots),
+            jail,
             SafetyCheckInterceptor(safetyPolicy),
             eventBus?.let { EventPublishingInterceptor(it) },
-            AuditLoggingInterceptor(redactor, auditLogger)
-        ) + customInterceptors
+            AuditLoggingInterceptor(redactor, auditLogger),
+        ) + customInterceptors,
     )
 
     /**
@@ -52,7 +54,7 @@ public class RemoteWslToolRepository(
         auditLogger: (AuditRecord) -> Unit = {},
         onOutput: ((stdoutLine: String, stderrLine: String) -> Unit)? = null,
         eventBus: ToolEventBus? = null,
-        allowedRoots: List<java.io.File> = emptyList()
+        allowedRoots: List<java.io.File> = emptyList(),
     ) : this(
         transport = KtorRemoteTransportAdapter(daemonManager, daemonManager.httpClient, daemonManager.json),
         pathTranslator = pathTranslator,
@@ -61,7 +63,7 @@ public class RemoteWslToolRepository(
         auditLogger = auditLogger,
         onOutput = onOutput,
         eventBus = eventBus,
-        allowedRoots = allowedRoots
+        allowedRoots = allowedRoots,
     )
 
     private val windowsDriveRegex = Regex("""^[a-zA-Z]:[\\/].*""")
@@ -81,20 +83,21 @@ public class RemoteWslToolRepository(
         return arg
     }
 
-    override suspend fun <R> execute(
-        command: ToolCommand<R>,
-        context: ExecutionContext
-    ): R {
-        val result = pipeline.execute(command, context) { cmd, ctx ->
+    override suspend fun <R> execute(command: ToolCommand<R>, context: ExecutionContext): R {
+        val result = pipeline.execute(command.boundTo(context), context) { cmd, ctx ->
             executeTerminal(cmd, ctx)
         }
         return result.getOrThrow()
     }
 
-    private suspend fun <R> executeTerminal(
-        command: ToolCommand<R>,
-        context: ExecutionContext
-    ): ToolResult<R> {
+    private suspend fun <R> executeTerminal(command: ToolCommand<R>, context: ExecutionContext): ToolResult<R> {
+        if (command is BinaryToolCommand<*>) {
+            return ToolResult.Failure.ExecutionError(
+                "${command.toolId.logicalName} prints bytes, which the service's text transport would alter; " +
+                    "run it locally or write its output to a file and download that",
+                null,
+            )
+        }
         val rawArgs = command.getArguments()
         val translatedArgs = rawArgs.map { translateArgument(it) }
 
@@ -104,7 +107,7 @@ public class RemoteWslToolRepository(
             workingDirectory = null,
             stdinText = if (command.stdinMode == StdinMode.PIPE_TEXT) command.stdinText else null,
             timeoutMs = command.timeoutMs,
-            acceptedExitCodes = command.acceptedExitCodes
+            acceptedExitCodes = command.acceptedExitCodes,
         )
 
         return try {
@@ -121,14 +124,16 @@ public class RemoteWslToolRepository(
                     exitCode = response.exitCode,
                     stdout = response.stdout,
                     stderr = response.stderr,
-                    message = "Command failed with exit code ${response.exitCode}: ${response.stderr.ifBlank { response.stdout }}"
+                    message = "Command failed with exit code ${response.exitCode}: ${response.stderr.ifBlank {
+                        response.stdout
+                    }}",
                 )
             } else {
                 val executionResult = CommandExecutionResult(
                     exitCode = response.exitCode,
                     stdout = response.stdout,
                     stderr = response.stderr,
-                    durationMs = response.durationMs
+                    durationMs = response.durationMs,
                 )
                 ToolResult.Success(command.parseResult(executionResult), response.durationMs)
             }
@@ -137,10 +142,9 @@ public class RemoteWslToolRepository(
         }
     }
 
-    override fun <R> stream(
-        command: ToolCommand<R>,
-        context: ExecutionContext
-    ): Flow<StreamEvent> {
+    override fun <R> stream(rawCommand: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> {
+        val command = rawCommand.boundTo(context)
+        jail.violation(command)?.let { throw ToolSafetyException(command.toolId, "WORKSPACE_JAIL", it) }
         safetyPolicy.checkSafety(command, context)
         command.validateInputArtifacts()
 
@@ -153,7 +157,7 @@ public class RemoteWslToolRepository(
             stdinText = if (command.stdinMode == StdinMode.PIPE_TEXT) command.stdinText else null,
             timeoutMs = command.timeoutMs,
             acceptedExitCodes = command.acceptedExitCodes,
-            streamOutput = true
+            streamOutput = true,
         )
 
         return transport.stream(request)
@@ -162,10 +166,8 @@ public class RemoteWslToolRepository(
     /**
      * Backward-compatible alias for [stream].
      */
-    public fun <R> executeStreaming(
-        command: ToolCommand<R>,
-        context: ExecutionContext
-    ): Flow<StreamEvent> = stream(command, context)
+    public fun <R> executeStreaming(command: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> =
+        stream(command, context)
 
     private fun sha256(text: String): String {
         if (text.isEmpty()) return ""

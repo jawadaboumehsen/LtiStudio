@@ -137,4 +137,20 @@ class FlashPlanTest {
         assertFalse(facts.single { it.label == "Fastboot product" }.differs)
         assertEquals(0x400000000L.toString(), facts.single { it.label.startsWith("Super") }.measured)
     }
+
+    @Test
+    fun aSlotSuffixedIdentityImageAndALogicalPartitionInTheBootloaderAreRefused() {
+        val listed = PhoneFacts(
+            "ZTE1234",
+            PhoneMode.BOOTLOADER,
+            PhoneReadout.fastbootVars(getvar + "\n(bootloader) partition-size:system_a:0x40000000"),
+        )
+        val withSuper = device.copy(dynamicPartitions = listOf("system"))
+        val plan = FlashPlanner.plan(listed, withSuper, listOf(image("persist_a", 0x1000), image("system", 0x1000)))
+        val by = plan.rows.associateBy { it.image.partition }
+        assertEquals(PlanVerdict.REFUSED, by.getValue("persist_a").verdict)
+        // Listed or not, the bootloader cannot write a partition inside super.
+        assertEquals(PlanVerdict.REFUSED, by.getValue("system").verdict)
+        assertTrue(by.getValue("system").reasons.first().startsWith("lives inside super"))
+    }
 }

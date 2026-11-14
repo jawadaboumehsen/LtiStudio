@@ -43,16 +43,12 @@ public data class InstallCommand(
     }
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
-        args.add("install")
-        if (downgrade) args.add("-d")
         if (exitOnWriteError) args.add("--exit-on-write-error")
-        if (grantPermissions) args.add("-g")
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
             args.add("--one-device")
             args.add(value.toString())
         }
-        if (replace) args.add("-r")
         serial?.let { val value = it
             args.add("-s")
             args.add(value.toString())
@@ -69,13 +65,17 @@ public data class InstallCommand(
             args.add("-L")
             args.add(value.toString())
         }
-        if (testPackages) args.add("-t")
         transportId?.let { val value = it
             args.add("-t")
             args.add(value.toString())
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
+        args.add("install")
+        if (downgrade) args.add("-d")
+        if (grantPermissions) args.add("-g")
+        if (replace) args.add("-r")
+        if (testPackages) args.add("-t")
         args.add(packagePath.toString())
         return args
     }
