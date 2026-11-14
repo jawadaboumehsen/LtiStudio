@@ -230,6 +230,18 @@ class PlatformMetadataTest {
         )
     }
 
+    @Test
+    fun runAsGetsAndroidsOwnCapabilities() {
+        val (owner, source) = OwnerRules.ANDROID_ONLY.owner("system/bin/run-as", isDirectory = false)
+        assertEquals(OwnerRules.Source.Android, source)
+        assertEquals(Owner(0, 2000, 0x1E8, 0xC0L), owner)
+        // Any other binary keeps the generic rule.
+        assertEquals(
+            Owner(0, 2000, 0x1ED),
+            OwnerRules.ANDROID_ONLY.owner("system/bin/toybox", isDirectory = false).first,
+        )
+    }
+
     private fun table(path: String, mode: Int, uid: Int, gid: Int, caps: Long): ByteArray {
         val name = path.encodeToByteArray()
         val length = (HEADER + name.size + 1 + 7) / 8 * 8

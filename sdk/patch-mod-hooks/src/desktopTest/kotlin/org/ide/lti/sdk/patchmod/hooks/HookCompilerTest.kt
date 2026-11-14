@@ -114,4 +114,18 @@ class HookCompilerTest {
         assertTrue(refused.single().contains("written by hand"), refused.toString())
         assertEquals(".class Lio/lti/Helper; # mine", out.resolve("io/lti/Helper.smali").readText())
     }
+
+    @Test
+    fun anEmptyHooksFolderLosesItsOutputAndDoesNotStopTheOthers() {
+        write("hooks/a/io/lti/A.java", "package io.lti; public final class A {}")
+        dir.resolve("hooks/b").mkdirs()
+        write("files/b/smali/io/lti/Old.smali", HookCompiler.GENERATED_HEADER + "\n.class LOld;")
+        val roots = listOf(
+            HookCompiler.Root(dir.resolve("hooks/a"), dir.resolve("files/a/smali")),
+            HookCompiler.Root(dir.resolve("hooks/b"), dir.resolve("files/b/smali")),
+        )
+        assertEquals(emptyList(), compile(roots, firmware = listOf(firmwareJar())))
+        assertTrue(dir.resolve("files/a/smali/io/lti/A.smali").isFile)
+        assertTrue(!dir.resolve("files/b/smali/io/lti/Old.smali").exists())
+    }
 }

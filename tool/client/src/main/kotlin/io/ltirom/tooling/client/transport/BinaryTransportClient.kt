@@ -80,9 +80,13 @@ public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort,
             val channel = response.bodyAsChannel()
             var bytesReceived = 0L
             // Written beside it and moved over it only when complete: a cut transfer never replaces the file.
-            val partial = File(destinationFile.path + ".partial")
-
-            partial.outputStream().use { output ->
+            val partial = java.nio.file.Files.createTempFile(
+                destinationFile.absoluteFile.parentFile.toPath(),
+                ".${destinationFile.name}.",
+                ".partial",
+            ).toFile()
+            try {
+                partial.outputStream().use { output ->
                 val buffer = ByteArray(TRANSFER_CHUNK_SIZE)
                 while (!channel.isClosedForRead) {
                     val read = channel.readAvailable(buffer, 0, buffer.size)
@@ -92,16 +96,18 @@ public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort,
                     onProgress?.invoke(TransferProgress(bytesReceived, totalSize))
                 }
             }
-            if (totalSize >= 0 && bytesReceived != totalSize) {
+                if (totalSize >= 0 && bytesReceived != totalSize) {
+                    throw java.io.IOException("Download of $remotePath ended at $bytesReceived of $totalSize bytes")
+                }
+                java.nio.file.Files.move(
+                    partial.toPath(),
+                    destinationFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                )
+            } finally {
                 partial.delete()
-                throw java.io.IOException("Download of $remotePath ended at $bytesReceived of $totalSize bytes")
             }
-            java.nio.file.Files.move(
-                partial.toPath(),
-                destinationFile.toPath(),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-            )
             bytesReceived
         }
     }

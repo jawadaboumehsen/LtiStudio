@@ -408,16 +408,17 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
          */
         private const val STALE_COMPANIONS_SCRIPT = """
 d=${'$'}(dirname "$1"); b=${'$'}(basename "$1"); n=${'$'}{b%.*}; mode="$2"
+act() { if [ "${'$'}mode" = list ]; then printf '%s\n' "${'$'}1"; else rm -rf -- "${'$'}1"; fi; }
 if [ -z "${'$'}(find "${'$'}d" -maxdepth 1 -type f \( -name '*.apk' -o -name '*.jar' \) ! -name "${'$'}b" | head -n 1)" ]; then
-  set -- "${'$'}d/oat" ${'$'}(find "${'$'}d" -maxdepth 1 \( -name '*.prof' -o -name '*.bprof' \))
+  [ -e "${'$'}d/oat" ] && act "${'$'}d/oat"
+  find "${'$'}d" -maxdepth 1 \( -name '*.prof' -o -name '*.bprof' \) | while IFS= read -r t; do act "${'$'}t"; done
 else
-  set -- "${'$'}d"/oat/*/"${'$'}n".odex "${'$'}d"/oat/*/"${'$'}n".vdex "${'$'}d"/oat/*/"${'$'}n".art \
-    "${'$'}d/${'$'}n.prof" "${'$'}d/${'$'}b.prof" "${'$'}d/${'$'}n.bprof" "${'$'}d/${'$'}b.bprof"
+  for t in "${'$'}d"/oat/*/"${'$'}n".odex "${'$'}d"/oat/*/"${'$'}n".vdex "${'$'}d"/oat/*/"${'$'}n".art \
+    "${'$'}d/${'$'}n.prof" "${'$'}d/${'$'}b.prof" "${'$'}d/${'$'}n.bprof" "${'$'}d/${'$'}b.bprof"; do
+    [ -e "${'$'}t" ] && act "${'$'}t"
+  done
 fi
-for t; do
-  [ -e "${'$'}t" ] || continue
-  if [ "${'$'}mode" = list ]; then printf '%s\n' "${'$'}t"; else rm -rf -- "${'$'}t"; fi
-done"""
+exit 0"""
 
         /**
          * `$1` work/, `$2` the scope, `$3` the file for FILE. One line per package: status, its path under work/,

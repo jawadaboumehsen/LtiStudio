@@ -781,4 +781,30 @@ class FileMutationAdapterTest {
             adapter.previewAfter(plan("bin", edit("e3", "etc/blob.bin", "z\n")), ctx, assetRoot.toString(), staged),
         )
     }
+
+    @Test
+    fun aReplaceOrDeleteAfterAnEarlierPlanIsCheckedAgainstWhatThatPlanLeft() = runBlocking<Unit> {
+        Files.createDirectories(workTree.resolve("system/etc"))
+        Files.writeString(workTree.resolve("system/etc/a.txt"), "A\n")
+        Files.writeString(assetRoot.resolve("new.txt"), "N\n")
+        fun plan(id: String, vararg ops: ConcreteOperation) =
+            ConcreteMutationPlan("p", id, "1.0.0", ops.toList(), notApplicable = emptyList(), digest = id)
+        val target = PartitionPath("system", "etc/a.txt")
+        val root = assetRoot.toString()
+        val staged = mutableMapOf<String, String>()
+        val edit = ConcreteOperation.TextPatch("e", target, "A\n", "B\n", "")
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(plan("edits", edit), ctx, root, staged))
+        // The replace expects the hash of what the edit left, not of the file on disk.
+        val replace = ConcreteOperation.Replace("r", AssetRef("new.txt"), target, sha256Text("B\n"))
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(plan("replaces", replace), ctx, root, staged))
+        // Deleted, then edited: the edit has nothing to meet.
+        val delete = ConcreteOperation.Delete("d", target)
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(plan("deletes", delete), ctx, root, staged))
+        val late = ConcreteOperation.TextPatch("late", target, "N\n", "x\n", "")
+        assertIs<MutationOutcome.Refused>(adapter.previewAfter(plan("late", late), ctx, root, staged))
+    }
+
+    private fun sha256Text(text: String): String = java.security.MessageDigest.getInstance(
+        "SHA-256",
+    ).digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
 }

@@ -165,7 +165,7 @@ internal suspend fun WorkbenchRunner.Job.readableImage(image: String, member: St
         raw = "$BROWSE_CACHE/${cacheName(image)}.raw.img"
         requireRoomToExpand(image, raw)
         sh(
-            "s=$(stat -c '%s %Y %Z %i' \"$1\"); [ -f \"$2\" ] && " +
+            "s=$(stat -c '%s %y %z %i' \"$1\"); [ -f \"$2\" ] && " +
                 "[ \"$(cat \"$2.src\" 2>/dev/null)\" = \"${'$'}s\" ] && exit 0; rm -f \"$2.partial\" \"$2.src\"; " +
                 "\"$3\" \"$1\" \"$2.partial\" >&2 && " +
                 "mv -f -T \"$2.partial\" \"$2\" && printf '%s' \"${'$'}s\" > \"$2.src\"",
@@ -178,7 +178,7 @@ internal suspend fun WorkbenchRunner.Job.readableImage(image: String, member: St
     require(member.matches(PARTITION_NAME)) { "'$member' is not a partition name." }
     val parts = "$BROWSE_CACHE/${cacheName(image)}.parts"
     sh(
-        "s=$(stat -c '%s %Y %Z %i' \"$1\"); [ -f \"$2/$4.img\" ] && " +
+        "s=$(stat -c '%s %y %z %i' \"$1\"); [ -f \"$2/$4.img\" ] && " +
             "[ \"$(cat \"$2/$4.img.src\" 2>/dev/null)\" = \"${'$'}s\" ] && exit 0; mkdir -p \"$2\"; " +
             "rm -f \"$2/$4.img\" \"$2/$4.img.src\"; \"$3\" -p \"$4\" \"$1\" \"$2\" >&2 && " +
             "printf '%s' \"${'$'}s\" > \"$2/$4.img.src\"",

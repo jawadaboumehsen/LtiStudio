@@ -164,10 +164,25 @@ class FileMutationAdapter : FileMutationPort {
         val asset = when (op) {
             is ConcreteOperation.Copy -> op.source.path
             is ConcreteOperation.Replace -> op.source.path
+            is ConcreteOperation.Delete -> return staged.set(target, DELETED)
             else -> return
         }
         val bytes = runCatching { Files.readAllBytes(Path.of(assetRoot).resolve(asset).normalize()) }.getOrNull()
         staged[target] = bytes?.takeIf { it.size <= STAGED_TEXT_LIMIT && 0.toByte() !in it }?.decodeToString() ?: UNREAD
+    }
+
+    /** Whether [path] is there after the earlier operations: deleted, written by a copy, or on disk. */
+    private fun existsAfter(path: Path, staged: Map<Path, String>): Boolean = when (staged[path]) {
+        DELETED -> false
+        null -> Files.isRegularFile(path)
+        else -> true
+    }
+
+    /** [path]'s sha256 after the earlier operations; null when an earlier copy left content that was not read. */
+    private fun shaAfter(path: Path, staged: Map<Path, String>): String? = when (val text = staged[path]) {
+        null -> sha256Of(path)
+        UNREAD, DELETED -> null
+        else -> CacheKeys.sha256(text)
     }
 
     private fun validateOperation(
@@ -178,8 +193,8 @@ class FileMutationAdapter : FileMutationPort {
     ): List<ValidationError> = when (op) {
         is ConcreteOperation.ApkJarPatch -> unsupported(op.id, op.target.relativePath, "ApkJarPatch", "T059")
         is ConcreteOperation.Copy -> validateCopy(op, ctx, assetRoot)
-        is ConcreteOperation.Replace -> validateReplace(op, ctx, assetRoot)
-        is ConcreteOperation.Delete -> validateDelete(op, ctx)
+        is ConcreteOperation.Replace -> validateReplace(op, ctx, assetRoot, staged)
+        is ConcreteOperation.Delete -> validateDelete(op, ctx, staged)
         is ConcreteOperation.PropertyPatch -> validatePropertyPatch(op, ctx, staged)
         is ConcreteOperation.TextPatch -> validateTextPatch(op, ctx, staged)
     }
@@ -227,6 +242,7 @@ class FileMutationAdapter : FileMutationPort {
         op: ConcreteOperation.Replace,
         ctx: MutationContext,
         assetRoot: String,
+        staged: Map<Path, String>,
     ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
         val targetPath = when (val resolved = resolveOperationPath(op, ctx)) {
@@ -253,7 +269,7 @@ class FileMutationAdapter : FileMutationPort {
         }
 
         if (targetPath != null) {
-            if (!Files.exists(targetPath) || !Files.isRegularFile(targetPath)) {
+            if (!existsAfter(targetPath, staged)) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -265,8 +281,9 @@ class FileMutationAdapter : FileMutationPort {
                     ),
                 )
             } else {
-                val actualSha = sha256Of(targetPath)
-                if (!actualSha.equals(op.expectedSha256, ignoreCase = true)) {
+                // Content an earlier copy left without reading it cannot be compared: not refused for it.
+                val actualSha = shaAfter(targetPath, staged)
+                if (actualSha != null && !actualSha.equals(op.expectedSha256, ignoreCase = true)) {
                     errors.add(
                         ValidationError(
                             stageId = StageId.MODULE_APPLICATION,
@@ -284,7 +301,11 @@ class FileMutationAdapter : FileMutationPort {
         return errors
     }
 
-    private fun validateDelete(op: ConcreteOperation.Delete, ctx: MutationContext): List<ValidationError> {
+    private fun validateDelete(
+        op: ConcreteOperation.Delete,
+        ctx: MutationContext,
+        staged: Map<Path, String>,
+    ): List<ValidationError> {
         val errors = mutableListOf<ValidationError>()
         val targetPath = when (val resolved = resolveOperationPath(op, ctx)) {
             is ResolvedTarget.Invalid -> {
@@ -296,7 +317,7 @@ class FileMutationAdapter : FileMutationPort {
         }
 
         if (targetPath != null) {
-            if (!Files.exists(targetPath) || !Files.isRegularFile(targetPath)) {
+            if (!existsAfter(targetPath, staged)) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -341,7 +362,7 @@ class FileMutationAdapter : FileMutationPort {
         }
 
         if (targetPath != null && staged[targetPath] != UNREAD) {
-            if (targetPath !in staged && (!Files.exists(targetPath) || !Files.isRegularFile(targetPath))) {
+            if (!existsAfter(targetPath, staged)) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -392,7 +413,7 @@ class FileMutationAdapter : FileMutationPort {
         }
 
         if (targetPath != null && staged[targetPath] != UNREAD) {
-            if (targetPath !in staged && (!Files.exists(targetPath) || !Files.isRegularFile(targetPath))) {
+            if (!existsAfter(targetPath, staged)) {
                 errors.add(
                     ValidationError(
                         stageId = StageId.MODULE_APPLICATION,
@@ -593,3 +614,6 @@ class FileMutationAdapter : FileMutationPort {
 /** Staged for a file an earlier copy or replace wrote with content that is not read (binary, or large). */
 private const val UNREAD = "\u0000unread"
 private const val STAGED_TEXT_LIMIT = 1024 * 1024
+
+/** Staged for a file an earlier operation deleted. */
+private const val DELETED = "\u0000deleted"

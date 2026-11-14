@@ -40,8 +40,11 @@ internal object KeptPartition {
         list() {
           cd "${'$'}1" 2>/dev/null || { echo "(cannot read ${'$'}1)"; return; }
           find . -mindepth 1 -printf '%P\t%y\t%s\t%m\t%l\n' || echo "(cannot list ${'$'}1)"
-          find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum | sed -E 's#^([0-9a-f]+)  \./(.*)${'$'}#\2\tmd5 \1#' ||
-            echo "(cannot read every file of ${'$'}1)"
+          f=${'$'}(mktemp) && m=${'$'}(mktemp) || { echo "(no temporary file)"; return; }
+          find . -type f -print0 > "${'$'}f" || echo "(cannot list ${'$'}1)"
+          xargs -0 -r -P8 -n64 md5sum < "${'$'}f" > "${'$'}m" || echo "(cannot read every file of ${'$'}1)"
+          sed -E 's#^([0-9a-f]+)  \./(.*)${'$'}#\2\tmd5 \1#' "${'$'}m"
+          rm -f "${'$'}f" "${'$'}m"
         }
         (list "$1" | LC_ALL=C sort) > "${'$'}t/a"
         (list "$2" | LC_ALL=C sort) > "${'$'}t/b"

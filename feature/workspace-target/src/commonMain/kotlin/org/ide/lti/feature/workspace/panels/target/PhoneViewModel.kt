@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.workbench.PhoneFacts
 import org.ide.lti.core.domain.workbench.PhoneMode
@@ -90,14 +91,17 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
         if (probe == null || _state.value.busy != null) return
         _state.update { it.copy(busy = what, error = null) }
         job = viewModelScope.launch {
+            // A job cancelled by showFor may end after the next one started: it must not touch that one's state.
+            val self = coroutineContext.job
+            fun current() = job === self
             try {
                 block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.message ?: e::class.simpleName) }
+                if (current()) _state.update { it.copy(error = e.message ?: e::class.simpleName) }
             } finally {
-                _state.update { it.copy(busy = null) }
+                if (current()) _state.update { it.copy(busy = null) }
             }
         }
     }

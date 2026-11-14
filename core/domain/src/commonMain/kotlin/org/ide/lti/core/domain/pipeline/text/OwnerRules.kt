@@ -57,6 +57,8 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
         private const val XBIN_DIR_MODE = 0x1E8 // 0750
         private const val READ_ONLY = 0x124 // 0444
         private const val SHELL = 2000
+        private const val RUN_AS_MODE = 0x1E8 // 0750
+        private const val CAP_SETUID_SETGID = 0xC0L // 1 shl CAP_SETGID (6) or 1 shl CAP_SETUID (7)
 
         /**
          * One binary table: entries of `u16 length, u16 mode, u16 uid, u16 gid, u64 capabilities, NUL-ended path`
@@ -150,6 +152,9 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
         private val ANDROID_FILES = listOf("system", "vendor", "odm", "product", "system_ext", "oem").flatMap {
             listOf(file("$it/etc/fs_config_dirs", READ_ONLY), file("$it/etc/fs_config_files", READ_ONLY))
         } + listOf(
+            // fs_config.cpp's special binary: `adb run-as` needs both capabilities to switch to the app's user.
+            Entry("system/bin/run-as", Owner(0, SHELL, RUN_AS_MODE, CAP_SETUID_SETGID)),
+        ) + listOf(
             "system/bin/*", "system/xbin/*", "system/apex/*/bin/*", "system_ext/bin/*", "system_ext/apex/*/bin/*",
             "vendor/bin/*", "vendor/apex/*/bin/*", "vendor/xbin/*", "odm/bin/*", "product/bin/*",
             "product/apex/*/bin/*",

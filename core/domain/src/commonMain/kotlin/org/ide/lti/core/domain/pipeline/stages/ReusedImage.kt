@@ -124,16 +124,17 @@ internal object ReusedImage {
 t=${'$'}(mktemp -d) || exit 1; trap 'rm -rf "${'$'}t"' EXIT
 cd "$1" || exit 1
 find . -printf '%P\t%y\t%s\t%m\t%l\n' > "${'$'}t/l" || exit 1
-find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum > "${'$'}t/m" || exit 1
+find . -type f -print0 > "${'$'}t/f" || exit 1
+xargs -0 -r -P8 -n64 md5sum < "${'$'}t/f" > "${'$'}t/m" || exit 1
 cat "$2" "$3" > "${'$'}t/s" || exit 1
 fp=${'$'}( { printf '%s\n' "$6"; LC_ALL=C sort "${'$'}t/l"; LC_ALL=C sort "${'$'}t/m"; cat "${'$'}t/s"; } | sha256sum | cut -d' ' -f1)
 # The image recorded with it is this very file (size, times, inode): one put there by hand is not reused.
-if [ -f "$4" ] && [ -f "$5" ] && [ "${'$'}(cat "$5")" = "${'$'}fp ${'$'}(stat -c '%s %Y %Z %i' "$4")" ]; then
+if [ -f "$4" ] && [ -f "$5" ] && [ "${'$'}(cat "$5")" = "${'$'}fp ${'$'}(stat -c '%s %y %z %i' "$4")" ]; then
   echo "same ${'$'}fp"
 else
   echo "changed ${'$'}fp"
 fi"""
 
     /** The image's identity kept with its fingerprint; must match the `stat` format in [FINGERPRINT_SCRIPT]. */
-    private const val IMAGE_STAT = "%s %Y %Z %i"
+    private const val IMAGE_STAT = "%s %y %z %i"
 }

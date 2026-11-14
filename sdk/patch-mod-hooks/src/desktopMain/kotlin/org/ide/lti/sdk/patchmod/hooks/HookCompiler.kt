@@ -56,20 +56,21 @@ object HookCompiler {
         // d8 refuses a class defined in two classpath entries, and a plain jar (android.jar) repeats the firmware's.
         val dexClasspath = firmware.zip(classpath).filter { (from, stub) -> from != stub }.map { it.second }
         val classes = work.resolve("classes").also { it.deleteRecursively() }
-        val sources = roots.flatMap { root -> javaFiles(root.sources) }
+        val (withSources, empty) = roots.partition { root -> javaFiles(root.sources).isNotEmpty() }
+        val sources = withSources.flatMap { root -> javaFiles(root.sources) }
         val problems = if (sources.isEmpty()) {
             listOf("No Java sources in ${roots.map { it.sources }}")
         } else {
             // Each root is compiled again on its own, against all the classes: what javac writes there is exactly
             // that root's, with every top-level class of a source (not only the one named like the file).
             javac(sources, classpath, classes).ifEmpty {
-                roots.flatMap { root ->
+                withSources.flatMap { root ->
                     javac(javaFiles(root.sources), classpath + classes, own(work, root).also { it.deleteRecursively() })
                 }
             }
         }
         if (problems.isNotEmpty()) return problems
-        val smali = roots.associateWith { root ->
+        val smali = withSources.associateWith { root ->
             val id = root.out.path.hashCode().toUInt()
             val own = own(work, root)
             val dex = work.resolve("dex/$id").also { it.deleteRecursively() }
@@ -84,7 +85,10 @@ object HookCompiler {
         }
         val refused = smali.values.flatMap { dir -> check(dir) } +
             smali.flatMap { (root, dir) -> handWritten(dir, root.out) }
-        if (refused.isEmpty()) smali.forEach { (root, dir) -> publish(dir, root.out) }
+        if (refused.isEmpty()) {
+            smali.forEach { (root, dir) -> publish(dir, root.out) }
+            empty.forEach { removeGenerated(it.out) }
+        }
         return refused
     }
 
