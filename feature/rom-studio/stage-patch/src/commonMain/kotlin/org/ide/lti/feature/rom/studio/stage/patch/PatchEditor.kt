@@ -38,6 +38,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.core.model.plugin.Condition
 import org.ide.lti.core.model.plugin.Operation
@@ -55,6 +56,8 @@ public fun PatchEditor(
     facts: PatchFacts,
     onToggle: (String) -> Unit,
     onRefresh: () -> Unit,
+    lab: LabState = LabState(),
+    onCheckTogether: () -> Unit = {},
     onOpenPlugins: () -> Unit = {},
     selectedObjectId: String = "module-catalog",
     modifier: Modifier = Modifier,
@@ -73,7 +76,13 @@ public fun PatchEditor(
         ) {
             item {
                 when (selectedObjectId.lowercase()) {
-                    "enabled-ordered-modules", "enabled_ordered_modules" -> EnabledCard(settings, facts, onToggle)
+                    "enabled-ordered-modules", "enabled_ordered_modules" -> Column(
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                    ) {
+                        // Above the list: with many mods enabled the list is long, the check is what is asked for.
+                        if (settings.enabledPackages.isNotEmpty()) ModLabCard(lab, facts, onCheckTogether)
+                        EnabledCard(settings, facts, onToggle)
+                    }
 
                     "file-changes", "file_changes" -> ChangesCard(
                         "File changes",
@@ -281,3 +290,53 @@ private fun Problem(text: String) {
 }
 
 private const val CONTEXT_PREVIEW = 48
+
+/** The mod lab: every operation of the enabled mods, in the order they apply, as the build would meet it. */
+@Composable
+private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: () -> Unit) {
+    Card("Check them together", "PatchModLab") {
+        Hint(
+            "Checks each operation against the assembled work tree, after the ones before it, as the build applies " +
+                "them. Nothing is written.",
+        )
+        GlassButton(
+            onClick = onCheck,
+            enabled = !lab.checking,
+            variant = GlassButtonVariant.Standard,
+            modifier = Modifier.testTag("PatchModLabCheck"),
+        ) { Text(if (lab.checking) "Checking…" else "Check against this firmware", fontSize = FontSize.Micro) }
+        lab.error?.let { Problem(it) }
+        val result = lab.result ?: return@Card
+        result.problems.forEach { Problem(it) }
+        val counts = result.rows.groupingBy { it.status }.eachCount()
+        if (result.rows.isNotEmpty()) {
+            Hint(
+                LabStatus.entries.mapNotNull { s -> counts[s]?.let { "$it ${LAB_WORDS.getValue(s)}" } }
+                    .joinToString(" · "),
+            )
+        }
+        result.rows.groupBy { it.mod }.forEach { (mod, rows) ->
+            Mono(facts.installed.firstOrNull { it.key == mod }?.displayName?.takeIf { it.isNotBlank() } ?: mod)
+            rows.forEach { row ->
+                val op = facts.plans[mod]?.operations?.firstOrNull { it.id == row.operationId }
+                val text = "${LAB_MARKS.getValue(row.status)} ${op?.let(::describe) ?: row.operationId}" +
+                    row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
+                if (row.status == LabStatus.REFUSED) Problem(text) else Hint(text)
+            }
+        }
+    }
+}
+
+private val LAB_WORDS = mapOf(
+    LabStatus.CHECKED to "checked",
+    LabStatus.REFUSED to "refused",
+    LabStatus.UNCHECKED to "checked only by the build",
+    LabStatus.NOT_APPLICABLE to "left out",
+)
+
+private val LAB_MARKS = mapOf(
+    LabStatus.CHECKED to "✓",
+    LabStatus.REFUSED to "✗",
+    LabStatus.UNCHECKED to "?",
+    LabStatus.NOT_APPLICABLE to "–",
+)

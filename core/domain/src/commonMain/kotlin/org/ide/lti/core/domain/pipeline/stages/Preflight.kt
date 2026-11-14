@@ -21,6 +21,9 @@ import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 import org.ide.lti.core.domain.plugin.ApplyModules
 import org.ide.lti.core.domain.plugin.COMPONENT_EDITS_UNCHECKED
 import org.ide.lti.core.domain.plugin.CheckModules
+import org.ide.lti.core.domain.plugin.LabModules
+import org.ide.lti.core.domain.plugin.LabRow
+import org.ide.lti.core.domain.plugin.ModLab
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.workbench.LogLevel
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
@@ -120,6 +123,27 @@ public class Preflight(
         return listOf("PREFLIGHT_INCOMPLETE: the checks kept asking for more facts; build to see the rest")
     }
 
+    /**
+     * The mod lab: every operation of the enabled mods, in the order they apply, checked against the assembled
+     * work tree as the build would meet it; with [with], those settings instead of the saved ones (the upgrade
+     * assistant checks another workspace's mods here). Nothing is written.
+     */
+    public suspend fun lab(workspaceId: String, with: ConfigurationSnapshot? = null): ModLab {
+        val plugins = checkNotNull(catalog) { "No plugins are installed in this app" }
+        val snapshot = with ?: checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
+        val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
+        return runner.read(workspaceId) {
+            if (readText(APPLIED_PATH)?.contains("\"operations\":0") == false) {
+                ModLab(emptyList(), listOf(MODS_NOT_CHECKED.substringAfter(": ")))
+            } else {
+                val values = mutableMapOf<String, String>()
+                val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device))
+                val problems = run(labPlan(plugins), base, values)
+                ModLab(LabRow.decode(values[LAB_KEY].orEmpty()), problems)
+            }
+        }
+    }
+
     /** Why a build stopped, from its failed stage's message (`<step>: CODE: text`), with the fix offered here. */
     public fun diagnose(failure: String, snapshot: ConfigurationSnapshot): PreflightFinding? =
         CODE.find(failure)?.let { finding(failure.substring(it.range.first), snapshot) }
@@ -189,6 +213,19 @@ public class Preflight(
             "MODS_NOT_CHECKED" to { _ -> open("Run through Assemble", StageId.WORK_TREE_ASSEMBLY, "work-trees") },
         )
         const val MODS_KEY = "preflight.modules"
+        const val LAB_KEY = "preflight.lab"
+
+        /** The Patches stage's plan with its apply step checking each operation instead. */
+        fun labPlan(catalog: PluginCatalogPort): (StageContext) -> List<PipelineStep> = { ctx ->
+            ModuleApplicationStage(catalog).plan(ctx).mapNotNull { step ->
+                val apply = (step as? PipelineStep.Host)?.request as? ApplyModules
+                when {
+                    apply != null -> PipelineStep.Host("check each operation", LAB_KEY, LabModules(apply))
+                    step is PipelineStep.Check -> step
+                    else -> null
+                }
+            }
+        }
 
         /** What the Patches stage writes into work/ (`ModuleApplicationStage.APPLIED_PATH`). */
         const val APPLIED_PATH = "work/modules/applied.json"

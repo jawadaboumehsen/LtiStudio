@@ -133,12 +133,22 @@ private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
                 modifier = Modifier.weight(1f),
             )
             GlassButton(
+                onClick = { vm.compareWith(other) },
+                enabled = !state.comparing,
+                variant = GlassButtonVariant.Text,
+                modifier = Modifier.testTag("CompareWith_${other.id}"),
+            ) {
+                val busy = state.comparing && state.comparedWith?.id == other.id
+                Text(if (busy) "Comparing…" else "Compare first", fontSize = FontSize.BodySmall)
+            }
+            GlassButton(
                 onClick = { asked = other },
                 variant = GlassButtonVariant.Standard,
                 modifier = Modifier.testTag("CarryFrom_${other.id}"),
             ) { Text("Use its settings", fontSize = FontSize.BodySmall) }
         }
     }
+    UpgradeReport(state)
     asked?.let { other ->
         GlassDialog(
             onDismissRequest = { asked = null },
@@ -194,6 +204,43 @@ private fun FindingRow(finding: PreflightFinding, vm: PreflightViewModel, onOpen
             ) { Text("${fix.label} →", fontSize = FontSize.BodySmall) }
 
             null -> Unit
+        }
+    }
+}
+
+/** The upgrade assistant's report: what changes from the compared workspace's firmware, and what still fits. */
+@Composable
+private fun UpgradeReport(state: PreflightUiState) {
+    val sections = state.upgrade ?: return
+    val from = state.comparedWith?.name ?: return
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("UpgradeReport"),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        Text(
+            "From $from to this firmware",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        sections.forEach { section ->
+            Text(
+                section.title,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                fontWeight = FontWeight.SemiBold,
+            )
+            section.lines.forEach { line ->
+                Text(
+                    line.text,
+                    color = if (line.problem) {
+                        GlassTheme.diagnosticColors.warning
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontSize = FontSize.BodySmall,
+                )
+            }
         }
     }
 }

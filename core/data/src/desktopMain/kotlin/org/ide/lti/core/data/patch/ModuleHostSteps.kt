@@ -32,6 +32,9 @@ import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.FileMutationPort
+import org.ide.lti.core.domain.plugin.LabModules
+import org.ide.lti.core.domain.plugin.LabRow
+import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
@@ -64,7 +67,8 @@ class ModuleHostSteps(
         yield()
         return when (request) {
             is ApplyModules -> applyModules(workspace, request)
-            is CheckModules -> checkModules(workspace, request.apply)
+            is CheckModules -> labRows(workspace, request.apply).summary()
+            is LabModules -> LabRow.encode(labRows(workspace, request.apply))
             is CoverageCheckRequest -> checkCoverage(workspace, request)
             is CoverageFixRequest -> fixCoverage(workspace, request)
             is TreeEditSidecars -> moveTreeEditSidecars(workspace, request)
@@ -106,35 +110,45 @@ class ModuleHostSteps(
         return "ok: $changes change(s) from ${request.plans.size} module(s)"
     }
 
-    /** Each plugin whose file operations would be refused by this work tree, with why; `ok` when none. */
-    private suspend fun checkModules(workspace: Workspace, request: ApplyModules): String {
+    /**
+     * Each operation of [request]'s plans checked against the work tree without changing it, in plan order and each
+     * against what the earlier ones left (the build applies them that way). APK/JAR edits need the package decoded:
+     * only the build checks them, which is said, not passed over.
+     */
+    private suspend fun labRows(workspace: Workspace, request: ApplyModules): List<LabRow> {
         val work = workTree(workspace)
         val ctx = MutationContext(
             workTreeRelPath = work.toString(),
             partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
         )
-        // In plan order, each against what the earlier ones left: the build applies them that way.
         val staged = mutableMapOf<String, String>()
-        val refused = request.plans.mapNotNull { plan ->
+        return request.plans.flatMap { plan ->
             yield()
-            val key = "${plan.publisher}:${plan.id}:${plan.version}"
+            val mod = "${plan.publisher}:${plan.id}"
             val fileOps = plan.operations.filterNot { it.isComponentEdit() }
             val outcome = files.previewAfter(
                 plan.copy(operations = fileOps),
                 ctx,
-                request.assetRoots[key].orEmpty(),
+                request.assetRoots["$mod:${plan.version}"].orEmpty(),
                 staged,
             )
-            (outcome as? MutationOutcome.Refused)?.report?.errors?.takeIf { it.isNotEmpty() }?.let { errors ->
-                "${plan.id} ${plan.version}: " + errors.take(
-                    ERRORS_SHOWN,
-                ).joinToString("; ") { "${it.code} ${it.fieldPath}" }
-            }
+            val errors = (outcome as? MutationOutcome.Refused)?.report?.errors.orEmpty().groupBy { it.objectId }
+            plan.operations.map { op ->
+                val refusal = errors[op.id]?.joinToString("; ") { "${it.code}: ${it.message}" }
+                when {
+                    op is ConcreteOperation.ApkJarPatch -> LabRow(
+                        mod,
+                        op.id,
+                        LabStatus.UNCHECKED,
+                        "edits ${op.target.partition}/${op.target.relativePath}: checked when the build decodes it",
+                    )
+
+                    refusal != null -> LabRow(mod, op.id, LabStatus.REFUSED, refusal)
+
+                    else -> LabRow(mod, op.id, LabStatus.CHECKED)
+                }
+            } + plan.notApplicable.map { LabRow(mod, it.operationId, LabStatus.NOT_APPLICABLE, it.reason) }
         }
-        // APK/JAR edits need the package decoded: only the build checks them, which is said, not passed over.
-        val components = request.plans.filter { p -> p.operations.any { it.isComponentEdit() } }.map { it.id }
-        val unchecked = components.takeIf { it.isNotEmpty() }?.joinToString(prefix = COMPONENT_EDITS_UNCHECKED)
-        return (refused.ifEmpty { listOf("ok") } + listOfNotNull(unchecked)).joinToString("\n")
     }
 
     /** Consecutive runs of operations of one kind, in plan order: a later copy still lands after an earlier edit. */
@@ -495,3 +509,13 @@ private fun kindOf(entry: Path): EntryKind = when {
 }
 
 private const val ERRORS_SHOWN = 3
+
+/** The preflight's mod check: one line per mod the build would refuse, with why; `ok` when none. */
+private fun List<LabRow>.summary(): String {
+    val refused = filter { it.status == LabStatus.REFUSED }.groupBy { it.mod }.map { (mod, rows) ->
+        "${mod.substringAfter(':')}: " + rows.take(ERRORS_SHOWN).joinToString("; ") { "${it.operationId} ${it.reason}" }
+    }
+    val components = filter { it.status == LabStatus.UNCHECKED }.map { it.mod.substringAfter(':') }.distinct()
+    val unchecked = components.takeIf { it.isNotEmpty() }?.joinToString(prefix = COMPONENT_EDITS_UNCHECKED)
+    return (refused.ifEmpty { listOf("ok") } + listOfNotNull(unchecked)).joinToString("\n")
+}

@@ -32,6 +32,7 @@ public val romStudioShellModule: Module = module {
             preflight = getOrNull(),
             settings = getOrNull(),
             samePhone = getOrNull(),
+            upgrade = getOrNull(),
         )
     }
     viewModel { params ->

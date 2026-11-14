@@ -28,6 +28,7 @@ public val stagePatchModule: Module = module {
             plugins = getOrNull(),
             catalog = getOrNull(),
             content = getOrNull(),
+            preflight = getOrNull(),
         )
     }
 

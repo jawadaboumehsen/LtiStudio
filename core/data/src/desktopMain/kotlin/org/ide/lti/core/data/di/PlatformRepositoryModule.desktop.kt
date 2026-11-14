@@ -63,6 +63,7 @@ import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.FirmwareArchives
+import org.ide.lti.core.domain.workspace.FirmwareUpgrade
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -176,4 +177,5 @@ internal actual val platformRepositoryModule =
         single { PhoneProbe(runner = get()) }
         single { SizeAdvisor(runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
+        single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
     }

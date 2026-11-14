@@ -21,7 +21,9 @@ import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import org.ide.lti.core.domain.workspace.FirmwareUpgrade
 import org.ide.lti.core.domain.workspace.SamePhoneSettings
+import org.ide.lti.core.domain.workspace.UpgradeSection
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.workspace.Workspace
 
@@ -32,6 +34,10 @@ public data class PreflightUiState(
     /** Other workspaces of the same phone, whose settings can be carried here. */
     val samePhone: List<Workspace> = emptyList(),
     val message: String? = null,
+    /** The upgrade report for taking [comparedWith]'s settings: what changed and what still fits. */
+    val upgrade: List<UpgradeSection>? = null,
+    val comparedWith: Workspace? = null,
+    val comparing: Boolean = false,
 )
 
 /** Will it build? Runs the preflight and applies a finding's settings fix, then checks again. */
@@ -40,6 +46,7 @@ public class PreflightViewModel(
     private val preflight: Preflight? = null,
     private val settings: WorkspaceSettingsStore? = null,
     private val samePhone: SamePhoneSettings? = null,
+    private val upgrade: FirmwareUpgrade? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PreflightUiState())
     public val state: StateFlow<PreflightUiState> = _state.asStateFlow()
@@ -49,6 +56,26 @@ public class PreflightViewModel(
             viewModelScope.launch {
                 val others = runCatching { finder.others(workspaceId) }.getOrDefault(emptyList())
                 _state.update { it.copy(samePhone = others) }
+            }
+        }
+    }
+
+    /** The upgrade assistant: what of [from]'s settings fits this workspace's firmware, before taking them. */
+    public fun compareWith(from: Workspace) {
+        val assistant = upgrade ?: return
+        _state.update { it.copy(comparing = true, comparedWith = from, upgrade = null, error = null) }
+        viewModelScope.launch {
+            try {
+                val report = assistant.compare(from.id, workspaceId)
+                _state.update { if (it.comparedWith?.id == from.id) it.copy(upgrade = report) else it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: RefusalException) {
+                _state.update { it.copy(error = "${e.refusal.cause} ${e.refusal.nextStep}") }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                _state.update { it.copy(error = e.message ?: e::class.simpleName) }
+            } finally {
+                _state.update { it.copy(comparing = false) }
             }
         }
     }

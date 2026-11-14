@@ -49,9 +49,12 @@ public class PatchStageEditor : StageEditor {
             return
         }
 
+        val lab by viewModel.lab.collectAsState()
         PatchEditor(
             settings = settings,
             facts = facts,
+            lab = lab,
+            onCheckTogether = viewModel::checkTogether,
             onToggle = viewModel::toggle,
             onRefresh = viewModel::refresh,
             onOpenPlugins = context.onOpenPlugins,

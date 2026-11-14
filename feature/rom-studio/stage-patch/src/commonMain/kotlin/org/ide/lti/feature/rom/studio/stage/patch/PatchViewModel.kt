@@ -22,9 +22,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.LockResult
+import org.ide.lti.core.domain.plugin.ModLab
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginDependencyResolver
 import org.ide.lti.core.domain.plugin.PluginInstallPort
@@ -59,7 +61,31 @@ public class PatchViewModel(
     private val plugins: PluginInstallPort? = null,
     private val catalog: PluginCatalogPort? = null,
     private val content: ContentWorkbench? = null,
+    private val preflight: Preflight? = null,
 ) : ViewModel() {
+
+    private val _lab = MutableStateFlow(LabState())
+
+    /** The mod lab's last answer: each enabled mod's operations checked against the assembled tree. */
+    public val lab: StateFlow<LabState> = _lab.asStateFlow()
+
+    /** Checks every operation of the enabled mods together, as the build would apply them; nothing is written. */
+    public fun checkTogether() {
+        val checks = preflight ?: return
+        val enabled = settings.value.enabledPackages
+        viewModelScope.launch {
+            _lab.update { it.copy(checking = true, error = null) }
+            val result = try {
+                LabState(result = checks.lab(workspaceId))
+            } catch (e: RefusalException) {
+                LabState(error = "${e.refusal.cause} ${e.refusal.nextStep}")
+            } catch (e: IllegalStateException) {
+                LabState(error = e.message ?: "The check failed")
+            }
+            // Checked for another list of mods than the one on screen now: it says nothing about it.
+            _lab.value = if (settings.value.enabledPackages == enabled) result else LabState()
+        }
+    }
 
     private val _scriptCheck = MutableStateFlow<Map<String, String>>(emptyMap())
 
@@ -105,6 +131,10 @@ public class PatchViewModel(
     public val facts: StateFlow<PatchFacts> = _facts.asStateFlow()
 
     init {
+        // A changed list of mods makes the last lab answer stale.
+        viewModelScope.launch {
+            settings.map { it.enabledPackages }.distinctUntilChanged().collect { _lab.value = LabState() }
+        }
         // The saved settings load after this view model starts: the plans follow the enabled list as it arrives.
         viewModelScope.launch {
             settings.map { it.enabledPackages }.distinctUntilChanged().collect { enabled ->
@@ -210,3 +240,6 @@ public class PatchViewModel(
             catalog?.templateFor(r.identity.publisher, r.identity.id, r.identity.version)?.let { r.key to it }
         }.toMap()
 }
+
+/** The mod lab on screen: checking, its [result], or why it could not run. */
+public data class LabState(val checking: Boolean = false, val result: ModLab? = null, val error: String? = null)

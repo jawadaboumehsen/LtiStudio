@@ -51,25 +51,40 @@ internal fun ImpactPreview(uiState: BuildRunUiState, onPreview: () -> Unit) {
                     modifier = Modifier.testTag("ImpactPreviewButton"),
                 ) { Text(if (uiState.isPreviewing) "Reading…" else "Preview") }
             }
+            // Three lines at most: the artifact list below shares the panel's height.
             uiState.impact?.let { stages ->
-                val reruns = stages.count { it.runsBecause != null }
+                val (reused, runs) = stages.partition { it.runsBecause == null }
                 Text(
-                    if (reruns == 0) "Every stage comes from cache." else "$reruns of ${stages.size} stages run again.",
+                    if (runs.isEmpty()) {
+                        "Every stage comes from cache."
+                    } else {
+                        "${runs.size} of ${stages.size} stages run."
+                    },
                     style = GlassTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.testTag("ImpactSummary"),
                 )
-                stages.forEach { stage ->
-                    val why = stage.runsBecause
+                if (reused.isNotEmpty()) {
                     Text(
-                        "${stageLabel(stage.stageId)}: ${why?.let { "runs, $it" } ?: "reused"}",
+                        "Reused: " + reused.joinToString { stageLabel(it.stageId) },
                         style = GlassTheme.typography.bodySmall,
-                        color = if (why == null) {
-                            GlassTheme.diagnosticColors.success
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        modifier = Modifier.testTag("Impact_${stage.stageId.name}"),
+                        color = GlassTheme.diagnosticColors.success,
+                    )
+                }
+                runs.firstOrNull()?.let { first ->
+                    Text(
+                        "${stageLabel(first.stageId)} runs: ${first.runsBecause}",
+                        style = GlassTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.testTag("ImpactFirstRun"),
+                    )
+                }
+                runs.drop(1).takeIf { it.isNotEmpty() }?.let { after ->
+                    Text(
+                        "Then " + after.joinToString { stageLabel(it.stageId) } + " (they share work/)",
+                        style = GlassTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
