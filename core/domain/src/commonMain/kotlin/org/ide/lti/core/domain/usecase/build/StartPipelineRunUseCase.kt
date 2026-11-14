@@ -11,6 +11,7 @@ import kotlinx.serialization.encodeToString
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
+import org.ide.lti.core.domain.pipeline.StagePreview
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
@@ -52,6 +53,22 @@ public class StartPipelineRunUseCase(
         // One start at a time: the active-run check and the QUEUED record must not interleave with another start.
         admission.withLock { start(workspaceId, driverInstanceId, throughStage) }
     }
+
+    /** What a build through [throughStage] would rerun and why, from the cache records; nothing runs. */
+    public suspend fun preview(workspaceId: String, throughStage: StageId? = null): Result<List<StagePreview>> =
+        runCatching {
+            settingsStore?.flush(workspaceId)?.getOrThrow()
+            val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
+                "Workspace not found: $workspaceId"
+            }
+            val snapshot = requireNotNull(workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }) {
+                "The workspace has no configuration yet"
+            }
+            val target = requireNotNull(workspaceDeviceRepository.get(workspaceId)) {
+                "Workspace has no device configuration"
+            }
+            orchestrator.preview(StageContext(workspace, snapshot, target), throughStage)
+        }
 
     /**
      * Holds the workspace's job lock while the run is checked and queued: a workbench edit then either holds the

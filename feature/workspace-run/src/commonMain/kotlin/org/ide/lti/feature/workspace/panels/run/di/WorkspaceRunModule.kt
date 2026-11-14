@@ -29,6 +29,8 @@ public val workspaceRunModule: Module = module {
             readinessPort = getOrNull(),
             workspaceDeviceRepository = getOrNull(),
             snapshotRepository = getOrNull(),
+            preflight = getOrNull(),
+            settingsStore = getOrNull(),
         )
     }
 }

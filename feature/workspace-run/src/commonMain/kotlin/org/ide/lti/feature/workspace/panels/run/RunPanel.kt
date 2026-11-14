@@ -49,6 +49,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
+import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.RunState
@@ -62,6 +63,8 @@ public fun RunPanel(
     viewModel: BuildRunViewModel,
     historyViewModel: RunHistoryViewModel = koinViewModel(),
     onNavigateToSetup: (() -> Unit)? = null,
+    /** Opens a stage editor at an object: where a failed build's fix is made. */
+    onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf("run") }
@@ -94,6 +97,7 @@ public fun RunPanel(
                 ActiveRunContent(
                     viewModel = viewModel,
                     onNavigateToSetup = onNavigateToSetup,
+                    onOpen = onOpen,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -272,6 +276,7 @@ private fun RunStateBanners(uiState: BuildRunUiState, onNavigateToSetup: (() -> 
 private fun ActiveRunContent(
     viewModel: BuildRunViewModel,
     onNavigateToSetup: (() -> Unit)? = null,
+    onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -283,6 +288,9 @@ private fun ActiveRunContent(
         onClearError = { viewModel.clearError() },
         onReattach = { viewModel.reattachBuild() },
         onNavigateToSetup = onNavigateToSetup,
+        onPreview = viewModel::previewImpact,
+        onApplyFix = viewModel::applyFix,
+        onOpen = onOpen,
         modifier = modifier,
     )
 }
@@ -296,6 +304,9 @@ public fun ActiveRunContent(
     onClearError: () -> Unit = {},
     onReattach: () -> Unit = {},
     onNavigateToSetup: (() -> Unit)? = null,
+    onPreview: () -> Unit = {},
+    onApplyFix: (PreflightFix.Setting) -> Unit = {},
+    onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val typography = GlassTheme.typography
@@ -312,6 +323,8 @@ public fun ActiveRunContent(
 
         if (!uiState.isRunning) {
             RunThroughSelector(selected = uiState.throughStage, onSelect = onSelectThroughStage)
+            ImpactPreview(uiState = uiState, onPreview = onPreview)
+            FailureDiagnosis(uiState = uiState, onApplyFix = onApplyFix, onOpen = onOpen)
         }
 
         RunStateBanners(

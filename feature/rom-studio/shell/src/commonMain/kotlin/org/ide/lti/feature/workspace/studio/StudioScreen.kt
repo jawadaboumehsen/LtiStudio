@@ -227,6 +227,7 @@ private fun StudioContent(
         RunPanel(
             viewModel = koinViewModel<BuildRunViewModel>(),
             onNavigateToSetup = onNavigateToSetup,
+            onOpen = { stage, objectId -> openAt(viewModel, stage, objectId) },
             modifier = Modifier.fillMaxSize(),
         )
     } else if (shellState.selectedWorkspaceSection == WorkspaceSection.Storage) {
@@ -260,14 +261,17 @@ private fun StudioContent(
             preflight = {
                 PreflightCard(
                     vm = koinViewModel<PreflightViewModel> { parametersOf(workspaceId) },
-                    onOpen = { stage, objectId ->
-                        viewModel.selectStage(stage)
-                        if (objectId.isNotEmpty()) viewModel.selectObject(stage, objectId)
-                    },
+                    onOpen = { stage, objectId -> openAt(viewModel, stage, objectId) },
                 )
             },
         )
     }
+}
+
+/** Opens [stage]'s editor, at [objectId] when one is named: where a finding is fixed. */
+private fun openAt(viewModel: StudioViewModel, stage: StageId, objectId: String) {
+    viewModel.selectStage(stage)
+    if (objectId.isNotEmpty()) viewModel.selectObject(stage, objectId)
 }
 
 private fun dispatchOverviewAction(

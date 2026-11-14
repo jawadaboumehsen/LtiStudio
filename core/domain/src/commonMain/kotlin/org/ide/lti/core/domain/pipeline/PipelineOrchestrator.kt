@@ -193,6 +193,44 @@ public class PipelineOrchestrator(
     /** Whether this app drives [runId] now: a cancel then waits for this driver to stop. */
     public fun isDriving(runId: String): Boolean = runId in driving
 
+    /**
+     * What a run through [throughStage] would do now, stage by stage: the same cache decisions a run makes, read
+     * from the cache records and the workspace; nothing runs and nothing is written.
+     */
+    public suspend fun preview(ctx: StageContext, throughStage: StageId? = null): List<StagePreview> {
+        val pins = toolStore?.paths(ToolGroupCatalog)?.getOrElse { e ->
+            throw IllegalStateException("Cannot read the tool versions a build would use", e)
+        }
+        val now = clock.now()
+        val run = BuildRun(
+            PREVIEW_ID,
+            ctx.workspace.id,
+            ctx.snapshot.id,
+            startedAt = now,
+            pinnedTools = pins?.paths.orEmpty().toMap(),
+            toolVersions = pins?.versions.orEmpty().toMap(),
+            throughStage = throughStage,
+        )
+        val values = ctx.runtimeValues.toMutableMap()
+        values[RuntimeKeys.RUN_DATE] = now.yyyymmdd()
+        values[RuntimeKeys.RUN_TIMESTAMP] = now.epochSeconds.toString()
+        values[RuntimeKeys.DEVICE_REVISION] = ctx.target.revision.toString()
+        val driver = Driver(PREVIEW_ID, PREVIEW_ID, FlowCollector {}, run, values).also { it.baseContext = ctx }
+        val stages = stagesOf(run)
+        var previousKey = ""
+        for ((index, stage) in stages.withIndex()) {
+            val key = computeStageCacheKey(driver, stage, previousKey)
+            if (!isCached(driver, stages, index, key, previousKey)) {
+                val why = driver.takeWorkGroupReason()
+                    ?: whyRan(driver, stage, cacheInputs(driver, stage, previousKey), upstreamExecuted = false)
+                val after = stages.drop(index + 1).map { StagePreview(it.id, EARLIER_RUNS) }
+                return stages.take(index).map { StagePreview(it.id, null) } + StagePreview(stage.id, why) + after
+            }
+            previousKey = key
+        }
+        return stages.map { StagePreview(it.id, null) }
+    }
+
     /** A queued run whose driver could not start is failed, never left queued (it would block every start). */
     private suspend fun failQueued(runId: String, cause: Throwable): Nothing {
         runRepository.update(runId) {
@@ -1427,6 +1465,12 @@ find . -path ./package -prune -o -printf '%P\t%y\t%s\t%m\t%l\n' > "${'$'}t/l" ||
 find . -path ./package -prune -o -type f -print0 > "${'$'}t/f" || exit 1
 xargs -0 -r -P8 -n64 md5sum < "${'$'}t/f" > "${'$'}t/m" || exit 1
 { LC_ALL=C sort "${'$'}t/l"; LC_ALL=C sort "${'$'}t/m"; } | sha256sum | cut -d' ' -f1"""
+
+/** One stage of [PipelineOrchestrator.preview]: reused from cache ([runsBecause] null), or why it would run. */
+public data class StagePreview(val stageId: StageId, val runsBecause: String?)
+
+private const val PREVIEW_ID = "preview"
+private const val EARLIER_RUNS = "an earlier stage runs first, and they share work/"
 
 /** The work-tree stages' cache decision: those up to [cachedThrough] come from cache; [reason] is why they run. */
 private data class WorkGroupCheck(val cachedThrough: StageId?, val reason: String?)

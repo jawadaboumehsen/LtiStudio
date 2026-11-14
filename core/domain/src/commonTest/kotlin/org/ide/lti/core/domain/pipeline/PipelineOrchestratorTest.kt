@@ -26,6 +26,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @Suppress("MaxLineLength")
@@ -381,6 +382,30 @@ class PipelineOrchestratorTest {
             ),
             events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId },
         )
+    }
+
+    @Test
+    fun thePreviewMakesTheNextRunsCacheDecisionsAndRunsNothing() = runTest {
+        val port = globalPort()
+        val repo = InMemoryRunRepository()
+        orchestrator(port, repo).drive("run-1", fixture.globalOtaContext(), "d1").toList()
+        val ctx = fixture.globalOtaContext().let { c ->
+            c.copy(snapshot = c.snapshot.copy(build = c.snapshot.build.copy(brotliLevel = 9)))
+        }
+        val executedBefore = port.durableSteps.size
+        val filesBefore = port.files.mapValues { it.value.toList() }
+
+        val preview = orchestrator(port, repo).preview(ctx)
+        assertEquals(executedBefore, port.durableSteps.size)
+        assertEquals(filesBefore, port.files.mapValues { it.value.toList() }, "a preview writes nothing")
+        assertNull(repo.getRun("preview"))
+
+        val events = orchestrator(port, repo).drive("run-2", ctx, "d2").toList()
+        val skipped = events.filterIsInstance<PipelineEvent.StageSkipped>().map { it.stageId }
+        assertEquals(skipped, preview.filter { it.runsBecause == null }.map { it.stageId })
+        val build = preview.first { it.stageId == StageId.BUILD_FLASHABLE_ZIP }
+        val ran = repo.getRun("run-2")!!.stages.first { it.stageId == StageId.BUILD_FLASHABLE_ZIP }
+        assertEquals(ran.whyRan, build.runsBecause)
     }
 
     @Test

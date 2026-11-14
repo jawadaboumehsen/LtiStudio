@@ -120,6 +120,10 @@ public class Preflight(
         return listOf("PREFLIGHT_INCOMPLETE: the checks kept asking for more facts; build to see the rest")
     }
 
+    /** Why a build stopped, from its failed stage's message (`<step>: CODE: text`), with the fix offered here. */
+    public fun diagnose(failure: String, snapshot: ConfigurationSnapshot): PreflightFinding? =
+        CODE.find(failure)?.let { finding(failure.substring(it.range.first), snapshot) }
+
     private fun finding(message: String, snapshot: ConfigurationSnapshot): PreflightFinding {
         val code = message.substringBefore(':').trim()
         val text = message.substringAfter(':').trim()
@@ -133,6 +137,9 @@ public class Preflight(
 
     private companion object {
         const val MAX_READS = 64
+
+        /** A refusal code: capitals and digits in two or more parts joined by `_`, then a colon. */
+        val CODE = Regex("""\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+:""")
         const val COVERAGE = "COVERAGE_REFUSAL"
         const val PAYLOAD = "PAYLOAD_NEEDS_AB_OTA"
 
