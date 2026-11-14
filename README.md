@@ -325,3 +325,15 @@ Contributor notes on architecture, the design system and each pipeline stage are
 ## License
 
 [Mozilla Public License 2.0](LICENSE).
+
+### Third-party code
+
+These parts come from other projects under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which applies to them:
+
+- **[Haze](https://github.com/chrisbanes/haze)** (Chris Banes), vendored under `core/designsystem/haze/` from commit
+  `a9bc783540bd9dec472bab66057b4601586f09a3`. The sources keep their `dev.chrisbanes.haze.*` packages and their
+  licence headers.
+- **IntelliJ Platform icons** (Copyright 2000-2025 JetBrains s.r.o. and contributors): the `ide*.svg` icons under
+  `core/designsystem/src/commonMain/composeResources/drawable/`, unmodified files from
+  [intellij-community](https://github.com/JetBrains/intellij-community).
