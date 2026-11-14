@@ -68,25 +68,64 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
             fun u16(i: Int) = (bytes[i].toInt() and 0xFF) or ((bytes[i + 1].toInt() and 0xFF) shl 8)
             while (at + HEADER <= bytes.size) {
                 val length = u16(at)
-                if (length <= HEADER || at + length > bytes.size) break
+                // As Android's reader: a record past the end, or a path without its NUL inside it, is a damaged tail.
+                val nul = (at + HEADER until at + length).takeIf { length > HEADER && at + length <= bytes.size }
+                    ?.firstOrNull { bytes[it] == 0.toByte() } ?: break
                 val caps = (0 until 8).fold(0L) { acc, i -> acc or ((bytes[at + 8 + i].toLong() and 0xFF) shl (8 * i)) }
-                val name = bytes.decodeToString(at + HEADER, at + length).substringBefore('\u0000')
+                val name = bytes.decodeToString(at + HEADER, nul)
                 if (name.isNotEmpty()) out += Entry(name, Owner(u16(at + 4), u16(at + 6), u16(at + 2), caps))
                 at += length
             }
             return out
         }
 
-        /** Android's fs_config match: `*` matches anything (also `/`); a folder rule covers what is below it. */
-        internal fun matches(pattern: String, path: String, isDirectory: Boolean): Boolean {
-            if (!isDirectory) return glob(pattern, path)
-            val base = pattern.trimEnd('/').removeSuffix("/*")
-            return glob("$base/*", "$path/")
+        /**
+         * Android's fs_config match, `fnmatch` without flags: `*` matches anything (also `/`), `?` one character,
+         * `[...]` one of a set (`[!...]` none of it). A folder rule covers what is below it, and
+         * `system/<partition>/` and `<partition>/` name the same place.
+         */
+        internal fun matches(pattern: String, path: String, isDirectory: Boolean): Boolean = aliases(pattern).any {
+            if (isDirectory) glob(it.trimEnd('/').removeSuffix("/*") + "/*", "$path/") else glob(it, path)
         }
 
-        private fun glob(pattern: String, text: String): Boolean {
-            val regex = pattern.split('*').joinToString(".*") { Regex.escape(it) }
-            return Regex(regex).matches(text)
+        private val PARTITIONS =
+            listOf("odm", "oem", "product", "system_ext", "vendor", "vendor_dlkm", "odm_dlkm", "system_dlkm")
+
+        private fun aliases(pattern: String): List<String> = listOfNotNull(
+            pattern,
+            pattern.removePrefix("system/").takeIf { p -> PARTITIONS.any { p.startsWith("$it/") } && p != pattern },
+            "system/$pattern".takeIf { PARTITIONS.any { pattern.startsWith("$it/") } },
+        )
+
+        private fun glob(pattern: String, text: String): Boolean = Regex(globRegex(pattern)).matches(text)
+
+        private fun globRegex(pattern: String): String = buildString {
+            var i = 0
+            while (i < pattern.length) {
+                val c = pattern[i]
+                val set = if (c == '[') bracket(pattern, i) else null
+                when {
+                    set != null -> append(set.first).also { i = set.second }
+                    c == '*' -> append(".*")
+                    c == '?' -> append('.')
+                    else -> append(Regex.escape(c.toString()))
+                }
+                i++
+            }
+        }
+
+        /** The regex class of the `[...]` set at [start], and the index of its `]`; null when it has none. */
+        private fun bracket(pattern: String, start: Int): Pair<String, Int>? {
+            var i = start + 1
+            val negate = pattern.getOrNull(i) == '!' || pattern.getOrNull(i) == '^'
+            if (negate) i++
+            val bodyStart = i
+            if (pattern.getOrNull(i) == ']') i++
+            val end = pattern.indexOf(']', i).takeIf { it >= 0 } ?: return null
+            val body = pattern.substring(bodyStart, end).map { ch ->
+                if (ch in "\\[]^&") "\\$ch" else ch.toString()
+            }.joinToString("")
+            return "[" + (if (negate) "^" else "") + body + "]" to end
         }
 
         private fun dir(pattern: String, mode: Int, gid: Int = 0) = Entry(pattern, Owner(0, gid, mode))

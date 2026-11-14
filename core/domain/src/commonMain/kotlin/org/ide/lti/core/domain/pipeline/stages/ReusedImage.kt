@@ -114,6 +114,11 @@ internal object ReusedImage {
      * image is there and was built from this fingerprint, else `changed <fp>`.
      */
     private const val FINGERPRINT_SCRIPT = """
-fp=${'$'}( { printf '%s\n' "$6"; (cd "$1" && find . -printf '%P\t%y\t%s\t%m\t%l\n' | LC_ALL=C sort; find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum | LC_ALL=C sort); cat "$2" "$3"; } | sha256sum | cut -d' ' -f1)
+t=${'$'}(mktemp -d) || exit 1; trap 'rm -rf "${'$'}t"' EXIT
+cd "$1" || exit 1
+find . -printf '%P\t%y\t%s\t%m\t%l\n' > "${'$'}t/l" || exit 1
+find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum > "${'$'}t/m" || exit 1
+cat "$2" "$3" > "${'$'}t/s" || exit 1
+fp=${'$'}( { printf '%s\n' "$6"; LC_ALL=C sort "${'$'}t/l"; LC_ALL=C sort "${'$'}t/m"; cat "${'$'}t/s"; } | sha256sum | cut -d' ' -f1)
 if [ -f "$4" ] && [ -f "$5" ] && [ "${'$'}(cat "$5")" = "${'$'}fp" ]; then echo "same ${'$'}fp"; else echo "changed ${'$'}fp"; fi"""
 }

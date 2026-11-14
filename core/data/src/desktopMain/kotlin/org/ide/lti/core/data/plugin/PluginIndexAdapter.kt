@@ -186,13 +186,14 @@ class PluginIndexAdapter(
         )
     }
 
-    private val assetName = Regex("""^([^-]+)-(.+)-(\d[0-9A-Za-z.+]*(?:-[0-9A-Za-z.]+)?)$""")
+    private val assetName = Regex("""^([^-]+)-(.+?)-(\d+\.\d+(?:\.\d+)*(?:-[0-9A-Za-z.]+)?(?:\+[0-9A-Za-z.]+)?)$""")
 
     /** `owner/repo` of a `https://github.com/owner/repo` URL, or null for any other source. */
     private fun githubRepo(uri: URI): String? {
         if (uri.host?.lowercase()?.removePrefix("www.") != "github.com") return null
         val parts = uri.path.orEmpty().trim('/').split('/')
-        return parts.takeIf { it.size >= 2 && it[0].isNotEmpty() && it[1].isNotEmpty() }
+        // Only `owner/repo` itself: a deeper URL (a release asset, an index file) is fetched as given.
+        return parts.takeIf { it.size == 2 && it[0].isNotEmpty() && it[1].isNotEmpty() }
             ?.let { "${it[0]}/${it[1].removeSuffix(".git")}" }
     }
 

@@ -45,7 +45,8 @@ public fun BuildEditor(
     /** The size advisor (`SizeAdvisorCard`), under Partition layout. */
     advisor: (@Composable () -> Unit)? = null,
 ) {
-    LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
+    // Every visit: a build since the last one changed the images, sizes and package.
+    LaunchedEffect(Unit) { onRefresh() }
     Box(modifier = modifier.fillMaxSize().testTag("BuildEditor"), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier

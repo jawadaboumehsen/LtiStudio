@@ -479,6 +479,7 @@ public class PluginManagerViewModel(
 
     public fun selectAuthorTask(task: String) {
         _uiState.update {
+            if (it.isAuthorTaskRunning) return@update it
             it.copy(
                 authorSelectedTask = task,
                 authorTaskResult = null,
@@ -488,9 +489,10 @@ public class PluginManagerViewModel(
 
     public fun runAuthorTask(task: String = _uiState.value.authorSelectedTask, timeoutMs: Long = 60000L) {
         val path = _uiState.value.authorProjectPathInput
-        if (path.isBlank()) return
+        if (path.isBlank() || _uiState.value.isAuthorTaskRunning) return
+        // Set before the task starts: no other task can be picked while this one has no result yet.
+        _uiState.update { it.copy(isAuthorTaskRunning = true, authorTaskResult = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isAuthorTaskRunning = true, authorTaskResult = null) }
             val project = AuthorProject(
                 path = path,
                 fingerprint = "",

@@ -311,6 +311,8 @@ class ConfigurationViewModel(
                     if (it.editingTarget != target) {
                         return@update it.copy(
                             originalTarget = toSave,
+                            // The next save of these edits is the revision after the one just saved.
+                            editingTarget = it.editingTarget.copy(revision = toSave.revision),
                             isDirty = true,
                             isSyncing = false,
                             statusMessage = "Saved an earlier revision; newer local changes are still unsaved",

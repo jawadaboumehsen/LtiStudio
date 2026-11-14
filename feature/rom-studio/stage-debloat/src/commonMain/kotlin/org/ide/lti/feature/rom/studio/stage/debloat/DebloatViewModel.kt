@@ -180,6 +180,10 @@ public class DebloatViewModel(
                 loading = false,
                 lastResult = result,
                 restorePoints = points,
+                // Read again for this inventory below; until then (or if that fails) none are shown.
+                apps = emptyMap(),
+                mentions = emptyMap(),
+                iconFolder = null,
             )
             readApps(inventory)
         }

@@ -189,9 +189,14 @@ class WorkspaceConfigurationViewModel(
             val result = if (_uiState.value.initialSnapshot == null) {
                 saveConfigurationSnapshotUseCase(workspaceId, draft)
             } else {
+                val shown = _uiState.value.initialSnapshot?.assembly
                 saveConfigurationSnapshotUseCase.update(workspaceId) { current ->
+                    val a = current.assembly
                     current.copy(
-                        assembly = current.assembly.copy(buildType = draft.buildType, romVersion = draft.romVersion),
+                        assembly = a.copy(
+                            buildType = if (draft.buildType != shown?.buildType) draft.buildType else a.buildType,
+                            romVersion = if (draft.romVersion != shown?.romVersion) draft.romVersion else a.romVersion,
+                        ),
                     )
                 }
             }

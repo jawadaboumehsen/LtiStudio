@@ -56,8 +56,23 @@ sealed interface MutationOutcome {
 
 interface FileMutationPort {
     suspend fun preview(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome
+
+    /**
+     * [preview] after earlier plans: [staged] holds the text of files they edited (by absolute path) and gets this
+     * plan's edits, so a plan editing what an earlier one wrote is checked against that.
+     */
+    suspend fun previewAfter(
+        plan: ConcreteMutationPlan,
+        ctx: MutationContext,
+        assetRoot: String,
+        staged: MutableMap<String, String>,
+    ): MutationOutcome = preview(plan, ctx, assetRoot)
+
     suspend fun apply(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome
 }
+
+/** In a [CheckModules] result: the line naming the mods whose APK/JAR edits only the build checks. */
+const val COMPONENT_EDITS_UNCHECKED: String = "unchecked: "
 
 object FileMutationCodes {
     const val PARTITION_NOT_IN_TREE: String = "PARTITION_NOT_IN_TREE"

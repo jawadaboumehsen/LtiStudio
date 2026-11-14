@@ -252,6 +252,18 @@ class BuildFlashableZipStageTest {
     }
 
     @Test
+    fun `a coverage refusal the fill cannot repair says so`() {
+        val base = fullContext()
+        fun refusal(json: String) = stage.plan(
+            base.copy(runtimeValues = base.runtimeValues + (BuildFlashableZipStage.COVERAGE_RESULT_KEY to json)),
+        ).filterIsInstance<PipelineStep.Check>().first().verify(emptyMap()).orEmpty()
+        val mixed = CoverageResult(uncoveredFsConfig = listOf("system/bin/a"), unbuildableNames = listOf("system/b c"))
+        // Names holding a space stop the build whatever else is missing: preflight must not call it a note.
+        assertTrue("hold a space" in refusal(CoverageResult.encode(mixed)))
+        assertTrue(BuildChecks.UNREADABLE_COVERAGE in refusal("not json"))
+    }
+
+    @Test
     fun `a link the build broke stops it until accepted`() {
         val base = fullContext()
         val listing = "P\tsystem_ext\nL\tsystem_ext\tpriv-app/Wfd/lib/arm64/libwfd.so\t/system_ext/lib64/libwfd.so"

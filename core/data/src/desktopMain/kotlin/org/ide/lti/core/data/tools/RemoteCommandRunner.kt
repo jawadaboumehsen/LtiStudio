@@ -147,6 +147,7 @@ public class RemoteCommandRunner(
         for (attempt in 0 until maxAttempts) {
             try {
                 val outputBuffer = StringBuilder()
+                var cut = false
                 val diagnosticTail = StringBuilder()
                 var exitCode = -1
                 var summary: String? = null
@@ -158,16 +159,10 @@ public class RemoteCommandRunner(
                     env = env,
                     onFinished = { exitCode = it },
                     onSummary = { summary = it },
+                    raw = true,
                 ).collect { chunk ->
                     val line = if (chunk.endsWith("\n")) chunk else "$chunk\n"
-                    if (outputBuffer.length < maxOutputChars) {
-                        val available = maxOutputChars - outputBuffer.length
-                        if (line.length <= available) {
-                            outputBuffer.append(line)
-                        } else {
-                            outputBuffer.append(line.take(available))
-                        }
-                    }
+                    if (outputBuffer.length + line.length <= maxOutputChars) outputBuffer.append(line) else cut = true
                     diagnosticTail.append(line)
                     if (diagnosticTail.length > MAX_DIAGNOSTIC_CHARS * 2) {
                         diagnosticTail.delete(0, diagnosticTail.length - MAX_DIAGNOSTIC_CHARS)
@@ -175,7 +170,14 @@ public class RemoteCommandRunner(
                 }
 
                 if (exitCode == 0) {
-                    return Result.success(outputBuffer.toString())
+                    // A caller parses this output: part of it would be read as all of it.
+                    return if (cut) {
+                        Result.failure(
+                            IllegalStateException("The command printed more than $maxOutputChars characters."),
+                        )
+                    } else {
+                        Result.success(outputBuffer.toString())
+                    }
                 }
                 lastExitCode = exitCode
                 if (isTimeout(summary)) {
@@ -208,6 +210,8 @@ public class RemoteCommandRunner(
         env: Map<String, String> = emptyMap(),
         onFinished: ((Int) -> Unit)? = null,
         onSummary: ((String?) -> Unit)? = null,
+        /** Each output line whole; otherwise a long line is shortened for the log. */
+        raw: Boolean = false,
     ): Flow<String> = channelFlow {
         val execId = UUID.randomUUID().toString()
         val key = env["LTI_TOOL_GROUP"] ?: execId
@@ -244,7 +248,7 @@ public class RemoteCommandRunner(
                     withTimeout(timeoutSeconds * 1000L + 30_000L) {
                         transport.attachRun(runHandle.runId).collect { event ->
                             when (val ev = event.event) {
-                                is StreamEvent.OutputChunk -> send(ev.text.forLog())
+                                is StreamEvent.OutputChunk -> send(if (raw) ev.text else ev.text.forLog())
 
                                 is StreamEvent.ExecutionFinished -> {
                                     finishedReason(ev.exitCode, ev.summary)?.let { send(it) }
@@ -265,7 +269,7 @@ public class RemoteCommandRunner(
                     withTimeout(timeoutSeconds * 1000L + 30_000L) {
                         transport.stream(req).collect { event ->
                             when (event) {
-                                is StreamEvent.OutputChunk -> send(event.text.forLog())
+                                is StreamEvent.OutputChunk -> send(if (raw) event.text else event.text.forLog())
 
                                 is StreamEvent.ExecutionFinished -> {
                                     finishedReason(event.exitCode, event.summary)?.let { send(it) }

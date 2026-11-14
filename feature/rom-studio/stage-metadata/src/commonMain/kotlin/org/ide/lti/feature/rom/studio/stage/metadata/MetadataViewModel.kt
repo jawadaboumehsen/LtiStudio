@@ -65,13 +65,17 @@ public class MetadataViewModel(
      */
     public fun draftChangelog() {
         val facts = workspaceFacts ?: return
+        val asked = settings.value.changelog
         viewModelScope.launch {
             val draft = ChangelogDraft.of(
                 facts.read(workspaceId, ChangelogDraft.PLAN),
                 facts.read(workspaceId, DebloatStage.RESULT),
                 store?.current(workspaceId),
             )
-            if (draft.isNotBlank()) updateSettings(settings.value.copy(changelog = draft))
+            // Notes typed while it was read are newer than the request: they stay.
+            if (draft.isNotBlank() && settings.value.changelog == asked) {
+                updateSettings(settings.value.copy(changelog = draft))
+            }
         }
     }
 

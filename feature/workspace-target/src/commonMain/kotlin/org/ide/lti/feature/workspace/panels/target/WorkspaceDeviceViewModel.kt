@@ -186,19 +186,30 @@ class WorkspaceDeviceViewModel(
         val workspaceId = _uiState.value.workspaceId ?: return
         val state = _uiState.value
         if (state.draft != null || state.loadError != null || state.isSaving || state.locked) return
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
+            try {
+                createFromTemplate(workspaceId, template)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    private suspend fun createFromTemplate(workspaceId: String, template: TargetDevice) {
+        run {
             // Only a folder that definitely has no device gets the template; an existing file is never replaced.
             val existing = runCatching { workspaceDeviceRepository.get(workspaceId) }
             if (existing.isFailure || existing.getOrNull() != null) {
                 retry()
-                return@launch
+                return
             }
             val stored = runCatching { workspaceDeviceRepository.save(workspaceId, template) }.getOrElse { error ->
                 _uiState.update {
                     if (it.workspaceId != workspaceId) return@update it
                     it.copy(message = error.message ?: "Failed to write the device configuration")
                 }
-                return@launch
+                return
             }
             val bound = bindRevision(workspaceId, stored.revision)
             _uiState.update {

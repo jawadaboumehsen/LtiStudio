@@ -95,4 +95,23 @@ class HookCompilerTest {
         val broken = compile(listOf(HookCompiler.Root(dir.resolve("broken"), out)))
         assertTrue(broken.single().startsWith("javac failed") && "missing" in broken.single(), broken.toString())
     }
+
+    @Test
+    fun aSecondTopLevelClassIsPublishedAndAHandWrittenFileIsNeverReplaced() {
+        write(
+            "hooks/a/io/lti/Hook.java",
+            "package io.lti; public final class Hook { public static int x() { return Helper.y(); } }\n" +
+                "final class Helper { static int y() { return 2; } }",
+        )
+        val out = dir.resolve("files/a/smali")
+        val roots = listOf(HookCompiler.Root(dir.resolve("hooks/a"), out))
+        assertEquals(emptyList(), compile(roots, firmware = listOf(firmwareJar())))
+        // Helper has no file of its own, but Hook calls it: without it the hook fails on the phone.
+        assertTrue(out.resolve("io/lti/Helper.smali").isFile)
+
+        out.resolve("io/lti/Helper.smali").writeText(".class Lio/lti/Helper; # mine")
+        val refused = compile(roots, firmware = listOf(firmwareJar()))
+        assertTrue(refused.single().contains("written by hand"), refused.toString())
+        assertEquals(".class Lio/lti/Helper; # mine", out.resolve("io/lti/Helper.smali").readText())
+    }
 }

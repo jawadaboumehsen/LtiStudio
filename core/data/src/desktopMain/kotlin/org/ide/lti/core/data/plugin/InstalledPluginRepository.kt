@@ -222,8 +222,13 @@ class InstalledPluginRepository(
 
             !Files.isRegularFile(recordFile.resolveSibling("package.lti-mod.zip")) -> null
 
+            // The installed file may be damaged: the copy just verified replaces it.
             else -> {
-                Files.deleteIfExists(quarantined)
+                Files.move(
+                    quarantined,
+                    recordFile.resolveSibling("package.lti-mod.zip"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                )
                 true
             }
         }

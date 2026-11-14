@@ -38,4 +38,16 @@ class SizeAdvisorTest {
         assertEquals(64, applied.partitionClusterKib["vendor"])
         assertEquals(true, applied.partitionDedupe["vendor"])
     }
+
+    @Test
+    fun theAdviceCountsTheHashtreeTheBuildAdds() {
+        // 1 GiB of filesystem: hashtree levels of 8 MiB, 64 KiB and one block, then the footer reserve.
+        val gib = 1L shl 30
+        assertEquals(gib + 8_388_608 + 65_536 + 4_096 + 65_536, SizeAdvisor.signedBytes(gib))
+        val fast = TrialOption("as set now", "lz4hc,9", false, null)
+        val small = fast.copy(label = "64 KiB cluster", clusterKib = 64)
+        val results = listOf(TrialResult(fast, gib, 10.0), TrialResult(small, gib - 20_000_000, 40.0))
+        // The bare fast image fits 1 MiB of room; signed it does not.
+        assertEquals(small, SizeAdvisor.recommend(results, room = gib + 1_048_576)?.option)
+    }
 }

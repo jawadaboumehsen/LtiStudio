@@ -161,8 +161,12 @@ class PluginManagerViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         assertIs<TrustCheck.Approved>(viewModel.uiState.value.authorTrustCheck)
 
+        val selected = viewModel.uiState.value.authorSelectedTask
         viewModel.runAuthorTask("testMod")
+        // Another task cannot be picked while this one runs: its result would show under the wrong task.
+        viewModel.selectAuthorTask("packageMod")
         testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(selected, viewModel.uiState.value.authorSelectedTask)
         assertIs<AuthorTaskResult.Success>(viewModel.uiState.value.authorTaskResult)
     }
 

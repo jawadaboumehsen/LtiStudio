@@ -47,13 +47,32 @@ import java.security.MessageDigest
 class FileMutationAdapter : FileMutationPort {
 
     override suspend fun preview(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome =
-        when (val checked = check(plan, ctx, assetRoot)) {
-            is CheckedPlan.Refused -> MutationOutcome.Refused(checked.report)
+        previewWith(plan, ctx, assetRoot, mutableMapOf())
 
-            is CheckedPlan.Ready -> MutationOutcome.Applied(
-                checked.operations.map { computeEffect(it.operation, it.path, it.partitionRoot) },
-            )
-        }
+    override suspend fun previewAfter(
+        plan: ConcreteMutationPlan,
+        ctx: MutationContext,
+        assetRoot: String,
+        staged: MutableMap<String, String>,
+    ): MutationOutcome {
+        val paths = staged.mapKeys { Path.of(it.key) }.toMutableMap()
+        val outcome = previewWith(plan, ctx, assetRoot, paths)
+        staged.putAll(paths.mapKeys { it.key.toString() })
+        return outcome
+    }
+
+    private fun previewWith(
+        plan: ConcreteMutationPlan,
+        ctx: MutationContext,
+        assetRoot: String,
+        staged: MutableMap<Path, String>,
+    ): MutationOutcome = when (val checked = check(plan, ctx, assetRoot, staged)) {
+        is CheckedPlan.Refused -> MutationOutcome.Refused(checked.report)
+
+        is CheckedPlan.Ready -> MutationOutcome.Applied(
+            checked.operations.map { computeEffect(it.operation, it.path, it.partitionRoot) },
+        )
+    }
 
     /**
      * Applies in plan order, re-checking each operation immediately before its write. A failure part way
@@ -95,12 +114,16 @@ class FileMutationAdapter : FileMutationPort {
     }
 
     /** Resolves and validates every operation once; two operations writing one path is a plan-level refusal. */
-    private fun check(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): CheckedPlan {
+    private fun check(
+        plan: ConcreteMutationPlan,
+        ctx: MutationContext,
+        assetRoot: String,
+        // A file's text after the earlier edits: an edit is checked against what it will really meet.
+        staged: MutableMap<Path, String> = mutableMapOf(),
+    ): CheckedPlan {
         val errors = mutableListOf<ValidationError>()
         val planned = mutableListOf<PlannedOperation>()
         val seenPaths = mutableMapOf<Path, ConcreteOperation>()
-        // A file's text after the plan's earlier edits: an edit is checked against what it will really meet.
-        val staged = mutableMapOf<Path, String>()
 
         for (op in plan.operations) {
             errors += validateOperation(op, ctx, assetRoot, staged)

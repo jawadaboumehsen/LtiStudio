@@ -36,6 +36,7 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StageState
 
 /**
@@ -118,9 +119,23 @@ public class RunRepositoryImpl(
     }
 
     override suspend fun update(runId: String, change: (BuildRun) -> BuildRun): BuildRun? = withContext(ioDispatcher) {
-        val updated = writes.withLock { getRun(runId)?.let(change)?.also { persist(it) } }
+        var before: BuildRun? = null
+        val updated = writes.withLock { getRun(runId)?.also { before = it }?.let(change)?.also { persist(it) } }
         updated?.let { mirrorRunToRemoteWorkspace(it) }
+        updated?.let { onStageBoundary(before, it) }
         updated
+    }
+
+    /** A stage that stopped running gets its last output in its file; one that starts begins its file here. */
+    private suspend fun onStageBoundary(before: BuildRun?, after: BuildRun) {
+        val was = before?.stages?.firstOrNull { it.state == StageState.RUNNING }?.stageId
+        val now = after.stages.firstOrNull { it.state == StageState.RUNNING }?.stageId
+        if (was == now) return
+        if (was != null) mirrorStageLogsToRemoteWorkspace(after.id, was)
+        if (now != null) {
+            val size = cachedEvents(after.id).size
+            eventsLock.withLock { stageStart[after.id] = now.name to size }
+        }
     }
 
     /** Disk first: memory (what the UI and admission see) only ever shows a record that was saved. */
@@ -273,13 +288,17 @@ public class RunRepositoryImpl(
         return note + log.copyOfRange(log.size - MAX_TRANSFER_CHUNK_BYTES.toInt() + note.size, log.size)
     }
 
-    private suspend fun mirrorStageLogsToRemoteWorkspace(runId: String) {
+    private suspend fun mirrorStageLogsToRemoteWorkspace(runId: String, stage: StageId? = null) {
         val port = executionPort ?: return
         val wsRepo = workspaceRepository ?: return
         try {
             val run = getRun(runId) ?: return
             val workspace = wsRepo.getWorkspace(run.workspaceId) ?: return
-            val active = run.stages.firstOrNull { it.state == StageState.RUNNING } ?: run.stages.lastOrNull() ?: return
+            // The stage named, else the one running, else the one that started last (not the run's last stage).
+            val active = stage?.let { id -> run.stages.firstOrNull { it.stageId == id } }
+                ?: run.stages.firstOrNull { it.state == StageState.RUNNING }
+                ?: run.stages.filter { it.startedAt != null }.maxByOrNull { it.startedAt!! }
+                ?: return
             val activeStage = active.stageId
             val allLogs = cachedEvents(runId)
             // A stage's file holds the events since it began, not the earlier stages' output. For a stage begun in

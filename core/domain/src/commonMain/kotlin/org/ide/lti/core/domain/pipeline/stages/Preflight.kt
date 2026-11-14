@@ -19,6 +19,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 import org.ide.lti.core.domain.plugin.ApplyModules
+import org.ide.lti.core.domain.plugin.COMPONENT_EDITS_UNCHECKED
 import org.ide.lti.core.domain.plugin.CheckModules
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.workbench.LogLevel
@@ -123,9 +124,10 @@ public class Preflight(
         val code = message.substringBefore(':').trim()
         val text = message.substringAfter(':').trim()
         // With the fill on, the build adds the missing lines itself after Patches: no longer a stop.
-        val filled = code == COVERAGE && "hold a space" !in text && snapshot.customization.fillMissingSidecars
+        val filled = code == COVERAGE && "hold a space" !in text && BuildChecks.UNREADABLE_COVERAGE !in text &&
+            snapshot.customization.fillMissingSidecars
         val payloadOff = code == PAYLOAD && PackageKind.Payload.name !in snapshot.build.extraPackages
-        val note = filled || payloadOff || code == "MODS_NOT_CHECKED"
+        val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED"
         return PreflightFinding(code, text, blocks = !note, fix = FIXES[code]?.invoke(text)?.takeUnless { filled })
     }
 
@@ -194,8 +196,17 @@ public class Preflight(
                     apply != null -> listOf(
                         PipelineStep.Host("check modules", MODS_KEY, CheckModules(apply)),
                         PipelineStep.Check("modules fit") { values ->
-                            values[MODS_KEY]?.takeIf { it != "ok" && it.isNotBlank() }
+                            values[MODS_KEY]?.lines()?.filterNot { it.startsWith(COMPONENT_EDITS_UNCHECKED) }
+                                ?.joinToString("\n")?.takeIf { it != "ok" && it.isNotBlank() }
                                 ?.let { "MODS_DO_NOT_FIT: these mods would be refused by this firmware: $it" }
+                        },
+                        PipelineStep.Check("mods partly checked") { values ->
+                            values[MODS_KEY]?.lines()?.firstOrNull { it.startsWith(COMPONENT_EDITS_UNCHECKED) }?.let {
+                                "MODS_PARTLY_CHECKED: ${it.removePrefix(
+                                    COMPONENT_EDITS_UNCHECKED,
+                                )} also edit APKs or " +
+                                    "JARs; those edits are checked when the build decodes the packages."
+                            }
                         },
                     )
 

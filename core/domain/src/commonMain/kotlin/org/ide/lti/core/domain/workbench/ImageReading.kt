@@ -79,14 +79,25 @@ private const val READ_SCRIPT = """
  */
 private const val COPY_SCRIPT = """
     set -e
-    m="$1"; img="$2"; mnt="$3"; fs="$4"; dest="$5"; shift 5
+    m="$1"; img="$2"; mnt="$3"; fs="$4"; dest="$5"; INSIDE="$6"; shift 6
     mkdir -p "${'$'}mnt"
     if [ "${'$'}fs" = ext4 ]; then "${'$'}m" "${'$'}img" "${'$'}mnt" -o ro,fakeroot >&2; else "${'$'}m" "${'$'}img" "${'$'}mnt" >&2; fi
     trap 'fusermount3 -u "${'$'}mnt" 2>/dev/null; rmdir "${'$'}mnt" 2>/dev/null' EXIT
-    for p; do
-      mkdir -p "$(dirname "${'$'}dest/${'$'}p")"; rm -rf "${'$'}dest/${'$'}p"
-      cp -a -T "${'$'}mnt/${'$'}p" "${'$'}dest/${'$'}p"
-    done
+    for p; do sh -c "${'$'}INSIDE" sh "${'$'}mnt" "${'$'}dest" "${'$'}p"; done
+"""
+
+/**
+ * `sh -c COPY_ONE sh <tree> <dest dir> <path>`: copies `<tree>/<path>` to `<dest dir>/<path>`, replacing an earlier
+ * copy, when no link on the way (in the tree or in the destination) leads out of either; exit 3 otherwise.
+ */
+internal const val COPY_ONE: String = """
+    set -e
+    root=${'$'}(realpath -m "$1"); out=${'$'}(realpath -m "$2"); p="$3"
+    from=${'$'}(realpath -m "${'$'}(dirname "$1/${'$'}p")"); to=${'$'}(realpath -m "${'$'}(dirname "$2/${'$'}p")")
+    case "${'$'}from/" in "${'$'}root"/*) ;; *) echo "${'$'}p: a link on its way leaves the image" >&2; exit 3 ;; esac
+    case "${'$'}to/" in "${'$'}out"/*) ;; *) echo "${'$'}p: a link on its way leaves the export folder" >&2; exit 3 ;; esac
+    mkdir -p "${'$'}(dirname "$2/${'$'}p")"; rm -rf "$2/${'$'}p"
+    cp -a -T "$1/${'$'}p" "$2/${'$'}p"
 """
 
 /**
@@ -154,8 +165,10 @@ internal suspend fun WorkbenchRunner.Job.readableImage(image: String, member: St
         raw = "$BROWSE_CACHE/${cacheName(image)}.raw.img"
         requireRoomToExpand(image, raw)
         sh(
-            "[ -f \"$2\" ] && [ \"$2\" -nt \"$1\" ] && exit 0; rm -f \"$2.partial\"; " +
-                "\"$3\" \"$1\" \"$2.partial\" >&2 && mv -f -T \"$2.partial\" \"$2\"",
+            "s=$(stat -c '%s %Y %Z %i' \"$1\"); [ -f \"$2\" ] && " +
+                "[ \"$(cat \"$2.src\" 2>/dev/null)\" = \"${'$'}s\" ] && exit 0; rm -f \"$2.partial\" \"$2.src\"; " +
+                "\"$3\" \"$1\" \"$2.partial\" >&2 && " +
+                "mv -f -T \"$2.partial\" \"$2\" && printf '%s' \"${'$'}s\" > \"$2.src\"",
             abs(image),
             abs(raw),
             toolPath("simg2img"),
@@ -165,8 +178,10 @@ internal suspend fun WorkbenchRunner.Job.readableImage(image: String, member: St
     require(member.matches(PARTITION_NAME)) { "'$member' is not a partition name." }
     val parts = "$BROWSE_CACHE/${cacheName(image)}.parts"
     sh(
-        "[ -f \"$2/$4.img\" ] && [ \"$2/$4.img\" -nt \"$1\" ] && exit 0; mkdir -p \"$2\"; " +
-            "rm -f \"$2/$4.img\"; \"$3\" -p \"$4\" \"$1\" \"$2\" >&2",
+        "s=$(stat -c '%s %Y %Z %i' \"$1\"); [ -f \"$2/$4.img\" ] && " +
+            "[ \"$(cat \"$2/$4.img.src\" 2>/dev/null)\" = \"${'$'}s\" ] && exit 0; mkdir -p \"$2\"; " +
+            "rm -f \"$2/$4.img\" \"$2/$4.img.src\"; \"$3\" -p \"$4\" \"$1\" \"$2\" >&2 && " +
+            "printf '%s' \"${'$'}s\" > \"$2/$4.img.src\"",
         abs(raw),
         abs(parts),
         toolPath("lpunpack"),
@@ -332,16 +347,11 @@ internal suspend fun WorkbenchRunner.Job.copyFromImage(
             abs("$BROWSE_CACHE/mnt"),
             fs.name.lowercase(),
             abs(dest),
+            COPY_ONE,
             *paths.toTypedArray(),
         )
 
-        else -> paths.forEach { rel ->
-            sh(
-                "mkdir -p \"$(dirname \"$2\")\" && rm -rf \"$2\" && cp -a -T \"$1\" \"$2\"",
-                "${f2fsTree(img)}/$rel",
-                abs("$dest/$rel"),
-            )
-        }
+        else -> paths.forEach { rel -> sh(COPY_ONE, f2fsTree(img), abs(dest), rel) }
     }
 }
 

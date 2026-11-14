@@ -113,6 +113,7 @@ public class ContentToolsViewModel(
         current = { _state.value.trees },
         update = { change -> _state.update { it.copy(trees = change(it.trees)) } },
         task = ::compareTask,
+        busy = { _state.value.busy != null },
     )
 
     private var job: Job? = null

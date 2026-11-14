@@ -153,8 +153,12 @@ private fun TrialResults(p: String, state: SizeAdvisorState, onUse: (String, Tri
         ) {
             Detail(
                 r.option.label + if (r == best) " (advised)" else "",
-                bytes?.let { "${mb(it)} in ${r.seconds?.let(::seconds) ?: "?"}" } ?: "failed: ${r.error}",
-                GlassTheme.diagnosticColors.error.takeIf { bytes == null || bytes > room },
+                bytes?.let {
+                    "${mb(
+                        SizeAdvisor.signedBytes(it),
+                    )} signed, in ${r.seconds?.let(::seconds) ?: "?"}"
+                } ?: "failed: ${r.error}",
+                GlassTheme.diagnosticColors.error.takeIf { bytes == null || SizeAdvisor.signedBytes(bytes) > room },
             )
             if (bytes != null) {
                 GlassButton(onClick = { onUse(p, r.option) }, variant = GlassButtonVariant.Text) {

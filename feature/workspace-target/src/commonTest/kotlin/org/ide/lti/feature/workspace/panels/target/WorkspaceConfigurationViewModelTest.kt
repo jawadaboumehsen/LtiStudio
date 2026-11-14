@@ -289,6 +289,9 @@ class WorkspaceConfigurationViewModelTest {
             viewModel.setBuildType("userdebug")
             assertTrue(viewModel.uiState.value.isDirty)
             assertEquals("user", viewModel.uiState.value.initialSnapshot?.assembly?.buildType)
+            // Meanwhile Assemble saves another ROM version; this panel still shows 1.0.
+            saveUseCase.update("ws-1") { it.copy(assembly = it.assembly.copy(romVersion = "2.0")) }
+            advanceUntilIdle()
 
             // Save
             viewModel.saveConfiguration()
@@ -297,10 +300,13 @@ class WorkspaceConfigurationViewModelTest {
             val saved = viewModel.uiState.value.initialSnapshot
             assertFalse(viewModel.uiState.value.isDirty)
             assertEquals("userdebug", saved?.assembly?.buildType)
+            // Only what this panel changed is written: the version Assemble saved stays.
+            assertEquals("2.0", saved?.assembly?.romVersion)
             // What the stages own is kept as they saved it, not rewritten from this panel's draft
             assertEquals(TargetRegion.GLOBAL, saved?.acquisition?.region)
             assertEquals("https://example.com", saved?.release?.otaBaseUrl)
-            assertEquals(1, provisioningPort.uploadedConfigs.size)
+            // Assemble's save and this panel's.
+            assertEquals(2, provisioningPort.uploadedConfigs.size)
         } finally {
             Dispatchers.resetMain()
         }

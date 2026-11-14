@@ -60,17 +60,50 @@ object HookCompiler {
         val problems = if (sources.isEmpty()) {
             listOf("No Java sources in ${roots.map { it.sources }}")
         } else {
-            javac(sources, classpath, classes)
+            // Each root is compiled again on its own, against all the classes: what javac writes there is exactly
+            // that root's, with every top-level class of a source (not only the one named like the file).
+            javac(sources, classpath, classes).ifEmpty {
+                roots.flatMap { root ->
+                    javac(javaFiles(root.sources), classpath + classes, own(work, root).also { it.deleteRecursively() })
+                }
+            }
         }
         if (problems.isNotEmpty()) return problems
         val smali = roots.associateWith { root ->
-            val dex = work.resolve("dex/${root.out.path.hashCode().toUInt()}").also { it.deleteRecursively() }
-            d8(classFilesOf(root, classes), classes, dexClasspath, dex, minApi)
-            baksmali(dex, work.resolve("smali/${dex.name}").also { it.deleteRecursively() }, minApi)
+            val id = root.out.path.hashCode().toUInt()
+            val own = own(work, root)
+            val dex = work.resolve("dex/$id").also { it.deleteRecursively() }
+            d8(
+                own.walkTopDown().filter { it.isFile && it.extension == "class" }.toList(),
+                classes,
+                dexClasspath,
+                dex,
+                minApi,
+            )
+            baksmali(dex, work.resolve("smali/$id").also { it.deleteRecursively() }, minApi)
         }
-        val refused = smali.values.flatMap { dir -> check(dir) }
+        val refused = smali.values.flatMap { dir -> check(dir) } +
+            smali.flatMap { (root, dir) -> handWritten(dir, root.out) }
         if (refused.isEmpty()) smali.forEach { (root, dir) -> publish(dir, root.out) }
         return refused
+    }
+
+    /** Where [root]'s own classes are compiled. */
+    private fun own(work: File, root: Root): File = work.resolve("classes-${root.out.path.hashCode().toUInt()}")
+
+    /** The smali files of [smali] that [out] already holds written by hand: publishing would replace them. */
+    private fun handWritten(smali: File, out: File): List<String> =
+        smali.walkTopDown().filter { it.isFile && it.extension == "smali" }.mapNotNull { f ->
+            val target = out.resolve(f.relativeTo(smali).path)
+            "${target.path} was written by hand and a hook class has its name: rename one of them"
+                .takeIf { target.isFile && target.useLines { it.firstOrNull() } != GENERATED_HEADER }
+        }.toList()
+
+    /** Deletes the smali files under [out] this compiler generated (hand-written ones stay). */
+    fun removeGenerated(out: File) {
+        out.walkTopDown().filter { it.isFile && it.extension == "smali" }
+            .filter { it.useLines { lines -> lines.firstOrNull() == GENERATED_HEADER } }
+            .forEach { it.delete() }
     }
 
     private fun javaFiles(dir: File) = dir.walkTopDown().filter { it.isFile && it.extension == "java" }.toList()
@@ -127,17 +160,6 @@ object HookCompiler {
         return if (ok) emptyList() else listOf("javac failed (classpath: $classpathNames):\n$errors")
     }
 
-    /** [root]'s classes among [classes]: each of its sources' top-level class and that class's nested ones. */
-    private fun classFilesOf(root: Root, classes: File): List<File> {
-        val names = javaFiles(root.sources).map {
-            it.relativeTo(root.sources).path.replace('\\', '/').removeSuffix(".java")
-        }
-        return classes.walkTopDown().filter { it.isFile && it.extension == "class" }.filter { file ->
-            val name = file.relativeTo(classes).path.replace('\\', '/').removeSuffix(".class")
-            names.any { name == it || name.startsWith("$it$") }
-        }.toList()
-    }
-
     private fun d8(program: List<File>, classes: File, classpath: List<File>, out: File, minApi: Int) {
         out.mkdirs()
         val command = D8Command.builder()
@@ -171,9 +193,7 @@ object HookCompiler {
 
     /** Replaces the generated smali under [out] with [smali]'s files, each starting with [GENERATED_HEADER]. */
     private fun publish(smali: File, out: File) {
-        out.walkTopDown().filter { it.isFile && it.extension == "smali" }
-            .filter { it.useLines { lines -> lines.firstOrNull() == GENERATED_HEADER } }
-            .forEach { it.delete() }
+        removeGenerated(out)
         smali.walkTopDown().filter { it.isFile && it.extension == "smali" }.forEach { f ->
             val target = out.resolve(f.relativeTo(smali).path)
             target.parentFile.mkdirs()

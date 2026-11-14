@@ -90,6 +90,9 @@ public fun PluginManagerScreen(
     val marketplaceUrl = remember { mutableStateOf(viewModel.uiState.value.marketplaceUrlInput) }
     val authorProjectPath = remember { mutableStateOf(viewModel.uiState.value.authorProjectPathInput) }
     val searchQuery = remember { mutableStateOf(viewModel.uiState.value.searchQuery) }
+    LaunchedEffect(uiState.marketplaceUrlInput) {
+        if (marketplaceUrl.value.isEmpty()) marketplaceUrl.value = uiState.marketplaceUrlInput
+    }
     // An installed package is done with: the next import starts from an empty path.
     LaunchedEffect(uiState.installState is InstallState.Installed) {
         if (uiState.installState is InstallState.Installed) importPath.value = ""
@@ -245,6 +248,7 @@ public fun PluginManagerContent(
                                     onUninstall = actions.onUninstallPackage,
                                 )
                             }
+
                             PluginDestination.MARKETPLACE -> {
                                 PluginMarketplaceTab(
                                     source = state.marketplaceSource,
@@ -263,6 +267,7 @@ public fun PluginManagerContent(
                                     onInstall = actions.onInstallMarketplace,
                                 )
                             }
+
                             PluginDestination.IMPORT -> {
                                 PluginImportTab(
                                     importPath = state.importPathInput,
@@ -276,6 +281,7 @@ public fun PluginManagerContent(
                                     onConfirmInstall = actions.onConfirmImportInstall,
                                 )
                             }
+
                             PluginDestination.AUTHOR_TOOLS -> {
                                 PluginAuthorToolsTab(
                                     projectPath = state.authorProjectPathInput,

@@ -27,17 +27,31 @@ fun compileModPayload(project: File): List<String> {
     val config = parsed?.getOrNull()
     return when {
         parsed == null -> emptyList()
+
         config == null -> listOf("payload.json: ${parsed.exceptionOrNull()?.message}")
-        else -> HookCompiler.compile(
-            roots = project.resolve("hooks").listFiles().orEmpty().filter { it.isDirectory }.map {
-                HookCompiler.Root(it, project.resolve("files").resolve(it.name))
-            },
-            firmware = config.firmware.map { File(it).takeIf(File::isAbsolute) ?: project.resolve(it) },
-            work = project.resolve("build/hooks"),
-            minApi = config.minRuntimeApi,
-        )
+
+        else -> {
+            removeOrphanedHooks(project)
+            compileHooks(project, config)
+        }
     }
 }
+
+/** The smali this compiler generated under `files/<dir>` whose `hooks/<dir>` no longer exists. */
+private fun removeOrphanedHooks(project: File) {
+    project.resolve("files").listFiles().orEmpty()
+        .filter { it.isDirectory && !project.resolve("hooks").resolve(it.name).isDirectory }
+        .forEach(HookCompiler::removeGenerated)
+}
+
+private fun compileHooks(project: File, config: PayloadConfig): List<String> = HookCompiler.compile(
+    roots = project.resolve("hooks").listFiles().orEmpty().filter { it.isDirectory }.map {
+        HookCompiler.Root(it, project.resolve("files").resolve(it.name))
+    },
+    firmware = config.firmware.map { File(it).takeIf(File::isAbsolute) ?: project.resolve(it) },
+    work = project.resolve("build/hooks"),
+    minApi = config.minRuntimeApi,
+)
 
 /** `compileModPayload --project <dir>`. */
 fun main(args: Array<String>) {

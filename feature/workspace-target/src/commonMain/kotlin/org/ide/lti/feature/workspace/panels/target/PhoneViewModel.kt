@@ -12,6 +12,7 @@ package org.ide.lti.feature.workspace.panels.target
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,11 +40,22 @@ data class PhoneUiState(
 class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
     private val _state = MutableStateFlow(PhoneUiState())
     val state: StateFlow<PhoneUiState> = _state.asStateFlow()
+    private var workspace: String? = null
+    private var job: Job? = null
 
-    fun read(workspaceId: String) = busy("Reading the phone…") {
+    /** The card shows [workspaceId]: another workspace's images and picks go, and its read still running stops. */
+    fun showFor(workspaceId: String) {
+        if (workspace == workspaceId) return
+        workspace = workspaceId
+        job?.cancel()
+        _state.value = PhoneUiState()
+    }
+
+    fun read(workspaceId: String) = busy(workspaceId, "Reading the phone…") {
         val phones = probe!!.read(workspaceId)
         val images = probe.images(workspaceId)
         _state.update { s ->
+            if (workspace != workspaceId) return@update s
             s.copy(
                 phones = phones,
                 images = images,
@@ -61,9 +73,10 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
 
     fun reboot(workspaceId: String, to: PhoneMode) {
         val phone = _state.value.phone ?: return
-        busy("Rebooting to ${to.words} and waiting for it…") {
+        busy(workspaceId, "Rebooting to ${to.words} and waiting for it…") {
             val back = probe!!.reboot(workspaceId, phone, to)
             _state.update { s ->
+                if (workspace != workspaceId) return@update s
                 s.copy(
                     phones = back?.let { b -> s.phones.map { if (it.serial == b.serial) b else it } } ?: s.phones,
                     error = if (back == null) "The phone did not come back in ${to.words} within 90 seconds." else null,
@@ -72,10 +85,11 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
         }
     }
 
-    private fun busy(what: String, block: suspend () -> Unit) {
+    private fun busy(workspaceId: String, what: String, block: suspend () -> Unit) {
+        showFor(workspaceId)
         if (probe == null || _state.value.busy != null) return
         _state.update { it.copy(busy = what, error = null) }
-        viewModelScope.launch {
+        job = viewModelScope.launch {
             try {
                 block()
             } catch (e: CancellationException) {

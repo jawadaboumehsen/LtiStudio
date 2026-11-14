@@ -185,11 +185,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
                 abs(path),
                 abs(output),
             )
-            sh(
-                "d=$(dirname \"$1\"); rm -rf \"${'$'}d/oat\"; " +
-                    "find \"${'$'}d\" -maxdepth 1 \\( -name '*.prof' -o -name '*.bprof' \\) -delete",
-                abs(path),
-            )
+            sh(STALE_COMPANIONS_SCRIPT, abs(path))
             ApkPatchResult(file = path, status = "Rebuilt", restorePointId = point.id)
         }
 
@@ -403,6 +399,19 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         private const val STALE = "Stale"
 
         /**
+         * `$1` a rebuilt package: removes its precompiled files and profiles, which no longer fit it. A folder of its
+         * own loses its whole oat/; in a shared folder (framework/) only this package's files go, never a sibling's.
+         */
+        private const val STALE_COMPANIONS_SCRIPT = """
+d=${'$'}(dirname "$1"); b=${'$'}(basename "$1"); n=${'$'}{b%.*}
+if [ -z "${'$'}(find "${'$'}d" -maxdepth 1 -type f \( -name '*.apk' -o -name '*.jar' \) ! -name "${'$'}b" | head -n 1)" ]; then
+  rm -rf "${'$'}d/oat"; find "${'$'}d" -maxdepth 1 \( -name '*.prof' -o -name '*.bprof' \) -delete
+else
+  rm -f "${'$'}d"/oat/*/"${'$'}n".odex "${'$'}d"/oat/*/"${'$'}n".vdex "${'$'}d"/oat/*/"${'$'}n".art \
+    "${'$'}d/${'$'}n.prof" "${'$'}d/${'$'}b.prof" "${'$'}d/${'$'}n.bprof" "${'$'}d/${'$'}b.bprof"
+fi"""
+
+        /**
          * `$1` work/, `$2` the scope, `$3` the file for FILE. One line per package: status, its path under work/,
          * reason, and its precompiled files (oat/<arch>/<name>.odex|vdex|art, and a framework jar's boot image
          * files) space-separated. A VDEX's version is its bytes 4 to 7.
@@ -412,7 +421,7 @@ cd "$1" || exit 1
 case "$2" in
   SERVICES) find . -type f -path '*/framework/services.jar' ;;
   FRAMEWORK) find . -type f -path '*/framework/*' ! -path '*/framework/*/*' \( -name '*.jar' -o -name '*.apk' \) ;;
-  APPS) find . -mindepth 3 -maxdepth 5 -type f -name '*.apk' -path '*app/*' ;;
+  APPS) find . -mindepth 3 -maxdepth 6 -type f -name '*.apk' -path '*app/*' ;;
   FILE) echo "./$3" ;;
 esac | sort | while read -r f; do
   f=${'$'}{f#./}; dir=${'$'}{f%/*}; base=${'$'}{f##*/}; name=${'$'}{base%.*}

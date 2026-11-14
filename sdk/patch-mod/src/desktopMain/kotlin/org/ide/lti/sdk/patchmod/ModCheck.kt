@@ -86,6 +86,7 @@ object ModCheck {
         return op.edits.map { edit ->
             when (val result = apply(edit, dir, buffer, listing)) {
                 is EditResult.Changed -> EditCheck(mod.id, op.id, result.changed, null)
+
                 is EditResult.Failed ->
                     EditCheck(mod.id, op.id, edit.memberDescriptor, "${result.code}: ${result.message}")
             }
@@ -107,7 +108,9 @@ object ModCheck {
         val resolved = files.resolve(target)
         val failure = when {
             resolved is Resolved.Refused -> resolved.reason
+
             resolved is Resolved.NoTree -> "${EditCheck.NOT_CHECKED}: no work tree (a folder per partition)"
+
             resolved is Resolved.Path -> {
                 val owner = touched.put(resolved.key, op)
                 val overlaps = owner != null && !(inPlace(owner) && inPlace(op))
@@ -117,6 +120,7 @@ object ModCheck {
                     apply(mod, op, resolved.key, files, assetExists)
                 }
             }
+
             else -> null
         }
         return EditCheck(mod.id, op.id, "${target.partition}:${target.relativePath}", failure)
@@ -131,14 +135,17 @@ object ModCheck {
         assetExists: (PluginPlanTemplate, AssetRef) -> Boolean,
     ): String? = when (op) {
         is Operation.Copy -> missingAsset(mod, op.source, assetExists) ?: files.put(key, Entry.Opaque).let { null }
+
         is Operation.Replace -> missingAsset(mod, op.source, assetExists)
             ?: files.requireFile(key, op.destination.relativePath)
-            ?: files.preimage(key, op.expectedSha256, op.destination.relativePath)
-            ?: files.put(key, Entry.Opaque).let { null }
+            ?: files.preimage(key, op.expectedSha256, op.destination.relativePath).also { files.put(key, Entry.Opaque) }
+
         is Operation.Delete -> files.requireFile(key, op.target.relativePath)
             ?: files.put(key, Entry.Deleted).let { null }
+
         is Operation.PropertyPatch -> files.requireFile(key, op.target.relativePath)
             ?: files.edit(key) { FileEdits.propertyPatch(it, op.key, value(mod, op.value)) }
+
         is Operation.TextPatch -> files.requireFile(key, op.target.relativePath)
             ?: files.edit(key) { text ->
                 val actual = if (op.expectedSha256.isEmpty()) "" else files.sha256(key).orEmpty()
@@ -151,6 +158,7 @@ object ModCheck {
                     op.target.relativePath,
                 )
             }
+
         else -> null
     }
 
@@ -238,12 +246,15 @@ object ModCheck {
                 !partition.isDirectory -> Resolved.Refused(
                     "${FileMutationCodes.PARTITION_NOT_IN_TREE}: partition '${target.partition}' is not in the tree",
                 )
+
                 !path.startsWith(root) -> Resolved.Refused(
                     "${FileMutationCodes.PATH_ESCAPES_PARTITION}: '${target.relativePath}' escapes the partition",
                 )
+
                 crossesLink(root, path) -> Resolved.Refused(
                     "${FileMutationCodes.PATH_ESCAPES_PARTITION}: '${target.relativePath}' passes through a link",
                 )
+
                 else -> {
                     val key = "${target.partition}:${root.relativize(path).toString().replace('\\', '/')}"
                     files[key] = path.toFile()
@@ -286,16 +297,17 @@ object ModCheck {
 
         fun preimage(key: String, expected: String, relative: String): String? {
             val actual = sha256(key)
-            return if (actual == null || actual.equals(expected, ignoreCase = true)) {
-                null
-            } else {
-                "${FileMutationCodes.PREIMAGE_MISMATCH}: '$relative' expected $expected, actual $actual"
+            return when {
+                actual == null -> "${EditCheck.NOT_CHECKED}: an earlier operation left '$relative', not read"
+                actual.equals(expected, ignoreCase = true) -> null
+                else -> "${FileMutationCodes.PREIMAGE_MISMATCH}: '$relative' expected $expected, actual $actual"
             }
         }
 
         /** Applies [change] to the file's text and keeps the result; the failure as `code: message`, or null. */
         fun edit(key: String, change: (String) -> EditResult): String? {
-            val current = text(key) ?: return null // content left by an earlier copy: nothing to check against
+            val current = text(key)
+                ?: return "${EditCheck.NOT_CHECKED}: an earlier copy left this file; its contents are not read"
             return when (val result = change(current)) {
                 is EditResult.Changed -> null.also { entries[key] = Entry.Text(result.content) }
                 is EditResult.Failed -> "${result.code}: ${result.message}"

@@ -10,6 +10,7 @@
 package org.ide.lti.sdk.patchmod
 
 import org.ide.lti.core.domain.plugin.PluginPackageCodec
+import org.ide.lti.core.domain.plugin.PluginPackagePolicy
 import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.plugin.PluginManifest
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
@@ -17,7 +18,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -26,9 +26,12 @@ import java.util.zip.ZipOutputStream
  */
 object PackageWriter {
 
-    val DOS_EPOCH_MILLIS: Long = LocalDateTime.of(1980, 1, 1, 0, 0, 0)
-        .toInstant(ZoneOffset.UTC)
-        .toEpochMilli()
+    /**
+     * Every entry's time, as a ZIP stores it (a local date and time): the same bytes in any time zone. Two seconds
+     * past the DOS epoch: the JDK reads 1980-01-01 00:00:00 itself as "before 1980" and then adds an extended
+     * timestamp converted through the system time zone.
+     */
+    val DOS_EPOCH: LocalDateTime = LocalDateTime.of(1980, 1, 1, 0, 0, 2)
 
     private const val BUFFER_SIZE = 8 * 1024 * 1024
 
@@ -46,8 +49,24 @@ object PackageWriter {
         val targets = template.compatibility.map { it.device }.distinct().ifEmpty { manifest.compatibleTargets }
         val updatedManifest = manifest.copy(payloads = payloadEntries, compatibleTargets = targets)
         val textMembers = prepareTextMembers(updatedManifest, template, readme, license)
+        requireWithinReaderCaps(textMembers)
         writeZipFile(textMembers, assets, out)
         return updatedManifest
+    }
+
+    /** Each text member within the size `PluginPackageReader` accepts: a package it refuses is never written. */
+    private fun requireWithinReaderCaps(members: Map<String, ByteArray>) {
+        val caps = mapOf(
+            PluginPackageCodec.MANIFEST to PluginPackagePolicy.MANIFEST_MAX_BYTES,
+            PluginPackageCodec.PLAN to PluginPackagePolicy.PLAN_MAX_BYTES,
+            PluginPackageCodec.SETTINGS to PluginPackagePolicy.SETTINGS_MAX_BYTES,
+            PluginPackageCodec.README to PluginPackagePolicy.README_MAX_BYTES,
+            PluginPackageCodec.LICENSE to PluginPackagePolicy.PLAN_MAX_BYTES,
+        )
+        members.forEach { (name, bytes) ->
+            val cap = caps[name] ?: return@forEach
+            require(bytes.size <= cap) { "$name is ${bytes.size} bytes; an installed package takes at most $cap" }
+        }
     }
 
     private fun validateAssets(manifest: PluginManifest, assets: Map<String, Path>) {
@@ -152,7 +171,7 @@ object PackageWriter {
         buffer: ByteArray,
     ) {
         val entry = ZipEntry(name).apply {
-            time = DOS_EPOCH_MILLIS
+            timeLocal = DOS_EPOCH
             method = ZipEntry.DEFLATED
             extra = null
             comment = null

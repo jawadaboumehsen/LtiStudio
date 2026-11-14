@@ -290,6 +290,31 @@ class PluginIndexAdapterTest {
     }
 
     @Test
+    fun testANumericPreReleaseStaysInTheVersionAndADeeperGithubUrlIsFetchedAsGiven() = runTest {
+        val json = """
+            {"tag_name":"v1","assets":[
+              {"name":"lti-demo-1.2.3-1.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1/d.zip"},
+              {"name":"lti-mod-2-1.0.0.lti-mod.zip","browser_download_url":"https://github.com/o/r/releases/download/v1/m.zip"}
+            ]}
+        """.trimIndent()
+        val opened = mutableListOf<String>()
+        val adapter = PluginIndexAdapter(
+            cacheDir = tempDir,
+            connectionOpener = { uri ->
+                opened += uri.toString()
+                FakeHttpURLConnection(url = uri.toURL(), responseBodyToReturn = json)
+            },
+        )
+        val result = adapter.fetch(IndexSource("o/r", "https://github.com/o/r"), allowCache = false)
+        assertIs<IndexFetchResult.Fetched>(result)
+        assertEquals(listOf("demo" to "1.2.3-1", "mod-2" to "1.0.0"), result.doc.entries.map { it.id to it.version })
+
+        val pinned = "https://github.com/o/r/releases/download/v1/index.json"
+        adapter.fetch(IndexSource("pinned", pinned), allowCache = false)
+        assertEquals(pinned, opened.last())
+    }
+
+    @Test
     fun testTheLastGoodSourceIsRememberedAndAFailedOneIsNot() = runTest {
         var body = releaseJson
         val adapter = PluginIndexAdapter(

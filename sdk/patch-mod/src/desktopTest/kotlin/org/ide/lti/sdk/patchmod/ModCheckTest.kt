@@ -193,4 +193,18 @@ class ModCheckTest {
         }
         assertTrue(checked(empty, mod).single().failure!!.startsWith("PARTITION_NOT_IN_TREE"))
     }
+
+    @Test
+    fun anEditOfWhatAnEarlierCopyLeftIsNotCheckedRatherThanPassed() {
+        val tree = workTree()
+        val copies = romMod("p", "copies", "1.0.0") {
+            operations { copy("new", "assets/tool.bin", Partition.SYSTEM, "etc/new.txt") }
+        }
+        val edits = romMod("p", "edits", "1.0.0") {
+            operations { textPatch("edit", Partition.SYSTEM, "etc/new.txt", "absent\n", literal("x"), "") }
+        }
+        val edit = checked(tree, copies, edits).last()
+        // The copied asset is not read here: the edit can neither pass nor fail.
+        assertTrue(edit.notChecked && !edit.failed, edit.failure)
+    }
 }

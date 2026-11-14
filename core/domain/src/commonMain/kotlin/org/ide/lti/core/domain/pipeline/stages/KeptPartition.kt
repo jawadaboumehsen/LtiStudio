@@ -31,14 +31,20 @@ internal object KeptPartition {
 
     /**
      * `sh -c UNCHANGED_SCRIPT sh <work tree> <stock tree> <work fs_config> <stock fs_config> <work file_context>
-     * <stock file_context>`: the paths whose kind, size, time, mode or link target differ (at most 20), then a line
-     * per sidecar that differs; nothing when the trees are the same. Assemble keeps the stock times, so an unchanged
-     * file has the same time; a file rewritten in place to the same size gets a new one.
+     * <stock file_context>`: the paths whose kind, size, mode, link target or contents (md5) differ (at most 20),
+     * then a line per sidecar that differs; nothing when the trees are the same. Times are not compared: a file can
+     * be rewritten with its old time. A tree that cannot be read is a difference.
      */
     const val UNCHANGED_SCRIPT: String = """
         t=${'$'}(mktemp -d); trap 'rm -rf "${'$'}t"' EXIT
-        (cd "$1" && find . -mindepth 1 -printf '%P\t%y\t%s\t%T@\t%m\t%l\n' | LC_ALL=C sort) > "${'$'}t/a"
-        (cd "$2" && find . -mindepth 1 -printf '%P\t%y\t%s\t%T@\t%m\t%l\n' | LC_ALL=C sort) > "${'$'}t/b"
+        list() {
+          cd "${'$'}1" 2>/dev/null || { echo "(cannot read ${'$'}1)"; return; }
+          find . -mindepth 1 -printf '%P\t%y\t%s\t%m\t%l\n' || echo "(cannot list ${'$'}1)"
+          find . -type f -print0 | xargs -0 -r -P8 -n64 md5sum | sed -E 's#^([0-9a-f]+)  \./(.*)${'$'}#\2\tmd5 \1#' ||
+            echo "(cannot read every file of ${'$'}1)"
+        }
+        (list "$1" | LC_ALL=C sort) > "${'$'}t/a"
+        (list "$2" | LC_ALL=C sort) > "${'$'}t/b"
         diff "${'$'}t/a" "${'$'}t/b" | sed -n 's/^[<>] //p' | cut -f1 | LC_ALL=C sort -u | head -n 20
         cmp -s "$3" "$4" || echo "(owners and modes: fs_config)"
         cmp -s "$5" "$6" || echo "(SELinux labels: file_context)"

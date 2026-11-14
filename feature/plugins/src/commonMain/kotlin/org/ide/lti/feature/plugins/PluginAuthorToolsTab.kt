@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,11 +28,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -43,9 +46,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
-import org.ide.lti.core.designsystem.generated.resources.Res
-import org.ide.lti.core.designsystem.generated.resources.ideNodesPlugin
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -57,13 +61,11 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.plugin.AuthorTaskResult
 import org.ide.lti.core.domain.plugin.TrustCheck
 import org.ide.lti.feature.plugins.components.PluginDiagnosticsTable
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.ide.lti.feature.plugins.components.PluginPipelineFlow
-import org.jetbrains.compose.resources.painterResource
 
 private data class SdkAuthorTask(val id: String, val title: String, val icon: @Composable () -> Painter)
 
@@ -157,14 +159,6 @@ private fun AuthorProjectHeaderCard(
     onRevokeProject: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val hasPath = projectPath.isNotBlank()
-    val displayTitle = if (hasPath) {
-        formatPluginDisplayName(projectPath.substringAfterLast('/').substringAfterLast('\\').ifBlank { projectPath })
-    } else {
-        "No project selected"
-    }
-    val locationText = if (hasPath) projectPath else "No author project path configured"
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -182,115 +176,27 @@ private fun AuthorProjectHeaderCard(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = "Project",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
-                    Row(
-                        modifier = Modifier
-                            .clip(GlassShapes.MediumSmall)
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .glassOutlineBorder(
-                                width = StrokeWidth.Hairline,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Faint),
-                                shape = GlassShapes.HazeMediumSmall,
-                            )
-                            .clickable { onProjectPathChange(projectPath) }
-                            .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Text(
-                            text = "$displayTitle ▾",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f).padding(horizontal = Spacing.Medium)) {
-                    Text(
-                        text = "Project location",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.ExtraExtraSmall))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
-                    ) {
-                        Icon(
-                            painter = AppIcons.FolderPainterResource(),
-                            contentDescription = "Project Location",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(IconSize.Small),
-                        )
-                        Column {
-                            Text(
-                                text = "Local author project",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = locationText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = codeFontFamily(),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+                GlassTextField(
+                    value = projectPath,
+                    onValueChange = onProjectPathChange,
+                    label = "Author project folder",
+                    placeholder = "The folder of a mod project (with its Gradle wrapper)",
+                    config = TextFieldConfig(singleLine = true),
+                    modifier = Modifier.weight(1f).testTag("AuthorProjectPath"),
+                )
+                GlassButton(
+                    onClick = { onCheckProject(projectPath) },
+                    enabled = projectPath.isNotBlank(),
+                    variant = GlassButtonVariant.Primary,
+                    shape = GlassShapes.HazeMediumSmall,
+                    minHeight = ComponentSize.PluginActionBtnCompactHeight,
+                    contentPadding = PaddingValues(horizontal = Spacing.Medium, vertical = Spacing.ExtraSmall),
+                    modifier = Modifier.testTag("CheckAuthorProject"),
                 ) {
-                    GlassButton(
-                        onClick = { onCheckProject(projectPath) },
-                        variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.HazeMediumSmall,
-                        minHeight = ComponentSize.PluginActionBtnCompactHeight,
-                        contentPadding = PaddingValues(
-                            horizontal = Spacing.Medium,
-                            vertical = Spacing.ExtraSmall,
-                        ),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                        ) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ideNodesPlugin),
-                                contentDescription = "Open in IntelliJ IDEA",
-                                tint = BrandColors.OnLogoBadge,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text("Open in IntelliJ IDEA")
-                        }
-                    }
-                    GlassButton(
-                        onClick = { onCheckProject(projectPath) },
-                        variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.HazeMediumSmall,
-                        minHeight = ComponentSize.PluginActionBtnCompactHeight,
-                        contentPadding = PaddingValues(
-                            horizontal = Spacing.Small,
-                            vertical = Spacing.ExtraSmall,
-                        ),
-                    ) {
-                        Text("▾")
-                    }
+                    Text("Check project")
                 }
             }
 
@@ -312,17 +218,18 @@ private fun AuthorTrustStatusRow(
     onRevokeProject: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isApproved = trustCheck is TrustCheck.Approved || trustCheck == null
-    val trustTint = if (isApproved) {
-        GlassTheme.diagnosticColors.success
-    } else {
-        GlassTheme.diagnosticColors.warning
+    val isApproved = trustCheck is TrustCheck.Approved
+    val trustTint = when {
+        isApproved -> GlassTheme.diagnosticColors.success
+        trustCheck == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> GlassTheme.diagnosticColors.warning
     }
     val trustPainter = if (isApproved) {
         AppIcons.CheckPainterResource()
     } else {
         AppIcons.InfoPainterResource()
     }
+    var reviewing by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -340,10 +247,11 @@ private fun AuthorTrustStatusRow(
                 modifier = Modifier.size(IconSize.Small),
             )
             Text(
-                text = if (isApproved) {
-                    "Trusted project · Wrapper and build scripts unchanged."
-                } else {
-                    "Build scripts modified · Trust review required."
+                text = when (trustCheck) {
+                    is TrustCheck.Approved -> "Trusted project · Wrapper and build scripts unchanged."
+                    is TrustCheck.FingerprintChanged -> "Build scripts changed since approved · Review before running."
+                    TrustCheck.NotApproved -> "Not approved · Review before running its tasks."
+                    null -> "Not checked yet · Check the project first."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = trustTint,
@@ -351,7 +259,8 @@ private fun AuthorTrustStatusRow(
         }
 
         GlassButton(
-            onClick = if (trustCheck is TrustCheck.Approved) onRevokeProject else onApproveProject,
+            onClick = { reviewing = true },
+            enabled = trustCheck != null,
             variant = GlassButtonVariant.Standard,
             shape = GlassShapes.HazeMediumSmall,
             minHeight = ComponentSize.PluginActionBtnCompactHeight,
@@ -359,8 +268,40 @@ private fun AuthorTrustStatusRow(
                 horizontal = Spacing.Medium,
                 vertical = Spacing.ExtraSmall,
             ),
+            modifier = Modifier.testTag("ReviewTrust"),
         ) {
             Text("Review trust →")
+        }
+    }
+    if (reviewing) {
+        GlassDialog(
+            onDismissRequest = { reviewing = false },
+            title = if (isApproved) "Stop trusting this project?" else "Trust this project?",
+            confirmButton = {
+                GlassButton(
+                    onClick = {
+                        reviewing = false
+                        if (isApproved) onRevokeProject() else onApproveProject()
+                    },
+                    variant = GlassButtonVariant.Primary,
+                    modifier = Modifier.testTag("ConfirmTrust"),
+                ) { Text(if (isApproved) "Revoke" else "Approve") }
+            },
+            dismissButton = {
+                GlassButton(onClick = { reviewing = false }, variant = GlassButtonVariant.Text) { Text("Cancel") }
+            },
+        ) {
+            Text(
+                if (isApproved) {
+                    "Its tasks will not run again until you approve it."
+                } else {
+                    "Its tasks run the project's Gradle wrapper and build scripts on this computer with your rights. " +
+                        "Approving trusts them as they are now; any later change to them asks again." +
+                        (if (trustCheck is TrustCheck.FingerprintChanged) " They changed since approved." else "")
+                },
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

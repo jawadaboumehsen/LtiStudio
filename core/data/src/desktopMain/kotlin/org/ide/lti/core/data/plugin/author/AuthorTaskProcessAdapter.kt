@@ -11,7 +11,9 @@ package org.ide.lti.core.data.plugin.author
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -89,7 +91,11 @@ class AuthorTaskProcessAdapter(
         }
     }
 
-    override suspend fun fingerprint(projectPath: String): String? {
+    override suspend fun fingerprint(projectPath: String): String? = withContext(Dispatchers.IO) {
+        fingerprintOf(projectPath)
+    }
+
+    private suspend fun fingerprintOf(projectPath: String): String? {
         val projectDir = Path.of(projectPath).toAbsolutePath().normalize()
         if (!Files.exists(projectDir) || !Files.isDirectory(projectDir)) {
             return null
@@ -101,11 +107,14 @@ class AuthorTaskProcessAdapter(
         val md = MessageDigest.getInstance("SHA-256")
         val buffer = ByteArray(PluginPackagePolicy.TRANSFER_CHUNK_BYTES.toInt())
         for (relPath in sortedPaths) {
-            // NUL-delimit the path from its content so a rename cannot produce the same digest
-            // as a different file whose bytes happen to start with the renamed suffix.
-            md.update(relPath.toByteArray(Charsets.UTF_8))
-            md.update(0)
+            currentCoroutineContext().ensureActive()
+            // Every path and every content goes in with its length first: bytes moved from one file into the
+            // next (or into a name) can never give the same digest.
+            val name = relPath.toByteArray(Charsets.UTF_8)
+            md.update(lengthOf(name.size.toLong()))
+            md.update(name)
             val file = projectDir.resolve(relPath)
+            md.update(lengthOf(Files.size(file)))
             Files.newInputStream(file).use { input ->
                 while (true) {
                     val read = input.read(buffer)
@@ -117,6 +126,8 @@ class AuthorTaskProcessAdapter(
 
         return md.digest().joinToString("") { "%02x".format(it) }
     }
+
+    private fun lengthOf(n: Long): ByteArray = java.nio.ByteBuffer.allocate(Long.SIZE_BYTES).putLong(n).array()
 
     override suspend fun approval(projectPath: String): TrustApproval? {
         val file = approvalFileFor(projectPath)

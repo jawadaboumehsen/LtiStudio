@@ -26,6 +26,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.CoverageResult
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ApplyModules
+import org.ide.lti.core.domain.plugin.COMPONENT_EDITS_UNCHECKED
 import org.ide.lti.core.domain.plugin.CheckModules
 import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
@@ -112,18 +113,28 @@ class ModuleHostSteps(
             workTreeRelPath = work.toString(),
             partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
         )
+        // In plan order, each against what the earlier ones left: the build applies them that way.
+        val staged = mutableMapOf<String, String>()
         val refused = request.plans.mapNotNull { plan ->
             yield()
             val key = "${plan.publisher}:${plan.id}:${plan.version}"
             val fileOps = plan.operations.filterNot { it.isComponentEdit() }
-            val outcome = files.preview(plan.copy(operations = fileOps), ctx, request.assetRoots[key].orEmpty())
+            val outcome = files.previewAfter(
+                plan.copy(operations = fileOps),
+                ctx,
+                request.assetRoots[key].orEmpty(),
+                staged,
+            )
             (outcome as? MutationOutcome.Refused)?.report?.errors?.takeIf { it.isNotEmpty() }?.let { errors ->
                 "${plan.id} ${plan.version}: " + errors.take(
                     ERRORS_SHOWN,
                 ).joinToString("; ") { "${it.code} ${it.fieldPath}" }
             }
         }
-        return if (refused.isEmpty()) "ok" else refused.joinToString("\n")
+        // APK/JAR edits need the package decoded: only the build checks them, which is said, not passed over.
+        val components = request.plans.filter { p -> p.operations.any { it.isComponentEdit() } }.map { it.id }
+        val unchecked = components.takeIf { it.isNotEmpty() }?.joinToString(prefix = COMPONENT_EDITS_UNCHECKED)
+        return (refused.ifEmpty { listOf("ok") } + listOfNotNull(unchecked)).joinToString("\n")
     }
 
     /** Consecutive runs of operations of one kind, in plan order: a later copy still lands after an earlier edit. */
@@ -213,9 +224,10 @@ class ModuleHostSteps(
 
     /** Writes the build values into a copied text file, or the text members of a copied zip, that ask for them. */
     private fun fillValues(file: Path, values: Map<String, String>) {
-        if (!Files.isRegularFile(file) || Files.size(file) > TEXT_LIMIT) return
+        val zip = file.fileName.toString().endsWith(".zip")
+        if (!Files.isRegularFile(file) || Files.size(file) > if (zip) ZIP_EXPANDED_LIMIT else TEXT_LIMIT) return
         val bytes = Files.readAllBytes(file)
-        val filled = if (file.fileName.toString().endsWith(".zip")) fillZip(bytes, values) else fill(bytes, values)
+        val filled = if (zip) fillZip(bytes, values) else fill(bytes, values)
         filled?.let { Files.write(file, it) }
     }
 

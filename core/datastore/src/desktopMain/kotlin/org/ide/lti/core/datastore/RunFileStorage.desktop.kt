@@ -11,6 +11,8 @@ package org.ide.lti.core.datastore
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.file.Files
 
@@ -56,13 +58,24 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
         if (events.isEmpty()) return@withContext
         val file = File(baseDir, "$runId.events.jsonl")
         file.parentFile?.mkdirs()
-        file.appendText(events.joinToString(separator = "\n", postfix = "\n"), Charsets.UTF_8)
+        val lines = events.joinToString(
+            separator = "\n",
+            postfix = "\n",
+        ) { Json.encodeToString(String.serializer(), it) }
+        file.appendText(lines, Charsets.UTF_8)
     }
 
     override suspend fun getEvents(runId: String, fromSeq: Long): List<String> = withContext(Dispatchers.IO) {
         val file = File(baseDir, "$runId.events.jsonl")
         if (!file.exists() || !file.isFile) return@withContext emptyList()
-        val lines = file.readLines(Charsets.UTF_8).filter { it.isNotBlank() }
+        // A JSON string per event; a line from before is read as it is.
+        val lines = file.readLines(Charsets.UTF_8).filter { it.isNotBlank() }.map { line ->
+            if (line.startsWith('"')) {
+                runCatching { Json.decodeFromString(String.serializer(), line) }.getOrDefault(line)
+            } else {
+                line
+            }
+        }
         if (fromSeq <= 0L) {
             lines
         } else {

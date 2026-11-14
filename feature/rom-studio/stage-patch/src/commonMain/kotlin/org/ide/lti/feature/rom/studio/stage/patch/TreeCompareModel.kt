@@ -46,13 +46,17 @@ public class TreeCompareModel internal constructor(
     private val current: () -> TreeCompareState,
     private val update: ((TreeCompareState) -> TreeCompareState) -> Unit,
     private val task: (String, suspend (CompareWorkbench) -> Unit) -> Unit,
+    /** True while a task runs: another one is not started (and must not change what is shown). */
+    private val busy: () -> Boolean = { false },
 ) {
     /** The workspaces and this one's sources; the first time, stock against the build of the same partition. */
     public fun loadCompare() {
         task("Looking for trees and images") { tools ->
             val all = workspaces?.getWorkspaces()?.first().orEmpty().filter { it.linuxPath != null }
             val own = tools.sources(workspaceId)
-            update { t ->
+            update { old ->
+                // What a build or an image change made since the last visit is offered: nothing older is kept.
+                val t = old.copy(sources = emptyMap(), members = emptyMap())
                 val stock = own.trees.firstOrNull { it == "${FirmwareExtractionStage.EXTRACTED}/system" }
                     ?: own.trees.firstOrNull { it.startsWith(FirmwareExtractionStage.EXTRACTED) }
                 val built = stock?.let { "work/${it.substringAfterLast('/')}" }?.takeIf { it in own.trees }
@@ -102,13 +106,14 @@ public class TreeCompareModel internal constructor(
         val b = t.b ?: return
         task("Comparing ${a.partition} with ${b.partition}") { tools ->
             val result = tools.compareSides(a, b, t.trustTimes)
-            update { it.copy(result = result, opened = null, entry = null) }
+            update { if (it.a == a && it.b == b) it.copy(result = result, opened = null, entry = null) else it }
         }
     }
 
     /** Opens a row of the comparison: its line diff, entries, dex files and methods, or sizes and hashes. */
     public fun open(change: TreeChange) {
         val result = current().result ?: return
+        if (busy()) return
         update { it.copy(opened = change, entry = null) }
         task("Comparing ${change.path.substringAfterLast('/')}") { tools ->
             val entry = tools.compareEntry(result.a, result.b, change)

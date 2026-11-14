@@ -191,6 +191,36 @@ class PlatformMetadataTest {
     }
 
     /** One fs_config table entry: header, path and its NUL, padded to 8 bytes as Android writes it. */
+    @Test
+    fun deviceRulesMatchAsAndroidsFnmatchWithPartitionAliases() {
+        val o = Owner(1000, 2000, 0x1ED)
+        val rules = OwnerRules(
+            dirs = emptyList(),
+            files = listOf(
+                OwnerRules.Entry("vendor/bin/hw/android.hardware.?ensors*", o),
+                OwnerRules.Entry("vendor/lib[0-9]*/libfoo.so", o),
+                OwnerRules.Entry("system/vendor/bin/helper", o),
+            ),
+        )
+        fun source(path: String) = rules.owner(path, isDirectory = false).second
+        assertEquals(OwnerRules.Source.Device, source("vendor/bin/hw/android.hardware.sensors@2.0"))
+        assertEquals(OwnerRules.Source.Device, source("vendor/lib64/libfoo.so"))
+        assertEquals(OwnerRules.Source.Default, source("vendor/libx/libfoo.so"))
+        // system/vendor/ and vendor/ name the same place, both ways.
+        assertEquals(OwnerRules.Source.Device, source("vendor/bin/helper"))
+        assertEquals(OwnerRules.Source.Device, source("system/vendor/lib64/libfoo.so"))
+    }
+
+    @Test
+    fun aRecordWithoutItsNulEndsTheTable() {
+        val entry = table("vendor/bin/cnd", 0x1ED, 1000, 1000, 0)
+        val unterminated = entry.copyOf().also { b ->
+            for (i in HEADER + "vendor/bin/cnd".length until b.size) b[i] = 'x'.code.toByte()
+        }
+        assertEquals(1, OwnerRules.decodeTable(entry).size)
+        assertEquals(0, OwnerRules.decodeTable(unterminated).size)
+    }
+
     private fun table(path: String, mode: Int, uid: Int, gid: Int, caps: Long): ByteArray {
         val name = path.encodeToByteArray()
         val length = (HEADER + name.size + 1 + 7) / 8 * 8

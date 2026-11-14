@@ -34,6 +34,9 @@ import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
 
 /** The Build stage's toolkit checks and extra packages (spec 010): coverage gate, image verify, fastboot/Odin. */
 internal object BuildChecks {
+    /** In a coverage refusal: the check ran but its result could not be read (no fill repairs that). */
+    const val UNREADABLE_COVERAGE: String = "unreadable coverage result"
+
     // The tar stays when the plain one is asked for too: the verified form is a copy with the md5sum line appended.
     private const val ODIN_MD5 =
         "cd \"\$1\" && cp -f \"\$2\" \"\$2.part\" && md5sum \"\$2\" >> \"\$2.part\" && mv -f \"\$2.part\" \"\$2.md5\""
@@ -247,9 +250,12 @@ internal object BuildChecks {
         val spaced = coverage?.unbuildableNames.orEmpty()
         fun listed(paths: List<String>) = paths.take(COVERAGE_SHOWN).joinToString() +
             (if (paths.size > COVERAGE_SHOWN) " and ${paths.size - COVERAGE_SHOWN} more" else "")
-        val reason = if (missing.isEmpty() && spaced.isNotEmpty()) {
+        val reason = if (coverage == null) {
+            "COVERAGE_REFUSAL: $UNREADABLE_COVERAGE. Build again; if it stays, send the build log."
+        } else if (spaced.isNotEmpty()) {
             "COVERAGE_REFUSAL: ${spaced.size} name(s) hold a space, which no permission or SELinux line can " +
-                "describe: ${listed(spaced)}. Rename or delete them (Assemble > Image browser) and build again."
+                "describe: ${listed(spaced)}. Rename or delete them (Assemble > Image browser) and build again." +
+                (if (missing.isEmpty()) "" else " ${missing.size} other file(s) have no permission or SELinux entry.")
         } else {
             "COVERAGE_REFUSAL: ${missing.size} file(s) have no permission or SELinux label entry, so the " +
                 "image would not boot: ${listed(missing)}. Add the entries in Build & Sign (Coverage) and build again."

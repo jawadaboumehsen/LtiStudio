@@ -87,6 +87,8 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
         private const val BLOCK = 4096
         private const val ERROR_SHOWN = 400
         private const val CLUSTER = 64
+        private const val DIGEST = 32
+        private const val FOOTER_RESERVE = 64 * KIB
 
         /**
          * The ways worth trying for [p]: as set now, a 64 KiB cluster, deduplicated (when the boot kernel at
@@ -118,10 +120,25 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
             ).distinctBy { Triple(it.compression, it.dedupe, it.clusterKib) }
         }
 
-        /** The fastest result that fits in [room] bytes, else the smallest; null when none built. */
+        /**
+         * [bytes] of a bare image as the build leaves it: with the AVB hashtree (32 bytes per 4 KiB block, each
+         * level rounded to a block, no FEC) and a reserve for the footer and its vbmeta.
+         */
+        public fun signedBytes(bytes: Long): Long {
+            var level = bytes
+            var tree = 0L
+            while (level > BLOCK) {
+                level = (level + BLOCK - 1) / BLOCK * DIGEST
+                level = (level + BLOCK - 1) / BLOCK * BLOCK
+                tree += level
+            }
+            return bytes + tree + FOOTER_RESERVE
+        }
+
+        /** The fastest result that fits in [room] bytes once signed, else the smallest; null when none built. */
         public fun recommend(results: List<TrialResult>, room: Long?): TrialResult? {
             val built = results.filter { it.bytes != null }
-            val fitting = built.filter { room == null || it.bytes!! <= room }
+            val fitting = built.filter { room == null || signedBytes(it.bytes!!) <= room }
             return fitting.minByOrNull { it.seconds ?: Double.MAX_VALUE } ?: built.minByOrNull { it.bytes!! }
         }
 

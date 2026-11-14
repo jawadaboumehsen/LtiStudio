@@ -714,4 +714,33 @@ class FileMutationAdapterTest {
             stream.sorted(Comparator.reverseOrder()).forEach { Files.deleteIfExists(it) }
         }
     }
+
+    @Test
+    fun aLaterPlanIsCheckedAgainstWhatAnEarlierOneEdited() = runBlocking {
+        Files.createDirectories(workTree.resolve("system/etc"))
+        Files.writeString(workTree.resolve("system/etc/notes.txt"), "A\n")
+        fun plan(id: String, from: String, to: String) = ConcreteMutationPlan(
+            publisher = "p",
+            id = id,
+            version = "1.0.0",
+            operations = listOf(
+                ConcreteOperation.TextPatch(
+                    id = "$id-edit",
+                    target = PartitionPath("system", "etc/notes.txt"),
+                    context = from,
+                    replacement = to,
+                    expectedSha256 = "",
+                ),
+            ),
+            notApplicable = emptyList(),
+            digest = id,
+        )
+        // Alone, B meets "A" and is refused; after A it meets "B" as the build would.
+        assertIs<MutationOutcome.Refused>(adapter.preview(plan("b", "B", "C"), ctx, assetRoot.toString()))
+        val staged = mutableMapOf<String, String>()
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(plan("a", "A", "B"), ctx, assetRoot.toString(), staged))
+        assertIs<MutationOutcome.Applied>(adapter.previewAfter(plan("b", "B", "C"), ctx, assetRoot.toString(), staged))
+        // Nothing was written.
+        assertEquals("A\n", Files.readString(workTree.resolve("system/etc/notes.txt")))
+    }
 }

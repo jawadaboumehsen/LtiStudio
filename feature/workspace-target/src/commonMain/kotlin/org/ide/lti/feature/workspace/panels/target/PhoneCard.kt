@@ -19,6 +19,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ internal fun PhoneCard(
 ) {
     val phone by vm.state.collectAsStateWithLifecycle()
     val workspaceId = state.workspaceId ?: return
+    LaunchedEffect(workspaceId) { vm.showFor(workspaceId) }
     Column(
         modifier = Modifier.fillMaxWidth().testTag("PhoneCard"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -121,6 +123,7 @@ private fun Phones(state: PhoneUiState, vm: PhoneViewModel) {
 @Composable
 private fun Facts(phone: PhoneFacts, workspaceId: String, vm: PhoneViewModel) {
     var all by remember(phone) { mutableStateOf(false) }
+    phone.readError?.let { Note("Its answers are incomplete: $it", GlassTheme.diagnosticColors.warning) }
     factLines(phone).forEach { (label, value) -> Fact(label, value) }
     Note("Every value above is the phone's own answer (measured).", MaterialTheme.colorScheme.onSurfaceVariant)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {

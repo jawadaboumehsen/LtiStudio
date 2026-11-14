@@ -1422,9 +1422,10 @@ private const val WORK_RECORD = ".cache/work.fp"
 
 /** `$1` work/: every entry's path, kind, size, mode and link, and every file's md5, without package/. */
 private const val WORK_FINGERPRINT_SCRIPT = """cd "$1" || exit 1
-{ find . -path ./package -prune -o -printf '%P\t%y\t%s\t%m\t%l\n' | LC_ALL=C sort
-  find . -path ./package -prune -o -type f -print0 | xargs -0 -r -P8 -n64 md5sum | LC_ALL=C sort
-} | sha256sum | cut -d' ' -f1"""
+t=${'$'}(mktemp -d) || exit 1; trap 'rm -rf "${'$'}t"' EXIT
+find . -path ./package -prune -o -printf '%P\t%y\t%s\t%m\t%l\n' > "${'$'}t/l" || exit 1
+find . -path ./package -prune -o -type f -print0 | xargs -0 -r -P8 -n64 md5sum > "${'$'}t/m" || exit 1
+{ LC_ALL=C sort "${'$'}t/l"; LC_ALL=C sort "${'$'}t/m"; } | sha256sum | cut -d' ' -f1"""
 
 /** The work-tree stages' cache decision: those up to [cachedThrough] come from cache; [reason] is why they run. */
 private data class WorkGroupCheck(val cachedThrough: StageId?, val reason: String?)

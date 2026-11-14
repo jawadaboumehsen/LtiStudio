@@ -23,6 +23,9 @@ import org.ide.lti.core.domain.plugin.PluginPlanResolver
 import org.ide.lti.core.domain.plugin.PluginPlanValidator
 import org.ide.lti.core.domain.plugin.ResolutionInput
 import org.ide.lti.core.domain.plugin.ResolutionResult
+import org.ide.lti.core.model.plugin.Operation
+import org.ide.lti.core.model.plugin.PartitionPath
+import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.sdk.patchmod.ModCheck
 import org.ide.lti.sdk.patchmod.PackageWriter
 import org.ide.lti.sdk.patchmod.runtime.PackageReadResult
@@ -344,9 +347,7 @@ object PatchModTool {
             listOf(template),
             tree = treeRoot,
             assetExists = { _, asset -> File(projectDir, asset.path).isFile },
-            decoded = { target ->
-                File(decodedRoot, target.relativePath.substringAfterLast('/')).takeIf { it.isDirectory }
-            },
+            decoded = { target -> decodedComponent(decodedRoot, template, target) },
         )
         val failed = checks.filter { it.failed }
         val lines = checks.joinToString("\n") { c ->
@@ -559,4 +560,16 @@ object PatchModTool {
         val diagFile = File(buildDir, "diagnostics.json")
         diagFile.writeText(json.encodeToString(ListSerializer(DiagnosticEntry.serializer()), diagnostics) + "\n")
     }
+}
+
+/**
+ * The decoded folder of [target]: `<root>/<partition>/<path>` when it is there, else `<root>/<file name>` when no
+ * other package [template] edits has that file name (two `Foo.apk` would be checked against one folder).
+ */
+private fun decodedComponent(root: File, template: PluginPlanTemplate, target: PartitionPath): File? {
+    File(root, "${target.partition}/${target.relativePath}").takeIf { it.isDirectory }?.let { return it }
+    val name = target.relativePath.substringAfterLast('/')
+    val sameName = template.operations.filterIsInstance<Operation.ApkJarPatch>().map { it.target }.distinct()
+        .count { it.relativePath.substringAfterLast('/') == name }
+    return File(root, name).takeIf { it.isDirectory && sameName <= 1 }
 }

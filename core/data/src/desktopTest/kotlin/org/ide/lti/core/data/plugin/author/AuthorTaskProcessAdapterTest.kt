@@ -48,6 +48,17 @@ class AuthorTaskProcessAdapterTest {
     }
 
     @Test
+    fun bytesMovedAcrossAFileBoundaryChangeTheFingerprint() = runTest {
+        // The audit's pair: a = "Xb\u0000Y", b = "Z" against a = "X", b = "Yb\u0000Z" read the same without lengths.
+        Files.writeString(projectDir.resolve("a"), "Xb\u0000Y")
+        Files.writeString(projectDir.resolve("b"), "Z")
+        val first = adapter.fingerprint(projectDir.toString())
+        Files.writeString(projectDir.resolve("a"), "X")
+        Files.writeString(projectDir.resolve("b"), "Yb\u0000Z")
+        assertNotEquals(first, adapter.fingerprint(projectDir.toString()))
+    }
+
+    @Test
     fun aScriptTheBuildAppliesFromAnywhereIsPartOfTheFingerprint() = runTest {
         Files.writeString(projectDir.resolve("build.gradle.kts"), "apply(from = \"extra.gradle.kts\")")
         val extra = projectDir.resolve("extra.gradle.kts")

@@ -72,7 +72,7 @@ import org.ide.lti.core.domain.workbench.partition
 @Composable
 internal fun TreeCompareCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     val t = state.trees
-    LaunchedEffect(Unit) { if (t.workspaces.isEmpty()) viewModel.trees.loadCompare() }
+    LaunchedEffect(Unit) { viewModel.trees.loadCompare() }
     CompareCard("Compare two trees") {
         CompareHint(
             "Each side is a partition tree (stock firmware or the build) or an image read straight from its file, " +
@@ -108,8 +108,10 @@ internal fun TreeCompareCard(state: ContentToolsState, viewModel: ContentToolsVi
 /** Whether [side] names something to read: a tree, a filesystem image, or a partition picked inside super. */
 private fun ready(side: CompareSide?, t: TreeCompareState): Boolean = when (side) {
     null -> false
+
     // A workspace was chosen, nothing in it yet.
     is CompareSide.Tree -> side.folder.isNotEmpty()
+
     is CompareSide.Image -> {
         val kind = t.sources[side.workspaceId]?.images?.firstOrNull { it.path == side.image }?.kind
         val members = t.members["${side.workspaceId}|${side.image}"]

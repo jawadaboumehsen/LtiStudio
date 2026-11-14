@@ -174,7 +174,7 @@ class PackageWriterTest {
             val entries = zf.entries().asSequence().toList()
             assertTrue(entries.isNotEmpty())
             for (entry in entries) {
-                assertEquals(PackageWriter.DOS_EPOCH_MILLIS, entry.time)
+                assertEquals(PackageWriter.DOS_EPOCH, entry.timeLocal)
             }
         }
     }
@@ -229,6 +229,37 @@ class PackageWriterTest {
                 license = "License\n",
                 assets = assets,
                 out = out,
+            )
+        }
+    }
+
+    @Test
+    fun testTheSamePackageHasTheSameBytesInAnyTimeZoneAndAnOversizedReadmeIsRefused() {
+        val asset = createAssetFile("tool.so", "bytes")
+        fun write(zone: String, name: String): ByteArray {
+            val saved = java.util.TimeZone.getDefault()
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone))
+            try {
+                val out = tempDir.resolve(name)
+                val assets = mapOf("assets/bin/tool.so" to asset)
+                PackageWriter.writePackage(sampleManifest, sampleTemplate, "Readme\n", "License\n", assets, out)
+                return java.nio.file.Files.readAllBytes(out)
+            } finally {
+                java.util.TimeZone.setDefault(saved)
+            }
+        }
+        assertTrue(write("UTC", "utc.lti-mod.zip").contentEquals(write("Asia/Beirut", "beirut.lti-mod.zip")))
+
+        // One byte over what an installed package's reader takes: refused here, not after publishing.
+        val readme = "x".repeat(org.ide.lti.core.domain.plugin.PluginPackagePolicy.README_MAX_BYTES.toInt() + 1)
+        kotlin.test.assertFailsWith<IllegalArgumentException> {
+            PackageWriter.writePackage(
+                sampleManifest,
+                sampleTemplate,
+                readme,
+                "L\n",
+                emptyMap(),
+                tempDir.resolve("big.zip"),
             )
         }
     }

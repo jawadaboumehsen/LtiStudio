@@ -10,6 +10,8 @@
 package org.ide.lti.core.domain.workbench
 
 import kotlinx.coroutines.delay
+import org.ide.lti.core.domain.pipeline.toolkit.Refusal
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 
 /** How a phone is connected, as adb or fastboot report it. */
 public enum class PhoneMode(public val words: String, public val fastboot: Boolean = false) {
@@ -29,7 +31,13 @@ public data class PhonePartition(val name: String, val sizeBytes: Long?, val log
  * What a connected phone says about itself. [values] are its answers as read (`getvar all`, or `getprop` over adb),
  * kept whole; the rest is taken from them. A null fact was not answered: nothing here is assumed.
  */
-public data class PhoneFacts(val serial: String, val mode: PhoneMode, val values: Map<String, String> = emptyMap()) {
+public data class PhoneFacts(
+    val serial: String,
+    val mode: PhoneMode,
+    val values: Map<String, String> = emptyMap(),
+    /** Why its answers are missing or incomplete (the command failed or timed out); null when it answered. */
+    val readError: String? = null,
+) {
     private fun first(vararg keys: String) = keys.firstNotNullOfOrNull { values[it]?.takeIf(String::isNotBlank) }
 
     /** Fastboot's `product`, else Android's device name. */
@@ -153,16 +161,23 @@ public class PhoneProbe(private val runner: WorkbenchRunner) {
     public suspend fun read(workspaceId: String): List<PhoneFacts> = runner.read(workspaceId) {
         val adb = toolPath("adb")
         val fastboot = toolPath("fastboot")
-        val listed = sh(LIST_SCRIPT, adb, fastboot).split(FASTBOOT_MARK)
-        PhoneReadout.devices(listed[0], listed.getOrElse(1) { "" }).map { (serial, mode) ->
+        val adbList = answer("adb devices", LIST_SCRIPT, adb)
+        val fastbootList = answer("fastboot devices", LIST_SCRIPT, fastboot)
+        listOfNotNull(adbList.second, fastbootList.second).firstOrNull()?.let { error ->
+            throw RefusalException(Refusal(error, "the connected phone", "Check usbipd and the phone's cable."))
+        }
+        PhoneReadout.devices(adbList.first, fastbootList.first).map { (serial, mode) ->
             when (mode) {
                 PhoneMode.BOOTLOADER -> {
-                    val vars = PhoneReadout.fastbootVars(sh(GETVAR_SCRIPT, fastboot, serial))
-                    PhoneFacts(serial, if (vars["is-userspace"] == "yes") PhoneMode.FASTBOOTD else mode, vars)
+                    val (out, error) = answer("fastboot getvar all", GETVAR_SCRIPT, fastboot, serial)
+                    val vars = PhoneReadout.fastbootVars(out)
+                    PhoneFacts(serial, if (vars["is-userspace"] == "yes") PhoneMode.FASTBOOTD else mode, vars, error)
                 }
 
-                PhoneMode.ANDROID, PhoneMode.RECOVERY ->
-                    PhoneFacts(serial, mode, PhoneReadout.props(sh(GETPROP_SCRIPT, adb, serial)))
+                PhoneMode.ANDROID, PhoneMode.RECOVERY -> {
+                    val (out, error) = answer("adb shell getprop", GETPROP_SCRIPT, adb, serial)
+                    PhoneFacts(serial, mode, PhoneReadout.props(out), error)
+                }
 
                 else -> PhoneFacts(serial, mode)
             }
@@ -207,11 +222,26 @@ public class PhoneProbe(private val runner: WorkbenchRunner) {
     }
 
     public companion object {
-        private const val FASTBOOT_MARK = "@fastboot\n"
-        private const val LIST_SCRIPT =
-            "timeout 15 \"\$1\" devices -l 2>&1; echo @fastboot; timeout 15 \"\$2\" devices 2>&1; :"
-        private const val GETVAR_SCRIPT = "timeout 30 \"\$1\" -s \"\$2\" getvar all 2>&1; :"
-        private const val GETPROP_SCRIPT = "timeout 15 \"\$1\" -s \"\$2\" shell getprop 2>&1; :"
+        private const val LIST_SCRIPT = "timeout 15 \"\$1\" devices -l 2>&1"
+        private const val GETVAR_SCRIPT = "timeout 30 \"\$1\" -s \"\$2\" getvar all 2>&1"
+        private const val GETPROP_SCRIPT = "timeout 15 \"\$1\" -s \"\$2\" shell getprop 2>&1"
+        private const val TIMED_OUT = 124
+        private const val ERROR_SHOWN = 300
+
+        /** A command's output, and why it failed (with the end of its output) or null. */
+        private suspend fun WorkbenchRunner.Job.answer(
+            what: String,
+            script: String,
+            vararg args: String,
+        ): Pair<String, String?> {
+            val result = tryRun("sh", "-c", script, "sh", *args)
+            val error = when (result.exitCode) {
+                0 -> null
+                TIMED_OUT -> "$what did not answer within its time limit."
+                else -> "$what failed (exit ${result.exitCode}): ${result.stdout.trim().takeLast(ERROR_SHOWN)}"
+            }
+            return result.stdout to error
+        }
         private const val REBOOT_SCRIPT = "timeout 15 \"\$1\" -s \"\$2\" reboot \$3 2>&1"
 
         /**
