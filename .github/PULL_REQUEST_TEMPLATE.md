@@ -1,16 +1,12 @@
-## Issue Fix
-Fixes #{Issue Number}
-Jira Task: [Task_Number](Task_Link)
+## What and why
+<!-- What this changes and the problem it solves. -->
+
+Fixes #
 
 ## Screenshots
-<!--Please Add Screenshots or Screen Recordings which show the changes you made.-->
+<!-- For anything visible in the app. -->
 
-## Description
-<!--Please Add Summary of what changes you have made.-->
-
-##
-<!--Please make sure these boxes are checked before submitting your pull request - thanks!-->
-
-- [ ] Run the unit tests with `./gradlew check` to make sure you didn't break anything
-
-- [ ] If you have multiple commits please combine them into one commit by squashing them.
+## Checks
+- [ ] `./gradlew detekt verifyDesignSystemGuardrails checkArchitecture --continue` passes
+- [ ] The `desktopTest` of every module I touched passes
+- [ ] New pipeline logic has a test
