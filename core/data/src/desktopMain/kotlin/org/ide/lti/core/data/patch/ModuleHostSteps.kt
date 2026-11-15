@@ -521,6 +521,17 @@ private fun kindOf(entry: Path): EntryKind = when {
 }
 
 private const val ERRORS_SHOWN = 3
+private const val METHODS_SHOWN = 3
+
+/**
+ * `Landroid/security/KeyStore2;->getSecurityLevel(I)L…;` → `KeyStore2.getSecurityLevel`; a member file
+ * (`smali_classes6/io/lti/Hook.smali`) → `Hook.smali`.
+ */
+internal fun shortMember(member: String): String {
+    if ("->" !in member) return member.substringAfterLast('/')
+    val type = member.substringBefore("->").removeSuffix(";").substringAfterLast('/')
+    return "$type.${member.substringAfter("->").substringBefore('(').substringBefore(':')}"
+}
 
 /**
  * The mod lab's APK/JAR check: each package decoded once, every mod's edits of it applied in plan order in memory
@@ -538,9 +549,12 @@ internal suspend fun componentVerdicts(
         when (val outcome = adapter.apply(group.map { it.second }, ctx, preview = true)) {
             is ApkJarOutcome.Applied -> {
                 val methods = outcome.receipts.flatMap { it.changedMethods }.distinct()
-                val said = "applies to $name" + methods.takeIf { it.isNotEmpty() }?.joinToString(
-                    prefix = ": ",
-                ).orEmpty()
+                // The package's changes from every mod: counted, with the first few by short name.
+                val said = "applies to $name" + methods.takeIf { it.isNotEmpty() }?.let { all ->
+                    val more = if (all.size > METHODS_SHOWN) ", +${all.size - METHODS_SHOWN} more" else ""
+                    "; the package's edits change ${all.size}: " +
+                        all.take(METHODS_SHOWN).joinToString(transform = ::shortMember) + more
+                }.orEmpty()
                 group.map { (mod, op) -> (mod to op.id) to LabRow(mod, op.id, LabStatus.CHECKED, said) }
             }
 

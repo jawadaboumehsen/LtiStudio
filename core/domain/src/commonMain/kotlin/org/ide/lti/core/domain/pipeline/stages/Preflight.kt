@@ -13,6 +13,7 @@ import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
+import org.ide.lti.core.domain.pipeline.WORK_RECORD
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
@@ -79,7 +80,7 @@ public class Preflight(
             val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device))
             val values = mutableMapOf<String, String>()
             // After Patches, work/ holds the mods already: their anchors are checked against a tree only Assemble made.
-            val patched = readText(APPLIED_PATH)?.contains("\"operations\":0") == false
+            val patched = patched()
             val mods = when {
                 catalog == null || snapshot.customization.enabledPackages.isEmpty() -> emptyList()
                 patched -> listOf(MODS_NOT_CHECKED)
@@ -133,7 +134,7 @@ public class Preflight(
         val snapshot = with ?: checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
         return runner.read(workspaceId) {
-            if (readText(APPLIED_PATH)?.contains("\"operations\":0") == false) {
+            if (patched()) {
                 ModLab(emptyList(), listOf(MODS_NOT_CHECKED.substringAfter(": ")))
             } else {
                 val values = mutableMapOf<String, String>()
@@ -142,6 +143,17 @@ public class Preflight(
                 ModLab(LabRow.decode(values[LAB_KEY].orEmpty()), problems)
             }
         }
+    }
+
+    /**
+     * Whether work/ holds the mods: Patches recorded applying some, and the stage that last left work/
+     * ([WORK_RECORD]) is Patches or Build (which runs on the patched tree). A run that stopped at Assemble or Debloat
+     * left a clean tree, even though Patches' record from an earlier run is still there.
+     */
+    private suspend fun WorkbenchRunner.Job.patched(): Boolean {
+        val applied = readText(APPLIED_PATH)?.contains("\"operations\":0") == false
+        val leftBy = readText(WORK_RECORD)?.substringBefore(' ')?.trim().orEmpty()
+        return applied && (leftBy.isEmpty() || leftBy in PATCHED_BY)
     }
 
     /** Why a build stopped, from its failed stage's message (`<step>: CODE: text`), with the fix offered here. */
@@ -215,9 +227,21 @@ public class Preflight(
         const val MODS_KEY = "preflight.modules"
         const val LAB_KEY = "preflight.lab"
 
+        /** The stages that leave work/ with the mods in it. */
+        val PATCHED_BY = setOf(StageId.MODULE_APPLICATION.name, StageId.BUILD_FLASHABLE_ZIP.name)
+
+        /**
+         * The Patches plan without the check that follows its apply step (it reads the apply step's result, which a
+         * check that replaces that step never records).
+         */
+        fun withoutApplyResult(steps: List<PipelineStep>): List<PipelineStep> = steps.filterIndexed { i, step ->
+            val after = steps.getOrNull(i - 1) as? PipelineStep.Host
+            step !is PipelineStep.Check || after?.request !is ApplyModules
+        }
+
         /** The Patches stage's plan with its apply step checking each operation instead. */
         fun labPlan(catalog: PluginCatalogPort, decode: Boolean): (StageContext) -> List<PipelineStep> = { ctx ->
-            ModuleApplicationStage(catalog).plan(ctx).mapNotNull { step ->
+            withoutApplyResult(ModuleApplicationStage(catalog).plan(ctx)).mapNotNull { step ->
                 val apply = (step as? PipelineStep.Host)?.request as? ApplyModules
                 when {
                     apply != null -> PipelineStep.Host("check each operation", LAB_KEY, LabModules(apply, decode))
@@ -234,7 +258,7 @@ public class Preflight(
 
         /** The Patches stage's plan with its apply step checking instead, and a finding for each mod refused. */
         fun modCheck(catalog: PluginCatalogPort): (StageContext) -> List<PipelineStep> = { ctx ->
-            ModuleApplicationStage(catalog).plan(ctx).flatMap { step ->
+            withoutApplyResult(ModuleApplicationStage(catalog).plan(ctx)).flatMap { step ->
                 val apply = (step as? PipelineStep.Host)?.request as? ApplyModules
                 when {
                     apply != null -> listOf(

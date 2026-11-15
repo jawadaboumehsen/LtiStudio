@@ -611,6 +611,11 @@ class ApkJarMutationAdapterTest {
         assertEquals(0, fakePort.rebuildCount)
         assertEquals(1, fakePort.discardCount)
         assertEquals("DEX_CONTAINER_PLACEHOLDER", Files.readString(frameworkJar))
+        assertEquals(
+            "KeyStore2.getSecurityLevel",
+            shortMember("Landroid/security/KeyStore2;->getSecurityLevel(I)Landroid/x;"),
+        )
+        assertEquals("Hook.smali", shortMember("smali_classes6/io/lti/Hook.smali"))
     }
 }
 

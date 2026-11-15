@@ -1456,7 +1456,7 @@ private val WORK_GROUP = setOf(StageId.WORK_TREE_ASSEMBLY, StageId.DEBLOAT, Stag
 private val WORK_EDITORS = WORK_GROUP + StageId.BUILD_FLASHABLE_ZIP
 
 /** `<last editing stage> <fingerprint>` of work/ as the last run left it. */
-private const val WORK_RECORD = ".cache/work.fp"
+public const val WORK_RECORD: String = ".cache/work.fp"
 
 /** `$1` work/: every entry's path, kind, size, mode and link, and every file's md5, without package/. */
 private const val WORK_FINGERPRINT_SCRIPT = """cd "$1" || exit 1

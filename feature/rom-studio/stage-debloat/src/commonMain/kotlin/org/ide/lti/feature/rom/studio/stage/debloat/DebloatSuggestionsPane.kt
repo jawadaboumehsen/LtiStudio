@@ -109,7 +109,13 @@ private fun GoalCard(facts: DebloatFacts, picked: Set<String>, onToggle: (Debloa
         val kept = plan.kept.takeIf { it.isNotEmpty() }
             ?.joinToString(prefix = "; kept as asked: ") { it.label ?: it.packageId }.orEmpty()
         Hint("Proposal: ${plan.picks.size} apps, ${formatBytes(plan.freedBytes)} of files$short$kept.")
-        plan.picks.forEach { s -> Line("- ${s.label ?: s.packageId}  ${formatBytes(s.candidate.sizeBytes)}") }
+        // The largest carry the goal; the long tail of small apps is one line.
+        plan.picks.take(
+            SHOWN,
+        ).forEach { s -> Line("- ${s.label ?: s.packageId}  ${formatBytes(s.candidate.sizeBytes)}") }
+        plan.picks.drop(SHOWN).takeIf { it.isNotEmpty() }?.let { rest ->
+            Hint("+ ${rest.size} smaller apps, ${formatBytes(rest.sumOf { it.candidate.sizeBytes })}")
+        }
         Hint(
             "Why: nothing in the ROM relies on or looks for these apps, none is part of the system or starts at " +
                 "boot. Unknown: what they do at run time (intents, services) is in no file. The image shrinks by " +
@@ -144,3 +150,4 @@ private fun GoalCard(facts: DebloatFacts, picked: Set<String>, onToggle: (Debloa
 
 private const val MIB = 1024L * 1024L
 private const val MAX_DIGITS = 6
+private const val SHOWN = 10
