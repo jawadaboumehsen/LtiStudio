@@ -13,20 +13,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.model.run.StageId
 
 /** "What will run?": each stage of the next run, reused from cache or why it runs again. */
@@ -145,6 +154,47 @@ internal fun FailureDiagnosis(
             uiState.fixMessage?.let {
                 Text(it, style = GlassTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
             }
+        }
+    }
+}
+
+/** The post-build report, as the Markdown it is copied as. */
+@Composable
+internal fun BuildReportDialog(report: BuildReportText?, onClose: () -> Unit) {
+    report ?: return
+    val clipboard = LocalClipboardManager.current
+    GlassDialog(
+        onDismissRequest = onClose,
+        title = "Build report",
+        confirmButton = {
+            GlassButton(
+                onClick = { clipboard.setText(AnnotatedString(report.markdown)) },
+                variant = GlassButtonVariant.Primary,
+                modifier = Modifier.testTag("BuildReportCopy"),
+            ) { Text("Copy") }
+        },
+        dismissButton = {
+            GlassButton(onClick = onClose, variant = GlassButtonVariant.Text) { Text("Close") }
+        },
+    ) {
+        Column(
+            modifier = Modifier.heightIn(max = ComponentSize.MaxPanelHeight).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            if (report.problems.isNotEmpty()) {
+                Text(
+                    "Needs a look: " + report.problems.joinToString("; "),
+                    style = GlassTheme.typography.bodySmall,
+                    color = GlassTheme.diagnosticColors.error,
+                )
+            }
+            Text(
+                report.markdown,
+                style = GlassTheme.typography.bodySmall,
+                fontFamily = codeFontFamily(),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.testTag("BuildReportText"),
+            )
         }
     }
 }

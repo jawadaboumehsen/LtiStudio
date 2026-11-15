@@ -31,6 +31,7 @@ public val workspaceRunModule: Module = module {
             snapshotRepository = getOrNull(),
             preflight = getOrNull(),
             settingsStore = getOrNull(),
+            buildReport = getOrNull(),
         )
     }
 }

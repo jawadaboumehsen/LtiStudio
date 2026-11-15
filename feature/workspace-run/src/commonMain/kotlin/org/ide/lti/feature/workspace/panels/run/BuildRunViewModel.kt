@@ -41,6 +41,8 @@ import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
+import org.ide.lti.core.domain.workspace.BuildReport
+import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.BuildRun
@@ -74,6 +76,9 @@ public data class BuildRunUiState(
     val diagnosis: PreflightFinding? = null,
     /** A fix applied from [diagnosis], or why it could not be. */
     val fixMessage: String? = null,
+    /** The post-build report of [latestRun], when asked for. */
+    val report: BuildReportText? = null,
+    val isReporting: Boolean = false,
 ) {
     /** The message of the stage the last run failed in. */
     val failure: String?
@@ -112,6 +117,7 @@ public class BuildRunViewModel(
     private val snapshotRepository: SnapshotRepository? = null,
     private val preflight: Preflight? = null,
     private val settingsStore: WorkspaceSettingsStore? = null,
+    private val buildReport: BuildReport? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildRunUiState())
@@ -293,6 +299,30 @@ public class BuildRunViewModel(
                 )
             }
         }
+    }
+
+    /** The post-build report of the last run: its packages hashed again, keys, super budget, stages, changes. */
+    public fun makeReport() {
+        val reporter = buildReport ?: return
+        val run = _uiState.value.latestRun ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isReporting = true, errorMessage = null) }
+            val result = runCatching { reporter.of(run) }
+            _uiState.update { state ->
+                if (state.latestRun?.id != run.id) return@update state.copy(isReporting = false)
+                result.fold(
+                    onSuccess = { state.copy(isReporting = false, report = it) },
+                    onFailure = { e ->
+                        if (e is CancellationException) throw e
+                        state.copy(isReporting = false, errorMessage = e.message ?: "The report could not be made")
+                    },
+                )
+            }
+        }
+    }
+
+    public fun closeReport() {
+        _uiState.update { it.copy(report = null) }
     }
 
     /** Applies the settings fix of [BuildRunUiState.diagnosis]; the next build then runs with it. */

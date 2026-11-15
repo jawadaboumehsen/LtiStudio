@@ -62,6 +62,7 @@ import org.ide.lti.core.domain.workbench.SizeAdvisor
 import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
+import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
@@ -178,4 +179,5 @@ internal actual val platformRepositoryModule =
         single { SizeAdvisor(runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
+        single { BuildReport(runner = get(), settings = get()) }
     }

@@ -289,6 +289,8 @@ private fun ActiveRunContent(
         onReattach = { viewModel.reattachBuild() },
         onNavigateToSetup = onNavigateToSetup,
         onPreview = viewModel::previewImpact,
+        onReport = viewModel::makeReport,
+        onCloseReport = viewModel::closeReport,
         onApplyFix = viewModel::applyFix,
         onOpen = onOpen,
         modifier = modifier,
@@ -305,6 +307,8 @@ public fun ActiveRunContent(
     onReattach: () -> Unit = {},
     onNavigateToSetup: (() -> Unit)? = null,
     onPreview: () -> Unit = {},
+    onReport: () -> Unit = {},
+    onCloseReport: () -> Unit = {},
     onApplyFix: (PreflightFix.Setting) -> Unit = {},
     onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -370,11 +374,26 @@ public fun ActiveRunContent(
         GlassHorizontalDivider()
 
         // Artifacts section
-        Text(
-            text = "Verified Artifacts",
-            style = typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Verified Artifacts",
+                style = typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (uiState.latestRun?.state == RunState.SUCCEEDED) {
+                GlassButton(
+                    onClick = onReport,
+                    enabled = !uiState.isReporting,
+                    variant = GlassButtonVariant.Standard,
+                    modifier = Modifier.testTag("BuildReportButton"),
+                ) { Text(if (uiState.isReporting) "Reading…" else "Build report") }
+            }
+        }
+        BuildReportDialog(uiState.report, onClose = onCloseReport)
 
         val artifacts = uiState.latestRun?.artifacts ?: emptyList()
         if (artifacts.isEmpty()) {
