@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.patch
 
 import kotlinx.coroutines.yield
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.HostRequest
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
@@ -104,7 +105,11 @@ class ModuleHostSteps(
             }
         } catch (e: Throwable) {
             // work/ now holds part of the mods: the next build assembles it again rather than patch it twice.
-            runCatching { Files.deleteIfExists(work.parent.resolve(".cache/${StageId.WORK_TREE_ASSEMBLY.name}.key")) }
+            runCatchingCancellable {
+                Files.deleteIfExists(
+                    work.parent.resolve(".cache/${StageId.WORK_TREE_ASSEMBLY.name}.key"),
+                )
+            }
             throw e
         }
         return "ok: $changes change(s) from ${request.plans.size} module(s)"

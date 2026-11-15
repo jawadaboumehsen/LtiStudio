@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.cli
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -53,6 +54,8 @@ class DesktopShellExecutor : ShellExecutor {
                 val exitCode = process.waitFor()
                 trySend(ShellOutputEvent.Finished(exitCode))
                 close()
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 // cancelled or interrupted
             }
@@ -78,6 +81,8 @@ class DesktopShellExecutor : ShellExecutor {
                     onLine(ShellOutputEvent.Line(line, isError = isError))
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             // stream closed or cancelled
         }

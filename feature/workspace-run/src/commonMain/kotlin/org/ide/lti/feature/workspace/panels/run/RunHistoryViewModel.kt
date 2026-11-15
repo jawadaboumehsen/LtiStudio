@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -74,7 +75,7 @@ public class RunHistoryViewModel(
 
     /** Reads [runId]'s log; a late read lands only on the run it was read for. */
     private suspend fun showLogs(runId: String) {
-        val logs = runCatching { runRepository.cachedEvents(runId) }.getOrDefault(emptyList())
+        val logs = runCatchingCancellable { runRepository.cachedEvents(runId) }.getOrDefault(emptyList())
         _uiState.update { if (it.selectedRun?.id == runId) it.copy(selectedRunLogs = logs) else it }
     }
 
@@ -95,6 +96,8 @@ public class RunHistoryViewModel(
                     state.copy(runs = runs, selectedRun = sel, isLoading = false)
                 }
                 _uiState.value.selectedRun?.let { showLogs(it.id) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     if (it.currentWorkspace?.id == ws.id) it.copy(isLoading = false, errorMessage = e.message) else it

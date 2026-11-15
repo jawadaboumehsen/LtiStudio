@@ -21,6 +21,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.digestToken
@@ -380,7 +381,7 @@ public class PublishReleaseUseCase(
         } finally {
             // This attempt's temporary file never stays behind (each attempt has a name of its own); after a rename
             // there is nothing left to remove.
-            withContext(NonCancellable) { runCatching { run(ws, "rm", "-f", "--", partial) } }
+            withContext(NonCancellable) { runCatchingCancellable { run(ws, "rm", "-f", "--", partial) } }
         }
         return if (exists) "replaced $dest/$name" else "copied to $dest/$name"
     }
@@ -389,7 +390,11 @@ public class PublishReleaseUseCase(
     private suspend fun releaseOf(ws: Workspace, problems: MutableList<String>): ReleaseFiles? {
         val text = port.readFile(ws, MANIFEST)
         val entry = text?.let {
-            runCatching { Json.parseToJsonElement(it).jsonObject.getValue("response").jsonArray.first().jsonObject }
+            runCatchingCancellable {
+                Json.parseToJsonElement(
+                    it,
+                ).jsonObject.getValue("response").jsonArray.first().jsonObject
+            }
                 .getOrNull()
         }
         // A field of another type (an object, an array) is simply missing; a name must be a plain file name.
@@ -453,8 +458,10 @@ public class PublishReleaseUseCase(
         check(result.exitCode == 0) { "$tool ${args.last()} failed: $why" }
     }
 
-    private suspend fun readJournal(ws: Workspace): PublishJournal? =
-        port.readFile(ws, JOURNAL)?.let { runCatching { json.decodeFromString<PublishJournal>(it) }.getOrNull() }
+    private suspend fun readJournal(ws: Workspace): PublishJournal? = port.readFile(
+        ws,
+        JOURNAL,
+    )?.let { runCatchingCancellable { json.decodeFromString<PublishJournal>(it) }.getOrNull() }
 
     /** Throws when the journal is not saved: a step it does not record would be repeated or refused later. */
     private suspend fun save(ws: Workspace, journal: PublishJournal) {

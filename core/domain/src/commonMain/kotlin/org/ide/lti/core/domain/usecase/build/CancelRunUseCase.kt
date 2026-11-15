@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.hasFinished
 import org.ide.lti.core.domain.ports.linkInWorkspace
@@ -95,7 +96,12 @@ public class CancelRunUseCase(
     private suspend fun cleanStaging(workspaceId: String) {
         val ws = workspaceRepository?.getWorkspace(workspaceId)
         // A link, or a scan that failed: the cancel still finishes, this cleanup just waits for the next build's.
-        if (ws?.linuxPath != null && runCatching { executionPort.linkInWorkspace(ws) == null }.getOrDefault(false)) {
+        if (ws?.linuxPath != null && runCatchingCancellable {
+                executionPort.linkInWorkspace(
+                    ws,
+                ) == null
+            }.getOrDefault(false)
+        ) {
             executionPort.execute(
                 ws,
                 StepCommand("rm", listOf("-rf", "${ws.linuxPath}/out/package/.stage"), ws.linuxPath),

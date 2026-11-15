@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.workspace
 
 import kotlinx.coroutines.flow.first
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
@@ -26,9 +27,13 @@ public class SamePhoneSettings(
 ) {
     /** The other workspaces whose device has [workspaceId]'s codename. */
     public suspend fun others(workspaceId: String): List<Workspace> {
-        val codename = runCatching { settings.device(workspaceId)?.codename }.getOrNull() ?: return emptyList()
+        val codename = runCatchingCancellable {
+            settings.device(
+                workspaceId,
+            )?.codename
+        }.getOrNull() ?: return emptyList()
         return workspaces.getWorkspaces().first().filter { ws ->
-            ws.id != workspaceId && runCatching { settings.device(ws.id)?.codename }.getOrNull() == codename
+            ws.id != workspaceId && runCatchingCancellable { settings.device(ws.id)?.codename }.getOrNull() == codename
         }
     }
 

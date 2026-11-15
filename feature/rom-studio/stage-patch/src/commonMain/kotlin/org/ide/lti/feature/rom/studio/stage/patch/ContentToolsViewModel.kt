@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.toolkit.ApexPatchResult
 import org.ide.lti.core.domain.pipeline.toolkit.ApkPatchResult
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveDiff
@@ -152,7 +153,7 @@ public class ContentToolsViewModel(
     public fun refreshDeodexBackups() {
         val workbench = restore ?: return
         viewModelScope.launch {
-            val points = runCatching { workbench.list(workspaceId).items }.getOrDefault(emptyList())
+            val points = runCatchingCancellable { workbench.list(workspaceId).items }.getOrDefault(emptyList())
                 .filter { it.tool == ContentWorkbench.TOOL && PRECOMPILED.containsMatchIn(it.itemPath) }
             _state.update { it.copy(deodexBackups = points) }
         }

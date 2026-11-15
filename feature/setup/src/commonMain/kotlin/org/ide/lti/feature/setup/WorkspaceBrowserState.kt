@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolchainSetupState
@@ -270,7 +271,11 @@ class WorkspaceBrowserState(
                 openRecentProject(project, onWorkspaceOpened)
                 return@launch
             }
-            val result = runCatching { openWorkspaceUseCase(project.workspaceId) }.getOrElse { Result.failure(it) }
+            val result = runCatchingCancellable {
+                openWorkspaceUseCase(
+                    project.workspaceId,
+                )
+            }.getOrElse { Result.failure(it) }
             result.fold(
                 onSuccess = { workspace ->
                     if (!toolchainSetupState.value.canLaunchWorkspace) {
@@ -304,7 +309,7 @@ class WorkspaceBrowserState(
                 openPath(path, onWorkspaceOpened)
                 return@launch
             }
-            val result = runCatching { openWorkspaceByPathUseCase(path) }.getOrElse { Result.failure(it) }
+            val result = runCatchingCancellable { openWorkspaceByPathUseCase(path) }.getOrElse { Result.failure(it) }
             result.fold(
                 onSuccess = { workspace ->
                     if (!toolchainSetupState.value.canLaunchWorkspace) {
@@ -340,7 +345,7 @@ class WorkspaceBrowserState(
         val removedProject = currentFiltered.getOrNull(removedIndex)
 
         scope.launch {
-            val result = runCatching { removeRecentWorkspaceUseCase(workspaceId) }
+            val result = runCatchingCancellable { removeRecentWorkspaceUseCase(workspaceId) }
             result.fold(
                 onSuccess = {
                     _workspaceError.value = null

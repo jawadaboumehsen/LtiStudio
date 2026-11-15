@@ -11,6 +11,7 @@ package org.ide.lti.core.common.utils
 
 import io.github.vinceglb.filekit.core.FileKit
 import io.github.vinceglb.filekit.core.PickerMode
+import kotlinx.coroutines.CancellationException
 
 object DialogUtils {
     /**
@@ -18,12 +19,12 @@ object DialogUtils {
      * without blocking the Compose UI thread, and returns the selected directory path,
      * or null if cancelled or if an error occurs.
      */
-    suspend fun selectDirectory(title: String = "Select Workspace Directory"): String? {
-        return try {
-            FileKit.pickDirectory(title = title)?.path
-        } catch (_: Throwable) {
-            null
-        }
+    suspend fun selectDirectory(title: String = "Select Workspace Directory"): String? = try {
+        FileKit.pickDirectory(title = title)?.path
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Throwable) {
+        null
     }
 
     /**
@@ -31,13 +32,14 @@ object DialogUtils {
      * without blocking the Compose UI thread, and returns the selected [io.github.vinceglb.filekit.core.PlatformFile],
      * or null if cancelled or if an error occurs.
      */
-    suspend fun selectFile(title: String = "Select Firmware Archive"): io.github.vinceglb.filekit.core.PlatformFile? {
-        return try {
+    suspend fun selectFile(title: String = "Select Firmware Archive"): io.github.vinceglb.filekit.core.PlatformFile? =
+        try {
             FileKit.pickFile(mode = PickerMode.Single, title = title)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Throwable) {
             null
         }
-    }
 
     /** [selectFile], as the picked file's path. */
     suspend fun selectFilePath(title: String): String? = selectFile(title)?.path

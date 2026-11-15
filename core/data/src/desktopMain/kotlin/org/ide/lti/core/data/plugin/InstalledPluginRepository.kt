@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.plugin.InstalledRecord
@@ -277,7 +278,7 @@ class InstalledPluginRepository(
         Files.walk(packagesDir).use { stream ->
             stream.filter { it.fileName?.toString() == "record.json" && Files.isRegularFile(it) }
                 .forEach { path ->
-                    runCatching {
+                    runCatchingCancellable {
                         val text = Files.readString(path)
                         json.decodeFromString(InstalledRecord.serializer(), text)
                     }.getOrNull()?.let { records.add(it to path.parent) }
@@ -349,7 +350,7 @@ class InstalledPluginRepository(
     }
 
     override suspend fun discard(quarantined: Path) {
-        runCatching { Files.deleteIfExists(quarantined) }
+        runCatchingCancellable { Files.deleteIfExists(quarantined) }
     }
 
     private fun atomicMove(source: Path, target: Path) {

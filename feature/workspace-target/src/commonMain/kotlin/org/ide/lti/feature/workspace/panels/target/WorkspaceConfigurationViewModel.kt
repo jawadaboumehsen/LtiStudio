@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
@@ -112,7 +113,7 @@ class WorkspaceConfigurationViewModel(
     }
 
     private suspend fun loadWorkspaceConfiguration(workspace: Workspace) {
-        val target = runCatching { workspaceDeviceRepository.get(workspace.id) }.getOrNull()
+        val target = runCatchingCancellable { workspaceDeviceRepository.get(workspace.id) }.getOrNull()
         val regions = target?.availableRegions ?: listOf(TargetRegion.GLOBAL, TargetRegion.CHINA)
         val firmwares = target?.availableFirmwares ?: emptyMap()
 

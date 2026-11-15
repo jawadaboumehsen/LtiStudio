@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.text.FstabEditor
 import org.ide.lti.core.domain.pipeline.toolkit.BootFlagDiff
 import org.ide.lti.core.domain.pipeline.toolkit.BootParts
@@ -441,7 +442,7 @@ public class BootPaneModel(
     private fun checkUnbuilt() {
         val runner = runner ?: return
         scope.launch {
-            val files = runCatching { BootWorkbench.unbuiltFiles(runner, workspaceId) }
+            val files = runCatchingCancellable { BootWorkbench.unbuiltFiles(runner, workspaceId) }
                 .getOrDefault(state.value.unbuiltFiles)
             mutableState.update { it.copy(unbuilt = files.keys.sorted(), unbuiltFiles = files) }
         }

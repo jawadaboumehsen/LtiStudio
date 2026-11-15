@@ -8,6 +8,7 @@
 package org.ide.lti.desktop.tray
 
 import dev.nucleusframework.core.runtime.Platform
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,6 +44,8 @@ class DesktopNativeNotifier(
                     Platform.MacOS -> sendMacNotification(notification)
                     else -> Unit
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Throwable) {
                 // Ignore notification delivery failures gracefully
             }
@@ -88,9 +91,7 @@ class DesktopNativeNotifier(
         ProcessBuilder("osascript", "-e", script).start()
     }
 
-    private fun escapePowerShell(text: String): String =
-        text.replace("'", "''").replace("`", "``").replace("\$", "`\$")
+    private fun escapePowerShell(text: String): String = text.replace("'", "''").replace("`", "``").replace("\$", "`\$")
 
-    private fun escapeAppleScript(text: String): String =
-        text.replace("\\", "\\\\").replace("\"", "\\\"")
+    private fun escapeAppleScript(text: String): String = text.replace("\\", "\\\\").replace("\"", "\\\"")
 }

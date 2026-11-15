@@ -12,8 +12,8 @@ package org.ide.lti.core.data.repository.run
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
@@ -92,7 +92,6 @@ class RunRepositoryWritesTest {
         val repository = RunRepositoryImpl(
             RunRecordDataSource(MapSettings(), fileStorage = storage, ioDispatcher = dispatcher),
             ioDispatcher = dispatcher,
-            scope = CoroutineScope(dispatcher),
         )
         repository.upsert(finished)
 
@@ -112,13 +111,15 @@ class RunRepositoryWritesTest {
         val source = RunRecordDataSource(MapSettings(), fileStorage = storage, ioDispatcher = dispatcher)
         source.saveRun(finished)
         storage.holdFirstRead = true
-        val repository = RunRepositoryImpl(source, ioDispatcher = dispatcher, scope = CoroutineScope(dispatcher))
+        val repository = RunRepositoryImpl(source, ioDispatcher = dispatcher)
+        val read = launch { repository.getRun(finished.id) }
         runCurrent()
         storage.readStarted.await()
 
         repository.deleteRun(finished.id)
         storage.finishRead.complete(Unit)
         runCurrent()
+        read.join()
 
         assertNull(repository.getRun(finished.id))
     }
@@ -162,7 +163,6 @@ class RunRepositoryWritesTest {
         val repository = RunRepositoryImpl(
             RunRecordDataSource(MapSettings(), fileStorage = storage, ioDispatcher = dispatcher),
             ioDispatcher = dispatcher,
-            scope = CoroutineScope(dispatcher),
         )
         repository.upsert(finished)
 

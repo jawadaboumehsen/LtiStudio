@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.target
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -74,6 +75,8 @@ public class TargetRevisionRepositoryImpl(
         try {
             val target = json.decodeFromString<TargetDevice>(file.readText(Charsets.UTF_8))
             if (target.revision == revision && target.id == profileId) target else null
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -94,6 +97,8 @@ public class TargetRevisionRepositoryImpl(
                     revision = target.revision,
                     contentDigest = TargetRevisionRef.computeDigest(target),
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 null
             }

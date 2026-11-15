@@ -9,7 +9,7 @@
  */
 package org.ide.lti.core.data.toolkit
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
@@ -89,6 +89,8 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         val json = readFile(workspace, ACKNOWLEDGEMENTS_FILE) ?: return Acknowledgements.Empty
         return try {
             Acknowledgements.fromJson(json)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Throwable) {
             Acknowledgements.Empty
         }
@@ -127,10 +129,6 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
                             this@WorkspaceToolkitStores.release(workspace, holderName)
                             released.set(true)
                         }
-                    }
-
-                    override fun close() {
-                        runBlocking { release() }
                     }
                 }
                 LockResult.Acquired(handle)

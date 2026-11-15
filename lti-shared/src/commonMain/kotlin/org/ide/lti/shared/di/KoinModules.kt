@@ -9,9 +9,6 @@
  */
 package org.ide.lti.shared.di
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import org.ide.lti.core.cli.di.cliModule
 import org.ide.lti.core.common.di.CommonModule
 import org.ide.lti.core.common.di.DispatchersModule
@@ -73,7 +70,7 @@ object KoinModules {
                 initialNotificationSettings = initialData.notificationSettings,
                 initialAppearance = initialData.appearance,
                 userDataRepository = repo,
-                coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
+                coroutineScope = get(),
             )
         }
     }

@@ -28,6 +28,7 @@ import dev.nucleusframework.application.NucleusWindow
 import dev.nucleusframework.application.nucleusApplication
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.timing.StartupTiming
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -185,7 +186,7 @@ fun main(args: Array<String>) {
                 isShuttingDown = true
                 coroutineScope.launch {
                     // Asking must not stop the app from closing: no answer means no warning.
-                    val builds = runCatching {
+                    val builds = runCatchingCancellable {
                         kotlinx.coroutines.withTimeoutOrNull(5_000L) {
                             org.koin.core.context.GlobalContext.getOrNull()
                                 ?.getOrNull<AppShutdownPort>()

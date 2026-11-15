@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.plugin.author
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -17,6 +18,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.plugin.AuthorDiagnostic
 import org.ide.lti.core.domain.plugin.AuthorProject
@@ -135,6 +137,8 @@ class AuthorTaskProcessAdapter(
         return try {
             val text = Files.readString(file)
             json.decodeFromString(TrustApproval.serializer(), text)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -206,10 +210,10 @@ class AuthorTaskProcessAdapter(
             var stderr = ""
             // Daemon threads: on timeout destroyForcibly() closes these pipes underneath them.
             val stdoutReader = thread(name = "author-task-stdout", isDaemon = true) {
-                stdout = runCatching { readBounded(process.inputStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
+                stdout = runCatchingCancellable { readBounded(process.inputStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
             }
             val stderrReader = thread(name = "author-task-stderr", isDaemon = true) {
-                stderr = runCatching { readBounded(process.errorStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
+                stderr = runCatchingCancellable { readBounded(process.errorStream, MAX_OUTPUT_BYTES) }.getOrDefault("")
             }
 
             try {

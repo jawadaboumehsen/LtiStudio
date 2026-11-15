@@ -9,10 +9,9 @@
  */
 package org.ide.lti.core.data.repository.run
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emitAll
@@ -21,13 +20,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.datastore.RunRecordDataSource
 import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
@@ -52,7 +51,6 @@ public class RunRepositoryImpl(
     private val executionPort: PipelineExecutionPort? = null,
     private val json: Json = RunRecordDataSource.defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob()),
 ) : RunRepository {
 
     private val runs = MutableStateFlow<Map<String, BuildRun>>(emptyMap())
@@ -80,28 +78,13 @@ public class RunRepositoryImpl(
     /** A stage that began before this moment began in an earlier session of the app. */
     private val sessionStart = Clock.System.now()
 
-    init {
-        scope.launch(ioDispatcher) {
-            for (summary in runRecordDataSource.currentSummaries) {
-                try {
-                    runRecordDataSource.getRun(summary.id)?.let(::cacheLoaded)
-                } catch (_: Exception) {
-                    // Ignore decoding failures during eager warmup
-                }
-            }
-        }
-    }
-
     override fun observeRuns(workspaceId: String): Flow<List<BuildRun>> = flow {
         withContext(ioDispatcher) {
             val summaries = runRecordDataSource.currentSummaries.filter { it.workspaceId == workspaceId }
             val missing = summaries.filter { it.id !in runs.value }
             for (summary in missing) {
-                try {
-                    runRecordDataSource.getRun(summary.id)?.let(::cacheLoaded)
-                } catch (_: Exception) {
-                    // Ignore
-                }
+                // An unreadable run file is left out of the list (its decode warning says why).
+                runCatchingCancellable { runRecordDataSource.getRun(summary.id)?.let(::cacheLoaded) }
             }
         }
         emitAll(
@@ -174,7 +157,7 @@ public class RunRepositoryImpl(
         runRecordDataSource.currentSummaries
             .filter { it.workspaceId == workspaceId && it.id !in runs.value }
             .forEach { summary ->
-                runCatching { runRecordDataSource.getRun(summary.id) }.getOrNull()
+                runCatchingCancellable { runRecordDataSource.getRun(summary.id) }.getOrNull()
                     ?.let(::cacheLoaded)
             }
         runs.value.values
@@ -276,6 +259,8 @@ public class RunRepositoryImpl(
                     )
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             // Non-critical mirror operation
         }
@@ -310,6 +295,8 @@ public class RunRepositoryImpl(
             }
             val log = allLogs.drop(from).joinToString("\n").encodeToByteArray()
             port.uploadFile(workspace, "stages/${activeStage.name.lowercase()}.log", withinUploadLimit(log))
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             // Non-critical mirror operation
         }

@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
@@ -105,7 +106,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(currentGroup.group) {
-        runCatching { focusRequester.requestFocus() }
+        runCatchingCancellable { focusRequester.requestFocus() }
     }
 
     GlassCard(

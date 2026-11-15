@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.text.PlatformMetadata
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -34,7 +35,7 @@ internal suspend fun WorkbenchRunner.Job.platformMetadata(treeRel: String = "wor
         if (line.startsWith("== ")) {
             name = line.removePrefix("== ")
         } else if (current != null) {
-            runCatching { Base64.decode(line.trim()) }.getOrNull()?.let { files[current] = it }
+            runCatchingCancellable { Base64.decode(line.trim()) }.getOrNull()?.let { files[current] = it }
             name = null
         }
     }

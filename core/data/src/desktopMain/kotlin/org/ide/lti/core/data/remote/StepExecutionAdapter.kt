@@ -15,6 +15,7 @@ import io.ltirom.tooling.core.remote.StartRunRequest
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.ports.FileStat
 import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
@@ -83,7 +84,7 @@ public class StepExecutionAdapter(
                     }
 
                     is CoreStreamEvent.ExecutionFinished -> {
-                        val run = runCatching { transport.getRun(serverRunId) }.getOrNull()
+                        val run = runCatchingCancellable { transport.getRun(serverRunId) }.getOrNull()
                         val exitCode =
                             if (run?.status == RunStatusValue.INTERRUPTED) {
                                 -1

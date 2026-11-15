@@ -26,6 +26,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.AbOtaSteps
 import org.ide.lti.core.domain.pipeline.stages.BuildChecks
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
@@ -933,7 +934,7 @@ public class PipelineOrchestrator(
             throw e
         } catch (e: Exception) {
             // The run fails here: its step must not go on changing the work tree behind it.
-            runCatching { executionPort.cancel(handle.runId) }
+            runCatchingCancellable { executionPort.cancel(handle.runId) }
             throw e
         }
         outputBuffer.flush()
@@ -1004,7 +1005,7 @@ public class PipelineOrchestrator(
     private suspend fun runHost(driver: Driver, stage: StageDefinition, index: Int, step: PipelineStep.Host): Boolean {
         if (driver.runtimeValues.containsKey(step.resultKey)) return true
         val started = markHostStarted(driver, step)
-        val output = runCatching {
+        val output = runCatchingCancellable {
             coroutineScope {
                 val work = async {
                     checkNotNull(hostSteps) { "this app cannot run host steps" }.run(driver.ws, step.request)
@@ -1254,7 +1255,14 @@ public class PipelineOrchestrator(
                 .associate { it[0].trim() to it[1].trim() }
         // The values the stage ran with (its run date names the package): today's date would name a file that
         // does not exist, so a cached Build would always miss and the artifacts would point at nothing.
-        val recordedValues = fields["values"]?.let { runCatching { json.decodeFromString(valuesSerializer, it) } }
+        val recordedValues = fields["values"]?.let {
+            runCatchingCancellable {
+                json.decodeFromString(
+                    valuesSerializer,
+                    it,
+                )
+            }
+        }
             ?.getOrNull().orEmpty()
         val context = driver.context().let { it.copy(runtimeValues = it.runtimeValues + recordedValues) }
         val valid = fields["input"] == cacheKey &&

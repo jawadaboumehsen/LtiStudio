@@ -32,6 +32,7 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.data.remote.ToolStatusMapper
 import org.ide.lti.core.data.setup.check.CheckContext
 import org.ide.lti.core.data.setup.check.EnvironmentCheck
@@ -589,7 +590,7 @@ public class WslToolchainProvisioner(
     /** Free bytes under [home] from `df`, with when they were measured; nulls when `df` fails. */
     private suspend fun measureStorage(home: String): Pair<Long?, Long?> {
         val storageDf =
-            runCatching {
+            runCatchingCancellable {
                 transport.execute(
                     ToolExecutionRequest(
                         toolId = "df",
@@ -1126,7 +1127,7 @@ public class WslToolchainProvisioner(
         }
 
     private suspend fun resolveHome(distro: String): String = currentEnvironment?.takeIf { it.distro == distro }?.home
-        ?: runCatching {
+        ?: runCatchingCancellable {
             val res =
                 transport.execute(
                     ToolExecutionRequest(

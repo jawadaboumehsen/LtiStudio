@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.ports
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.model.workspace.Workspace
@@ -37,7 +38,7 @@ public suspend fun PipelineExecutionPort.runToEnd(
     val exitCode = try {
         readToEnd(handle.runId, stdout, stderr)
     } catch (e: Exception) {
-        withContext(NonCancellable) { runCatching { cancel(handle.runId) } }
+        withContext(NonCancellable) { runCatchingCancellable { cancel(handle.runId) } }
         throw e
     }
     return ToolResult(exitCode, stdout.toString(), stderr.toString())

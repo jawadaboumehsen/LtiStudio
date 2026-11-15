@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.data.repository.target.WorkspaceFolderDeviceRepository.Companion.DeviceJson
 import org.ide.lti.core.domain.ports.DestinationExistsException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -179,7 +180,7 @@ public class RemoteWorkspaceProvisioner(
     private suspend inline fun <reified T> readBack(remotePath: String, format: Json = json) {
         val name = remotePath.substringAfterLast('/')
         val bytes = transport.downloadFile(remotePath)
-        val decoded = bytes?.let { runCatching { format.decodeFromString<T>(it.decodeToString()) } }
+        val decoded = bytes?.let { runCatchingCancellable { format.decodeFromString<T>(it.decodeToString()) } }
         val failure = when {
             decoded == null -> "Failed to read back $name"
             decoded.isFailure -> "$name is corrupt: ${decoded.exceptionOrNull()?.message}"

@@ -12,6 +12,7 @@ package org.ide.lti.core.datastore
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -95,6 +96,8 @@ public class RunRecordDataSource(
         val rawJson = fileStorage.getRun(runId) ?: return@withContext null
         try {
             json.decodeFromString<BuildRun>(rawJson)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             handleDecodeFailure("run_file.$runId", rawJson, "Failed to decode run file: ${e.message}")
             null

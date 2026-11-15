@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.ports.DestinationExistsException
 import org.ide.lti.core.domain.ports.EnvironmentNotReadyException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
@@ -195,7 +196,7 @@ class CreateWorkspaceUseCase(
         )
         // The workspace is registered now; its recents entry is a convenience whose failure never reports the
         // creation as failed (a retry would then find the workspace already there).
-        runCatching {
+        runCatchingCancellable {
             workspaceRepository.addRecentProject(
                 RecentProject(
                     workspaceId = workspaceId,

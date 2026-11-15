@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.plugin
 
 import kotlinx.coroutines.flow.first
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -26,7 +27,7 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
     suspend fun usersOf(): Map<String, List<String>> {
         val users = mutableMapOf<String, MutableList<String>>()
         for (workspace in workspaces.getWorkspaces().first()) {
-            val snapshot = runCatching { store.current(workspace.id) }.getOrNull()
+            val snapshot = runCatchingCancellable { store.current(workspace.id) }.getOrNull()
             if (snapshot == null) {
                 users.getOrPut(ANY_VERSION) { mutableListOf() } += workspace.name
                 continue
@@ -96,7 +97,7 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
     ) {
         for (workspace in workspaces.getWorkspaces().first()) {
             // A workspace whose settings cannot be read uses nothing we can see; it is left alone.
-            val snapshot = runCatching { store.current(workspace.id) }.getOrNull() ?: continue
+            val snapshot = runCatchingCancellable { store.current(workspace.id) }.getOrNull() ?: continue
             action(workspace.id, workspace.name, snapshot)
         }
     }

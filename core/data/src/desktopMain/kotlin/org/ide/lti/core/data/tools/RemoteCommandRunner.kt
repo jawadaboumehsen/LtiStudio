@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.domain.tools.ToolErrorException
 import java.util.UUID
@@ -355,8 +356,8 @@ public class RemoteCommandRunner(
      * plain stream has none, and the answer to its cancel is all there is.
      */
     private suspend fun stopRemote(id: String, durable: Boolean): Boolean {
-        val accepted = runCatching { transport.cancelRun(id) }.getOrNull()?.accepted == true
-        val asked = accepted || runCatching { transport.cancel(id) }.getOrDefault(false)
+        val accepted = runCatchingCancellable { transport.cancelRun(id) }.getOrNull()?.accepted == true
+        val asked = accepted || runCatchingCancellable { transport.cancel(id) }.getOrDefault(false)
         return if (durable) awaitFinished(id) else asked
     }
 
@@ -397,7 +398,7 @@ public class RemoteCommandRunner(
     }
 
     private suspend fun requestStop(id: String): Boolean {
-        val runResult = runCatching { transport.cancelRun(id) }.getOrNull()
-        return runResult?.accepted == true || runCatching { transport.cancel(id) }.getOrDefault(false)
+        val runResult = runCatchingCancellable { transport.cancelRun(id) }.getOrNull()
+        return runResult?.accepted == true || runCatchingCancellable { transport.cancel(id) }.getOrDefault(false)
     }
 }

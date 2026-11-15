@@ -192,6 +192,7 @@ class EnvironmentSetupState(
             // A journaled attempt survived a restart or a dropped connection: reconcile it against server
             // truth before anything else is offered (US3 T023). Reconnect reuses the attemptId.
             initial.pendingAttemptId != null -> reconcilePendingAttempt()
+
             // Reconnect to an already-running mutation on state-holder (re)creation, e.g. after
             // navigating away and back to the Environment destination during a session (FR-007).
             initial.isRunning -> {
@@ -259,6 +260,8 @@ class EnvironmentSetupState(
                     StartupTiming.log("Environment check started")
                     toolchainService.checkStatus()
                     StartupTiming.log("Environment check finished")
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     _environmentNotice.value = "Environment verification notice: ${e.message}"
                 } finally {
@@ -420,6 +423,7 @@ class EnvironmentSetupState(
             when {
                 aptPackages.isNotEmpty() ->
                     "Package installation requires administrator approval in your WSL terminal (sudo apt-get install)."
+
                 else -> null
             }
         return PlannedSetupChanges(
@@ -503,6 +507,7 @@ class EnvironmentSetupState(
                                 )
                             recheckAfterReset = plan.kind == SetupPlanKind.CACHE_RESET
                         }
+
                         is SetupOutcome.Cancelled -> {
                             _activeOperation.value =
                                 _activeOperation.value?.copy(
@@ -511,6 +516,7 @@ class EnvironmentSetupState(
                                 )
                             _environmentNotice.value = "Operation was cancelled"
                         }
+
                         is SetupOutcome.Failed -> {
                             _activeOperation.value =
                                 _activeOperation.value?.copy(
@@ -519,7 +525,9 @@ class EnvironmentSetupState(
                                 )
                             _environmentNotice.value = "Operation failed: ${outcome.reason}"
                         }
+
                         is SetupOutcome.Busy -> applyBusy(outcome, "Operation rejected")
+
                         is SetupOutcome.Interrupted -> {
                             _activeOperation.value =
                                 _activeOperation.value?.copy(
@@ -528,6 +536,7 @@ class EnvironmentSetupState(
                                 )
                             _environmentNotice.value = "Operation interrupted: ${outcome.reason}"
                         }
+
                         is SetupOutcome.AwaitingUserAction -> {
                             _activeOperation.value =
                                 _activeOperation.value?.copy(
@@ -711,7 +720,9 @@ class EnvironmentSetupState(
     private fun applyTerminalOutcome(outcome: SetupOutcome?, subject: String) {
         when (outcome) {
             null -> _activeOperation.value = null
+
             is SetupOutcome.Succeeded -> _activeOperation.value = null
+
             is SetupOutcome.Cancelled -> {
                 _activeOperation.value =
                     _activeOperation.value?.copy(
@@ -720,6 +731,7 @@ class EnvironmentSetupState(
                     )
                 _environmentNotice.value = "$subject was cancelled"
             }
+
             is SetupOutcome.Failed -> {
                 _activeOperation.value =
                     _activeOperation.value?.copy(
@@ -728,7 +740,9 @@ class EnvironmentSetupState(
                     )
                 _environmentNotice.value = "$subject failed: ${outcome.reason}"
             }
+
             is SetupOutcome.Busy -> applyBusy(outcome, "$subject rejected")
+
             is SetupOutcome.Interrupted -> {
                 _activeOperation.value =
                     _activeOperation.value?.copy(
@@ -737,6 +751,7 @@ class EnvironmentSetupState(
                     )
                 _environmentNotice.value = "$subject interrupted: ${outcome.reason}"
             }
+
             is SetupOutcome.AwaitingUserAction -> {
                 _activeOperation.value =
                     _activeOperation.value?.copy(
@@ -787,8 +802,11 @@ class EnvironmentSetupState(
         when {
             _activeOperation.value?.executionState == SetupOperationState.AWAITING_USER_ACTION ->
                 _isHandoffSheetVisible.value = true
+
             toolchainSetupState.value.isBusy || currentExecutionJob?.isActive == true -> Unit
+
             service == null -> _environmentNotice.value = "Toolchain service is not available in this session."
+
             else -> startBootstrapPackages(service)
         }
     }
@@ -867,6 +885,7 @@ class EnvironmentSetupState(
                             )
                         _environmentNotice.value = "Operation was cancelled"
                     }
+
                     is SetupOutcome.Interrupted -> {
                         _activeOperation.value =
                             current.copy(
@@ -875,6 +894,7 @@ class EnvironmentSetupState(
                             )
                         _environmentNotice.value = "Could not abandon operation: ${outcome.reason}"
                     }
+
                     is SetupOutcome.Failed -> {
                         _activeOperation.value =
                             current.copy(
@@ -883,6 +903,7 @@ class EnvironmentSetupState(
                             )
                         _environmentNotice.value = "Could not abandon operation: ${outcome.reason}"
                     }
+
                     else -> {
                         _activeOperation.value =
                             current.copy(
@@ -920,11 +941,14 @@ class EnvironmentSetupState(
                 _handoffSheetState.value == TerminalHandoffState.Verifying
         when {
             service == null -> _environmentNotice.value = "Toolchain service is not available in this session."
+
             currentOp == null || planId == null || !awaiting ->
                 _environmentNotice.value = "No operation awaiting user action to resume."
+
             _handoffSheetState.value == TerminalHandoffState.Verifying ||
                 toolchainSetupState.value.isBusy ||
                 currentExecutionJob?.isActive == true -> Unit
+
             else -> startResume(service, currentOp, planId)
         }
     }
@@ -974,6 +998,7 @@ class EnvironmentSetupState(
                 _handoffSheetState.value = TerminalHandoffState.Done
                 _isHandoffSheetVisible.value = false
             }
+
             is SetupOutcome.AwaitingUserAction -> {
                 _activeOperation.value =
                     _activeOperation.value?.copy(
@@ -988,10 +1013,12 @@ class EnvironmentSetupState(
                     )
                 _environmentNotice.value = "Action still pending: requirements not yet satisfied."
             }
+
             is SetupOutcome.Cancelled -> {
                 endOperation(SetupOperationState.CANCELLED, "Operation cancelled")
                 _environmentNotice.value = "Operation was cancelled"
             }
+
             is SetupOutcome.Failed -> {
                 val kept = keepHandoffOrFail(currentHandoff, outcome.reason)
                 _environmentNotice.value =
@@ -1001,11 +1028,13 @@ class EnvironmentSetupState(
                         "Operation failed: ${outcome.reason}"
                     }
             }
+
             is SetupOutcome.Busy -> {
                 keepAwaiting(currentHandoff, "Another setup operation is running")
                 _handoffSheetState.value = TerminalHandoffState.AnotherOperationRunning
                 _environmentNotice.value = "Another setup operation is running. Try again when it finishes."
             }
+
             is SetupOutcome.Interrupted -> {
                 keepAwaiting(currentHandoff, outcome.reason)
                 _handoffSheetState.value = TerminalHandoffState.Idle

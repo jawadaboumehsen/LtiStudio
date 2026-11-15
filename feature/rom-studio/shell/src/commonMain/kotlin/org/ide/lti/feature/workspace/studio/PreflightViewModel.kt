@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
@@ -54,7 +55,7 @@ public class PreflightViewModel(
     init {
         samePhone?.let { finder ->
             viewModelScope.launch {
-                val others = runCatching { finder.others(workspaceId) }.getOrDefault(emptyList())
+                val others = runCatchingCancellable { finder.others(workspaceId) }.getOrDefault(emptyList())
                 _state.update { it.copy(samePhone = others) }
             }
         }

@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ReleaseVersion
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
@@ -500,7 +501,14 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         val groupDef = ToolGroupCatalog.group(group)
         val recommended = (groupDef?.source as? ToolSource.Git)?.recommendedUrl
         // Asked before trust: a name that is no repository URL must not be trusted, nor handed to git as a path.
-        if (url != recommended && runCatching { ToolSelection(group.value, url, ToolRef.Branch("main")) }.isFailure) {
+        if (url != recommended && runCatchingCancellable {
+                ToolSelection(
+                    group.value,
+                    url,
+                    ToolRef.Branch("main"),
+                )
+            }.isFailure
+        ) {
             _resolveError.value = "Enter the repository as https://… or ssh://…"
             return
         }

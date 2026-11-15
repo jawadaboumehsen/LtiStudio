@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -63,7 +64,7 @@ public fun ToolGroupRow(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(isSelected) {
         if (isSelected) {
-            runCatching { focusRequester.requestFocus() }
+            runCatchingCancellable { focusRequester.requestFocus() }
         }
     }
 
@@ -114,7 +115,7 @@ public fun ToolGroupRow(
                 }
             }
             .clickable(onClick = {
-                runCatching { focusRequester.requestFocus() }
+                runCatchingCancellable { focusRequester.requestFocus() }
                 onClick()
             })
             .semantics(mergeDescendants = true) {

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.plugin
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -99,6 +100,8 @@ class PluginIndexAdapter(
     private suspend fun fetchBlocking(source: IndexSource, allowCache: Boolean): IndexFetchResult {
         val uri = try {
             URI(source.url)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             return IndexFetchResult.Failed(IndexFailure.InsecureSource)
         }

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.configuration
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -52,6 +53,8 @@ public class SnapshotMaterializer(private val storageDir: Path) : SnapshotMateri
                 try {
                     val data = Json.decodeFromString<IntentData>(content)
                     SnapshotMaterializationIntent(data.workspaceId, data.snapshotId, data.status)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (_: Exception) {
                     null
                 }

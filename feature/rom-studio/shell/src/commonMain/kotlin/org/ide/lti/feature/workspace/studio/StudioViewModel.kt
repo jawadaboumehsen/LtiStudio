@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
@@ -473,7 +474,7 @@ public class StudioViewModel(
         val workspaceId = _uiState.value.workspaceId
         if (workspaceId.isBlank()) return
         viewModelScope.launch {
-            val index = runCatching { workbench.list(workspaceId) }.getOrDefault(RestoreIndex.Empty)
+            val index = runCatchingCancellable { workbench.list(workspaceId) }.getOrDefault(RestoreIndex.Empty)
             _uiState.update {
                 if (it.workspaceId == workspaceId) {
                     it.copy(
@@ -515,7 +516,7 @@ public class StudioViewModel(
             } catch (e: RefusalException) {
                 "${e.refusal.cause} ${e.refusal.nextStep}"
             }
-            val index = runCatching { workbench.list(workspaceId) }.getOrDefault(_uiState.value.restoreIndex)
+            val index = runCatchingCancellable { workbench.list(workspaceId) }.getOrDefault(_uiState.value.restoreIndex)
             _uiState.update {
                 if (it.workspaceId == workspaceId) it.copy(restoreIndex = index, restoreMessage = message) else it
             }
@@ -583,7 +584,7 @@ public class StudioViewModel(
         validationJob = viewModelScope.launch {
             delay(VALIDATION_DEBOUNCE_MS)
             // A read that failed (the service busy or down) is not a missing configuration: keep what is known.
-            val snapshot = runCatching { settingsStore?.current(workspaceId) }.getOrElse { return@launch }
+            val snapshot = runCatchingCancellable { settingsStore?.current(workspaceId) }.getOrElse { return@launch }
             val report = currentValidation(workspaceId, snapshot)
             // Another workspace opened meanwhile has its own check; this one's result is for a workspace not shown.
             if (workspaceId != requestedWorkspaceId) return@launch

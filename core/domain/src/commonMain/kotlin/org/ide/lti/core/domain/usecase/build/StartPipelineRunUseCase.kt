@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
@@ -49,7 +50,7 @@ public class StartPipelineRunUseCase(
         workspaceId: String,
         driverInstanceId: String = "driver_${UUID.randomUUID()}",
         throughStage: StageId? = null,
-    ): Result<BuildRun> = runCatching {
+    ): Result<BuildRun> = runCatchingCancellable {
         // One start at a time: the active-run check and the QUEUED record must not interleave with another start.
         admission.withLock { start(workspaceId, driverInstanceId, throughStage) }
     }

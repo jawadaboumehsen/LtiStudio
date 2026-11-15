@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.checkpoint
 
+import kotlinx.coroutines.CancellationException
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.ContentManifest
 import org.ide.lti.core.domain.pipeline.ManifestEntry
@@ -50,7 +51,9 @@ public class CheckpointRepository : CheckpointPort {
                 requiredBytes = requiredBytes,
                 availableBytes = availableBytes,
             )
+
             !Files.exists(sourceRoot) -> StagingResult.SourceMissing(checkpoint.rootRelPath)
+
             else -> null
         }
         if (failure != null) return failure
@@ -86,7 +89,9 @@ public class CheckpointRepository : CheckpointPort {
         val destPath = stagingDir.resolve(rel)
         when {
             Files.isSymbolicLink(sourcePath) -> copySymlink(sourcePath, destPath)
+
             Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS) -> Files.createDirectories(destPath)
+
             Files.isRegularFile(sourcePath, LinkOption.NOFOLLOW_LINKS) -> {
                 Files.createDirectories(destPath.parent)
                 copyStreamed(sourcePath, destPath)
@@ -152,6 +157,7 @@ public class CheckpointRepository : CheckpointPort {
         }
         return when (entry.kind) {
             ManifestEntryKind.SYMLINK -> verifySymlink(entryPath, entry)
+
             ManifestEntryKind.FILE,
             ManifestEntryKind.SIDECAR,
             -> verifyRegularFile(entryPath, entry)
@@ -203,6 +209,8 @@ public class CheckpointRepository : CheckpointPort {
             Files.createDirectories(finalDir.parent)
             try {
                 Files.move(stagingDir, finalDir, StandardCopyOption.ATOMIC_MOVE)
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 copyTreeRecursively(stagingDir, finalDir)
                 deleteRecursively(stagingDir)
@@ -352,10 +360,14 @@ private fun findFirstDifference(actual: ContentManifest, expected: ContentManife
         val act = actualMap[path]
         when {
             act == null -> "Missing entry '$path'"
+
             act.kind != exp.kind -> "Kind mismatch at '$path': expected ${exp.kind}, got ${act.kind}"
+
             act.sizeBytes != exp.sizeBytes ->
                 "Size mismatch at '$path': expected ${exp.sizeBytes}, got ${act.sizeBytes}"
+
             act.sha256 != exp.sha256 -> "Sha256 mismatch at '$path': expected ${exp.sha256}, got ${act.sha256}"
+
             else -> null
         }
     }

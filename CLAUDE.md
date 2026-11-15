@@ -1238,6 +1238,7 @@ nothing is shown as done before its job finished.
 - Tools added to the catalog for the toolkit: `7zz` (7-Zip), `sdat2img.py`, `kptools` (KernelPatch); system packages
   `lz4`, `zstd`, `cpio`, `dtc`. Not available, so not offered: Linux magiskboot, delta_generator (no Seamless OTA
   output), vdexExtractor (deodex handles plain VDEX/ODEX only), simg2simg (split writes byte parts).
+- Coroutines: a broad catch around a suspending call must not swallow cancellation. Use `runCatchingCancellable` (`core:common` `utils/Cancellation.kt`) instead of `runCatching`, or put `catch (e: CancellationException) { throw e }` before `catch (e: Exception)`; a catch that cleans up and rethrows needs neither. Repositories, managers and use cases expose `suspend` functions and do not launch in constructors; the one app-wide scope is `DomainModule`'s `CoroutineScope` (no other `SupervisorJob()` scopes except app-lifetime infrastructure: `PublishSessions`, `WslToolchainProvisioner`'s shared verification, `DesktopNativeNotifier`). File I/O started from a view model runs in `withContext(Dispatchers.IO)`.
 - Tests: pure logic gets `kotlin.test` with real sample data; tool-backed steps are planned against
   `SimulatedExecutionPort` with real tool output. Gates (run sequentially, app closed): `detekt`,
   `verifyDesignSystemGuardrails`, `checkArchitecture` plus the touched module's `desktopTest --rerun-tasks`.

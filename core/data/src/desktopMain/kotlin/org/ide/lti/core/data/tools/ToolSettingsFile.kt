@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.tools
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -122,6 +123,8 @@ public class ToolSettingsFile(
                 }
             }
             Result.success(Settings(picks, unreadable))
+        } catch (e: CancellationException) {
+            throw e
         } catch (t: Throwable) {
             Result.failure(ToolErrorException(ToolError.Internal("$settingsPath can't be read: ${t.message}")))
         }
@@ -177,6 +180,8 @@ public class ToolSettingsFile(
         withContext(NonCancellable) {
             try {
                 if (previous != null) record(group, previous.first, previous.second) else clear(group)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }

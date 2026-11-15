@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
@@ -119,7 +120,7 @@ class WorkspaceDeviceViewModel(
         val readSnapshot = runCatching { workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) } }
             .onFailure { if (it is CancellationException) throw it }
         val loadedSnapshot = readSnapshot.getOrNull()
-        val read = runCatching { workspaceDeviceRepository.get(workspace.id) }
+        val read = runCatchingCancellable { workspaceDeviceRepository.get(workspace.id) }
         val device = read.getOrNull()
         val failure = read.exceptionOrNull() ?: readSnapshot.exceptionOrNull()
         _uiState.update {
@@ -199,12 +200,17 @@ class WorkspaceDeviceViewModel(
     private suspend fun createFromTemplate(workspaceId: String, template: TargetDevice) {
         run {
             // Only a folder that definitely has no device gets the template; an existing file is never replaced.
-            val existing = runCatching { workspaceDeviceRepository.get(workspaceId) }
+            val existing = runCatchingCancellable { workspaceDeviceRepository.get(workspaceId) }
             if (existing.isFailure || existing.getOrNull() != null) {
                 retry()
                 return
             }
-            val stored = runCatching { workspaceDeviceRepository.save(workspaceId, template) }.getOrElse { error ->
+            val stored = runCatchingCancellable {
+                workspaceDeviceRepository.save(
+                    workspaceId,
+                    template,
+                )
+            }.getOrElse { error ->
                 _uiState.update {
                     if (it.workspaceId != workspaceId) return@update it
                     it.copy(message = error.message ?: "Failed to write the device configuration")
@@ -239,7 +245,7 @@ class WorkspaceDeviceViewModel(
         // Only the latest check reports: an older one finishing later (same workspace or not) is dropped.
         val request = ++firmwareRequest
         viewModelScope.launch {
-            val read = runCatching { check.read(workspaceId, device.bootPartitions) }
+            val read = runCatchingCancellable { check.read(workspaceId, device.bootPartitions) }
             _uiState.update {
                 if (it.workspaceId != workspaceId || request != firmwareRequest) return@update it
                 it.copy(
@@ -267,7 +273,7 @@ class WorkspaceDeviceViewModel(
         if (workspaceId == null || draft == null || !state.canSave) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, message = null) }
-            val stored = runCatching { workspaceDeviceRepository.save(workspaceId, draft) }
+            val stored = runCatchingCancellable { workspaceDeviceRepository.save(workspaceId, draft) }
             stored.onSuccess { device ->
                 val bound = bindRevision(workspaceId, device.revision)
                 _uiState.update {

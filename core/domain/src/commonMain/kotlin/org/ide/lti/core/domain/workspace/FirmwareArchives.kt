@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.workspace
 
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.toolkit.FormatDetector
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.pipeline.toolkit.PackageFormat
@@ -86,7 +87,7 @@ public class FirmwareArchives(
             run(ws, "cp", "-f", "--", source, partial, timeoutMs = COPY_TIMEOUT_MS)
             run(ws, "mv", "-f", "-T", "--", partial, dest)
         } finally {
-            withContext(NonCancellable) { runCatching { run(ws, "rm", "-f", "--", partial) } }
+            withContext(NonCancellable) { runCatchingCancellable { run(ws, "rm", "-f", "--", partial) } }
         }
         return FirmwareArchive(
             ref = "$DIR/$name",
@@ -98,7 +99,16 @@ public class FirmwareArchives(
 
     /** The container format from the file's first bytes (FR-001: content, never the name); null when unknown. */
     private suspend fun detect(ws: Workspace, path: String): PackageFormat? {
-        val header = runCatching { run(ws, "xxd", "-p", "-l", HEADER_BYTES, path) }.getOrNull() ?: return null
+        val header = runCatchingCancellable {
+            run(
+                ws,
+                "xxd",
+                "-p",
+                "-l",
+                HEADER_BYTES,
+                path,
+            )
+        }.getOrNull() ?: return null
         return FormatDetector.detect(FormatDetector.fromHex(header)).takeIf { it != PackageFormat.Unknown }
     }
 

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.plugin.InstalledRecord
@@ -217,8 +218,12 @@ public class PatchViewModel(
 
     /** The workspace's device and firmware against each plugin's plan; nothing while either is unknown. */
     private suspend fun incompatibleOf(installed: List<InstalledRecord>): Map<String, String> {
-        val device = runCatching { store?.device(workspaceId)?.codename }.getOrNull()
-        val firmware = runCatching { store?.current(workspaceId)?.acquisition?.firmware?.version }.getOrNull()
+        val device = runCatchingCancellable { store?.device(workspaceId)?.codename }.getOrNull()
+        val firmware = runCatchingCancellable {
+            store?.current(
+                workspaceId,
+            )?.acquisition?.firmware?.version
+        }.getOrNull()
         return installed.takeIf { device != null }.orEmpty().mapNotNull { r ->
             val plan = catalog?.templateFor(r.identity.publisher, r.identity.id, r.identity.version)
             plan?.let { incompatibility(it, device.orEmpty(), firmware.orEmpty()) }?.let { r.key to it }

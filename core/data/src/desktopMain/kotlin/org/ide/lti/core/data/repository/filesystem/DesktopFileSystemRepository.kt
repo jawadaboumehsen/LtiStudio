@@ -10,6 +10,7 @@
 package org.ide.lti.core.data.repository.filesystem
 
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -39,78 +40,76 @@ class DesktopFileSystemRepository : FileSystemRepository {
     private val fileSystem = FileSystem.SYSTEM
     private val logger = Logger.withTag("FileSystemWatcher")
 
-    override suspend fun listFiles(path: String): Result<List<FileNode>> {
-        return try {
-            val dirPath = path.toPath()
-            val files = fileSystem.list(dirPath).map { filePath ->
-                val metadata = fileSystem.metadata(filePath)
-                FileNode(
-                    path = filePath.toString(),
-                    name = filePath.name,
-                    type = if (metadata.isDirectory) FileType.DIRECTORY else FileType.FILE,
-                    size = metadata.size ?: 0,
-                    lastModified = metadata.lastModifiedAtMillis ?: 0,
-                    children = null,
-                )
-            }.sortedWith(compareBy({ it.type != FileType.DIRECTORY }, { it.name.lowercase() }))
-            Result.success(files)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun listFiles(path: String): Result<List<FileNode>> = try {
+        val dirPath = path.toPath()
+        val files = fileSystem.list(dirPath).map { filePath ->
+            val metadata = fileSystem.metadata(filePath)
+            FileNode(
+                path = filePath.toString(),
+                name = filePath.name,
+                type = if (metadata.isDirectory) FileType.DIRECTORY else FileType.FILE,
+                size = metadata.size ?: 0,
+                lastModified = metadata.lastModifiedAtMillis ?: 0,
+                children = null,
+            )
+        }.sortedWith(compareBy({ it.type != FileType.DIRECTORY }, { it.name.lowercase() }))
+        Result.success(files)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun readFile(path: String): Result<String> {
-        return try {
-            val content = fileSystem.read(path.toPath()) {
-                readUtf8()
-            }
-            Result.success(content)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun readFile(path: String): Result<String> = try {
+        val content = fileSystem.read(path.toPath()) {
+            readUtf8()
         }
+        Result.success(content)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun writeFile(path: String, content: String): Result<Unit> {
-        return try {
-            fileSystem.write(path.toPath()) {
-                writeUtf8(content)
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun writeFile(path: String, content: String): Result<Unit> = try {
+        fileSystem.write(path.toPath()) {
+            writeUtf8(content)
         }
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun createDirectory(path: String): Result<Unit> {
-        return try {
-            fileSystem.createDirectory(path.toPath())
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun createDirectory(path: String): Result<Unit> = try {
+        fileSystem.createDirectory(path.toPath())
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun delete(path: String): Result<Unit> {
-        return try {
-            fileSystem.delete(path.toPath())
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun delete(path: String): Result<Unit> = try {
+        fileSystem.delete(path.toPath())
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun rename(oldPath: String, newPath: String): Result<Unit> {
-        return try {
-            fileSystem.atomicMove(oldPath.toPath(), newPath.toPath())
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override suspend fun rename(oldPath: String, newPath: String): Result<Unit> = try {
+        fileSystem.atomicMove(oldPath.toPath(), newPath.toPath())
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
-    override suspend fun exists(path: String): Boolean {
-        return fileSystem.exists(path.toPath())
-    }
+    override suspend fun exists(path: String): Boolean = fileSystem.exists(path.toPath())
 
     override fun watchDirectory(path: String): Flow<FileSystemEvent> = callbackFlow {
         val watchService = createWatchService()
@@ -124,6 +123,8 @@ class DesktopFileSystemRepository : FileSystemRepository {
                     watchService.take()
                 } catch (_: java.nio.file.ClosedWatchServiceException) {
                     null
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.e(e) { "Error taking watch event key for directory: $path" }
                     null
@@ -138,19 +139,19 @@ class DesktopFileSystemRepository : FileSystemRepository {
             job.cancel()
             try {
                 watchService?.close()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.w(e) { "Error closing WatchService for directory: $path" }
             }
         }
     }
 
-    private fun createWatchService(): WatchService? {
-        return try {
-            FileSystems.getDefault().newWatchService()
-        } catch (e: Exception) {
-            logger.e(e) { "Failed to create WatchService" }
-            null
-        }
+    private fun createWatchService(): WatchService? = try {
+        FileSystems.getDefault().newWatchService()
+    } catch (e: Exception) {
+        logger.e(e) { "Failed to create WatchService" }
+        null
     }
 
     private fun registerDirectory(path: String, watchService: WatchService?): Path? {
@@ -172,21 +173,13 @@ class DesktopFileSystemRepository : FileSystemRepository {
         }
     }
 
-    private fun processWatchEvents(
-        key: WatchKey,
-        dir: Path?,
-        onEvent: (FileSystemEvent) -> Unit,
-    ) {
+    private fun processWatchEvents(key: WatchKey, dir: Path?, onEvent: (FileSystemEvent) -> Unit) {
         for (event in key.pollEvents()) {
             toFileSystemEvent(event.kind(), dir, event.context())?.let(onEvent)
         }
     }
 
-    private fun toFileSystemEvent(
-        kind: WatchEvent.Kind<*>,
-        dir: Path?,
-        context: Any?,
-    ): FileSystemEvent? {
+    private fun toFileSystemEvent(kind: WatchEvent.Kind<*>, dir: Path?, context: Any?): FileSystemEvent? {
         val filename = context?.toString() ?: ""
         val fullPath = if (dir != null && filename.isNotEmpty()) {
             dir.resolve(filename).toString()

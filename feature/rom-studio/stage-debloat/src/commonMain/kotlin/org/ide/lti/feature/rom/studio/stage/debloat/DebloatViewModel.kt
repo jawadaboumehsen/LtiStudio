@@ -12,12 +12,15 @@ package org.ide.lti.feature.rom.studio.stage.debloat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.common.utils.DialogUtils
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.debloat.AppFacts
 import org.ide.lti.core.domain.debloat.AppManifests
 import org.ide.lti.core.domain.debloat.AppMap
@@ -172,7 +175,11 @@ public class DebloatViewModel(
                 .joinToString("\n") { "${it.sizeBytes}\t${it.path}" }
             val result = facts.read(workspaceId, DebloatStage.RESULT)?.let(DebloatStage::parseResult)
             val inventory = withRemoved(DebloatInventory.parse(listing), result)
-            val points = runCatching { restore?.list(workspaceId)?.items.orEmpty() }.getOrDefault(emptyList())
+            val points = runCatchingCancellable {
+                restore?.list(
+                    workspaceId,
+                )?.items.orEmpty()
+            }.getOrDefault(emptyList())
                 .filter { it.tool == DebloatStage.TOOL }
             _facts.value = _facts.value.copy(
                 inventory = inventory,
@@ -275,7 +282,9 @@ public class DebloatViewModel(
             val path = pickFile() ?: return@launch
             guarded {
                 val file = File(path)
-                val list = RemovalList.parse(file.nameWithoutExtension, file.readText())
+                // A community list can be a megabyte: read off the UI thread.
+                val text = withContext(Dispatchers.IO) { file.readText() }
+                val list = RemovalList.parse(file.nameWithoutExtension, text)
                 if (list.opinions.isEmpty()) {
                     pick(list, "Imported")
                 } else {
@@ -345,7 +354,8 @@ public class DebloatViewModel(
             val folder = pickFolder() ?: return@launch
             guarded {
                 val file = File(folder, "debloat-$workspaceId.json")
-                file.writeText(RemovalList.toJson(portableList("Debloat of $workspaceId")))
+                val json = RemovalList.toJson(portableList("Debloat of $workspaceId"))
+                withContext(Dispatchers.IO) { file.writeText(json) }
                 _facts.value = _facts.value.copy(message = "Saved ${file.path}.")
             }
         }

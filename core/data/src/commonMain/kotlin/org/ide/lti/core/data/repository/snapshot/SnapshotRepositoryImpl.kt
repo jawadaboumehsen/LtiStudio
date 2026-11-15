@@ -12,6 +12,7 @@ package org.ide.lti.core.data.repository.snapshot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.datastore.SnapshotPreferencesDataSource
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
@@ -34,14 +35,13 @@ public class SnapshotRepositoryImpl(
     override val snapshots: Flow<List<ConfigurationSnapshot>>
         get() = dataSource.snapshots
 
-    override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> {
-        return dataSource.snapshotsForWorkspace(workspaceId)
-    }
+    override fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> =
+        dataSource.snapshotsForWorkspace(workspaceId)
 
     override suspend fun getSnapshot(id: String): ConfigurationSnapshot? =
         dataSource.getSnapshot(id) ?: fromWorkspaceFolder(id)?.also { snapshot ->
             // Two readers may race to cache it; the store refuses the second copy, which is fine.
-            runCatching { dataSource.saveSnapshot(snapshot) }
+            runCatchingCancellable { dataSource.saveSnapshot(snapshot) }
         }
 
     private suspend fun fromWorkspaceFolder(id: String): ConfigurationSnapshot? {

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.datastore.TargetPreferencesDataSource
 import org.ide.lti.core.domain.repository.target.TargetRepository
 import org.ide.lti.core.model.target.DefaultTargetCatalog
@@ -60,7 +61,7 @@ class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesD
     }
 
     override suspend fun selectTarget(targetId: String): Result<TargetDevice> = writes.withLock {
-        runCatching {
+        runCatchingCancellable {
             val target = requireNotNull(_targets.value.find { it.id == targetId }) { "Unknown target ID: $targetId" }
             preferencesDataSource.saveSelectedTargetId(target.id)
             _selectedTargetId.value = target.id
@@ -69,7 +70,7 @@ class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesD
     }
 
     override suspend fun addTarget(target: TargetDevice): Result<TargetDevice> = writes.withLock {
-        runCatching {
+        runCatchingCancellable {
             val current = _targets.value
             val adding = current.none { it.id == target.id }
             val updatedList = if (adding) current + target else current.map { if (it.id == target.id) target else it }
@@ -86,7 +87,7 @@ class TargetRepositoryImpl(private val preferencesDataSource: TargetPreferencesD
     override suspend fun updateTarget(target: TargetDevice): Result<TargetDevice> = addTarget(target)
 
     override suspend fun deleteTarget(targetId: String): Result<Unit> = writes.withLock {
-        runCatching {
+        runCatchingCancellable {
             val currentList = _targets.value
             check(currentList.size > 1) { "Cannot delete the only remaining target profile." }
             require(currentList.any { it.id == targetId }) { "Target not found: $targetId" }

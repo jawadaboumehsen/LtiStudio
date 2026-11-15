@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.workspace
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
@@ -76,9 +78,11 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
                 targetDisplayName = previous?.targetDisplayName,
             )
             // The workspace is open either way: a failed recents update is not an open failure.
-            runCatching { repository.addRecentProject(recentProject) }
+            runCatchingCancellable { repository.addRecentProject(recentProject) }
 
             Result.success(workspace)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -89,7 +93,7 @@ class WorkspaceManager(val repository: WorkspaceRepository, private val coroutin
      */
     suspend fun openWorkspaceByPath(path: String): Result<Workspace> {
         val workspace = workspaceForPath(repository, path)
-        return runCatching { repository.saveWorkspace(workspace) }.fold(
+        return runCatchingCancellable { repository.saveWorkspace(workspace) }.fold(
             onSuccess = { openWorkspace(workspace.id) },
             onFailure = { Result.failure(it) },
         )

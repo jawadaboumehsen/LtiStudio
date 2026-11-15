@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.PipelineEvent
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
@@ -58,7 +59,7 @@ public open class ReattachRunUseCase(
 
         val workspace = workspaceRepository.getWorkspace(workspaceId) ?: return null
         val snapshot = snapshotRepository.getSnapshot(run.snapshotId) ?: return null
-        val target = runCatching { workspaceDeviceRepository.get(workspaceId) }.getOrNull() ?: return null
+        val target = runCatchingCancellable { workspaceDeviceRepository.get(workspaceId) }.getOrNull() ?: return null
         // The run was planned for one device revision: one changed since (sizes, layout) would mix two targets.
         val admitted = run.runtimeValues[RuntimeKeys.DEVICE_REVISION]?.toIntOrNull()
         if (admitted != null && admitted != target.revision) {
@@ -95,7 +96,9 @@ public open class ReattachRunUseCase(
                     if (it.state.isTerminal) it else it.copy(state = RunState.INTERRUPTED, endedAt = Clock.System.now())
                 }
             }
+
             status.hasFinished -> true
+
             else -> false.also { port.cancel(step) }
         }
     }

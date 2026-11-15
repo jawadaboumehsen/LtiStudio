@@ -132,7 +132,6 @@ class AssembleStageEditorTest {
                 override val holderName = holderName
                 override val workspace = workspace
                 override suspend fun release() {}
-                override fun close() {}
             },
         )
 

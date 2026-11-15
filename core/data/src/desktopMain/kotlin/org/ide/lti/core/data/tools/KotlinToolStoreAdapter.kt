@@ -34,6 +34,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.data.tools.KotlinStoreLayout.matches
 import org.ide.lti.core.data.tools.KotlinStoreLayout.shellQuote
 import org.ide.lti.core.data.tools.KotlinStoreLayout.toData
@@ -271,6 +272,7 @@ public class KotlinToolStoreAdapter(
                         val resolved = ResolvedSource.Git(src.recommendedUrl, src.pinnedRef, src.pinnedCommit)
                         KotlinStoreLayout.computeVersionId(resolved) == rawCurrent
                     }
+
                     is ToolSource.Release -> {
                         (group.recipe as? RecipeConfig.Release)?.versions?.any { it.version == rawCurrent } == true
                     }
@@ -282,11 +284,13 @@ public class KotlinToolStoreAdapter(
                         val resolved = ResolvedSource.Git(src.recommendedUrl, src.pinnedRef, src.pinnedCommit)
                         KotlinStoreLayout.computeVersionId(resolved) == rawCurrent
                     }
+
                     is ToolSource.Release -> {
                         (defaultGroup.recipe as? RecipeConfig.Release)?.versions?.any {
                             it.version == rawCurrent
                         } == true
                     }
+
                     null -> false
                 }
             // A damaged pick is reported like an unknown selection: this group needs an explicit choice, the rest work.
@@ -525,11 +529,13 @@ public class KotlinToolStoreAdapter(
 
         when (val blocked = unconfirmedCancellations.recheck(request.group)) {
             is Recheck.Blocked -> throw RemoteCancellationUnconfirmedException(blocked.executionId)
+
             // The block came from an operation that was left registered; its process is confirmed gone now.
             Recheck.Lifted -> {
                 activeOperations.remove(request.group)
                 activeJobs.remove(request.group)
             }
+
             Recheck.Clear -> Unit
         }
         check(activeOperations.putIfAbsent(request.group, opId) == null) {
@@ -552,7 +558,11 @@ public class KotlinToolStoreAdapter(
                 sameSourceFound = false
                 val cat = exec(listOf("cat", "$dir/version.json")).getOrNull() ?: return false
                 if (cat.isBlank()) return false
-                val existing = runCatching { json.decodeFromString<VersionData>(cat) }.getOrNull() ?: return false
+                val existing = runCatchingCancellable {
+                    json.decodeFromString<VersionData>(
+                        cat,
+                    )
+                }.getOrNull() ?: return false
                 val sameSource = existing.source.matches(request.source.toData())
                 val sameRecipe =
                     existing.recipe.type == request.recipe.typeName() &&
@@ -581,7 +591,7 @@ public class KotlinToolStoreAdapter(
             // Check if existing and intact
             val catJson = exec(listOf("cat", "$targetVerDir/version.json")).getOrNull()
             if (catJson != null && catJson.isNotBlank()) {
-                val existing = runCatching { json.decodeFromString<VersionData>(catJson) }.getOrNull()
+                val existing = runCatchingCancellable { json.decodeFromString<VersionData>(catJson) }.getOrNull()
                 if (existing != null) {
                     if (checkIntactAndReuse(targetVerDir, versionId)) {
                         return@flow
@@ -719,6 +729,7 @@ public class KotlinToolStoreAdapter(
                         delay(GIT_RETRY_DELAY_MS)
                     }
                 }
+
                 is ResolvedSource.Release -> {
                     emit(InstallEvent.Output("Preparing release download..."))
                 }
@@ -751,7 +762,7 @@ public class KotlinToolStoreAdapter(
             }
             if (missingLayout.isNotEmpty()) {
                 val err = ToolError.UnsupportedLayout(missingLayout)
-                runCatching {
+                runCatchingCancellable {
                     writeResultFile(
                         opId,
                         request.group.value,
@@ -871,7 +882,7 @@ public class KotlinToolStoreAdapter(
                 throw e
             }
             if (wasCancelled) {
-                runCatching {
+                runCatchingCancellable {
                     writeResultFile(
                         opId = opId,
                         group = request.group.value,
@@ -918,11 +929,14 @@ public class KotlinToolStoreAdapter(
                             e.toolError
                         }
                     }
+
                     isAdmissionRequired -> ToolError.AdmissionRequired(e.message ?: "Command admission is closed")
+
                     isConnLost -> ToolError.ConnectionLost(e.message ?: "Connection lost")
+
                     else -> ToolError.BuildFailed(e.message ?: "Build failed")
                 }
-            runCatching {
+            runCatchingCancellable {
                 writeResultFile(opId, request.group.value, null, reused = false, ok = false, error = err.message)
             }
             emit(InstallEvent.Finished(OperationResult.Failed(err, err.message)))
@@ -1094,7 +1108,13 @@ public class KotlinToolStoreAdapter(
             val recordedSource =
                 if (choice == ChoiceUpdate.Record) {
                     val vJson = exec(listOf("cat", "$groupDir/$versionId/version.json")).getOrNull()
-                    val vData = vJson?.let { runCatching { json.decodeFromString<VersionData>(it) }.getOrNull() }
+                    val vData = vJson?.let {
+                        runCatchingCancellable {
+                            json.decodeFromString<VersionData>(
+                                it,
+                            )
+                        }.getOrNull()
+                    }
                     vData?.toDomain(group, groupDef)?.source
                 } else {
                     null

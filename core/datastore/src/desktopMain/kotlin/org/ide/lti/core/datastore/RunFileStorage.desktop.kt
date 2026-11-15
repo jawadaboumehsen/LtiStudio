@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import java.io.File
 import java.nio.file.Files
 
@@ -71,7 +72,7 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
         // A JSON string per event; a line from before is read as it is.
         val lines = file.readLines(Charsets.UTF_8).filter { it.isNotBlank() }.map { line ->
             if (line.startsWith('"')) {
-                runCatching { Json.decodeFromString(String.serializer(), line) }.getOrDefault(line)
+                runCatchingCancellable { Json.decodeFromString(String.serializer(), line) }.getOrDefault(line)
             } else {
                 line
             }

@@ -43,7 +43,7 @@ public sealed interface LockResult {
 /**
  * An active lock handle on a workspace.
  */
-public interface JobLockHandle : AutoCloseable {
+public interface JobLockHandle {
     public val holderName: String
     public val workspace: Workspace
     public suspend fun release()

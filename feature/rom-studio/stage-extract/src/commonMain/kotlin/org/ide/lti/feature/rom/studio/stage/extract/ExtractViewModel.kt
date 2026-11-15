@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveListing
@@ -256,13 +257,19 @@ public class ExtractViewModel(
             val archive = store?.current(workspaceId)?.acquisition?.let { FirmwareAcquisitionStage.archiveRelPath(it) }
 
             val manifestRaw = facts.lastValue(workspaceId, RuntimeKeys.PACKAGE_MANIFEST)
-            val manifest = manifestRaw?.let { runCatching { PackageManifest.decode(it) }.getOrNull() }
+            val manifest = manifestRaw?.let { runCatchingCancellable { PackageManifest.decode(it) }.getOrNull() }
 
             val checksumRaw = facts.lastValue(workspaceId, RuntimeKeys.PACKAGE_CHECKSUM_RESULT)
-            val checksum = checksumRaw?.let { runCatching { ChecksumResult.decode(it) }.getOrNull() }
+            val checksum = checksumRaw?.let { runCatchingCancellable { ChecksumResult.decode(it) }.getOrNull() }
 
             val imagesRaw = facts.lastValue(workspaceId, RuntimeKeys.EXTRACT_IMAGES)
-            val images = imagesRaw?.let { runCatching { PartitionImage.decodeList(it) }.getOrNull() }.orEmpty()
+            val images = imagesRaw?.let {
+                runCatchingCancellable {
+                    PartitionImage.decodeList(
+                        it,
+                    )
+                }.getOrNull()
+            }.orEmpty()
 
             // The browser opens on the workspace's archive until the user picks another file.
             if (archive != null && _facts.value.browse.archive == null) browse(archive, emptyList())

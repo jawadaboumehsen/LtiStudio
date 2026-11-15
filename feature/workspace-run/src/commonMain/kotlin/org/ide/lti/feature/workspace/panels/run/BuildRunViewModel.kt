@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.RunEstimate
 import org.ide.lti.core.domain.pipeline.StagePreview
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
@@ -136,7 +137,7 @@ public class BuildRunViewModel(
                 readinessPort.observe().collectLatest { readiness ->
                     val ws = _uiState.value.currentWorkspace
                     val effective = if (ws != null) {
-                        runCatching { readinessPort.forWorkspace(ws) }.getOrDefault(readiness)
+                        runCatchingCancellable { readinessPort.forWorkspace(ws) }.getOrDefault(readiness)
                     } else {
                         readiness
                     }
@@ -158,7 +159,7 @@ public class BuildRunViewModel(
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { ws ->
                 val wsReadiness = if (ws != null && readinessPort != null) {
-                    runCatching { readinessPort.forWorkspace(ws) }.getOrNull()
+                    runCatchingCancellable { readinessPort.forWorkspace(ws) }.getOrNull()
                 } else {
                     null
                 }
@@ -191,7 +192,7 @@ public class BuildRunViewModel(
                     observeRunUseCase.observeRuns(ws.id).collectLatest { runs ->
                         val latest = runs.maxByOrNull { it.startedAt }
                         val cachedLogs = if (latest != null && runRepository != null) {
-                            runCatching { runRepository.cachedEvents(latest.id) }.getOrDefault(emptyList())
+                            runCatchingCancellable { runRepository.cachedEvents(latest.id) }.getOrDefault(emptyList())
                         } else {
                             emptyList()
                         }
@@ -290,7 +291,7 @@ public class BuildRunViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isPreviewing = true, impact = null, errorMessage = null) }
             val result = startPipelineRunUseCase.preview(ws.id, through)
-            val history = runCatching { runRepository?.observeRuns(ws.id)?.first() }.getOrNull().orEmpty()
+            val history = runCatchingCancellable { runRepository?.observeRuns(ws.id)?.first() }.getOrNull().orEmpty()
             val estimate = result.getOrNull()?.let { RunEstimate.of(it, history) }
             _uiState.update { state ->
                 if (state.currentWorkspace?.id != ws.id || state.throughStage != through) {
@@ -313,7 +314,7 @@ public class BuildRunViewModel(
         val run = _uiState.value.latestRun ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isReporting = true, errorMessage = null) }
-            val result = runCatching { reporter.of(run) }
+            val result = runCatchingCancellable { reporter.of(run) }
             _uiState.update { state ->
                 if (state.latestRun?.id != run.id) return@update state.copy(isReporting = false)
                 result.fold(

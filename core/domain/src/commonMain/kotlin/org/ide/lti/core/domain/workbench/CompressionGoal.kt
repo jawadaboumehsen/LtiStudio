@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 
@@ -48,7 +49,7 @@ public class CompressionGoal(
     ): List<CompressionStep> {
         val build = checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }.build
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
-        val kernel = runCatching { boot.kernelFacts(workspaceId) }.getOrNull()
+        val kernel = runCatchingCancellable { boot.kernelFacts(workspaceId) }.getOrNull()
         val candidates = device.dynamicPartitions
             .filter { BuildFilesystems.of(build, it) == BuildFilesystems.EROFS && it !in build.keepStock }
         val sizes = runner.read(workspaceId) {

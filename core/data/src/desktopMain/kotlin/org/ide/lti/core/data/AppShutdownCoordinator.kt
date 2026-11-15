@@ -16,6 +16,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
@@ -91,7 +92,7 @@ public class AppShutdownCoordinator(
 
     /** The job this app runs in [workspace]; one that cannot be read in time does not hold up closing. */
     private suspend fun runningJob(workspace: Workspace): String? = withTimeoutOrNull(JOB_READ_TIMEOUT) {
-        runCatching { jobLock?.currentHolder(workspace) }.getOrNull()
+        runCatchingCancellable { jobLock?.currentHolder(workspace) }.getOrNull()
     }
 
     override suspend fun forceShutdown() {
