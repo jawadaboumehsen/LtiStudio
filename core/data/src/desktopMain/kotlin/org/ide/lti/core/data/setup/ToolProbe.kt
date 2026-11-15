@@ -38,6 +38,7 @@ internal fun toolBinary(home: String, toolId: String, fallbackName: String): Too
 
 /** Checks one installed tool in WSL: the file is there (readable jar or executable) and its probe passes. */
 internal class ToolProbe(private val transport: RemoteTransportPort) {
+    /** Whether the file of [binary] is there and the probe command of [toolId] exits as accepted. */
     suspend fun probe(toolId: String, binary: ToolBinary): ToolProbeResult {
         val exists = run("test", listOf(if (binary.isJar) "-r" else "-x", binary.path)) == 0
         if (!exists) return ToolProbeResult(exists = false, verified = false)
@@ -46,6 +47,7 @@ internal class ToolProbe(private val transport: RemoteTransportPort) {
         return ToolProbeResult(exists = true, verified = ToolCapabilities.isAcceptedExitCode(toolId, exitCode))
     }
 
+    /** Runs [tool] in WSL for setup and returns its exit code. */
     private suspend fun run(tool: String, arguments: List<String>): Int = transport.execute(
         ToolExecutionRequest(toolId = tool, arguments = arguments, workingDirectory = "/", purpose = RunPurpose.SETUP),
     ).exitCode

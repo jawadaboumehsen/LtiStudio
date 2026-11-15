@@ -22,6 +22,7 @@ import org.ide.lti.core.model.setup.toDomain
 /* The journaled form of a setup plan back to the domain plan a resume executes; a field that cannot be
  * rebuilt exactly (a missing frozen commit, an unknown action) refuses the resume rather than guess. */
 
+/** The plan this journal entry froze; throws when a field cannot be rebuilt exactly. */
 internal fun PersistedSetupPlan.toDomainPlan(): SetupPlan = SetupPlan(
     planId = planId,
     revisionHash = revisionHash,
@@ -62,6 +63,7 @@ internal fun PersistedSetupPlan.toDomainPlan(): SetupPlan = SetupPlan(
     },
 )
 
+/** The resolved source of [groupId] as it was frozen (git commit, release asset, ...). */
 @Suppress("CyclomaticComplexMethod")
 internal fun PersistedResolvedInput.toDomain(groupId: ToolGroupId): ResolvedInput = when (kind) {
     "git" -> {

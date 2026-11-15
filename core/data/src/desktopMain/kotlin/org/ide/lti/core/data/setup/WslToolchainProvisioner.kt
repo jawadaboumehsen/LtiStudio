@@ -186,6 +186,8 @@ public class WslToolchainProvisioner(
 
     public companion object {
         private const val STATE_LOG_TAIL_LINES: Int = 100
+        private const val CONFIRM_MISMATCH: String =
+            "Confirmation requires the displayed plan ID and unchanged revision hash."
         private const val LOCAL_ATTEMPT_ID: String = "local"
         private const val PROVISIONER_CHILD_ID: String = "provisioner"
         private const val OWNER_READ: Int = 0x100 // 0400
@@ -195,6 +197,7 @@ public class WslToolchainProvisioner(
 
         public val SUPPORTED_RECIPES: Set<String> get() = ToolCapabilities.SUPPORTED_TOOL_IDS
 
+        /** Whether the app can build [toolId] itself (its group has a recipe). */
         public fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
 
         /** Names from `find -printf "%m %f\n"` lines that are usable tools: a JAR readable, the rest executable. */
@@ -251,6 +254,7 @@ public class WslToolchainProvisioner(
         return deferred.await()
     }
 
+    /** One check of every stage, flagged as checking while it runs; the state it left. */
     private suspend fun runVerificationInternal(): ToolchainSetupState {
         // Invariant: A held Deferred can be joined by post-repair checks (:851, :1021, :1557). That is only safe
         // because repairs cannot start while isBusy.
@@ -414,6 +418,7 @@ public class WslToolchainProvisioner(
         }
     }
 
+    /** Marks the service and tools steps by what the service's tool list said ([unpublished]: tools it lacks). */
     private fun reportRegistryOnSteps(registryResult: ToolRegistryResult?, unpublished: Set<String>) {
         when (registryResult) {
             is ToolRegistryResult.Unreachable -> {
@@ -444,6 +449,7 @@ public class WslToolchainProvisioner(
         }
     }
 
+    /** Marks the tools step failed with [message] as both its description and its error. */
     private fun failToolsStep(message: String) = setStepStatus(
         stage = SetupStepStage.TOOLCHAIN_COMPILATION,
         status = StepStatus.FAILED,
@@ -451,6 +457,7 @@ public class WslToolchainProvisioner(
         error = message,
     )
 
+    /** Whether the tools step has already passed in this state. */
     private fun toolsStepSucceeded(): Boolean =
         _state.value.steps.any { it.stage == SetupStepStage.TOOLCHAIN_COMPILATION && it.status == StepStatus.SUCCESS }
 
@@ -497,6 +504,7 @@ public class WslToolchainProvisioner(
         }
     }
 
+    /** Shows [stage] as running and yields, so the UI sees it before the stage blocks. */
     private suspend fun setStepRunning(stage: SetupStepStage) {
         _state.update { it.withStepRunning(stage, System.currentTimeMillis()) }
         kotlinx.coroutines.yield()
@@ -516,12 +524,17 @@ public class WslToolchainProvisioner(
         (targetId?.let(logBuffer::getLogFile) ?: logBuffer.latestLogFile())?.readText()
     }
 
+    /** After [failedStage] failed: every later stage shows as pending with [reason]. */
     private fun shortCircuitRemaining(failedStage: SetupStepStage, reason: String) {
         _state.update { it.withRemainingPending(failedStage, reason, System.currentTimeMillis()) }
     }
 
     override suspend fun provisionAvbKey(): Boolean = provisionAvbKey(serviceCli = null, home = null, distroName = null)
 
+    /**
+     * Makes the AVB signing key in WSL when it is missing; false when busy or it could not be made. The service,
+     * home and distro are given when called from setup, else found.
+     */
     public suspend fun provisionAvbKey(
         serviceCli: WslCliExecutor? = null,
         home: String? = null,
@@ -630,6 +643,7 @@ public class WslToolchainProvisioner(
         }.also { _operationOutcome.value = it }
     }
 
+    /** Records [toolId] as built and verified at [binaryPath], in the repository and the tools matrix. */
     private suspend fun toolVerified(toolId: String, binaryPath: String): SetupOutcome {
         val now = System.currentTimeMillis()
         repository?.updateTool(toolId) {
@@ -698,158 +712,134 @@ public class WslToolchainProvisioner(
         plan
     }
 
-    @Suppress("CyclomaticComplexMethod") // plan validation, per-kind execution, cancel/failure archiving and post-check
-    override suspend fun confirm(
-        planId: String,
-        revisionHash: String,
-    ): SetupOutcome =
-        withContext(dispatcher) {
-            val currentPlan = activePlan
-            val matches =
-                currentPlan != null &&
-                    currentPlan.planId == planId &&
-                    currentPlan.revisionHash == revisionHash
-            if (currentPlan == null || !matches) {
-                val outcome =
-                    SetupOutcome.Failed(
-                        stage = null,
-                        reason = "Confirmation requires the displayed plan ID and unchanged revision hash.",
-                    )
-                _operationOutcome.value = outcome
-                return@withContext outcome
-            }
-
-            // Revalidate revision and environment against the CURRENT state: a plan previewed before a
-            // later check (or against another distro) is stale and needs a fresh preview (FR-004).
-            val switchAction =
-                currentPlan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
-            val liveRevision =
-                SetupPlanFactory.computeRevisionHash(
-                    snapshot = _state.value,
-                    switchInputs = switchAction?.inputs,
-                    selectionRevision = switchAction?.selectionRevision,
-                )
-            val liveDistro = resolveEnvironmentKey()
-            if (liveRevision != currentPlan.revisionHash || liveDistro != currentPlan.environmentKey) {
-                val outcome =
-                    SetupOutcome.Failed(
-                        stage = null,
-                        reason = "Environment evidence changed since the plan was previewed; " +
-                            "preview again before confirming.",
-                    )
-                _operationOutcome.value = outcome
-                return@withContext outcome
-            }
-
-            val distro = currentPlan.environmentKey
-
-            coordinator.withAdmission(
-                environmentKey = distro,
-                operationId = currentPlan.planId,
-                kind = currentPlan.kind.name,
-            ) {
-                val journal =
-                    openAttempt(
-                        environmentKey = distro,
-                        planId = currentPlan.planId,
-                        revisionHash = currentPlan.revisionHash,
-                        kind = currentPlan.kind,
-                        plannedActionIds = currentPlan.orderedActions.map { it.actionId() },
-                    ).getOrElse {
-                        return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
-                    }
-                val newAttemptId = journal?.attemptId ?: currentPlan.planId
-
-                // The plan is consumed by this attempt: a second confirmation must preview again.
-                activePlan = null
-                _state.update { it.copy(isRunning = true, activeOperationId = currentPlan.planId) }
-                try {
-                    val planOutcome =
-                        when (currentPlan.kind) {
-                            SetupPlanKind.CACHE_RESET -> executeCacheReset()
-
-                            SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
-
-                            SetupPlanKind.FULL_SETUP,
-                            SetupPlanKind.STAGE_RETRY,
-                            SetupPlanKind.REPAIR_TOOL,
-                            -> {
-                                if (currentPlan.targetStageOrToolId == SetupStepStage.SERVER_CONNECTIVITY.name) {
-                                    val env = currentEnvironment
-                                    if (serverArtifactPort != null && env != null) {
-                                        serverArtifactPort.ensureInstalled(env)
-                                        serverArtifactPort.ensureRunningCurrent(env)
-                                    } else {
-                                        supervisor.ensureStarted(distro)
-                                    }
-                                }
-                                // Failed health is a terminal prerequisite failure: nothing else runs.
-                                val health = transport.checkHealth()
-                                if (health == null) {
-                                    SetupOutcome.Failed(
-                                        stage = SetupStepStage.SERVER_CONNECTIVITY.name,
-                                        reason = "Daemon bridge failed: health check returned null.",
-                                    )
-                                } else {
-                                    val heartbeatOk =
-                                        heartbeatMonitor?.awaitInitialHeartbeat() ?: transport.sendHeartbeat()
-                                    if (!heartbeatOk) {
-                                        SetupOutcome.Failed(
-                                            stage = SetupStepStage.SERVER_CONNECTIVITY.name,
-                                            reason = "Daemon bridge failed: client heartbeat was not acknowledged.",
-                                        )
-                                    } else {
-                                        heartbeatMonitor?.start()
-                                        executePlan(currentPlan, distro, journal)
-                                    }
-                                }
-                            }
-                        }
-                    val shouldVerifyAfter =
-                        planOutcome is SetupOutcome.Succeeded &&
-                            currentPlan.kind != SetupPlanKind.CACHE_RESET
-                    val finalOutcome =
-                        if (shouldVerifyAfter) {
-                            verifyEnvironment()
-                            completionOutcome(
-                                currentPlan,
-                                _state.value,
-                                planOutcome,
-                                lastPrerequisiteReport?.missingPackages.orEmpty(),
-                            )
-                        } else {
-                            planOutcome
-                        }
-                    archiveAttempt(newAttemptId, finalOutcome)
-                } catch (ce: CancellationException) {
-                    // Explicit cancel: the attempt is archived as cancelled only if every submitted child is
-                    // proven; otherwise it stays journaled for reconciliation ("cancellation acknowledgement
-                    // alone never unlocks mutation").
-                    archiveAttempt(newAttemptId, SetupOutcome.Cancelled)
-                    throw ce
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") e: Exception,
-                ) {
-                    // Transport/adapter failure escaping the plan is a typed Failed, but the attempt is only
-                    // archived when every submitted child has terminal proof; otherwise it stays journaled and
-                    // recovery is blocked until reconciled (never a silent retry).
-                    appendLog("[Plan] ERROR: ${e.message}")
-                    archiveAttempt(
-                        newAttemptId,
-                        SetupOutcome.Failed(
-                            stage = _state.value.currentStage?.name,
-                            reason = e.message ?: "Plan execution failed",
-                        ),
-                    )
-                } finally {
-                    _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
-                    publishJournalState()
+    override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome = withContext(dispatcher) {
+        val currentPlan = activePlan
+        val refusal = confirmRefusal(currentPlan, planId, revisionHash)
+        if (currentPlan == null || refusal != null) {
+            val outcome = SetupOutcome.Failed(stage = null, reason = refusal ?: CONFIRM_MISMATCH)
+            _operationOutcome.value = outcome
+            return@withContext outcome
+        }
+        val distro = currentPlan.environmentKey
+        coordinator.withAdmission(
+            environmentKey = distro,
+            operationId = currentPlan.planId,
+            kind = currentPlan.kind.name,
+        ) {
+            val journal =
+                openAttempt(
+                    environmentKey = distro,
+                    planId = currentPlan.planId,
+                    revisionHash = currentPlan.revisionHash,
+                    kind = currentPlan.kind,
+                    plannedActionIds = currentPlan.orderedActions.map { it.actionId() },
+                ).getOrElse {
+                    return@withAdmission SetupOutcome.Interrupted(it.message ?: "Attempt could not be journaled.")
                 }
-            }.also {
-                _operationOutcome.value = it
+            // The plan is consumed by this attempt: a second confirmation must preview again.
+            activePlan = null
+            runAttempt(currentPlan, journal?.attemptId ?: currentPlan.planId, currentPlan.planId, "Plan") {
+                when (currentPlan.kind) {
+                    SetupPlanKind.CACHE_RESET -> executeCacheReset()
+
+                    SetupPlanKind.BOOTSTRAP_PACKAGES -> executePlan(currentPlan, distro, journal)
+
+                    // Failed health is a terminal prerequisite failure: nothing else runs.
+                    SetupPlanKind.FULL_SETUP, SetupPlanKind.STAGE_RETRY, SetupPlanKind.REPAIR_TOOL ->
+                        bridgeFailure(currentPlan, distro) ?: executePlan(currentPlan, distro, journal)
+                }
+            }
+        }.also {
+            _operationOutcome.value = it
+        }
+    }
+
+    /**
+     * Why [plan] cannot be confirmed as [planId] / [revisionHash], or null. Revision and environment are checked
+     * against the current state: a plan previewed before a later check (or for another distro) is stale (FR-004).
+     */
+    private suspend fun confirmRefusal(plan: SetupPlan?, planId: String, revisionHash: String): String? {
+        if (plan == null || plan.planId != planId || plan.revisionHash != revisionHash) return CONFIRM_MISMATCH
+        val switchAction = plan.orderedActions.filterIsInstance<SetupPlanAction.SwitchToolchain>().firstOrNull()
+        val liveRevision = SetupPlanFactory.computeRevisionHash(
+            snapshot = _state.value,
+            switchInputs = switchAction?.inputs,
+            selectionRevision = switchAction?.selectionRevision,
+        )
+        val stale = liveRevision != plan.revisionHash || resolveEnvironmentKey() != plan.environmentKey
+        return "Environment evidence changed since the plan was previewed; preview again before confirming."
+            .takeIf { stale }
+    }
+
+    /**
+     * Brings the build service up for a server retry, then requires its health and the client heartbeat: the
+     * failure that stops the plan before anything else runs, or null when the bridge is up.
+     */
+    private suspend fun bridgeFailure(plan: SetupPlan, distro: String): SetupOutcome.Failed? {
+        if (plan.targetStageOrToolId == SetupStepStage.SERVER_CONNECTIVITY.name) {
+            val env = currentEnvironment
+            if (serverArtifactPort != null && env != null) {
+                serverArtifactPort.ensureInstalled(env)
+                serverArtifactPort.ensureRunningCurrent(env)
+            } else {
+                supervisor.ensureStarted(distro)
             }
         }
+        val reason = when {
+            transport.checkHealth() == null -> "Daemon bridge failed: health check returned null."
 
+            !(heartbeatMonitor?.awaitInitialHeartbeat() ?: transport.sendHeartbeat()) ->
+                "Daemon bridge failed: client heartbeat was not acknowledged."
+
+            else -> null
+        }
+        if (reason == null) heartbeatMonitor?.start()
+        return reason?.let { SetupOutcome.Failed(stage = SetupStepStage.SERVER_CONNECTIVITY.name, reason = it) }
+    }
+
+    /**
+     * Runs attempt [attemptId] of [plan] ([run] does the work): a success is checked again against the live
+     * environment ([completionOutcome]) before it counts; the attempt is archived as it ended. A cancel archives it
+     * as cancelled only when every submitted child is proven, and is rethrown; any other failure escaping the plan
+     * is a typed Failed, archived only with terminal proof of every child (else recovery is blocked until
+     * reconciled, never a silent retry).
+     */
+    private suspend fun runAttempt(
+        plan: SetupPlan,
+        attemptId: String,
+        operationId: String,
+        logTag: String,
+        run: suspend () -> SetupOutcome,
+    ): SetupOutcome {
+        _state.update { it.copy(isRunning = true, activeOperationId = operationId) }
+        return try {
+            val planOutcome = run()
+            val finalOutcome = if (planOutcome is SetupOutcome.Succeeded && plan.kind != SetupPlanKind.CACHE_RESET) {
+                verifyEnvironment()
+                completionOutcome(plan, _state.value, planOutcome, lastPrerequisiteReport?.missingPackages.orEmpty())
+            } else {
+                planOutcome
+            }
+            archiveAttempt(attemptId, finalOutcome)
+        } catch (ce: CancellationException) {
+            archiveAttempt(attemptId, SetupOutcome.Cancelled)
+            throw ce
+        } catch (
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            appendLog("[$logTag] ERROR: ${e.message}")
+            val reason = e.message ?: "Plan execution failed"
+            archiveAttempt(attemptId, SetupOutcome.Failed(stage = _state.value.currentStage?.name, reason = reason))
+        } finally {
+            _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
+            publishJournalState()
+        }
+    }
+
+    /**
+     * The home folder of the user in [distro]: the current environment's when it is that distro, else asked from
+     * WSL.
+     */
     private suspend fun resolveHome(distro: String): String = currentEnvironment?.takeIf { it.distro == distro }?.home
         ?: runCatchingCancellable {
             val res =
@@ -899,6 +889,7 @@ public class WslToolchainProvisioner(
         }
     }
 
+    /** The system packages of [env], through the service when it is ready, else probed straight from WSL. */
     private suspend fun resolveResumeProbeReport(
         env: SetupEnvironment,
         isServerReady: Boolean,
@@ -914,6 +905,10 @@ public class WslToolchainProvisioner(
         Result.success(hostReport)
     }
 
+    /**
+     * Ends a package handoff by what [probeReport] found: still missing shows the handoff again, all present
+     * archives the attempt.
+     */
     private suspend fun evaluateBootstrapReport(
         repo: ToolchainSetupRepository,
         active: SetupAttemptRecord,
@@ -995,7 +990,6 @@ public class WslToolchainProvisioner(
     }
 
     /** Rebuilds the journaled plan so a resumed attempt runs exactly the actions that were previewed. */
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     override suspend fun resume(planId: String): SetupOutcome = withContext(dispatcher) {
         val distro = resolveEnvironmentKey()
         coordinator.withAdmission(
@@ -1009,87 +1003,98 @@ public class WslToolchainProvisioner(
                     reason = "No repository configured to resume setup.",
                 )
             val active = repo.currentState.activeAttempt
-            if (active == null ||
-                (active.planId != planId && active.attemptId != planId) ||
-                active.status != AttemptStatus.AWAITING_USER_ACTION
-            ) {
-                return@withAdmission SetupOutcome.Failed(
-                    stage = null,
-                    reason = "No pending attempt matching plan or attempt '$planId' in AWAITING_USER_ACTION state.",
-                )
+            resumeRefusal(active, planId, distro)?.let { return@withAdmission it }
+            // resumeRefusal answered for each of these.
+            val attempt = checkNotNull(active)
+            val handoff = checkNotNull(attempt.awaitingHandoff)
+            val domainPlan = rebuildPlan(attempt).getOrElse {
+                return@withAdmission SetupOutcome.Interrupted(it.message.orEmpty())
             }
-            if (active.environmentKey != distro) {
-                return@withAdmission SetupOutcome.Failed(
-                    stage = null,
-                    reason =
-                    "Attempt '${active.attemptId}' was for distro '${active.environmentKey}', not current " +
-                        "'$distro'.",
-                )
+            if (attempt.isBootstrap()) {
+                return@withAdmission resumeBootstrap(repo, attempt, handoff, planId, distro)
             }
-            if (active.unprovenIntents.isNotEmpty()) {
-                return@withAdmission SetupOutcome.Interrupted(
-                    "Attempt '${active.attemptId}' has unproven commands; reconnect before resuming.",
-                )
-            }
-            val handoff =
-                active.awaitingHandoff ?: return@withAdmission SetupOutcome.Failed(
-                    stage = null,
-                    reason = "Attempt '${active.attemptId}' has no handoff details.",
-                )
-            val persistedPlan =
-                active.persistedPlan ?: return@withAdmission SetupOutcome.Interrupted(
-                    "Attempt '${active.attemptId}' has no persisted plan; preview and confirm a new plan.",
-                )
-            val domainPlan =
-                try {
-                    persistedPlan.toDomainPlan()
-                } catch (e: IllegalArgumentException) {
-                    return@withAdmission SetupOutcome.Interrupted(
-                        "Attempt '${active.attemptId}' has an invalid persisted plan: ${e.message}",
-                    )
-                } catch (e: IllegalStateException) {
-                    return@withAdmission SetupOutcome.Interrupted(
-                        "Attempt '${active.attemptId}' cannot safely reconstruct its plan: ${e.message}",
-                    )
-                }
-            if (domainPlan.orderedActions.isEmpty()) {
-                return@withAdmission SetupOutcome.Interrupted(
-                    "Attempt '${active.attemptId}' has no resumable actions in its persisted plan; " +
-                        "the handoff remains pending and must be reviewed.",
-                )
-            }
+            packagesAfterHandoff(attempt, handoff, planId, distro)?.let { return@withAdmission it }
 
-            val isBootstrap =
-                active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
-                    active.persistedPlan?.kind == SetupPlanKind.BOOTSTRAP_PACKAGES.name ||
-                    active.bootstrapRequirementIds.isNotEmpty() ||
-                    (
-                        handoff.actionId.contains("install_packages", ignoreCase = true) &&
-                            active.planKind == SetupPlanKind.BOOTSTRAP_PACKAGES.name
-                        )
+            // The handoff's action is done: the attempt runs again from the actions it has not completed.
+            repo.recordPlanActionCompleted(attempt.attemptId, handoff.actionId).onFailure { failure ->
+                return@withAdmission SetupOutcome.Interrupted("Failed to record action completion: ${failure.message}")
+            }
+            repo.updateAttemptStatus(attempt.attemptId, AttemptStatus.RUNNING).onFailure { failure ->
+                return@withAdmission SetupOutcome.Interrupted("Failed to update attempt status: ${failure.message}")
+            }
+            setStepStatus(SetupStepStage.SYSTEM_PACKAGES, StepStatus.SUCCESS, "System packages verified.")
+            val completedActionIds = (attempt.completedActionIds + handoff.actionId)
+                .filter { it != "switch-toolchain" && !it.startsWith("prereq-") }
+                .toSet()
+            val journal = SetupJournalContext(
+                environmentKey = distro,
+                attemptId = attempt.attemptId,
+                activity = logBuffer,
+            )
+            runAttempt(domainPlan, attempt.attemptId, attempt.planId, "Resume") {
+                executePlan(domainPlan, distro, journal, actionsToSkip = completedActionIds)
+            }
+        }.also {
+            _operationOutcome.value = it
+        }
+    }
 
-            if (isBootstrap) return@withAdmission resumeBootstrap(repo, active, handoff, planId, distro)
+    /**
+     * The journaled plan of [attempt]; a failure's message says why it cannot be rebuilt safely (the handoff then
+     * stays pending).
+     */
+    private fun rebuildPlan(attempt: SetupAttemptRecord): Result<SetupPlan> {
+        val id = attempt.attemptId
+        val persisted = attempt.persistedPlan
+            ?: return refused("Attempt '$id' has no persisted plan; preview and confirm a new plan.")
+        return try {
+            val plan = persisted.toDomainPlan()
+            // A plan with nothing left to run would archive the attempt as done while the handoff was never reviewed.
+            if (plan.orderedActions.isNotEmpty()) {
+                Result.success(plan)
+            } else {
+                refused(
+                    "Attempt '$id' has no resumable actions in its persisted plan; the handoff remains pending and " +
+                        "must be reviewed.",
+                )
+            }
+        } catch (e: IllegalArgumentException) {
+            refused("Attempt '$id' has an invalid persisted plan: ${e.message}")
+        } catch (e: IllegalStateException) {
+            refused("Attempt '$id' cannot safely reconstruct its plan: ${e.message}")
+        }
+    }
 
-            // Re-probe prerequisite packages
-            val currentEnv =
-                currentEnvironment
-                    ?: active.environment?.toDomain()
-                    ?: (detector.classify(distro) as? org.ide.lti.core.model.setup.DistroStatus.Usable)?.environment
-                    ?: return@withAdmission SetupOutcome.Failed(
-                        stage = SetupStepStage.SYSTEM_PACKAGES.name,
-                        reason = "No active WSL environment found",
-                    )
-            currentEnvironment = currentEnv
-            val report = hostPrerequisitePort.probe(currentEnv)
-            val stillMissing = report.missingPackages.filter { it in handoff.packages }
-            if (stillMissing.isNotEmpty()) {
+    /** A plan that cannot be rebuilt; [why] becomes the Interrupted outcome's reason. */
+    private fun refused(why: String): Result<SetupPlan> = Result.failure(IllegalStateException(why))
+
+    /**
+     * After the user ran the handoff's command: the packages are checked again in the attempt's environment. Still
+     * missing: the handoff is shown again; another package missing now: the environment broke while paused and the
+     * resume stops. Null when everything is there.
+     */
+    private suspend fun packagesAfterHandoff(
+        attempt: SetupAttemptRecord,
+        handoff: PersistedUserHandoff,
+        planId: String,
+        distro: String,
+    ): SetupOutcome? {
+        val env = currentEnvironment
+            ?: attempt.environment?.toDomain()
+            ?: (detector.classify(distro) as? DistroStatus.Usable)?.environment
+            ?: return SetupOutcome.Failed(SetupStepStage.SYSTEM_PACKAGES.name, "No active WSL environment found")
+        currentEnvironment = env
+        val missing = hostPrerequisitePort.probe(env).missingPackages
+        val stillMissing = missing.filter { it in handoff.packages }
+        val otherMissing = missing.filterNot { it in handoff.packages }
+        return when {
+            stillMissing.isNotEmpty() -> {
                 appendLog("[Resume] Required packages still missing: ${stillMissing.joinToString()}")
-                return@withAdmission SetupOutcome.AwaitingUserAction(
+                SetupOutcome.AwaitingUserAction(
                     pendingPlanId = planId,
                     stage = SetupStepStage.SYSTEM_PACKAGES,
                     reason = "Required packages are still not installed in WSL: ${stillMissing.joinToString()}",
-                    handoff =
-                    UserRepairHandoff(
+                    handoff = UserRepairHandoff(
                         actionId = handoff.actionId,
                         description = "Required packages are still missing",
                         terminalCommand = handoff.command,
@@ -1099,91 +1104,15 @@ public class WslToolchainProvisioner(
                 )
             }
 
-            val otherMissing = report.missingPackages.filterNot { it in handoff.packages }
-            if (otherMissing.isNotEmpty()) {
-                val problemNames = otherMissing.joinToString()
-                appendLog("[Resume] ERROR: Environment became unhealthy while paused: $problemNames")
-                setStepStatus(
-                    SetupStepStage.SYSTEM_PACKAGES,
-                    StepStatus.FAILED,
-                    desc = "Environment check failed before resumption: $problemNames",
-                    error = problemNames,
-                )
-                return@withAdmission SetupOutcome.Failed(
-                    stage = SetupStepStage.SYSTEM_PACKAGES.name,
-                    reason = "Environment check failed before resumption: $problemNames",
-                )
+            otherMissing.isNotEmpty() -> {
+                val names = otherMissing.joinToString()
+                appendLog("[Resume] ERROR: Environment became unhealthy while paused: $names")
+                val reason = "Environment check failed before resumption: $names"
+                setStepStatus(SetupStepStage.SYSTEM_PACKAGES, StepStatus.FAILED, desc = reason, error = names)
+                SetupOutcome.Failed(stage = SetupStepStage.SYSTEM_PACKAGES.name, reason = reason)
             }
 
-            // Mark the handoff action as completed!
-            repo.recordPlanActionCompleted(active.attemptId, handoff.actionId).onFailure { failure ->
-                return@withAdmission SetupOutcome.Interrupted(
-                    "Failed to record action completion: ${failure.message}",
-                )
-            }
-            repo.updateAttemptStatus(active.attemptId, AttemptStatus.RUNNING).onFailure { failure ->
-                return@withAdmission SetupOutcome.Interrupted("Failed to update attempt status: ${failure.message}")
-            }
-
-            setStepStatus(
-                SetupStepStage.SYSTEM_PACKAGES,
-                StepStatus.SUCCESS,
-                "System packages verified.",
-            )
-
-            val completedActionIds =
-                (active.completedActionIds + handoff.actionId)
-                    .filter { it != "switch-toolchain" && !it.startsWith("prereq-") }
-                    .toSet()
-            val journal =
-                SetupJournalContext(
-                    environmentKey = distro,
-                    attemptId = active.attemptId,
-                    activity = logBuffer,
-                )
-
-            _state.update { it.copy(isRunning = true, activeOperationId = active.planId) }
-            val resumeOutcome =
-                try {
-                    val planOutcome = executePlan(domainPlan, distro, journal, actionsToSkip = completedActionIds)
-                    val shouldVerifyAfter =
-                        planOutcome is SetupOutcome.Succeeded &&
-                            domainPlan.kind != SetupPlanKind.CACHE_RESET
-                    val finalOutcome =
-                        if (shouldVerifyAfter) {
-                            verifyEnvironment()
-                            completionOutcome(
-                                domainPlan,
-                                _state.value,
-                                planOutcome,
-                                lastPrerequisiteReport?.missingPackages.orEmpty(),
-                            )
-                        } else {
-                            planOutcome
-                        }
-                    archiveAttempt(active.attemptId, finalOutcome)
-                } catch (ce: CancellationException) {
-                    archiveAttempt(active.attemptId, SetupOutcome.Cancelled)
-                    throw ce
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") e: Exception,
-                ) {
-                    appendLog("[Resume] ERROR: ${e.message}")
-                    archiveAttempt(
-                        active.attemptId,
-                        SetupOutcome.Failed(
-                            stage = _state.value.currentStage?.name,
-                            reason = e.message ?: "Plan resumption failed",
-                        ),
-                    )
-                } finally {
-                    _state.update { it.copy(isRunning = false, activeOperationId = null, currentStage = null) }
-                    publishJournalState()
-                }
-
-            resumeOutcome
-        }.also {
-            _operationOutcome.value = it
+            else -> null
         }
     }
 
@@ -1291,11 +1220,13 @@ public class WslToolchainProvisioner(
         )
     }
 
+    /** The journal's id for this action, as the plan records completed ones. */
     private fun SetupPlanAction.actionId(): String = when (this) {
         is SetupPlanAction.InstallPackages -> "packages"
         is SetupPlanAction.SwitchToolchain -> "switch-toolchain"
     }
 
+    /** Remembers [runId] as the run [stage] started, so its output can be followed. */
     private fun recordRunStarted(stage: SetupStepStage, runId: String) {
         _state.update { s ->
             s.copy(
@@ -1489,6 +1420,7 @@ public class WslToolchainProvisioner(
         outcome
     }
 
+    /** Sets one step's status, description, error and failure category. */
     private fun setStepStatus(
         stage: SetupStepStage,
         status: StepStatus,
@@ -1508,6 +1440,7 @@ public class WslToolchainProvisioner(
         appendLog(line, SetupLogKind.CHECK)
     }
 
+    /** Adds [line] to the activity log under the open attempt (or the local one). */
     private fun appendLog(line: String, kind: SetupLogKind = SetupLogKind.RUN) {
         val attemptId = repository?.currentState?.activeAttempt?.attemptId ?: LOCAL_ATTEMPT_ID
         logBuffer.append(text = line, attemptId = attemptId, childRunId = PROVISIONER_CHILD_ID, kind = kind)
