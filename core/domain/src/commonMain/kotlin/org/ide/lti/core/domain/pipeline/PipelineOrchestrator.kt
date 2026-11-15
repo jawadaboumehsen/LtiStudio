@@ -321,6 +321,10 @@ public class PipelineOrchestrator(
             val runtimeValues = (existing?.runtimeValues.orEmpty() + ctx.runtimeValues).toMutableMap()
             runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
             runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
+            if (RuntimeKeys.DISK_FREE_BEFORE !in runtimeValues) {
+                executionPort.checkAvailableDiskSpace(ctx.workspace)
+                    ?.let { runtimeValues[RuntimeKeys.DISK_FREE_BEFORE] = it.toString() }
+            }
 
             val initialRun =
                 existing?.let { queued ->
@@ -441,8 +445,7 @@ public class PipelineOrchestrator(
                     upstreamExecuted = true
                 }
 
-                val artifacts = collectArtifacts(driver)
-                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                succeed(driver)
                 emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
             } catch (e: CancellationException) {
                 if (driver.run.state == RunState.RUNNING) {
@@ -504,8 +507,7 @@ public class PipelineOrchestrator(
                 }
 
             if (startStageIndex == -1) {
-                val artifacts = collectArtifacts(driver)
-                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                succeed(driver)
                 emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
                 return@flow
             }
@@ -613,8 +615,7 @@ public class PipelineOrchestrator(
                     upstreamExecuted = true
                 }
 
-                val artifacts = collectArtifacts(driver)
-                driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+                succeed(driver)
                 emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
             } catch (e: CancellationException) {
                 if (driver.run.state == RunState.RUNNING) {
@@ -1266,6 +1267,14 @@ public class PipelineOrchestrator(
             driver.runtimeValues.putAll(recordedValues - runOwned)
         }
         return valid
+    }
+
+    /** The run succeeded: its artifacts, and the disk's free space now (what the run used, for later estimates). */
+    private suspend fun succeed(driver: Driver) {
+        val artifacts = collectArtifacts(driver)
+        executionPort.checkAvailableDiskSpace(driver.ws)
+            ?.let { driver.runtimeValues[RuntimeKeys.DISK_FREE_AFTER] = it.toString() }
+        driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
     }
 
     /** A stage's cache file: its input key, its outputs' digest, and the run's values when it ran. */

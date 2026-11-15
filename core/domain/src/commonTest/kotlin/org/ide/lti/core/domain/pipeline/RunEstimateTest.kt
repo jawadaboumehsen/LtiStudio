@@ -66,4 +66,19 @@ class RunEstimateTest {
         assertEquals(RunEstimate.SAMPLES, estimate.samples)
         assertNull(RunEstimate.of(listOf(StagePreview(build, null)), history))
     }
+
+    @Test
+    fun diskUseComesFromTheNewestRunThatRanAtLeastTheseStages() {
+        fun measured(at: Long, before: Long, after: Long, vararg stages: Pair<StageId, Long?>) = run(at, *stages).copy(
+            runtimeValues = mapOf(RuntimeKeys.DISK_FREE_BEFORE to "$before", RuntimeKeys.DISK_FREE_AFTER to "$after"),
+        )
+        val history = listOf(
+            measured(1, 100, 40, debloat to 5L, build to 9L),
+            measured(2, 100, 90, build to 9L), // newer, but did not run Debloat
+            run(3, debloat to 5L, build to 9L), // newest, not measured
+        )
+        val preview = listOf(StagePreview(debloat, "x"), StagePreview(build, "y"))
+        assertEquals(60L, RunEstimate.of(preview, history)!!.diskBytes)
+        assertEquals(10L, RunEstimate.of(listOf(StagePreview(build, "y")), history)!!.diskBytes)
+    }
 }

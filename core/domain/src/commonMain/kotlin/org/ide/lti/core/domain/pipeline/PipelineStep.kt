@@ -87,6 +87,10 @@ public object RuntimeKeys {
     public const val RUN_DATE: String = "run.date"
     public const val RUN_TIMESTAMP: String = "run.timestamp"
 
+    /** Free bytes on the workspace's disk when the run started and when it succeeded (`RunEstimate`'s disk use). */
+    public const val DISK_FREE_BEFORE: String = "run.disk.freeBefore"
+    public const val DISK_FREE_AFTER: String = "run.disk.freeAfter"
+
     /** The device revision a run was admitted with; a resume refuses a device changed since. */
     public const val DEVICE_REVISION: String = "run.device.revision"
     public const val ARCHIVE_MIME: String = "firmware.archive.mime"

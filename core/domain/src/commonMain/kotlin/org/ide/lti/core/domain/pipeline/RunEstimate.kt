@@ -25,6 +25,11 @@ public data class RunEstimate(
     /** The runs each counted stage was measured from (the smallest count is the weakest evidence). */
     val samples: Int,
     val unknown: List<StageId>,
+    /**
+     * Net bytes the newest earlier run that executed at least these stages took from the disk (free space when it
+     * started minus when it succeeded); null when no such run was measured. Peaks during a run are not measured.
+     */
+    val diskBytes: Long? = null,
 ) {
     public companion object {
         public const val SAMPLES: Int = 5
@@ -47,6 +52,13 @@ public data class RunEstimate(
                 longestMs = known.values.sumOf { it.last() },
                 samples = known.values.minOfOrNull { it.size } ?: 0,
                 unknown = runs.filter { measured[it].isNullOrEmpty() },
+                diskBytes = newestFirst.firstNotNullOfOrNull { run ->
+                    val ran = run.stages.filter { it.state == StageState.EXECUTED }.map { it.stageId }.toSet()
+                    val before = run.runtimeValues[RuntimeKeys.DISK_FREE_BEFORE]?.toLongOrNull()
+                    val after = run.runtimeValues[RuntimeKeys.DISK_FREE_AFTER]?.toLongOrNull()
+                    val used = if (before != null && after != null) before - after else null
+                    used?.takeIf { ran.containsAll(runs) }?.coerceAtLeast(0)
+                },
             )
         }
     }
