@@ -146,14 +146,18 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
             return fitting.minByOrNull { it.seconds ?: Double.MAX_VALUE } ?: built.minByOrNull { it.bytes!! }
         }
 
-        /** `$1` mkfs.erofs, `$2` the image, then its arguments: prints the image size and the seconds it took. */
+        /**
+         * `$1` mkfs.erofs, `$2` the image, then its arguments: prints the image size and the seconds it took. The image
+         * is removed however the script ends, a stop (TERM, as the build service sends a cancelled job) included.
+         */
         private const val TIMED_SCRIPT = """
 tool=$1; img=$2; shift 2
+trap 'rm -f "${'$'}img"' EXIT
+trap 'exit 143' TERM INT HUP
 rm -f "${'$'}img"
 start=${'$'}(date +%s.%N)
 "${'$'}tool" "${'$'}@" || exit ${'$'}?
 end=${'$'}(date +%s.%N)
-printf '%s %s\n' "${'$'}(stat -c %s "${'$'}img")" "${'$'}(echo "${'$'}end - ${'$'}start" | bc 2>/dev/null || awk "BEGIN{print ${'$'}end-${'$'}start}")"
-rm -f "${'$'}img""""
+printf '%s %s\n' "${'$'}(stat -c %s "${'$'}img")" "${'$'}(echo "${'$'}end - ${'$'}start" | bc 2>/dev/null || awk "BEGIN{print ${'$'}end-${'$'}start}")""""
     }
 }
