@@ -17,6 +17,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 /** One line of the upgrade report; [problem] lines need a decision before building. */
 public data class UpgradeLine(val text: String, val problem: Boolean = false)
 
+/** A titled part of the upgrade report. */
 public data class UpgradeSection(val title: String, val lines: List<UpgradeLine>)
 
 /**
@@ -30,6 +31,7 @@ public class FirmwareUpgrade(
     private val settings: WorkspaceSettingsStore,
     private val preflight: Preflight,
 ) {
+    /** The report for taking the settings of workspace [from] into workspace [to]. */
     public suspend fun compare(from: String, to: String): List<UpgradeSection> {
         val old = checkNotNull(settings.current(from)) { "The old workspace has no settings" }
         val mine = checkNotNull(settings.current(to)) { "This workspace has no configuration yet" }
@@ -57,6 +59,7 @@ public class FirmwareUpgrade(
         )
     }
 
+    /** The build fingerprint, release and patch level before and after. */
     private fun firmware(before: Facts, after: Facts) = UpgradeSection(
         "Firmware",
         PROPS.mapNotNull { (key, label) ->
@@ -70,6 +73,7 @@ public class FirmwareUpgrade(
         },
     )
 
+    /** Each stock image added, gone or resized. */
     private fun partitions(before: Facts, after: Facts): UpgradeSection {
         val names = (before.images.keys + after.images.keys).sorted()
         val lines = names.mapNotNull { p ->
@@ -85,17 +89,25 @@ public class FirmwareUpgrade(
         return UpgradeSection("Partition images", lines.ifEmpty { listOf(UpgradeLine("Same images, same sizes.")) })
     }
 
+    /** Each debloat pick the new extracted tree no longer has. */
     private fun debloat(picks: List<String>, after: Facts): UpgradeSection {
         val missing = picks.filter { after.picks[it] == false }
         val lines = if (picks.isEmpty()) {
             listOf(UpgradeLine("No apps picked for removal."))
         } else {
             listOf(UpgradeLine("${picks.size - missing.size} of ${picks.size} picked apps are where they were.")) +
-                missing.map { UpgradeLine("$it: not in this firmware (moved or removed); the pick is dropped", true) }
+                missing.map {
+                    UpgradeLine(
+                        "$it: not in this firmware (moved or removed); the pick is still selected. " +
+                            "Review or remove it before carrying settings.",
+                        true,
+                    )
+                }
         }
         return UpgradeSection("Debloat picks", lines)
     }
 
+    /** Each mod operation checked against the new assembled tree with [carried]'s mods. */
     private suspend fun mods(to: String, carried: ConfigurationSnapshot): UpgradeSection {
         if (carried.customization.enabledPackages.isEmpty()) {
             return UpgradeSection("Mods", listOf(UpgradeLine("No mods enabled.")))
@@ -108,7 +120,7 @@ public class FirmwareUpgrade(
                 rows.takeIf { it.isNotEmpty() }?.let {
                     UpgradeLine(
                         "${rows.count { it.status == LabStatus.CHECKED }} operations fit, ${refused.size} no " +
-                            "longer do, ${rows.count { it.status == LabStatus.UNCHECKED }} APK/JAR edits are " +
+                            "longer do, ${rows.count { it.status == LabStatus.UNCHECKED }} operations are " +
                             "checked by the build.",
                     )
                 },
@@ -117,6 +129,7 @@ public class FirmwareUpgrade(
         return UpgradeSection("Mods", lines)
     }
 
+    /** The settings tied to the old firmware that are not carried over. */
     private fun leftBehind(old: ConfigurationSnapshot): UpgradeSection {
         val lines = listOfNotNull(
             old.assembly.kernelOverrides.keys.takeIf { it.isNotEmpty() }
@@ -158,6 +171,7 @@ public class FirmwareUpgrade(
             "ro.build.version.security_patch" to "Security patch",
         )
 
+        /** [bytes] in KiB under one MiB, else in MiB. */
         fun mib(bytes: Long?): String {
             val b = bytes ?: 0L
             return if (b < MIB) "${b / KIB} KiB" else "${b / MIB} MiB"

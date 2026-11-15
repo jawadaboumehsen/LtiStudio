@@ -14,11 +14,13 @@ import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ComponentPatchCodes
 import org.ide.lti.core.domain.plugin.ComponentPatchPort
+import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.DecodedComponent
 import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
+import org.ide.lti.core.model.plugin.AssetRef
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.SmaliEdit
@@ -636,6 +638,41 @@ class ApkJarMutationAdapterTest {
             shortMember("Landroid/security/KeyStore2;->getSecurityLevel(I)Landroid/x;"),
         )
         assertEquals("Hook.smali", shortMember("smali_classes6/io/lti/Hook.smali"))
+    }
+
+    @Test
+    fun labErrorsKeepModIdentityWhenOperationNamesAreTheSame() = runBlocking<Unit> {
+        fakePort.members["smali/X.smali"] = "a\nb\n"
+        val target = PartitionPath("system", "framework/framework.jar")
+        val good = ConcreteOperation.ApkJarPatch("patch", target, emptyList())
+        val bad = good.copy(edits = listOf(SmaliEdit("smali/missing.smali", "", "@@ @@\n-x\n+y")))
+        val verdicts = componentVerdicts(adapter, listOf("io:first" to good, "io:second" to bad), ctx)
+        assertEquals(LabStatus.CHECKED, verdicts.getValue("io:first" to "patch").status)
+        assertEquals(LabStatus.REFUSED, verdicts.getValue("io:second" to "patch").status)
+    }
+
+    @Test
+    fun labDoesNotDecodeOldOrMissingBytesWhenAFileOperationChangesTheComponent() = runBlocking<Unit> {
+        val target = PartitionPath("system", "framework/new.jar")
+        val op = ConcreteOperation.ApkJarPatch("patch", target, emptyList())
+        val rows = componentVerdicts(adapter, listOf("io:mod" to op), ctx, setOf(target))
+        assertEquals(LabStatus.UNCHECKED, rows.getValue("io:mod" to "patch").status)
+        assertTrue("original order" in rows.getValue("io:mod" to "patch").reason)
+        assertEquals(0, fakePort.decodeCount)
+    }
+
+    @Test
+    fun mixedFileAndComponentTargetsAreFoundAcrossPlansAndNormalizedPaths() {
+        val target = PartitionPath("system", "framework/new.jar")
+        val copy = ConcreteOperation.Copy("copy", AssetRef("assets/new.jar"), target)
+        val edit = ConcreteOperation.ApkJarPatch(
+            "patch",
+            target.copy(relativePath = "framework/./new.jar"),
+            emptyList(),
+        )
+        fun plan(id: String, op: ConcreteOperation) = ConcreteMutationPlan("io", id, "1.0", listOf(op), emptyList(), "")
+        assertEquals(setOf(target), mixedComponentTargets(listOf(plan("copy", copy), plan("edit", edit))))
+        assertEquals(emptySet(), mixedComponentTargets(listOf(plan("only-file", copy))))
     }
 }
 

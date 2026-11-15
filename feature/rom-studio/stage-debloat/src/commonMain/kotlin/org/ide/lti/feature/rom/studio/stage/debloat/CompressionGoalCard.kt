@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -40,6 +42,7 @@ import org.ide.lti.feature.rom.studio.api.formatBytes
 /** A partition's own compression choices before a goal changed them, to put back. */
 public data class CompressionBefore(val compression: String?, val dedupe: Boolean?, val clusterKib: Int?)
 
+/** What the compression half of the size goal shows: the measuring, its steps and what Undo puts back. */
 public data class CompressionGoalState(
     val measuring: Boolean = false,
     /** The partition being tried now, as "system (1 of 7)". */
@@ -56,9 +59,11 @@ public class CompressionGoalViewModel(
     private val goal: CompressionGoal? = null,
     private val store: WorkspaceSettingsStore? = null,
 ) : ViewModel() {
+    private val saves = Mutex()
     private val _state = MutableStateFlow(CompressionGoalState())
     public val state: StateFlow<CompressionGoalState> = _state.asStateFlow()
 
+    /** Trials compression until [shortBytes] are covered; ignored while one is running. */
     public fun measure(shortBytes: Long) {
         val measurer = goal ?: return
         if (_state.value.measuring) return
@@ -83,34 +88,43 @@ public class CompressionGoalViewModel(
     public fun use(steps: List<CompressionStep>) {
         val settings = store ?: return
         viewModelScope.launch {
-            var before = emptyMap<String, CompressionBefore>()
-            settings.update(workspaceId) { snapshot ->
-                val build = snapshot.build
-                before = steps.associate { s ->
-                    s.partition to CompressionBefore(
-                        build.partitionCompression[s.partition],
-                        build.partitionDedupe[s.partition],
-                        build.partitionClusterKib[s.partition],
-                    )
-                }
-                snapshot.copy(build = steps.fold(build) { b, s -> s.option.applyTo(b, s.partition) })
-            }.onSuccess { _state.update { it.copy(changed = before) } }
-                .onFailure { e -> _state.update { it.copy(error = e.message ?: "The settings could not be saved") } }
+            saves.withLock {
+                var before = emptyMap<String, CompressionBefore>()
+                settings.update(workspaceId) { snapshot ->
+                    val build = snapshot.build
+                    before = steps.associate { s ->
+                        s.partition to CompressionBefore(
+                            build.partitionCompression[s.partition],
+                            build.partitionDedupe[s.partition],
+                            build.partitionClusterKib[s.partition],
+                        )
+                    }
+                    snapshot.copy(build = steps.fold(build) { b, s -> s.option.applyTo(b, s.partition) })
+                }.onSuccess { _state.update { it.copy(changed = before + it.changed) } }
+                    .onFailure { e ->
+                        _state.update { it.copy(error = e.message ?: "The settings could not be saved") }
+                    }
+            }
         }
     }
 
     /** Puts back what [use] changed, partition by partition (other build settings edited since stay). */
     public fun undo() {
         val settings = store ?: return
-        val changed = _state.value.changed
         viewModelScope.launch {
-            settings.update(workspaceId) { snapshot ->
-                snapshot.copy(build = changed.entries.fold(snapshot.build) { b, (p, was) -> restore(b, p, was) })
-            }.onSuccess { _state.update { it.copy(changed = emptyMap()) } }
-                .onFailure { e -> _state.update { it.copy(error = e.message ?: "The settings could not be saved") } }
+            saves.withLock {
+                val changed = _state.value.changed
+                settings.update(workspaceId) { snapshot ->
+                    snapshot.copy(build = changed.entries.fold(snapshot.build) { b, (p, was) -> restore(b, p, was) })
+                }.onSuccess { _state.update { it.copy(changed = emptyMap()) } }
+                    .onFailure { e ->
+                        _state.update { it.copy(error = e.message ?: "The settings could not be saved") }
+                    }
+            }
         }
     }
 
+    /** Settings [b] with partition [p]'s own compression entries put back to [was]. */
     private fun restore(b: BuildSettings, p: String, was: CompressionBefore): BuildSettings = b.copy(
         partitionCompression =
         was.compression?.let { b.partitionCompression + (p to it) } ?: (b.partitionCompression - p),
@@ -135,8 +149,8 @@ internal fun CompressionGoalCard(vm: CompressionGoalViewModel, shortBytes: Long)
         ) {
             Text(
                 when {
-                    state.trying != null -> "Trying ${state.trying}…"
-                    state.measuring -> "Building trial images…"
+                    state.trying != null -> "Trying ${state.trying}â€¦"
+                    state.measuring -> "Building trial imagesâ€¦"
                     else -> "Measure compression for the rest"
                 },
                 fontSize = FontSize.BodySmall,

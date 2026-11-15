@@ -41,6 +41,7 @@ import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.model.plugin.FileMetadata
+import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.Workspace
 import java.io.IOException
@@ -77,6 +78,10 @@ class ModuleHostSteps(
         }
     }
 
+    /**
+     * Applies every enabled mod's plan to work/ in order: file operations, then APK/JAR edits; returns the applied
+     * operations.
+     */
     private suspend fun applyModules(workspace: Workspace, request: ApplyModules): String {
         val work = workTree(workspace)
         val ctx = MutationContext(
@@ -128,10 +133,12 @@ class ModuleHostSteps(
             partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
         )
         val staged = mutableMapOf<String, String>()
+        val mixedTargets = mixedComponentTargets(request.plans)
         val rows = request.plans.flatMap { plan ->
             yield()
             val mod = "${plan.publisher}:${plan.id}"
             val fileOps = plan.operations.filterNot { it.isComponentEdit() }
+                .filterNot { it.targetPartitionPath().normalizedLabTarget() in mixedTargets }
             val outcome = files.previewAfter(
                 plan.copy(operations = fileOps),
                 ctx,
@@ -142,6 +149,14 @@ class ModuleHostSteps(
             plan.operations.map { op ->
                 val refusal = errors[op.id]?.joinToString("; ") { "${it.code}: ${it.message}" }
                 when {
+                    op.targetPartitionPath().normalizedLabTarget() in mixedTargets -> LabRow(
+                        mod,
+                        op.id,
+                        LabStatus.UNCHECKED,
+                        "this package has both file-level and APK/JAR edits; " +
+                            "checked by the build in their original order",
+                    )
+
                     op is ConcreteOperation.ApkJarPatch -> LabRow(
                         mod,
                         op.id,
@@ -164,7 +179,12 @@ class ModuleHostSteps(
                 )
             }
         }
-        val verdicts = componentVerdicts(bytecodeAdapter(workspace, work, request.platformKeyRef), edits, ctx)
+        val verdicts = componentVerdicts(
+            bytecodeAdapter(workspace, work, request.platformKeyRef),
+            edits,
+            ctx,
+            mixedTargets,
+        )
         return rows.map { verdicts[it.mod to it.operationId] ?: it }
     }
 
@@ -176,6 +196,7 @@ class ModuleHostSteps(
             acc
         }
 
+    /** Applies one mod's file operations and writes the sidecar lines of the files they added or deleted. */
     private suspend fun applyFiles(
         plan: ConcreteMutationPlan,
         ctx: MutationContext,
@@ -200,6 +221,7 @@ class ModuleHostSteps(
         return effects
     }
 
+    /** Applies one mod's APK/JAR edits, with the build values filled in, through the decode/rebuild adapter. */
     @Suppress("LongParameterList")
     private suspend fun applyComponents(
         bytecode: ApkJarMutationAdapter,
@@ -271,6 +293,7 @@ class ModuleHostSteps(
         return filled.toByteArray()
     }
 
+    /** A copied zip with the build values filled into its text members; null when it has none to fill. */
     private fun fillZip(bytes: ByteArray, values: Map<String, String>): ByteArray? {
         // Read with a cap: a small zip of highly compressible members must not expand without bound in memory.
         var expanded = 0L
@@ -298,6 +321,7 @@ class ModuleHostSteps(
         return out.toByteArray()
     }
 
+    /** This APK/JAR edit with the build values filled into its texts; other operations as they are. */
     private fun ConcreteOperation.withValues(values: Map<String, String>): ConcreteOperation =
         if (this !is ConcreteOperation.ApkJarPatch) {
             this
@@ -317,9 +341,11 @@ class ModuleHostSteps(
             )
         }
 
+    /** Stops the run: mod [key] was refused for [errors]. */
     private fun refused(key: String, errors: List<ValidationError>): Nothing =
         error("$key refused: " + errors.joinToString("; ") { "${it.code}: ${it.message}" })
 
+    /** An edit inside an APK or JAR (applied by decoding it), not a file operation. */
     private fun ConcreteOperation.isComponentEdit() = this is ConcreteOperation.ApkJarPatch
 
     /** apktool on the build service; the framework tag is the firmware's incremental, as LtiRom's apktool.sh. */
@@ -342,6 +368,7 @@ class ModuleHostSteps(
         )
     }
 
+    /** The workspace's work/ folder as a Windows path through \\wsl.localhost. */
     private fun workTree(workspace: Workspace): Path {
         val linux = checkNotNull(workspace.linuxPath) { "workspace ${workspace.id} has no WSL folder" }
         val name = checkNotNull(workspace.environmentId?.distro ?: distro()) { "no WSL distribution is selected" }
@@ -455,6 +482,7 @@ class ModuleHostSteps(
         return """{"edits":${request.edits.size}}"""
     }
 
+    /** The work-tree files with no fs_config or file_contexts line, as the coverage result. */
     private fun checkCoverage(workspace: Workspace, request: CoverageCheckRequest): String {
         val work = workTree(workspace)
         val configs = work.resolve("configs")
@@ -519,6 +547,7 @@ private fun platformOf(work: Path): PlatformMetadata = PlatformMetadata.load { r
     work.resolve(rel).takeIf { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }?.let(Files::readAllBytes)
 }
 
+/** File, folder or link, without following a link. */
 private fun kindOf(entry: Path): EntryKind = when {
     Files.isSymbolicLink(entry) -> EntryKind.Link
     Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS) -> EntryKind.Directory
@@ -539,6 +568,19 @@ internal fun shortMember(member: String): String {
     return "$type.${member.substringAfter("->").substringBefore('(').substringBefore(':')}"
 }
 
+/** Packages whose bytes cannot be previewed independently of their surrounding file operations. */
+internal fun mixedComponentTargets(plans: List<ConcreteMutationPlan>): Set<PartitionPath> {
+    val operations = plans.flatMap { it.operations }
+    val components = operations.filterIsInstance<ConcreteOperation.ApkJarPatch>()
+        .map { it.target.normalizedLabTarget() }.toSet()
+    return operations.filterNot { it is ConcreteOperation.ApkJarPatch }
+        .map { it.targetPartitionPath().normalizedLabTarget() }.filter { it in components }.toSet()
+}
+
+/** The same path with `.` and `..` resolved and forward slashes, so the lab matches edits of one file. */
+private fun PartitionPath.normalizedLabTarget(): PartitionPath =
+    copy(relativePath = Path.of(relativePath).normalize().toString().replace('\\', '/'))
+
 /**
  * The mod lab's APK/JAR check: each package decoded once, every mod's edits of it applied in plan order in memory
  * (`preview`: nothing is rebuilt and the decode is discarded). An edit after a refused one is not reached.
@@ -547,11 +589,42 @@ internal suspend fun componentVerdicts(
     adapter: ApkJarMutationAdapter,
     edits: List<Pair<String, ConcreteOperation>>,
     ctx: MutationContext,
+    changedFiles: Set<PartitionPath> = emptySet(),
+): Map<Pair<String, String>, LabRow> {
+    // IDs are unique within a mod only. The adapter's objectId must identify one operation across all mods.
+    val original = edits.mapIndexed { index, pair -> "lab-$index" to pair }.toMap()
+    val scoped = original.map { (id, pair) ->
+        val op = pair.second as ConcreteOperation.ApkJarPatch
+        pair.first to op.copy(id = id, target = op.target.normalizedLabTarget())
+    }
+    val changed = changedFiles.map { it.normalizedLabTarget() }.toSet()
+    return scopedComponentVerdicts(adapter, scoped, ctx, changed).values.associate { row ->
+        val (mod, op) = original.getValue(row.operationId)
+        (mod to op.id) to row.copy(operationId = op.id)
+    }
+}
+
+/** The lab rows of [edits], per package: decoded once, each mod's edits applied in order, in memory. */
+private suspend fun scopedComponentVerdicts(
+    adapter: ApkJarMutationAdapter,
+    edits: List<Pair<String, ConcreteOperation>>,
+    ctx: MutationContext,
+    changedFiles: Set<PartitionPath>,
 ): Map<Pair<String, String>, LabRow> = edits
     .groupBy { (_, op) -> (op as ConcreteOperation.ApkJarPatch).target }
     .flatMap { (target, group) ->
         yield()
         val name = "${target.partition}/${target.relativePath}"
+        if (target in changedFiles) {
+            return@flatMap group.map { (mod, op) ->
+                (mod to op.id) to LabRow(
+                    mod,
+                    op.id,
+                    LabStatus.UNCHECKED,
+                    "$name also has file-level edits; the build checks these operations in their original order",
+                )
+            }
+        }
         when (val outcome = adapter.apply(group.map { it.second }, ctx, preview = true)) {
             is ApkJarOutcome.Applied -> {
                 val methods = outcome.receipts.flatMap { it.changedMethods }.distinct()

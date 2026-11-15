@@ -26,7 +26,7 @@ public enum class LabStatus {
     /** The build would refuse it: [LabRow.reason] says why. */
     REFUSED,
 
-    /** An APK/JAR edit: only the build, which decodes the package, checks it. */
+    /** Requires a build: decoding is off, or file and APK/JAR edits must be checked together in order. */
     UNCHECKED,
 
     /** The mod itself leaves it out for this firmware or these settings. */
@@ -54,6 +54,7 @@ public data class LabRow(
             ).joinToString("\t")
         }
 
+        /** The rows [encode] wrote; a line it did not write is skipped. */
         public fun decode(text: String): List<LabRow> = text.lines().mapNotNull { line ->
             val parts = line.split('\t', limit = 5).takeIf { it.size >= 4 } ?: return@mapNotNull null
             LabStatus.entries.firstOrNull { it.name == parts[2] }?.let { status ->

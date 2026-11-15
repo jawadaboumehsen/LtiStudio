@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.workspace
 
 import org.ide.lti.core.domain.pipeline.stages.ChangelogDraft
-import org.ide.lti.core.domain.pipeline.stages.DebloatStage
+import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageState
@@ -25,34 +25,53 @@ public data class BuildReportText(val markdown: String, val problems: List<Strin
  * compared with the hash the build recorded; the signing keys' fingerprints; the built images against the super
  * group; how each stage ran; the tool versions; and the changes from stock ([ChangelogDraft]). Writes nothing.
  */
-public class BuildReport(private val runner: WorkbenchRunner, private val settings: WorkspaceSettingsStore) {
+public class BuildReport(
+    private val runner: WorkbenchRunner,
+    private val settings: WorkspaceSettingsStore,
+    private val snapshots: SnapshotRepository,
+) {
+    /** The report of [run], read now from its workspace. */
     public suspend fun of(run: BuildRun): BuildReportText {
-        val snapshot = settings.current(run.workspaceId)
+        val snapshot = snapshots.getSnapshot(run.snapshotId)?.takeIf { it.workspaceId == run.workspaceId }
         val device = settings.device(run.workspaceId)
         val files = run.artifacts.map { it.linuxPath }
-        val (facts, changes) = runner.read(run.workspaceId) {
-            Facts.parse(sh(SCRIPT, abs("."), *files.toTypedArray())) to
-                ChangelogDraft.of(readText(ChangelogDraft.PLAN), readText(DebloatStage.RESULT), snapshot)
+        val signing = snapshot?.build?.signing
+        val facts = runner.read(run.workspaceId) {
+            Facts.parse(
+                sh(
+                    SCRIPT,
+                    abs("."),
+                    signing?.platformKeyRef?.let { abs("$it.x509.pem") }.orEmpty(),
+                    signing?.avbKeyRef?.let(::abs).orEmpty(),
+                    *files.toTypedArray(),
+                ),
+            )
         }
+        val changes = ChangelogDraft.of(planJson = null, debloatJson = null, snapshot = snapshot)
         val problems = mutableListOf<String>()
+        if (snapshot == null) problems += "the run's configuration snapshot is unavailable"
         val text = buildString {
             header(run, device, snapshot)
             packages(run, facts, problems)
             signing(facts)
             device?.let { budget(it, facts, problems) }
             stages(run)
-            if (changes.isNotBlank()) append("\n## Changes from stock\n\n").append(changes.trim()).append('\n')
+            if (changes.isNotBlank()) append("\n## Build configuration changes\n\n").append(changes.trim()).append('\n')
+            append("\nDetailed mod and removed-app results for this run are unavailable.\n")
         }
         return BuildReportText(text, problems)
     }
 
+    /** Run id, state and end, its snapshot, the device now and the firmware. */
     private fun StringBuilder.header(run: BuildRun, device: TargetDevice?, snapshot: ConfigurationSnapshot?) {
         append("# Build report\n\n")
         append("- Run: ${run.id} (${run.state.name.lowercase()}, ended ${run.endedAt ?: "?"})\n")
-        device?.let { append("- Device: ${it.name} (${it.codename})\n") }
+        append("- Configuration snapshot: ${run.snapshotId}${if (snapshot == null) " (unavailable)" else ""}\n")
+        device?.let { append("- Device configuration now: ${it.name} (${it.codename})\n") }
         snapshot?.acquisition?.firmware?.let { append("- Firmware: ${it.version} (${it.buildId})\n") }
     }
 
+    /** Each package hashed again against the hash the build recorded. */
     private fun StringBuilder.packages(run: BuildRun, facts: Facts, problems: MutableList<String>) {
         append("\n## Packages\n\n")
         if (run.artifacts.isEmpty()) append("No packages recorded.\n")
@@ -79,17 +98,19 @@ public class BuildReport(private val runner: WorkbenchRunner, private val settin
         }
     }
 
+    /** The fingerprints of the configured signing keys, read now. */
     private fun StringBuilder.signing(facts: Facts) {
-        append("\n## Signing keys\n\n")
+        append("\n## Configured signing keys (read now)\n\n")
         append("- Platform certificate (APKs, OTA): SHA-256 ${facts.cert ?: "not found"}\n")
-        append("- AVB public key (boot chain): SHA-256 ${facts.avb ?: "not found"}\n")
+        append("- AVB public key (DER): SHA-256 ${facts.avb ?: "not found"}\n")
     }
 
+    /** The built images of the super group now, and whether they fit it. */
     private fun StringBuilder.budget(device: TargetDevice, facts: Facts, problems: MutableList<String>) {
         val built = facts.images.filterKeys { it in device.dynamicPartitions }
         val used = built.values.sum()
         val free = device.superGroupBytes - used
-        append("\n## Super partition (${device.superGroupName}, ${mib(device.superGroupBytes)})\n\n")
+        append("\n## Super partition now (${device.superGroupName}, ${mib(device.superGroupBytes)})\n\n")
         built.entries.sortedByDescending { it.value }.forEach { (p, bytes) -> append("- $p: ${mib(bytes)}\n") }
         if (free >= 0) {
             append("- Used ${mib(used)}, ${mib(free)} free\n")
@@ -99,6 +120,7 @@ public class BuildReport(private val runner: WorkbenchRunner, private val settin
         }
     }
 
+    /** How each stage ran (or came from cache), and the tool versions. */
     private fun StringBuilder.stages(run: BuildRun) {
         append("\n## Stages\n\n")
         run.stages.forEach { s ->
@@ -146,18 +168,23 @@ public class BuildReport(private val runner: WorkbenchRunner, private val settin
         const val MS = 1000L
         const val MIB = 1024L * 1024L
 
+        /** [bytes] in whole MiB, "?" when unknown. */
         fun mib(bytes: Long?) = bytes?.let { "${it / MIB} MiB" } ?: "? MiB"
 
-        /** `$1` the workspace, then the package paths. Reads only; a package's sha256 is computed again. */
-        const val SCRIPT = """cd "$1" || exit 1
-shift
+        /** `$1` workspace, `$2` configured certificate, `$3` AVB private key; then package paths. */
+        internal const val SCRIPT = """cd "$1" || exit 1
+cert="$2"; avb="$3"; shift 3
 for i in out/images/*.img; do
   [ -f "${'$'}i" ] && printf 'img\t%s\t%s\n' "${'$'}{i##*/}" "${'$'}(stat -c %s "${'$'}i")"
 done
-if [ -f keys/platform.x509.pem ]; then
-  printf 'cert\t%s\n' "${'$'}(openssl x509 -in keys/platform.x509.pem -noout -fingerprint -sha256 | cut -d= -f2)"
+if [ -f "${'$'}cert" ]; then
+  fingerprint=${'$'}(openssl x509 -in "${'$'}cert" -noout -fingerprint -sha256 2>/dev/null) &&
+    printf 'cert\t%s\n' "${'$'}{fingerprint#*=}"
 fi
-if [ -f keys/avb.avbpubkey ]; then printf 'avb\t%s\n' "${'$'}(sha256sum keys/avb.avbpubkey | cut -d' ' -f1)"; fi
+t=${'$'}(mktemp -d) || exit 1; trap 'rm -rf "${'$'}t"' EXIT
+if [ -f "${'$'}avb" ] && openssl pkey -in "${'$'}avb" -pubout -outform DER -out "${'$'}t/avb.der" 2>/dev/null; then
+  printf 'avb\t%s\n' "${'$'}(sha256sum "${'$'}t/avb.der" | cut -d' ' -f1)"
+fi
 for a in "${'$'}@"; do
   if [ -f "${'$'}a" ]; then
     printf 'file\t%s\t%s\t%s\n' "${'$'}a" "${'$'}(stat -c %s "${'$'}a")" "${'$'}(sha256sum "${'$'}a" | cut -d' ' -f1)"

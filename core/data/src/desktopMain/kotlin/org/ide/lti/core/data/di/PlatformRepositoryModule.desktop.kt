@@ -181,5 +181,5 @@ internal actual val platformRepositoryModule =
         single { CompressionGoal(advisor = get(), boot = get(), settings = get(), runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
-        single { BuildReport(runner = get(), settings = get()) }
+        single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
     }
