@@ -1,0 +1,53 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
+package org.ide.lti.core.domain.pipeline
+
+import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageState
+
+/**
+ * How long the next run should take, from earlier runs on this machine: for each stage the preview says runs, its
+ * last [SAMPLES] real runs (not cache hits); the typical time is the sum of their medians, the range the sum of their
+ * shortest and longest. A stage that never ran here is [unknown], not guessed.
+ */
+public data class RunEstimate(
+    val typicalMs: Long,
+    val shortestMs: Long,
+    val longestMs: Long,
+    /** The runs each counted stage was measured from (the smallest count is the weakest evidence). */
+    val samples: Int,
+    val unknown: List<StageId>,
+) {
+    public companion object {
+        public const val SAMPLES: Int = 5
+
+        /** Null when no stage runs (everything comes from cache). */
+        public fun of(preview: List<StagePreview>, history: List<BuildRun>): RunEstimate? {
+            val runs = preview.filter { it.runsBecause != null }.map { it.stageId }
+            if (runs.isEmpty()) return null
+            val newestFirst = history.sortedByDescending { it.startedAt }
+            val measured = runs.associateWith { stage ->
+                newestFirst.mapNotNull { run ->
+                    run.stages.firstOrNull { it.stageId == stage && it.state == StageState.EXECUTED }
+                        ?.durationMs?.takeIf { it > 0 }
+                }.take(SAMPLES).sorted()
+            }
+            val known = measured.filterValues { it.isNotEmpty() }
+            return RunEstimate(
+                typicalMs = known.values.sumOf { it[it.size / 2] },
+                shortestMs = known.values.sumOf { it.first() },
+                longestMs = known.values.sumOf { it.last() },
+                samples = known.values.minOfOrNull { it.size } ?: 0,
+                unknown = runs.filter { measured[it].isNullOrEmpty() },
+            )
+        }
+    }
+}

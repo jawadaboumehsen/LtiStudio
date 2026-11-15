@@ -20,12 +20,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.pipeline.RunEstimate
 import org.ide.lti.core.domain.pipeline.StagePreview
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
@@ -71,6 +73,8 @@ public data class BuildRunUiState(
     val throughStage: StageId? = null,
     /** What the next run would rerun and why ("What will run?"); null until asked, cleared by any change. */
     val impact: List<StagePreview>? = null,
+    /** How long [impact]'s stages took in earlier runs here; null when nothing runs or nothing was measured. */
+    val estimate: RunEstimate? = null,
     val isPreviewing: Boolean = false,
     /** Why the last run stopped, with the fix the build check offers for it. */
     val diagnosis: PreflightFinding? = null,
@@ -286,12 +290,14 @@ public class BuildRunViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isPreviewing = true, impact = null, errorMessage = null) }
             val result = startPipelineRunUseCase.preview(ws.id, through)
+            val history = runCatching { runRepository?.observeRuns(ws.id)?.first() }.getOrNull().orEmpty()
+            val estimate = result.getOrNull()?.let { RunEstimate.of(it, history) }
             _uiState.update { state ->
                 if (state.currentWorkspace?.id != ws.id || state.throughStage != through) {
                     return@update state.copy(isPreviewing = false)
                 }
                 result.fold(
-                    onSuccess = { state.copy(isPreviewing = false, impact = it) },
+                    onSuccess = { state.copy(isPreviewing = false, impact = it, estimate = estimate) },
                     onFailure = { e ->
                         if (e is CancellationException) throw e
                         state.copy(isPreviewing = false, errorMessage = e.message ?: "The preview failed")

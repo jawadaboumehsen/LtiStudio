@@ -34,6 +34,7 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import org.ide.lti.core.domain.pipeline.RunEstimate
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.model.run.StageId
@@ -87,6 +88,14 @@ internal fun ImpactPreview(uiState: BuildRunUiState, onPreview: () -> Unit) {
                         style = GlassTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.testTag("ImpactFirstRun"),
+                    )
+                }
+                uiState.estimate?.let { estimate ->
+                    Text(
+                        estimateText(estimate),
+                        style = GlassTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("ImpactEstimate"),
                     )
                 }
                 runs.drop(1).takeIf { it.isNotEmpty() }?.let { after ->
@@ -198,5 +207,31 @@ internal fun BuildReportDialog(report: BuildReportText?, onClose: () -> Unit) {
         }
     }
 }
+
+/** "About 18 min (12-25 min), from up to 5 earlier runs here; Debloat never ran here: not counted." */
+internal fun estimateText(estimate: RunEstimate): String {
+    val parts = mutableListOf<String>()
+    if (estimate.samples > 0) {
+        val range = if (estimate.shortestMs == estimate.longestMs) {
+            ""
+        } else {
+            " (${minutes(estimate.shortestMs)}-${minutes(estimate.longestMs)})"
+        }
+        val runs = if (estimate.samples == 1) "1 earlier run" else "${estimate.samples}+ earlier runs"
+        parts += "Time: about ${minutes(estimate.typicalMs)}$range, from $runs here"
+    }
+    if (estimate.unknown.isNotEmpty()) {
+        parts += estimate.unknown.joinToString { stageLabel(it) } + " never ran here: not counted"
+    }
+    return parts.joinToString("; ") + "."
+}
+
+private fun minutes(ms: Long): String {
+    if (ms < MINUTE_MS) return "${ms / SECOND_MS} s"
+    return "${(ms + MINUTE_MS / 2) / MINUTE_MS} min"
+}
+
+private const val SECOND_MS = 1000L
+private const val MINUTE_MS = 60_000L
 
 private const val LOG_LINES = 8
