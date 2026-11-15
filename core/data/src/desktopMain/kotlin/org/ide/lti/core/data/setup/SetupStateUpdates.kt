@@ -188,6 +188,30 @@ internal fun ToolchainSetupState.withToolResult(
     },
 )
 
+/** What the service's tool list says next to what the product needs (see the provisioner's registry check). */
+internal data class ToolRegistryCheck(val published: Set<String>, val unpublished: Set<String>, val fullyReady: Boolean)
+
+/**
+ * A check finished at [now] in [home]: its storage reading (kept from before when this one could not measure), the
+ * tool list, and ready-since only when [registry] says everything is ready.
+ */
+internal fun ToolchainSetupState.withCheckFinished(
+    home: String,
+    storage: Pair<Long?, Long?>,
+    registry: ToolRegistryCheck,
+    now: Long,
+): ToolchainSetupState = copy(
+    storageAvailableBytes = storage.first ?: storageAvailableBytes,
+    storageMeasuredAt = storage.second ?: storageMeasuredAt,
+    userHome = home,
+    workDirLinuxPath = "$home/LtiRomWorkDir",
+    lastVerifiedTimestamp = if (registry.fullyReady) now else lastVerifiedTimestamp,
+    checkedAt = now,
+    lastReadyAt = if (registry.fullyReady) now else null,
+    publishedToolIds = registry.published,
+    unpublishedToolIds = registry.unpublished,
+)
+
 /** [line] is the newest log line: the state keeps the last [tail] of them. */
 internal fun ToolchainSetupState.withLogLine(line: String, tail: Int): ToolchainSetupState =
     copy(logs = (logs + line).takeLast(tail), activeLogLine = line)
