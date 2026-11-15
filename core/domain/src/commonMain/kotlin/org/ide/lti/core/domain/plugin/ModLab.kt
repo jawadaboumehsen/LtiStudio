@@ -13,9 +13,10 @@ import org.ide.lti.core.domain.pipeline.HostRequest
 
 /**
  * Checks every operation of [apply]'s plans, in plan order and each against what the earlier ones left, without
- * changing the work tree; the result is [LabRow.encode]d, one row per operation.
+ * changing the work tree; the result is [LabRow.encode]d, one row per operation. With [decode], APK/JAR edits are
+ * applied to their decoded packages in memory too (about a minute per package), else marked for the build.
  */
-public data class LabModules(val apply: ApplyModules) : HostRequest
+public data class LabModules(val apply: ApplyModules, val decode: Boolean = false) : HostRequest
 
 /** What the check could say about one operation. */
 public enum class LabStatus {

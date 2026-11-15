@@ -128,7 +128,7 @@ public class Preflight(
      * work tree as the build would meet it; with [with], those settings instead of the saved ones (the upgrade
      * assistant checks another workspace's mods here). Nothing is written.
      */
-    public suspend fun lab(workspaceId: String, with: ConfigurationSnapshot? = null): ModLab {
+    public suspend fun lab(workspaceId: String, with: ConfigurationSnapshot? = null, decode: Boolean = false): ModLab {
         val plugins = checkNotNull(catalog) { "No plugins are installed in this app" }
         val snapshot = with ?: checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
@@ -138,7 +138,7 @@ public class Preflight(
             } else {
                 val values = mutableMapOf<String, String>()
                 val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device))
-                val problems = run(labPlan(plugins), base, values)
+                val problems = run(labPlan(plugins, decode), base, values)
                 ModLab(LabRow.decode(values[LAB_KEY].orEmpty()), problems)
             }
         }
@@ -216,11 +216,11 @@ public class Preflight(
         const val LAB_KEY = "preflight.lab"
 
         /** The Patches stage's plan with its apply step checking each operation instead. */
-        fun labPlan(catalog: PluginCatalogPort): (StageContext) -> List<PipelineStep> = { ctx ->
+        fun labPlan(catalog: PluginCatalogPort, decode: Boolean): (StageContext) -> List<PipelineStep> = { ctx ->
             ModuleApplicationStage(catalog).plan(ctx).mapNotNull { step ->
                 val apply = (step as? PipelineStep.Host)?.request as? ApplyModules
                 when {
-                    apply != null -> PipelineStep.Host("check each operation", LAB_KEY, LabModules(apply))
+                    apply != null -> PipelineStep.Host("check each operation", LAB_KEY, LabModules(apply, decode))
                     step is PipelineStep.Check -> step
                     else -> null
                 }

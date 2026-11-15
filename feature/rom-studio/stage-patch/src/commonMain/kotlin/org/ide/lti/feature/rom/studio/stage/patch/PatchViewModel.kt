@@ -69,14 +69,17 @@ public class PatchViewModel(
     /** The mod lab's last answer: each enabled mod's operations checked against the assembled tree. */
     public val lab: StateFlow<LabState> = _lab.asStateFlow()
 
-    /** Checks every operation of the enabled mods together, as the build would apply them; nothing is written. */
-    public fun checkTogether() {
+    /**
+     * Checks every operation of the enabled mods together, as the build would apply them; nothing is written. With
+     * [decode], APK/JAR edits are applied to their decoded packages too.
+     */
+    public fun checkTogether(decode: Boolean = false) {
         val checks = preflight ?: return
         val enabled = settings.value.enabledPackages
         viewModelScope.launch {
             _lab.update { it.copy(checking = true, error = null) }
             val result = try {
-                LabState(result = checks.lab(workspaceId))
+                LabState(result = checks.lab(workspaceId, decode = decode))
             } catch (e: RefusalException) {
                 LabState(error = "${e.refusal.cause} ${e.refusal.nextStep}")
             } catch (e: IllegalStateException) {

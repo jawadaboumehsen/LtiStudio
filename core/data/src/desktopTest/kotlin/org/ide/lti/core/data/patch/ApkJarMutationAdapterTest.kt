@@ -17,6 +17,7 @@ import org.ide.lti.core.domain.plugin.ComponentPatchPort
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.DecodedComponent
 import org.ide.lti.core.domain.plugin.EffectKind
+import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -582,6 +583,34 @@ class ApkJarMutationAdapterTest {
         Files.walk(path)
             .sorted(Comparator.reverseOrder())
             .forEach(Files::delete)
+    }
+
+    @Test
+    fun theModLabAppliesEveryModsEditsToOneDecodeAndStopsAtTheFirstRefusal() = runBlocking<Unit> {
+        val existing = "a\nb\n"
+        fakePort.members["smali/X.smali"] = existing
+        fun hunk(from: String, to: String) = "--- a/smali/X.smali\n+++ b/smali/X.smali\n@@ -1,1 +1,1 @@\n-$from\n+$to\n"
+        val target = PartitionPath("system", "framework/framework.jar")
+        fun edit(id: String, pin: String, from: String, to: String) =
+            ConcreteOperation.ApkJarPatch(id, target, listOf(SmaliEdit("smali/X.smali", pin, hunk(from, to))))
+        val edits = listOf(
+            "io:first" to edit("ok", sha256Of(existing), "a", "A"),
+            "io:second" to edit("bad", sha256Of("not this file"), "b", "B"),
+            "io:first" to edit("later", "", "A", "Z"),
+        )
+
+        val verdicts = componentVerdicts(adapter, edits, ctx)
+
+        assertEquals(LabStatus.CHECKED, verdicts.getValue("io:first" to "ok").status)
+        assertEquals(LabStatus.REFUSED, verdicts.getValue("io:second" to "bad").status)
+        val later = verdicts.getValue("io:first" to "later")
+        assertEquals(LabStatus.UNCHECKED, later.status)
+        assertTrue("not reached" in later.reason, later.reason)
+        // One decode for the package, nothing rebuilt, the decode thrown away, the jar untouched.
+        assertEquals(1, fakePort.decodeCount)
+        assertEquals(0, fakePort.rebuildCount)
+        assertEquals(1, fakePort.discardCount)
+        assertEquals("DEX_CONTAINER_PLACEHOLDER", Files.readString(frameworkJar))
     }
 }
 

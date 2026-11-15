@@ -57,7 +57,7 @@ public fun PatchEditor(
     onToggle: (String) -> Unit,
     onRefresh: () -> Unit,
     lab: LabState = LabState(),
-    onCheckTogether: () -> Unit = {},
+    onCheckTogether: (Boolean) -> Unit = {},
     onOpenPlugins: () -> Unit = {},
     selectedObjectId: String = "module-catalog",
     modifier: Modifier = Modifier,
@@ -293,18 +293,27 @@ private const val CONTEXT_PREVIEW = 48
 
 /** The mod lab: every operation of the enabled mods, in the order they apply, as the build would meet it. */
 @Composable
-private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: () -> Unit) {
+private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> Unit) {
     Card("Check them together", "PatchModLab") {
         Hint(
             "Checks each operation against the assembled work tree, after the ones before it, as the build applies " +
                 "them. Nothing is written.",
         )
-        GlassButton(
-            onClick = onCheck,
-            enabled = !lab.checking,
-            variant = GlassButtonVariant.Standard,
-            modifier = Modifier.testTag("PatchModLabCheck"),
-        ) { Text(if (lab.checking) "Checking…" else "Check against this firmware", fontSize = FontSize.Micro) }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            GlassButton(
+                onClick = { onCheck(false) },
+                enabled = !lab.checking,
+                variant = GlassButtonVariant.Standard,
+                modifier = Modifier.testTag("PatchModLabCheck"),
+            ) { Text(if (lab.checking) "Checking…" else "Check against this firmware", fontSize = FontSize.Micro) }
+            // Decoding takes about a minute per package: asked for, not done on every check.
+            GlassButton(
+                onClick = { onCheck(true) },
+                enabled = !lab.checking,
+                variant = GlassButtonVariant.Text,
+                modifier = Modifier.testTag("PatchModLabDecode"),
+            ) { Text("Also check APK/JAR edits (decodes each package)", fontSize = FontSize.Micro) }
+        }
         lab.error?.let { Problem(it) }
         val result = lab.result ?: return@Card
         result.problems.forEach { Problem(it) }

@@ -68,7 +68,7 @@ class ModuleHostSteps(
         return when (request) {
             is ApplyModules -> applyModules(workspace, request)
             is CheckModules -> labRows(workspace, request.apply).summary()
-            is LabModules -> LabRow.encode(labRows(workspace, request.apply))
+            is LabModules -> LabRow.encode(labRows(workspace, request.apply, request.decode))
             is CoverageCheckRequest -> checkCoverage(workspace, request)
             is CoverageFixRequest -> fixCoverage(workspace, request)
             is TreeEditSidecars -> moveTreeEditSidecars(workspace, request)
@@ -113,16 +113,17 @@ class ModuleHostSteps(
     /**
      * Each operation of [request]'s plans checked against the work tree without changing it, in plan order and each
      * against what the earlier ones left (the build applies them that way). APK/JAR edits need the package decoded:
-     * only the build checks them, which is said, not passed over.
+     * with [decode] each package is decoded once and they are applied to it in memory ([componentVerdicts]),
+     * otherwise only the build checks them, which is said, not passed over.
      */
-    private suspend fun labRows(workspace: Workspace, request: ApplyModules): List<LabRow> {
+    private suspend fun labRows(workspace: Workspace, request: ApplyModules, decode: Boolean = false): List<LabRow> {
         val work = workTree(workspace)
         val ctx = MutationContext(
             workTreeRelPath = work.toString(),
             partitionRoots = request.partitions.filter { Files.isDirectory(work.resolve(it)) }.associateWith { it },
         )
         val staged = mutableMapOf<String, String>()
-        return request.plans.flatMap { plan ->
+        val rows = request.plans.flatMap { plan ->
             yield()
             val mod = "${plan.publisher}:${plan.id}"
             val fileOps = plan.operations.filterNot { it.isComponentEdit() }
@@ -149,6 +150,17 @@ class ModuleHostSteps(
                 }
             } + plan.notApplicable.map { LabRow(mod, it.operationId, LabStatus.NOT_APPLICABLE, it.reason) }
         }
+        if (!decode || rows.none { it.status == LabStatus.UNCHECKED }) return rows
+        val values = buildValues(work, request)
+        val edits = request.plans.flatMap { plan ->
+            plan.operations.filter { it.isComponentEdit() }.map {
+                "${plan.publisher}:${plan.id}" to it.withValues(
+                    values,
+                )
+            }
+        }
+        val verdicts = componentVerdicts(bytecodeAdapter(workspace, work, request.platformKeyRef), edits, ctx)
+        return rows.map { verdicts[it.mod to it.operationId] ?: it }
     }
 
     /** Consecutive runs of operations of one kind, in plan order: a later copy still lands after an earlier edit. */
@@ -509,6 +521,56 @@ private fun kindOf(entry: Path): EntryKind = when {
 }
 
 private const val ERRORS_SHOWN = 3
+
+/**
+ * The mod lab's APK/JAR check: each package decoded once, every mod's edits of it applied in plan order in memory
+ * (`preview`: nothing is rebuilt and the decode is discarded). An edit after a refused one is not reached.
+ */
+internal suspend fun componentVerdicts(
+    adapter: ApkJarMutationAdapter,
+    edits: List<Pair<String, ConcreteOperation>>,
+    ctx: MutationContext,
+): Map<Pair<String, String>, LabRow> = edits
+    .groupBy { (_, op) -> (op as ConcreteOperation.ApkJarPatch).target }
+    .flatMap { (target, group) ->
+        yield()
+        val name = "${target.partition}/${target.relativePath}"
+        when (val outcome = adapter.apply(group.map { it.second }, ctx, preview = true)) {
+            is ApkJarOutcome.Applied -> {
+                val methods = outcome.receipts.flatMap { it.changedMethods }.distinct()
+                val said = "applies to $name" + methods.takeIf { it.isNotEmpty() }?.joinToString(
+                    prefix = ": ",
+                ).orEmpty()
+                group.map { (mod, op) -> (mod to op.id) to LabRow(mod, op.id, LabStatus.CHECKED, said) }
+            }
+
+            is ApkJarOutcome.Refused -> {
+                val errors = outcome.report.errors.groupBy { it.objectId }
+                val all = outcome.report.errors.joinToString("; ") { "${it.code}: ${it.message}" }
+                val first = group.indexOfFirst { it.second.id in errors }
+                group.mapIndexed { i, (mod, op) ->
+                    val row = when {
+                        op.id in errors || first < 0 -> LabRow(
+                            mod,
+                            op.id,
+                            LabStatus.REFUSED,
+                            errors[op.id]?.joinToString("; ") { "${it.code}: ${it.message}" } ?: all,
+                        )
+
+                        i > first -> LabRow(
+                            mod,
+                            op.id,
+                            LabStatus.UNCHECKED,
+                            "not reached: an earlier edit of $name was refused",
+                        )
+
+                        else -> LabRow(mod, op.id, LabStatus.CHECKED, "applies to $name")
+                    }
+                    (mod to op.id) to row
+                }
+            }
+        }
+    }.toMap()
 
 /** The preflight's mod check: one line per mod the build would refuse, with why; `ok` when none. */
 private fun List<LabRow>.summary(): String {
