@@ -13,6 +13,7 @@ import kotlinx.coroutines.yield
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.pipeline.toolkit.LineDiff
 import org.ide.lti.core.domain.plugin.ApkJarOutcome
 import org.ide.lti.core.domain.plugin.ComponentPatchCodes
 import org.ide.lti.core.domain.plugin.ComponentPatchPort
@@ -57,6 +58,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
                 is ConcreteOperation.ApkJarPatch -> {
                     when (val resolved = PartitionPathResolver.resolve(op.targetPartitionPath(), op.id, ctx)) {
                         is ResolvedTarget.Invalid -> resolutionErrors.add(resolved.error)
+
                         is ResolvedTarget.Valid -> {
                             if (!Files.exists(resolved.path) || !Files.isRegularFile(resolved.path)) {
                                 resolutionErrors.add(
@@ -74,6 +76,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
                         }
                     }
                 }
+
                 is ConcreteOperation.Copy,
                 is ConcreteOperation.Replace,
                 is ConcreteOperation.Delete,
@@ -104,6 +107,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
             val outcome = processComponent(componentPath, ops, preview)
             when (outcome) {
                 is ComponentProcessResult.Refused -> return ApkJarOutcome.Refused(outcome.report)
+
                 is ComponentProcessResult.Applied -> {
                     allEffects.addAll(outcome.effects)
                     allReceipts.add(outcome.receipt)
@@ -151,6 +155,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
                         preview = preview,
                         members = members,
                     )
+
                     is ConcreteOperation.Copy,
                     is ConcreteOperation.Replace,
                     is ConcreteOperation.Delete,
@@ -194,6 +199,17 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
                 operationIds = ops.map { it.id },
                 changedMethods = changedMethods.distinct(),
                 aotArtifactsInvalidated = computeAotArtifacts(componentPath),
+                // A preview writes nothing: what it would change is kept to show (a new member diffs against empty).
+                diffs = if (preview) {
+                    memberBuffer.mapNotNull { (member, after) ->
+                        val before = patchPort.readMember(decoded, member).orEmpty()
+                        // A file's last line break is no line of its own.
+                        LineDiff.hunk(before.removeSuffix("\n").lines(), after.removeSuffix("\n").lines())
+                            ?.takeIf { it.isNotEmpty() }?.let { member to it }
+                    }.toMap()
+                } else {
+                    emptyMap()
+                },
             )
 
             val effects = ops.map { op ->
@@ -258,6 +274,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
         val existing = memberBuffer[member] ?: patchPort.readMember(decoded, member)
         return when (val result = MemberEdits.apply(existing, edit)) {
             is EditResult.Failed -> fail(result)
+
             is EditResult.Changed -> {
                 memberBuffer[member] = result.content
                 if (!preview) patchPort.writeMember(decoded, member, result.content)

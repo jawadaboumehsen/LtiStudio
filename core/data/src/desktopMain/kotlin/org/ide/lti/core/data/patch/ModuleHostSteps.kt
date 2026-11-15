@@ -522,6 +522,7 @@ private fun kindOf(entry: Path): EntryKind = when {
 
 private const val ERRORS_SHOWN = 3
 private const val METHODS_SHOWN = 3
+private const val DIFF_LINES = 400
 
 /**
  * `Landroid/security/KeyStore2;->getSecurityLevel(I)L…;` → `KeyStore2.getSecurityLevel`; a member file
@@ -555,7 +556,15 @@ internal suspend fun componentVerdicts(
                     "; the package's edits change ${all.size}: " +
                         all.take(METHODS_SHOWN).joinToString(transform = ::shortMember) + more
                 }.orEmpty()
-                group.map { (mod, op) -> (mod to op.id) to LabRow(mod, op.id, LabStatus.CHECKED, said) }
+                val lines = outcome.receipts.flatMap { it.diffs.entries }
+                    .flatMap { (member, hunk) -> listOf("=== $member") + hunk }
+                val cut = lines.size - DIFF_LINES
+                val detail = (lines.take(DIFF_LINES) + listOfNotNull("… ($cut more lines)".takeIf { cut > 0 }))
+                    .joinToString("\n")
+                // The package's before/after goes with its first edit only: every edit of it shares one decode.
+                group.mapIndexed { i, (mod, op) ->
+                    (mod to op.id) to LabRow(mod, op.id, LabStatus.CHECKED, said, if (i == 0) detail else "")
+                }
             }
 
             is ApkJarOutcome.Refused -> {

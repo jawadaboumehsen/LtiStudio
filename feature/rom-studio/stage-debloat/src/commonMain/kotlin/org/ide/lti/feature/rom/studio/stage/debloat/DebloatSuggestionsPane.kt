@@ -39,9 +39,14 @@ import org.ide.lti.feature.rom.studio.api.formatBytes
  * Apps the ROM itself says can go (`DebloatSuggestions`): nothing it declares relies on them, nothing warns, no boot
  * start; the largest first. Picking one goes through the same checks as a pick in Inventory.
  */
-internal fun LazyListScope.suggestions(facts: DebloatFacts, picked: Set<String>, onToggle: (DebloatCandidate) -> Unit) {
+internal fun LazyListScope.suggestions(
+    facts: DebloatFacts,
+    picked: Set<String>,
+    onToggle: (DebloatCandidate) -> Unit,
+    goalShort: @Composable (Long) -> Unit = {},
+) {
     if (facts.apps.isEmpty()) return
-    item { GoalCard(facts, picked, onToggle) }
+    item { GoalCard(facts, picked, onToggle, goalShort) }
     val suggested = DebloatSuggestions.of(facts.inventory, facts.apps, picked)
     val total = formatBytes(suggested.sumOf { it.candidate.sizeBytes })
     item {
@@ -77,7 +82,12 @@ internal fun LazyListScope.suggestions(facts: DebloatFacts, picked: Set<String>,
  * stays unknown; picking it goes through Debloat's own checks, and the picks it made can be taken back.
  */
 @Composable
-private fun GoalCard(facts: DebloatFacts, picked: Set<String>, onToggle: (DebloatCandidate) -> Unit) {
+private fun GoalCard(
+    facts: DebloatFacts,
+    picked: Set<String>,
+    onToggle: (DebloatCandidate) -> Unit,
+    goalShort: @Composable (Long) -> Unit,
+) {
     var mib by rememberSaveable { mutableStateOf("") }
     var keep by rememberSaveable { mutableStateOf("") }
     var applied by remember { mutableStateOf<List<DebloatCandidate>>(emptyList()) }
@@ -120,8 +130,9 @@ private fun GoalCard(facts: DebloatFacts, picked: Set<String>, onToggle: (Debloa
             "Why: nothing in the ROM relies on or looks for these apps, none is part of the system or starts at " +
                 "boot. Unknown: what they do at run time (intents, services) is in no file. The image shrinks by " +
                 "about the files' size (APKs hardly compress)." +
-                if (plan.shortBytes > 0) " For the rest, try Build & Sign > Partition layout > size trials." else "",
+                if (plan.shortBytes > 0) " For the rest, compression can be measured below." else "",
         )
+        if (plan.shortBytes > 0) goalShort(plan.shortBytes)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(
                 onClick = {

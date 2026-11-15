@@ -159,29 +159,79 @@ public object TreeCompare {
 /** A line diff (longest common subsequence): `- old` and `+ new` lines, or null past [MAX_LINES] lines a side. */
 public object LineDiff {
     public const val MAX_LINES: Int = 3000
+    private const val CONTEXT = 3
 
-    public fun diff(old: List<String>, new: List<String>): List<String>? {
-        if (old.size > MAX_LINES || new.size > MAX_LINES) return null
-        // lcs[i][j]: length of the common subsequence of old[i..] and new[j..].
+    public fun diff(old: List<String>, new: List<String>): List<String>? =
+        ops(old, new)?.filterNot { it.startsWith("  ") }
+
+    /**
+     * What an edit changed, readably: the common start and end are cut first (an edited smali class can be 20,000
+     * lines; the change is a few), then the rest is diffed with unchanged lines kept as `  line`; a run of more than
+     * twice [context] unchanged lines folds to `  …`, and [context] unchanged lines stand on each side. Empty when
+     * nothing changed; null when the changed part is too long to diff.
+     */
+    public fun hunk(old: List<String>, new: List<String>, context: Int = CONTEXT): List<String>? {
+        var start = 0
+        while (start < old.size && start < new.size && old[start] == new[start]) start++
+        var end = 0
+        while (end < old.size - start && end < new.size - start && old[old.size - 1 - end] == new[new.size - 1 - end]) {
+            end++
+        }
+        val middle = ops(old.subList(start, old.size - end), new.subList(start, new.size - end))
+        return when {
+            middle == null -> null
+
+            middle.all { it.startsWith("  ") } -> emptyList()
+
+            else -> listOf("@@ line ${start + 1} @@") +
+                old.subList(maxOf(0, start - context), start).map { "  $it" } +
+                fold(middle, context) +
+                old.subList(old.size - end, minOf(old.size, old.size - end + context)).map { "  $it" }
+        }
+    }
+
+    /** [lines] with every run of more than twice [context] unchanged lines cut to its ends and `  …`. */
+    private fun fold(lines: List<String>, context: Int): List<String> {
+        val out = mutableListOf<String>()
+        var run = mutableListOf<String>()
+        fun flush() {
+            out += if (run.size > 2 * context) run.take(context) + "  …" + run.takeLast(context) else run
+            run = mutableListOf()
+        }
+        for (line in lines) {
+            if (line.startsWith("  ")) {
+                run += line
+            } else {
+                flush()
+                out += line
+            }
+        }
+        flush()
+        return out
+    }
+
+    /** `lcs[i][j]`: the length of the longest common subsequence of `old[i..]` and `new[j..]`. */
+    private fun lcs(old: List<String>, new: List<String>): Array<IntArray> {
         val lcs = Array(old.size + 1) { IntArray(new.size + 1) }
         for (i in old.indices.reversed()) {
             for (j in new.indices.reversed()) {
                 lcs[i][j] = if (old[i] == new[j]) lcs[i + 1][j + 1] + 1 else maxOf(lcs[i + 1][j], lcs[i][j + 1])
             }
         }
+        return lcs
+    }
+
+    /** Every line: `  ` unchanged, `- ` removed, `+ ` added (the removed one first, as diffs show it). */
+    private fun ops(old: List<String>, new: List<String>): List<String>? {
+        if (old.size > MAX_LINES || new.size > MAX_LINES) return null
+        val lcs = lcs(old, new)
         val out = mutableListOf<String>()
         var i = 0
         var j = 0
         while (i < old.size || j < new.size) {
             when {
-                i < old.size && j < new.size && old[i] == new[j] -> {
-                    i++
-                    j++
-                }
-
-                // The removed line first, as diffs show it.
+                i < old.size && j < new.size && old[i] == new[j] -> out += "  ${old[i++].also { j++ }}"
                 i < old.size && (j == new.size || lcs[i + 1][j] >= lcs[i][j + 1]) -> out += "- ${old[i++]}"
-
                 else -> out += "+ ${new[j++]}"
             }
         }

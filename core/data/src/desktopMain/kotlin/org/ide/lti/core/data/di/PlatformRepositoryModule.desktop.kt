@@ -53,6 +53,7 @@ import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
 import org.ide.lti.core.domain.workbench.ArchiveWorkbench
 import org.ide.lti.core.domain.workbench.BootWorkbench
 import org.ide.lti.core.domain.workbench.CompareWorkbench
+import org.ide.lti.core.domain.workbench.CompressionGoal
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
 import org.ide.lti.core.domain.workbench.ImageWorkbench
@@ -177,6 +178,7 @@ internal actual val platformRepositoryModule =
         single { DeviceFirmwareCheck(runner = get()) }
         single { PhoneProbe(runner = get()) }
         single { SizeAdvisor(runner = get()) }
+        single { CompressionGoal(advisor = get(), boot = get(), settings = get(), runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
         single { BuildReport(runner = get(), settings = get()) }

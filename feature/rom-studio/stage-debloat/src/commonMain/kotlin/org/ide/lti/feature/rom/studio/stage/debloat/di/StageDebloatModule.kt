@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.debloat.di
 
 import org.ide.lti.feature.rom.studio.api.StageEditor
+import org.ide.lti.feature.rom.studio.stage.debloat.CompressionGoalViewModel
 import org.ide.lti.feature.rom.studio.stage.debloat.DebloatStageEditor
 import org.ide.lti.feature.rom.studio.stage.debloat.DebloatViewModel
 import org.koin.core.module.Module
@@ -18,6 +19,13 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 public val stageDebloatModule: Module = module {
+    viewModel { params ->
+        CompressionGoalViewModel(
+            workspaceId = params.getOrNull<String>() ?: "",
+            goal = getOrNull(),
+            store = getOrNull(),
+        )
+    }
     single<StageEditor>(named("debloat")) { DebloatStageEditor() }
 
     viewModel { params ->

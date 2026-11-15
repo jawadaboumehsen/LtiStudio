@@ -25,4 +25,13 @@ class ModLabTest {
         assertEquals(rows.map { it.copy(reason = it.reason.replace(Regex("[\t\n]"), " ")) }, back)
         assertEquals(emptyList(), LabRow.decode("ok\nnot a row"))
     }
+
+    @Test
+    fun aRowsBeforeAndAfterSurvivesTheTextResultWithItsLineBreaksAndTabs() {
+        val detail = "=== smali/X.smali\n@@ line 1 @@\n- a\n+ \tb"
+        val back = LabRow.decode(LabRow.encode(listOf(LabRow("m", "op", LabStatus.CHECKED, "ok", detail))))
+        assertEquals("=== smali/X.smali\n@@ line 1 @@\n- a\n+     b", back.single().detail)
+        // A row written before details existed still reads.
+        assertEquals("", LabRow.decode("m\top\tCHECKED\tok").single().detail)
+    }
 }

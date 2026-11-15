@@ -42,6 +42,7 @@ interface ComponentPatchPort {
  * @property operationIds List of mutation operation identifiers executed on this component.
  * @property changedMethods Descriptors of all methods modified by method edits.
  * @property aotArtifactsInvalidated Sibling AOT compilation artifacts that downstream build stages must purge.
+ * @property diffs In a preview, each changed member and what changed (`LineDiff.hunk`); empty when applied.
  */
 data class ComponentPatchReceipt(
     val componentPath: String,
@@ -49,6 +50,7 @@ data class ComponentPatchReceipt(
     val operationIds: List<String>,
     val changedMethods: List<String>,
     val aotArtifactsInvalidated: List<String>,
+    val diffs: Map<String, List<String>> = emptyMap(),
 )
 
 /**

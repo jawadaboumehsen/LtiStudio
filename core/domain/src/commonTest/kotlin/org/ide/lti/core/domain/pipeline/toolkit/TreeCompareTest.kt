@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.pipeline.toolkit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TreeCompareTest {
     // LISTING_SCRIPT lines of PQ84P01's system partition (fw-baseline): stock, then the build.
@@ -90,5 +91,24 @@ class TreeCompareTest {
         assertEquals(listOf("+ $hook"), LineDiff.diff(old, listOf(hook) + old))
         assertEquals(emptyList(), LineDiff.diff(old, old))
         assertNull(LineDiff.diff(List(LineDiff.MAX_LINES + 1) { "nop" }, emptyList()))
+    }
+
+    @Test
+    fun aHunkShowsTheChangeInContextAndFoldsTheLongUnchangedStretchesOfABigFile() {
+        val old = (1..20_000).map { "line $it" }
+        val new = old.toMutableList().apply {
+            set(9_999, "changed 10000")
+            add(10_100, "added after 10100")
+        }
+        val hunk = LineDiff.hunk(old, new)!!
+        assertEquals("@@ line 10000 @@", hunk.first())
+        assertEquals(listOf("  line 9997", "  line 9998", "  line 9999"), hunk.subList(1, 4))
+        assertEquals(listOf("- line 10000", "+ changed 10000"), hunk.subList(4, 6))
+        assertTrue("  …" in hunk, hunk.toString())
+        assertTrue("+ added after 10100" in hunk)
+        assertEquals("  line 10103", hunk.last())
+        assertEquals(emptyList(), LineDiff.hunk(old, old))
+        // A new member diffs against nothing: every line added.
+        assertEquals(listOf("@@ line 1 @@", "- ", "+ a", "+ b"), LineDiff.hunk("".lines(), listOf("a", "b")))
     }
 }

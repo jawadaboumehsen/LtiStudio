@@ -22,6 +22,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -331,8 +335,34 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
                 val text = "${LAB_MARKS.getValue(row.status)} ${op?.let(::describe) ?: row.operationId}" +
                     row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
                 if (row.status == LabStatus.REFUSED) Problem(text) else Hint(text)
+                if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
             }
         }
+    }
+}
+
+/** A package's edits before and after: `- ` removed, `+ ` added, `  ` unchanged lines, `=== member` headers. */
+@Composable
+private fun BeforeAfter(detail: String) {
+    var open by remember { mutableStateOf(false) }
+    GlassButton(
+        onClick = { open = !open },
+        variant = GlassButtonVariant.Text,
+        modifier = Modifier.testTag("PatchModLabDiff"),
+    ) { Text(if (open) "Hide changes" else "Show changes (before / after)", fontSize = FontSize.Micro) }
+    if (!open) return
+    detail.lines().forEach { line ->
+        Text(
+            text = line,
+            fontSize = FontSize.Micro,
+            fontFamily = codeFontFamily(),
+            color = when {
+                line.startsWith("+ ") -> GlassTheme.diagnosticColors.success
+                line.startsWith("- ") -> GlassTheme.diagnosticColors.error
+                line.startsWith("===") || line.startsWith("@@") -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }
 

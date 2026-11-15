@@ -586,6 +586,26 @@ class ApkJarMutationAdapterTest {
     }
 
     @Test
+    fun theModLabShowsAPackagesChangesBeforeAndAfterOnItsFirstEdit() = runBlocking<Unit> {
+        val existing = "a\nb\n"
+        fakePort.members["smali/X.smali"] = existing
+        val target = PartitionPath("system", "framework/framework.jar")
+        val hunk = "--- a/smali/X.smali\n+++ b/smali/X.smali\n@@ -1,1 +1,1 @@\n-a\n+A\n"
+        val op = ConcreteOperation.ApkJarPatch(
+            "ok",
+            target,
+            listOf(SmaliEdit("smali/X.smali", sha256Of(existing), hunk)),
+        )
+        val other = ConcreteOperation.ApkJarPatch("none", target, emptyList())
+
+        val verdicts = componentVerdicts(adapter, listOf("io:m" to op, "io:m" to other), ctx)
+
+        assertEquals("=== smali/X.smali\n@@ line 1 @@\n- a\n+ A\n  b", verdicts.getValue("io:m" to "ok").detail)
+        assertEquals("", verdicts.getValue("io:m" to "none").detail)
+        assertEquals("a\nb\n", fakePort.members["smali/X.smali"], "a preview leaves the package as it was")
+    }
+
+    @Test
     fun theModLabAppliesEveryModsEditsToOneDecodeAndStopsAtTheFirstRefusal() = runBlocking<Unit> {
         val existing = "a\nb\n"
         fakePort.members["smali/X.smali"] = existing

@@ -34,18 +34,34 @@ public enum class LabStatus {
 }
 
 /** One operation of one mod (`publisher:id`) in the mod lab. */
-public data class LabRow(val mod: String, val operationId: String, val status: LabStatus, val reason: String = "") {
+public data class LabRow(
+    val mod: String,
+    val operationId: String,
+    val status: LabStatus,
+    val reason: String = "",
+    /** What the edits of this row's package change, before and after (`LineDiff.hunk` lines); empty for most rows. */
+    val detail: String = "",
+) {
     public companion object {
-        /** One tab-separated line per row: the host step result is text. */
+        /** One tab-separated line per row: the host step result is text (the detail's line breaks as `\u001F`). */
         public fun encode(rows: List<LabRow>): String = rows.joinToString("\n") { row ->
-            listOf(row.mod, row.operationId, row.status.name, row.reason.replace(Regex("[\t\n\r]"), " "))
-                .joinToString("\t")
+            listOf(
+                row.mod,
+                row.operationId,
+                row.status.name,
+                row.reason.replace(Regex("[\t\n\r]"), " "),
+                row.detail.replace("\t", "    ").replace("\r", "").replace('\n', DETAIL_BREAK),
+            ).joinToString("\t")
         }
 
         public fun decode(text: String): List<LabRow> = text.lines().mapNotNull { line ->
-            val parts = line.split('\t', limit = 4).takeIf { it.size == 4 } ?: return@mapNotNull null
-            LabStatus.entries.firstOrNull { it.name == parts[2] }?.let { LabRow(parts[0], parts[1], it, parts[3]) }
+            val parts = line.split('\t', limit = 5).takeIf { it.size >= 4 } ?: return@mapNotNull null
+            LabStatus.entries.firstOrNull { it.name == parts[2] }?.let { status ->
+                LabRow(parts[0], parts[1], status, parts[3], parts.getOrNull(4).orEmpty().replace(DETAIL_BREAK, '\n'))
+            }
         }
+
+        private const val DETAIL_BREAK = '\u001F'
     }
 }
 

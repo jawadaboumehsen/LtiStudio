@@ -94,6 +94,8 @@ public fun DebloatEditor(
     onRefresh: () -> Unit,
     selectedObjectId: String = "inventory",
     actions: DebloatActions = DebloatActions(),
+    /** Shown under the size goal when the apps leave it short by the given bytes (the compression trials). */
+    goalShort: @Composable (Long) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
@@ -113,7 +115,7 @@ public fun DebloatEditor(
             item { Feedback(facts, actions) }
             when (selectedObjectId.lowercase()) {
                 "remove-selections", "remove_selections" -> {
-                    suggestions(facts, picked, onToggle)
+                    suggestions(facts, picked, onToggle, goalShort)
                     removeSelections(settings, facts, picked, actions, onUnpick)
                 }
 

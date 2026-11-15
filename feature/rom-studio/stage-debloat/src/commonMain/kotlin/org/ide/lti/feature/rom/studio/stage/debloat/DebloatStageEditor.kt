@@ -39,6 +39,9 @@ public class DebloatStageEditor : StageEditor {
             onUnpick = viewModel::unpick,
             onRefresh = viewModel::refresh,
             selectedObjectId = context.selectedObjectId?.value ?: "inventory",
+            goalShort = { short ->
+                CompressionGoalCard(koinViewModel { parametersOf(context.workspaceId) }, short)
+            },
             actions = DebloatActions(
                 restore = viewModel::restore,
                 restoreAll = viewModel::restoreAll,
