@@ -809,6 +809,7 @@ public class PipelineOrchestrator(
                                 state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
                                 exitCode = exitCode,
                                 lastSeq = currentSeq,
+                                endedAt = clock.now(),
                             )
                         } else {
                             it
@@ -838,6 +839,7 @@ public class PipelineOrchestrator(
                             state = if (code == 0) StepState.COMPLETED else StepState.FAILED,
                             exitCode = code,
                             lastSeq = status.lastSeq,
+                            endedAt = status.endedAtEpochMs?.let(Instant::fromEpochMilliseconds),
                         )
                     } else {
                         it
@@ -920,6 +922,8 @@ public class PipelineOrchestrator(
                 command = resolvedCommand,
                 state = StepState.RUNNING,
                 lastSeq = 0L,
+                label = step.label,
+                startedAt = clock.now(),
             )
         driver.persist { r ->
             val updated = r.steps.filterNot { it.stageId == stage.id && it.index == index } + initialStep
@@ -948,6 +952,7 @@ public class PipelineOrchestrator(
                             state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
                             exitCode = exitCode,
                             lastSeq = lastSeq,
+                            endedAt = clock.now(),
                         )
                     } else {
                         it

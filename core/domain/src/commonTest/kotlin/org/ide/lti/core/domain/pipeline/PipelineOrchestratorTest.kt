@@ -190,6 +190,9 @@ class PipelineOrchestratorTest {
         val run = assertNotNull(repo.getRun("run-1"))
         assertEquals(RunState.SUCCEEDED, run.state)
         assertTrue(run.stages.all { it.state == StageState.EXECUTED })
+        // Every step keeps its name and when it started and ended (the run inspector's timeline).
+        assertTrue(run.steps.isNotEmpty())
+        assertTrue(run.steps.all { it.label != null && it.startedAt != null && it.endedAt != null }, "${run.steps}")
 
         // Captured values drive later steps: the AVB footer uses the real salt and searched size.
         val footer =

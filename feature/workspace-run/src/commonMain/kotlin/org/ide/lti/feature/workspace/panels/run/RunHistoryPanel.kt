@@ -58,6 +58,9 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
     uiState.comparison?.let { comparison ->
         MarkdownDialog("Compare runs", comparison.markdown, emptyList(), onClose = viewModel::closeComparison)
     }
+    uiState.inspection?.let { inspection ->
+        MarkdownDialog("Run inspector", inspection, emptyList(), onClose = viewModel::closeInspection)
+    }
 
     pendingDelete?.let { run ->
         DeleteRunDialog(
@@ -132,11 +135,22 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                             .fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
-                        Text(
-                            text = "Run ${selected.id}",
-                            style = typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Run ${selected.id}",
+                                style = typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            GlassButton(
+                                onClick = viewModel::inspect,
+                                enabled = !uiState.isComparing,
+                                variant = GlassButtonVariant.Standard,
+                            ) { Text("Inspect") }
+                        }
                         CompareWithRow(
                             others = uiState.runs.filter { it.id != selected.id }.take(COMPARE_CHOICES),
                             busy = uiState.isComparing,

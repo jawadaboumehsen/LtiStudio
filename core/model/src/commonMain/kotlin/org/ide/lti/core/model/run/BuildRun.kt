@@ -69,6 +69,11 @@ data class StageStep(
     val state: StepState = StepState.PENDING,
     val exitCode: Int? = null,
     val lastSeq: Long = 0L,
+    /** The step's name in its stage's plan; null in runs recorded before steps were named. */
+    val label: String? = null,
+    /** When the step started and ended, for the run inspector's timeline; null in older runs. */
+    val startedAt: Instant? = null,
+    val endedAt: Instant? = null,
 ) {
     companion object {
         fun deriveIdempotencyKey(runId: String, stageId: Any, stepIndex: Int): String {

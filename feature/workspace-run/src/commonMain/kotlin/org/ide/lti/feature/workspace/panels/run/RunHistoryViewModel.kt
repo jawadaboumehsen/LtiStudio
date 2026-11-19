@@ -26,8 +26,10 @@ import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.RunComparisonText
 import org.ide.lti.core.domain.workspace.RunRecord
+import org.ide.lti.core.domain.workspace.RunTimeline
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.workspace.Workspace
 
 public data class RunHistoryUiState(
@@ -40,6 +42,8 @@ public data class RunHistoryUiState(
     /** The comparison being read, or shown; null when none is open. */
     val isComparing: Boolean = false,
     val comparison: RunComparisonText? = null,
+    /** The run inspector's Markdown for the selected run; null when it is closed. */
+    val inspection: String? = null,
     /** The newest phone check of each run that has one, by run id (the history list's badge). */
     val deviceChecks: Map<String, DeviceCheckResult> = emptyMap(),
 )
@@ -125,6 +129,43 @@ public class RunHistoryViewModel(
         }
     }
 
+    /**
+     * The run inspector: where the selected run's time went (stages, their share, why each ran, slowest steps), then
+     * what differs from the previous successful run, when there is one.
+     */
+    public fun inspect() {
+        val run = _uiState.value.selectedRun ?: return
+        if (_uiState.value.isComparing) return
+        val previous = _uiState.value.runs
+            .filter { it.state == RunState.SUCCEEDED && it.startedAt < run.startedAt }
+            .maxByOrNull { it.startedAt }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isComparing = true, errorMessage = null) }
+            val header = "# Run inspector\n\n- Run: ${run.id} (${run.state.name.lowercase()})\n\n"
+            val text = header + RunTimeline.of(run) + "\n" + sincePrevious(previous, run)
+            _uiState.update { it.copy(isComparing = false, inspection = text) }
+        }
+    }
+
+    /** The comparison with [previous] (the inspector's second part), its headings one level down. */
+    private suspend fun sincePrevious(previous: BuildRun?, run: BuildRun): String {
+        val comparer = runComparison
+        return when {
+            previous == null -> "No earlier run succeeded here, so there is nothing to compare.\n"
+
+            comparer == null -> ""
+
+            else -> runCatchingCancellable { comparer.compare(previous, run).markdown }.fold(
+                onSuccess = { it.replaceFirst("# Compare runs", SINCE_HEADING).replace("\n## ", "\n### ") },
+                onFailure = { "The previous run could not be compared: ${it.message}\n" },
+            )
+        }
+    }
+
+    public fun closeInspection() {
+        _uiState.update { it.copy(inspection = null) }
+    }
+
     public fun closeComparison() {
         _uiState.update { it.copy(comparison = null) }
     }
@@ -173,3 +214,5 @@ public class RunHistoryViewModel(
         }
     }
 }
+
+private const val SINCE_HEADING = "## Since the previous successful run"
