@@ -57,7 +57,8 @@ public data class PreflightFinding(
  * Will it build? Runs Build & Sign's own checks against the current settings and work/ without building: the
  * partitions left out, the filesystems, the permission and label coverage, broken links, the mount tables, what the
  * boot kernel mounts and decodes, unsigned APKs, kept partitions changed since extraction and the extra packages;
- * plus the device configuration's errors. Only the steps that read are run; nothing in the workspace is written.
+ * plus the device configuration's errors and whether the system still meets the vendor ([VintfCheck]). Only the
+ * steps that read are run; nothing in the workspace is written.
  */
 public class Preflight(
     private val runner: WorkbenchRunner,
@@ -86,7 +87,8 @@ public class Preflight(
                 patched -> listOf(MODS_NOT_CHECKED)
                 else -> run(modCheck(catalog), base, values)
             }
-            val messages = GENERATORS.flatMap { generator -> run(generator, base, values) } + mods
+            val vintf = VintfCheck.findings(sh(VintfCheck.SCRIPT, abs("work")))
+            val messages = GENERATORS.flatMap { generator -> run(generator, base, values) } + mods + vintf
             report(LogLevel.INF, "Preflight: ${messages.size} finding(s) from Build & Sign's checks")
             messages
         }
@@ -167,7 +169,8 @@ public class Preflight(
         val filled = code == COVERAGE && "hold a space" !in text && BuildChecks.UNREADABLE_COVERAGE !in text &&
             snapshot.customization.fillMissingSidecars
         val payloadOff = code == PAYLOAD && PackageKind.Payload.name !in snapshot.build.extraPackages
-        val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED"
+        val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED" ||
+            code in VintfCheck.NOTES
         return PreflightFinding(code, text, blocks = !note, fix = FIXES[code]?.invoke(text)?.takeUnless { filled })
     }
 
