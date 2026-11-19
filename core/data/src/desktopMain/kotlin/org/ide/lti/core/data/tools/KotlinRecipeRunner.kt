@@ -48,6 +48,15 @@ public class KotlinRecipeRunner(
 
             is RecipeConfig.CMake -> runCmake(srcDir, outDir, recipe, outputs, supportFiles, onLog, groupId)
 
+            // Once its AOSP projects and the app's build files are in place, a plain CMake build of those files.
+            is RecipeConfig.AospCMake -> {
+                AospSources { tool, args, accepted ->
+                    runCmd(tool, args, srcDir, onLog, acceptedExitCodes = accepted)
+                }.prepare(srcDir, recipe)
+                val cmake = RecipeConfig.CMake(sourceSubdir = AospSources.BUNDLED_DIR, revision = recipe.revision)
+                runCmake(srcDir, outDir, cmake, outputs, supportFiles, onLog, groupId)
+            }
+
             is RecipeConfig.Autotools -> runAutotools(srcDir, outDir, recipe, outputs, supportFiles, onLog, groupId)
 
             is RecipeConfig.GradleJar -> runGradleJar(srcDir, outDir, recipe, outputs, onLog, groupId)

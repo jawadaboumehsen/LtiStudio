@@ -234,6 +234,7 @@ public object KotlinStoreLayout {
         is RecipeConfig.GradleJar -> "gradle_jar"
         is RecipeConfig.ScriptCopy -> "script_copy"
         is RecipeConfig.Release -> "release"
+        is RecipeConfig.AospCMake -> "aosp_cmake"
     }
 
     public fun buildPublishScript(

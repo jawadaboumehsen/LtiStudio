@@ -32,6 +32,7 @@ class ToolGroupCatalogTest {
                 "7zip",
                 "sdat2img",
                 "kptools",
+                "vintf-tools",
             )
         val actualGroupIds = ToolGroupCatalog.allGroups.map { it.id.value }.toSet()
         assertEquals(expectedGroupIds, actualGroupIds)

@@ -78,6 +78,7 @@ public fun BuildEditor(
                     CoverageRulesPane(coverage.rules, onCoverageRules)
                     LinkCheckPane(settings, onChange)
                     ApkSignaturePane(settings, onChange)
+                    VintfPane(settings, onChange)
                 }
 
                 else -> {

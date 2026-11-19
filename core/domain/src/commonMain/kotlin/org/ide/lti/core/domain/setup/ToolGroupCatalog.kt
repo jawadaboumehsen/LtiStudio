@@ -11,7 +11,7 @@ package org.ide.lti.core.domain.setup
 
 import org.ide.lti.core.model.setup.ToolRef
 
-private fun nativeOutput(
+internal fun nativeOutput(
     toolId: String,
     probeArgs: List<String> = listOf("--help"),
     acceptedExitCodes: Set<Int> = setOf(0),
@@ -550,6 +550,7 @@ public object ToolGroupCatalog {
             SEVEN_ZIP,
             SDAT2IMG,
             KPTOOLS,
+            VINTF_TOOLS_GROUP,
         )
 
     private val extraGroups = mutableListOf<ToolGroup>()

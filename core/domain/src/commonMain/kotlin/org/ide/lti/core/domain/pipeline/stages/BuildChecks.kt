@@ -51,6 +51,9 @@ internal object BuildChecks {
     const val KERNEL_KEY = "build.kernel.config"
     private const val UNSIGNED_KEY = "build.apks.unsigned"
 
+    /** What [VintfCheck.SCRIPT] printed for work/ (the Preflight reads its notes from it too). */
+    const val VINTF_KEY = "build.vintf"
+
     /** The build tree first, then the stock one it is compared with. */
     private val LINK_TREES = listOf("work", FirmwareExtractionStage.EXTRACTED)
 
@@ -210,6 +213,39 @@ internal object BuildChecks {
                     (if (unsigned.size > LINKS_SHOWN) " and ${unsigned.size - LINKS_SHOWN} more" else "") +
                     ". Sign them in the mod or script that adds them, or accept it in Build & Sign > Coverage."
             }
+        }
+        return steps
+    }
+
+    /**
+     * The system must meet the vendor's VINTF requirements, as AOSP's checkvintf judges them ([VintfCheck]): a
+     * missing SELinux mapping (the phone does not boot) is always refused; an incompatibility until accepted
+     * ([BuildWarningKind.VintfIncompatible]). Without checkvintf installed only the mapping is checked.
+     */
+    fun vintfSteps(ctx: StageContext): List<PipelineStep> {
+        val steps = mutableListOf<PipelineStep>(
+            PipelineStep.Tool(
+                stepCommand(
+                    "sh",
+                    listOf(
+                        "-c",
+                        VintfCheck.SCRIPT,
+                        "sh",
+                        ctx.abs("work"),
+                        ctx.toolPaths["checkvintf"] ?: "checkvintf",
+                        ctx.toolPaths["unpack_bootimg"] ?: "unpack_bootimg",
+                        ctx.toolPaths["fsck.erofs"] ?: "fsck.erofs",
+                    ),
+                    ctx.wsPath,
+                ),
+                "check vendor compatibility (VINTF)",
+                VINTF_KEY,
+            ),
+        )
+        val output = ctx.value(VINTF_KEY) ?: return steps
+        val accepted = BuildWarningKind.VintfIncompatible.name in ctx.snapshot.build.acknowledgedWarnings
+        VintfCheck.refusals(output, accepted).forEach { refusal ->
+            steps += PipelineStep.Check("vendor compatibility") { refusal }
         }
         return steps
     }

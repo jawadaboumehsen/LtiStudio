@@ -51,4 +51,19 @@ sealed interface RecipeConfig {
     data class ScriptCopy(val files: List<String>, override val revision: Int = 1) : RecipeConfig
 
     data class Release(val versions: List<ReleaseVersion>, override val revision: Int = 1) : RecipeConfig
+
+    /**
+     * AOSP sources built with CMake outside AOSP, which ships no such build: the group's source, plus [projects]
+     * fetched beside it (each at its commit, checked), plus the build files the app carries in its resources under
+     * `tool-recipes/<bundle>/` ([bundledFiles], a CMakeLists.txt first), written to `ltirom-build/` in the source.
+     */
+    data class AospCMake(
+        val projects: List<AospProject>,
+        val bundle: String,
+        val bundledFiles: List<String>,
+        override val revision: Int = 1,
+    ) : RecipeConfig
 }
+
+/** An AOSP project fetched to `aosp/<path>` beside an [RecipeConfig.AospCMake] group's source, at [commit]. */
+data class AospProject(val path: String, val url: String, val commit: String)

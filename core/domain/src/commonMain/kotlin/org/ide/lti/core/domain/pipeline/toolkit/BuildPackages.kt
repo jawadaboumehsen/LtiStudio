@@ -40,4 +40,7 @@ public enum class BuildWarningKind {
 
     /** APKs in the work tree with no signature at all (Android will not install them). */
     UnsignedApks,
+
+    /** The system does not meet the vendor's VINTF requirements (checkvintf); some stock firmwares already fail. */
+    VintfIncompatible,
 }

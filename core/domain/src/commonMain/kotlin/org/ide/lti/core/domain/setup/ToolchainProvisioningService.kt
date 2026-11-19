@@ -551,6 +551,14 @@ public data class ToolchainSetupState(
                 isCore = true,
             ),
             ToolComponentItem(
+                id = "checkvintf",
+                name = "Check VINTF",
+                category = ToolCategory.SIGNING_AND_SECURITY,
+                binaryName = "checkvintf",
+                capabilities = listOf("vintf_compatibility", "kernel_requirements", "sepolicy_versions"),
+                isCore = false,
+            ),
+            ToolComponentItem(
                 id = "signapk",
                 name = "Sign APK",
                 category = ToolCategory.SIGNING_AND_SECURITY,

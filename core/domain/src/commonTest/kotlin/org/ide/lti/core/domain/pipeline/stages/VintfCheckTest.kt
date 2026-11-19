@@ -13,87 +13,70 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+/** [VintfCheck] judging what its script printed for PQ84P01 (vendor SKU sun, kernel 6.6.92, sepolicy 202404). */
 class VintfCheckTest {
-    /** What the script prints for a tree shaped like PQ84P01's, with the parts a test changes as parameters. */
-    private fun tree(
+    private fun output(
         mappings: String = "202404.cil\n34.0.cil",
-        levels: String = "202404\n8",
-        deviceMatrixHal: String = OPTIONAL_HAL,
-        frameworkSdk: String = "<version>34</version><version>35</version>",
-    ) = """
-@@@ vendor/etc/vintf/manifest_sun.xml
-<!-- Input: <hal format="aidl"><name>commented.out</name></hal> -->
-<manifest version="8.0" type="device" target-level="202404">
-    <hal format="aidl"><name>android.hardware.gatekeeper</name><fqname>IGatekeeper/default</fqname></hal>
-</manifest>
-@@@ vendor/etc/vintf/manifest/power.xml
-<manifest version="8.0" type="device"><hal format="aidl"><name>android.hardware.power</name></hal></manifest>
-@@@ vendor/etc/vintf/compatibility_matrix.xml
-<compatibility-matrix version="8.0" type="device">
-    $deviceMatrixHal
-    <system-sdk><version>35</version></system-sdk>
-</compatibility-matrix>
-@@@ system/system/etc/vintf/manifest.xml
-<manifest version="8.0" type="framework">
-    <hal format="aidl"><name>android.frameworks.sensorservice</name><fqname>ISensorManager/default</fqname></hal>
-    <system-sdk>$frameworkSdk</system-sdk>
-</manifest>
-@@@ system/system/etc/vintf/compatibility_matrix.202404.xml
-<compatibility-matrix version="8.0" type="framework" level="202404">
-    <hal format="aidl" optional="false"><name>android.hardware.power</name></hal>
-    <hal format="aidl" optional="true"><name>android.hardware.nfc</name></hal>
-</compatibility-matrix>
-@@@ levels
-$levels
-@@@ mapping
-$mappings
-@@@ vendor-sepolicy
-202404
-    """.trimIndent()
+        kernel: String = "ok 6.6.92-android15-8-g3637f4904cf5-ab13944661-4k",
+        result: String = "@@@ result sun|- 0\n",
+    ) = "@@@ mapping\n$mappings\n@@@ vendor-sepolicy\n202404\n@@@ kernel $kernel\n$result"
+
+    /** checkvintf's real answer when the boot kernel lacks a config the level-202404 6.6 requirements ask for. */
+    private val incompatible = listOf(
+        "@@@ result sun|- 65",
+        "ERROR: files are incompatible: Runtime info and framework compatibility matrix are incompatible: " +
+            "No compatible kernel requirement found (kernel FCM version = 202404).",
+        "For kernel requirements at matrix level 202404, Kernel config errors:",
+        "Missing config CONFIG_ADVISE_SYSCALLS",
+        ": Success",
+    ).joinToString("\n", postfix = "\n")
 
     @Test
-    fun aMatchingSystemAndVendorHaveNoFindings() {
-        assertEquals(emptyList(), VintfCheck.findings(tree()))
+    fun aCompatibleSystemHasNoRefusalAndNoNote() {
+        assertEquals(emptyList(), VintfCheck.refusals(output(), accepted = false))
+        assertEquals(emptyList(), VintfCheck.notes(output()))
     }
 
     @Test
-    fun aMissingSelinuxMappingIsTheOneThatStopsTheBuild() {
-        val found = VintfCheck.findings(tree(mappings = "33.0.cil\n34.0.cil"))
-        assertEquals(1, found.size, "$found")
-        assertTrue(found[0].startsWith("VINTF_SEPOLICY: vendor's sepolicy is 202404"), found[0])
-        assertTrue("33.0, 34.0" in found[0], found[0])
-        assertTrue("VINTF_SEPOLICY" !in VintfCheck.NOTES)
+    fun anIncompatibilityIsRefusedWithCheckvintfsReasonUntilAccepted() {
+        val refusals = VintfCheck.refusals(output(result = incompatible), accepted = false)
+        assertEquals(1, refusals.size, "$refusals")
+        val refusal = refusals[0]
+        assertTrue(refusal.startsWith("VINTF_INCOMPATIBLE: the system does not meet"), refusal)
+        assertTrue("(vendor SKU sun): Runtime info and framework compatibility matrix" in refusal, refusal)
+        assertTrue("Missing config CONFIG_ADVISE_SYSCALLS" in refusal, refusal)
+        assertTrue("files are incompatible" !in refusal && ": Success" !in refusal, refusal)
+        assertEquals(emptyList(), VintfCheck.refusals(output(result = incompatible), accepted = true))
     }
 
     @Test
-    fun aMissingLevelSdkOrRequiredHalIsANote() {
-        val found = VintfCheck.findings(
-            tree(
-                levels = "7\n8",
-                deviceMatrixHal = """<hal format="aidl"><name>vendor.qti.required</name></hal>""",
-                frameworkSdk = "<version>34</version>",
-            ),
-        )
-        assertTrue(found.any { it.startsWith("VINTF_LEVEL: vendor targets FCM level 202404") }, "$found")
-        assertTrue(found.any { it.startsWith("VINTF_SYSTEM_SDK: vendor's matrix asks for system SDK 35") }, "$found")
-        assertTrue(
-            found.any { it == "VINTF_HAL: vendor's matrix requires vendor.qti.required (aidl), $NOT_DECLARED" },
-            "$found",
-        )
-        assertTrue(found.all { it.substringBefore(':') in VintfCheck.NOTES }, "$found")
-    }
-
-    private companion object {
-        const val OPTIONAL_HAL =
-            """<hal format="aidl" optional="true"><name>android.frameworks.sensorservice</name></hal>"""
-        const val NOT_DECLARED = "which the system's manifests do not declare"
+    fun aMissingSelinuxMappingIsRefusedEvenWhenIncompatibilityIsAccepted() {
+        val refusals = VintfCheck.refusals(output(mappings = "33.0.cil\n34.0.cil"), accepted = true)
+        assertEquals(1, refusals.size, "$refusals")
+        assertTrue(refusals[0].startsWith("VINTF_SEPOLICY: vendor's sepolicy is 202404"), refusals[0])
+        assertTrue("33.0, 34.0" in refusals[0], refusals[0])
     }
 
     @Test
-    fun missingEvidenceIsSaid() {
+    fun whatCouldNotBeJudgedIsANoteNotARefusal() {
+        val noTool = "@@@ mapping\n202404.cil\n@@@ vendor-sepolicy\n202404\n@@@ tool-missing\n"
+        assertEquals(emptyList(), VintfCheck.refusals(noTool, accepted = false))
+        assertTrue(VintfCheck.notes(noTool).single().startsWith("VINTF_NOT_CHECKED: checkvintf is not installed"))
+
+        val noConfig = output(kernel = "no embedded configuration (CONFIG_IKCONFIG) in the boot kernel")
         assertEquals(
-            listOf("VINTF_NOT_CHECKED: no device manifest under vendor/etc/vintf or odm/etc/vintf"),
-            VintfCheck.findings("@@@ levels\n202404\n@@@ mapping\n@@@ vendor-sepolicy\n"),
+            listOf(
+                "VINTF_NOT_CHECKED: the kernel requirements were not checked: " +
+                    "no embedded configuration (CONFIG_IKCONFIG) in the boot kernel",
+            ),
+            VintfCheck.notes(noConfig),
+        )
+
+        val crashed = output(result = "@@@ result -|- 70\nERROR: No device manifest.\n")
+        assertEquals(emptyList(), VintfCheck.refusals(crashed, accepted = false))
+        assertEquals(
+            listOf("VINTF_NOT_CHECKED: checkvintf could not finish (exit 70): No device manifest."),
+            VintfCheck.notes(crashed),
         )
     }
 }

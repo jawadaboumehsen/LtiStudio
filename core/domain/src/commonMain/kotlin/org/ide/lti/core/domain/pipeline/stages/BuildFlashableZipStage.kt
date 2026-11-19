@@ -112,6 +112,7 @@ public class BuildFlashableZipStage : StageDefinition {
         steps += BuildChecks.mountTableSteps(ctx)
         steps += BuildChecks.kernelFilesystemSteps(ctx)
         steps += BuildChecks.apkSignatureSteps(ctx)
+        steps += BuildChecks.vintfSteps(ctx)
         val ws = ctx.wsPath
         val stage = ctx.abs(STAGE_DIR)
         // Staging starts empty: a member an earlier build left there must not reach this package.

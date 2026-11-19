@@ -22,6 +22,7 @@ import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ToolOutput
 import org.ide.lti.core.domain.setup.ToolOutputKind
 import org.ide.lti.core.domain.setup.ToolProbe
+import org.ide.lti.core.domain.setup.VINTF_TOOLS_GROUP
 import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.model.setup.ToolRef
@@ -59,6 +60,38 @@ class KotlinRecipeRunnerTest {
         override suspend fun downloadFile(remotePath: String): ByteArray? = null
 
         override suspend fun shutdown(): Boolean = true
+    }
+
+    @Test
+    fun `an AOSP recipe fetches each pinned project, writes the app's build files and builds them`() = runTest {
+        val group = VINTF_TOOLS_GROUP
+        val recipe = group.recipe as RecipeConfig.AospCMake
+        val transport = RecordingTransport()
+        val result =
+            KotlinRecipeRunner(transport).executeRecipe(
+                srcDir = "/home/user/src",
+                outDir = "/home/user/out",
+                source = ResolvedSource.Git("https://android.googlesource.com/x", ToolRef.Commit(COMMIT), COMMIT),
+                recipe = recipe,
+                outputs = group.outputs,
+                supportFiles = emptyList(),
+                onLog = {},
+            )
+        assertTrue(result.isSuccess, result.toString())
+        // Each project shallowly at its commit, into aosp/<path>.
+        val fetches = transport.requests.filter { it.toolId == "sh" && "git fetch" in it.arguments[1] }
+        assertEquals(
+            recipe.projects.map { listOf("/home/user/src/aosp/${it.path}", it.url, it.commit) },
+            fetches.map { it.arguments.takeLast(3) },
+        )
+        // Every bundled file, with the bytes the app ships, written under ltirom-build/ (base64 in an argument).
+        val writes = transport.requests.filter { it.toolId == "sh" && "base64 -d" in it.arguments[1] }
+            .associate { it.arguments[3] to java.util.Base64.getDecoder().decode(it.arguments[4]) }
+        assertEquals(recipe.bundledFiles.map { "/home/user/src/ltirom-build/$it" }.toSet(), writes.keys)
+        val cmakeLists = writes.getValue("/home/user/src/ltirom-build/CMakeLists.txt").decodeToString()
+        assertTrue("add_executable(checkvintf" in cmakeLists)
+        val configure = transport.requests.first { it.toolId == "cmake" }.arguments
+        assertEquals(listOf("-S", "/home/user/src/ltirom-build", "-B", "/home/user/src/build"), configure.take(4))
     }
 
     @Test

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.pipeline.stages
 
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
@@ -57,8 +58,8 @@ public data class PreflightFinding(
  * Will it build? Runs Build & Sign's own checks against the current settings and work/ without building: the
  * partitions left out, the filesystems, the permission and label coverage, broken links, the mount tables, what the
  * boot kernel mounts and decodes, unsigned APKs, kept partitions changed since extraction and the extra packages;
- * plus the device configuration's errors and whether the system still meets the vendor ([VintfCheck]). Only the
- * steps that read are run; nothing in the workspace is written.
+ * the vendor compatibility (VINTF); plus the device configuration's errors. Only the steps that read are run;
+ * nothing in the workspace is written.
  */
 public class Preflight(
     private val runner: WorkbenchRunner,
@@ -78,7 +79,9 @@ public class Preflight(
             )
         }
         val found = runner.read(workspaceId) {
-            val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device))
+            // The tools a check script needs by path (a build gets them from its pinned tools); missing: left out.
+            val tools = PREFLIGHT_TOOLS.mapNotNull { id -> runCatchingCancellable { id to toolPath(id) }.getOrNull() }
+            val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device, toolPaths = tools.toMap()))
             val values = mutableMapOf<String, String>()
             // After Patches, work/ holds the mods already: their anchors are checked against a tree only Assemble made.
             val patched = patched()
@@ -87,8 +90,8 @@ public class Preflight(
                 patched -> listOf(MODS_NOT_CHECKED)
                 else -> run(modCheck(catalog), base, values)
             }
-            val vintf = VintfCheck.findings(sh(VintfCheck.SCRIPT, abs("work")))
-            val messages = GENERATORS.flatMap { generator -> run(generator, base, values) } + mods + vintf
+            val checks = GENERATORS.flatMap { generator -> run(generator, base, values) }
+            val messages = checks + mods + values[BuildChecks.VINTF_KEY]?.let(VintfCheck::notes).orEmpty()
             report(LogLevel.INF, "Preflight: ${messages.size} finding(s) from Build & Sign's checks")
             messages
         }
@@ -170,12 +173,15 @@ public class Preflight(
             snapshot.customization.fillMissingSidecars
         val payloadOff = code == PAYLOAD && PackageKind.Payload.name !in snapshot.build.extraPackages
         val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED" ||
-            code in VintfCheck.NOTES
+            code == VintfCheck.NOT_CHECKED
         return PreflightFinding(code, text, blocks = !note, fix = FIXES[code]?.invoke(text)?.takeUnless { filled })
     }
 
     private companion object {
         const val MAX_READS = 64
+
+        /** The tools the check scripts take by path. */
+        val PREFLIGHT_TOOLS = listOf("checkvintf", "unpack_bootimg", "fsck.erofs")
 
         /** A refusal code: capitals and digits in two or more parts joined by `_`, then a colon. */
         val CODE = Regex("""\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+:""")
@@ -201,6 +207,7 @@ public class Preflight(
             },
             "BROKEN_LINKS" to { _ -> accept(BuildWarningKind.BrokenLinks, "Accept the broken links") },
             "UNSIGNED_APK" to { _ -> accept(BuildWarningKind.UnsignedApks, "Accept the unsigned APKs") },
+            "VINTF_INCOMPATIBLE" to { _ -> accept(BuildWarningKind.VintfIncompatible, "Build it anyway") },
             "SUPER_OVERLAP" to { _ -> accept(BuildWarningKind.SuperOverlap, "Accept: they are in super.img too") },
             "KEPT_PARTITION_CHANGED" to { text ->
                 val p = text.substringBefore(' ')
@@ -310,6 +317,7 @@ public class Preflight(
             BuildChecks::mountTableSteps,
             BuildChecks::kernelFilesystemSteps,
             BuildChecks::apkSignatureSteps,
+            BuildChecks::vintfSteps,
             { ctx ->
                 buildList { ctx.snapshot.build.keepStock.forEach { p -> KeptPartition.steps(ctx, p, this) } }
                     .filter { it !is PipelineStep.Tool || it.resultKey != null }
