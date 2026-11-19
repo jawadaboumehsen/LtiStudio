@@ -18,6 +18,7 @@ import org.ide.lti.core.domain.plugin.ConcreteMutationPlan
 import org.ide.lti.core.domain.plugin.ConcreteOperation
 import org.ide.lti.core.domain.plugin.DecodedComponent
 import org.ide.lti.core.domain.plugin.EffectKind
+import org.ide.lti.core.domain.plugin.LabRow
 import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.model.plugin.AssetRef
@@ -32,6 +33,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -659,6 +661,56 @@ class ApkJarMutationAdapterTest {
         assertEquals(LabStatus.UNCHECKED, rows.getValue("io:mod" to "patch").status)
         assertTrue("original order" in rows.getValue("io:mod" to "patch").reason)
         assertEquals(0, fakePort.decodeCount)
+    }
+
+    /** Mod "copy" adds new.jar, mod "edit" changes its code, mod "late" deletes it: run in a sandbox, in that order. */
+    private suspend fun simulateNewJar(pin: String): Map<Pair<String, String>, LabRow> {
+        val existing = "a\nb\n"
+        fakePort.members["smali/X.smali"] = existing
+        val assets = Files.createDirectories(tempDir.resolve("assets"))
+        Files.writeString(assets.resolve("new.jar"), "NEW_JAR")
+        val target = PartitionPath("system", "framework/new.jar")
+        val hunk = "--- a/smali/X.smali\n+++ b/smali/X.smali\n@@ -1,1 +1,1 @@\n-a\n+A\n"
+        fun plan(id: String, op: ConcreteOperation) = ConcreteMutationPlan("io", id, "1.0", listOf(op), emptyList(), "")
+        val plans = listOf(
+            plan("copy", ConcreteOperation.Copy("add", AssetRef("new.jar"), target)),
+            plan("edit", ConcreteOperation.ApkJarPatch("patch", target, listOf(SmaliEdit("smali/X.smali", pin, hunk)))),
+            plan("late", ConcreteOperation.Delete("drop", target)),
+        )
+        val root = tempDir.resolve("lab-sandbox")
+        val rows = sandboxVerdicts(
+            Sandbox(workTree, root, mapOf("io:copy:1.0" to assets.toString())),
+            FileMutationAdapter(),
+            adapter,
+            plans,
+            mixedComponentTargets(plans),
+        ) { it }
+        assertFalse(Files.exists(root), "the sandbox is deleted")
+        assertFalse(Files.exists(workTree.resolve("system/framework/new.jar")), "work/ is never written")
+        return rows
+    }
+
+    @Test
+    fun theModLabSimulatesFileAndApkJarEditsOfOnePackageTogetherInPlanOrder() = runBlocking<Unit> {
+        val rows = simulateNewJar(pin = sha256Of("a\nb\n"))
+        assertEquals(LabStatus.CHECKED, rows.getValue("io:copy" to "add").status)
+        val patch = rows.getValue("io:edit" to "patch")
+        assertEquals(LabStatus.CHECKED, patch.status, patch.reason)
+        assertTrue("in plan order" in patch.reason, patch.reason)
+        assertEquals(LabStatus.CHECKED, rows.getValue("io:late" to "drop").status)
+        // Decoded and rebuilt as the build would, into the sandbox only.
+        assertEquals(1, fakePort.rebuildCount)
+    }
+
+    @Test
+    fun aRefusedEditInTheSandboxStopsTheLaterOperationsOnThatPackage() = runBlocking<Unit> {
+        val rows = simulateNewJar(pin = sha256Of("not this file"))
+        assertEquals(LabStatus.CHECKED, rows.getValue("io:copy" to "add").status)
+        assertEquals(LabStatus.REFUSED, rows.getValue("io:edit" to "patch").status)
+        val drop = rows.getValue("io:late" to "drop")
+        assertEquals(LabStatus.UNCHECKED, drop.status)
+        assertTrue("not reached" in drop.reason, drop.reason)
+        assertEquals(0, fakePort.rebuildCount)
     }
 
     @Test

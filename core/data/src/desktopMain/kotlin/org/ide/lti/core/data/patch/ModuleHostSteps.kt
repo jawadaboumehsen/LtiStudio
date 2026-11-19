@@ -9,11 +9,14 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.HostRequest
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
+import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.pipeline.stages.CoverageFixRequest
 import org.ide.lti.core.domain.pipeline.stages.TreeEditSidecars
 import org.ide.lti.core.domain.pipeline.stages.TreeEdits
@@ -154,7 +157,7 @@ class ModuleHostSteps(
                         op.id,
                         LabStatus.UNCHECKED,
                         "this package has both file-level and APK/JAR edits; " +
-                            "checked by the build in their original order",
+                            "\"Also check APK/JAR edits\" simulates them together in their original order",
                     )
 
                     op is ConcreteOperation.ApkJarPatch -> LabRow(
@@ -179,12 +182,18 @@ class ModuleHostSteps(
                 )
             }
         }
-        val verdicts = componentVerdicts(
-            bytecodeAdapter(workspace, work, request.platformKeyRef),
-            edits,
-            ctx,
-            mixedTargets,
-        )
+        val adapter = bytecodeAdapter(workspace, work, request.platformKeyRef)
+        val verdicts = componentVerdicts(adapter, edits, ctx, mixedTargets) + if (mixedTargets.isEmpty()) {
+            emptyMap()
+        } else {
+            sandboxVerdicts(
+                Sandbox(work, work.parent.resolve(".cache").resolve("lab-sandbox"), request.assetRoots),
+                files,
+                adapter,
+                request.plans,
+                mixedTargets,
+            ) { it.withValues(values) }
+        }
         return rows.map { verdicts[it.mod to it.operationId] ?: it }
     }
 
@@ -672,6 +681,151 @@ private suspend fun scopedComponentVerdicts(
             }
         }
     }.toMap()
+
+/** Where [sandboxVerdicts] works: the real [work] tree it copies from, the scratch [root], the mods' assets. */
+internal data class Sandbox(val work: Path, val root: Path, val assetRoots: Map<String, String>)
+
+/**
+ * The packages that both file operations and APK/JAR edits change ([mixed]), simulated together as the build
+ * would: each is copied from work/ into the scratch tree (one a mod adds starts absent), then every mod's
+ * operations on them run there in plan order, file operations through [files] and APK/JAR edits decoded, edited and
+ * rebuilt through [adapter]. work/ is never written; the scratch tree is deleted after. An operation after a refused
+ * one on the same package is not reached.
+ */
+@Suppress("LongParameterList")
+internal suspend fun sandboxVerdicts(
+    sandbox: Sandbox,
+    files: FileMutationPort,
+    adapter: ApkJarMutationAdapter,
+    plans: List<ConcreteMutationPlan>,
+    mixed: Set<PartitionPath>,
+    prepare: (ConcreteOperation) -> ConcreteOperation,
+): Map<Pair<String, String>, LabRow> {
+    val root = sandbox.root
+    root.toFile().deleteRecursively()
+    try {
+        mixed.forEach { target ->
+            val from = sandbox.work.resolve(target.partition).resolve(target.relativePath)
+            val to = root.resolve(target.partition).resolve(target.relativePath)
+            Files.createDirectories(to.parent)
+            // A link in work/ is not followed out of it.
+            if (Files.isRegularFile(from, LinkOption.NOFOLLOW_LINKS)) Files.copy(from, to)
+        }
+        val ctx = MutationContext(root.toString(), mixed.map { it.partition }.distinct().associateWith { it })
+        val run = SandboxRun(sandbox, files, adapter, ctx, prepare)
+        plans.forEach { plan -> run.simulate(plan, mixed) }
+        return run.rows
+    } finally {
+        withContext(NonCancellable) { runCatching { root.toFile().deleteRecursively() } }
+    }
+}
+
+/** [sandboxVerdicts]' state across the mods: the rows so far, and the packages a refusal stopped. */
+private class SandboxRun(
+    private val sandbox: Sandbox,
+    private val files: FileMutationPort,
+    private val adapter: ApkJarMutationAdapter,
+    private val ctx: MutationContext,
+    private val prepare: (ConcreteOperation) -> ConcreteOperation,
+) {
+    val rows = mutableMapOf<Pair<String, String>, LabRow>()
+    private val stopped = mutableMapOf<PartitionPath, String>()
+
+    /** [plan]'s operations on the [mixed] packages, in order, as runs of one kind. */
+    suspend fun simulate(plan: ConcreteMutationPlan, mixed: Set<PartitionPath>) {
+        val mod = "${plan.publisher}:${plan.id}"
+        val ops = plan.operations.filter { it.labTarget() in mixed }
+        ops.kindRuns().forEach { (components, run) ->
+            yield()
+            val (ready, blocked) = run.partition { it.labTarget() !in stopped }
+            blocked.forEach {
+                rows[mod to it.id] = LabRow(
+                    mod,
+                    it.id,
+                    LabStatus.UNCHECKED,
+                    stopped.getValue(it.labTarget()),
+                )
+            }
+            if (ready.isNotEmpty()) apply(plan, mod, components, ready)
+        }
+    }
+
+    private suspend fun apply(
+        plan: ConcreteMutationPlan,
+        mod: String,
+        components: Boolean,
+        ready: List<ConcreteOperation>,
+    ) {
+        val result = if (components) {
+            simulateComponents(adapter, ready.map(prepare), ctx)
+        } else {
+            simulateFiles(files, plan.copy(operations = ready), ctx, sandbox.assetRoots["$mod:${plan.version}"])
+        }
+        ready.forEach { op -> rows[mod to op.id] = sandboxRow(mod, op, result) }
+        if (result.errors.isEmpty()) return
+        ready.forEach { stopped[it.labTarget()] = "not reached: an earlier operation on ${it.labName()} was refused" }
+    }
+}
+
+/** One run's outcome in the sandbox: errors by operation id, and the methods the APK/JAR edits changed. */
+private data class SandboxResult(val errors: Map<String, String>, val methods: List<String> = emptyList())
+
+private suspend fun simulateComponents(
+    adapter: ApkJarMutationAdapter,
+    ops: List<ConcreteOperation>,
+    ctx: MutationContext,
+): SandboxResult = when (val outcome = adapter.apply(ops, ctx)) {
+    is ApkJarOutcome.Applied -> SandboxResult(emptyMap(), outcome.receipts.flatMap { it.changedMethods }.distinct())
+    is ApkJarOutcome.Refused -> SandboxResult(outcome.report.byOperation())
+}
+
+private suspend fun simulateFiles(
+    files: FileMutationPort,
+    plan: ConcreteMutationPlan,
+    ctx: MutationContext,
+    assetRoot: String?,
+): SandboxResult = when (val outcome = files.apply(plan, ctx, assetRoot.orEmpty())) {
+    is MutationOutcome.Applied -> SandboxResult(emptyMap())
+    is MutationOutcome.Refused -> SandboxResult(outcome.report.byOperation())
+}
+
+private fun ValidationReport.byOperation(): Map<String, String> = errors.groupBy { it.objectId.orEmpty() }
+    .mapValues { (_, list) -> list.joinToString("; ") { "${it.code}: ${it.message}" } }
+
+private fun sandboxRow(mod: String, op: ConcreteOperation, result: SandboxResult): LabRow {
+    val name = op.labName()
+    val error = result.errors[op.id]
+    return when {
+        error != null -> LabRow(mod, op.id, LabStatus.REFUSED, error)
+
+        result.errors.isNotEmpty() -> LabRow(
+            mod,
+            op.id,
+            LabStatus.UNCHECKED,
+            "not reached: another operation of this mod on $name was refused",
+        )
+
+        else -> {
+            val methods = result.methods.takeIf { it.isNotEmpty() && op is ConcreteOperation.ApkJarPatch }?.let { all ->
+                val more = if (all.size > METHODS_SHOWN) ", +${all.size - METHODS_SHOWN} more" else ""
+                "; changes " + all.take(METHODS_SHOWN).joinToString(transform = ::shortMember) + more
+            }.orEmpty()
+            LabRow(mod, op.id, LabStatus.CHECKED, "simulated with the other edits of $name in plan order$methods")
+        }
+    }
+}
+
+/** Consecutive runs of file operations or APK/JAR edits, in plan order. */
+private fun List<ConcreteOperation>.kindRuns(): List<Pair<Boolean, List<ConcreteOperation>>> =
+    fold(mutableListOf<Pair<Boolean, MutableList<ConcreteOperation>>>()) { acc, op ->
+        val k = op is ConcreteOperation.ApkJarPatch
+        if (acc.lastOrNull()?.first == k) acc.last().second += op else acc += k to mutableListOf(op)
+        acc
+    }
+
+private fun ConcreteOperation.labTarget(): PartitionPath = targetPartitionPath().normalizedLabTarget()
+
+private fun ConcreteOperation.labName(): String = labTarget().let { "${it.partition}/${it.relativePath}" }
 
 /** The preflight's mod check: one line per mod the build would refuse, with why; `ok` when none. */
 private fun List<LabRow>.summary(): String {
