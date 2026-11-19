@@ -186,6 +186,17 @@ public class WslToolchainProvisioner(
 
     public companion object {
         private const val STATE_LOG_TAIL_LINES: Int = 100
+
+        /** `$1` = output file: a new RSA-4096 key, created readable by its owner only (umask before openssl). */
+        private const val AVB_GENERATE_SCRIPT: String =
+            "umask 077 && rm -f \"$1\" && openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out \"$1\" " +
+                "2>/dev/null && chmod 600 \"$1\""
+
+        /** `$1` = key file: a regular file, mode 600, an RSA key that passes openssl's check, of 4096 bits. */
+        private const val AVB_CHECK_SCRIPT: String =
+            "[ -f \"$1\" ] && [ \"$(stat -c %a \"$1\")\" = 600 ] && " +
+                "openssl rsa -in \"$1\" -check -noout >/dev/null 2>&1 && " +
+                "openssl rsa -in \"$1\" -noout -text 2>/dev/null | grep -q '(4096 bit'"
         private const val CONFIRM_MISMATCH: String =
             "Confirmation requires the displayed plan ID and unchanged revision hash."
         private const val LOCAL_ATTEMPT_ID: String = "local"
@@ -520,8 +531,14 @@ public class WslToolchainProvisioner(
      * run ends, so "export after a failed run" relies on the newest-file fallback.
      */
     override suspend fun getAttemptLog(attemptId: String?): String? = withContext(dispatcher) {
-        val targetId = attemptId ?: _state.value.activeOperationId ?: _state.value.pendingAttemptId
-        (targetId?.let(logBuffer::getLogFile) ?: logBuffer.latestLogFile())?.readText()
+        // An attempt asked for by id is that attempt's log or none; only "the current one" falls back to the newest.
+        val file = if (attemptId != null) {
+            logBuffer.getLogFile(attemptId)
+        } else {
+            (_state.value.activeOperationId ?: _state.value.pendingAttemptId)?.let(logBuffer::getLogFile)
+                ?: logBuffer.latestLogFile()
+        }
+        file?.readText()
     }
 
     /** After [failedStage] failed: every later stage shows as pending with [reason]. */
@@ -556,51 +573,70 @@ public class WslToolchainProvisioner(
         appendLog("[AVB 2.0] Initializing security/avb directory in $workDir...")
         effectiveCli.execute(distro, listOf("mkdir", "-p", avbDir))
 
-        val keyExists = effectiveCli.execute(distro, listOf("test", "-f", keyPath)).exitCode == 0
-        if (!keyExists) {
-            appendLog("[AVB 2.0] Generating RSA-4096 private key via OpenSSL...")
-            val genRes =
-                effectiveCli.execute(
-                    distro,
-                    listOf(
-                        "openssl",
-                        "genpkey",
-                        "-algorithm",
-                        "RSA",
-                        "-pkeyopt",
-                        "rsa_keygen_bits:4096",
-                        "-out",
-                        keyPath,
-                    ),
-                )
+        val keyExists = effectiveCli.execute(distro, listOf("test", "-e", keyPath)).exitCode == 0
+        val keyReady = if (keyExists) {
+            // Never replaced: earlier builds may be signed with it. The user moves it away to get a new one.
+            // Only its mode is tightened, so a key copied in with looser rights is not reported as damaged.
             effectiveCli.execute(distro, listOf("chmod", "600", keyPath))
-            appendLog("[AVB 2.0] Private key generated with mode 0600 at $keyPath.")
+            validAvbKey(effectiveCli, distro, keyPath).also { ok ->
+                appendLog(
+                    if (ok) {
+                        "[AVB 2.0] Existing RSA-4096 private key detected."
+                    } else {
+                        "[AVB 2.0] ERROR: $keyPath is not a valid RSA-4096 private key. Move it away and provision " +
+                            "again to make a new one."
+                    },
+                )
+            }
         } else {
-            appendLog("[AVB 2.0] Existing RSA-4096 private key detected.")
+            generateAvbKey(effectiveCli, distro, keyPath)
         }
+        if (!keyReady) return@withContext false
 
         // Extract public key using avbtool if available
         val hasAvbTool = effectiveCli.execute(distro, listOf("test", "-x", "$binDir/avbtool")).exitCode == 0
-        if (hasAvbTool) {
-            effectiveCli.execute(
-                distro,
-                listOf("$binDir/avbtool", "extract_public_key", "--key", keyPath, "--output", pubKeyPath),
-            )
-            appendLog("[AVB 2.0] Derived AVB public key at $pubKeyPath.")
-        }
-
-        val verified = effectiveCli.execute(distro, listOf("test", "-f", keyPath)).exitCode == 0
-        if (verified) {
-            _state.update { s ->
-                s.copy(
-                    isAvbKeyProvisioned = true,
-                    avbKeyPath = keyPath,
-                )
-            }
+        val publicKeyOk = !hasAvbTool || effectiveCli.execute(
+            distro,
+            listOf("$binDir/avbtool", "extract_public_key", "--key", keyPath, "--output", pubKeyPath),
+        ).exitCode == 0
+        appendLog(
+            when {
+                !hasAvbTool -> "[AVB 2.0] avbtool is not installed yet; the public key is derived later."
+                publicKeyOk -> "[AVB 2.0] Derived AVB public key at $pubKeyPath."
+                else -> "[AVB 2.0] ERROR: avbtool could not derive the public key from $keyPath."
+            },
+        )
+        if (publicKeyOk) {
+            _state.update { it.copy(isAvbKeyProvisioned = true, avbKeyPath = keyPath) }
             appendLog("[AVB 2.0] Machine signing key successfully verified.")
         }
-        verified
+        publicKeyOk
     }
+
+    /**
+     * Makes a new RSA-4096 key: written as `<key>.partial` with only the owner able to read it, checked, then renamed
+     * onto [keyPath] in one step, so a failed or cut-off generation never leaves a key that looks usable.
+     */
+    private suspend fun generateAvbKey(cli: WslCliExecutor, distro: String, keyPath: String): Boolean {
+        appendLog("[AVB 2.0] Generating RSA-4096 private key via OpenSSL...")
+        val partial = "$keyPath.partial"
+        val generated = cli.execute(distro, listOf("sh", "-c", AVB_GENERATE_SCRIPT, "sh", partial)).exitCode == 0
+        val ok = generated && validAvbKey(cli, distro, partial) &&
+            cli.execute(distro, listOf("mv", "-f", "-T", partial, keyPath)).exitCode == 0
+        if (!ok) cli.execute(distro, listOf("rm", "-f", partial))
+        appendLog(
+            if (ok) {
+                "[AVB 2.0] Private key generated with mode 0600 at $keyPath."
+            } else {
+                "[AVB 2.0] ERROR: OpenSSL could not generate a valid RSA-4096 key; nothing was kept."
+            },
+        )
+        return ok
+    }
+
+    /** Whether [path] is a readable, consistent RSA private key of 4096 bits that only its owner can read. */
+    private suspend fun validAvbKey(cli: WslCliExecutor, distro: String, path: String): Boolean =
+        cli.execute(distro, listOf("sh", "-c", AVB_CHECK_SCRIPT, "sh", path)).exitCode == 0
 
     override suspend fun testTool(toolId: String): SetupOutcome = withContext(dispatcher) {
         val toolItem =
@@ -1135,8 +1171,13 @@ public class WslToolchainProvisioner(
      * Archives the attempt with its typed outcome. Succeeded/Failed/Cancelled are only recorded when every
      * journaled child has authoritative terminal proof; otherwise the attempt stays active for recovery.
      */
+    private suspend fun archiveAttempt(attemptId: String, outcome: SetupOutcome): SetupOutcome =
+        // Called from a cancel's catch: in the cancelled context the journal write (withContext(IO)) would be refused
+        // before it ran, leaving the attempt RUNNING and blocking the next operation until recovery.
+        withContext(NonCancellable) { archiveAttemptNow(attemptId, outcome) }
+
     @Suppress("ReturnCount") // no-journal, foreign attempt, unproven children and write failure are distinct verdicts
-    private suspend fun archiveAttempt(attemptId: String, outcome: SetupOutcome): SetupOutcome {
+    private suspend fun archiveAttemptNow(attemptId: String, outcome: SetupOutcome): SetupOutcome {
         val repo = repository ?: return outcome
         val active = repo.currentState.activeAttempt
         if (active == null || active.attemptId != attemptId) return outcome

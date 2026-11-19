@@ -160,11 +160,16 @@ public class SetupLogBuffer(
         if (isNew) writeHeader(fileAttemptId)
     }
 
+    /**
+     * Moves the full log to its one backup and starts an empty one. When the backup cannot be deleted or the log
+     * cannot be renamed (a file locked on Windows), it throws and the line is not written: the cap holds, and the next
+     * line tries the rotation again.
+     */
     private fun rotate(dir: File, logFile: File, fileAttemptId: String) {
         closeWriter()
         val backupFile = File(dir, "$fileAttemptId.log.1")
-        if (backupFile.exists()) backupFile.delete()
-        logFile.renameTo(backupFile)
+        if (backupFile.exists() && !backupFile.delete()) throw java.io.IOException("cannot delete $backupFile")
+        if (!logFile.renameTo(backupFile)) throw java.io.IOException("cannot rename $logFile")
         openWriterFor(dir, logFile, fileAttemptId)
     }
 

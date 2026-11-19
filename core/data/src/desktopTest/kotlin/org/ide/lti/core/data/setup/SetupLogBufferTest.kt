@@ -210,4 +210,20 @@ class SetupLogBufferTest {
         val snapshotBytes = snapshot.sumOf { it.text.encodeToByteArray().size.toLong() }
         assertTrue(snapshotBytes <= SetupLogConstants.MAX_PAYLOAD_BYTES)
     }
+
+    @Test
+    fun aRotationThatCannotMoveTheLogKeepsTheFileUnderItsCap() {
+        val dir = kotlin.io.path.createTempDirectory("setup-log").toFile()
+        try {
+            // A non-empty folder where the backup goes cannot be deleted: rotation fails, as with a locked file.
+            java.io.File(dir, "attempt-1.log.1/keep").apply { parentFile.mkdirs() }.writeText("x")
+            val buffer = SetupLogBuffer(logDirectory = dir, maxLogFileSizeBytes = 256)
+            for (i in 1..50) buffer.append(SetupLogEvent.create("attempt-1", "run-1", i.toLong(), "line $i of the log"))
+            assertTrue(java.io.File(dir, "attempt-1.log").length() <= 256)
+            // The in-memory log is not affected by the file.
+            assertEquals(50, buffer.size)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
