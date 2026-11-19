@@ -75,17 +75,20 @@ public class RunComparison(private val runner: WorkbenchRunner, private val snap
         }
 
         /** Each stage's settings field that differs, as `build.compression: "lz4" -> "lzma"`. */
-        private fun settings(a: Side, b: Side): List<String> = withSnapshots(a, b) { before, after ->
+        public fun settingsChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> =
             StageId.entries.flatMap { stage ->
                 StageInputs.changes(StageInputs.settings(stage, before, json), StageInputs.settings(stage, after, json))
             }
+
+        /** Each mod added, removed or moved to another version (the snapshots' lockfiles). */
+        public fun modChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> {
+            fun versions(s: ConfigurationSnapshot) = s.customization.lockfile.entries.associate { it.id to it.version }
+            return StageInputs.changes(versions(before), versions(after))
         }
 
-        /** Each mod added, removed or moved to another version (the snapshot's lockfile). */
-        private fun mods(a: Side, b: Side): List<String> = withSnapshots(a, b) { before, after ->
-            fun versions(s: ConfigurationSnapshot) = s.customization.lockfile.entries.associate { it.id to it.version }
-            StageInputs.changes(versions(before), versions(after))
-        }
+        private fun settings(a: Side, b: Side): List<String> = withSnapshots(a, b, ::settingsChanges)
+
+        private fun mods(a: Side, b: Side): List<String> = withSnapshots(a, b, ::modChanges)
 
         /** [compare] of both runs' snapshots; nothing when either is unavailable (said by [missing]). */
         private fun withSnapshots(

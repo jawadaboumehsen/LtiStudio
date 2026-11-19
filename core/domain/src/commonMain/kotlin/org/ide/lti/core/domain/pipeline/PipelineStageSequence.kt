@@ -27,6 +27,18 @@ public object PipelineStageSequence {
         StageId.PUBLISH_RELEASE,
     )
 
+    /** The stage's name as the app shows it. */
+    public fun label(stage: StageId): String = when (stage) {
+        StageId.FIRMWARE_ACQUISITION -> "Acquire firmware"
+        StageId.FIRMWARE_EXTRACTION -> "Extract"
+        StageId.WORK_TREE_ASSEMBLY -> "Assemble"
+        StageId.DEBLOAT -> "Debloat"
+        StageId.MODULE_APPLICATION -> "Patches & mods"
+        StageId.BUILD_FLASHABLE_ZIP -> "Build & sign"
+        StageId.GENERATE_OTA_MANIFEST -> "Release metadata"
+        StageId.PUBLISH_RELEASE -> "Publish"
+    }
+
     public fun orderOf(stageId: StageId): Int {
         val index = ORDER.indexOf(stageId)
         require(index >= 0) { "Stage $stageId is not part of canonical pipeline sequence" }

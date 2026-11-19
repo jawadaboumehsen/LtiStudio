@@ -31,8 +31,35 @@ public data class RunEstimate(
      */
     val diskBytes: Long? = null,
 ) {
+    /** "Time: about 18 min (12-25 min), from 5+ earlier runs here; disk: about 3.2 GiB more, ...". */
+    public fun describe(): String {
+        val parts = mutableListOf<String>()
+        if (samples > 0) {
+            val range = if (shortestMs == longestMs) "" else " (${minutes(shortestMs)}-${minutes(longestMs)})"
+            val runs = if (samples == 1) "1 earlier run" else "$samples+ earlier runs"
+            parts += "Time: about ${minutes(typicalMs)}$range, from $runs here"
+        }
+        diskBytes?.let { parts += "disk: about ${gib(it)} more, as the last run like it (net)" }
+        if (unknown.isNotEmpty()) {
+            parts += unknown.joinToString { PipelineStageSequence.label(it) } + " never ran here: not counted"
+        }
+        return parts.joinToString("; ").replaceFirstChar { it.uppercase() } + "."
+    }
+
     public companion object {
         public const val SAMPLES: Int = 5
+
+        private fun minutes(ms: Long): String =
+            if (ms < MINUTE_MS) "${ms / SECOND_MS} s" else "${(ms + MINUTE_MS / 2) / MINUTE_MS} min"
+
+        private fun gib(bytes: Long): String =
+            if (bytes < GIB) "${bytes / MIB} MiB" else "${(bytes * TENTHS / GIB) / TENTHS.toDouble()} GiB"
+
+        private const val MIB = 1024L * 1024L
+        private const val GIB = MIB * 1024L
+        private const val TENTHS = 10L
+        private const val SECOND_MS = 1000L
+        private const val MINUTE_MS = 60_000L
 
         /** Null when no stage runs (everything comes from cache). */
         public fun of(preview: List<StagePreview>, history: List<BuildRun>): RunEstimate? {

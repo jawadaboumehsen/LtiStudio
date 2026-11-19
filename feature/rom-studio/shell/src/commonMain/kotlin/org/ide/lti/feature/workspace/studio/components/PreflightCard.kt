@@ -35,8 +35,11 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.workspace.NextBuildFacts
+import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.workspace.studio.PreflightUiState
@@ -106,8 +109,72 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
             )
             findings.forEach { FindingRow(it, vm, onOpen) }
         }
+        NextBuildSection(state)
     }
 }
+
+/** If you build now: what changed since the last build that worked, which stages run and why, time and disk. */
+@Composable
+private fun NextBuildSection(state: PreflightUiState) {
+    state.nextError?.let { Text(it, color = GlassTheme.diagnosticColors.error, fontSize = FontSize.BodySmall) }
+    if (state.readingNext) {
+        Text(
+            "Reading what the next build would do…",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.BodySmall,
+        )
+    }
+    val next = state.next ?: return
+    Column(
+        modifier = Modifier.fillMaxWidth().testTag("NextBuild"),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        Text(
+            "If you build now",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        nextBuildLines(next).forEach { line ->
+            Text(line, color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
+        }
+    }
+}
+
+/** The section's lines, in reading order. */
+internal fun nextBuildLines(next: NextBuildFacts): List<String> = buildList {
+    val good = next.lastGood
+    val changes = next.changes
+    when {
+        good == null -> add("No build has made a package here yet.")
+
+        changes == null -> add("The last build that worked has no settings snapshot: what changed is not known.")
+
+        changes.isEmpty() -> add("No settings or mods changed since the last build that worked (${started(good)}).")
+
+        else -> {
+            add("Changed since the last build that worked (${started(good)}):")
+            changes.take(CHANGES_SHOWN).forEach { add("• $it") }
+            if (changes.size > CHANGES_SHOWN) add("…and ${changes.size - CHANGES_SHOWN} more.")
+        }
+    }
+    val runs = next.stages.filter { it.runsBecause != null }
+    val first = runs.firstOrNull()
+    if (first == null) {
+        add("Every stage comes from cache.")
+    } else {
+        add(
+            "${runs.size} of ${next.stages.size} stages run, from " +
+                "${PipelineStageSequence.label(first.stageId)}: ${first.runsBecause}",
+        )
+    }
+    next.estimate?.let { add(it.describe()) }
+}
+
+private fun started(run: BuildRun): String = run.startedAt.toString().take(STARTED_SHOWN).replace('T', ' ')
+
+private const val CHANGES_SHOWN = 8
+private const val STARTED_SHOWN = 16
 
 /** The other workspaces of this phone: their settings (not their firmware's) can be taken over in one click. */
 @Composable

@@ -35,16 +35,7 @@ internal fun deviceChecklist(issues: List<ValidationError>): List<DeviceCheckRow
     return listOf(device) + stages
 }
 
-internal fun stageLabel(stage: StageId): String = when (stage) {
-    StageId.FIRMWARE_ACQUISITION -> "Acquire firmware"
-    StageId.FIRMWARE_EXTRACTION -> "Extract"
-    StageId.WORK_TREE_ASSEMBLY -> "Assemble"
-    StageId.DEBLOAT -> "Debloat"
-    StageId.MODULE_APPLICATION -> "Patches & mods"
-    StageId.BUILD_FLASHABLE_ZIP -> "Build & sign"
-    StageId.GENERATE_OTA_MANIFEST -> "Release metadata"
-    StageId.PUBLISH_RELEASE -> "Publish"
-}
+internal fun stageLabel(stage: StageId): String = PipelineStageSequence.label(stage)
 
 /** Why Start is disabled: what is missing in the device configuration, stage by stage. */
 @Composable

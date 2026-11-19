@@ -34,7 +34,6 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.domain.pipeline.RunEstimate
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.model.run.StageId
@@ -92,7 +91,7 @@ internal fun ImpactPreview(uiState: BuildRunUiState, onPreview: () -> Unit) {
                 }
                 uiState.estimate?.let { estimate ->
                     Text(
-                        estimateText(estimate),
+                        estimate.describe(),
                         style = GlassTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.testTag("ImpactEstimate"),
@@ -213,38 +212,5 @@ internal fun MarkdownDialog(title: String, markdown: String, problems: List<Stri
         }
     }
 }
-
-/** "About 18 min (12-25 min), from up to 5 earlier runs here; Debloat never ran here: not counted." */
-internal fun estimateText(estimate: RunEstimate): String {
-    val parts = mutableListOf<String>()
-    if (estimate.samples > 0) {
-        val range = if (estimate.shortestMs == estimate.longestMs) {
-            ""
-        } else {
-            " (${minutes(estimate.shortestMs)}-${minutes(estimate.longestMs)})"
-        }
-        val runs = if (estimate.samples == 1) "1 earlier run" else "${estimate.samples}+ earlier runs"
-        parts += "Time: about ${minutes(estimate.typicalMs)}$range, from $runs here"
-    }
-    estimate.diskBytes?.let { parts += "disk: about ${formatGiB(it)} more, as the last run like it (net)" }
-    if (estimate.unknown.isNotEmpty()) {
-        parts += estimate.unknown.joinToString { stageLabel(it) } + " never ran here: not counted"
-    }
-    return parts.joinToString("; ").replaceFirstChar { it.uppercase() } + "."
-}
-
-private fun minutes(ms: Long): String {
-    if (ms < MINUTE_MS) return "${ms / SECOND_MS} s"
-    return "${(ms + MINUTE_MS / 2) / MINUTE_MS} min"
-}
-
-private fun formatGiB(bytes: Long): String =
-    if (bytes < GIB) "${bytes / MIB} MiB" else "${(bytes * TENTHS / GIB) / TENTHS.toDouble()} GiB"
-
-private const val MIB = 1024L * 1024L
-private const val GIB = MIB * 1024L
-private const val TENTHS = 10L
-private const val SECOND_MS = 1000L
-private const val MINUTE_MS = 60_000L
 
 private const val LOG_LINES = 8

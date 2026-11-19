@@ -23,6 +23,8 @@ import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
+import org.ide.lti.core.domain.workspace.NextBuild
+import org.ide.lti.core.domain.workspace.NextBuildFacts
 import org.ide.lti.core.domain.workspace.SamePhoneSettings
 import org.ide.lti.core.domain.workspace.UpgradeSection
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
@@ -39,6 +41,10 @@ public data class PreflightUiState(
     val upgrade: List<UpgradeSection>? = null,
     val comparedWith: Workspace? = null,
     val comparing: Boolean = false,
+    /** What building now would do: changes since the last build that worked, stages that run, the estimate. */
+    val next: NextBuildFacts? = null,
+    val readingNext: Boolean = false,
+    val nextError: String? = null,
 )
 
 /** Will it build? Runs the preflight and applies a finding's settings fix, then checks again. */
@@ -48,6 +54,7 @@ public class PreflightViewModel(
     private val settings: WorkspaceSettingsStore? = null,
     private val samePhone: SamePhoneSettings? = null,
     private val upgrade: FirmwareUpgrade? = null,
+    private val nextBuild: NextBuild? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PreflightUiState())
     public val state: StateFlow<PreflightUiState> = _state.asStateFlow()
@@ -95,6 +102,7 @@ public class PreflightViewModel(
     }
 
     public fun check() {
+        readNext()
         val checker = preflight ?: return
         if (_state.value.checking) return
         _state.update { it.copy(checking = true, error = null) }
@@ -110,6 +118,24 @@ public class PreflightViewModel(
                 _state.update { it.copy(error = e.message ?: e::class.simpleName) }
             } finally {
                 _state.update { it.copy(checking = false) }
+            }
+        }
+    }
+
+    /** Reads what building now would do, beside the blockers (a longer read: work/ is hashed like a run start). */
+    private fun readNext() {
+        val reader = nextBuild ?: return
+        if (_state.value.readingNext) return
+        _state.update { it.copy(readingNext = true, nextError = null) }
+        viewModelScope.launch {
+            val result = runCatchingCancellable { reader.of(workspaceId) }
+            _state.update { state ->
+                result.fold(
+                    onSuccess = { state.copy(readingNext = false, next = it) },
+                    onFailure = { e ->
+                        state.copy(readingNext = false, nextError = "What the next build does: ${e.message}")
+                    },
+                )
             }
         }
     }

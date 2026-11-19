@@ -33,6 +33,7 @@ public val romStudioShellModule: Module = module {
             settings = getOrNull(),
             samePhone = getOrNull(),
             upgrade = getOrNull(),
+            nextBuild = getOrNull(),
         )
     }
     viewModel { params ->

@@ -49,6 +49,7 @@ import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.repository.filesystem.FileSystemRepository
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
+import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
 import org.ide.lti.core.domain.workbench.ArchiveWorkbench
 import org.ide.lti.core.domain.workbench.BootWorkbench
@@ -67,6 +68,7 @@ import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
+import org.ide.lti.core.domain.workspace.NextBuild
 import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.koin.core.module.dsl.bind
@@ -185,5 +187,9 @@ internal actual val platformRepositoryModule =
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
         single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
         single { RunComparison(runner = get(), snapshots = get()) }
+        single {
+            val start = get<StartPipelineRunUseCase>()
+            NextBuild(workspaces = get(), snapshots = get(), runs = get(), preview = { start.preview(it) })
+        }
         single { DeviceTest(runner = get(), probe = get()) }
     }
