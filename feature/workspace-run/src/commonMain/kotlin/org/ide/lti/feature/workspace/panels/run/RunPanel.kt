@@ -291,6 +291,7 @@ private fun ActiveRunContent(
         onPreview = viewModel::previewImpact,
         onReport = viewModel::makeReport,
         onCloseReport = viewModel::closeReport,
+        onCheckPhone = viewModel::checkPhone,
         onApplyFix = viewModel::applyFix,
         onOpen = onOpen,
         modifier = modifier,
@@ -309,6 +310,7 @@ public fun ActiveRunContent(
     onPreview: () -> Unit = {},
     onReport: () -> Unit = {},
     onCloseReport: () -> Unit = {},
+    onCheckPhone: () -> Unit = {},
     onApplyFix: (PreflightFix.Setting) -> Unit = {},
     onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -385,15 +387,24 @@ public fun ActiveRunContent(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (uiState.latestRun?.state == RunState.SUCCEEDED) {
-                GlassButton(
-                    onClick = onReport,
-                    enabled = !uiState.isReporting,
-                    variant = GlassButtonVariant.Standard,
-                    modifier = Modifier.testTag("BuildReportButton"),
-                ) { Text(if (uiState.isReporting) "Reading…" else "Build report") }
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+                    // After installing the package: does the phone run this build, and is it healthy?
+                    GlassButton(
+                        onClick = onCheckPhone,
+                        enabled = !uiState.isCheckingPhone,
+                        variant = GlassButtonVariant.Standard,
+                        modifier = Modifier.testTag("CheckPhoneButton"),
+                    ) { Text(if (uiState.isCheckingPhone) "Checking…" else "Check the phone") }
+                    GlassButton(
+                        onClick = onReport,
+                        enabled = !uiState.isReporting,
+                        variant = GlassButtonVariant.Standard,
+                        modifier = Modifier.testTag("BuildReportButton"),
+                    ) { Text(if (uiState.isReporting) "Reading…" else "Build report") }
+                }
             }
         }
-        BuildReportDialog(uiState.report, onClose = onCloseReport)
+        BuildReportDialog(uiState.report, uiState.reportTitle, onClose = onCloseReport)
 
         val artifacts = uiState.latestRun?.artifacts ?: emptyList()
         if (artifacts.isEmpty()) {

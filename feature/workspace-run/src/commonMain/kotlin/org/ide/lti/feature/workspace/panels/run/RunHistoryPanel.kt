@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -50,6 +52,10 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
     val typography = GlassTheme.typography
     var pendingDelete by remember { mutableStateOf<BuildRun?>(null) }
 
+    uiState.comparison?.let { comparison ->
+        MarkdownDialog("Compare runs", comparison.markdown, emptyList(), onClose = viewModel::closeComparison)
+    }
+
     pendingDelete?.let { run ->
         DeleteRunDialog(
             run = run,
@@ -67,40 +73,7 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
             .padding(Spacing.Medium),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        // Top action bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Build History",
-                    style = typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = if (uiState.currentWorkspace != null) {
-                        "${uiState.runs.size} previous runs recorded"
-                    } else {
-                        "Loading the workspace…"
-                    },
-                    style = typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            GlassButton(
-                onClick = { viewModel.refreshHistory() },
-                enabled = !uiState.isLoading && uiState.currentWorkspace != null,
-                variant = GlassButtonVariant.Secondary,
-            ) {
-                Text(
-                    text = if (uiState.isLoading) "Refreshing..." else "Refresh",
-                    style = typography.labelMedium,
-                )
-            }
-        }
+        HistoryHeader(uiState, onRefresh = viewModel::refreshHistory)
 
         uiState.errorMessage?.let { error ->
             Text(text = error, style = typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -160,6 +133,11 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                             style = typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
+                        CompareWithRow(
+                            others = uiState.runs.filter { it.id != selected.id }.take(COMPARE_CHOICES),
+                            busy = uiState.isComparing,
+                            onCompare = viewModel::compareWith,
+                        )
 
                         StagePipelineView(
                             latestRun = selected,
@@ -210,6 +188,76 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
         }
     }
 }
+
+/** The title, how many runs are recorded, and Refresh. */
+@Composable
+private fun HistoryHeader(uiState: RunHistoryUiState, onRefresh: () -> Unit) {
+    val typography = GlassTheme.typography
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column {
+            Text(
+                text = "Build History",
+                style = typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = if (uiState.currentWorkspace != null) {
+                    "${uiState.runs.size} previous runs recorded"
+                } else {
+                    "Loading the workspace…"
+                },
+                style = typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        GlassButton(
+            onClick = onRefresh,
+            enabled = !uiState.isLoading && uiState.currentWorkspace != null,
+            variant = GlassButtonVariant.Secondary,
+        ) {
+            Text(
+                text = if (uiState.isLoading) "Refreshing..." else "Refresh",
+                style = typography.labelMedium,
+            )
+        }
+    }
+}
+
+/** "Compare with": one chip per other run (newest first), by when it started and how it ended. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CompareWithRow(others: List<BuildRun>, busy: Boolean, onCompare: (BuildRun) -> Unit) {
+    if (others.isEmpty()) return
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+    ) {
+        Text(
+            if (busy) "Comparing…" else "Compare with",
+            style = GlassTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        others.forEach { run ->
+            GlassChip(
+                label = "${run.startedAt.toString().take(STARTED_SHOWN).replace('T', ' ')} " +
+                    run.state.name.lowercase(),
+                onClick = { onCompare(run) },
+                enabled = !busy,
+            )
+        }
+    }
+}
+
+private const val COMPARE_CHOICES = 6
+
+/** `2026-11-19T10:42` of an instant: day and minute. */
+private const val STARTED_SHOWN = 16
 
 @Composable
 private fun DeleteRunDialog(run: BuildRun, onDelete: () -> Unit, onDismiss: () -> Unit) {

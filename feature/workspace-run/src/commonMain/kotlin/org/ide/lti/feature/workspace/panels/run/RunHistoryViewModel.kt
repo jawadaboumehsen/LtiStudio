@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
+import org.ide.lti.core.domain.workspace.RunComparison
+import org.ide.lti.core.domain.workspace.RunComparisonText
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.workspace.Workspace
@@ -32,12 +34,16 @@ public data class RunHistoryUiState(
     val selectedRunLogs: List<String> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    /** The comparison being read, or shown; null when none is open. */
+    val isComparing: Boolean = false,
+    val comparison: RunComparisonText? = null,
 )
 
 public class RunHistoryViewModel(
     private val workspaceManager: WorkspaceManager,
     private val getRunHistoryUseCase: GetRunHistoryUseCase,
     private val runRepository: RunRepository,
+    private val runComparison: RunComparison? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RunHistoryUiState())
@@ -82,6 +88,30 @@ public class RunHistoryViewModel(
     public fun selectRun(run: BuildRun) {
         _uiState.update { it.copy(selectedRun = run, selectedRunLogs = emptyList()) }
         viewModelScope.launch { showLogs(run.id) }
+    }
+
+    /** Compares the selected run with [other]: the earlier of the two is "before". */
+    public fun compareWith(other: BuildRun) {
+        val comparer = runComparison
+        val selected = _uiState.value.selectedRun
+        if (comparer == null || selected == null || _uiState.value.isComparing || selected.id == other.id) return
+        val (older, newer) = listOf(selected, other).sortedBy { it.startedAt }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isComparing = true, errorMessage = null) }
+            val result = runCatchingCancellable { comparer.compare(older, newer) }
+            _uiState.update { state ->
+                result.fold(
+                    onSuccess = { state.copy(isComparing = false, comparison = it) },
+                    onFailure = { e ->
+                        state.copy(isComparing = false, errorMessage = "The runs could not be compared: ${e.message}")
+                    },
+                )
+            }
+        }
+    }
+
+    public fun closeComparison() {
+        _uiState.update { it.copy(comparison = null) }
     }
 
     public fun refreshHistory() {

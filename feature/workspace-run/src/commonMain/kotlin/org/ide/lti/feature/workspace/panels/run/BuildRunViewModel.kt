@@ -36,6 +36,7 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
@@ -44,6 +45,8 @@ import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
+import org.ide.lti.core.domain.workbench.DeviceTest
+import org.ide.lti.core.domain.workbench.DeviceVerdict
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -81,9 +84,11 @@ public data class BuildRunUiState(
     val diagnosis: PreflightFinding? = null,
     /** A fix applied from [diagnosis], or why it could not be. */
     val fixMessage: String? = null,
-    /** The post-build report of [latestRun], when asked for. */
+    /** The post-build report of [latestRun], or its phone check ([reportTitle] says which), when asked for. */
     val report: BuildReportText? = null,
+    val reportTitle: String = "Build report",
     val isReporting: Boolean = false,
+    val isCheckingPhone: Boolean = false,
 ) {
     /** The message of the stage the last run failed in. */
     val failure: String?
@@ -123,6 +128,7 @@ public class BuildRunViewModel(
     private val preflight: Preflight? = null,
     private val settingsStore: WorkspaceSettingsStore? = null,
     private val buildReport: BuildReport? = null,
+    private val deviceTest: DeviceTest? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildRunUiState())
@@ -318,10 +324,42 @@ public class BuildRunViewModel(
             _uiState.update { state ->
                 if (state.latestRun?.id != run.id) return@update state.copy(isReporting = false)
                 result.fold(
-                    onSuccess = { state.copy(isReporting = false, report = it) },
+                    onSuccess = { state.copy(isReporting = false, report = it, reportTitle = "Build report") },
                     onFailure = { e ->
                         if (e is CancellationException) throw e
                         state.copy(isReporting = false, errorMessage = e.message ?: "The report could not be made")
+                    },
+                )
+            }
+        }
+    }
+
+    /**
+     * Checks the connected phone against the last run after its package was installed: this build running, booted,
+     * SELinux, verified boot, crashes. The result is kept with the run and shown like the report.
+     */
+    public fun checkPhone() {
+        val tester = deviceTest
+        val run = _uiState.value.latestRun
+        if (tester == null || run == null || _uiState.value.isCheckingPhone) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingPhone = true, errorMessage = null) }
+            val result = runCatchingCancellable { tester.check(run) }
+            _uiState.update { state ->
+                result.fold(
+                    onSuccess = { check ->
+                        val problems = check.items.filter {
+                            it.verdict == DeviceVerdict.FAIL
+                        }.map { "${it.name}: ${it.detail}" }
+                        state.copy(
+                            isCheckingPhone = false,
+                            report = BuildReportText(check.markdown(), problems),
+                            reportTitle = "Phone check",
+                        )
+                    },
+                    onFailure = { e ->
+                        val why = (e as? RefusalException)?.refusal?.let { "${it.cause}. ${it.nextStep}" } ?: e.message
+                        state.copy(isCheckingPhone = false, errorMessage = why ?: "The phone could not be checked")
                     },
                 )
             }

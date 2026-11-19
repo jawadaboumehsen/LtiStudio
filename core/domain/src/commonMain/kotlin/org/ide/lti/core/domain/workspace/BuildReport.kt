@@ -9,7 +9,6 @@
  */
 package org.ide.lti.core.domain.workspace
 
-import org.ide.lti.core.domain.pipeline.stages.ChangelogDraft
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.model.run.BuildRun
@@ -23,7 +22,7 @@ public data class BuildReportText(val markdown: String, val problems: List<Strin
 /**
  * The post-build report: one page of what a finished run left, read again now. Each package is hashed again and
  * compared with the hash the build recorded; the signing keys' fingerprints; the built images against the super
- * group; how each stage ran; the tool versions; and the changes from stock ([ChangelogDraft]). Writes nothing.
+ * group; how each stage ran; the tool versions; and what the run did ([RunRecord]). Writes nothing.
  */
 public class BuildReport(
     private val runner: WorkbenchRunner,
@@ -47,17 +46,22 @@ public class BuildReport(
                 ),
             )
         }
-        val changes = ChangelogDraft.of(planJson = null, debloatJson = null, snapshot = snapshot)
+        val record = RunRecord.read(runner, run.workspaceId, run.id)
+        val changes = record.changes(snapshot)
         val problems = mutableListOf<String>()
         if (snapshot == null) problems += "the run's configuration snapshot is unavailable"
         val text = buildString {
             header(run, device, snapshot)
             packages(run, facts, problems)
-            signing(facts)
+            signing(facts, record, problems)
             device?.let { budget(it, facts, problems) }
             stages(run)
+            onThePhone(record)
             if (changes.isNotBlank()) append("\n## Build configuration changes\n\n").append(changes.trim()).append('\n')
-            append("\nDetailed mod and removed-app results for this run are unavailable.\n")
+            if (!record.present) {
+                append("\nThis run has no record (it predates them): its mod and removed-app results are ")
+                append("unavailable.\n")
+            }
         }
         return BuildReportText(text, problems)
     }
@@ -98,14 +102,34 @@ public class BuildReport(
         }
     }
 
-    /** The fingerprints of the configured signing keys, read now. */
-    private fun StringBuilder.signing(facts: Facts) {
-        append("\n## Configured signing keys (read now)\n\n")
-        append("- Platform certificate (APKs, OTA): SHA-256 ${facts.cert ?: "not found"}\n")
-        append("- AVB public key (DER): SHA-256 ${facts.avb ?: "not found"}\n")
+    /** Built, installed on a phone, device-tested: three states, from the newest check of this build. */
+    private fun StringBuilder.onThePhone(record: RunRecord) {
+        append("\n## On the phone\n\n")
+        append(record.deviceCheck?.markdown() ?: "Not checked on a phone yet (Run panel > Check the phone).\n")
     }
 
-    /** The built images of the super group now, and whether they fit it. */
+    /** The keys configured now, and the ones the run recorded signing with; a key changed since is a problem. */
+    private fun StringBuilder.signing(facts: Facts, record: RunRecord, problems: MutableList<String>) {
+        append("\n## Signing keys\n\n")
+        key("Platform certificate (APKs, OTA)", record.certificate, facts.cert, problems)
+        key("AVB public key (DER)", record.avbKey, facts.avb, problems)
+    }
+
+    /** One key: its fingerprint now and, when the run recorded one, whether the build signed with the same. */
+    private fun StringBuilder.key(name: String, signed: String?, now: String?, problems: MutableList<String>) {
+        append("- $name: configured now SHA-256 ${now ?: "not found"}")
+        when (signed) {
+            null -> append("\n")
+
+            now -> append(", the one this build signed with\n")
+
+            else -> {
+                append("; this build signed with SHA-256 $signed\n")
+                problems += "the $name changed since this build"
+            }
+        }
+    }
+
     private fun StringBuilder.budget(device: TargetDevice, facts: Facts, problems: MutableList<String>) {
         val built = facts.images.filterKeys { it in device.dynamicPartitions }
         val used = built.values.sum()

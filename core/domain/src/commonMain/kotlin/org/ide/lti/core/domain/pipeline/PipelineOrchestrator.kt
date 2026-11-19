@@ -40,6 +40,7 @@ import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.tools.ToolStorePort
 import org.ide.lti.core.domain.tools.ToolUsageCoordinator
+import org.ide.lti.core.domain.workspace.RunRecord
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
@@ -1277,12 +1278,39 @@ public class PipelineOrchestrator(
         return valid
     }
 
-    /** The run succeeded: its artifacts, and the disk's free space now (what the run used, for later estimates). */
+    /**
+     * The run succeeded: its record ([RunRecord]), its artifacts, and the disk's free space now (what the run used,
+     * for later estimates).
+     */
     private suspend fun succeed(driver: Driver) {
+        writeRecord(driver)
         val artifacts = collectArtifacts(driver)
         executionPort.checkAvailableDiskSpace(driver.ws)
             ?.let { driver.runtimeValues[RuntimeKeys.DISK_FREE_AFTER] = it.toString() }
         driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+    }
+
+    /**
+     * Keeps what this run did in `records/<runId>/`: the receipts of the stages that were part of it (a cached stage
+     * counts: work/ is the tree it left) and the signing keys' fingerprints when Build was. A record that cannot be
+     * written does not fail a finished build; the report then says the run has none.
+     */
+    private suspend fun writeRecord(driver: Driver) {
+        val ran = driver.run.stages.map { it.stageId }.toSet()
+        val signing = driver.context().snapshot.build.signing.takeIf { StageId.BUILD_FLASHABLE_ZIP in ran }
+        val ctx = driver.baseContext
+        val args = listOf(
+            "-c",
+            RunRecord.WRITE_SCRIPT,
+            "sh",
+            ctx.abs("."),
+            RunRecord.dir(driver.run.id),
+            if (StageId.MODULE_APPLICATION in ran) "1" else "0",
+            if (StageId.DEBLOAT in ran) "1" else "0",
+            signing?.let { ctx.abs("${it.platformKeyRef}.x509.pem") }.orEmpty(),
+            signing?.let { ctx.abs(it.avbKeyRef) }.orEmpty(),
+        )
+        runCatchingCancellable { executionPort.execute(driver.ws, StepCommand("sh", args, driver.ws.linuxPath)) }
     }
 
     /** A stage's cache file: its input key, its outputs' digest, and the run's values when it ran. */

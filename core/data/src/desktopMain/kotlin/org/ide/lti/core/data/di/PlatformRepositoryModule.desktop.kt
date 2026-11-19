@@ -56,6 +56,7 @@ import org.ide.lti.core.domain.workbench.CompareWorkbench
 import org.ide.lti.core.domain.workbench.CompressionGoal
 import org.ide.lti.core.domain.workbench.ContentWorkbench
 import org.ide.lti.core.domain.workbench.DeviceFirmwareCheck
+import org.ide.lti.core.domain.workbench.DeviceTest
 import org.ide.lti.core.domain.workbench.ImageWorkbench
 import org.ide.lti.core.domain.workbench.PhoneProbe
 import org.ide.lti.core.domain.workbench.RestoreWorkbench
@@ -66,6 +67,7 @@ import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
+import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -182,4 +184,6 @@ internal actual val platformRepositoryModule =
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
         single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
+        single { RunComparison(runner = get(), snapshots = get()) }
+        single { DeviceTest(runner = get(), probe = get()) }
     }

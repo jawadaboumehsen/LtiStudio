@@ -43,14 +43,16 @@ class BuildReportTest {
             )
         }
         val snapshots = InMemorySnapshotRepository().also { it.saveSnapshot(saved) }
-        var command: StepCommand? = null
+        val commands = mutableListOf<StepCommand>()
         val port = fake<PipelineExecutionPort> { name, args ->
             when (name) {
                 "startStep" -> {
-                    command = args[1] as StepCommand
+                    commands += args[1] as StepCommand
                     RunHandle("report", "RUNNING", 0)
                 }
+
                 "observe" -> flowOf(StepEvent.Output(1, "cert\tcustom-cert\navb\tcustom-avb"), StepEvent.Finished(0))
+
                 else -> error("Unexpected port method $name: current workspace receipts must not be read")
             }
         }
@@ -74,8 +76,8 @@ class BuildReportTest {
         val report = reporter.of(run)
         assertTrue(checkNotNull(saved.acquisition.firmware).version in report.markdown)
         assertTrue("custom-cert" in report.markdown && "custom-avb" in report.markdown)
-        assertTrue("results for this run are unavailable" in report.markdown)
-        val args = checkNotNull(command).args
+        assertTrue("results are unavailable" in report.markdown)
+        val args = commands.flatMap { it.args }
         assertTrue(args.any { it.endsWith("/keys/custom platform.x509.pem") })
         assertTrue(args.any { it.endsWith("/keys/custom avb.pem") })
         assertFalse(args.any { it.endsWith("/keys/platform.x509.pem") })

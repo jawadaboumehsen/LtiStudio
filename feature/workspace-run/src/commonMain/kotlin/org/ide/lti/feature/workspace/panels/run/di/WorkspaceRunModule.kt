@@ -32,6 +32,7 @@ public val workspaceRunModule: Module = module {
             preflight = getOrNull(),
             settingsStore = getOrNull(),
             buildReport = getOrNull(),
+            deviceTest = getOrNull(),
         )
     }
 }

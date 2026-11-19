@@ -169,15 +169,21 @@ internal fun FailureDiagnosis(
 
 /** The post-build report, as the Markdown it is copied as. */
 @Composable
-internal fun BuildReportDialog(report: BuildReportText?, onClose: () -> Unit) {
+internal fun BuildReportDialog(report: BuildReportText?, title: String, onClose: () -> Unit) {
     report ?: return
+    MarkdownDialog(title, report.markdown, report.problems, onClose)
+}
+
+/** A Markdown text (a report, a comparison) with Copy; [problems] are listed above it. */
+@Composable
+internal fun MarkdownDialog(title: String, markdown: String, problems: List<String>, onClose: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     GlassDialog(
         onDismissRequest = onClose,
-        title = "Build report",
+        title = title,
         confirmButton = {
             GlassButton(
-                onClick = { clipboard.setText(AnnotatedString(report.markdown)) },
+                onClick = { clipboard.setText(AnnotatedString(markdown)) },
                 variant = GlassButtonVariant.Primary,
                 modifier = Modifier.testTag("BuildReportCopy"),
             ) { Text("Copy") }
@@ -190,15 +196,15 @@ internal fun BuildReportDialog(report: BuildReportText?, onClose: () -> Unit) {
             modifier = Modifier.heightIn(max = ComponentSize.MaxPanelHeight).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            if (report.problems.isNotEmpty()) {
+            if (problems.isNotEmpty()) {
                 Text(
-                    "Needs a look: " + report.problems.joinToString("; "),
+                    "Needs a look: " + problems.joinToString("; "),
                     style = GlassTheme.typography.bodySmall,
                     color = GlassTheme.diagnosticColors.error,
                 )
             }
             Text(
-                report.markdown,
+                markdown,
                 style = GlassTheme.typography.bodySmall,
                 fontFamily = codeFontFamily(),
                 color = MaterialTheme.colorScheme.onSurface,
