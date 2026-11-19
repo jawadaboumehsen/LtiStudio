@@ -21,8 +21,11 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
+import org.ide.lti.core.domain.workbench.DeviceCheckResult
+import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.RunComparisonText
+import org.ide.lti.core.domain.workspace.RunRecord
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.workspace.Workspace
@@ -37,6 +40,8 @@ public data class RunHistoryUiState(
     /** The comparison being read, or shown; null when none is open. */
     val isComparing: Boolean = false,
     val comparison: RunComparisonText? = null,
+    /** The newest phone check of each run that has one, by run id (the history list's badge). */
+    val deviceChecks: Map<String, DeviceCheckResult> = emptyMap(),
 )
 
 public class RunHistoryViewModel(
@@ -44,6 +49,7 @@ public class RunHistoryViewModel(
     private val getRunHistoryUseCase: GetRunHistoryUseCase,
     private val runRepository: RunRepository,
     private val runComparison: RunComparison? = null,
+    private val runner: WorkbenchRunner? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RunHistoryUiState())
@@ -60,9 +66,11 @@ public class RunHistoryViewModel(
                         selectedRunLogs = emptyList(),
                         isLoading = false,
                         errorMessage = null,
+                        deviceChecks = emptyMap(),
                     )
                 }
                 if (ws != null) {
+                    launch { loadDeviceChecks(ws.id) }
                     getRunHistoryUseCase.observe(ws.id).collectLatest { runs ->
                         _uiState.update { state ->
                             val currentSelId = state.selectedRun?.id
@@ -77,6 +85,13 @@ public class RunHistoryViewModel(
                 }
             }
         }
+    }
+
+    /** Reads the phone checks of [workspaceId]'s runs; none are shown when they cannot be read. */
+    private suspend fun loadDeviceChecks(workspaceId: String) {
+        val reader = runner ?: return
+        val checks = runCatchingCancellable { RunRecord.deviceChecks(reader, workspaceId) }.getOrDefault(emptyMap())
+        _uiState.update { if (it.currentWorkspace?.id == workspaceId) it.copy(deviceChecks = checks) else it }
     }
 
     /** Reads [runId]'s log; a late read lands only on the run it was read for. */
@@ -126,6 +141,7 @@ public class RunHistoryViewModel(
                     state.copy(runs = runs, selectedRun = sel, isLoading = false)
                 }
                 _uiState.value.selectedRun?.let { showLogs(it.id) }
+                loadDeviceChecks(ws.id)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

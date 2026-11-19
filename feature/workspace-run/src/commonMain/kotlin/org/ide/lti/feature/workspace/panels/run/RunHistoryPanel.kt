@@ -38,10 +38,13 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
+import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.workbench.DeviceCheckResult
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
@@ -112,6 +115,7 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                         val isSelected = run.id == uiState.selectedRun?.id
                         RunListItemCard(
                             run = run,
+                            deviceCheck = uiState.deviceChecks[run.id],
                             isSelected = isSelected,
                             onSelect = { viewModel.selectRun(run) },
                             onDelete = { pendingDelete = run },
@@ -280,7 +284,13 @@ private fun DeleteRunDialog(run: BuildRun, onDelete: () -> Unit, onDismiss: () -
 }
 
 @Composable
-private fun RunListItemCard(run: BuildRun, isSelected: Boolean, onSelect: () -> Unit, onDelete: () -> Unit) {
+private fun RunListItemCard(
+    run: BuildRun,
+    deviceCheck: DeviceCheckResult?,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    onDelete: () -> Unit,
+) {
     val typography = GlassTheme.typography
 
     GlassCard(
@@ -318,6 +328,7 @@ private fun RunListItemCard(run: BuildRun, isSelected: Boolean, onSelect: () -> 
                     style = typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                deviceCheck?.let { PhoneBadge(it) }
                 // A queued or running build cannot be deleted; cancel it first.
                 if (!run.state.isActive) {
                     GlassChip(
@@ -328,6 +339,17 @@ private fun RunListItemCard(run: BuildRun, isSelected: Boolean, onSelect: () -> 
             }
         }
     }
+}
+
+/** The run's newest phone check: passed, problems on the phone, or the phone runs another build. */
+@Composable
+private fun PhoneBadge(check: DeviceCheckResult) {
+    val (label, severity) = when {
+        !check.installed -> "Phone: other build" to IdeStatusSeverity.Warning
+        check.passed -> "Phone: passed" to IdeStatusSeverity.Ready
+        else -> "Phone: problems" to IdeStatusSeverity.Failed
+    }
+    IdeStatusBadge(label = label, severity = severity)
 }
 
 @Composable

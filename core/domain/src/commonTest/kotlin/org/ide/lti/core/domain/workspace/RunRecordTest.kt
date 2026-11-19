@@ -11,6 +11,7 @@ package org.ide.lti.core.domain.workspace
 
 import org.ide.lti.core.domain.pipeline.stages.AppliedModulePlan
 import org.ide.lti.core.domain.pipeline.stages.AppliedOperationSummary
+import org.ide.lti.core.domain.workbench.DeviceCheckResult
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.PluginLockfileEntry
 import kotlin.test.Test
@@ -52,5 +53,13 @@ class RunRecordTest {
         assertNull(keysOnly.plan)
         assertNull(keysOnly.debloat)
         assertNull(keysOnly.avbKey)
+    }
+
+    @Test
+    fun theHistoryReadsEachRunsPhoneCheckAndSkipsAnUnreadableOne() {
+        val check = DeviceCheckResult("r1", "2026-11-19T10:00:00Z", "ABC", "Phone", emptyList())
+        val json = ConfigurationSnapshot.canonicalJson.encodeToString(DeviceCheckResult.serializer(), check)
+        val checks = RunRecord.parseDeviceChecks("r1\t$json\nr2\t{broken\n\n")
+        assertEquals(mapOf("r1" to check), checks)
     }
 }

@@ -45,6 +45,20 @@ public data class RunRecord(
         public suspend fun read(runner: WorkbenchRunner, workspaceId: String, runId: String): RunRecord =
             parse(runner.read(workspaceId) { sh(READ_SCRIPT, abs("."), dir(runId)) })
 
+        /** The newest phone check of every run in [workspaceId] that has one, by run id, in one read. */
+        public suspend fun deviceChecks(runner: WorkbenchRunner, workspaceId: String): Map<String, DeviceCheckResult> =
+            parseDeviceChecks(runner.read(workspaceId) { sh(DEVICE_CHECKS_SCRIPT, abs(".")) })
+
+        /** What [DEVICE_CHECKS_SCRIPT] printed: `<runId>\t<check JSON>` rows; an unreadable check is left out. */
+        public fun parseDeviceChecks(text: String): Map<String, DeviceCheckResult> = text.lines().mapNotNull { line ->
+            val parts = line.split('\t', limit = 2).takeIf { it.size == 2 }
+            val check = parts?.let { (_, json) ->
+                runCatching { ConfigurationSnapshot.canonicalJson.decodeFromString<DeviceCheckResult>(json) }
+                    .getOrNull()
+            }
+            check?.let { parts[0] to it }
+        }.toMap()
+
         /** What [READ_SCRIPT] printed: `<name>\t<one line of JSON or a fingerprint>` rows. */
         public fun parse(text: String): RunRecord {
             val rows = text.lines().mapNotNull { line ->
@@ -110,6 +124,15 @@ for f in modules-plan.json debloat-result.json device-check.json; do
   [ -f "${'$'}d/${'$'}f" ] && printf '%s\t%s\n' "${'$'}f" "${'$'}(tr -d '\n\r' < "${'$'}d/${'$'}f")"
 done
 [ -f "${'$'}d/keys.tsv" ] && cat "${'$'}d/keys.tsv"
+exit 0"""
+
+        /** Prints `<runId>\t<device-check.json on one line>` for every record folder holding a check; no links. */
+        private const val DEVICE_CHECKS_SCRIPT: String = """cd "$1" || exit 1
+[ -d records ] && [ ! -L records ] || exit 0
+for f in records/*/device-check.json; do
+  [ -f "${'$'}f" ] && [ ! -L "${'$'}f" ] && [ ! -L "${'$'}{f%/*}" ] || continue
+  r=${'$'}{f#records/}; printf '%s\t%s\n' "${'$'}{r%%/*}" "${'$'}(tr -d '\n\r' < "${'$'}f")"
+done
 exit 0"""
     }
 
