@@ -9,7 +9,12 @@
  */
 package org.ide.lti.core.domain.workbench
 
+import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.workspace.RunRecord
+import org.ide.lti.core.model.run.Artifact
+import org.ide.lti.core.model.run.ArtifactKind
+import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -65,5 +70,15 @@ class DeviceTestTest {
         val current = RunRecord.parse("record\tyes\ndevice-check.json\t$json\ncert\tAA\n")
         assertTrue(current.present)
         assertEquals(check, current.deviceCheck)
+    }
+
+    @Test
+    fun onlyASucceededRunWithAPackageCanBeCheckedOnThePhone() {
+        val zip = Artifact(ArtifactKind.FLASHABLE_ZIP, "/ws/out/rom.zip", sizeBytes = 1, sha256 = "a")
+        val built = BuildRun("r", "w", "s", RunState.SUCCEEDED, Instant.fromEpochSeconds(0), artifacts = listOf(zip))
+        assertTrue(DeviceTest.madePackage(built))
+        // Run through Assemble: succeeded, but nothing to install.
+        assertFalse(DeviceTest.madePackage(built.copy(artifacts = emptyList())))
+        assertFalse(DeviceTest.madePackage(built.copy(state = RunState.FAILED)))
     }
 }

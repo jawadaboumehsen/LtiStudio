@@ -72,7 +72,7 @@ public class DeviceTest(
     /** Checks the one phone booted into Android against [run], and keeps the result with the run. */
     public suspend fun check(run: BuildRun): DeviceCheckResult {
         val stamp = run.runtimeValues[RuntimeKeys.RUN_TIMESTAMP]
-        if (run.state != RunState.SUCCEEDED || stamp == null) {
+        if (!madePackage(run) || stamp == null) {
             throw RefusalException(
                 Refusal("This run made no package", "run ${run.id}", "Check a run that went through Build & Sign."),
             )
@@ -105,6 +105,9 @@ public class DeviceTest(
     }
 
     public companion object {
+        /** Whether [run] succeeded with a package (a run stopped before Build & Sign has none to install). */
+        public fun madePackage(run: BuildRun): Boolean = run.state == RunState.SUCCEEDED && run.artifacts.isNotEmpty()
+
         /** The checks from what [PHONE_SCRIPT] printed (`key=value` lines, `crash=<process>` per crashed one). */
         public fun items(answers: String, stamp: String): List<DeviceCheckItem> {
             val lines = answers.lines().map { it.trim() }

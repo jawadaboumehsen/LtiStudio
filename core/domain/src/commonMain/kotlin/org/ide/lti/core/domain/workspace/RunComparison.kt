@@ -132,7 +132,7 @@ public class RunComparison(private val runner: WorkbenchRunner, private val snap
                 when {
                     x == null -> "$name: new (${mib(y?.sizeBytes)})"
                     y == null -> "$name: not built any more"
-                    x.sha256 != y.sha256 -> "$name: different content, ${mib(x.sizeBytes)} → ${mib(y.sizeBytes)}"
+                    x.sha256 != y.sha256 -> "$name: different content" + sizes(x.sizeBytes, y.sizeBytes)
                     else -> null
                 }
             }
@@ -172,6 +172,10 @@ public class RunComparison(private val runner: WorkbenchRunner, private val snap
 
         private fun setChanges(before: Set<String>, after: Set<String>, added: String, removed: String): List<String> =
             (after - before).sorted().map { "$it: $added" } + (before - after).sorted().map { "$it: $removed" }
+
+        /** ", 6482 MiB → 6417 MiB", or nothing when a size was not recorded. */
+        private fun sizes(before: Long?, after: Long?): String =
+            if (before == null || after == null) "" else ", ${mib(before)} → ${mib(after)}"
 
         private fun mib(bytes: Long?): String = bytes?.let { "${it / MIB} MiB" } ?: "? MiB"
 
