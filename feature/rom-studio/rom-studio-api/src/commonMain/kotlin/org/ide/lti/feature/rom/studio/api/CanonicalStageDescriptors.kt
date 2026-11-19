@@ -15,6 +15,24 @@ import org.ide.lti.core.model.run.StageId
  * Canonical contract descriptors for all eight ROM Setup Studio pipeline stages.
  */
 public object CanonicalStageDescriptors {
+    /**
+     * The panes the Simple Studio view shows (each stage's first pane among them, so a stage always opens on one).
+     * The others stay reachable by a link that opens them, and their settings still apply.
+     */
+    public val SIMPLE: Set<String> = setOf(
+        "source", "integrity",
+        "archive-layout",
+        "work-trees", "build-properties",
+        "inventory", "remove-selections", "risk-review", "results",
+        "module-catalog", "enabled-ordered-modules", "conflicts",
+        "images", "compression", "avb-keys", "package-signing", "output-naming",
+        "release-identity", "changelog", "manifest-preview",
+        "provider", "release-repository-and-tag", "publish-review-and-recovery",
+    )
+
+    /** The panes of [stage] that a view shows: all, or in [simple] the main ones plus [openId] when one is open. */
+    public fun visible(stage: StageDescriptor, simple: Boolean, openId: String?): List<StudioSubobject> =
+        stage.subobjects.filter { !simple || it.id.value in SIMPLE || it.id.value == openId }
 
     public val ACQUIRE: StageDescriptor = StageDescriptor(
         stageId = StageId.FIRMWARE_ACQUISITION,

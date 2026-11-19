@@ -323,6 +323,20 @@ private fun AppearanceChoices(appSettingsState: AppSettingsState) {
         }
     }
     GlassHorizontalDivider()
+    ChoiceRow(
+        "Studio view",
+        "Simple shows each stage's main panes only; the others keep their settings and still apply.",
+    ) {
+        listOf(true to "Simple", false to "Expert").forEach { (simple, label) ->
+            GlassChip(
+                label = label,
+                selected = appearance.simpleStudio == simple,
+                onClick = { appSettingsState.appearance = appearance.copy(simpleStudio = simple) },
+                modifier = Modifier.testTag("StudioView_$label"),
+            )
+        }
+    }
+    GlassHorizontalDivider()
     ChoiceRow("Text size", "Scales text throughout the app.") {
         Appearance.TextScales.forEach { scale ->
             val percent = (scale * PERCENT).roundToInt()

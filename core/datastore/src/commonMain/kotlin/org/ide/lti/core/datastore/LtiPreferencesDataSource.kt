@@ -94,6 +94,7 @@ class LtiPreferencesDataSource(
         appearance = AppearanceSettings(
             accent = settings.getString(KEY_ACCENT, AppearanceSettings.DEFAULT_ACCENT),
             compact = settings.getBoolean(KEY_COMPACT, false),
+            simpleStudio = settings.getBoolean(KEY_SIMPLE_STUDIO, false),
             textScalePercent = settings.getInt(KEY_TEXT_SCALE, AppearanceSettings.DEFAULT_TEXT_SCALE),
         ),
     )
@@ -111,6 +112,7 @@ class LtiPreferencesDataSource(
         settings[KEY_NOTIF_SOUND_ENABLED] = data.notificationSettings.soundEnabled
         settings[KEY_ACCENT] = data.appearance.accent
         settings[KEY_COMPACT] = data.appearance.compact
+        settings[KEY_SIMPLE_STUDIO] = data.appearance.simpleStudio
         settings[KEY_TEXT_SCALE] = data.appearance.textScalePercent
     }
 
@@ -127,6 +129,7 @@ class LtiPreferencesDataSource(
         const val KEY_NOTIF_SOUND_ENABLED = "pref_notif_sound_enabled"
         const val KEY_ACCENT = "pref_accent"
         const val KEY_COMPACT = "pref_compact_density"
+        const val KEY_SIMPLE_STUDIO = "pref_simple_studio"
         const val KEY_TEXT_SCALE = "pref_text_scale_percent"
     }
 }

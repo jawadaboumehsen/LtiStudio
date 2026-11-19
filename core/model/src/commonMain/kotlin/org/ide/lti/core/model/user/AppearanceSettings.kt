@@ -14,6 +14,8 @@ public data class AppearanceSettings(
     val accent: String = DEFAULT_ACCENT,
     val compact: Boolean = false,
     val textScalePercent: Int = DEFAULT_TEXT_SCALE,
+    /** Simple Studio view: each stage shows only its main panes; the others keep their settings and still apply. */
+    val simpleStudio: Boolean = false,
 ) {
     public companion object {
         public const val DEFAULT_ACCENT: String = "default"

@@ -58,6 +58,7 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
 import org.ide.lti.feature.rom.studio.api.StageEditorContext
@@ -111,6 +112,7 @@ public fun StudioScreen(
     viewModel: StudioViewModel = koinViewModel { parametersOf(workspaceId) },
     workspaceManager: WorkspaceManager = koinInject(),
     workbenchLog: WorkbenchLog? = getKoin().getOrNull(),
+    appSettings: AppSettingsState? = getKoin().getOrNull(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val shellState by viewModel.shellState.collectAsState()
@@ -134,6 +136,7 @@ public fun StudioScreen(
         uiState = shellState,
         stageEditorRegistry = stageEditorRegistry,
         selectedObjectId = selectedObjectId,
+        simpleView = appSettings?.appearance?.simpleStudio == true,
         onSelectStageObject = { stageId, objectId ->
             viewModel.selectObject(stageId, objectId)
         },
@@ -317,6 +320,8 @@ public fun StudioShellContent(
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
     iconsOnly: Boolean = false,
+    /** Simple Studio view: each stage's main panes only ([CanonicalStageDescriptors.SIMPLE]). */
+    simpleView: Boolean = false,
     /** The workbench jobs' Output panel, under the content. */
     output: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -472,6 +477,7 @@ public fun StudioShellContent(
                             stage = descriptor,
                             selectedObjectId = selectedObjectId,
                             onSelectStageObject = onSelectStageObject,
+                            simple = simpleView,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
@@ -556,9 +562,11 @@ private fun StageSubMenuTabBar(
     selectedObjectId: String?,
     onSelectStageObject: ((StageId, String) -> Unit)?,
     modifier: Modifier = Modifier,
+    simple: Boolean = false,
 ) {
-    val items = remember(stage) {
-        stage.subobjects.map { sub ->
+    // Simple view: the main panes, plus the one open now (a fix's link may open another).
+    val items = remember(stage, simple, selectedObjectId) {
+        CanonicalStageDescriptors.visible(stage, simple, selectedObjectId).map { sub ->
             IdeSubMenuItem(
                 id = sub.id.value,
                 label = sub.title,
