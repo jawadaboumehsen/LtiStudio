@@ -38,6 +38,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.stages.VintfStatus
 import org.ide.lti.core.domain.workspace.NextBuildFacts
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
@@ -93,6 +94,7 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
                 fontSize = FontSize.BodySmall,
             )
         }
+        VintfResult(state)
         SamePhone(state, vm)
         state.findings?.let { findings ->
             val stops = findings.count { it.blocks }
@@ -110,6 +112,28 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
             findings.forEach { FindingRow(it, vm, onOpen) }
         }
         NextBuildSection(state)
+    }
+}
+
+@Composable
+private fun VintfResult(state: PreflightUiState) {
+    val result = state.vintf
+    val status = result?.status ?: VintfStatus.NOT_RUN
+    val colors = GlassTheme.diagnosticColors
+    Text(
+        text = if (state.checking) "VINTF · Checking…" else "VINTF · ${status.label}",
+        color = when (status) {
+            VintfStatus.COMPATIBLE -> colors.success
+            VintfStatus.INCOMPATIBLE -> colors.error
+            VintfStatus.INCOMPLETE -> colors.warning
+            VintfStatus.NOT_RUN -> MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        fontWeight = FontWeight.SemiBold,
+        fontSize = FontSize.BodySmall,
+        modifier = Modifier.testTag("PreflightVintfStatus"),
+    )
+    result?.missingEvidence?.forEach { missing ->
+        Text(missing, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
     }
 }
 

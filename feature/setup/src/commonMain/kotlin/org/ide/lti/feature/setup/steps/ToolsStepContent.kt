@@ -13,8 +13,10 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.setup.SetupActivityState
 import org.ide.lti.feature.setup.SetupUiState
@@ -78,7 +81,7 @@ fun ToolsStepContent(
                         start = Spacing.ScreenHorizontal,
                         end = if (isInspectorOpen) Spacing.None else Spacing.ScreenHorizontal,
                         top = Spacing.Medium,
-                        bottom = Spacing.ScreenVertical,
+                        bottom = Spacing.ScreenVertical + Spacing.ExtraExtraLarge * 2,
                     ),
                 verticalArrangement = Arrangement.spacedBy(Spacing.SectionGap),
             ) {
@@ -124,6 +127,8 @@ fun ToolsStepContent(
                     isRunning = state.toolchainSetupState.isRunning,
                     defaultExpanded = false,
                 )
+
+                Spacer(modifier = Modifier.height(Spacing.Large))
             }
 
             if (isInspectorOpen) {

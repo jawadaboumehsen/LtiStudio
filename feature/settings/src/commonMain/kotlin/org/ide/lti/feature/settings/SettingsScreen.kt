@@ -167,8 +167,10 @@ fun SettingsScreenContent(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(
-                            horizontal = Spacing.ScreenHorizontal,
-                            vertical = Spacing.ScreenVertical,
+                            start = Spacing.ScreenHorizontal,
+                            top = Spacing.ScreenVertical,
+                            end = Spacing.ScreenHorizontal,
+                            bottom = Spacing.ScreenVertical + Spacing.ExtraExtraLarge * 2,
                         ),
                 ) {
                     when (selectedCategory) {

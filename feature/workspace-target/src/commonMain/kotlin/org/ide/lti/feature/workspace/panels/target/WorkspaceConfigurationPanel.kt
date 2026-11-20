@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +40,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
@@ -78,7 +81,12 @@ fun WorkspaceConfigurationPanel(
             modifier = modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(Spacing.Medium),
+                .padding(
+                    start = Spacing.Medium,
+                    top = Spacing.Medium,
+                    end = Spacing.Medium,
+                    bottom = Spacing.ExtraExtraLarge * 2,
+                ),
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
         ) {
             ConfigurationHeader(uiState)
@@ -97,6 +105,7 @@ fun WorkspaceConfigurationPanel(
             TextSection("ROM Version", draft.romVersion, "1.0.0", viewModel::setRomVersion)
             GlassHorizontalDivider()
             ConfigurationActions(uiState, viewModel)
+            Spacer(modifier = Modifier.height(Spacing.Large))
         }
     }
 }

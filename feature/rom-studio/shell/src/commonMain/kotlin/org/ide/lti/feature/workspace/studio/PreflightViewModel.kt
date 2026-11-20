@@ -21,6 +21,7 @@ import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
 import org.ide.lti.core.domain.workspace.NextBuild
@@ -45,6 +46,7 @@ public data class PreflightUiState(
     val next: NextBuildFacts? = null,
     val readingNext: Boolean = false,
     val nextError: String? = null,
+    val vintf: VintfAssessment? = null,
 )
 
 /** Will it build? Runs the preflight and applies a finding's settings fix, then checks again. */
@@ -105,11 +107,11 @@ public class PreflightViewModel(
         readNext()
         val checker = preflight ?: return
         if (_state.value.checking) return
-        _state.update { it.copy(checking = true, error = null) }
+        _state.update { it.copy(checking = true, error = null, findings = null, vintf = null) }
         viewModelScope.launch {
             try {
-                val found = checker.check(workspaceId)
-                _state.update { it.copy(findings = found) }
+                val report = checker.report(workspaceId)
+                _state.update { it.copy(findings = report.findings, vintf = report.vintf) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RefusalException) {

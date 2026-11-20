@@ -98,14 +98,29 @@ object MachineRowMapper {
 
     fun mapDistroStatus(status: DistroStatus, allStatuses: List<DistroStatus> = emptyList()): WslRowPresentation =
         when (status) {
-            is DistroStatus.WslUnavailable ->
+            is DistroStatus.WslUnavailable -> {
+                val missing = listOf("not found", "not installed", "CreateProcess error=2").any {
+                    status.detail.contains(it, ignoreCase = true)
+                }
+                val install = "Run 'wsl --install' in PowerShell."
+                val instruction = when {
+                    status.accessDenied ->
+                        "1. In Windows PowerShell, run ‘wsl --status’ and ‘wsl -l -v’.\n" +
+                            "2. Close LtiRomGui and reopen it from Start or File Explorer. Choose Check again.\n" +
+                            "3. If access is still denied and your Windows policy allows it, close LtiRomGui. " +
+                            "Right-click LtiRomGui.exe and choose Run as administrator. " +
+                            "Otherwise ask your Windows administrator for WSL access."
+                    missing -> install
+                    else -> null
+                }
                 WslRowPresentation(
-                    detailText = "WSL isn't installed. Run 'wsl --install' in PowerShell.",
+                    detailText = if (missing) "WSL isn't installed. $install" else status.detail,
                     severity = IdeStatusSeverity.Failed,
-                    instruction = "Run 'wsl --install' in PowerShell.",
+                    instruction = instruction,
                     primaryAction = null,
                     secondaryAction = SetupRowAction.CHECK_AGAIN,
                 )
+            }
             is DistroStatus.NoDistro ->
                 WslRowPresentation(
                     detailText = "No Linux distribution. Run 'wsl --install -d Ubuntu-24.04' in PowerShell.",

@@ -18,10 +18,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +48,7 @@ import org.ide.lti.core.designsystem.component.navigation.GlassTab
 import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
@@ -320,9 +323,12 @@ public fun ActiveRunContent(
     modifier: Modifier = Modifier,
 ) {
     val typography = GlassTheme.typography
+    val scrollState = rememberScrollState()
 
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .verticalScroll(scrollState)
+            .padding(bottom = Spacing.ExtraExtraLarge * 2),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
         RunTopActionBar(
@@ -422,33 +428,29 @@ public fun ActiveRunContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+            Column(
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                items(artifacts) { artifact ->
+                artifacts.forEach { artifact ->
                     ArtifactItem(artifact = artifact)
                 }
             }
         }
-
-        // With no artifacts the list is absent: keep the console at the bottom.
-        if (artifacts.isEmpty()) Spacer(modifier = Modifier.weight(1f))
 
         // Console log drawer
         GlassConsoleDrawer(
             logs = uiState.logs,
             isRunning = uiState.isRunning,
             modifier = Modifier.fillMaxWidth(),
-            // The artifact list takes what is left: an open log must not take all of it.
             logMaxHeight = if (artifacts.isEmpty()) {
                 ComponentSize.DialogDefaultHeight
             } else {
                 ComponentSize.ActionCardHeight
             },
         )
+
+        Spacer(modifier = Modifier.height(Spacing.Large))
     }
 }
 

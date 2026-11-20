@@ -13,6 +13,7 @@ package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -32,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +44,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.launch
+import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.BrandColors
@@ -76,23 +81,62 @@ fun IdeSubMenuTabBar(
     tagPrefix: String = "NavigatorItem_",
 ) {
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
     Row(
-        modifier = modifier.wheelScrollsRow(scrollState).horizontalScroll(scrollState),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        items.forEach { item ->
-            val isSelected = item.id == selectedItemId
-            SubMenuPillTab(
-                item = item,
-                selected = isSelected,
-                tag = "${tagPrefix}${item.id}",
-                onClick = { onSelectItem(item.id) },
+        if (scrollState.canScrollBackward) {
+            GlassIconButton(
+                icon = AppIcons.ChevronLeft,
+                onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateScrollBy(-SCROLL_STEP)
+                    }
+                },
+                size = ComponentSize.TopBarButtonSize,
+                contentDescription = "Scroll tabs left",
+                modifier = Modifier.padding(end = Spacing.ExtraSmall),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .wheelScrollsRow(scrollState)
+                .horizontalScroll(scrollState),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            items.forEach { item ->
+                val isSelected = item.id == selectedItemId
+                SubMenuPillTab(
+                    item = item,
+                    selected = isSelected,
+                    tag = "${tagPrefix}${item.id}",
+                    onClick = { onSelectItem(item.id) },
+                )
+            }
+        }
+
+        if (scrollState.canScrollForward) {
+            GlassIconButton(
+                icon = AppIcons.ChevronRight,
+                onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateScrollBy(SCROLL_STEP)
+                    }
+                },
+                size = ComponentSize.TopBarButtonSize,
+                contentDescription = "Scroll tabs right",
+                modifier = Modifier.padding(start = Spacing.ExtraSmall),
             )
         }
     }
 }
+
+private const val SCROLL_STEP = 180f
 
 /** A plain mouse wheel moves the row: `horizontalScroll` alone answers only to Shift + wheel. */
 private fun Modifier.wheelScrollsRow(state: ScrollState): Modifier = pointerInput(state) {

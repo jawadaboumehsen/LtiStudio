@@ -20,9 +20,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -129,10 +132,13 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                 // Right: Details for selected run
                 val selected = uiState.selectedRun
                 if (selected != null) {
+                    val rightScrollState = rememberScrollState()
                     Column(
                         modifier = Modifier
                             .weight(0.55f)
-                            .fillMaxHeight(),
+                            .fillMaxHeight()
+                            .verticalScroll(rightScrollState)
+                            .padding(end = Spacing.Small, bottom = Spacing.ExtraLarge),
                         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
                         Row(
@@ -187,8 +193,6 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                             }
                         }
 
-                        Spacer(modifier = Modifier.weight(1f))
-
                         val logsToDisplay = if (uiState.selectedRunLogs.isNotEmpty()) {
                             uiState.selectedRunLogs
                         } else {
@@ -200,6 +204,8 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                             isRunning = false,
                             modifier = Modifier.fillMaxWidth(),
                         )
+
+                        Spacer(modifier = Modifier.height(Spacing.Large))
                     }
                 }
             }

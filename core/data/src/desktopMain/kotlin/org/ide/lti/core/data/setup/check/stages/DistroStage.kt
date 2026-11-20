@@ -109,7 +109,7 @@ public class DistroStage(private val detector: WslEnvironmentDetector = WslEnvir
                 )
             }
             is DistroStatus.WslUnavailable -> {
-                StageOutcome.Failed("WSL isn't installed", error = "WSL 2 is not installed: ${primary.detail}")
+                StageOutcome.Failed("WSL is unavailable", error = primary.detail)
             }
         }
     }

@@ -54,6 +54,8 @@ public data class PreflightFinding(
     val fix: PreflightFix? = null,
 )
 
+public data class PreflightReport(val findings: List<PreflightFinding>, val vintf: VintfAssessment)
+
 /**
  * Will it build? Runs Build & Sign's own checks against the current settings and work/ without building: the
  * partitions left out, the filesystems, the permission and label coverage, broken links, the mount tables, what the
@@ -68,7 +70,9 @@ public class Preflight(
     /** The installed plugins, for the mod check: each enabled mod's file anchors against the assembled tree. */
     private val catalog: PluginCatalogPort? = null,
 ) {
-    public suspend fun check(workspaceId: String): List<PreflightFinding> {
+    public suspend fun check(workspaceId: String): List<PreflightFinding> = report(workspaceId).findings
+
+    public suspend fun report(workspaceId: String): PreflightReport {
         val snapshot = checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
         val validation = DeviceConfigReadiness.check(device, snapshot).filter { it.severity == Severity.ERROR }.map {
@@ -78,7 +82,7 @@ public class Preflight(
                 fix = it.stageId?.let { stage -> PreflightFix.Open("Open ${it.fieldPath}", stage, it.objectId ?: "") },
             )
         }
-        val found = runner.read(workspaceId) {
+        val (found, vintf) = runner.read(workspaceId) {
             // The tools a check script needs by path (a build gets them from its pinned tools); missing: left out.
             val tools = PREFLIGHT_TOOLS.mapNotNull { id -> runCatchingCancellable { id to toolPath(id) }.getOrNull() }
             val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device, toolPaths = tools.toMap()))
@@ -91,11 +95,21 @@ public class Preflight(
                 else -> run(modCheck(catalog), base, values)
             }
             val checks = GENERATORS.flatMap { generator -> run(generator, base, values) }
-            val messages = checks + mods + values[BuildChecks.VINTF_KEY]?.let(VintfCheck::notes).orEmpty()
-            report(LogLevel.INF, "Preflight: ${messages.size} finding(s) from Build & Sign's checks")
-            messages
+            val output = values[BuildChecks.VINTF_KEY]
+            val exit = values[RuntimeKeys.exitOf(BuildChecks.VINTF_KEY)]?.toIntOrNull() ?: 0
+            val vintf = VintfCheck.assess(output, exit)
+            val accepted = BuildWarningKind.VintfIncompatible.name in snapshot.build.acknowledgedWarnings
+            val acknowledged = if (accepted && output != null) {
+                VintfCheck.refusals(output, accepted = false).filter { it.startsWith("VINTF_INCOMPATIBLE:") }
+                    .map { "VINTF_ACCEPTED: Accepted mismatch. " + it.substringAfter(": ") }
+            } else {
+                emptyList()
+            }
+            val messages = checks + mods + acknowledged
+            report(LogLevel.INF, "Preflight: ${messages.size} finding(s). VINTF: ${vintf.status.label}")
+            messages to vintf
         }
-        return validation + found.distinct().map { finding(it, snapshot) }
+        return PreflightReport(validation + found.distinct().map { finding(it, snapshot) }, vintf)
     }
 
     /**
@@ -173,7 +187,7 @@ public class Preflight(
             snapshot.customization.fillMissingSidecars
         val payloadOff = code == PAYLOAD && PackageKind.Payload.name !in snapshot.build.extraPackages
         val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED" ||
-            code == VintfCheck.NOT_CHECKED
+            code == VintfCheck.NOT_CHECKED || code == "VINTF_ACCEPTED"
         return PreflightFinding(code, text, blocks = !note, fix = FIXES[code]?.invoke(text)?.takeUnless { filled })
     }
 

@@ -29,6 +29,7 @@ import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.model.setup.AttemptStatus
+import org.ide.lti.core.model.setup.DistroStatus
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 import kotlin.test.Test
@@ -95,6 +96,26 @@ class WslToolchainProvisionerTest {
         assertEquals(StepStatus.PENDING, serverStep.status)
         // Not ready because the toolchain is absent in this fixture, not because the daemon is idle.
         assertFalse(state.isAllReady)
+    }
+
+    @Test
+    fun `Windows access denial is reported on the WSL step before probing the build service`() = runTest {
+        val cli = FakeWslCliExecutor().apply { windowsDeniesWsl = true }
+        val provisioner = WslToolchainProvisioner(
+            supervisor = FakeDaemonSupervisor(),
+            transport = FakeRemoteTransport(),
+            repository = inMemoryToolchainRepository(),
+            detector = WslEnvironmentDetector(cli),
+            cli = cli,
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
+
+        val state = provisioner.checkStatus()
+
+        assertEquals(StepStatus.FAILED, state.steps.first { it.stage == SetupStepStage.WSL_DETECTION }.status)
+        assertEquals(StepStatus.PENDING, state.steps.first { it.stage == SetupStepStage.SERVER_CONNECTIVITY }.status)
+        assertTrue(state.distroStatuses.filterIsInstance<DistroStatus.WslUnavailable>().single().accessDenied)
+        assertFalse(cli.commandLog.any { it.startsWith("WSL:") })
     }
 
     @Test

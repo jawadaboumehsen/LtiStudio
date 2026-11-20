@@ -12,6 +12,7 @@ package org.ide.lti.feature.workspace.studio.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -116,6 +117,7 @@ public fun WorkspaceStoragePanel(viewModel: WorkspaceStorageViewModel, modifier:
                 .fillMaxWidth()
                 .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
+            contentPadding = PaddingValues(bottom = Spacing.ExtraExtraLarge * 2),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             item { Summary(state, onRefresh = viewModel::refresh) }

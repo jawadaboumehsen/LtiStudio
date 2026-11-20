@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -65,7 +67,12 @@ public fun WorkspaceOverview(
                 .fillMaxWidth()
                 .widthIn(max = GlassDimens.OverviewMaxContentWidth)
                 .verticalScroll(scrollState)
-                .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
+                .padding(
+                    start = Spacing.ExtraLarge,
+                    top = Spacing.Medium,
+                    end = Spacing.ExtraLarge,
+                    bottom = Spacing.ExtraExtraLarge * 2,
+                ),
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
         ) {
             // 1. Content Header: Title, target context pill, and action buttons
@@ -116,6 +123,8 @@ public fun WorkspaceOverview(
                 onOpenHistory = onOpenHistory,
                 onAction = onAction,
             )
+
+            Spacer(modifier = Modifier.height(Spacing.Large))
         }
     }
 }

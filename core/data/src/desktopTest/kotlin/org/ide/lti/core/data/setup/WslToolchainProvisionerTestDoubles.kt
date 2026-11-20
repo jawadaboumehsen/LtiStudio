@@ -224,6 +224,7 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     var missingDevPackages: Boolean = false
     var pythonMissing: Boolean = false
     var wslInstalled: Boolean = true
+    var windowsDeniesWsl: Boolean = false
     val existingPaths: MutableSet<String> = mutableSetOf()
     val fileContents: MutableMap<String, String> = mutableMapOf()
     val commandLog = mutableListOf<String>()
@@ -235,6 +236,7 @@ internal class FakeWslCliExecutor : WslCliExecutor() {
     override fun executeHost(command: List<String>, timeoutSeconds: Long, charset: Charset): CliExecutionResult {
         val cmdStr = command.joinToString(" ")
         commandLog.add("HOST: $cmdStr")
+        if (windowsDeniesWsl) return CliExecutionResult(-1, "Error code: Wsl/E_ACCESSDENIED", "")
         if (!wslInstalled) {
             return CliExecutionResult(1, "", "WSL 2 is not installed")
         }

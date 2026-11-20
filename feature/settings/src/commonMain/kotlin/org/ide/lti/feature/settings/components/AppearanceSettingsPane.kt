@@ -208,7 +208,7 @@ fun AppearanceSettingsPane(
             }
         }
 
-        Spacer(modifier = Modifier.height(Spacing.Small))
+        Spacer(modifier = Modifier.height(Spacing.Large))
 
         // Bottom Action Footer Bar
         Row(
@@ -252,6 +252,8 @@ fun AppearanceSettingsPane(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+
+        Spacer(modifier = Modifier.height(Spacing.Large))
     }
 }
 

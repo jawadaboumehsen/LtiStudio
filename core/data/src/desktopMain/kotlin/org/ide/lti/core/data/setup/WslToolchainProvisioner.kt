@@ -335,6 +335,14 @@ public class WslToolchainProvisioner(
             } else {
                 detector.detectAll()
             }
+        val accessDenied = detected.filterIsInstance<DistroStatus.WslUnavailable>().firstOrNull { it.accessDenied }
+        if (accessDenied != null) {
+            val stage = SetupStepStage.WSL_DETECTION
+            _state.update { it.copy(distroStatuses = detected) }
+            setStepStatus(stage, StepStatus.FAILED, desc = accessDenied.detail, error = accessDenied.detail)
+            shortCircuitRemaining(stage, "Waiting for Windows to grant access to WSL.")
+            return
+        }
         val target = checkTarget(detected, wanted, preferredDistro, currentEnvironment)
         val distro = target.distro
         val cleanHome = target.homeHint?.takeIf { it.startsWith("/") } ?: resolveHome(distro)

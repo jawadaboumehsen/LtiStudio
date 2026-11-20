@@ -4,6 +4,7 @@ import org.ide.lti.core.model.setup.DistroStatus
 import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class WslEnvironmentDetectorTest {
@@ -39,6 +40,23 @@ class WslEnvironmentDetectorTest {
         val detector = WslEnvironmentDetector(cli)
         val status = detector.classify()
         assertTrue(status is DistroStatus.WslUnavailable, "Expected WslUnavailable but got $status")
+    }
+
+    @Test
+    fun `Windows WSL access denial from stdout is visible during setup and workspace open`() {
+        val denial = "Access is denied.\nError code: Wsl/E_ACCESSDENIED"
+        val cli = FakeWslCliExecutor().apply {
+            defaultHostResponse = CliExecutionResult(-1, denial, "")
+            defaultDistroResponse = CliExecutionResult(-1, denial.toList().joinToString("\u0000"), "")
+        }
+        val detector = WslEnvironmentDetector(cli)
+        val unavailable = detector.classify() as DistroStatus.WslUnavailable
+        assertTrue(unavailable.accessDenied)
+        assertTrue("Wsl/E_ACCESSDENIED" in unavailable.detail)
+        assertEquals(unavailable, detector.detectAll().single())
+        val failure = assertFailsWith<IllegalStateException> { detector.resolveWslUserHome("Ubuntu") }
+        assertTrue(failure.message.orEmpty().contains(unavailable.detail))
+        assertTrue(failure.message.orEmpty().contains("Setup > Environment"))
     }
 
     @Test

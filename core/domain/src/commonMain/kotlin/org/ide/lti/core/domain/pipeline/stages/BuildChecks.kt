@@ -235,7 +235,7 @@ internal object BuildChecks {
                         ctx.toolPaths["checkvintf"] ?: "checkvintf",
                         ctx.toolPaths["unpack_bootimg"] ?: "unpack_bootimg",
                         ctx.toolPaths["fsck.erofs"] ?: "fsck.erofs",
-                    ),
+                    ) + WorkTreeAssemblyStage.assembledPartitions(ctx),
                     ctx.wsPath,
                 ),
                 "check vendor compatibility (VINTF)",

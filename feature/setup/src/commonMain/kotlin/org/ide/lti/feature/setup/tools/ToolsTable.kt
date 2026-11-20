@@ -10,6 +10,7 @@
 package org.ide.lti.feature.setup.tools
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,6 +62,7 @@ public fun ToolsTable(
         modifier
             .fillMaxWidth()
             .heightIn(max = ComponentSize.MaxPanelHeight),
+        contentPadding = PaddingValues(bottom = Spacing.Small),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         items(

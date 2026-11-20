@@ -85,6 +85,18 @@ class MachineRowMapperTest {
         assertNull(wslUnavailPres.primaryActionLabel)
         assertEquals("Check again", wslUnavailPres.secondaryActionLabel)
 
+        val accessDenied = DistroStatus.WslUnavailable(
+            "Windows denied access to WSL (Wsl/E_ACCESSDENIED).",
+            accessDenied = true,
+        )
+        val deniedRow = MachineRowMapper.mapDistroStatus(accessDenied)
+        assertEquals(accessDenied.detail, deniedRow.detailText)
+        assertTrue(deniedRow.instruction.orEmpty().contains("wsl --status"))
+        assertTrue(deniedRow.instruction.orEmpty().contains("Check again"))
+        assertTrue(deniedRow.instruction.orEmpty().contains("Run as administrator"))
+        assertFalse(deniedRow.instruction.orEmpty().contains("wsl --install"))
+        assertEquals("Check again", deniedRow.secondaryActionLabel)
+
         val noDistro = DistroStatus.NoDistro
         val noDistroPres = MachineRowMapper.mapDistroStatus(noDistro)
         assertTrue(noDistroPres.detailText.contains("No Linux distribution"))

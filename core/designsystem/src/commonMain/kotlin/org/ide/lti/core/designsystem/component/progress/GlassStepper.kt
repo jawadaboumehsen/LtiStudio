@@ -9,8 +9,10 @@
  */
 package org.ide.lti.core.designsystem.component.progress
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,12 +30,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
@@ -139,41 +145,78 @@ fun GlassStepper(
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         when (orientation) {
             GlassStepperOrientation.Horizontal -> {
+                val scrollState = rememberScrollState()
+                val coroutineScope = rememberCoroutineScope()
+
                 Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+                    modifier = modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    steps.forEachIndexed { index, step ->
-                        GlassStepNode(
-                            step = step,
-                            index = index + 1,
-                            isBusy = isBusy,
-                            onRetry = onRetryStep?.let { retry -> { retry(step.id) } },
-                            onClick = onStepClick?.let { click -> { click(step.id) } },
-                            // Fixed floor, no weight(): weight() cannot combine with the
-                            // Row's horizontalScroll (weight needs bounded max width, a
-                            // scrollable row measures children unbounded). Below this floor
-                            // the row scrolls instead of squeezing nodes into illegible
-                            // slivers; above it, nodes simply keep their natural width.
-                            modifier = Modifier.widthIn(min = ComponentSize.StepNodeMinWidth),
+                    if (scrollState.canScrollBackward) {
+                        GlassIconButton(
+                            icon = AppIcons.ChevronLeft,
+                            onClick = {
+                                coroutineScope.launch {
+                                    scrollState.animateScrollBy(-STEPPER_SCROLL_STEP)
+                                }
+                            },
+                            size = ComponentSize.TopBarButtonSize,
+                            contentDescription = "Scroll stages left",
+                            modifier = Modifier.padding(end = Spacing.ExtraSmall),
                         )
+                    }
 
-                        if (index < steps.size - 1) {
-                            val isPreviousComplete = step.status.isComplete
-                            Icon(
-                                painter = AppIcons.ChevronRightPainterResource(),
-                                contentDescription = null,
-                                tint = if (isPreviousComplete) {
-                                    diagnostics.success.copy(alpha = AlphaTokens.Border)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
-                                },
-                                modifier = Modifier.size(IconSize.Small),
+                    Row(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .wheelScrollsRow(scrollState)
+                            .horizontalScroll(scrollState),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        steps.forEachIndexed { index, step ->
+                            GlassStepNode(
+                                step = step,
+                                index = index + 1,
+                                isBusy = isBusy,
+                                onRetry = onRetryStep?.let { retry -> { retry(step.id) } },
+                                onClick = onStepClick?.let { click -> { click(step.id) } },
+                                // Fixed floor, no weight(): weight() cannot combine with the
+                                // Row's horizontalScroll (weight needs bounded max width, a
+                                // scrollable row measures children unbounded). Below this floor
+                                // the row scrolls instead of squeezing nodes into illegible
+                                // slivers; above it, nodes simply keep their natural width.
+                                modifier = Modifier.widthIn(min = ComponentSize.StepNodeMinWidth),
                             )
+
+                            if (index < steps.size - 1) {
+                                val isPreviousComplete = step.status.isComplete
+                                Icon(
+                                    painter = AppIcons.ChevronRightPainterResource(),
+                                    contentDescription = null,
+                                    tint = if (isPreviousComplete) {
+                                        diagnostics.success.copy(alpha = AlphaTokens.Border)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Faint)
+                                    },
+                                    modifier = Modifier.size(IconSize.Small),
+                                )
+                            }
                         }
+                    }
+
+                    if (scrollState.canScrollForward) {
+                        GlassIconButton(
+                            icon = AppIcons.ChevronRight,
+                            onClick = {
+                                coroutineScope.launch {
+                                    scrollState.animateScrollBy(STEPPER_SCROLL_STEP)
+                                }
+                            },
+                            size = ComponentSize.TopBarButtonSize,
+                            contentDescription = "Scroll stages right",
+                            modifier = Modifier.padding(start = Spacing.ExtraSmall),
+                        )
                     }
                 }
             }
@@ -526,3 +569,20 @@ private fun StepTextDetails(
         overflow = TextOverflow.Ellipsis,
     )
 }
+
+/** A plain mouse wheel moves the row: `horizontalScroll` alone answers only to Shift + wheel. */
+private fun Modifier.wheelScrollsRow(state: ScrollState): Modifier = pointerInput(state) {
+    val step = ComponentSize.ButtonMinWidth.toPx()
+    awaitPointerEventScope {
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull()
+            if (event.type == PointerEventType.Scroll && change != null && change.scrollDelta.y != 0f) {
+                state.dispatchRawDelta(change.scrollDelta.y * step)
+                change.consume()
+            }
+        }
+    }
+}
+
+private const val STEPPER_SCROLL_STEP = 180f

@@ -237,7 +237,7 @@ public class ServicePreparation(
     }
 
     private fun detectionFailure(status: DistroStatus?): Pair<String, String> = when (status) {
-        is DistroStatus.WslUnavailable -> "WSL isn't installed" to status.detail
+        is DistroStatus.WslUnavailable -> "WSL is unavailable" to status.detail
         is DistroStatus.NoDistro, null ->
             "No Linux distribution" to
                 "Install a supported Ubuntu LTS distribution (e.g. wsl --install -d Ubuntu-24.04)"

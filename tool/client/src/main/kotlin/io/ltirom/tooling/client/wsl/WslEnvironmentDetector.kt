@@ -76,11 +76,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
     public fun classify(distro: String? = null): DistroStatus {
         val hostCheck = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (hostCheck.exitCode != 0) {
-            val detail =
-                hostCheck.error.ifBlank {
-                    hostCheck.output
-                }.ifBlank { "wsl.exe is not available or returned an error." }
-            return DistroStatus.WslUnavailable(detail)
+            return hostCheck.unavailable()
         }
 
         val distros =
@@ -126,13 +122,10 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
                 listOf("cat", "/etc/os-release"),
                 timeoutSeconds = DISTRO_BOOT_TIMEOUT_SECONDS,
             )
-        if (osReleaseRes.exitCode == -1 || osReleaseRes.error.contains("timed out", ignoreCase = true)) {
-            return DistroStatus.StartupFailed(targetDistro, osReleaseRes.error)
-        }
         if (osReleaseRes.exitCode != 0) {
             return DistroStatus.StartupFailed(
                 targetDistro,
-                osReleaseRes.error.ifBlank { "Failed to read /etc/os-release (exit code ${osReleaseRes.exitCode})" },
+                osReleaseRes.failureDetail("Failed to read /etc/os-release (exit code ${osReleaseRes.exitCode})"),
             )
         }
 
@@ -160,13 +153,10 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
                 listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""),
                 timeoutSeconds = 5,
             )
-        if (userRes.exitCode == -1 || userRes.error.contains("timed out", ignoreCase = true)) {
-            return DistroStatus.StartupFailed(targetDistro, userRes.error)
-        }
         if (userRes.exitCode != 0) {
             return DistroStatus.StartupFailed(
                 targetDistro,
-                userRes.error.ifBlank { "Failed to resolve default user (exit code ${userRes.exitCode})" },
+                userRes.failureDetail("Failed to resolve default user (exit code ${userRes.exitCode})"),
             )
         }
 
@@ -196,7 +186,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
     public fun detectAll(): List<DistroStatus> {
         val hostCheck = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (hostCheck.exitCode != 0) {
-            return listOf(DistroStatus.WslUnavailable(hostCheck.error.ifBlank { "wsl.exe is not available." }))
+            return listOf(hostCheck.unavailable())
         }
         val distros =
             hostCheck.output.lines()
@@ -221,7 +211,13 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
     public fun resolveWslUserHome(distro: String): String {
         val userRes = cli.execute(distro, listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""), timeoutSeconds = 5)
         if (userRes.exitCode != 0) {
-            error("Failed to resolve user home in '$distro': ${userRes.error}")
+            val detail = userRes.failureDetail("wsl.exe exited with code ${userRes.exitCode}")
+            val recovery = if (userRes.accessDeniedCode() != null) {
+                " Open Setup > Environment for recovery steps."
+            } else {
+                ""
+            }
+            error("Failed to resolve user home in '$distro': $detail$recovery")
         }
         val lines = userRes.output.lines().map { it.trim() }.filter { it.isNotBlank() }
         val home = if (lines.size > 1) lines[1] else ""
@@ -229,6 +225,25 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
             return home
         }
         error("No usable home directory found in '$distro'")
+    }
+
+    private fun CliExecutionResult.unavailable(): DistroStatus.WslUnavailable = DistroStatus.WslUnavailable(
+        detail = failureDetail("wsl.exe is not available or returned an error."),
+        accessDenied = accessDeniedCode() != null,
+    )
+
+    private fun CliExecutionResult.accessDeniedCode(): String? = sequenceOf(error, output)
+        .flatMap { it.replace("\u0000", "").lineSequence() }
+        .firstOrNull { "Wsl/" in it && "E_ACCESSDENIED" in it }
+        ?.substringAfter("Wsl/")?.trim()
+        ?.let { "Wsl/$it" }
+
+    // Windows WSL reports some host failures on stdout in UTF-16, even for commands targeting Linux.
+    private fun CliExecutionResult.failureDetail(fallback: String): String {
+        val stderr = error.replace("\u0000", "").trim()
+        val stdout = output.replace("\u0000", "").trim()
+        accessDeniedCode()?.let { return "Windows denied this app access to WSL ($it)." }
+        return stderr.ifBlank { stdout.takeIf { "Wsl/" in it }.orEmpty() }.ifBlank { fallback }
     }
 
     public fun isWslInstalled(): Boolean = try {

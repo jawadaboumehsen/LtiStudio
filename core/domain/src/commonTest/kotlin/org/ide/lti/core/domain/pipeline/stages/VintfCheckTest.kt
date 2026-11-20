@@ -19,7 +19,7 @@ class VintfCheckTest {
         mappings: String = "202404.cil\n34.0.cil",
         kernel: String = "ok 6.6.92-android15-8-g3637f4904cf5-ab13944661-4k",
         result: String = "@@@ result sun|- 0\n",
-    ) = "@@@ mapping\n$mappings\n@@@ vendor-sepolicy\n202404\n@@@ kernel $kernel\n$result"
+    ) = "@@@ mapping\n$mappings\n@@@ vendor-sepolicy\n202404\n@@@ kernel $kernel\n$result@@@ done 1\n"
 
     /** checkvintf's real answer when the boot kernel lacks a config the level-202404 6.6 requirements ask for. */
     private val incompatible = listOf(
@@ -35,11 +35,14 @@ class VintfCheckTest {
     fun aCompatibleSystemHasNoRefusalAndNoNote() {
         assertEquals(emptyList(), VintfCheck.refusals(output(), accepted = false))
         assertEquals(emptyList(), VintfCheck.notes(output()))
+        assertEquals(VintfStatus.COMPATIBLE, VintfCheck.assess(output()).status)
     }
 
     @Test
     fun anIncompatibilityIsRefusedWithCheckvintfsReasonUntilAccepted() {
-        val refusals = VintfCheck.refusals(output(result = incompatible), accepted = false)
+        val text = output(result = incompatible)
+        assertEquals(VintfStatus.INCOMPATIBLE, VintfCheck.assess(text).status)
+        val refusals = VintfCheck.refusals(text, accepted = false)
         assertEquals(1, refusals.size, "$refusals")
         val refusal = refusals[0]
         assertTrue(refusal.startsWith("VINTF_INCOMPATIBLE: the system does not meet"), refusal)
@@ -61,6 +64,8 @@ class VintfCheckTest {
     fun whatCouldNotBeJudgedIsANoteNotARefusal() {
         val noTool = "@@@ mapping\n202404.cil\n@@@ vendor-sepolicy\n202404\n@@@ tool-missing\n"
         assertEquals(emptyList(), VintfCheck.refusals(noTool, accepted = false))
+        assertEquals(VintfStatus.NOT_RUN, VintfCheck.assess(noTool).status)
+        assertEquals(VintfStatus.NOT_RUN, VintfCheck.assess(null).status)
         assertTrue(VintfCheck.notes(noTool).single().startsWith("VINTF_NOT_CHECKED: checkvintf is not installed"))
 
         val noConfig = output(kernel = "no embedded configuration (CONFIG_IKCONFIG) in the boot kernel")
@@ -78,5 +83,42 @@ class VintfCheckTest {
             listOf("VINTF_NOT_CHECKED: checkvintf could not finish (exit 70): No device manifest."),
             VintfCheck.notes(crashed),
         )
+    }
+
+    @Test
+    fun successfulSkuCheckWithUnreadableApexIsIncomplete() {
+        val missing = "Could not read VINTF fragments from APEX vendor/apex/broken.apex. Check its archive and payload."
+        val assessment = VintfCheck.assess(output() + "@@@ missing $missing\n")
+        assertEquals(VintfAssessment(VintfStatus.INCOMPLETE, listOf(missing)), assessment)
+    }
+
+    @Test
+    fun anInterruptedScanCannotPassOnOnlyOneSuccessfulSku() {
+        val partial = VintfCheck.assess(output().substringBefore("@@@ done"))
+        assertEquals(VintfStatus.INCOMPLETE, partial.status)
+        assertTrue(partial.missingEvidence.any { "complete set" in it })
+    }
+
+    @Test
+    fun aNonzeroScanExitCannotBeCompatibleEvenAfterTheCompletionMarker() {
+        val assessment = VintfCheck.assess(output(), exitCode = 1)
+        assertEquals(VintfStatus.INCOMPLETE, assessment.status)
+        assertTrue(assessment.missingEvidence.any { "exit 1" in it })
+    }
+
+    @Test
+    fun assemblyIsRequiredBeforeTheCheckerCanRun() {
+        val assessment = VintfCheck.assess("@@@ not-run Assemble must create work/ first.\n")
+        assertEquals(VintfStatus.NOT_RUN, assessment.status)
+        assertTrue(assessment.missingEvidence.any { "Assemble" in it })
+    }
+
+    @Test
+    fun vendorPolicyCannotEstablishAnIncompatibilityWithoutSystem() {
+        val missing = "The assembled /system partition is missing. Run Assemble."
+        val reason = "System and vendor are required to start checkvintf."
+        val text = "@@@ mapping\n@@@ vendor-sepolicy\n202404\n@@@ missing $missing\n@@@ not-run $reason\n"
+        assertEquals(VintfAssessment(VintfStatus.NOT_RUN, listOf(missing, reason)), VintfCheck.assess(text))
+        assertEquals(emptyList(), VintfCheck.refusals(text, accepted = false))
     }
 }
