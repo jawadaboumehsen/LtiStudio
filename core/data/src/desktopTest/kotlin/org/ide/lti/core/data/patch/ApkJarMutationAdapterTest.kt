@@ -21,6 +21,7 @@ import org.ide.lti.core.domain.plugin.EffectKind
 import org.ide.lti.core.domain.plugin.LabRow
 import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
+import org.ide.lti.core.domain.plugin.shortMember
 import org.ide.lti.core.model.plugin.AssetRef
 import org.ide.lti.core.model.plugin.MethodMatch
 import org.ide.lti.core.model.plugin.PartitionPath

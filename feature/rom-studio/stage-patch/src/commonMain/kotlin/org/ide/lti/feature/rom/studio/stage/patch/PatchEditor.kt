@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -42,8 +43,10 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.domain.plugin.LabRow
 import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.core.domain.plugin.shortMember
 import org.ide.lti.core.model.plugin.Condition
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.ValueRef
@@ -328,18 +331,71 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
                     .joinToString(" · "),
             )
         }
-        result.rows.groupBy { it.mod }.forEach { (mod, rows) ->
-            Mono(facts.installed.firstOrNull { it.key == mod }?.displayName?.takeIf { it.isNotBlank() } ?: mod)
-            rows.forEach { row ->
-                val op = facts.plans[mod]?.operations?.firstOrNull { it.id == row.operationId }
-                val text = "${LAB_MARKS.getValue(row.status)} ${op?.let(::describe) ?: row.operationId}" +
-                    row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
-                if (row.status == LabStatus.REFUSED) Problem(text) else Hint(text)
-                if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
+        var byPackage by remember { mutableStateOf(false) }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            listOf(false to "By mod", true to "By package").forEach { (value, label) ->
+                GlassChip(
+                    label = label,
+                    selected = byPackage == value,
+                    onClick = { byPackage = value },
+                    modifier = Modifier.testTag("PatchModLab_$label"),
+                )
             }
+        }
+        if (byPackage) LabPackages(result.rows, facts) else LabMods(result.rows, facts)
+    }
+}
+
+/** The lab by mod: each mod's operations in plan order, with what the check said. */
+@Composable
+private fun LabMods(rows: List<LabRow>, facts: PatchFacts) {
+    rows.groupBy { it.mod }.forEach { (mod, group) ->
+        Mono(modName(mod, facts))
+        group.forEach { row ->
+            LabLine(row, labOperation(row, facts)?.let(::describe) ?: row.operationId)
+            if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
         }
     }
 }
+
+/**
+ * The lab by package: each file the mods change (those several mods touch first), then each mod and what it does
+ * there, then for an APK or JAR the methods its edits change and the files inside it they touch.
+ */
+@Composable
+private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
+    labByPackage(rows) { row -> labOperation(row, facts)?.let(::targetOf) }.forEach { pkg ->
+        val mods = pkg.rows.map { it.mod }.distinct()
+        Mono(pkg.target + if (mods.size > 1) "  (${mods.size} mods)" else "")
+        pkg.rows.forEach { row ->
+            // The package's methods are listed once below, not after each of its edits.
+            val shown = row.copy(reason = row.reason.substringBefore("; the package's edits change"))
+            LabLine(
+                shown,
+                "${modName(row.mod, facts)}: ${labOperation(row, facts)?.let(::describe) ?: row.operationId}",
+            )
+            if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
+        }
+        if (pkg.methods.isNotEmpty()) {
+            Hint("Methods it changes (${pkg.methods.size}):")
+            pkg.methods.forEach { Hint("    ${shortMember(it)}   $it") }
+        }
+        if (pkg.files.isNotEmpty()) Hint("Files inside it: ${pkg.files.joinToString()}")
+    }
+}
+
+@Composable
+private fun LabLine(row: LabRow, what: String) {
+    val reason = row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
+    val text = "${LAB_MARKS.getValue(row.status)} $what$reason"
+    if (row.status == LabStatus.REFUSED) Problem(text) else Hint(text)
+}
+
+private fun labOperation(row: LabRow, facts: PatchFacts): Operation? =
+    facts.plans[row.mod]?.operations?.firstOrNull { it.id == row.operationId }
+
+private fun modName(mod: String, facts: PatchFacts): String =
+    facts.installed.firstOrNull { it.key == mod }?.displayName?.takeIf { it.isNotBlank() } ?: mod
 
 /** A package's edits before and after: `- ` removed, `+ ` added, `  ` unchanged lines, `=== member` headers. */
 @Composable

@@ -41,6 +41,10 @@ public data class LabRow(
     val reason: String = "",
     /** What the edits of this row's package change, before and after (`LineDiff.hunk` lines); empty for most rows. */
     val detail: String = "",
+    /** The methods its package's APK/JAR edits change (smali signatures); with the package's first edit only. */
+    val methods: List<String> = emptyList(),
+    /** The files inside the package those edits touch (`smali_classes2/…/X.smali`, `res/…`); likewise. */
+    val files: List<String> = emptyList(),
 ) {
     public companion object {
         /** One tab-separated line per row: the host step result is text (the detail's line breaks as `\u001F`). */
@@ -51,20 +55,35 @@ public data class LabRow(
                 row.status.name,
                 row.reason.replace(Regex("[\t\n\r]"), " "),
                 row.detail.replace("\t", "    ").replace("\r", "").replace('\n', DETAIL_BREAK),
+                row.methods.joinToString(LIST_BREAK.toString()),
+                row.files.joinToString(LIST_BREAK.toString()),
             ).joinToString("\t")
         }
 
         /** The rows [encode] wrote; a line it did not write is skipped. */
         public fun decode(text: String): List<LabRow> = text.lines().mapNotNull { line ->
-            val parts = line.split('\t', limit = 5).takeIf { it.size >= 4 } ?: return@mapNotNull null
+            val parts = line.split('\t', limit = 7).takeIf { it.size >= 4 } ?: return@mapNotNull null
+            fun list(i: Int) = parts.getOrNull(i).orEmpty().split(LIST_BREAK).filter { it.isNotEmpty() }
             LabStatus.entries.firstOrNull { it.name == parts[2] }?.let { status ->
-                LabRow(parts[0], parts[1], status, parts[3], parts.getOrNull(4).orEmpty().replace(DETAIL_BREAK, '\n'))
+                val detail = parts.getOrNull(4).orEmpty().replace(DETAIL_BREAK, '\n')
+                LabRow(parts[0], parts[1], status, parts[3], detail, methods = list(5), files = list(6))
             }
         }
 
         private const val DETAIL_BREAK = '\u001F'
+        private const val LIST_BREAK = '\u001E'
     }
 }
 
 /** The mod lab's answer: a row per operation, and what stopped the plans before any operation was checked. */
 public data class ModLab(val rows: List<LabRow>, val problems: List<String>)
+
+/**
+ * `Landroid/security/KeyStore2;->getSecurityLevel(I)L…;` → `KeyStore2.getSecurityLevel`; a member file
+ * (`smali_classes6/io/lti/Hook.smali`) → `Hook.smali`.
+ */
+public fun shortMember(member: String): String {
+    if ("->" !in member) return member.substringAfterLast('/')
+    val type = member.substringBefore("->").removeSuffix(";").substringAfterLast('/')
+    return "$type.${member.substringAfter("->").substringBefore('(').substringBefore(':')}"
+}

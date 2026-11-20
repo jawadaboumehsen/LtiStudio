@@ -42,6 +42,7 @@ import org.ide.lti.core.domain.plugin.LabStatus
 import org.ide.lti.core.domain.plugin.MutationContext
 import org.ide.lti.core.domain.plugin.MutationEffect
 import org.ide.lti.core.domain.plugin.MutationOutcome
+import org.ide.lti.core.domain.plugin.shortMember
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.model.plugin.FileMetadata
 import org.ide.lti.core.model.plugin.PartitionPath
@@ -567,16 +568,6 @@ private const val ERRORS_SHOWN = 3
 private const val METHODS_SHOWN = 3
 private const val DIFF_LINES = 400
 
-/**
- * `Landroid/security/KeyStore2;->getSecurityLevel(I)L…;` → `KeyStore2.getSecurityLevel`; a member file
- * (`smali_classes6/io/lti/Hook.smali`) → `Hook.smali`.
- */
-internal fun shortMember(member: String): String {
-    if ("->" !in member) return member.substringAfterLast('/')
-    val type = member.substringBefore("->").removeSuffix(";").substringAfterLast('/')
-    return "$type.${member.substringAfter("->").substringBefore('(').substringBefore(':')}"
-}
-
 /** Packages whose bytes cannot be previewed independently of their surrounding file operations. */
 internal fun mixedComponentTargets(plans: List<ConcreteMutationPlan>): Set<PartitionPath> {
     val operations = plans.flatMap { it.operations }
@@ -649,8 +640,10 @@ private suspend fun scopedComponentVerdicts(
                 val detail = (lines.take(DIFF_LINES) + listOfNotNull("… ($cut more lines)".takeIf { cut > 0 }))
                     .joinToString("\n")
                 // The package's before/after goes with its first edit only: every edit of it shares one decode.
+                val files = outcome.receipts.flatMap { it.diffs.keys }.distinct()
                 group.mapIndexed { i, (mod, op) ->
-                    (mod to op.id) to LabRow(mod, op.id, LabStatus.CHECKED, said, if (i == 0) detail else "")
+                    val row = LabRow(mod, op.id, LabStatus.CHECKED, said)
+                    (mod to op.id) to if (i == 0) row.copy(detail = detail, methods = methods, files = files) else row
                 }
             }
 
@@ -810,7 +803,9 @@ private fun sandboxRow(mod: String, op: ConcreteOperation, result: SandboxResult
                 val more = if (all.size > METHODS_SHOWN) ", +${all.size - METHODS_SHOWN} more" else ""
                 "; changes " + all.take(METHODS_SHOWN).joinToString(transform = ::shortMember) + more
             }.orEmpty()
+            val changed = result.methods.takeIf { op is ConcreteOperation.ApkJarPatch }.orEmpty()
             LabRow(mod, op.id, LabStatus.CHECKED, "simulated with the other edits of $name in plan order$methods")
+                .copy(methods = changed)
         }
     }
 }
