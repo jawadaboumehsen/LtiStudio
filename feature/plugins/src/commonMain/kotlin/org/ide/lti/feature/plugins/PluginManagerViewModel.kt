@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.plugin.AuthorProject
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
 import org.ide.lti.core.domain.plugin.AuthorTaskResult
@@ -38,6 +39,8 @@ import org.ide.lti.core.domain.plugin.TrustCheck
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.core.domain.plugin.newestPerPlugin
+import org.ide.lti.core.domain.workspace.ModUpdates
+import org.ide.lti.core.domain.workspace.PendingUpdate
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 
 public enum class PluginDestination(public val id: String, public val title: String) {
@@ -81,6 +84,12 @@ public data class PluginManagerUiState(
     val isAuthorTaskRunning: Boolean = false,
     val notificationMessage: String? = null,
     val errorMessage: String? = null,
+    /** A newer version installed and waiting for review before the workspaces move onto it. */
+    val pendingUpdate: PendingUpdate? = null,
+    /** The installed package the pending update moves to. */
+    val pendingInstalled: InstalledPackage? = null,
+    /** Per workspace name: the mod lab's answer on the new versions, or "Checking…". */
+    val updateChecks: Map<String, String> = emptyMap(),
 )
 
 @Suppress("TooManyFunctions") // unified state holder for installed, marketplace, import, and author tools
@@ -92,6 +101,7 @@ public class PluginManagerViewModel(
     private val pluginInstallPort: PluginInstallPort,
     private val workspaceManager: WorkspaceManager? = null,
     private val workspaceUsage: PluginWorkspaceUsage? = null,
+    private val modUpdates: ModUpdates? = null,
     initialDestination: String = "installed",
     initialWorkspaceId: String? = null,
     initialPackageId: String? = null,
@@ -268,9 +278,7 @@ public class PluginManagerViewModel(
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
                 if (state is InstallState.Installed) {
-                    val label = "${state.record.publisher}:${state.record.id}"
-                    val note = updateAfterInstall(state.record)
-                    _uiState.update { it.copy(notificationMessage = "Installed '$label' ${state.record.version}$note") }
+                    afterInstall(state.record)
                 } else if (state is InstallState.Failed) {
                     val err = state.report.errors.firstOrNull()?.message ?: "Installation failed"
                     _uiState.update { it.copy(errorMessage = err) }
@@ -280,6 +288,60 @@ public class PluginManagerViewModel(
                 }
             }
         }
+    }
+
+    /** After any install: a newer version some workspace would move onto is reviewed first, else applied. */
+    private suspend fun afterInstall(record: InstalledPackage) {
+        val pending = pendingUpdate(record)
+        val note = if (pending == null) updateAfterInstall(record) else " · review the update"
+        _uiState.update {
+            it.copy(
+                notificationMessage = "Installed '${record.publisher}:${record.id}' ${record.version}$note",
+                pendingUpdate = pending,
+                pendingInstalled = record.takeIf { pending != null },
+                updateChecks = emptyMap(),
+            )
+        }
+    }
+
+    /** The review of [installed] when it is a newer version some workspace would move onto; null otherwise. */
+    private suspend fun pendingUpdate(installed: InstalledPackage): PendingUpdate? {
+        val updates = modUpdates ?: return null
+        refreshInstalled()
+        val all = pluginInstallPort.installed()
+        return runCatchingCancellable {
+            updates.pending(all, "${installed.publisher}:${installed.id}", installed.version)
+        }.getOrNull()?.takeIf { p -> p.reviews.isNotEmpty() }
+    }
+
+    /** Runs the mod lab for [move]'s workspace on the new versions (nothing is saved). */
+    public fun checkUpdate(move: PluginWorkspaceUsage.PendingMove) {
+        val updates = modUpdates ?: return
+        _uiState.update { it.copy(updateChecks = it.updateChecks + (move.name to CHECKING)) }
+        viewModelScope.launch {
+            val answer = runCatchingCancellable { updates.check(move) }.getOrElse { "could not check: ${it.message}" }
+            _uiState.update { it.copy(updateChecks = it.updateChecks + (move.name to answer)) }
+        }
+    }
+
+    /** Moves the workspaces onto the reviewed update and removes the versions nothing uses any more. */
+    public fun applyUpdate() {
+        val installed = _uiState.value.pendingInstalled ?: return
+        viewModelScope.launch {
+            val note = updateAfterInstall(installed)
+            _uiState.update {
+                it.copy(
+                    pendingUpdate = null,
+                    pendingInstalled = null,
+                    notificationMessage = "Updated to ${installed.id} ${installed.version}$note",
+                )
+            }
+        }
+    }
+
+    /** Leaves the workspaces on the versions they use; the new one stays installed for later. */
+    public fun dismissUpdate() {
+        _uiState.update { it.copy(pendingUpdate = null, pendingInstalled = null, updateChecks = emptyMap()) }
     }
 
     /**
@@ -404,15 +466,8 @@ public class PluginManagerViewModel(
             installPluginUseCase(request).collect { state ->
                 _uiState.update { it.copy(installState = state) }
                 if (state is InstallState.Installed) {
-                    val pkgLabel = "${state.record.publisher}:${state.record.id}"
-                    val note = updateAfterInstall(state.record)
-                    _uiState.update {
-                        it.copy(
-                            importQuarantinedPath = null,
-                            importInspection = null,
-                            notificationMessage = "Installed '$pkgLabel' ${state.record.version}$note",
-                        )
-                    }
+                    _uiState.update { it.copy(importQuarantinedPath = null, importInspection = null) }
+                    afterInstall(state.record)
                 } else if (state is InstallState.Failed) {
                     val err = state.report.errors.firstOrNull()?.message ?: "Import install failed"
                     _uiState.update { it.copy(errorMessage = err) }

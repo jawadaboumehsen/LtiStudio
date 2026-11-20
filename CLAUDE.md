@@ -1203,6 +1203,11 @@ nothing is shown as done before its job finished.
 - Mod lab "By package" (`LabPackage`, `labByPackage`): the same rows grouped by the file they touch, packages several
   mods edit first; each `LabRow` also carries `methods` (full signatures; `shortMember` shortens them) and `files`
   (the decoded members its edits changed, from the receipts' diffs), on the package's first row.
+- Mod update review (Plugins, `ModUpdates` + `ModUpdateReview`, `UpdateReviewDialog`): installing a newer version
+  that would move workspaces (`PluginWorkspaceUsage.pendingMoves`) no longer moves them at once. The dialog shows,
+  per version the workspaces use, what changes: options (`SettingDefinition.describe`), files it edits (operation
+  kinds per target), devices (compatibility) and dependencies; per workspace "Check it" runs the mod lab on the
+  relocked versions (`Preflight.lab`). "Move N workspace(s)" runs `updateAfterInstall`; "Not now" leaves them.
 - Size advisor (Build & Sign > Partition layout, `SizeAdvisor`, `SizeAdvisorCard`): per EROFS partition, trial mkfs.erofs builds in workbench/trial (as set now, 64 KiB cluster, dedupe when the kernel is 6.1+, lzma when it decodes it), size and seconds each; advice = fastest whose signed size (`SizeAdvisor.signedBytes`: + AVB hashtree and footer) fits the room left in the super group, else smallest; kept partitions are not tried; "Use this" sets the partition's own compression/dedupe/cluster.
 - Changelog draft (Release metadata > Changelog, `ChangelogDraft`): from work/modules/plan.json (mods and the files they changed), work/debloat/result.json (apps removed, MB freed), build type and property overrides.
 - Phone vs device configuration (Connected phone, `PhoneDeviceCheck`): fastboot product, super size and boot-chain partition sizes measured by fastboot next to device.json, with "Use phone value" into the draft.

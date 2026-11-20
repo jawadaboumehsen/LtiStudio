@@ -68,6 +68,7 @@ import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
+import org.ide.lti.core.domain.workspace.ModUpdates
 import org.ide.lti.core.domain.workspace.NextBuild
 import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
@@ -184,6 +185,7 @@ internal actual val platformRepositoryModule =
         single { SizeAdvisor(runner = get()) }
         single { CompressionGoal(advisor = get(), boot = get(), settings = get(), runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
+        single { ModUpdates(catalog = get(), usage = get(), preflight = getOrNull()) }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
         single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
         single { RunComparison(runner = get(), snapshots = get()) }

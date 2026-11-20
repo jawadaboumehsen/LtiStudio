@@ -135,6 +135,9 @@ public fun PluginManagerScreen(
             onSelectAuthorTask = { viewModel.selectAuthorTask(it) },
             onRunAuthorTask = { viewModel.runAuthorTask(it) },
             onDismissNotification = { viewModel.dismissNotification() },
+            onCheckUpdate = { viewModel.checkUpdate(it) },
+            onApplyUpdate = { viewModel.applyUpdate() },
+            onDismissUpdate = { viewModel.dismissUpdate() },
         )
     }
 
@@ -300,6 +303,16 @@ public fun PluginManagerContent(
                         }
                     }
                 }
+            }
+
+            state.pendingUpdate?.let { update ->
+                UpdateReviewDialog(
+                    update = update,
+                    checks = state.updateChecks,
+                    onCheck = actions.onCheckUpdate,
+                    onApply = actions.onApplyUpdate,
+                    onDismiss = actions.onDismissUpdate,
+                )
             }
 
             // Details Dialog if open

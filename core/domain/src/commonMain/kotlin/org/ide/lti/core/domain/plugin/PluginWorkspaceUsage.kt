@@ -62,6 +62,34 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
         return moved
     }
 
+    /**
+     * The workspaces [moveToNewest] would move, each with its settings on the newest versions (worked out the same
+     * way, not saved) and the versions it uses now (`publisher:id` → version): for reviewing an update first.
+     */
+    suspend fun pendingMoves(installed: List<InstalledRecord>): List<PendingMove> {
+        val newest = newestPerPlugin(installed.filter { !it.revoked && !it.archived }, { it.key }) {
+            it.identity.version
+        }
+        val versions = newest.associate { it.key to it.identity.version }
+        val packages = newest.map { it.toInstalledPackage() }
+        val pending = mutableListOf<PendingMove>()
+        eachWorkspace { id, name, snapshot ->
+            relocked(snapshot, versions, packages)?.let { moved ->
+                val now = snapshot.customization.lockfile.entries.associate { "${it.publisher}:${it.id}" to it.version }
+                pending += PendingMove(id, name, moved, now)
+            }
+        }
+        return pending
+    }
+
+    /** A workspace an update would move: [snapshot] on the newest versions; [using] what it uses now. */
+    data class PendingMove(
+        val workspaceId: String,
+        val name: String,
+        val snapshot: ConfigurationSnapshot,
+        val using: Map<String, String>,
+    )
+
     /** [snapshot] locked onto [packages], or null when it uses no older version or cannot be locked. */
     private fun relocked(
         snapshot: ConfigurationSnapshot,

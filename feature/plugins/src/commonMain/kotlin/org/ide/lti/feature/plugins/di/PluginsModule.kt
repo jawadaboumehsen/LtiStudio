@@ -23,6 +23,7 @@ val pluginsModule = module {
             pluginInstallPort = get(),
             workspaceManager = getOrNull(),
             workspaceUsage = getOrNull(),
+            modUpdates = getOrNull(),
         )
     }
 }

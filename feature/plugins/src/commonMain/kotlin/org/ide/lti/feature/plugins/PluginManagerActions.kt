@@ -11,6 +11,7 @@ package org.ide.lti.feature.plugins
 
 import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.InstalledRecord
+import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.plugin.TrustDecision
 
 public data class PluginManagerActions(
@@ -37,4 +38,7 @@ public data class PluginManagerActions(
     val onSelectAuthorTask: (String) -> Unit = {},
     val onRunAuthorTask: (String) -> Unit = {},
     val onDismissNotification: () -> Unit = {},
+    val onCheckUpdate: (PluginWorkspaceUsage.PendingMove) -> Unit = {},
+    val onApplyUpdate: () -> Unit = {},
+    val onDismissUpdate: () -> Unit = {},
 )
