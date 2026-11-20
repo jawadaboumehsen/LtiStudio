@@ -26,6 +26,7 @@ import org.ide.lti.core.domain.plugin.PluginPackagePolicy
 import org.ide.lti.core.domain.plugin.edit.EditResult
 import org.ide.lti.core.domain.plugin.edit.FileEdits
 import org.ide.lti.core.model.run.StageId
+import java.nio.file.AccessDeniedException
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -563,26 +564,9 @@ class FileMutationAdapter : FileMutationPort {
         val tempFile = Files.createTempFile(targetPath.parent ?: Path.of("."), prefix, ".tmp")
         try {
             Files.writeString(tempFile, content, Charsets.UTF_8)
-            moveAtomically(tempFile, targetPath)
+            moveReplacing(tempFile, targetPath)
         } finally {
             Files.deleteIfExists(tempFile)
-        }
-    }
-
-    private fun moveAtomically(source: Path, destination: Path) {
-        try {
-            Files.move(
-                source,
-                destination,
-                StandardCopyOption.ATOMIC_MOVE,
-                StandardCopyOption.REPLACE_EXISTING,
-            )
-        } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(
-                source,
-                destination,
-                StandardCopyOption.REPLACE_EXISTING,
-            )
         }
     }
 
@@ -617,3 +601,38 @@ private const val STAGED_TEXT_LIMIT = 1024 * 1024
 
 /** Staged for a file an earlier operation deleted. */
 private const val DELETED = "\u0000deleted"
+
+/**
+ * [source] moved onto [destination], atomically where the file system can. Over `\\wsl.localhost`, Windows refuses
+ * to replace a file for a moment while something (a virus scan, the indexer) still holds it or the new copy: such a
+ * refusal is tried again a few times before it fails, saying so.
+ */
+internal fun moveReplacing(source: Path, destination: Path, attempts: Int = MOVE_ATTEMPTS) {
+    var attempt = 1
+    while (true) {
+        try {
+            moveOnce(source, destination)
+            return
+        } catch (e: AccessDeniedException) {
+            if (attempt == attempts) {
+                throw AccessDeniedException(
+                    "$source",
+                    "$destination",
+                    "Windows refused to replace it $attempts times; another program holds one of the files",
+                ).apply { initCause(e) }
+            }
+            Thread.sleep(MOVE_PAUSE_MS * attempt++)
+        }
+    }
+}
+
+private fun moveOnce(source: Path, destination: Path) {
+    try {
+        Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    } catch (_: AtomicMoveNotSupportedException) {
+        Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING)
+    }
+}
+
+private const val MOVE_ATTEMPTS = 5
+private const val MOVE_PAUSE_MS = 200L

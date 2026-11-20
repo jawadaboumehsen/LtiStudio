@@ -873,6 +873,8 @@ per stage; a failed stage marks every later stage pending and stops.
   `\\wsl.localhost\<distro>\…\work`), which also writes the sidecar entries of added or deleted files.
   `TextPatch` with an empty `expectedSha256` is anchored by its unique context only (for files several plugins
   edit, like `plat_sepolicy.cil`).
+  Files are replaced through `moveReplacing`: Windows refuses a replace over `\\wsl.localhost` for a moment while a
+  scanner holds the file (`AccessDeniedException`, no reason given), so it is tried 5 times before it fails.
 - First-party mods live outside this repo, in `../LtiRomMods` (a plain Kotlin project on the SDK, like any
   third-party mod): `./gradlew publishSdkToMavenLocal` here, then `./gradlew packageMods` there writes
   `build/mods/*.lti-mod.zip`; install them on the Plugins page. The SDK and the modules its POM names (core:common,
