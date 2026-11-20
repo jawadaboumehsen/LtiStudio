@@ -10,6 +10,7 @@
 package org.ide.lti.feature.workspace.panels.run.di
 
 import org.ide.lti.feature.workspace.panels.run.BuildRunViewModel
+import org.ide.lti.feature.workspace.panels.run.ProfilesViewModel
 import org.ide.lti.feature.workspace.panels.run.RunHistoryViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
@@ -18,6 +19,7 @@ import org.koin.dsl.module
 
 public val workspaceRunModule: Module = module {
     viewModelOf(::RunHistoryViewModel)
+    viewModel { ProfilesViewModel(workspaceManager = get(), profiles = getOrNull(), queue = getOrNull()) }
     viewModel {
         BuildRunViewModel(
             workspaceManager = get(),

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.data.di
 
+import kotlinx.coroutines.CoroutineScope
 import org.ide.lti.core.data.admission.WorkspaceAdmissionRepository
 import org.ide.lti.core.data.common.DesktopAppEnvironment
 import org.ide.lti.core.data.common.resolveAppDataDir
@@ -28,6 +29,7 @@ import org.ide.lti.core.data.repository.device.ConnectedDeviceRepositoryImpl
 import org.ide.lti.core.data.repository.filesystem.DesktopFileSystemRepository
 import org.ide.lti.core.data.repository.run.RunRepositoryImpl
 import org.ide.lti.core.data.toolkit.WorkspaceToolkitStores
+import org.ide.lti.core.data.workspace.FileBuildProfileStore
 import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.stages.Preflight
@@ -65,6 +67,9 @@ import org.ide.lti.core.domain.workbench.SizeAdvisor
 import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workbench.WorkspaceStorage
+import org.ide.lti.core.domain.workspace.BuildProfileStore
+import org.ide.lti.core.domain.workspace.BuildProfiles
+import org.ide.lti.core.domain.workspace.BuildQueue
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
@@ -186,6 +191,18 @@ internal actual val platformRepositoryModule =
         single { CompressionGoal(advisor = get(), boot = get(), settings = get(), runner = get()) }
         single { Preflight(runner = get(), settings = get(), host = getOrNull(), catalog = getOrNull()) }
         single { ModUpdates(catalog = get(), usage = get(), preflight = getOrNull()) }
+        single<BuildProfileStore> { FileBuildProfileStore() }
+        single { BuildProfiles(store = get(), settings = get()) }
+        single {
+            val start = get<StartPipelineRunUseCase>()
+            BuildQueue(
+                profiles = get(),
+                start = { start(it) },
+                runs = get(),
+                scope = get<CoroutineScope>(),
+                preflight = getOrNull(),
+            )
+        }
         single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
         single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
         single { RunComparison(runner = get(), snapshots = get()) }

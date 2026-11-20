@@ -1208,6 +1208,13 @@ nothing is shown as done before its job finished.
   per version the workspaces use, what changes: options (`SettingDefinition.describe`), files it edits (operation
   kinds per target), devices (compatibility) and dependencies; per workspace "Check it" runs the mod lab on the
   relocked versions (`Preflight.lab`). "Move N workspace(s)" runs `updateAfterInstall`; "Not now" leaves them.
+- Profiles (Run panel > Profiles, `BuildProfiles`, `FileBuildProfileStore`,
+  `<LOCALAPPDATA>/LtiRomGui/profiles/<workspace id>.json`): a workspace's whole `ConfigurationSnapshot` saved under a
+  name; Differences = `RunComparison.settingsChanges` + `modChanges` against the current settings; "Use it" copies
+  every stage's settings into the current snapshot (its id and revision stay). Build queue (`BuildQueue`, a Koin
+  single on the app scope): profiles in order, each applied, checked by `Preflight.check` (a blocking finding stops
+  the queue with it), started through `StartPipelineRunUseCase` and waited for; a run that does not succeed stops
+  the queue. "Stop after this build" starts no other. The queue lives while the app does.
 - Size advisor (Build & Sign > Partition layout, `SizeAdvisor`, `SizeAdvisorCard`): per EROFS partition, trial mkfs.erofs builds in workbench/trial (as set now, 64 KiB cluster, dedupe when the kernel is 6.1+, lzma when it decodes it), size and seconds each; advice = fastest whose signed size (`SizeAdvisor.signedBytes`: + AVB hashtree and footer) fits the room left in the super group, else smallest; kept partitions are not tried; "Use this" sets the partition's own compression/dedupe/cluster.
 - Changelog draft (Release metadata > Changelog, `ChangelogDraft`): from work/modules/plan.json (mods and the files they changed), work/debloat/result.json (apps removed, MB freed), build type and property overrides.
 - Phone vs device configuration (Connected phone, `PhoneDeviceCheck`): fastboot product, super size and boot-chain partition sizes measured by fastboot next to device.json, with "Use phone value" into the draft.

@@ -62,6 +62,7 @@ import org.koin.compose.viewmodel.koinViewModel
 public fun RunPanel(
     viewModel: BuildRunViewModel,
     historyViewModel: RunHistoryViewModel = koinViewModel(),
+    profilesViewModel: ProfilesViewModel = koinViewModel(),
     onNavigateToSetup: (() -> Unit)? = null,
     /** Opens a stage editor at an object: where a failed build's fix is made. */
     onOpen: (StageId, String) -> Unit = { _, _ -> },
@@ -79,6 +80,7 @@ public fun RunPanel(
             tabs = listOf(
                 GlassTab(id = "run", title = "Run"),
                 GlassTab(id = "history", title = "History"),
+                GlassTab(id = "profiles", title = "Profiles"),
             ),
             selectedId = selectedTab,
             onTabSelected = { selectedTab = it },
@@ -86,6 +88,8 @@ public fun RunPanel(
         )
 
         when (selectedTab) {
+            "profiles" -> ProfilesPanel(viewModel = profilesViewModel, modifier = Modifier.fillMaxSize())
+
             "history" -> {
                 RunHistoryPanel(
                     viewModel = historyViewModel,
