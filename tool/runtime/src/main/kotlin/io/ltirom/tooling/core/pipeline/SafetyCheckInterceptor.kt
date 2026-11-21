@@ -2,6 +2,7 @@ package io.ltirom.tooling.core.pipeline
 
 import io.ltirom.tooling.core.ToolSafetyPolicy
 import io.ltirom.tooling.core.ToolResult
+import kotlinx.coroutines.CancellationException
 
 /**
  * Single Responsibility: Enforces tool safety constraints and validates input/output artifacts.
@@ -19,7 +20,9 @@ public class SafetyCheckInterceptor(
                 chain.command.validateOutputArtifacts()
             }
             result
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             ToolResult.Failure.ValidationFailed(e.message ?: "Safety validation failed", e)
         }
     }

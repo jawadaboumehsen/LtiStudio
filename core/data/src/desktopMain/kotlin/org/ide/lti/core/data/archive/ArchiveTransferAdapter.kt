@@ -9,8 +9,11 @@
  */
 package org.ide.lti.core.data.archive
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import org.ide.lti.core.domain.ports.BoundedTransferPort
 import org.ide.lti.core.domain.ports.ExistingFileProbe
 import org.ide.lti.core.domain.ports.MAX_TRANSFER_CHUNK_BYTES
@@ -45,7 +48,8 @@ public object ArchiveTransferCodes {
     public const val DISK_FULL: String = "DISK_FULL"
 }
 
-public class ArchiveTransferAdapter : BoundedTransferPort {
+public class ArchiveTransferAdapter(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) :
+    BoundedTransferPort {
 
     private val cancellations = ConcurrentHashMap<String, AtomicBoolean>()
 
@@ -198,7 +202,7 @@ public class ArchiveTransferAdapter : BoundedTransferPort {
             } finally {
                 cancellations.remove(session.id)
             }
-        }
+        }.flowOn(ioDispatcher)
 
     private fun prepareSource(session: TransferSession, wsRoot: Path): PreparedSource =
         when (val src = session.source) {

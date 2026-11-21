@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.CancellationException
 import io.ltirom.tooling.core.ports.PathTranslatorPort
 import io.ltirom.tooling.core.remote.PathTranslationDirection
 import io.ltirom.tooling.core.remote.PathTranslationRequest
@@ -132,6 +133,8 @@ public class WslPathTranslator(
             } else {
                 if (direction == PathTranslationDirection.WINDOWS_TO_WSL) toWslPath(path) else toWindowsPath(path)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             if (direction == PathTranslationDirection.WINDOWS_TO_WSL) toWslPath(path) else toWindowsPath(path)
         }

@@ -10,6 +10,9 @@
 package org.ide.lti.core.data.checkpoint
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.ContentManifest
 import org.ide.lti.core.domain.pipeline.ManifestEntry
@@ -35,44 +38,45 @@ import java.util.UUID
 /**
  * File-system backed repository for stage checkpoints and staging trees over [java.nio].
  */
-public class CheckpointRepository : CheckpointPort {
+public class CheckpointRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : CheckpointPort {
 
-    override suspend fun stage(ws: Workspace, checkpoint: StageCheckpoint, requiredBytes: Long): StagingResult {
-        val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
-        if (!Files.exists(wsRoot)) {
-            Files.createDirectories(wsRoot)
-        }
+    override suspend fun stage(ws: Workspace, checkpoint: StageCheckpoint, requiredBytes: Long): StagingResult =
+        withContext(ioDispatcher) {
+            val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
+            if (!Files.exists(wsRoot)) {
+                Files.createDirectories(wsRoot)
+            }
 
-        val availableBytes = Files.getFileStore(wsRoot).usableSpace
-        val sourceRoot = wsRoot.resolve(checkpoint.rootRelPath).normalize()
+            val availableBytes = Files.getFileStore(wsRoot).usableSpace
+            val sourceRoot = wsRoot.resolve(checkpoint.rootRelPath).normalize()
 
-        val failure = when {
-            availableBytes < requiredBytes -> StagingResult.InsufficientDisk(
-                requiredBytes = requiredBytes,
-                availableBytes = availableBytes,
+            val failure = when {
+                availableBytes < requiredBytes -> StagingResult.InsufficientDisk(
+                    requiredBytes = requiredBytes,
+                    availableBytes = availableBytes,
+                )
+
+                !Files.exists(sourceRoot) -> StagingResult.SourceMissing(checkpoint.rootRelPath)
+
+                else -> null
+            }
+            if (failure != null) return@withContext failure
+
+            val randomId = UUID.randomUUID().toString().replace("-", "").take(8)
+            val stagingDirName = "${checkpoint.stageId}-$randomId"
+            val stagingRelPath = ".staging/$stagingDirName"
+            val stagingDir = wsRoot.resolve(stagingRelPath).normalize()
+            Files.createDirectories(stagingDir)
+
+            copyTree(sourceRoot, stagingDir)
+
+            val handle = StagingHandle(
+                id = stagingDirName,
+                checkpoint = checkpoint,
+                stagingRelPath = stagingRelPath,
             )
-
-            !Files.exists(sourceRoot) -> StagingResult.SourceMissing(checkpoint.rootRelPath)
-
-            else -> null
+            StagingResult.Staged(handle)
         }
-        if (failure != null) return failure
-
-        val randomId = UUID.randomUUID().toString().replace("-", "").take(8)
-        val stagingDirName = "${checkpoint.stageId}-$randomId"
-        val stagingRelPath = ".staging/$stagingDirName"
-        val stagingDir = wsRoot.resolve(stagingRelPath).normalize()
-        Files.createDirectories(stagingDir)
-
-        copyTree(sourceRoot, stagingDir)
-
-        val handle = StagingHandle(
-            id = stagingDirName,
-            checkpoint = checkpoint,
-            stagingRelPath = stagingRelPath,
-        )
-        return StagingResult.Staged(handle)
-    }
 
     private fun copyTree(sourceRoot: Path, stagingDir: Path) {
         Files.walk(sourceRoot).use { stream ->
@@ -121,35 +125,36 @@ public class CheckpointRepository : CheckpointPort {
      * verification. This byte-level check is the fundamental guarantee ensuring corrupt or tampered artifacts
      * cannot silently pass as valid checkpoints.
      */
-    override suspend fun verify(ws: Workspace, checkpoint: StageCheckpoint): VerificationReceipt {
-        val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
-        val checkpointRoot = wsRoot.resolve(checkpoint.rootRelPath).normalize()
+    override suspend fun verify(ws: Workspace, checkpoint: StageCheckpoint): VerificationReceipt =
+        withContext(ioDispatcher) {
+            val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
+            val checkpointRoot = wsRoot.resolve(checkpoint.rootRelPath).normalize()
 
-        val mismatches = mutableListOf<String>()
-        if (!Files.exists(checkpointRoot)) {
-            mismatches.addAll(checkpoint.manifest.entries.map { it.relPath })
-            return VerificationReceipt(
+            val mismatches = mutableListOf<String>()
+            if (!Files.exists(checkpointRoot)) {
+                mismatches.addAll(checkpoint.manifest.entries.map { it.relPath })
+                return@withContext VerificationReceipt(
+                    verifiedAtEpochMs = System.currentTimeMillis(),
+                    method = "sha256-content",
+                    verified = false,
+                    mismatches = mismatches,
+                )
+            }
+
+            for (entry in checkpoint.manifest.entries) {
+                val entryPath = checkpointRoot.resolve(entry.relPath).normalize()
+                if (!verifyEntry(entryPath, entry)) {
+                    mismatches.add(entry.relPath)
+                }
+            }
+
+            VerificationReceipt(
                 verifiedAtEpochMs = System.currentTimeMillis(),
                 method = "sha256-content",
-                verified = false,
+                verified = mismatches.isEmpty(),
                 mismatches = mismatches,
             )
         }
-
-        for (entry in checkpoint.manifest.entries) {
-            val entryPath = checkpointRoot.resolve(entry.relPath).normalize()
-            if (!verifyEntry(entryPath, entry)) {
-                mismatches.add(entry.relPath)
-            }
-        }
-
-        return VerificationReceipt(
-            verifiedAtEpochMs = System.currentTimeMillis(),
-            method = "sha256-content",
-            verified = mismatches.isEmpty(),
-            mismatches = mismatches,
-        )
-    }
 
     private fun verifyEntry(entryPath: Path, entry: ManifestEntry): Boolean {
         if (!Files.exists(entryPath, LinkOption.NOFOLLOW_LINKS)) {
@@ -185,55 +190,56 @@ public class CheckpointRepository : CheckpointPort {
      * An existing directory for that digest is reused, not overwritten, because identical content
      * digest implies identical artifact content by definition.
      */
-    override suspend fun promote(ws: Workspace, handle: StagingHandle, actual: ContentManifest): StageCheckpoint {
-        val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
-        val stagingDir = wsRoot.resolve(handle.stagingRelPath).normalize()
-        if (!Files.exists(stagingDir)) {
-            error("Staging directory does not exist: ${handle.stagingRelPath}")
-        }
-
-        val stagedManifest = manifestOf(stagingDir)
-        if (stagedManifest != actual) {
-            val diff = findFirstDifference(stagedManifest, actual)
-            error("Staged manifest does not match actual manifest: $diff")
-        }
-
-        val outputDigest = stagedManifest.canonicalDigest()
-        val finalRelPath = "checkpoints/${handle.checkpoint.stageId}/$outputDigest"
-        val finalDir = wsRoot.resolve(finalRelPath).normalize()
-
-        if (Files.exists(finalDir)) {
-            // Identical content by definition; reuse existing directory and discard staging
-            deleteRecursively(stagingDir)
-        } else {
-            Files.createDirectories(finalDir.parent)
-            try {
-                Files.move(stagingDir, finalDir, StandardCopyOption.ATOMIC_MOVE)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                copyTreeRecursively(stagingDir, finalDir)
-                deleteRecursively(stagingDir)
+    override suspend fun promote(ws: Workspace, handle: StagingHandle, actual: ContentManifest): StageCheckpoint =
+        withContext(ioDispatcher) {
+            val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
+            val stagingDir = wsRoot.resolve(handle.stagingRelPath).normalize()
+            if (!Files.exists(stagingDir)) {
+                error("Staging directory does not exist: ${handle.stagingRelPath}")
             }
+
+            val stagedManifest = manifestOf(stagingDir)
+            if (stagedManifest != actual) {
+                val diff = findFirstDifference(stagedManifest, actual)
+                error("Staged manifest does not match actual manifest: $diff")
+            }
+
+            val outputDigest = stagedManifest.canonicalDigest()
+            val finalRelPath = "checkpoints/${handle.checkpoint.stageId}/$outputDigest"
+            val finalDir = wsRoot.resolve(finalRelPath).normalize()
+
+            if (Files.exists(finalDir)) {
+                // Identical content by definition; reuse existing directory and discard staging
+                deleteRecursively(stagingDir)
+            } else {
+                Files.createDirectories(finalDir.parent)
+                try {
+                    Files.move(stagingDir, finalDir, StandardCopyOption.ATOMIC_MOVE)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    copyTreeRecursively(stagingDir, finalDir)
+                    deleteRecursively(stagingDir)
+                }
+            }
+
+            val sidecarPaths = stagedManifest.entries
+                .filter { it.kind == ManifestEntryKind.SIDECAR }
+                .map { it.relPath }
+
+            StageCheckpoint(
+                stageId = handle.checkpoint.stageId,
+                stageVersion = handle.checkpoint.stageVersion,
+                inputDigest = handle.checkpoint.inputDigest,
+                rootRelPath = finalRelPath,
+                manifest = stagedManifest,
+                sidecarRelPaths = sidecarPaths,
+                outputDigest = outputDigest,
+                verification = null,
+            )
         }
 
-        val sidecarPaths = stagedManifest.entries
-            .filter { it.kind == ManifestEntryKind.SIDECAR }
-            .map { it.relPath }
-
-        return StageCheckpoint(
-            stageId = handle.checkpoint.stageId,
-            stageVersion = handle.checkpoint.stageVersion,
-            inputDigest = handle.checkpoint.inputDigest,
-            rootRelPath = finalRelPath,
-            manifest = stagedManifest,
-            sidecarRelPaths = sidecarPaths,
-            outputDigest = outputDigest,
-            verification = null,
-        )
-    }
-
-    override suspend fun discard(ws: Workspace, handle: StagingHandle) {
+    override suspend fun discard(ws: Workspace, handle: StagingHandle): Unit = withContext(ioDispatcher) {
         val wsRoot = Path.of(ws.path).toAbsolutePath().normalize()
         val stagingDir = wsRoot.resolve(handle.stagingRelPath).normalize()
         deleteRecursively(stagingDir)

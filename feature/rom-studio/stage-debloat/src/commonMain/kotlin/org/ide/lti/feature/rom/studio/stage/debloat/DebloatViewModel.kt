@@ -17,6 +17,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ide.lti.core.common.utils.DialogUtils
@@ -131,7 +132,7 @@ public class DebloatViewModel(
         guarded {
             val kept = portableList("Picks for $device").copy(device = device)
             val saved = store.update { all -> all.filter { it.device != device } + kept }
-            _facts.value = _facts.value.copy(presets = saved)
+            _facts.update { it.copy(presets = saved) }
         }
     }
 
@@ -139,7 +140,7 @@ public class DebloatViewModel(
     public fun applyDevicePicks() {
         _facts.value.devicePicks?.let {
             pick(it, "Applied the picks kept for ${it.device}:")
-            _facts.value = _facts.value.copy(devicePicks = null)
+            _facts.update { prev -> prev.copy(devicePicks = null) }
         }
     }
 
@@ -167,7 +168,7 @@ public class DebloatViewModel(
     /** Reads the apps of the assembled work tree and the last Debloat result. */
     public fun refresh() {
         val facts = workspaceFacts ?: return
-        _facts.value = _facts.value.copy(loading = true)
+        _facts.update { it.copy(loading = true) }
         // A newer refresh replaces this one whole: its risks must never land on the newer inventory.
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
@@ -181,17 +182,19 @@ public class DebloatViewModel(
                 )?.items.orEmpty()
             }.getOrDefault(emptyList())
                 .filter { it.tool == DebloatStage.TOOL }
-            _facts.value = _facts.value.copy(
-                inventory = inventory,
-                loaded = true,
-                loading = false,
-                lastResult = result,
-                restorePoints = points,
-                // Read again for this inventory below; until then (or if that fails) none are shown.
-                apps = emptyMap(),
-                mentions = emptyMap(),
-                iconFolder = null,
-            )
+            _facts.update {
+                it.copy(
+                    inventory = inventory,
+                    loaded = true,
+                    loading = false,
+                    lastResult = result,
+                    restorePoints = points,
+                    // Read again for this inventory below; until then (or if that fails) none are shown.
+                    apps = emptyMap(),
+                    mentions = emptyMap(),
+                    iconFolder = null,
+                )
+            }
             readApps(inventory)
         }
         guarded {
@@ -199,7 +202,7 @@ public class DebloatViewModel(
             val device = devices?.get(workspaceId)?.codename
             val offered = saved.firstOrNull { it.device != null && it.device == device && it.entries.isNotEmpty() }
                 ?.takeIf { settings.value.removeSelectors.isEmpty() }
-            _facts.value = _facts.value.copy(presets = saved, device = device, devicePicks = offered)
+            _facts.update { it.copy(presets = saved, device = device, devicePicks = offered) }
         }
     }
 
@@ -223,31 +226,34 @@ public class DebloatViewModel(
             }
             val apks = manifests.mapValues { (apk, facts) -> signers[apk]?.let(facts::plus) ?: facts }
             val mentions = runner.read(workspaceId) { PackageMentions.parse(sh(PackageMentions.SCRIPT, abs("work"))) }
-            _facts.value = _facts.value.copy(apps = DebloatRisk.byApp(inventory, apks), mentions = mentions)
+            _facts.update { it.copy(apps = DebloatRisk.byApp(inventory, apks), mentions = mentions) }
             // Names and icons come second: the risks matter more, and badging takes as long again.
             val (labels, icons) = runner.read(workspaceId) {
                 AppManifests.parse(sh(AppManifests.LABELS_SCRIPT, abs("work"), abs(ICON_DIR))) to hostPath(ICON_DIR)
             }
             val named = apks.mapValues { (apk, facts) -> labels[apk]?.let(facts::plus) ?: facts }
-            _facts.value = _facts.value.copy(apps = DebloatRisk.byApp(inventory, named), iconFolder = icons)
+            _facts.update { it.copy(apps = DebloatRisk.byApp(inventory, named), iconFolder = icons) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _facts.value = _facts.value.copy(
-                refusal = if (RefusalCatalog.BUILD_RUNNING in e.message.orEmpty()) {
-                    Refusal(
-                        "A build is running in this workspace, so app names, signers and risks cannot be read now.",
-                        "work/",
-                        "Press Refresh when the build has finished; your picks are kept.",
-                    )
-                } else {
-                    Refusal(
-                        "The app manifests could not be read (${e.message ?: e::class.simpleName}).",
-                        "work/",
-                        "Check that aapt2 is installed in Setup > Tools; picks are still checked when the build runs.",
-                    )
-                },
-            )
+            _facts.update {
+                it.copy(
+                    refusal = if (RefusalCatalog.BUILD_RUNNING in e.message.orEmpty()) {
+                        Refusal(
+                            "A build is running in this workspace, so app names, signers and risks cannot be read now.",
+                            "work/",
+                            "Press Refresh when the build has finished; your picks are kept.",
+                        )
+                    } else {
+                        Refusal(
+                            "The app manifests could not be read (${e.message ?: e::class.simpleName}).",
+                            "work/",
+                            "Check that aapt2 is installed in Setup > Tools; " +
+                                "picks are still checked when the build runs.",
+                        )
+                    },
+                )
+            }
         }
     }
 
@@ -260,7 +266,7 @@ public class DebloatViewModel(
         guarded {
             workbench.restore(workspaceId, point.id)
             unpick(point.id.removePrefix("${DebloatStage.TOOL}:"))
-            _facts.value = _facts.value.copy(message = "Restored ${point.itemPath}.")
+            _facts.update { it.copy(message = "Restored ${point.itemPath}.") }
             refresh()
         }
     }
@@ -271,7 +277,7 @@ public class DebloatViewModel(
             val restored = workbench.restoreAll(workspaceId, DebloatStage.TOOL)
             val selectors = restored.map { it.id.removePrefix("${DebloatStage.TOOL}:") }.toSet()
             updateSettings(settings.value.copy(removeSelectors = settings.value.removeSelectors - selectors))
-            _facts.value = _facts.value.copy(message = "Restored ${restored.size} app(s).")
+            _facts.update { it.copy(message = "Restored ${restored.size} app(s).") }
             refresh()
         }
     }
@@ -316,7 +322,7 @@ public class DebloatViewModel(
         val match = listed.copy(blockedProtected = listed.blockedProtected + needed, effectiveRemovals = removable)
         val picks = (settings.value.removeSelectors + match.effectiveRemovals.map { it.id }).distinct()
         updateSettings(settings.value.copy(enabled = picks.isNotEmpty(), removeSelectors = picks))
-        _facts.value = _facts.value.copy(listResult = match, message = "$verb ${list.name}.")
+        _facts.update { it.copy(listResult = match, message = "$verb ${list.name}.") }
     }
 
     /**
@@ -340,12 +346,15 @@ public class DebloatViewModel(
             (all.filter { it.name != list.name } + list).sortedBy { it.name.lowercase() }
         }
         val here = _facts.value.apps.values.mapNotNull { it.packageId }.toSet()
-        _facts.value = _facts.value.copy(
-            presets = saved,
-            message = "Kept the community list ${list.name}: ${list.opinions.size} packages rated, " +
-                "${list.opinions.keys.count { it in here }} of them in this ROM. Its opinion shows beside each app; " +
-                "nothing was picked.",
-        )
+        val matchCount = list.opinions.keys.count { packageId -> packageId in here }
+        _facts.update {
+            it.copy(
+                presets = saved,
+                message = "Kept the community list ${list.name}: ${list.opinions.size} packages rated, " +
+                    "$matchCount of them in this ROM. Its opinion shows beside each app; " +
+                    "nothing was picked.",
+            )
+        }
     }
 
     /** Saves the current picks as a removal list in a folder the user picks. */
@@ -356,7 +365,7 @@ public class DebloatViewModel(
                 val file = File(folder, "debloat-$workspaceId.json")
                 val json = RemovalList.toJson(portableList("Debloat of $workspaceId"))
                 withContext(Dispatchers.IO) { file.writeText(json) }
-                _facts.value = _facts.value.copy(message = "Saved ${file.path}.")
+                _facts.update { it.copy(message = "Saved ${file.path}.") }
             }
         }
     }
@@ -370,7 +379,7 @@ public class DebloatViewModel(
             val saved = store.update { all ->
                 (all.filter { it.name != trimmed } + preset).sortedBy { it.name.lowercase() }
             }
-            _facts.value = _facts.value.copy(presets = saved, message = "Saved the preset $trimmed.")
+            _facts.update { it.copy(presets = saved, message = "Saved the preset $trimmed.") }
         }
     }
 
@@ -383,12 +392,12 @@ public class DebloatViewModel(
         val store = presets ?: return
         guarded {
             val saved = store.update { all -> all.filter { it.name != name } }
-            _facts.value = _facts.value.copy(presets = saved, message = "Deleted the preset $name.")
+            _facts.update { it.copy(presets = saved, message = "Deleted the preset $name.") }
         }
     }
 
     public fun dismissMessage() {
-        _facts.value = _facts.value.copy(message = null, refusal = null)
+        _facts.update { it.copy(message = null, refusal = null) }
     }
 
     private fun guarded(block: suspend () -> Unit) {
@@ -398,15 +407,17 @@ public class DebloatViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RefusalException) {
-                _facts.value = _facts.value.copy(refusal = e.refusal)
+                _facts.update { it.copy(refusal = e.refusal) }
             } catch (e: Exception) {
-                _facts.value = _facts.value.copy(
-                    refusal = Refusal(
-                        e.message ?: e::class.simpleName.orEmpty(),
-                        "Debloat",
-                        "Check the file and try again.",
-                    ),
-                )
+                _facts.update {
+                    it.copy(
+                        refusal = Refusal(
+                            e.message ?: e::class.simpleName.orEmpty(),
+                            "Debloat",
+                            "Check the file and try again.",
+                        ),
+                    )
+                }
             }
         }
     }

@@ -240,7 +240,7 @@ public class PatchViewModel(
         val enabled = current.enabledPackages.map { id -> current.lockedEntry(id)?.packageKey ?: id }
         val packageKey = current.lockedEntry(key)?.packageKey ?: key
         _facts.value.incompatible[packageKey]?.takeIf { packageKey !in enabled }?.let { why ->
-            _facts.value = _facts.value.copy(lockError = "${nameOf(packageKey, _facts.value.installed)} $why")
+            _facts.update { it.copy(lockError = "${nameOf(packageKey, it.installed)} $why") }
             return
         }
         val wanted = if (packageKey in enabled) enabled - packageKey else enabled + packageKey
@@ -251,23 +251,27 @@ public class PatchViewModel(
         val locked = PluginDependencyResolver.lock(wanted, packages, requestedOrder = wanted)
             .takeIf { it is LockResult.Locked } ?: PluginDependencyResolver.lock(wanted, packages, emptyList())
         when (val result = locked) {
-            is LockResult.Rejected -> _facts.value = _facts.value.copy(
-                lockError = result.report.errors.joinToString("; ") { it.message },
-            )
+            is LockResult.Rejected -> _facts.update {
+                it.copy(
+                    lockError = result.report.errors.joinToString("; ") { err -> err.message },
+                )
+            }
 
             is LockResult.Locked -> {
                 val ordered = result.lockfile.entries.map { "${it.publisher}:${it.id}" }
                 val updated = current.copy(enabledPackages = ordered, lockfile = result.lockfile)
                 updateSettings(updated)
-                _facts.value = _facts.value.copy(
-                    // Disabling a dependency of an enabled plugin does nothing: the lock adds it back.
-                    lockError = if (packageKey !in wanted && packageKey in ordered) {
-                        neededBy(packageKey, installed, ordered)
-                    } else {
-                        null
-                    },
-                    plans = plansOf(updated),
-                )
+                _facts.update {
+                    it.copy(
+                        // Disabling a dependency of an enabled plugin does nothing: the lock adds it back.
+                        lockError = if (packageKey !in wanted && packageKey in ordered) {
+                            neededBy(packageKey, installed, ordered)
+                        } else {
+                            null
+                        },
+                        plans = plansOf(updated),
+                    )
+                }
             }
         }
     }

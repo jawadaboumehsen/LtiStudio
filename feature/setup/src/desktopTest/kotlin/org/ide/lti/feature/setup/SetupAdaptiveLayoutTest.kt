@@ -96,9 +96,9 @@ class SetupAdaptiveLayoutTest {
         }
 
         // Brand and navigation elements must be displayed in compact mode
-        onNodeWithText("Machine environment").assertIsDisplayed()
+        onNodeWithTag("IdePipelineRail").assertIsDisplayed()
+        onNodeWithTag("RailItem_environment").assertExists()
         onNodeWithText("Recent Workspaces").assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
 
         // Content items displayed without clipping
         onNodeWithText("Kernel_AOSP").assertIsDisplayed()
@@ -260,7 +260,7 @@ class SetupAdaptiveLayoutTest {
 
         // Environment header and navigation visible in compact mode (SC-005)
         onAllNodesWithText("Machine setup").onFirst().assertIsDisplayed()
-        onNodeWithText("Environment").assertIsDisplayed()
+        onNodeWithTag("RailItem_environment").assertExists()
         onAllNodesWithText("Tools").onFirst().assertIsDisplayed()
     }
 

@@ -1,5 +1,7 @@
 package io.ltirom.tooling.core
 
+import kotlinx.coroutines.CancellationException
+
 /**
  * Railway-Oriented Programming Result Monad for tool operations.
  * Replaces unconstrained exception throwing with explicit, typed outcomes.
@@ -122,6 +124,8 @@ public suspend fun <R> ToolRepository.executeResult(
         val res = execute(command, context)
         val elapsed = System.currentTimeMillis() - startTime
         ToolResult.Success(res, elapsed)
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: ToolExitException) {
         ToolResult.Failure.NonZeroExit(
             toolId = e.toolId.logicalName,

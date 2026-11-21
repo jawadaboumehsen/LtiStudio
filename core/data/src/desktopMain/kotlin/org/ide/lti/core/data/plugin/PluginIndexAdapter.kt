@@ -230,6 +230,8 @@ class PluginIndexAdapter(
             }
         } catch (_: IOException) {
             return StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Offline))
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             return StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Offline))
         }
@@ -264,6 +266,9 @@ class PluginIndexAdapter(
         } catch (_: IOException) {
             conn.disconnect()
             StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Offline))
+        } catch (e: CancellationException) {
+            conn.disconnect()
+            throw e
         } catch (e: Exception) {
             conn.disconnect()
             StepResult.Done(RemoteFetchResult.Failure(IndexFailure.Malformed(e.message ?: "Unknown error")))

@@ -15,6 +15,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.common.utils.runCatchingCancellable
@@ -128,7 +129,7 @@ public class ExtractViewModel(
         val workbench = images ?: return
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
-            _facts.value = _facts.value.copy(replacing = partition, replaceRefusal = null)
+            _facts.update { it.copy(replacing = partition, replaceRefusal = null) }
             try {
                 val sha256 = workbench.importReplacement(workspaceId, partition, path)
                 updateSettings(
@@ -137,11 +138,11 @@ public class ExtractViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RefusalException) {
-                _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
+                _facts.update { it.copy(replaceRefusal = e.refusal) }
             } catch (e: Exception) {
-                _facts.value = _facts.value.copy(replaceRefusal = failure(e, partition))
+                _facts.update { it.copy(replaceRefusal = failure(e, partition)) }
             } finally {
-                _facts.value = _facts.value.copy(replacing = null)
+                _facts.update { it.copy(replacing = null) }
             }
         }
     }
@@ -153,18 +154,18 @@ public class ExtractViewModel(
     public fun reextract(partition: String) {
         val workbench = images ?: return
         viewModelScope.launch {
-            _facts.value = _facts.value.copy(reextracting = partition, replaceRefusal = null, reextractMessage = null)
+            _facts.update { it.copy(reextracting = partition, replaceRefusal = null, reextractMessage = null) }
             try {
                 workbench.reextract(workspaceId, partition, settings.value.replacementImages[partition])
-                _facts.value = _facts.value.copy(reextractMessage = "$partition was extracted again.")
+                _facts.update { it.copy(reextractMessage = "$partition was extracted again.") }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RefusalException) {
-                _facts.value = _facts.value.copy(replaceRefusal = e.refusal)
+                _facts.update { it.copy(replaceRefusal = e.refusal) }
             } catch (e: Exception) {
-                _facts.value = _facts.value.copy(replaceRefusal = failure(e, partition))
+                _facts.update { it.copy(replaceRefusal = failure(e, partition)) }
             } finally {
-                _facts.value = _facts.value.copy(reextracting = null)
+                _facts.update { it.copy(reextracting = null) }
             }
         }
     }
@@ -195,9 +196,11 @@ public class ExtractViewModel(
     }
 
     public fun toggleMember(member: String) {
-        val b = _facts.value.browse
-        val selected = if (member in b.selected) b.selected - member else b.selected + member
-        _facts.value = _facts.value.copy(browse = b.copy(selected = selected))
+        _facts.update { prev ->
+            val b = prev.browse
+            val selected = if (member in b.selected) b.selected - member else b.selected + member
+            prev.copy(browse = b.copy(selected = selected))
+        }
     }
 
     /** Copies the selected members of the current level to `out/toolkit/archive/`. */
@@ -246,7 +249,7 @@ public class ExtractViewModel(
     }
 
     private fun setBrowse(change: (ArchiveBrowse) -> ArchiveBrowse) {
-        _facts.value = _facts.value.copy(browse = change(_facts.value.browse))
+        _facts.update { it.copy(browse = change(it.browse)) }
     }
 
     /** Reads the archive Acquire selected (or the newest downloaded one) and `firmware/extracted/`. */
@@ -273,16 +276,18 @@ public class ExtractViewModel(
 
             // The browser opens on the workspace's archive until the user picks another file.
             if (archive != null && _facts.value.browse.archive == null) browse(archive, emptyList())
-            _facts.value = _facts.value.copy(
-                loaded = true,
-                archive = archive,
-                members = archive?.let { facts.zipMembers(workspaceId, it) }.orEmpty(),
-                extracted = facts.list(workspaceId, "firmware/extracted", name = "*.img"),
-                detectedFormat = manifest?.format,
-                checksumResult = checksum,
-                partitionImages = images,
-                refusal = manifest?.refusal,
-            )
+            _facts.update {
+                it.copy(
+                    loaded = true,
+                    archive = archive,
+                    members = archive?.let { arc -> facts.zipMembers(workspaceId, arc) }.orEmpty(),
+                    extracted = facts.list(workspaceId, "firmware/extracted", name = "*.img"),
+                    detectedFormat = manifest?.format,
+                    checksumResult = checksum,
+                    partitionImages = images,
+                    refusal = manifest?.refusal,
+                )
+            }
         }
     }
 }

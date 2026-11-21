@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.ports.TerminalLauncherPort
@@ -298,11 +299,11 @@ class SetupViewModel(
     val toolSelection: StateFlow<ToolSelection> = _toolSelection.asStateFlow()
 
     fun selectToolCategory(category: ToolCategory?) {
-        _toolSelection.value = _toolSelection.value.copy(category = category)
+        _toolSelection.update { it.copy(category = category) }
     }
 
     fun selectToolPackage(pkg: ToolNavPackage) {
-        _toolSelection.value = _toolSelection.value.copy(navPackage = pkg)
+        _toolSelection.update { it.copy(navPackage = pkg) }
     }
 
     val filteredToolsMatrix: StateFlow<List<ToolComponentItem>> =
