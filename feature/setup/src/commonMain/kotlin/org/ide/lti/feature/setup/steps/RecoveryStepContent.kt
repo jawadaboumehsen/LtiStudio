@@ -25,9 +25,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Warning
@@ -189,7 +189,7 @@ private fun RecoveryHeader(onOpenHelp: () -> Unit, modifier: Modifier = Modifier
                     .padding(horizontal = Spacing.SmallMedium, vertical = Spacing.Compact),
             ) {
                 Icon(
-                    imageVector = Icons.Default.HelpOutline,
+                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                     contentDescription = "Help",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(IconSize.Medium),
@@ -356,7 +356,7 @@ private fun RecoveryServiceCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Icon(
-                    imageVector = Icons.Default.HelpOutline,
+                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                     contentDescription = "Service status info",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(IconSize.Small),
@@ -385,7 +385,7 @@ private fun RecoveryServiceCard(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.HelpOutline,
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                         contentDescription = null,
                         tint = badgeColor,
                         modifier = Modifier.size(IconSize.Medium),

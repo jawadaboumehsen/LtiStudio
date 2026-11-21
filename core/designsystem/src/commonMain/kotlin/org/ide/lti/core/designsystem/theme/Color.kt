@@ -344,6 +344,10 @@ object BrandColors {
 /** Centralized token colors for window control buttons (e.g. native Windows close hover). */
 object WindowControlColors {
     val CloseHover = Color(0xFFE81123)
+    val StudioClose = Color(0xFFF06C65)
+    val StudioMinimize = Color(0xFFF1BC52)
+    val StudioZoom = Color(0xFF67C770)
+    val StudioSymbol = Color(0xFF252628)
 }
 
 /** Centralized token colors for cross-component press/drag interaction affordances. */

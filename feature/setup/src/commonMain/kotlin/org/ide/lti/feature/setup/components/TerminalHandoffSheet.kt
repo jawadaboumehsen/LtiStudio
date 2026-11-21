@@ -84,7 +84,7 @@ import org.ide.lti.feature.setup.TerminalHandoffState
  * - Zero stored passwords, zero password fields, zero sudoers/NOPASSWD references.
  */
 @OptIn(ExperimentalLayoutApi::class)
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod", "DEPRECATION")
 @Composable
 fun TerminalHandoffSheet(
     handoff: UserRepairHandoff,

@@ -18,7 +18,7 @@ import org.ide.lti.core.domain.tools.SetupToolsSummary
 import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.domain.tools.ToolOperation
 
-public enum class ToolRowStatusKind {
+enum class ToolRowStatusKind {
     NotInstalled,
     Ready,
     NeedsRepair,
@@ -28,7 +28,7 @@ public enum class ToolRowStatusKind {
     Interrupted,
 }
 
-public data class ToolRowPresentation(
+data class ToolRowPresentation(
     val groupId: String,
     val displayName: String,
     val inUseLabel: String,
@@ -41,7 +41,7 @@ public data class ToolRowPresentation(
 )
 
 /** What the inspector shows while a change runs: where it is, how far, the latest line, and whether it can stop. */
-public data class OperationProgressPresentation(
+data class OperationProgressPresentation(
     val title: String,
     val stepLabel: String?,
     /** 0..100, or null when it cannot be measured (the bar then runs indeterminate). */
@@ -51,20 +51,20 @@ public data class OperationProgressPresentation(
     val canCancel: Boolean,
 )
 
-public data class ToolsSummaryPresentation(
+data class ToolsSummaryPresentation(
     val summaryText: String,
     val isComplete: Boolean,
     val hasFailures: Boolean,
     val canRetry: Boolean,
 )
 
-public data class ToolErrorPresentation(val message: String, val nextAction: String?)
+data class ToolErrorPresentation(val message: String, val nextAction: String?)
 
-public object ToolsPresentationMapper {
+object ToolsPresentationMapper {
     private val installSteps = OperationPhase.entries
 
     /** The running change [op] as the inspector shows it. An install has five phases; a switch has none to count. */
-    public fun mapProgress(op: ToolOperation): OperationProgressPresentation {
+    fun mapProgress(op: ToolOperation): OperationProgressPresentation {
         val isSwitch = op.kind == OperationKind.Use
         val title =
             when (op.kind) {
@@ -95,7 +95,7 @@ public object ToolsPresentationMapper {
     }
 
     @Suppress("CyclomaticComplexMethod")
-    public fun mapRow(state: GroupState, isConnected: Boolean = true): ToolRowPresentation {
+    fun mapRow(state: GroupState, isConnected: Boolean = true): ToolRowPresentation {
         val groupDef = ToolGroupCatalog.group(state.group)
         val displayName = groupDef?.id?.value ?: state.group.value
         val cur = state.current
@@ -161,7 +161,7 @@ public object ToolsPresentationMapper {
         )
     }
 
-    public fun mapSummary(summary: SetupToolsSummary): ToolsSummaryPresentation {
+    fun mapSummary(summary: SetupToolsSummary): ToolsSummaryPresentation {
         val ready = summary.readyCount
         val failed = summary.failedCount
         val notAttempted = summary.notAttemptedCount
@@ -182,7 +182,7 @@ public object ToolsPresentationMapper {
     }
 
     @Suppress("CyclomaticComplexMethod")
-    public fun mapError(error: ToolError): ToolErrorPresentation = when (error) {
+    fun mapError(error: ToolError): ToolErrorPresentation = when (error) {
         is ToolError.MissingPackages ->
             ToolErrorPresentation(
                 message =

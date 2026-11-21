@@ -186,6 +186,8 @@ public data class BuildSettings(
     val keepStock: Set<String> = emptySet(),
     /** Which install package the build writes: the recovery flashable zip, the A/B OTA (payload.bin), or both. */
     val packageType: PackageType = PackageType.FLASHABLE,
+    /** IDs of individual confirmed VINTF mismatches acknowledged for this build's inputs. */
+    val vintfMismatchAcknowledgements: Set<String> = emptySet(),
 )
 
 /**

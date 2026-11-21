@@ -20,10 +20,10 @@ import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import androidx.compose.ui.test.performClick
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.Appearance
 import org.ide.lti.core.designsystem.theme.ColorContrast
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -31,12 +31,29 @@ import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
 import org.ide.lti.feature.settings.model.SettingsCategory
+import org.ide.lti.feature.settings.runSettingsUiTest
+import org.ide.lti.feature.settings.scrollToSettingsNode
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class SettingsScreenDiagnosticTest {
+
+    @Test
+    fun aboutStartsAtItsHeadingAfterScrollingAppearance() = runSettingsUiTest(width = 947, height = 816) {
+        val settingsState = AppSettingsState(initialTheme = AppSettingsState.THEME_DARK)
+        setContent {
+            LtiTheme(appTheme = AppTheme.Dark, appearance = Appearance(textScale = 1.25f)) {
+                SettingsScreenContent(onBackClick = {}, appSettingsState = settingsState)
+            }
+        }
+
+        scrollToSettingsNode("AppearanceActionFooter").assertIsDisplayed()
+        onNodeWithTag("NavigatorItem_about").performClick()
+        mainClock.advanceTimeByFrame()
+        onNodeWithText("About LtiRom Studio").assertIsDisplayed()
+    }
 
     @Test
     fun testSettingsAppearanceRenderedPixelContrastMeetsWcagDarkEffectsOn() =
@@ -62,7 +79,7 @@ class SettingsScreenDiagnosticTest {
     fun testSettingsAppearanceRenderedPixelContrastMeetsWcagLightEffectsOff() =
         assertThemeContrastMeetsWcag(AppTheme.Light, effectsEnabled = false)
 
-    private fun assertThemeContrastMeetsWcag(theme: AppTheme, effectsEnabled: Boolean = true) = runDesktopComposeUiTest(
+    private fun assertThemeContrastMeetsWcag(theme: AppTheme, effectsEnabled: Boolean = true) = runSettingsUiTest(
         width = 1120,
         height = 700,
     ) {
@@ -101,7 +118,7 @@ class SettingsScreenDiagnosticTest {
             ).toInt()
 
         // 2. Scroll to "Glass & motion" card and the switch inside it
-        onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
         waitForIdle()
 
         val glassCardTitleBounds = onNodeWithText("Glass & motion").getBoundsInRoot()
@@ -165,7 +182,7 @@ class SettingsScreenDiagnosticTest {
     }
 
     @Test
-    fun testCompactViewportScrollsToGlassAndMotionCard() = runDesktopComposeUiTest(
+    fun testCompactViewportScrollsToGlassAndMotionCard() = runSettingsUiTest(
         width = 900,
         height = 600,
     ) {
@@ -190,13 +207,13 @@ class SettingsScreenDiagnosticTest {
         waitForIdle()
         // At 900x600, "Glass & motion" card is initially below the fold.
         // Verify scrolling reaches and displays the card.
-        onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
         onNodeWithText("Glass & motion").assertIsDisplayed()
         onNodeWithText("Glass effects").assertIsDisplayed()
     }
 
     @Test
-    fun testSettingsRightRailPresenceAndGeometryAtWideViewport() = runDesktopComposeUiTest(
+    fun testSettingsRightRailPresenceAndGeometryAtWideViewport() = runSettingsUiTest(
         width = 1120,
         height = 700,
     ) {

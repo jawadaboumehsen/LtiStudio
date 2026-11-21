@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,6 +62,7 @@ fun AppearanceSettingsPane(
     appSettingsState: AppSettingsState,
     onRestoreDefaults: () -> Unit,
     modifier: Modifier = Modifier,
+    stackSections: Boolean = false,
 ) {
     val reduceTransparency = !appSettingsState.effectsEnabled
 
@@ -85,14 +87,15 @@ fun AppearanceSettingsPane(
             )
         }
 
-        // Two-Column Split Layout: Controls on Left (weight 1.1f), Live Preview on Right (weight 0.9f)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+            maxItemsInEachRow = if (stackSections) 1 else 2,
         ) {
             // Left Controls Column
             Column(
-                modifier = Modifier.weight(1.15f),
+                modifier = if (stackSections) Modifier.fillMaxWidth() else Modifier.weight(1.15f),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
                 // Card 1: App style
@@ -181,9 +184,12 @@ fun AppearanceSettingsPane(
                 }
             }
 
-            // Right Preview Column
             Column(
-                modifier = Modifier.weight(0.85f),
+                modifier = if (stackSections) {
+                    Modifier.widthIn(max = GlassDimens.AppearancePreviewMaxWidth).fillMaxWidth()
+                } else {
+                    Modifier.weight(0.85f)
+                },
                 verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
@@ -247,7 +253,7 @@ fun AppearanceSettingsPane(
 
             // Changes are live and saved; there is nothing to apply or cancel.
             Text(
-                text = "Changes apply at once and are saved for this app.",
+                text = appSettingsState.saveStatus,
                 fontSize = FontSize.LabelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

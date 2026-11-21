@@ -22,9 +22,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,6 +71,7 @@ import org.ide.lti.core.designsystem.theme.GlassFontFamily
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
+import org.ide.lti.core.designsystem.theme.LineHeight
 import org.ide.lti.core.designsystem.theme.Spacing
 
 @Immutable
@@ -94,7 +94,7 @@ enum class RailStageStatus(val label: String?) {
 /**
  * Persistent pipeline rail exposing ROM workflow stages.
  *
- * Supports standard 150 dp layout and compact 44 dp [iconsOnly] rail with hover tooltips.
+ * Uses labels in wide windows and hover tooltips in compact windows or when [iconsOnly] is set.
  */
 @OptIn(ExperimentalHazeApi::class)
 @Composable
@@ -115,7 +115,8 @@ fun IdePipelineRail(
         Modifier
     }
 
-    val railWidth = if (iconsOnly) {
+    val compactRail = iconsOnly || LocalCompactIdeFrame.current
+    val railWidth = if (compactRail) {
         GlassDimens.CompactRailWidth
     } else {
         GlassDimens.PipelineRailWidth
@@ -125,11 +126,12 @@ fun IdePipelineRail(
         modifier = modifier
             .width(railWidth)
             .fillMaxHeight()
-            .then(surfaceModifier),
+            .then(surfaceModifier)
+            .padding(top = Spacing.Small),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
-        if (header != null && !iconsOnly) {
+        if (header != null && !compactRail) {
             header()
         }
         stages.forEach { stage ->
@@ -137,7 +139,7 @@ fun IdePipelineRail(
                 stage = stage,
                 isSelected = stage.id == selectedStageId,
                 onSelectStage = onSelectStage,
-                iconsOnly = iconsOnly,
+                iconsOnly = compactRail,
             )
         }
     }
@@ -159,6 +161,7 @@ private fun PipelineRailItem(
         isSelected = isSelected,
         isPressed = isPressed,
         isHoveredOrFocused = isHovered || isFocused,
+        isFocused = isFocused,
     )
 
     if (iconsOnly) {
@@ -203,7 +206,7 @@ private fun PipelineRailItemBox(
         Modifier.glassOutlineBorder(
             width = GlassDimens.HairlineBorder,
             color = visuals.borderColor,
-            shape = GlassShapes.ShellPill,
+            shape = GlassShapes.Small,
         )
     } else {
         Modifier
@@ -212,13 +215,13 @@ private fun PipelineRailItemBox(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(GlassDimens.PipelineStageItemHeight)
+            .heightIn(min = GlassDimens.PipelineStageItemHeight)
             .padding(
                 horizontal = if (iconsOnly) Spacing.ExtraSmall else Spacing.Small,
                 vertical = Spacing.Hairline,
             )
-            .background(visuals.bg, shape = GlassShapes.ShellPill)
-            .clip(GlassShapes.ShellPill)
+            .background(visuals.bg, shape = GlassShapes.Small)
+            .clip(GlassShapes.Small)
             .then(borderModifier)
             .testTag("RailItem_${stage.id}")
             .semantics {
@@ -243,19 +246,19 @@ private fun PipelineRailItemBox(
         } else {
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .padding(horizontal = Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 RenderRailIcon(stageId = stage.id, contentColor = visuals.contentColor)
                 Text(
                     text = stage.label,
                     color = visuals.contentColor,
                     fontSize = FontSize.BodySmall,
+                    lineHeight = LineHeight.BodySmall,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     fontFamily = GlassFontFamily.ide(),
-                    maxLines = 1,
                     modifier = Modifier.weight(1f),
                 )
                 StatusDot(stage.status)
@@ -283,6 +286,7 @@ private fun resolveRailItemVisuals(
     isSelected: Boolean,
     isPressed: Boolean,
     isHoveredOrFocused: Boolean,
+    isFocused: Boolean,
 ): RailItemVisuals {
     val colors = MaterialTheme.colorScheme
     val isBlue = GlassTheme.appTheme == AppTheme.Blue
@@ -298,7 +302,7 @@ private fun resolveRailItemVisuals(
             effectsEnabled,
             colors,
         ),
-        borderColor = if (isSelected) (if (isBlue) colors.outline else colors.primary) else null,
+        borderColor = colors.primary.takeIf { isFocused },
     )
 }
 
@@ -311,7 +315,7 @@ private fun railItemBackground(
     colors: ColorScheme,
 ): Color = when {
     !enabled -> Color.Transparent
-    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Faded)
+    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Hover)
     pressed -> colors.surfaceContainerHigh
     hoveredOrFocused -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
     else -> Color.Transparent

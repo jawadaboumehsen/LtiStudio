@@ -913,18 +913,15 @@ public class KotlinToolStoreAdapter(
                     e is ToolErrorException -> {
                         val msg = e.toolError.message
                         val innerConnLost =
-                            isConnLost || (
-                                msg != null && (
-                                    msg.contains("Failed to execute command on remote daemon", ignoreCase = true) ||
-                                        msg.contains("Stream closed without ExecutionFinished", ignoreCase = true) ||
-                                        msg.contains("Stream error on remote daemon", ignoreCase = true) ||
-                                        msg.contains("Connection refused", ignoreCase = true) ||
-                                        msg.contains("Connection lost", ignoreCase = true) ||
-                                        msg.contains("Broken pipe", ignoreCase = true)
-                                    )
-                                )
+                            isConnLost ||
+                                msg.contains("Failed to execute command on remote daemon", ignoreCase = true) ||
+                                msg.contains("Stream closed without ExecutionFinished", ignoreCase = true) ||
+                                msg.contains("Stream error on remote daemon", ignoreCase = true) ||
+                                msg.contains("Connection refused", ignoreCase = true) ||
+                                msg.contains("Connection lost", ignoreCase = true) ||
+                                msg.contains("Broken pipe", ignoreCase = true)
                         if (innerConnLost && e.toolError !is ToolError.ConnectionLost) {
-                            ToolError.ConnectionLost(msg ?: "Connection lost")
+                            ToolError.ConnectionLost(msg)
                         } else {
                             e.toolError
                         }

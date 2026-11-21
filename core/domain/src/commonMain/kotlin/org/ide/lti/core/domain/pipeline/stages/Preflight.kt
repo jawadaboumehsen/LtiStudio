@@ -46,6 +46,10 @@ public sealed interface PreflightFix {
     public data class Open(override val label: String, val stage: StageId, val objectId: String) : PreflightFix
 }
 
+internal fun acknowledgeVintfMismatch(id: String) = PreflightFix.Setting("Acknowledge this mismatch") {
+    it.copy(build = it.build.copy(vintfMismatchAcknowledgements = it.build.vintfMismatchAcknowledgements + id))
+}
+
 /** One thing that would stop the next build ([blocks]) or that it would only warn about, with its fix. */
 public data class PreflightFinding(
     val code: String,
@@ -79,7 +83,10 @@ public class Preflight(
             PreflightFinding(
                 it.code,
                 it.message,
-                fix = it.stageId?.let { stage -> PreflightFix.Open("Open ${it.fieldPath}", stage, it.objectId ?: "") },
+                fix = it.stageId?.let { stage ->
+                    val label = if (it.objectId == "integrity") "Open firmware integrity" else "Open ${it.fieldPath}"
+                    PreflightFix.Open(label, stage, it.objectId.orEmpty())
+                },
             )
         }
         val (found, vintf) = runner.read(workspaceId) {
@@ -98,13 +105,13 @@ public class Preflight(
             val output = values[BuildChecks.VINTF_KEY]
             val exit = values[RuntimeKeys.exitOf(BuildChecks.VINTF_KEY)]?.toIntOrNull() ?: 0
             val vintf = VintfCheck.assess(output, exit)
-            val accepted = BuildWarningKind.VintfIncompatible.name in snapshot.build.acknowledgedWarnings
-            val acknowledged = if (accepted && output != null) {
-                VintfCheck.refusals(output, accepted = false).filter { it.startsWith("VINTF_INCOMPATIBLE:") }
-                    .map { "VINTF_ACCEPTED: Accepted mismatch. " + it.substringAfter(": ") }
-            } else {
-                emptyList()
-            }
+            val acknowledged = output?.let {
+                VintfCheck.acknowledgedMismatches(
+                    it,
+                    snapshot.build.vintfMismatchAcknowledgements,
+                    VintfCheck.acknowledgementScope(snapshot),
+                ).map { message -> "VINTF_ACCEPTED: Accepted mismatch. $message" }
+            }.orEmpty()
             val messages = checks + mods + acknowledged
             report(LogLevel.INF, "Preflight: ${messages.size} finding(s). VINTF: ${vintf.status.label}")
             messages to vintf
@@ -181,14 +188,20 @@ public class Preflight(
 
     private fun finding(message: String, snapshot: ConfigurationSnapshot): PreflightFinding {
         val code = message.substringBefore(':').trim()
-        val text = message.substringAfter(':').trim()
+        val rawText = message.substringAfter(':').trim()
+        val (mismatchId, text) = if (code == "VINTF_INCOMPATIBLE") {
+            VintfCheck.splitMismatchMessage(rawText)
+        } else {
+            null to rawText
+        }
+        val fix = mismatchId?.let(::acknowledgeVintfMismatch) ?: FIXES[code]?.invoke(text)
         // With the fill on, the build adds the missing lines itself after Patches: no longer a stop.
         val filled = code == COVERAGE && "hold a space" !in text && BuildChecks.UNREADABLE_COVERAGE !in text &&
             snapshot.customization.fillMissingSidecars
         val payloadOff = code == PAYLOAD && PackageKind.Payload.name !in snapshot.build.extraPackages
         val note = filled || payloadOff || code == "MODS_NOT_CHECKED" || code == "MODS_PARTLY_CHECKED" ||
             code == VintfCheck.NOT_CHECKED || code == "VINTF_ACCEPTED"
-        return PreflightFinding(code, text, blocks = !note, fix = FIXES[code]?.invoke(text)?.takeUnless { filled })
+        return PreflightFinding(code, text, blocks = !note, fix = fix?.takeUnless { filled })
     }
 
     private companion object {
@@ -221,7 +234,11 @@ public class Preflight(
             },
             "BROKEN_LINKS" to { _ -> accept(BuildWarningKind.BrokenLinks, "Accept the broken links") },
             "UNSIGNED_APK" to { _ -> accept(BuildWarningKind.UnsignedApks, "Accept the unsigned APKs") },
-            "VINTF_INCOMPATIBLE" to { _ -> accept(BuildWarningKind.VintfIncompatible, "Build it anyway") },
+            "VINTF_INCOMPATIBLE" to { _ -> open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline") },
+            "VINTF_PARTITION_MISSING" to { _ -> open("Open Assemble work trees", StageId.WORK_TREE_ASSEMBLY, "work-trees") },
+            "VINTF_SEPOLICY" to { _ ->
+                open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline")
+            },
             "SUPER_OVERLAP" to { _ -> accept(BuildWarningKind.SuperOverlap, "Accept: they are in super.img too") },
             "KEPT_PARTITION_CHANGED" to { text ->
                 val p = text.substringBefore(' ')

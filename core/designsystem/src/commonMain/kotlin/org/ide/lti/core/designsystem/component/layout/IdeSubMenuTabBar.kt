@@ -20,6 +20,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -79,7 +80,29 @@ fun IdeSubMenuTabBar(
     onSelectItem: (String) -> Unit,
     modifier: Modifier = Modifier,
     tagPrefix: String = "NavigatorItem_",
+    wrap: Boolean = false,
 ) {
+    val tabs: @Composable () -> Unit = {
+        items.forEach { item ->
+            SubMenuPillTab(
+                item = item,
+                selected = item.id == selectedItemId,
+                tag = "$tagPrefix${item.id}",
+                onClick = { onSelectItem(item.id) },
+            )
+        }
+    }
+    if (wrap) {
+        FlowRow(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            itemVerticalAlignment = Alignment.CenterVertically,
+            content = { tabs() },
+        )
+        return
+    }
+
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -109,15 +132,7 @@ fun IdeSubMenuTabBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            items.forEach { item ->
-                val isSelected = item.id == selectedItemId
-                SubMenuPillTab(
-                    item = item,
-                    selected = isSelected,
-                    tag = "${tagPrefix}${item.id}",
-                    onClick = { onSelectItem(item.id) },
-                )
-            }
+            tabs()
         }
 
         if (scrollState.canScrollForward) {
@@ -178,11 +193,11 @@ private fun SubMenuPillTab(item: IdeSubMenuItem, selected: Boolean, tag: String,
         effectsEnabled = effectsEnabled,
         colors = colors,
     )
-    val borderModifier = if (selected) {
+    val borderModifier = if (isFocused) {
         Modifier.glassOutlineBorder(
-            color = if (isBlue) colors.outline else colors.primary,
+            color = colors.primary,
             width = GlassDimens.HairlineBorder,
-            shape = GlassShapes.ShellPill,
+            shape = GlassShapes.Small,
         )
     } else {
         Modifier
@@ -191,8 +206,8 @@ private fun SubMenuPillTab(item: IdeSubMenuItem, selected: Boolean, tag: String,
     Row(
         modifier = Modifier
             .testTag(tag)
-            .background(background, shape = GlassShapes.ShellPill)
-            .clip(GlassShapes.ShellPill)
+            .background(background, shape = GlassShapes.Small)
+            .clip(GlassShapes.Small)
             .then(borderModifier)
             .selectable(
                 selected = selected,

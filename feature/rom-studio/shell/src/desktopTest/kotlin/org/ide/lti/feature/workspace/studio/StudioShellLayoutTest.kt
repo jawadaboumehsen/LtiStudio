@@ -30,6 +30,7 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import io.github.takahirom.roborazzi.captureRoboImage
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.Appearance
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LtiTheme
@@ -364,8 +365,8 @@ class StudioShellLayoutTest {
         )
 
         composeTestRule.setContent {
-            LtiTheme {
-                Box(Modifier.size(GlassDimens.ReferenceWindowWidth, GlassDimens.ReferenceWindowHeight)) {
+            LtiTheme(appearance = Appearance(textScale = 1.25f)) {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth / 2, GlassDimens.ReferenceWindowHeight)) {
                     StudioShellContent(
                         uiState = uiState,
                         onSelectGlobalDestination = {},
@@ -382,10 +383,9 @@ class StudioShellLayoutTest {
 
         val railBounds = composeTestRule.onNodeWithTag("IdePipelineRail").fetchSemanticsNode().boundsInRoot
         val navBounds = composeTestRule.onNodeWithTag("WorkspaceNavigator").fetchSemanticsNode().boundsInRoot
-        val rightRailBounds = composeTestRule.onNodeWithTag("WorkspaceRightRail").fetchSemanticsNode().boundsInRoot
 
         assertEquals(GlassDimens.CompactRailWidth.value, railBounds.width, 0.5f, "Rail width must be 44 dp")
-        assertEquals(GlassDimens.CompactRailWidth.value, rightRailBounds.width, 0.5f, "Right rail width must be 44 dp")
+        composeTestRule.onNodeWithTag("WorkspaceRightRail").assertDoesNotExist()
         assertTrue(navBounds.width > GlassDimens.CompactRailWidth.value, "Navigator tab bar is horizontal")
 
         for (stage in org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors.ALL) {
@@ -396,6 +396,10 @@ class StudioShellLayoutTest {
         composeTestRule.onNodeWithTag("NavigatorItem_RomConfig").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_RunHistory").assertExists()
         composeTestRule.onNodeWithTag("NavigatorItem_Artifacts").assertExists()
+        val overview = composeTestRule.onNodeWithTag("NavigatorItem_Overview").fetchSemanticsNode()
+        val storage = composeTestRule.onNodeWithTag("NavigatorItem_Storage").fetchSemanticsNode()
+        assertTrue(storage.positionInRoot.y > overview.positionInRoot.y, "The last tab flows onto the next row")
+        assertEquals(storage.size.width.toFloat(), storage.boundsInRoot.width, 0.5f, "Disk usage is fully visible")
         // The device is edited in ROM configuration; there is no second tab for it.
         composeTestRule.onNodeWithTag("NavigatorItem_TargetProfile").assertDoesNotExist()
 

@@ -13,7 +13,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +47,7 @@ import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
+import org.ide.lti.core.domain.workbench.DeviceCheckResult
 import org.ide.lti.core.domain.workbench.DeviceTest
 import org.ide.lti.core.domain.workbench.DeviceVerdict
 import org.ide.lti.core.domain.workspace.BuildReport
@@ -135,6 +138,8 @@ public class BuildRunViewModel(
     public val uiState: StateFlow<BuildRunUiState> = _uiState.asStateFlow()
     private val autoReattachedRuns = mutableSetOf<String>()
 
+    private var phoneCheckJob: Job? = null
+
     init {
         observeDeviceIssues()
         observeFailure()
@@ -179,9 +184,8 @@ public class BuildRunViewModel(
                 _uiState.update {
                     // Another workspace's run is never shown as this one's, not even until its own runs are read.
                     val shown = it.latestRun.takeIf { _ -> it.currentWorkspace?.id == ws?.id }
-                    it.copy(
+                    it.withLatestRun(shown).copy(
                         currentWorkspace = ws,
-                        latestRun = shown,
                         logs = if (shown == null) emptyList() else it.logs,
                         isCancelling = it.isCancelling && shown != null,
                         // A start or cancel still running for the workspace shown before is not this one's.
@@ -206,8 +210,7 @@ public class BuildRunViewModel(
                         _uiState.update { state ->
                             val currentIsReady =
                                 state.environmentReadiness?.state?.let { it == EnvironmentReadinessState.READY } ?: true
-                            state.copy(
-                                latestRun = latest,
+                            state.withLatestRun(latest).copy(
                                 isCancelling = latest?.state == RunState.CANCELLING,
                                 // A new run starts with its own (empty) log, never the previous run's.
                                 logs = if (cachedLogs.isNotEmpty() || latest?.id != state.latestRun?.id) {
@@ -339,13 +342,25 @@ public class BuildRunViewModel(
      * SELinux, verified boot, crashes. The result is kept with the run and shown like the report.
      */
     public fun checkPhone() {
-        val tester = deviceTest
-        val run = _uiState.value.latestRun
-        if (tester == null || run == null || _uiState.value.isCheckingPhone) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isCheckingPhone = true, errorMessage = null) }
-            val result = runCatchingCancellable { tester.check(run) }
+        val tester = deviceTest ?: return
+        checkPhone(tester::check)
+    }
+
+    internal fun checkPhone(check: suspend (BuildRun) -> DeviceCheckResult) {
+        val current = _uiState.value
+        val run = current.latestRun
+        val workspaceId = current.currentWorkspace?.id
+        if (run == null || workspaceId == null || current.isCheckingPhone) return
+        _uiState.update { it.copy(isCheckingPhone = true, errorMessage = null) }
+        phoneCheckJob = viewModelScope.launch {
+            val result = runCatchingCancellable { check(run) }
+            coroutineContext.ensureActive()
             _uiState.update { state ->
+                if (workspaceManager.currentWorkspace.value?.id != workspaceId ||
+                    state.currentWorkspace?.id != workspaceId || state.latestRun?.id != run.id
+                ) {
+                    return@update state
+                }
                 result.fold(
                     onSuccess = { check ->
                         val problems = check.items.filter {
@@ -364,6 +379,16 @@ public class BuildRunViewModel(
                 )
             }
         }
+    }
+
+    private fun BuildRunUiState.withLatestRun(run: BuildRun?): BuildRunUiState {
+        if (latestRun?.id == run?.id) return copy(latestRun = run)
+        phoneCheckJob?.cancel()
+        return copy(
+            latestRun = run,
+            isCheckingPhone = false,
+            report = report.takeUnless { reportTitle == "Phone check" },
+        )
     }
 
     public fun closeReport() {
@@ -413,7 +438,7 @@ public class BuildRunViewModel(
             val shown = { state: BuildRunUiState -> state.currentWorkspace?.id == ws.id }
             result.fold(
                 onSuccess = { run ->
-                    _uiState.update { if (shown(it)) it.copy(latestRun = run, isStartingRun = false) else it }
+                    _uiState.update { if (shown(it)) it.withLatestRun(run).copy(isStartingRun = false) else it }
                 },
                 onFailure = { error ->
                     _uiState.update {
@@ -444,7 +469,7 @@ public class BuildRunViewModel(
                                 it,
                             )
                         ) {
-                            it.copy(latestRun = cancelledRun, isCancelling = cancelledRun.state.isActive)
+                            it.withLatestRun(cancelledRun).copy(isCancelling = cancelledRun.state.isActive)
                         } else {
                             it
                         }

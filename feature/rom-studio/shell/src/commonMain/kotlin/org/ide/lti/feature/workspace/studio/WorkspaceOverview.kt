@@ -10,9 +10,9 @@
 package org.ide.lti.feature.workspace.studio
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -39,7 +40,7 @@ import org.ide.lti.feature.workspace.studio.components.TargetProfileCard
  *
  * Implements the normative Blue Glass Mockup 09 layout:
  * 1. Content Header with title, target summary context, and actions.
- * 2. Two-column body: Left = Build Readiness matrix, Right = Target Profile summary card.
+ * 2. Build readiness and target details, side by side when the content has room.
  * 3. Primary CTA row (Configure firmware + status).
  * 4. Recent activity card.
  */
@@ -51,21 +52,25 @@ public fun WorkspaceOverview(
     onReload: () -> Unit = {},
     onEditProfile: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
-    /** Will it build? (`PreflightCard`), under the readiness checklist. */
+    /** Live build plan and checks, before the workspace checklist. */
     preflight: (@Composable () -> Unit)? = null,
 ) {
     val scrollState = rememberScrollState()
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .testTag("WorkspaceOverview"),
         contentAlignment = Alignment.TopCenter,
     ) {
+        val contentWidth = maxWidth.coerceAtMost(GlassDimens.OverviewMaxContentWidth) - Spacing.ExtraLarge * 2
+        val textScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+        val sideBySide = contentWidth >= GlassDimens.OverviewTwoColumnMinWidth * textScale
+
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .widthIn(max = GlassDimens.OverviewMaxContentWidth)
+                .fillMaxWidth()
                 .verticalScroll(scrollState)
                 .padding(
                     start = Spacing.ExtraLarge,
@@ -88,27 +93,31 @@ public fun WorkspaceOverview(
                     ?.let { "Device ${it.replace("rev ", "revision ")}" }.orEmpty(),
             )
 
-            // 2. Two-column body: Build Readiness (left) and Target Card (right)
-            Row(
+            preflight?.invoke()
+
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                verticalAlignment = Alignment.Top,
+                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                maxItemsInEachRow = if (sideBySide) 2 else 1,
             ) {
                 ReadinessChecklistSection(
                     items = state.readinessItems,
                     reviewCount = state.reviewCount,
                     onAction = onAction,
-                    modifier = Modifier.weight(1f),
+                    modifier = if (sideBySide) Modifier.weight(1f) else Modifier.fillMaxWidth(),
                 )
 
                 TargetProfileCard(
                     summary = state.targetSummary,
                     onEditProfile = onEditProfile,
-                    modifier = Modifier.width(GlassDimens.OverviewTargetCardWidth),
+                    modifier = if (sideBySide) {
+                        Modifier.width(GlassDimens.OverviewTargetCardWidth)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
                 )
             }
-
-            preflight?.invoke()
 
             // 3. Prominent CTA bar
             OverviewCallToAction(

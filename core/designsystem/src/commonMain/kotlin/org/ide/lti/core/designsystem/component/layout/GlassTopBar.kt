@@ -150,6 +150,8 @@ fun GlassTopBar(
             .windowDragGesture(
                 onDrag = effectiveDrag,
                 onDragDelta = effectiveDragDelta,
+                onDragEnd = effectiveWindowControls.onDragEnd,
+                onDoubleClick = effectiveWindowControls.onMaximize,
             )
             .then(chromeModifier)
             .padding(horizontal = Spacing.MediumSmall),
@@ -507,6 +509,7 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
     }
 }
 
+@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassTopBarPreview() {

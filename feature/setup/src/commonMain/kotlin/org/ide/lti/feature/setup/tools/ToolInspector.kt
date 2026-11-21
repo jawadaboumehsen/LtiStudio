@@ -14,7 +14,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -76,15 +75,13 @@ import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.model.setup.ToolRef
 
-@Suppress("CyclomaticComplexMethod", "LongMethod")
-@OptIn(ExperimentalLayoutApi::class)
+@Suppress("CyclomaticComplexMethod", "LongMethod", "DuplicatedCode")
 @Composable
-public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
+fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
     val coroutineScope = rememberCoroutineScope()
     val groupState by state.selectedGroupState.collectAsState()
     val primaryAction by state.primaryButtonAction.collectAsState()
     val primaryDisabledReason by state.primaryButtonDisabledReason.collectAsState()
-    val resolvedSelection by state.resolvedSelection.collectAsState()
     val selectedVersionId by state.selectedVersionId.collectAsState()
     val refsError by state.refsError.collectAsState()
     val showTrustDialog by state.showTrustDialog.collectAsState()
@@ -214,11 +211,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                     ) {
-                        for (tool in outputs) {
+                        for ((toolId) in outputs) {
                             val isIntact = currentGroup.current?.intact == true
                             val symbol = if (isIntact) "✓" else "✕"
                             Text(
-                                text = "${tool.toolId} $symbol",
+                                text = "$toolId $symbol",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = codeFontFamily(),
                                 color = if (isIntact) {
@@ -273,17 +270,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                     fontFamily = codeFontFamily(),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                GlassSecondaryButton(
+                                InspectorSecondaryButton(
+                                    text = "Use Studio's version",
                                     onClick = { state.followStudio() },
                                     enabled = state.canUseStudioVersion,
-                                    minWidth = Spacing.None,
-                                    contentPadding = PaddingValues(
-                                        horizontal = Spacing.Medium,
-                                        vertical = Spacing.ExtraSmall,
-                                    ),
-                                ) {
-                                    Text("Use Studio's version", style = MaterialTheme.typography.labelSmall)
-                                }
+                                )
                             }
                         }
                         val reason = state.useStudioVersionDisabledReason()
@@ -330,17 +321,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 GlassCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .then(
-                                            if (isVersionSelected) {
-                                                Modifier.border(
-                                                    StrokeWidth.Focused,
-                                                    MaterialTheme.colorScheme.primary,
-                                                    GlassShapes.Card,
-                                                )
-                                            } else {
-                                                Modifier
-                                            },
-                                        )
+                                        .selectableBorder(isVersionSelected)
                                         .clip(GlassShapes.Card)
                                         .clickable(enabled = !isInstalling) {
                                             state.selectInstalledVersion(v.id)
@@ -371,28 +352,16 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                             )
                                         } else {
                                             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                                                GlassSecondaryButton(
+                                                InspectorSecondaryButton(
+                                                    text = "Use",
                                                     onClick = { state.use(v.id) },
                                                     enabled = state.canUseVersion(v.id),
-                                                    minWidth = Spacing.None,
-                                                    contentPadding = PaddingValues(
-                                                        horizontal = Spacing.Medium,
-                                                        vertical = Spacing.ExtraSmall,
-                                                    ),
-                                                ) {
-                                                    Text("Use", style = MaterialTheme.typography.labelSmall)
-                                                }
-                                                GlassSecondaryButton(
+                                                )
+                                                InspectorSecondaryButton(
+                                                    text = "Remove",
                                                     onClick = { state.remove(v.id) },
                                                     enabled = state.canRemoveVersion(v.id),
-                                                    minWidth = Spacing.None,
-                                                    contentPadding = PaddingValues(
-                                                        horizontal = Spacing.Medium,
-                                                        vertical = Spacing.ExtraSmall,
-                                                    ),
-                                                ) {
-                                                    Text("Remove", style = MaterialTheme.typography.labelSmall)
-                                                }
+                                                )
                                             }
                                         }
                                     }
@@ -431,17 +400,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 GlassCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .then(
-                                            if (isSelected) {
-                                                Modifier.border(
-                                                    StrokeWidth.Focused,
-                                                    MaterialTheme.colorScheme.primary,
-                                                    GlassShapes.Card,
-                                                )
-                                            } else {
-                                                Modifier
-                                            },
-                                        )
+                                        .selectableBorder(isSelected)
                                         .clip(GlassShapes.Card)
                                         .clickable(enabled = !isInstalling) {
                                             state.selectTargetVersion(rel.version)
@@ -477,7 +436,8 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                                 color = MaterialTheme.colorScheme.primary,
                                             )
                                         }
-                                        GlassSecondaryButton(
+                                        InspectorSecondaryButton(
+                                            text = if (isInstalled) "Use" else "Install & use",
                                             onClick = {
                                                 if (isInstalled) {
                                                     state.use(rel.version)
@@ -493,17 +453,7 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                                 }
                                             },
                                             enabled = !isInstalling,
-                                            minWidth = Spacing.None,
-                                            contentPadding = PaddingValues(
-                                                horizontal = Spacing.Medium,
-                                                vertical = Spacing.ExtraSmall,
-                                            ),
-                                        ) {
-                                            Text(
-                                                if (isInstalled) "Use" else "Install & use",
-                                                style = MaterialTheme.typography.labelSmall,
-                                            )
-                                        }
+                                        )
                                     }
                                 }
                             }
@@ -579,6 +529,15 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                             )
                         }
 
+                        val resolveRefWithTrust: (ToolRef) -> Unit = { ref ->
+                            coroutineScope.launch {
+                                val repo = repoFor(isCustomUrlMode, customUrlInput, state.recommendedUrl)
+                                state.requestWithTrustCheck(repo) {
+                                    state.resolveRef(ref, repo)
+                                }
+                            }
+                        }
+
                         when (selectedRefType) {
                             RefType.Tag -> {
                                 LaunchedEffect(currentGroup.group) {
@@ -600,17 +559,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.error,
                                     )
-                                    GlassSecondaryButton(
+                                    InspectorSecondaryButton(
+                                        text = "Retry",
                                         onClick = { state.loadRefs(if (isCustomUrlMode) customUrlInput else null) },
                                         enabled = !isInstalling,
-                                        minWidth = Spacing.None,
-                                        contentPadding = PaddingValues(
-                                            horizontal = Spacing.Medium,
-                                            vertical = Spacing.ExtraSmall,
-                                        ),
-                                    ) {
-                                        Text("Retry", style = MaterialTheme.typography.labelSmall)
-                                    }
+                                    )
                                 } else {
                                     val allTags = availableRefs?.tags.orEmpty()
                                     val filteredTags =
@@ -619,6 +572,10 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         } else {
                                             allTags.filter { it.name.contains(tagQuery, ignoreCase = true) }
                                         }
+
+                                    val onResolveTag: (String) -> Unit = { tagName ->
+                                        resolveRefWithTrust(ToolRef.Tag(tagName))
+                                    }
 
                                     LazyColumn(
                                         modifier =
@@ -640,31 +597,10 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                             GlassCard(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .then(
-                                                        if (isTagSelected) {
-                                                            Modifier.border(
-                                                                StrokeWidth.Focused,
-                                                                MaterialTheme.colorScheme.primary,
-                                                                GlassShapes.Card,
-                                                            )
-                                                        } else {
-                                                            Modifier
-                                                        },
-                                                    )
+                                                    .selectableBorder(isTagSelected)
                                                     .clip(GlassShapes.Card)
                                                     .clickable(enabled = !isInstalling) {
-                                                        coroutineScope.launch {
-                                                            val repo =
-                                                                repoFor(
-                                                                    isCustomUrlMode,
-                                                                    customUrlInput,
-                                                                    state.recommendedUrl,
-                                                                )
-                                                            val ref = ToolRef.Tag(tag.name)
-                                                            state.requestWithTrustCheck(repo) {
-                                                                state.resolveRef(ref, repo)
-                                                            }
-                                                        }
+                                                        onResolveTag(tag.name)
                                                     },
                                                 contentPadding = Spacing.Small,
                                             ) {
@@ -690,41 +626,25 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                         )
                                                     }
-                                                    GlassSecondaryButton(
+                                                    InspectorSecondaryButton(
+                                                        text = when {
+                                                            isTagInstalled -> "Use"
+                                                            isTagSelected -> "Selected"
+                                                            else -> "Select"
+                                                        },
                                                         onClick = {
                                                             if (isTagInstalled) {
                                                                 state.use(tag.name)
                                                             } else {
-                                                                coroutineScope.launch {
-                                                                    val repo =
-                                                                        repoFor(
-                                                                            isCustomUrlMode,
-                                                                            customUrlInput,
-                                                                            state.recommendedUrl,
-                                                                        )
-                                                                    val ref = ToolRef.Tag(tag.name)
-                                                                    state.requestWithTrustCheck(repo) {
-                                                                        state.resolveRef(ref, repo)
-                                                                    }
-                                                                }
+                                                                onResolveTag(tag.name)
                                                             }
                                                         },
                                                         enabled = !isInstalling,
-                                                        minWidth = Spacing.None,
                                                         contentPadding = PaddingValues(
                                                             horizontal = Spacing.Small,
                                                             vertical = Spacing.ExtraSmall,
                                                         ),
-                                                    ) {
-                                                        Text(
-                                                            text = when {
-                                                                isTagInstalled -> "Use"
-                                                                isTagSelected -> "Selected"
-                                                                else -> "Select"
-                                                            },
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                        )
-                                                    }
+                                                    )
                                                 }
                                             }
                                         }
@@ -748,21 +668,11 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         enabled = !isInstalling,
                                         modifier = Modifier.weight(1f),
                                     )
-                                    GlassSecondaryButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                val repo =
-                                                    repoFor(isCustomUrlMode, customUrlInput, state.recommendedUrl)
-                                                val ref = ToolRef.Branch(branchInput)
-                                                state.requestWithTrustCheck(repo) {
-                                                    state.resolveRef(ref, repo)
-                                                }
-                                            }
-                                        },
+                                    InspectorSecondaryButton(
+                                        text = "Resolve",
+                                        onClick = { resolveRefWithTrust(ToolRef.Branch(branchInput)) },
                                         enabled = branchInput.isNotBlank() && !isInstalling,
-                                    ) {
-                                        Text("Resolve", style = MaterialTheme.typography.labelSmall)
-                                    }
+                                    )
                                 }
                             }
 
@@ -787,21 +697,15 @@ public fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                         },
                                         modifier = Modifier.weight(1f),
                                     )
-                                    GlassSecondaryButton(
+                                    InspectorSecondaryButton(
+                                        text = "Resolve",
                                         onClick = {
-                                            coroutineScope.launch {
-                                                val repo =
-                                                    repoFor(isCustomUrlMode, customUrlInput, state.recommendedUrl)
-                                                val ref = ToolRef.Commit(commitSha(commitInput) ?: return@launch)
-                                                state.requestWithTrustCheck(repo) {
-                                                    state.resolveRef(ref, repo)
-                                                }
+                                            commitSha(commitInput)?.let { sha ->
+                                                resolveRefWithTrust(ToolRef.Commit(sha))
                                             }
                                         },
                                         enabled = commitSha(commitInput) != null && !isInstalling,
-                                    ) {
-                                        Text("Resolve", style = MaterialTheme.typography.labelSmall)
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -949,3 +853,32 @@ private val COMMIT_SHA = Regex("[0-9a-f]{40}")
 
 private fun repoFor(isCustom: Boolean, customInput: String, recommended: String?): String =
     if (isCustom) customInput else recommended.orEmpty()
+
+@Composable
+private fun Modifier.selectableBorder(isSelected: Boolean): Modifier = if (isSelected) {
+    border(StrokeWidth.Focused, MaterialTheme.colorScheme.primary, GlassShapes.Card)
+} else {
+    this
+}
+
+@Composable
+private fun InspectorSecondaryButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(
+        horizontal = Spacing.Medium,
+        vertical = Spacing.ExtraSmall,
+    ),
+) {
+    GlassSecondaryButton(
+        onClick = onClick,
+        enabled = enabled,
+        minWidth = Spacing.None,
+        contentPadding = contentPadding,
+        modifier = modifier,
+    ) {
+        Text(text, style = MaterialTheme.typography.labelSmall)
+    }
+}

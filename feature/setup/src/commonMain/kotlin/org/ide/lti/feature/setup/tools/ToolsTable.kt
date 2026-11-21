@@ -24,7 +24,7 @@ import kotlin.jvm.JvmName
 
 @JvmName("ToolsTableWithId")
 @Composable
-public fun ToolsTable(
+fun ToolsTable(
     rows: List<ToolRowPresentation>,
     selectedGroupId: ToolGroupId?,
     onSelectGroup: (ToolGroupId) -> Unit,
@@ -47,7 +47,7 @@ public fun ToolsTable(
 }
 
 @Composable
-public fun ToolsTable(
+fun ToolsTable(
     rows: List<ToolRowPresentation>,
     selectedGroupId: String?,
     onSelectGroup: (ToolGroupId) -> Unit,

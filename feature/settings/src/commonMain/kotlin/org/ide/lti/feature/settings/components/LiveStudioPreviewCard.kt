@@ -15,13 +15,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -103,7 +104,7 @@ fun LiveStudioPreviewCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(ComponentSize.AppearanceLivePreviewHeight)
+            .heightIn(min = ComponentSize.AppearanceLivePreviewHeight)
             .clip(GlassShapes.Card)
             .border(
                 width = GlassDimens.HairlineBorder,
@@ -116,19 +117,17 @@ fun LiveStudioPreviewCard(
         ScenicBackdropCanvas(
             isBlueGlass = isBlueGlass,
             isDark = isDark,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.matchParentSize(),
         )
 
         // Floating Frosted Glass Miniature Studio Window
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(Spacing.Medium),
+            modifier = Modifier.fillMaxWidth().padding(Spacing.Medium),
             contentAlignment = Alignment.Center,
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .clip(GlassShapes.Medium)
                     .background(windowCanvasBg)
                     .border(
@@ -141,7 +140,7 @@ fun LiveStudioPreviewCard(
                 StudioPreviewTitleBar(activeAccent = activeAccent, textColor = textColor)
 
                 // Window Body Split: Left Mini-Nav & Right Form
-                Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                     StudioPreviewSidebar(
                         previewScheme = previewScheme,
                         activeAccent = activeAccent,
@@ -364,8 +363,6 @@ private fun MiniFormInput(
             Text(
                 text = value,
                 fontSize = FontSize.LabelSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 color = textColor,
                 modifier = Modifier.weight(1f),
             )

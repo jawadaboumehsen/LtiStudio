@@ -93,6 +93,7 @@ internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
     }
 }
 
+@Suppress("DEPRECATION")
 @Composable
 private fun OpenOutput(
     log: WorkbenchLog,

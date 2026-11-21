@@ -12,6 +12,9 @@ package org.ide.lti.core.ui.settings
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.repository.user.UserDataRepository
 import org.ide.lti.core.model.user.AppearanceSettings
 import org.ide.lti.core.model.user.EditorSettings
@@ -42,7 +45,7 @@ class AppSettingsState(
         get() = themeState.value
         set(value) {
             themeState.value = value
-            persist { setTheme(value) }
+            persist("theme") { setTheme(value) }
         }
 
     private val effectsEnabledState = mutableStateOf(initialEffectsEnabled)
@@ -50,7 +53,7 @@ class AppSettingsState(
         get() = effectsEnabledState.value
         set(value) {
             effectsEnabledState.value = value
-            persist { setEffectsEnabled(value) }
+            persist("transparency") { setEffectsEnabled(value) }
         }
 
     private val reducedMotionState = mutableStateOf(initialReducedMotion)
@@ -58,7 +61,7 @@ class AppSettingsState(
         get() = reducedMotionState.value
         set(value) {
             reducedMotionState.value = value
-            persist { setReducedMotion(value) }
+            persist("animations") { setReducedMotion(value) }
         }
 
     var fluidAnimations: Boolean
@@ -72,7 +75,7 @@ class AppSettingsState(
         get() = editorSettingsState.value
         set(value) {
             editorSettingsState.value = value
-            persist { setEditorSettings(value) }
+            persist("editor") { setEditorSettings(value) }
         }
 
     private val notificationSettingsState = mutableStateOf(initialNotificationSettings)
@@ -80,7 +83,7 @@ class AppSettingsState(
         get() = notificationSettingsState.value
         set(value) {
             notificationSettingsState.value = value
-            persist { setNotificationSettings(value) }
+            persist("notifications") { setNotificationSettings(value) }
         }
 
     private val appearanceState = mutableStateOf(initialAppearance)
@@ -90,13 +93,40 @@ class AppSettingsState(
         get() = appearanceState.value
         set(value) {
             appearanceState.value = value
-            persist { setAppearance(value) }
+            persist("appearance") { setAppearance(value) }
         }
 
-    private fun persist(action: suspend UserDataRepository.() -> Unit) {
+    private val writes = Mutex()
+    private val pendingWrites = mutableStateOf(0)
+    private val failedSettings = mutableStateOf(setOf<String>())
+
+    val saveStatus: String
+        get() = when {
+            failedSettings.value.isNotEmpty() ->
+                "Could not save: ${failedSettings.value.sorted().joinToString()}. Changes apply for this session."
+            pendingWrites.value > 0 -> "Saving changes…"
+            userDataRepository == null || coroutineScope == null -> "Changes apply for this session."
+            else -> "Changes apply at once and are saved for this app."
+        }
+
+    private fun persist(setting: String, action: suspend UserDataRepository.() -> Unit) {
         val repository = userDataRepository ?: return
         val scope = coroutineScope ?: return
-        scope.launch { repository.action() }
+        pendingWrites.value++
+        scope.launch {
+            try {
+                writes.withLock {
+                    val result = runCatchingCancellable { repository.action() }
+                    failedSettings.value = if (result.isSuccess) {
+                        failedSettings.value - setting
+                    } else {
+                        failedSettings.value + setting
+                    }
+                }
+            } finally {
+                pendingWrites.value--
+            }
+        }
     }
 
     /**

@@ -520,8 +520,8 @@ public class ToolManager(
                         "Invalid source for group",
                     )
                 }
-                val recommended = (group.source as? ToolSource.Git)?.recommendedUrl
-                if (recommended != null && source.repoUrl != recommended &&
+                val recommended = group.source.recommendedUrl
+                if (source.repoUrl != recommended &&
                     selectionRepository != null && !isTrusted(source.repoUrl)
                 ) {
                     return OperationResult.TrustRequired(source.repoUrl)
@@ -666,7 +666,7 @@ public class ToolManager(
                     )
             val err =
                 if (isConn) {
-                    ToolError.ConnectionLost(msg ?: "Connection lost")
+                    ToolError.ConnectionLost(msg)
                 } else {
                     ToolError.Internal(msg ?: "Installation failed unexpectedly")
                 }

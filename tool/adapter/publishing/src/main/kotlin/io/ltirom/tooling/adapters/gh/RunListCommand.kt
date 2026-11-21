@@ -49,7 +49,7 @@ public data class RunListCommand(
         if (branch) args.add("--branch")
         commit?.let { val value = it
             args.add("--commit")
-            args.add(value.toString())
+            args.add(value)
         }
         if (created) args.add("--created")
         if (event) args.add("--event")

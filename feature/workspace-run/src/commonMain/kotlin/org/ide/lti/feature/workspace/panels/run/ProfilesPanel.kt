@@ -129,13 +129,14 @@ private fun QueueCard(state: ProfilesUiState, viewModel: ProfilesViewModel) {
             val shown = state.queue.builds.takeIf { it.isNotEmpty() }?.map { "${it.profile}: ${it.status}" }
                 ?: state.queued.mapIndexed { i, name -> "${i + 1}. $name" }
             shown.forEach { Note(it) }
+            if (state.queue.stopRequested) Note("Stopping the queue. No further builds will start.")
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
                 GlassButton(
                     onClick = viewModel::startQueue,
                     enabled = !state.queue.running && state.queued.isNotEmpty(),
                     modifier = Modifier.testTag("QueueStart"),
                 ) { Text("Build them in order") }
-                if (state.queue.running) {
+                if (state.queue.running && !state.queue.stopRequested) {
                     GlassButton(onClick = viewModel::stopQueue, variant = GlassButtonVariant.Text) {
                         Text("Stop after this build")
                     }

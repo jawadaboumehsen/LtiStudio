@@ -147,6 +147,38 @@ class RunHistoryViewModelTest {
     }
 
     @Test
+    fun inspectorClosesWhenRunOrWorkspaceSelectionChanges() = runTest(testDispatcher) {
+        val workspaces = FakeWorkspaceRepository()
+        val manager = WorkspaceManager(workspaces, backgroundScope)
+        val runs = FakeRunRepository()
+        val first = Workspace(id = "ws-1", name = "First", path = "/first")
+        val second = Workspace(id = "ws-2", name = "Second", path = "/second")
+        workspaces.saveWorkspace(first)
+        workspaces.saveWorkspace(second)
+        val older = sampleRun("older", startedEpochSec = 10)
+        val newer = sampleRun("newer", startedEpochSec = 20)
+        runs.upsert(older)
+        runs.upsert(newer)
+        val vm = RunHistoryViewModel(manager, GetRunHistoryUseCase(runs, workspaces), runs)
+
+        manager.openWorkspace(first.id)
+        testDispatcher.scheduler.runCurrent()
+        vm.inspect()
+        testDispatcher.scheduler.runCurrent()
+        assertNotNull(vm.uiState.value.inspection)
+        vm.selectRun(older)
+        assertNull(vm.uiState.value.inspection)
+        vm.inspect()
+        testDispatcher.scheduler.runCurrent()
+        assertNotNull(vm.uiState.value.inspection)
+
+        manager.openWorkspace(second.id)
+        testDispatcher.scheduler.runCurrent()
+        assertNull(vm.uiState.value.inspection)
+        assertEquals(second.id, vm.uiState.value.currentWorkspace?.id)
+    }
+
+    @Test
     fun testListRunsForWorkspace() = runTest(testDispatcher) {
         val wsRepo = FakeWorkspaceRepository()
         val wsManager = WorkspaceManager(wsRepo, CoroutineScope(testDispatcher))

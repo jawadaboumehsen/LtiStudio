@@ -325,7 +325,7 @@ public class WslToolchainProvisioner(
     private suspend fun runStages() {
         val wanted =
             repository?.currentState?.activeAttempt?.let {
-                it.environmentKey ?: it.environment?.distro
+                it.environmentKey
             }
         val alreadyVerifiedWsl = canReuseWsl(wanted)
 

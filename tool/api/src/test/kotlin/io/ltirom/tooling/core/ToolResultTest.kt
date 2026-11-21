@@ -24,7 +24,7 @@ class ToolResultTest {
 
         assertTrue(mapped.isFailure)
         assertTrue(mapped is ToolResult.Failure.ToolNotFound)
-        assertEquals("aapt2", (mapped as ToolResult.Failure.ToolNotFound).toolId)
+        assertEquals("aapt2", mapped.toolId)
     }
 
     @Test

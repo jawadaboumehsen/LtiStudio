@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 /*
  * Copyright 2025 Mifos Initiative
  *
@@ -48,6 +50,12 @@ tasks.withType<Test>().configureEach {
         ?: System.getProperty("updateScreenshots")
     if (updateScreenshots != null) {
         systemProperty("updateScreenshots", updateScreenshots)
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=dev.chrisbanes.haze.ExperimentalHazeApi")
     }
 }
 

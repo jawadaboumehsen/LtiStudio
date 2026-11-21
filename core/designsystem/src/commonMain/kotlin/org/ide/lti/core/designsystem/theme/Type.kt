@@ -69,7 +69,7 @@ fun codeFontFamily(): FontFamily = FontFamily(
 // Set of Material typography styles to start with
 @Composable
 internal fun appTypography(): Typography {
-    val defaultFamily = fontFamily()
+    val defaultFamily = ideFontFamily()
     return Typography(
         displayLarge = TextStyle(
             fontFamily = defaultFamily,

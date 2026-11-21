@@ -12,7 +12,7 @@ package org.ide.lti.core.designsystem.component.navigation
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,7 +40,7 @@ fun GlassScrollableTabRow(
 ) {
     val scope = rememberCoroutineScope()
 
-    ScrollableTabRow(
+    PrimaryScrollableTabRow(
         modifier = modifier,
         containerColor = containerColor,
         selectedTabIndex = pagerState.currentPage,

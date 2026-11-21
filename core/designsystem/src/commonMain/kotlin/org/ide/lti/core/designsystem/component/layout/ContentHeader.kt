@@ -11,6 +11,7 @@ package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,13 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.theme.FontSize
+import org.ide.lti.core.designsystem.theme.LineHeight
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 
 /**
- * Standard content panel header in the Blue Glass IDE frame.
+ * Standard content panel header in the Studio frame.
  *
  * Sits directly inside the inset content panel and presents:
  * - Breadcrumb navigation trail
@@ -44,18 +45,19 @@ fun ContentHeader(
     subtitle: String? = null,
     statusBadge: (@Composable () -> Unit)? = null,
     actions: (@Composable RowScope.() -> Unit)? = null,
+    context: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Large)
+            .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.SmallMedium)
             .testTag("ContentHeader"),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
         if (breadcrumbs.isNotEmpty()) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Compact),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
                 modifier = Modifier.testTag("ContentHeaderBreadcrumbs"),
             ) {
                 breadcrumbs.forEachIndexed { index, segment ->
@@ -83,29 +85,26 @@ fun ContentHeader(
             }
         }
 
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier.weight(1f, fill = false),
-                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Text(
-                        text = title,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontFamily = ideFontFamily(),
-                        fontSize = FontSize.HeadlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.testTag("ContentHeaderTitle"),
-                    )
-                    statusBadge?.invoke()
-                }
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = ideFontFamily(),
+                    fontSize = FontSize.TitleLarge,
+                    lineHeight = LineHeight.TitleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.testTag("ContentHeaderTitle"),
+                )
+                statusBadge?.invoke()
             }
 
             if (actions != null) {
@@ -119,8 +118,6 @@ fun ContentHeader(
             }
         }
 
-        // Below the title row, at full width: it never wraps beside the actions, so the header (and the tabs under
-        // it) keep one height on every tab.
         if (!subtitle.isNullOrBlank()) {
             Text(
                 text = subtitle,
@@ -128,10 +125,10 @@ fun ContentHeader(
                 fontFamily = ideFontFamily(),
                 fontSize = FontSize.BodyMedium,
                 fontWeight = FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                lineHeight = LineHeight.BodyMedium,
                 modifier = Modifier.testTag("ContentHeaderSubtitle"),
             )
         }
+        context?.invoke()
     }
 }

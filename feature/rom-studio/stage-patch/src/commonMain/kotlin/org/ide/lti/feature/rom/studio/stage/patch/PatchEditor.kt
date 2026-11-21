@@ -35,7 +35,6 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
-import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -68,10 +67,13 @@ public fun PatchEditor(
     onOpenPlugins: () -> Unit = {},
     selectedObjectId: String = "module-catalog",
     modifier: Modifier = Modifier,
+    saveError: String? = null,
 ) {
     // Every time it is shown: plugins are installed or updated on the Plugins page in between.
     LaunchedEffect(Unit) { onRefresh() }
+    val selected = selectedObjectId.lowercase().replace('_', '-')
     val changes = facts.plans.flatMap { (mod, plan) -> plan.operations.map { mod to it } }
+    val missingPlans = settings.enabledPackages.filterNot(facts.plans::containsKey)
 
     Box(modifier = modifier.fillMaxSize().testTag("PatchEditor"), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
@@ -81,9 +83,14 @@ public fun PatchEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
+            saveError?.let { message -> item { PatchProblem("Changes could not be saved. $message") } }
+            facts.lockError?.let { message -> item { PatchProblem(message) } }
+            if (facts.loaded && selected in PLAN_PREVIEWS && missingPlans.isNotEmpty()) {
+                item { PatchProblem("Locked plugin plans unavailable: ${missingPlans.joinToString()}.") }
+            }
             item {
-                when (selectedObjectId.lowercase()) {
-                    "enabled-ordered-modules", "enabled_ordered_modules" -> Column(
+                when (selected) {
+                    "enabled-ordered-modules" -> Column(
                         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
                     ) {
                         // Above the list: with many mods enabled the list is long, the check is what is asked for.
@@ -91,105 +98,66 @@ public fun PatchEditor(
                         EnabledCard(settings, facts, onToggle)
                     }
 
-                    "file-changes", "file_changes" -> ChangesCard(
+                    "file-changes" -> ChangesCard(
                         "File changes",
                         changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch },
                     )
 
-                    "text-patches", "text_patches" ->
+                    "text-patches" ->
                         ChangesCard("Text patches", changes.filter { (_, op) -> op is Operation.TextPatch })
 
-                    "property-patches", "property_patches" ->
+                    "property-patches" ->
                         ChangesCard("Property patches", changes.filter { (_, op) -> op is Operation.PropertyPatch })
 
                     "conflicts" -> ConflictsCard(changes)
 
-                    else -> CatalogCard(settings, facts, onToggle, onOpenPlugins)
+                    else -> PatchCatalog(settings, facts, onToggle, onOpenPlugins, onRefresh)
                 }
             }
         }
     }
 }
 
-@Composable
-private fun CatalogCard(
-    settings: CustomizationSettings,
-    facts: PatchFacts,
-    onToggle: (String) -> Unit,
-    onOpenPlugins: () -> Unit,
-) {
-    Card("Installed plugins", "PatchCatalog") {
-        GlassButton(onClick = onOpenPlugins, variant = GlassButtonVariant.Standard) {
-            Text("Install plugins…", fontSize = FontSize.BodySmall)
-        }
-        // Next to what was clicked, not under the list: a refused toggle says why where you can see it.
-        facts.lockError?.let { Problem(it) }
-        if (facts.loaded && facts.installed.isEmpty()) {
-            Hint("No plugins installed. Install .lti-mod.zip packages on the Plugins page.")
-        }
-        facts.installed.forEach { record ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = record.displayName.ifBlank { record.identity.id },
-                        fontSize = FontSize.BodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = ideFontFamily(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    record.summary.takeIf { it.isNotBlank() }?.let { Hint(it) }
-                    facts.incompatible[record.key]?.let { Problem("This plugin $it") }
-                    Hint(
-                        "v${record.identity.version} by ${record.identity.publisher}" +
-                            record.dependencies.takeIf { it.isNotEmpty() }
-                                ?.joinToString(prefix = " · needs ") { it.id }.orEmpty(),
-                    )
-                }
-                val enabled = record.key in settings.enabledPackages
-                GlassToggle(
-                    checked = enabled,
-                    // An incompatible plugin can be switched off, never on.
-                    enabled = enabled || record.key !in facts.incompatible,
-                    onCheckedChange = { onToggle(record.key) },
-                    activeColor = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-    }
-}
+private val PLAN_PREVIEWS = setOf("file-changes", "text-patches", "property-patches", "conflicts")
 
 @Composable
 private fun EnabledCard(settings: CustomizationSettings, facts: PatchFacts, onToggle: (String) -> Unit) {
-    Card("Enabled plugins, in the order they apply", "PatchEnabled") {
-        if (settings.enabledPackages.isEmpty()) Hint("No plugins enabled.")
+    PatchCard("Enabled plugins, in the order they apply", "PatchEnabled") {
+        if (settings.enabledPackages.isEmpty()) PatchHint("No plugins enabled.")
         settings.enabledPackages.forEachIndexed { index, pkg ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val name = facts.installed.firstOrNull { it.key == pkg }?.displayName?.takeIf { it.isNotBlank() }
+                val pin = settings.lockedEntry(pkg)
+                val record = if (pin != null) {
+                    facts.installedVersions.firstOrNull { it.matches(pin) }
+                } else {
+                    facts.installed.firstOrNull { it.key == pkg }
+                }
+                val name = record?.displayName?.takeIf { it.isNotBlank() }
                 Mono("${index + 1}. ${name ?: pkg}")
-                GlassButton(onClick = { onToggle(pkg) }, variant = GlassButtonVariant.Standard) {
+                GlassButton(
+                    onClick = { onToggle(pkg) },
+                    variant = GlassButtonVariant.Standard,
+                    enabled = facts.canChangePlugins,
+                ) {
                     Text("Disable", fontSize = FontSize.Micro)
                 }
             }
         }
-        Hint("A plugin's dependencies always apply before it.")
+        PatchHint("A plugin's dependencies always apply before it.")
     }
 }
 
 @Composable
 private fun ChangesCard(title: String, changes: List<Pair<String, Operation>>) {
-    Card(title, "PatchChanges") {
-        if (changes.isEmpty()) Hint("The enabled plugins make no changes of this kind.")
+    PatchCard(title, "PatchChanges") {
+        if (changes.isEmpty()) PatchHint("The enabled plugins make no changes of this kind.")
         changes.forEach { (mod, op) ->
             Mono(describe(op) + if (op.condition == Condition.Always) "" else "  (when its condition holds)")
-            Hint(mod.substringAfter(':') + " · " + op.id)
+            PatchHint(mod.substringAfter(':') + " · " + op.id)
         }
     }
 }
@@ -206,9 +174,9 @@ internal fun conflictsOf(changes: List<Pair<String, Operation>>): Map<String, Li
 @Composable
 private fun ConflictsCard(changes: List<Pair<String, Operation>>) {
     val conflicts = conflictsOf(changes)
-    Card("Conflicts", "PatchConflicts") {
-        if (conflicts.isEmpty()) Hint("No two enabled plugins replace the same file.")
-        conflicts.forEach { (path, ops) -> Problem("$path: ${ops.joinToString { it.first.substringAfter(':') }}") }
+    PatchCard("Conflicts", "PatchConflicts") {
+        if (conflicts.isEmpty()) PatchHint("No two enabled plugins replace the same file.")
+        conflicts.forEach { (path, ops) -> PatchProblem("$path: ${ops.joinToString { it.first.substringAfter(':') }}") }
     }
 }
 
@@ -245,7 +213,7 @@ private fun valueOf(value: ValueRef): String = when (value) {
 }
 
 @Composable
-private fun Card(title: String, tag: String, content: @Composable () -> Unit) {
+internal fun PatchCard(title: String, tag: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,7 +245,7 @@ private fun Mono(text: String) {
 }
 
 @Composable
-private fun Hint(text: String) {
+internal fun PatchHint(text: String) {
     Text(
         text = text,
         fontSize = FontSize.Micro,
@@ -287,7 +255,7 @@ private fun Hint(text: String) {
 }
 
 @Composable
-private fun Problem(text: String) {
+internal fun PatchProblem(text: String) {
     Text(
         text = text,
         fontSize = FontSize.Micro,
@@ -301,8 +269,8 @@ private const val CONTEXT_PREVIEW = 48
 /** The mod lab: every operation of the enabled mods, in the order they apply, as the build would meet it. */
 @Composable
 private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> Unit) {
-    Card("Check them together", "PatchModLab") {
-        Hint(
+    PatchCard("Check them together", "PatchModLab") {
+        PatchHint(
             "Checks each operation against the assembled work tree, after the ones before it, as the build applies " +
                 "them. Nothing is written.",
         )
@@ -321,12 +289,12 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
                 modifier = Modifier.testTag("PatchModLabDecode"),
             ) { Text("Also check APK/JAR edits (decodes each package)", fontSize = FontSize.Micro) }
         }
-        lab.error?.let { Problem(it) }
-        val result = lab.result ?: return@Card
-        result.problems.forEach { Problem(it) }
+        lab.error?.let { PatchProblem(it) }
+        val result = lab.result ?: return@PatchCard
+        result.problems.forEach { PatchProblem(it) }
         val counts = result.rows.groupingBy { it.status }.eachCount()
         if (result.rows.isNotEmpty()) {
-            Hint(
+            PatchHint(
                 LabStatus.entries.mapNotNull { s -> counts[s]?.let { "$it ${LAB_WORDS.getValue(s)}" } }
                     .joinToString(" · "),
             )
@@ -377,10 +345,10 @@ private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
             if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
         }
         if (pkg.methods.isNotEmpty()) {
-            Hint("Methods it changes (${pkg.methods.size}):")
-            pkg.methods.forEach { Hint("    ${shortMember(it)}   $it") }
+            PatchHint("Methods it changes (${pkg.methods.size}):")
+            pkg.methods.forEach { PatchHint("    ${shortMember(it)}   $it") }
         }
-        if (pkg.files.isNotEmpty()) Hint("Files inside it: ${pkg.files.joinToString()}")
+        if (pkg.files.isNotEmpty()) PatchHint("Files inside it: ${pkg.files.joinToString()}")
     }
 }
 
@@ -388,7 +356,7 @@ private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
 private fun LabLine(row: LabRow, what: String) {
     val reason = row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
     val text = "${LAB_MARKS.getValue(row.status)} $what$reason"
-    if (row.status == LabStatus.REFUSED) Problem(text) else Hint(text)
+    if (row.status == LabStatus.REFUSED) PatchProblem(text) else PatchHint(text)
 }
 
 private fun labOperation(row: LabRow, facts: PatchFacts): Operation? =

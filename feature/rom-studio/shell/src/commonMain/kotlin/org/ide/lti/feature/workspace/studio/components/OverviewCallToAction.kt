@@ -17,12 +17,11 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -61,14 +60,15 @@ public fun OverviewCallToAction(
     onAction: (WorkspaceActionUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    FlowRow(
         modifier = modifier
             .fillMaxWidth()
             .testTag("OverviewCtaBar")
             .ideCardSurface()
             .padding(Spacing.Medium),
-        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         // 1. Primary Action Button on the left
         val interactionSource = remember { MutableInteractionSource() }
@@ -120,15 +120,6 @@ public fun OverviewCallToAction(
             }
         }
 
-        // 2. Vertical separator
-        Box(
-            modifier = Modifier
-                .width(Spacing.Hairline)
-                .height(Spacing.ExtraLarge)
-                .background(MaterialTheme.colorScheme.outlineVariant),
-        )
-
-        // 3. Status prompt explanation on the right
         val promptTitle = when (buildState) {
             is BuildStateUi.InProgress -> "Build in progress (${buildState.stageLabel})"
             is BuildStateUi.Succeeded -> "Last build completed successfully."

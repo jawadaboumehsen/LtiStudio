@@ -10,16 +10,24 @@
 package org.ide.lti.core.designsystem.layout
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.moveBy
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.up
+import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
 import org.ide.lti.core.designsystem.component.layout.GlobalAppTopBar
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -29,6 +37,7 @@ import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GlobalAppTopBarTest {
 
@@ -88,6 +97,33 @@ class GlobalAppTopBarTest {
     }
 
     @Test
+    fun studioWindowControlsLeadTheToolbarAndInvokeTheirActions() {
+        val events = mutableListOf<String>()
+        composeTestRule.setContent {
+            LtiTheme {
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Workspace,
+                    onSelectDestination = {},
+                    windowControlActions = WindowControlActions(
+                        onClose = { events.add("close") },
+                        onMinimize = { events.add("minimize") },
+                        onMaximize = { events.add("restore") },
+                        isMaximized = { true },
+                    ),
+                )
+            }
+        }
+
+        val controls = listOf("Close", "Minimize", "Restore").map { composeTestRule.onNodeWithContentDescription(it) }
+        val positions = controls.map { it.fetchSemanticsNode().positionInRoot.x }
+        val brand = composeTestRule.onNodeWithTag("GlobalTopBarBrand").fetchSemanticsNode()
+        assertTrue(positions.zipWithNext().all { (left, right) -> left < right })
+        assertTrue(positions.last() < brand.positionInRoot.x)
+        controls.forEach { it.assertHasClickAction().performClick() }
+        assertEquals(listOf("close", "minimize", "restore"), events)
+    }
+
+    @Test
     fun testBlueThemeProvidesExpectedColorScheme() {
         var observedTheme: AppTheme? = null
         var observedSurface: Color? = null
@@ -102,5 +138,62 @@ class GlobalAppTopBarTest {
             assertEquals(AppTheme.Blue, observedTheme)
             assertEquals(colorSchemeFor(AppTheme.Blue).surface, observedSurface)
         }
+    }
+
+    @Test
+    fun testTopBarDragDispatchesDragCallbacks() {
+        var dragStarted = false
+        var dragDeltaX = 0f
+        var dragDeltaY = 0f
+        var dragEnded = false
+
+        composeTestRule.setContent {
+            LtiTheme {
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Workspace,
+                    onSelectDestination = {},
+                    windowControlActions = WindowControlActions(
+                        onDragWindow = { dragStarted = true },
+                        onDragDelta = { dx, dy ->
+                            dragDeltaX += dx
+                            dragDeltaY += dy
+                        },
+                        onDragEnd = { dragEnded = true },
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("GlobalAppTopBar").performTouchInput {
+            down(Offset(900f, 20f))
+            moveBy(Offset(40f, 10f))
+            up()
+        }
+
+        assertTrue(dragStarted, "onDragWindow should be called on pointer down")
+        assertTrue(dragDeltaX != 0f || dragDeltaY != 0f, "onDragDelta should receive movement delta")
+        assertTrue(dragEnded, "onDragEnd should be called on pointer release")
+    }
+
+    @Test
+    fun testTopBarDoubleClickTriggersMaximize() {
+        var maximized = false
+        composeTestRule.setContent {
+            LtiTheme {
+                GlobalAppTopBar(
+                    selectedDestination = GlobalAppDestination.Workspace,
+                    onSelectDestination = {},
+                    windowControlActions = WindowControlActions(
+                        onMaximize = { maximized = !maximized },
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("GlobalAppTopBar").performTouchInput {
+            doubleClick(Offset(900f, 20f))
+        }
+
+        assertTrue(maximized, "Double clicking empty space in the top app bar should toggle maximize")
     }
 }

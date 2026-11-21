@@ -315,6 +315,7 @@ internal fun EditDialogs(state: ImagePaneState, actions: ImagePaneActions) {
         val old = entry.path.trimEnd('/').substringAfterLast('/')
         var name by remember(entry) { mutableStateOf(old) }
         GlassDialog(
+            scrollContent = true,
             onDismissRequest = actions.dismissEdit,
             title = "Rename \"$old\"",
             confirmButton = {
@@ -352,6 +353,7 @@ internal fun EditDialogs(state: ImagePaneState, actions: ImagePaneActions) {
     state.deleting?.let { entry ->
         val isFolder = entry.path.endsWith("/")
         GlassDialog(
+            scrollContent = true,
             onDismissRequest = actions.dismissEdit,
             title = "Delete \"${entry.path.trimEnd('/').substringAfterLast('/')}\"?",
             confirmButton = {

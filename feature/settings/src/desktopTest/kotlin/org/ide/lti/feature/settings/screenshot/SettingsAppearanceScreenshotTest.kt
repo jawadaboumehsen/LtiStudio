@@ -19,8 +19,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
 import com.github.takahirom.roborazzi.RoborazziOptions
 import io.github.takahirom.roborazzi.captureRoboImage
@@ -30,6 +28,8 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
 import org.ide.lti.feature.settings.model.SettingsCategory
+import org.ide.lti.feature.settings.runSettingsUiTest
+import org.ide.lti.feature.settings.scrollToSettingsNode
 import org.junit.Test
 
 internal const val WIDTH_STANDARD = 1120
@@ -45,32 +45,32 @@ class SettingsAppearanceScreenshotTest {
     // =============================================================================================
 
     @Test
-    fun testSettings_Dark_EffectsOn() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Dark_EffectsOn() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Dark, effectsOn = true, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
     @Test
-    fun testSettings_Dark_EffectsOff() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Dark_EffectsOff() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Dark, effectsOn = false, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
     @Test
-    fun testSettings_Blue_EffectsOn() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Blue_EffectsOn() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Blue, effectsOn = true, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
     @Test
-    fun testSettings_Blue_EffectsOff() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Blue_EffectsOff() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Blue, effectsOn = false, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
     @Test
-    fun testSettings_Light_EffectsOn() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Light_EffectsOn() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Light, effectsOn = true, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
     @Test
-    fun testSettings_Light_EffectsOff() = runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+    fun testSettings_Light_EffectsOff() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
         verifySettingsAppearance(AppTheme.Light, effectsOn = false, width = WIDTH_STANDARD, height = HEIGHT_STANDARD)
     }
 
@@ -79,59 +79,55 @@ class SettingsAppearanceScreenshotTest {
     // =============================================================================================
 
     @Test
-    fun testSettings_Compact_Blue_EffectsOn() =
-        runDesktopComposeUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
-            verifySettingsAppearance(AppTheme.Blue, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
-        }
+    fun testSettings_Compact_Blue_EffectsOn() = runSettingsUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
+        verifySettingsAppearance(AppTheme.Blue, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
+    }
 
     @Test
-    fun testSettings_Compact_Dark_EffectsOn() =
-        runDesktopComposeUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
-            verifySettingsAppearance(AppTheme.Dark, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
-        }
+    fun testSettings_Compact_Dark_EffectsOn() = runSettingsUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
+        verifySettingsAppearance(AppTheme.Dark, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
+    }
 
     @Test
-    fun testSettings_Compact_Light_EffectsOn() =
-        runDesktopComposeUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
-            verifySettingsAppearance(AppTheme.Light, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
-        }
+    fun testSettings_Compact_Light_EffectsOn() = runSettingsUiTest(width = WIDTH_COMPACT, height = HEIGHT_COMPACT) {
+        verifySettingsAppearance(AppTheme.Light, effectsOn = true, width = WIDTH_COMPACT, height = HEIGHT_COMPACT)
+    }
 
     // =============================================================================================
     // Navigation Interaction Verification
     // =============================================================================================
 
     @Test
-    fun testNavigatorClickSelectsAppearance() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
-            val settingsState = AppSettingsState(
-                initialTheme = AppSettingsState.THEME_BLUE,
-                initialEffectsEnabled = true,
-            )
+    fun testNavigatorClickSelectsAppearance() = runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        val settingsState = AppSettingsState(
+            initialTheme = AppSettingsState.THEME_BLUE,
+            initialEffectsEnabled = true,
+        )
 
-            setContent {
-                LtiTheme(appTheme = AppTheme.Blue) {
-                    Box(Modifier.fillMaxSize()) {
-                        GlassBackdrop()
-                        SettingsScreenContent(
-                            onBackClick = {},
-                            appSettingsState = settingsState,
-                            initialCategory = SettingsCategory.About,
-                        )
-                    }
+        setContent {
+            LtiTheme(appTheme = AppTheme.Blue) {
+                Box(Modifier.fillMaxSize()) {
+                    GlassBackdrop()
+                    SettingsScreenContent(
+                        onBackClick = {},
+                        appSettingsState = settingsState,
+                        initialCategory = SettingsCategory.About,
+                    )
                 }
             }
-
-            waitForIdle()
-            // Verify we started on About in the navigator
-            onNodeWithTag("NavigatorItem_about").assertIsDisplayed()
-
-            // Click the real navigation item in IdeNavigatorPanel
-            onNodeWithTag("NavigatorItem_appearance").performClick()
-            waitForIdle()
-
-            // Verify that Appearance category is now active and "Glass & motion" card is rendered
-            onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
         }
+
+        waitForIdle()
+        // Verify we started on About in the navigator
+        onNodeWithTag("NavigatorItem_about").assertIsDisplayed()
+
+        // Click the real navigation item in IdeNavigatorPanel
+        onNodeWithTag("NavigatorItem_appearance").performClick()
+        waitForIdle()
+
+        // Verify that Appearance category is now active and "Glass & motion" card is rendered
+        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+    }
 
     // =============================================================================================
     // Internal Helper & Roborazzi Capture Engine
@@ -175,7 +171,7 @@ class SettingsAppearanceScreenshotTest {
 
         waitForIdle()
         // Scroll to target card to ensure the entire card region is in view
-        onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
         waitForIdle()
 
         val effectsTag = if (effectsOn) "effects_on" else "effects_off"

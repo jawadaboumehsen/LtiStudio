@@ -90,7 +90,11 @@ public object DeviceConfigReadiness {
         /** Records a blocking problem when [failed] is true. */
         fun rule(failed: Boolean, stage: StageId?, field: String, code: String, message: String) {
             // A device field is fixed in the device configuration, whichever stage it matters to.
-            val origin = DEVICE_OBJECT.takeIf { isDeviceField(field) }
+            val origin = when {
+                field == "firmware.sha256" -> "integrity"
+                isDeviceField(field) -> DEVICE_OBJECT
+                else -> null
+            }
             if (failed) list += ValidationError(stage, origin, field, code, Severity.ERROR, message)
         }
 

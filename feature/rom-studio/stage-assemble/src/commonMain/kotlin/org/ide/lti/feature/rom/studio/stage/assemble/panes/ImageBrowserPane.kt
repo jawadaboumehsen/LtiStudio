@@ -12,6 +12,7 @@ package org.ide.lti.feature.rom.studio.stage.assemble.panes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -97,19 +98,20 @@ public fun ImageBrowserPane(
         ImagePanel(Modifier.heightIn(max = GlassDimens.BrowserControlsMaxHeight), scroll = true) {
             ImageTitle("Image browser")
             SourcePicker(target, state, actions)
-            Row(
+            GlassTextField(
+                value = state.filter,
+                onValueChange = actions.setFilter,
+                placeholder = "Filter by path",
+                leading = TextFieldLeadingSlot.Custom {
+                    Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(IconSize.Small))
+                },
+                modifier = Modifier.fillMaxWidth().testTag("ImageSearchFilter"),
+            )
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                GlassTextField(
-                    value = state.filter,
-                    onValueChange = actions.setFilter,
-                    placeholder = "Filter by path (bin, priv-app, ...)",
-                    leading = TextFieldLeadingSlot.Custom {
-                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(IconSize.Small))
-                    },
-                    modifier = Modifier.weight(1f).testTag("ImageSearchFilter"),
-                )
                 GlassButton(
                     onClick = actions.searchAll,
                     enabled = state.busy == null && state.filter.trim().length >= 2,
@@ -121,9 +123,10 @@ public fun ImageBrowserPane(
                     Text("Open the tree in Explorer", fontSize = FontSize.BodySmall)
                 }
             }
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 state.tree?.let {
                     val where = if (state.partition == ImagePaneModel.ALL) "every partition" else it.source

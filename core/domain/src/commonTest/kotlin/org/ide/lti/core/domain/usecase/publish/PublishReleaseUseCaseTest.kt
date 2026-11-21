@@ -186,6 +186,27 @@ class PublishReleaseUseCaseTest {
     }
 
     @Test
+    fun changedDestinationRequiresFreshReviewBeforeAnyExport() = runTest {
+        built()
+        val review = publish.preflight("ws")
+        val changed = settings.publish.copy(localExportFolder = "D:\\ROM\\other")
+        assertTrue(publish.preflight("ws", changed).problems.isEmpty())
+        assertNull(publish.publish("ws", edited = changed, reviewed = review))
+        assertTrue(folder.files.keys.none { it.startsWith("/mnt/d/") })
+        val refreshed = publish.preflight("ws", changed)
+        assertNotNull(publish.publish("ws", edited = changed, reviewed = refreshed)?.outcome)
+    }
+
+    @Test
+    fun changedReleaseRequiresFreshReviewBeforeAnyExport() = runTest {
+        built()
+        val review = publish.preflight("ws")
+        built(content = "new")
+        assertNull(publish.publish("ws", reviewed = review))
+        assertTrue(folder.files.keys.none { it.startsWith("/mnt/d/") })
+    }
+
+    @Test
     fun aBuiltReleaseIsExportedAndVerifiedAndAnInterruptedOneResumes() = runTest {
         built()
         folder.corruptCopies = true

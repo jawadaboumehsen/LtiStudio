@@ -93,6 +93,7 @@ graphify-out/
 .codex/
 .gemini/
 .agents/
+reviews/
 graphify-out/
 local.properties
 *.log

@@ -45,9 +45,12 @@ public class ProfilesViewModel(
     private val _state = MutableStateFlow(ProfilesUiState())
     public val state: StateFlow<ProfilesUiState> = _state.asStateFlow()
 
+    private var workspaceGeneration = 0L
+
     init {
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { ws ->
+                workspaceGeneration++
                 _state.update { ProfilesUiState(workspaceId = ws?.id, queue = it.queue) }
                 if (ws != null) reload(ws.id)
             }
@@ -63,9 +66,8 @@ public class ProfilesViewModel(
 
     /** The current settings saved under the typed name. */
     public fun saveCurrent() {
-        act { ws, store ->
-            store.saveCurrent(ws, _state.value.nameInput).also { _state.update { s -> s.copy(nameInput = "") } }
-        }
+        val name = _state.value.nameInput
+        act(clearName = name) { ws, store -> store.saveCurrent(ws, name) }
     }
 
     public fun delete(name: String) {
@@ -82,9 +84,10 @@ public class ProfilesViewModel(
             _state.update { it.copy(differences = shown - profile.name) }
             return
         }
+        val generation = workspaceGeneration
         viewModelScope.launch {
             val lines = runCatchingCancellable { store.differences(ws, profile) }.getOrElse { listOf("${it.message}") }
-            _state.update { it.copy(differences = it.differences + (profile.name to lines)) }
+            updateCurrent(generation) { it.copy(differences = it.differences + (profile.name to lines)) }
         }
     }
 
@@ -92,10 +95,11 @@ public class ProfilesViewModel(
     public fun use(profile: BuildProfile) {
         val ws = _state.value.workspaceId ?: return
         val store = profiles ?: return
+        val generation = workspaceGeneration
         viewModelScope.launch {
             val done = store.apply(ws, profile).isSuccess
             val message = if (done) "Now using ${profile.name}" else "Could not use ${profile.name}"
-            _state.update { it.copy(message = message, differences = emptyMap()) }
+            updateCurrent(generation) { it.copy(message = message, differences = emptyMap()) }
         }
     }
 
@@ -113,14 +117,29 @@ public class ProfilesViewModel(
         queue?.stop()
     }
 
-    private fun act(change: suspend (String, BuildProfiles) -> List<BuildProfile>) {
+    private fun act(clearName: String? = null, change: suspend (String, BuildProfiles) -> List<BuildProfile>) {
         val ws = _state.value.workspaceId ?: return
         val store = profiles ?: return
+        val generation = workspaceGeneration
         viewModelScope.launch {
             runCatchingCancellable { change(ws, store) }
-                .onSuccess { list -> _state.update { it.copy(profiles = list, message = null) } }
-                .onFailure { e -> _state.update { it.copy(message = e.message ?: "The profile could not be saved") } }
+                .onSuccess { list ->
+                    updateCurrent(generation) {
+                        it.copy(
+                            profiles = list,
+                            message = null,
+                            nameInput = if (it.nameInput == clearName) "" else it.nameInput,
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    updateCurrent(generation) { it.copy(message = e.message ?: "The profile could not be saved") }
+                }
         }
+    }
+
+    private fun updateCurrent(generation: Long, change: (ProfilesUiState) -> ProfilesUiState) {
+        if (generation == workspaceGeneration) _state.update(change)
     }
 
     private suspend fun reload(workspaceId: String) {

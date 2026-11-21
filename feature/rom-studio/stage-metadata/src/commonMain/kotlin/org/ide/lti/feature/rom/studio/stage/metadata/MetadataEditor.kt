@@ -66,6 +66,7 @@ public fun MetadataEditor(
     modifier: Modifier = Modifier,
     /** Fills the changelog from what the last build did. */
     onDraftChangelog: () -> Unit = {},
+    saveError: String? = null,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("release.") || !it.fieldPath.contains('.') }
 
@@ -82,6 +83,11 @@ public fun MetadataEditor(
                 .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
+            saveError?.let { message ->
+                item {
+                    Text("Changes could not be saved. $message", color = GlassTheme.diagnosticColors.error)
+                }
+            }
             when (selectedObjectId.lowercase()) {
                 "ota-url", "ota_url" -> item {
                     OtaCard(settings, errors, dirtyPaths, onChange)
@@ -257,6 +263,7 @@ private fun ChangelogCard(
         }
         if (asking) {
             GlassDialog(
+                scrollContent = true,
                 onDismissRequest = { asking = false },
                 title = "Replace the release notes?",
                 confirmButton = {

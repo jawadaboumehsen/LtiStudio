@@ -51,6 +51,7 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
  * continuous glass surface rather than creating disjoint, redundant glass slices.
  */
 val LocalInIdeAppFrame = compositionLocalOf { false }
+internal val LocalCompactIdeFrame = compositionLocalOf { false }
 
 /**
  * Stateless root layout frame for the professional LtiRom IDE shell.
@@ -97,7 +98,7 @@ fun IdeAppFrame(
                 isCompact = widthDp < GlassDimens.CompactBreakpoint
             },
     ) {
-        CompositionLocalProvider(LocalInIdeAppFrame provides true) {
+        CompositionLocalProvider(LocalInIdeAppFrame provides true, LocalCompactIdeFrame provides isCompact) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Full-width Top App Bar
                 Box(
@@ -138,7 +139,7 @@ fun IdeAppFrame(
                     }
 
                     val centralColumnBackground = if (GlassTheme.effectsEnabled) {
-                        MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Half)
+                        MaterialTheme.colorScheme.surface.copy(alpha = AlphaTokens.Heavy)
                     } else {
                         MaterialTheme.colorScheme.surface
                     }

@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,13 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
+import org.ide.lti.core.designsystem.component.actions.StudioWindowControls
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.component.actions.windowDragGesture
 import org.ide.lti.core.designsystem.component.display.LtiRomStudioMark
@@ -52,12 +50,10 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.AppTheme
-import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -94,24 +90,39 @@ fun GlobalAppTopBar(
 ) {
     val localWindowControls = LocalWindowControlActions.current
     val effectiveWindowControls = windowControlActions ?: localWindowControls
+    val effectiveDrag = onDragWindow ?: effectiveWindowControls.onDragWindow
+    val effectiveDragDelta = effectiveWindowControls.onDragDelta
+    val effectiveDragEnd = effectiveWindowControls.onDragEnd
+    val effectiveDoubleClick = effectiveWindowControls.onMaximize
 
     IdeTopAppBar(
-        modifier = modifier.testTag("GlobalAppTopBar"),
+        modifier = modifier
+            .testTag("GlobalAppTopBar")
+            .windowDragGesture(
+                onDrag = effectiveDrag,
+                onDragDelta = effectiveDragDelta,
+                onDragEnd = effectiveDragEnd,
+                onDoubleClick = effectiveDoubleClick,
+            ),
         leadingContent = {
+            windowControls?.invoke() ?: StudioWindowControls(effectiveWindowControls)
             BrandIdentity(tag = "${tagPrefix}Brand")
         },
         centerContent = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                modifier = Modifier.testTag("GlobalTopBarDestinations"),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+                modifier = Modifier
+                    .testTag("GlobalTopBarDestinations")
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow, GlassShapes.Small)
+                    .padding(Spacing.Compact),
             ) {
                 GlobalAppDestination.entries.forEach { destination ->
                     DestinationTab(
                         destination = destination,
                         selected = destination == selectedDestination,
                         tag = "${tagPrefix}_${destination.name}",
-                        onClick = { onSelectDestination(destination) },
+                        onClick = { if (destination != selectedDestination) onSelectDestination(destination) },
                     )
                 }
             }
@@ -141,20 +152,9 @@ fun GlobalAppTopBar(
             actions()
             Spacer(
                 modifier = Modifier
-                    .width(Spacing.Large)
+                    .width(ComponentSize.StudioWindowButtonSize * 4)
                     .fillMaxHeight()
-                    .testTag(if (tagPrefix == "TopBar") "TopBar_DragRegion" else "${tagPrefix}DragRegion")
-                    .windowDragGesture(
-                        onDrag = onDragWindow ?: effectiveWindowControls.onDragWindow,
-                        onDragDelta = effectiveWindowControls.onDragDelta,
-                    ),
-            )
-        },
-        windowControls = {
-            windowControls?.invoke() ?: DesktopWindowControls(
-                onMinimize = effectiveWindowControls.onMinimize,
-                onMaximize = effectiveWindowControls.onMaximize,
-                onClose = effectiveWindowControls.onClose,
+                    .testTag(if (tagPrefix == "TopBar") "TopBar_DragRegion" else "${tagPrefix}DragRegion"),
             )
         },
     )
@@ -170,16 +170,7 @@ private fun BrandIdentity(tag: String = "GlobalTopBarBrand") {
         Box(
             modifier = Modifier
                 .size(ComponentSize.LogoBadgeSize)
-                .clip(GlassShapes.Small)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceContainerHigh,
-                            MaterialTheme.colorScheme.surfaceContainer,
-                        ),
-                    ),
-                )
-                .padding(Spacing.Compact),
+                .padding(Spacing.ExtraSmall),
             contentAlignment = Alignment.Center,
         ) {
             LtiRomStudioMark()
@@ -187,8 +178,9 @@ private fun BrandIdentity(tag: String = "GlobalTopBarBrand") {
         Text(
             text = "LtiRom Studio",
             color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
@@ -206,27 +198,18 @@ private fun DestinationTab(
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     val colors = MaterialTheme.colorScheme
-    val isBlue = GlassTheme.appTheme == AppTheme.Blue
-    val effectsEnabled = GlassTheme.effectsEnabled
-    val background = destinationTabBackground(
-        selected = selected,
-        isHoveredOrFocused = isHovered || isFocused,
-        isPressed = isPressed,
-        effectsEnabled = effectsEnabled,
-        colors = colors,
-    )
-    val contentColor = destinationTabContentColor(
-        selected = selected,
-        isHoveredOrFocused = isHovered || isFocused,
-        isBlue = isBlue,
-        effectsEnabled = effectsEnabled,
-        colors = colors,
-    )
-    val border = if (selected) {
+    val background = when {
+        isPressed -> colors.surfaceContainerHighest
+        selected -> colors.surfaceContainerHigh
+        isHovered || isFocused -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
+        else -> Color.Transparent
+    }
+    val contentColor = if (selected || isHovered || isFocused) colors.onSurface else colors.onSurfaceVariant
+    val border = if (selected || isFocused) {
         Modifier.glassOutlineBorder(
-            color = if (isBlue) colors.outline else colors.primary,
+            color = if (isFocused) colors.primary else colors.outlineVariant,
             width = GlassDimens.HairlineBorder,
-            shape = GlassShapes.ShellPill,
+            shape = GlassShapes.Small,
         )
     } else {
         Modifier
@@ -235,14 +218,14 @@ private fun DestinationTab(
     Row(
         modifier = Modifier
             .testTag(tag)
-            .background(background, shape = GlassShapes.ShellPill)
-            .clip(GlassShapes.ShellPill)
+            .background(background, shape = GlassShapes.Small)
+            .clip(GlassShapes.Small)
             .then(border)
             .selectable(
                 selected = selected,
+                enabled = !selected,
                 interactionSource = interactionSource,
                 indication = null,
-                enabled = !selected,
                 role = Role.Tab,
                 onClick = onClick,
             )
@@ -259,39 +242,11 @@ private fun DestinationTab(
         Text(
             text = destination.name,
             color = contentColor,
+            fontSize = FontSize.BodySmall,
             fontFamily = ideFontFamily(),
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
-}
-
-private fun destinationTabBackground(
-    selected: Boolean,
-    isHoveredOrFocused: Boolean,
-    isPressed: Boolean,
-    effectsEnabled: Boolean,
-    colors: ColorScheme,
-): Color = when {
-    selected -> if (!effectsEnabled) colors.primaryContainer else colors.primary.copy(alpha = AlphaTokens.Faded)
-    isPressed -> colors.surfaceContainerHigh
-    isHoveredOrFocused -> colors.surfaceContainerHigh.copy(alpha = AlphaTokens.Half)
-    else -> Color.Transparent
-}
-
-private fun destinationTabContentColor(
-    selected: Boolean,
-    isHoveredOrFocused: Boolean,
-    isBlue: Boolean,
-    effectsEnabled: Boolean,
-    colors: ColorScheme,
-): Color = when {
-    selected -> when {
-        !effectsEnabled -> colors.onPrimaryContainer
-        isBlue -> BrandColors.OnLogoBadge
-        else -> colors.onSurface
-    }
-    isHoveredOrFocused -> colors.onSurface
-    else -> colors.onSurfaceVariant
 }
 
 private fun destinationIcon(destination: GlobalAppDestination): AppIcon = when (destination) {

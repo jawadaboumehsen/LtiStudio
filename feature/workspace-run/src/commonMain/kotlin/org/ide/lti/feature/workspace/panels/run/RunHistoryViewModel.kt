@@ -12,6 +12,8 @@ package org.ide.lti.feature.workspace.panels.run
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,9 +61,12 @@ public class RunHistoryViewModel(
     private val _uiState = MutableStateFlow(RunHistoryUiState())
     public val uiState: StateFlow<RunHistoryUiState> = _uiState.asStateFlow()
 
+    private var analysisJob: Job? = null
+
     init {
         viewModelScope.launch {
             workspaceManager.currentWorkspace.collectLatest { ws ->
+                analysisJob?.cancel()
                 _uiState.update {
                     it.copy(
                         currentWorkspace = ws,
@@ -71,6 +76,9 @@ public class RunHistoryViewModel(
                         isLoading = false,
                         errorMessage = null,
                         deviceChecks = emptyMap(),
+                        isComparing = false,
+                        comparison = null,
+                        inspection = null,
                     )
                 }
                 if (ws != null) {
@@ -79,10 +87,7 @@ public class RunHistoryViewModel(
                         _uiState.update { state ->
                             val currentSelId = state.selectedRun?.id
                             val sel = runs.find { it.id == currentSelId } ?: runs.firstOrNull()
-                            state.copy(
-                                runs = runs,
-                                selectedRun = sel,
-                            )
+                            state.withSelection(sel).copy(runs = runs)
                         }
                         _uiState.value.selectedRun?.let { showLogs(it.id) }
                     }
@@ -105,7 +110,8 @@ public class RunHistoryViewModel(
     }
 
     public fun selectRun(run: BuildRun) {
-        _uiState.update { it.copy(selectedRun = run, selectedRunLogs = emptyList()) }
+        if (_uiState.value.currentWorkspace?.id != run.workspaceId) return
+        _uiState.update { it.withSelection(run) }
         viewModelScope.launch { showLogs(run.id) }
     }
 
@@ -113,19 +119,20 @@ public class RunHistoryViewModel(
     public fun compareWith(other: BuildRun) {
         val comparer = runComparison
         val selected = _uiState.value.selectedRun
-        if (comparer == null || selected == null || _uiState.value.isComparing || selected.id == other.id) return
+        if (comparer == null || selected == null || _uiState.value.isComparing) return
+        if (selected.workspaceId != other.workspaceId || selected.id == other.id) return
         val (older, newer) = listOf(selected, other).sortedBy { it.startedAt }
-        viewModelScope.launch {
-            _uiState.update { it.copy(isComparing = true, errorMessage = null) }
+        analyze(selected) {
             val result = runCatchingCancellable { comparer.compare(older, newer) }
-            _uiState.update { state ->
+            val show: (RunHistoryUiState) -> RunHistoryUiState = { state ->
                 result.fold(
-                    onSuccess = { state.copy(isComparing = false, comparison = it) },
+                    onSuccess = { state.copy(comparison = it) },
                     onFailure = { e ->
-                        state.copy(isComparing = false, errorMessage = "The runs could not be compared: ${e.message}")
+                        state.copy(errorMessage = "The runs could not be compared: ${e.message}")
                     },
                 )
             }
+            show
         }
     }
 
@@ -139,12 +146,40 @@ public class RunHistoryViewModel(
         val previous = _uiState.value.runs
             .filter { it.state == RunState.SUCCEEDED && it.startedAt < run.startedAt }
             .maxByOrNull { it.startedAt }
-        viewModelScope.launch {
-            _uiState.update { it.copy(isComparing = true, errorMessage = null) }
+        analyze(run) {
             val header = "# Run inspector\n\n- Run: ${run.id} (${run.state.name.lowercase()})\n\n"
             val text = header + RunTimeline.of(run) + "\n" + sincePrevious(previous, run)
-            _uiState.update { it.copy(isComparing = false, inspection = text) }
+            val show: (RunHistoryUiState) -> RunHistoryUiState = { it.copy(inspection = text) }
+            show
         }
+    }
+
+    private fun analyze(run: BuildRun, read: suspend () -> (RunHistoryUiState) -> RunHistoryUiState) {
+        val workspaceId = _uiState.value.currentWorkspace?.id ?: return
+        _uiState.update { it.copy(isComparing = true, errorMessage = null) }
+        analysisJob = viewModelScope.launch {
+            val show = read()
+            coroutineContext.ensureActive()
+            _uiState.update {
+                if (it.currentWorkspace?.id == workspaceId && it.selectedRun?.id == run.id) {
+                    show(it).copy(isComparing = false)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
+    private fun RunHistoryUiState.withSelection(run: BuildRun?): RunHistoryUiState {
+        if (selectedRun?.id == run?.id) return copy(selectedRun = run)
+        analysisJob?.cancel()
+        return copy(
+            selectedRun = run,
+            selectedRunLogs = emptyList(),
+            isComparing = false,
+            inspection = null,
+            comparison = null,
+        )
     }
 
     /** The comparison with [previous] (the inspector's second part), its headings one level down. */
@@ -179,7 +214,7 @@ public class RunHistoryViewModel(
                 if (_uiState.value.currentWorkspace?.id != ws.id) return@launch
                 _uiState.update { state ->
                     val sel = runs.find { it.id == state.selectedRun?.id } ?: runs.firstOrNull()
-                    state.copy(runs = runs, selectedRun = sel, isLoading = false)
+                    state.withSelection(sel).copy(runs = runs, isLoading = false)
                 }
                 _uiState.value.selectedRun?.let { showLogs(it.id) }
                 loadDeviceChecks(ws.id)
@@ -207,8 +242,7 @@ public class RunHistoryViewModel(
             _uiState.update { state ->
                 val remaining = state.runs.filterNot { it.id == runId }
                 val newSelected = if (state.selectedRun?.id == runId) remaining.firstOrNull() else state.selectedRun
-                val logs = if (newSelected == null) emptyList() else state.selectedRunLogs
-                state.copy(runs = remaining, selectedRun = newSelected, selectedRunLogs = logs, errorMessage = null)
+                state.withSelection(newSelected).copy(runs = remaining, errorMessage = null)
             }
             _uiState.value.selectedRun?.let { showLogs(it.id) }
         }

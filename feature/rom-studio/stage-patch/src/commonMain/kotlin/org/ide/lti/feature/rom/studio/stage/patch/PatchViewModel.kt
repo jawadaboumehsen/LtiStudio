@@ -11,6 +11,8 @@ package org.ide.lti.feature.rom.studio.stage.patch
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +43,9 @@ import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.CustomizationSettings
+import org.ide.lti.core.model.workspace.PluginLockfileEntry
 
 /** The installed plugins and the plans of those the workspace enables; empty until loaded. */
 public data class PatchFacts(
@@ -53,7 +57,12 @@ public data class PatchFacts(
     val lockError: String? = null,
     /** Plugins made for another device or firmware, by `publisher:id`: "is made for …, not …". */
     val incompatible: Map<String, String> = emptyMap(),
-)
+    val loading: Boolean = false,
+    val loadError: String? = null,
+    val installedVersions: List<InstalledRecord> = installed,
+) {
+    val canChangePlugins: Boolean get() = loaded && !loading && loadError == null
+}
 
 public class PatchViewModel(
     public val workspaceId: String,
@@ -66,6 +75,8 @@ public class PatchViewModel(
 ) : ViewModel() {
 
     private val _lab = MutableStateFlow(LabState())
+    private var labJob: Job? = null
+    private var refreshJob: Job? = null
 
     /** The mod lab's last answer: each enabled mod's operations checked against the assembled tree. */
     public val lab: StateFlow<LabState> = _lab.asStateFlow()
@@ -76,18 +87,41 @@ public class PatchViewModel(
      */
     public fun checkTogether(decode: Boolean = false) {
         val checks = preflight ?: return
-        val enabled = settings.value.enabledPackages
-        viewModelScope.launch {
-            _lab.update { it.copy(checking = true, error = null) }
+        val checkedSettings = settings.value
+        labJob?.cancel()
+        labJob = viewModelScope.launch {
+            _lab.value = LabState(checking = true)
             val result = try {
-                LabState(result = checks.lab(workspaceId, decode = decode))
+                val saved = store?.current(workspaceId)
+                if (saved == null || saved.customization == checkedSettings) {
+                    checkSavedWorkspace(checks, saved, decode)
+                } else {
+                    LabState(error = "The patch settings haven’t been saved yet. Try again after they save.")
+                }
             } catch (e: RefusalException) {
                 LabState(error = "${e.refusal.cause} ${e.refusal.nextStep}")
             } catch (e: IllegalStateException) {
                 LabState(error = e.message ?: "The check failed")
             }
-            // Checked for another list of mods than the one on screen now: it says nothing about it.
-            _lab.value = if (settings.value.enabledPackages == enabled) result else LabState()
+            ensureActive()
+            if (settings.value == checkedSettings) _lab.value = result
+        }
+    }
+
+    private suspend fun checkSavedWorkspace(
+        checks: Preflight,
+        saved: ConfigurationSnapshot?,
+        decode: Boolean,
+    ): LabState {
+        val checkedDevice = store?.device(workspaceId)
+        val result = checks.lab(workspaceId, with = saved, decode = decode)
+        val current = store?.current(workspaceId)
+        return if (current?.acquisition?.firmware == saved?.acquisition?.firmware &&
+            store?.device(workspaceId) == checkedDevice
+        ) {
+            LabState(result = result)
+        } else {
+            LabState()
         }
     }
 
@@ -135,22 +169,26 @@ public class PatchViewModel(
     public val facts: StateFlow<PatchFacts> = _facts.asStateFlow()
 
     init {
-        // A changed list of mods makes the last lab answer stale.
+        // The saved settings load after this view model starts.
         viewModelScope.launch {
-            settings.map { it.enabledPackages }.distinctUntilChanged().collect { _lab.value = LabState() }
+            settings.collect {
+                resetLab()
+            }
         }
-        // The saved settings load after this view model starts: the plans follow the enabled list as it arrives.
         viewModelScope.launch {
-            settings.map { it.enabledPackages }.distinctUntilChanged().collect { enabled ->
-                _facts.update { it.copy(plans = plansOf(it.installed, enabled)) }
+            // A plugin's plan can change while its ID stays enabled.
+            settings.map { it.enabledPackages to it.lockfile }.distinctUntilChanged().collect {
+                _facts.update { facts -> facts.copy(plans = plansOf(settings.value)) }
             }
         }
         // Compatibility is with the device and firmware as they are saved, not as they were at the last Refresh.
         viewModelScope.launch {
             val saves = store?.changes?.filter { it == workspaceId }?.map { } ?: emptyFlow()
             merge(device.map { }, saves).collectLatest {
-                val incompatible = incompatibleOf(_facts.value.installed)
-                _facts.update { it.copy(incompatible = incompatible) }
+                resetLab()
+                val installed = _facts.value.installed
+                val incompatible = incompatibleOf(installed)
+                _facts.update { if (it.installed == installed) it.copy(incompatible = incompatible) else it }
             }
         }
     }
@@ -164,19 +202,30 @@ public class PatchViewModel(
 
     public fun refresh() {
         val port = plugins ?: return
-        viewModelScope.launch {
-            // One row per plugin: older installed versions are never locked, so they are not offered either.
-            val usable = port.installed().filter { !it.revoked && !it.archived }
-            val installed = newestPerPlugin(usable, { it.key }) { it.identity.version }
-            // Read before the plans, which are made last from the list as it is now: this read can take a while.
-            val incompatible = incompatibleOf(installed)
-            _facts.update {
-                it.copy(
-                    loaded = true,
-                    installed = installed,
-                    plans = plansOf(installed, settings.value.enabledPackages),
-                    incompatible = incompatible,
-                )
+        refreshJob?.cancel()
+        _facts.update { it.copy(loading = true, loadError = null) }
+        refreshJob = viewModelScope.launch {
+            runCatchingCancellable {
+                val usable = port.installed().filter { !it.revoked && !it.archived }
+                val installed = newestPerPlugin(usable, { it.key }) { it.identity.version }
+                val incompatible = incompatibleOf(installed)
+                ensureActive()
+                val plans = plansOf(settings.value)
+                if (_facts.value.plans != plans) resetLab()
+                _facts.update {
+                    it.copy(
+                        loaded = true,
+                        loading = false,
+                        installed = installed,
+                        installedVersions = usable,
+                        plans = plans,
+                        incompatible = incompatible,
+                    )
+                }
+            }.onFailure { failure ->
+                _facts.update {
+                    it.copy(loading = false, loadError = failure.message ?: "Could not read installed plugins")
+                }
             }
         }
     }
@@ -186,14 +235,16 @@ public class PatchViewModel(
      * adds dependencies (before what needs them) and refuses missing or conflicting ones.
      */
     public fun toggle(key: String) {
+        if (!_facts.value.canChangePlugins) return
         val current = settings.value
-        val enabled = current.enabledPackages
-        _facts.value.incompatible[key]?.takeIf { key !in enabled }?.let { why ->
-            _facts.value = _facts.value.copy(lockError = "${nameOf(key, _facts.value.installed)} $why")
+        val enabled = current.enabledPackages.map { id -> current.lockedEntry(id)?.packageKey ?: id }
+        val packageKey = current.lockedEntry(key)?.packageKey ?: key
+        _facts.value.incompatible[packageKey]?.takeIf { packageKey !in enabled }?.let { why ->
+            _facts.value = _facts.value.copy(lockError = "${nameOf(packageKey, _facts.value.installed)} $why")
             return
         }
-        val wanted = if (key in enabled) enabled - key else enabled + key
-        val installed = _facts.value.installed
+        val wanted = if (packageKey in enabled) enabled - packageKey else enabled + packageKey
+        val installed = candidatesFor(current)
         val packages = installed.map { it.toInstalledPackage() }
         // The list's own order stays (independent mods that touch the same files apply as chosen), unless the
         // dependencies no longer allow it.
@@ -206,11 +257,16 @@ public class PatchViewModel(
 
             is LockResult.Locked -> {
                 val ordered = result.lockfile.entries.map { "${it.publisher}:${it.id}" }
-                updateSettings(current.copy(enabledPackages = ordered, lockfile = result.lockfile))
+                val updated = current.copy(enabledPackages = ordered, lockfile = result.lockfile)
+                updateSettings(updated)
                 _facts.value = _facts.value.copy(
                     // Disabling a dependency of an enabled plugin does nothing: the lock adds it back.
-                    lockError = neededBy(key, installed, ordered).takeIf { key !in wanted && key in ordered },
-                    plans = plansOf(installed, ordered),
+                    lockError = if (packageKey !in wanted && packageKey in ordered) {
+                        neededBy(packageKey, installed, ordered)
+                    } else {
+                        null
+                    },
+                    plans = plansOf(updated),
                 )
             }
         }
@@ -224,8 +280,11 @@ public class PatchViewModel(
                 workspaceId,
             )?.acquisition?.firmware?.version
         }.getOrNull()
+        val current = settings.value
+        val pins = current.enabledPackages.mapNotNull(current::lockedEntry).associateBy { it.packageKey }
         return installed.takeIf { device != null }.orEmpty().mapNotNull { r ->
-            val plan = catalog?.templateFor(r.identity.publisher, r.identity.id, r.identity.version)
+            val version = pins[r.key]?.version ?: r.identity.version
+            val plan = catalog?.templateFor(r.identity.publisher, r.identity.id, version)
             plan?.let { incompatibility(it, device.orEmpty(), firmware.orEmpty()) }?.let { r.key to it }
         }.toMap()
     }
@@ -243,11 +302,41 @@ public class PatchViewModel(
         return "${name(key)} is needed by $who; disable that first."
     }
 
-    private fun plansOf(installed: List<InstalledRecord>, enabled: List<String>): Map<String, PluginPlanTemplate> =
-        installed.filter { it.key in enabled }.mapNotNull { r ->
-            catalog?.templateFor(r.identity.publisher, r.identity.id, r.identity.version)?.let { r.key to it }
+    private fun candidatesFor(current: CustomizationSettings): List<InstalledRecord> {
+        val pins = current.enabledPackages.mapNotNull(current::lockedEntry).associateBy { it.packageKey }
+        val unpinned = _facts.value.installed.filter { it.key !in pins }
+        val pinned = _facts.value.installedVersions.filter { record ->
+            val pin = pins[record.key] ?: return@filter false
+            record.matches(pin)
+        }
+        return unpinned + pinned
+    }
+
+    private fun plansOf(settings: CustomizationSettings): Map<String, PluginPlanTemplate> {
+        val source = catalog ?: return emptyMap()
+        return settings.enabledPackages.mapNotNull { key ->
+            val entry = settings.lockedEntry(key) ?: return@mapNotNull null
+            val digest = source.contentDigestFor(entry.publisher, entry.id, entry.version).orEmpty()
+            if (entry.contentDigest.isNotEmpty() && digest.isNotEmpty() && digest != entry.contentDigest) {
+                return@mapNotNull null
+            }
+            source.templateFor(entry.publisher, entry.id, entry.version)?.let { key to it }
         }.toMap()
+    }
+
+    private fun resetLab() {
+        labJob?.cancel()
+        _lab.value = LabState()
+    }
 }
+
+internal fun CustomizationSettings.lockedEntry(key: String): PluginLockfileEntry? =
+    lockfile.entries.firstOrNull { it.packageKey == key || it.id == key }
+
+internal val PluginLockfileEntry.packageKey: String get() = "$publisher:$id"
+
+internal fun InstalledRecord.matches(pin: PluginLockfileEntry): Boolean = key == pin.packageKey &&
+    identity.version == pin.version && (pin.contentDigest.isEmpty() || identity.contentDigest == pin.contentDigest)
 
 /** The mod lab on screen: checking, its [result], or why it could not run. */
 public data class LabState(val checking: Boolean = false, val result: ModLab? = null, val error: String? = null)

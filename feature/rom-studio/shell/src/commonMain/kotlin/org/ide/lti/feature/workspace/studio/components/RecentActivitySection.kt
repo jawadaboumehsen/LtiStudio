@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -101,7 +102,7 @@ public fun RecentActivitySection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(GlassDimens.OverviewEmptyStateHeight)
+                    .heightIn(min = GlassDimens.OverviewEmptyStateHeight)
                     .clickable(onClick = onOpenHistory)
                     .padding(Spacing.Medium),
                 contentAlignment = Alignment.Center,
@@ -148,9 +149,12 @@ public fun RecentActivitySection(
                             .fillMaxWidth()
                             .padding(Spacing.Medium),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.Hairline),
+                        ) {
                             Text(
                                 text = activity.title,
                                 color = MaterialTheme.colorScheme.onSurface,

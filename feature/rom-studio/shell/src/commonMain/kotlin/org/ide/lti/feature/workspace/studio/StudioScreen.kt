@@ -160,7 +160,6 @@ public fun StudioScreen(
         onValidate = { viewModel.validateWorkspace() },
         onSave = { viewModel.saveWorkspace() },
         modifier = modifier,
-        iconsOnly = true,
         onOpenProblems = { viewModel.selectWorkspaceSection(WorkspaceSection.Overview) },
         onOpenActivity = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         output = workbenchLog?.let { log -> { OutputPanel(log) } },
@@ -263,8 +262,12 @@ private fun StudioContent(
             onOpenHistory = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
             preflight = {
                 PreflightCard(
-                    vm = koinViewModel<PreflightViewModel> { parametersOf(workspaceId) },
+                    vm = koinViewModel<PreflightViewModel>(key = workspaceId) { parametersOf(workspaceId) },
                     onOpen = { stage, objectId -> openAt(viewModel, stage, objectId) },
+                    onOpenSetup = onNavigateToSetup,
+                    resolveLink = { fix ->
+                        readinessStageLink(fix, uiState.railItems.map { it.stage.stageId }, uiState.validationReport)
+                    },
                 )
             },
         )
@@ -339,7 +342,7 @@ public fun StudioShellContent(
                 ?: CanonicalStageDescriptors.descriptorFor(selectedStage.stageId)
             val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
             val currentSubobject = currentStage?.subobjects?.firstOrNull { it.id.value == activeObjectId }
-            if (currentSubobject != null && currentStage != null) {
+            if (currentSubobject != null) {
                 listOf("ROM Setup", currentStage.title, currentSubobject.title)
             } else {
                 listOf("ROM Setup", selectedStage.label)
@@ -448,14 +451,8 @@ public fun StudioShellContent(
                         title = headerTitle,
                         breadcrumbs = breadcrumbItems,
                         subtitle = headerSubtitle,
+                        context = uiState.targetContext?.let { target -> { TopBarTargetSpecifier(target) } },
                         actions = {
-                            val targetContext = uiState.targetContext
-                            if (targetContext != null) {
-                                TopBarTargetSpecifier(
-                                    targetContext = targetContext,
-                                )
-                            }
-
                             val isValidating = uiState.validateOperation is OperationUiState.Running
                             TopBarActionButton(
                                 label = "Validate",
@@ -583,6 +580,7 @@ private fun StageSubMenuTabBar(
             onSelectStageObject?.invoke(stage.stageId, objectId)
         },
         modifier = modifier.testTag("StageNavigator"),
+        wrap = true,
     )
 }
 
@@ -637,6 +635,7 @@ private fun WorkspaceSubMenuTabBar(
             }
         },
         modifier = modifier.testTag("WorkspaceNavigator"),
+        wrap = true,
     )
 }
 

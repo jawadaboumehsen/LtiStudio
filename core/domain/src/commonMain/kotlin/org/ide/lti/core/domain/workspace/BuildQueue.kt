@@ -10,7 +10,6 @@
 package org.ide.lti.core.domain.workspace
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.Preflight
+import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
@@ -36,6 +36,7 @@ public data class QueueState(
     val workspaceId: String? = null,
     val builds: List<QueuedBuild> = emptyList(),
     val running: Boolean = false,
+    val stopRequested: Boolean = false,
 )
 
 /**
@@ -44,54 +45,72 @@ public data class QueueState(
  * built in full; the next starts once that run has ended. A failed build stops the queue. Stopping lets the running
  * build finish and starts no other. The queue lives while the app does; a build it started goes on as any build.
  */
-public class BuildQueue(
+public class BuildQueue internal constructor(
     private val profiles: BuildProfiles,
     private val start: suspend (workspaceId: String) -> Result<BuildRun>,
     private val runs: RunRepository,
     private val scope: CoroutineScope,
-    private val preflight: Preflight? = null,
+    private val check: (suspend (String) -> List<PreflightFinding>)?,
 ) {
+    public constructor(
+        profiles: BuildProfiles,
+        start: suspend (workspaceId: String) -> Result<BuildRun>,
+        runs: RunRepository,
+        scope: CoroutineScope,
+        preflight: Preflight? = null,
+    ) : this(profiles, start, runs, scope, preflight?.let { it::check })
+
     private val _state = MutableStateFlow(QueueState())
     public val state: StateFlow<QueueState> = _state.asStateFlow()
-    private var job: Job? = null
 
     /** Builds [names] of [workspaceId]'s profiles in that order; refused while a queue is going. */
     public fun start(workspaceId: String, names: List<String>) {
-        if (_state.value.running || names.isEmpty()) return
-        _state.value = QueueState(workspaceId, names.map { QueuedBuild(it) }, running = true)
-        job = scope.launch {
+        val builds = names.map { QueuedBuild(it) }
+        if (builds.isEmpty()) return
+        val previous = _state.value
+        if (previous.running || !_state.compareAndSet(previous, QueueState(workspaceId, builds, running = true))) return
+        scope.launch {
             try {
-                for (index in names.indices) {
-                    if (!_state.value.running || !buildOne(workspaceId, index)) break
+                for ((index, build) in builds.withIndex()) {
+                    if (_state.value.stopRequested || !buildOne(workspaceId, index, build.profile)) break
                 }
             } finally {
-                _state.update { it.copy(running = false) }
+                _state.update { it.copy(running = false, stopRequested = false) }
             }
         }
     }
 
-    /** No build starts after the one running (which goes on to its end). */
+    /** Lets any build already committed to launch finish before accepting another queue. */
     public fun stop() {
-        _state.update { s ->
-            val builds = s.builds.map { if (it.status == QueuedBuild.WAITING) it.copy(status = "not started") else it }
-            s.copy(running = false, builds = builds)
+        _state.update { state ->
+            if (!state.running || state.stopRequested) return@update state
+            val builds = state.builds.map {
+                if (it.status == QueuedBuild.WAITING) it.copy(status = "not started") else it
+            }
+            state.copy(stopRequested = true, builds = builds)
         }
     }
 
     /** Applies, checks, starts and waits for the build at [index]; false stops the queue. */
-    private suspend fun buildOne(workspaceId: String, index: Int): Boolean {
-        val name = _state.value.builds[index].profile
+    @Suppress("ReturnCount")
+    private suspend fun buildOne(workspaceId: String, index: Int, name: String): Boolean {
         val profile = profiles.list(workspaceId).firstOrNull { it.name == name }
+        if (_state.value.stopRequested) return false
         val stop = when {
             profile == null -> "the profile is gone"
             profiles.apply(workspaceId, profile).isFailure -> "its settings could not be applied"
+            _state.value.stopRequested -> return false
             else -> blocker(workspaceId)
         }
         if (stop != null) {
-            mark(index, "stopped: $stop", null)
+            _state.update { if (it.stopRequested) it else it.withStatus(index, "stopped: $stop") }
             return false
         }
-        mark(index, "checked, starting", null)
+        // Claim the launch atomically with Stop. If Stop wins, this build stays "not started".
+        val checked = _state.value
+        if (checked.stopRequested || !_state.compareAndSet(checked, checked.withStatus(index, "checked, starting"))) {
+            return false
+        }
         val run = start(workspaceId)
         run.exceptionOrNull()?.let { mark(index, "stopped: could not start (${it.message})", null) }
         return run.getOrNull()?.let { waitFor(workspaceId, index, it) } ?: false
@@ -110,8 +129,8 @@ public class BuildQueue(
 
     /** The Preflight's first blocking finding for the settings now current; null when nothing would stop it. */
     private suspend fun blocker(workspaceId: String): String? {
-        val checker = preflight ?: return null
-        return runCatchingCancellable { checker.check(workspaceId) }.fold(
+        val checker = check ?: return null
+        return runCatchingCancellable { checker(workspaceId) }.fold(
             onSuccess = { findings ->
                 findings.firstOrNull { it.blocks }?.let { "Will it build? says ${it.code}: ${it.message}" }
             },
@@ -120,11 +139,12 @@ public class BuildQueue(
     }
 
     private fun mark(index: Int, status: String, runId: String?) {
-        _state.update { s ->
-            val builds = s.builds.mapIndexed { i, b ->
-                if (i == index) b.copy(status = status, runId = runId ?: b.runId) else b
-            }
-            s.copy(builds = builds)
-        }
+        _state.update { it.withStatus(index, status, runId) }
     }
+
+    private fun QueueState.withStatus(index: Int, status: String, runId: String? = null): QueueState = copy(
+        builds = builds.mapIndexed { i, build ->
+            if (i == index) build.copy(status = status, runId = runId ?: build.runId) else build
+        },
+    )
 }

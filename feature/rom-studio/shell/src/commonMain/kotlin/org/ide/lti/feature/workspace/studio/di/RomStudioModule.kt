@@ -34,6 +34,7 @@ public val romStudioShellModule: Module = module {
             samePhone = getOrNull(),
             upgrade = getOrNull(),
             nextBuild = getOrNull(),
+            runs = getOrNull(),
         )
     }
     viewModel { params ->

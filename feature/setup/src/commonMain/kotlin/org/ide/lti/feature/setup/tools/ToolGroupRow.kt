@@ -44,7 +44,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 
 @Suppress("CyclomaticComplexMethod")
 @Composable
-public fun ToolGroupRow(
+fun ToolGroupRow(
     row: ToolRowPresentation,
     isSelected: Boolean,
     onClick: () -> Unit,

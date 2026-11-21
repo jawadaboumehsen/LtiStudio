@@ -14,11 +14,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,9 +83,10 @@ public fun StudioTopAppBar(
 
 @Composable
 internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    FlowRow(
+        itemVerticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         modifier = modifier.testTag("TopBarTargetContext"),
     ) {
         val rawTargetText = when (val target = targetContext.targetId) {
@@ -104,53 +104,11 @@ internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Mod
             is DisplayValue.Unavailable -> null
         }
 
-        // Target Specifier Badge Pill
-        Row(
-            modifier = Modifier
-                .clip(GlassShapes.ShellControl)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .border(
-                    width = GlassDimens.HairlineBorder,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = GlassShapes.ShellControl,
-                )
-                .padding(horizontal = Spacing.Small, vertical = Spacing.Hairline),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-        ) {
-            Text(
-                text = "TARGET:",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
-            )
-            Text(
-                text = targetText,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "/",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
-            )
-            Text(
-                text = profileText,
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
-            )
-        }
-
-        // Vertical Divider
-        Box(
-            modifier = Modifier
-                .width(GlassDimens.HairlineBorder)
-                .height(Spacing.Medium)
-                .background(MaterialTheme.colorScheme.outline),
+        Text(
+            text = "$targetText / $profileText",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
         )
 
         if (revText != null) {
@@ -162,7 +120,7 @@ internal fun TopBarTargetSpecifier(targetContext: TargetContextUi, modifier: Mod
             )
         }
 
-        val badge = targetContext.draftBadge ?: return@Row
+        val badge = targetContext.draftBadge ?: return@FlowRow
         Box(
             modifier = Modifier
                 .clip(GlassShapes.ShellControl)
@@ -246,6 +204,7 @@ internal fun TopBarActionButton(
             Text(
                 text = label,
                 color = contentColor,
+                fontSize = FontSize.BodySmall,
                 fontFamily = ideFontFamily(),
                 fontWeight = if (isPrimary) FontWeight.SemiBold else FontWeight.Medium,
             )

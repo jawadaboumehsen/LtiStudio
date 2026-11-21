@@ -85,6 +85,12 @@ internal fun PhoneCard(
             return@Column
         }
         if (phone.phones.isEmpty()) NoPhone()
+        if (phone.phones.isNotEmpty() && phone.phone == null) {
+            Note(
+                "The selected phone is no longer connected. Choose a phone to continue.",
+                GlassTheme.diagnosticColors.warning,
+            )
+        }
         Phones(phone, vm)
         phone.phone?.let { Facts(it, workspaceId, vm) }
         phone.phone?.let { MeasuredVsConfigured(it, device, enabled = !state.locked, onUsePhoneValue) }
@@ -107,7 +113,7 @@ private fun NoPhone() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Phones(state: PhoneUiState, vm: PhoneViewModel) {
-    if (state.phones.size < 2) return
+    if (state.phones.isEmpty() || (state.phones.size == 1 && state.phone != null)) return
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
         state.phones.forEach { p ->
             GlassChip(

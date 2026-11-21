@@ -16,6 +16,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -326,8 +327,6 @@ private fun WorkspaceRowItem(
                         fontSize = SetupTokens.TextSection,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = project.path,
@@ -478,13 +477,14 @@ private fun WorkspaceHeaderSection(
     headerStatus: ProjectsHeaderStatusPresentation? = null,
     onNavigateToEnvironment: () -> Unit = {},
 ) {
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.weight(1f, fill = false).padding(end = Spacing.Medium),
+            modifier = Modifier.padding(end = Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
             Text(
@@ -492,15 +492,11 @@ private fun WorkspaceHeaderSection(
                 fontSize = SetupTokens.TextTitle,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "Open a workspace or create a new one",
                 fontSize = SetupTokens.TextBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             if (headerStatus?.statusText != null) {
                 Row(
@@ -532,9 +528,10 @@ private fun WorkspaceHeaderSection(
             }
         }
 
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             GlassSecondaryButton(onClick = onOpenFolder) {
                 Row(

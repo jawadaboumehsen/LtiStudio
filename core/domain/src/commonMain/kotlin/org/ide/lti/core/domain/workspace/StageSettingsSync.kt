@@ -163,7 +163,9 @@ public class StageSettingsSync<T>(
         val generation = ++loadGeneration
         val snapshot = store?.current(workspaceId)
         if (snapshot != null && revision == requestedAt && generation == loadGeneration) {
-            _settings.value = read(edits.applyTo(owner, snapshot))
+            val effectiveSettings = read(edits.applyTo(owner, snapshot))
+            _settings.value = effectiveSettings
+            if (read(snapshot) == effectiveSettings) _saveError.value = null
         }
     }
 

@@ -99,7 +99,7 @@ public fun WorkTreesPane(
             ) {
                 IdeTableHeader {
                     IdeTableHeaderCell(
-                        text = "Select",
+                        text = "",
                         modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
                     )
                     IdeTableHeaderCell(

@@ -9,16 +9,22 @@
  */
 package org.ide.lti.feature.rom.studio.stage.patch
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PackageIdentity
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginInstallPort
 import org.ide.lti.core.domain.plugin.TrustDecision
+import org.ide.lti.core.domain.workspace.PendingWorkspaceEdits
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
@@ -27,7 +33,11 @@ import org.ide.lti.core.model.plugin.PartitionPath
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.target.DefaultTargetCatalog
+import org.ide.lti.core.model.workspace.AcquisitionSettings
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.CustomizationSettings
+import org.ide.lti.core.model.workspace.PluginLockfile
+import org.ide.lti.core.model.workspace.PluginLockfileEntry
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import java.nio.file.Path
 import kotlin.test.Test
@@ -87,12 +97,46 @@ class PatchViewModelToggleTest {
         conflicts = emptyList(),
     )
 
-    private val port = object : PluginInstallPort {
+    private fun pluginPort(records: suspend () -> List<InstalledRecord>) = object : PluginInstallPort {
         override suspend fun quarantine(sourceLabel: String) = null
         override suspend fun inspect(quarantined: Path) = error("unused")
         override suspend fun promote(quarantined: Path, identity: PackageIdentity) = false
-        override suspend fun installed() = listOf(record("selinux"), record("logpersist", needs = listOf("selinux")))
+        override suspend fun installed() = records()
         override suspend fun remove(identity: PackageIdentity) = false
+    }
+
+    private val installed = listOf(record("selinux"), record("logpersist", needs = listOf("selinux")))
+    private val port = pluginPort { installed }
+
+    private class SavedSettings(initial: CustomizationSettings = CustomizationSettings()) : WorkspaceSettingsStore {
+        private var snapshot = ConfigurationSnapshot.create(
+            id = "test-snapshot",
+            workspaceId = "ws",
+            profileRevision = 1,
+            acquisition = AcquisitionSettings(
+                region = DefaultTargetCatalog.PQ84P01_DEFAULT.availableRegions.first(),
+                firmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first(),
+            ),
+            createdAt = Instant.fromEpochMilliseconds(0),
+            customization = initial,
+        )
+        var failWrites = false
+        override val pendingEdits = PendingWorkspaceEdits(::update)
+        override val changes = MutableSharedFlow<String>()
+
+        override suspend fun current(workspaceId: String) = snapshot
+
+        override suspend fun update(
+            workspaceId: String,
+            change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
+        ): Result<ConfigurationSnapshot> {
+            if (failWrites) return Result.failure(IllegalStateException("Workspace is read-only"))
+            snapshot = change(snapshot)
+            changes.emit(workspaceId)
+            return Result.success(snapshot)
+        }
+
+        override suspend fun device(workspaceId: String) = DefaultTargetCatalog.PQ84P01_DEFAULT
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -112,6 +156,135 @@ class PatchViewModelToggleTest {
 
             vm.toggle("io.ltirom:logpersist")
             assertEquals(listOf("io.ltirom:selinux"), vm.settings.value.enabledPackages)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun disablingAPluginPersistsTheRemovalAndPreservesOtherVersionPins() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val catalog = object : PluginCatalogPort {
+                override fun templateFor(publisher: String, id: String, version: String) = PluginPlanTemplate(
+                    publisher = publisher,
+                    id = id,
+                    version = version,
+                    settings = emptyList(),
+                    operations = listOf(Operation.Delete("remove-test-file", PartitionPath("system", "test-file.txt"))),
+                )
+
+                override fun contentDigestFor(publisher: String, id: String, version: String) = null
+            }
+            val store = SavedSettings()
+            var records = installed
+            val installedPort = pluginPort { records }
+            val vm = PatchViewModel(workspaceId = "ws", store = store, plugins = installedPort, catalog = catalog)
+            vm.refresh()
+            vm.toggle("io.ltirom:logpersist")
+            advanceUntilIdle()
+            assertEquals(setOf("io.ltirom:selinux", "io.ltirom:logpersist"), vm.facts.value.plans.keys)
+            assertEquals(2, store.current("ws").customization.lockfile.entries.size)
+
+            val older = records.first()
+            records = records + older.copy(identity = older.identity.copy(version = "2.0.0"))
+            vm.refresh()
+            assertEquals("2.0.0", vm.facts.value.installed.first { it.identity.id == "selinux" }.identity.version)
+            assertEquals("1.0.0", vm.facts.value.plans.getValue("io.ltirom:selinux").version)
+
+            vm.toggle("io.ltirom:logpersist")
+            advanceUntilIdle()
+            val reopened = PatchViewModel(
+                workspaceId = "ws",
+                store = store,
+                plugins = installedPort,
+                catalog = catalog,
+            )
+            reopened.refresh()
+
+            assertEquals(listOf("io.ltirom:selinux"), reopened.settings.value.enabledPackages)
+            assertEquals(listOf("selinux"), reopened.settings.value.lockfile.entries.map { it.id })
+            assertEquals("1.0.0", reopened.settings.value.lockfile.entries.single().version)
+            assertEquals(setOf("io.ltirom:selinux"), reopened.facts.value.plans.keys)
+            assertEquals(2, reopened.facts.value.installed.size)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun catalogFailureCanBeRetriedAndFailedSavesRemainVisible() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            var canRead = false
+            val store = SavedSettings()
+            val flakyPort = pluginPort {
+                check(canRead) { "Could not read the plugin directory" }
+                installed
+            }
+            val vm = PatchViewModel(workspaceId = "ws", store = store, plugins = flakyPort)
+            vm.refresh()
+            assertEquals("Could not read the plugin directory", vm.facts.value.loadError)
+
+            canRead = true
+            vm.refresh()
+            assertEquals(null, vm.facts.value.loadError)
+            assertEquals(2, vm.facts.value.installed.size)
+
+            store.failWrites = true
+            vm.toggle("io.ltirom:selinux")
+            advanceUntilIdle()
+            assertEquals("Workspace is read-only", vm.saveError.value)
+            assertTrue(store.current("ws").customization.enabledPackages.isEmpty())
+
+            store.failWrites = false
+            assertTrue(store.flush("ws").isSuccess)
+            advanceUntilIdle()
+            assertEquals(null, vm.saveError.value)
+            assertEquals(listOf("io.ltirom:selinux"), store.current("ws").customization.enabledPackages)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun legacyPluginCanBeDisabledOnlyAfterSuccessfulRefresh() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val pendingRead = CompletableDeferred<Unit>()
+            var failRead = false
+            val port = pluginPort {
+                pendingRead.await()
+                check(!failRead)
+                installed
+            }
+            val pin = PluginLockfileEntry("io.ltirom", "selinux", "1.0.0", "sha256:selinux")
+            val initial = CustomizationSettings(
+                enabledPackages = listOf("selinux"),
+                lockfile = PluginLockfile(entries = listOf(pin)),
+            )
+            val vm = PatchViewModel(workspaceId = "ws", initialSettings = initial, plugins = port)
+            assertEquals(pin, vm.settings.value.lockedEntry("selinux"))
+
+            vm.refresh()
+            vm.toggle("selinux")
+            assertEquals(initial, vm.settings.value)
+            pendingRead.complete(Unit)
+            advanceUntilIdle()
+
+            failRead = true
+            vm.refresh()
+            vm.toggle("selinux")
+            assertEquals(initial, vm.settings.value)
+
+            failRead = false
+            vm.refresh()
+            vm.toggle("selinux")
+            assertTrue(vm.settings.value.enabledPackages.isEmpty())
+            assertTrue(vm.settings.value.lockfile.entries.isEmpty())
         } finally {
             Dispatchers.resetMain()
         }

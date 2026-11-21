@@ -22,7 +22,7 @@ import org.ide.lti.core.model.setup.DistroStatus
  * Inspects installed WSL distributions, identifies default distro,
  * and ensures an approved Ubuntu LTS version is active.
  */
-public class DistroStage(private val detector: WslEnvironmentDetector = WslEnvironmentDetector()) : CheckStage {
+class DistroStage(private val detector: WslEnvironmentDetector = WslEnvironmentDetector()) : CheckStage {
     override val stage: SetupStepStage = SetupStepStage.WSL_DETECTION
 
     @Suppress("CyclomaticComplexMethod")
@@ -30,7 +30,7 @@ public class DistroStage(private val detector: WslEnvironmentDetector = WslEnvir
         // A verified WSL keeps its expensive facts (OS, user) but the cheap ones are read again: the default
         // distribution or WSL version may have been changed outside the app since.
         val pending = ctx.repository?.currentState?.activeAttempt
-        val followsDefault = pending == null || (pending.environmentKey ?: pending.environment?.distro) == null
+        val followsDefault = pending == null || pending.environmentKey.isBlank()
         if (ctx.alreadyVerifiedWsl && detector.stillCurrent(ctx.environment, requireDefault = followsDefault)) {
             scope.setDistroInfo(
                 activeDistro = ctx.environment.distro,
@@ -55,7 +55,7 @@ public class DistroStage(private val detector: WslEnvironmentDetector = WslEnvir
         // Primary / default distro status (prefer pending attempt's target distro)
         val wanted =
             ctx.repository?.currentState?.activeAttempt?.let {
-                it.environmentKey ?: it.environment?.distro
+                it.environmentKey.ifBlank { it.environment?.distro }
             }
         val primary =
             if (wanted != null) {

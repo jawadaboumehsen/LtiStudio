@@ -9,9 +9,11 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.ToolResult
@@ -40,7 +43,12 @@ import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
 import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
+import org.ide.lti.core.domain.workbench.DeviceCheckResult
+import org.ide.lti.core.domain.workspace.BuildProfile
+import org.ide.lti.core.domain.workspace.BuildProfileStore
+import org.ide.lti.core.domain.workspace.BuildProfiles
 import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
@@ -324,6 +332,81 @@ class BuildRunViewModelTest {
         workspaceRepo.saveWorkspace(workspace)
         workspaceManager.openWorkspace(workspace.id)
         return workspace to snapshot
+    }
+
+    @Test
+    fun aLatePhoneCheckCannotAppearOnTheNextRun() = runTest {
+        val fixture = createFixture()
+        val (workspace, snapshot) = fixture.createAndOpenWorkspace()
+        val first = BuildRun(
+            "first",
+            workspace.id,
+            snapshot.id,
+            state = RunState.SUCCEEDED,
+            startedAt = Instant.fromEpochMilliseconds(1),
+        )
+        fixture.runRepo.upsert(first)
+        advanceUntilIdle()
+        val release = CompletableDeferred<Unit>()
+        fixture.viewModel.checkPhone { run ->
+            withContext(NonCancellable) { release.await() }
+            DeviceCheckResult(run.id, "now", "phone", null, emptyList())
+        }
+        advanceUntilIdle()
+        assertTrue(fixture.viewModel.uiState.value.isCheckingPhone)
+
+        fixture.runRepo.upsert(first.copy(id = "second", startedAt = Instant.fromEpochMilliseconds(2)))
+        advanceUntilIdle()
+        release.complete(Unit)
+        advanceUntilIdle()
+
+        val state = fixture.viewModel.uiState.value
+        assertEquals("second", state.latestRun?.id)
+        assertFalse(state.isCheckingPhone)
+        assertNull(state.report)
+    }
+
+    @Test
+    fun lateProfileSaveKeepsTheNextWorkspacesProfilesAndDraft() = runTest {
+        val fixture = createFixture()
+        val (first, snapshot) = fixture.createAndOpenWorkspace("first")
+        val release = CompletableDeferred<Unit>()
+        val next = BuildProfile("second profile", snapshot.createdAt, snapshot)
+        val profileStore = object : BuildProfileStore {
+            override suspend fun load(workspaceId: String): List<BuildProfile> =
+                if (workspaceId == first.id) emptyList() else listOf(next)
+
+            override suspend fun update(
+                workspaceId: String,
+                change: (List<BuildProfile>) -> List<BuildProfile>,
+            ): List<BuildProfile> {
+                release.await()
+                return change(emptyList())
+            }
+        }
+        val settings = object : WorkspaceSettingsStore {
+            override suspend fun current(workspaceId: String) = snapshot
+            override suspend fun device(workspaceId: String): TargetDevice? = null
+            override suspend fun update(
+                workspaceId: String,
+                change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
+            ): Result<ConfigurationSnapshot> = error("unused")
+        }
+        val vm = ProfilesViewModel(fixture.workspaceManager, BuildProfiles(profileStore, settings))
+        advanceUntilIdle()
+        vm.setName("first profile")
+        vm.saveCurrent()
+        advanceUntilIdle()
+
+        val (second, _) = fixture.createAndOpenWorkspace("second")
+        advanceUntilIdle()
+        vm.setName("next draft")
+        release.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(second.id, vm.state.value.workspaceId)
+        assertEquals(listOf(next), vm.state.value.profiles)
+        assertEquals("next draft", vm.state.value.nameInput)
     }
 
     @Test

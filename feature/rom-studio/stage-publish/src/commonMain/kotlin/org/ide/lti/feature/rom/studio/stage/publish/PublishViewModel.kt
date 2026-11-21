@@ -22,9 +22,12 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.PublishSettings
 
+/** The settings and release shown together in the confirmation. */
+class PublishReview internal constructor(val settings: PublishSettings, val preflight: PublishPreflight)
+
 /** What Publish would do now (or why not), and the last attempt's journal. */
-public data class PublishUiState(
-    val preflight: PublishPreflight? = null,
+data class PublishUiState(
+    val review: PublishReview? = null,
     val journal: PublishJournal? = null,
     val publishing: Boolean = false,
     /** The running step and its bytes while publishing. */
@@ -34,17 +37,24 @@ public data class PublishUiState(
     val cancelling: Boolean = false,
     /** A check or publish that stopped outside its steps (the service gone, the journal not written). */
     val error: String? = null,
-)
+) {
+    val preflight: PublishPreflight? get() = review?.preflight
 
-public class PublishViewModel(
-    public val workspaceId: String,
+    internal fun readyReview(settings: PublishSettings): PublishReview? = review?.takeIf {
+        !publishing && it.settings == settings && it.preflight.problems.isEmpty() &&
+            it.preflight.release != null && it.preflight.destination != null
+    }
+}
+
+class PublishViewModel(
+    val workspaceId: String,
     initialSettings: PublishSettings? = null,
     store: WorkspaceSettingsStore? = null,
     publisher: PublishReleaseUseCase? = null,
     sessions: PublishSessions? = null,
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -55,34 +65,34 @@ public class PublishViewModel(
         write = { snapshot, value -> snapshot.copy(publish = value) },
     )
 
-    public val settings: StateFlow<PublishSettings> = sync.settings
+    val settings: StateFlow<PublishSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
-    public fun updateSettings(updated: PublishSettings) {
+    fun updateSettings(updated: PublishSettings) {
         sync.update(updated)
     }
 
     private val sessions: PublishSessions = sessions ?: PublishSessions(publisher)
 
     /** The workspace's publish, which outlives this editor (see [PublishSessions]). */
-    public val state: StateFlow<PublishUiState> = this.sessions.state(workspaceId)
+    val state: StateFlow<PublishUiState> = this.sessions.state(workspaceId)
 
-    public fun refresh() {
+    fun refresh() {
         sessions.refresh(workspaceId, settings.value)
     }
 
     /** Publishes (or resumes the last attempt). Only called after the person confirms it. */
-    public fun publish() {
-        sessions.publish(workspaceId, settings.value)
+    fun publish(review: PublishReview) {
+        if (settings.value == review.settings) sessions.publish(workspaceId, review)
     }
 
     /** Stops the running publish; the journal keeps what is done, so publishing again resumes. */
-    public fun cancel() {
+    fun cancel() {
         sessions.cancel(workspaceId)
     }
 }

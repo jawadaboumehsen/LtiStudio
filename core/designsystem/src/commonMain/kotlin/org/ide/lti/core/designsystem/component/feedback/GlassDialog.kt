@@ -13,13 +13,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -30,13 +32,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
+import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassSpinner
+import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.HazeShape
@@ -71,8 +77,9 @@ fun GlassDialog(
     modifier: Modifier = Modifier,
     title: String? = null,
     dismissButton: (@Composable () -> Unit)? = null,
-    shape: HazeShape = GlassShapes.HazePanel,
+    shape: HazeShape = GlassShapes.HazeMedium,
     properties: DialogProperties = DialogProperties(),
+    scrollContent: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -99,10 +106,16 @@ fun GlassDialog(
     ) {
         Box(
             modifier = modifier
+                .widthIn(max = ComponentSize.StudioDialogMaxWidth)
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
                 .then(dialogSurfaceModifier)
-                .clip(shape),
+                .clip(shape)
+                .glassOutlineBorder(
+                    width = GlassDimens.HairlineBorder,
+                    color = colors.outlineVariant,
+                    shape = shape,
+                ),
         ) {
             CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
                 Column(
@@ -113,31 +126,30 @@ fun GlassDialog(
                     if (title != null) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = colors.onSurface,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { heading() },
                         )
                         Spacer(modifier = Modifier.height(Spacing.Medium))
                     }
 
-                    ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-                        content()
+                    val bodyModifier = if (scrollContent) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                    Column(modifier = Modifier.weight(1f, fill = false).fillMaxWidth().then(bodyModifier)) {
+                        ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
+                            content()
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(Spacing.DialogPadding))
 
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (dismissButton != null) {
-                            dismissButton()
-                            Spacer(modifier = Modifier.width(Spacing.Small))
-                        }
+                        dismissButton?.invoke()
                         confirmButton()
                     }
                 }

@@ -34,7 +34,7 @@ data class PhoneUiState(
     val busy: String? = null,
     val error: String? = null,
 ) {
-    val phone: PhoneFacts? get() = phones.firstOrNull { it.serial == serial } ?: phones.firstOrNull()
+    val phone: PhoneFacts? get() = phones.firstOrNull { it.serial == serial }
 }
 
 /** The phone attached to WSL and the plan of what would go where; it reads and reboots, never writes. */
@@ -59,6 +59,7 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
             if (workspace != workspaceId) return@update s
             s.copy(
                 phones = phones,
+                serial = s.serial ?: phones.firstOrNull()?.serial,
                 images = images,
                 picked = s.picked.filter { p -> images.any { it.path == p } }.toSet(),
                 read = true,
@@ -73,6 +74,7 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
     }
 
     fun reboot(workspaceId: String, to: PhoneMode) {
+        showFor(workspaceId)
         val phone = _state.value.phone ?: return
         busy(workspaceId, "Rebooting to ${to.words} and waiting for it…") {
             val back = probe!!.reboot(workspaceId, phone, to)

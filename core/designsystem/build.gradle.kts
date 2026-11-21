@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 /*
  * Copyright 2025 Mifos Initiative
  *
@@ -62,6 +64,7 @@ compose.resources {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
+        freeCompilerArgs.add("-opt-in=dev.chrisbanes.haze.ExperimentalHazeApi")
         freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }

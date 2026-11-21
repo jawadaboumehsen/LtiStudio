@@ -35,6 +35,7 @@ public fun AcknowledgementDialog(
     title: String = "Explicit Acknowledgement Required",
 ) {
     GlassDialog(
+        scrollContent = true,
         onDismissRequest = onDismiss,
         title = title,
         modifier = modifier,

@@ -242,6 +242,7 @@ private fun ReplacementsCard(
     var confirm by remember { mutableStateOf<String?>(null) }
     confirm?.let { p ->
         GlassDialog(
+            scrollContent = true,
             onDismissRequest = { confirm = null },
             title = "Re-extract $p?",
             confirmButton = {

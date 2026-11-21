@@ -65,7 +65,7 @@ public fun PublishEditor(
     selectedObjectId: String = "provider",
     state: PublishUiState = PublishUiState(),
     onRefresh: () -> Unit = {},
-    onPublish: () -> Unit = {},
+    onPublish: (PublishReview) -> Unit = {},
     onCancelPublish: () -> Unit = {},
     onValidate: () -> Unit = {},
     onSave: () -> Unit = {},
@@ -113,7 +113,7 @@ public fun PublishEditor(
                 }
 
                 "publish-review-and-recovery", "publish_review_and_recovery" -> item {
-                    ReviewCard(state, onPublish, onCancelPublish)
+                    ReviewCard(state, settings, onPublish, onCancelPublish)
                 }
 
                 else -> item {
@@ -400,10 +400,16 @@ private fun VerificationCard(state: PublishUiState) {
 
 /** Publish, after a confirmation; then each step of the attempt (publishing again resumes where it stopped). */
 @Composable
-private fun ReviewCard(state: PublishUiState, onPublish: () -> Unit, onCancel: () -> Unit) {
-    var confirming by remember { mutableStateOf(false) }
+private fun ReviewCard(
+    state: PublishUiState,
+    settings: PublishSettings,
+    onPublish: (PublishReview) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val review = state.readyReview(settings)
+    var confirming by remember(review) { mutableStateOf(false) }
     val preflight = state.preflight
-    val ready = preflight != null && preflight.problems.isEmpty() && !state.publishing
+    val ready = review != null
     Card("Publish") {
         val journal = state.journal
         val resumes = journal != null && !journal.finished && journal.sha256 == preflight?.release?.sha256
@@ -414,12 +420,13 @@ private fun ReviewCard(state: PublishUiState, onPublish: () -> Unit, onCancel: (
         journal?.outcome?.takeIf { !state.publishing }?.let { Success(withShownPaths(it)) }
         journal?.let { JournalSteps(it, state.transfer?.stepId.takeIf { state.publishing }) }
     }
-    val release = preflight?.release
-    if (confirming && release != null) {
+    val release = review?.preflight?.release
+    if (confirming && review != null && release != null) {
         val what = release.ota?.let { "${release.zip} and ${it.zip} go" } ?: "${release.zip} goes"
-        ConfirmPublish("$what to ${preflight.destination?.let(::shownPath)}.", onDismiss = { confirming = false }) {
+        val destination = review.preflight.destination?.let(::shownPath)
+        ConfirmPublish("$what to $destination.", onDismiss = { confirming = false }) {
             confirming = false
-            onPublish()
+            onPublish(review)
         }
     }
 }
@@ -457,6 +464,7 @@ private fun Success(text: String) {
 @Composable
 private fun ConfirmPublish(text: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     GlassDialog(
+        scrollContent = true,
         onDismissRequest = onDismiss,
         title = "Publish this release?",
         confirmButton = {

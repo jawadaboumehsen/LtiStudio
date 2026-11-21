@@ -214,21 +214,14 @@ internal fun ApkSignaturePane(settings: BuildSettings, onChange: (BuildSettings)
 internal fun VintfPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
     ToolCard("Vendor compatibility (VINTF)", tag = "VintfPane") {
         Note(
-            "Every build checks the system against what the vendor requires, with AOSP's own checkvintf (Setup > " +
-                "Tools > vintf-tools): HALs, sepolicy, VNDK and SDK versions, and the boot kernel's version and " +
-                "configuration. An incompatible system boots with Android's \"internal problem\" warning and " +
-                "refuses OTAs, so it stops the build; a missing SELinux mapping (no boot) always does.",
+            "Run Build Readiness in Overview to review compatibility. You can acknowledge an individual confirmed " +
+                "mismatch there. Missing selected partitions and SELinux mappings must be fixed.",
         )
-        val name = BuildWarningKind.VintfIncompatible.name
-        val accepted = name in settings.acknowledgedWarnings
-        GlassChip(
-            label = "Build even when incompatible",
-            selected = accepted,
-            onClick = {
-                val next = if (accepted) settings.acknowledgedWarnings - name else settings.acknowledgedWarnings + name
-                onChange(settings.copy(acknowledgedWarnings = next))
-            },
-        )
+        if (settings.vintfMismatchAcknowledgements.isNotEmpty()) {
+            GlassButton(onClick = { onChange(settings.copy(vintfMismatchAcknowledgements = emptySet())) }) {
+                Text("Clear VINTF acknowledgements")
+            }
+        }
     }
 }
 

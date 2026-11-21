@@ -32,6 +32,7 @@ public class MetadataStageEditor : StageEditor {
         val settings by viewModel.settings.collectAsState()
         val device by viewModel.device.collectAsState()
         val manifest by viewModel.manifest.collectAsState()
+        val saveError by viewModel.saveError.collectAsState()
         LaunchedEffect(context.workspaceId) { viewModel.refreshManifest() }
 
         MetadataEditor(
@@ -40,6 +41,7 @@ public class MetadataStageEditor : StageEditor {
             onChange = { viewModel.updateSettings(it) },
             selectedObjectId = context.selectedObjectId?.value ?: "release-identity",
             manifest = manifest,
+            saveError = saveError,
             onValidate = context.onValidationRequested,
             onSave = context.onSaveRequested,
             modifier = modifier,

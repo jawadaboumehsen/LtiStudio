@@ -267,7 +267,6 @@ fun SetupScreen(
             onDismissHelpSheet = { isHelpSheetOpen = false },
             activityState = viewModel.setupActivityState,
             toolsPageState = viewModel.toolsPageState,
-            iconsOnly = true,
         )
     }
 }
@@ -676,7 +675,7 @@ fun SetupScreenContent(
     }
 
     val activeOperationForPreview = state.activeOperation
-    if (isPreviewOpen && activeOperationForPreview != null) {
+    if (activeOperationForPreview?.executionState == SetupOperationState.PREVIEW) {
         ProvisioningPreviewSheet(
             plannedChanges = activeOperationForPreview.plannedChanges,
             onConfirm = {

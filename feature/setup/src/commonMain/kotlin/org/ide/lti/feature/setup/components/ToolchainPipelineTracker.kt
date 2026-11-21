@@ -299,6 +299,7 @@ private fun extractToolName(description: String): String? {
     return match?.groupValues?.get(1)
 }
 
+@Suppress("LongMethod", "CyclomaticComplexMethod", "DEPRECATION")
 @Composable
 private fun VerticalStageRow(
     step: SetupStepDetail,
@@ -410,7 +411,6 @@ private fun VerticalStageRow(
             !isRunning
 
     val isFailed = step.status == StepStatus.FAILED || rowSeverity == IdeStatusSeverity.Failed
-    val isWarning = !isFailed && (step.status == StepStatus.WARNING || rowSeverity == IdeStatusSeverity.Warning)
 
     val displayDescription =
         systemPackagesPres?.detailText
@@ -760,6 +760,7 @@ private fun VerticalStageRow(
 }
 
 /** A step's technical error: selectable, with a button that copies the whole text for a bug report. */
+@Suppress("DEPRECATION")
 @Composable
 internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier) {
     val clipboardManager = LocalClipboardManager.current

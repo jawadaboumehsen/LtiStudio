@@ -37,14 +37,14 @@ import org.ide.lti.core.domain.tools.ToolManager
 import org.ide.lti.core.model.setup.ToolRef
 import org.ide.lti.core.model.setup.ToolSelection
 
-public enum class PrimaryButtonAction {
+enum class PrimaryButtonAction {
     Use,
     InstallAndUse,
     Repair,
     Disabled,
 }
 
-public enum class RefType {
+enum class RefType {
     Tag,
     Branch,
     Commit,
@@ -54,7 +54,7 @@ public enum class RefType {
  * The one thing an install is built from: which group, which repository, which ref, and the commit (with its
  * submodules) that exact pair resolved to. Anything that changes any of them drops it.
  */
-public data class ResolvedSelection(
+data class ResolvedSelection(
     val group: ToolGroupId,
     val repoUrl: String,
     val ref: ToolRef,
@@ -64,18 +64,18 @@ public data class ResolvedSelection(
 }
 
 /** Why the last change to [group] did not happen. */
-public data class ToolActionError(val group: ToolGroupId, val message: String)
+data class ToolActionError(val group: ToolGroupId, val message: String)
 
 @Suppress("TooManyFunctions")
-public class ToolsPageState(public val manager: ToolManager, private val scope: CoroutineScope) {
+class ToolsPageState(val manager: ToolManager, private val scope: CoroutineScope) {
     private val _selectedGroup = MutableStateFlow(ToolGroupCatalog.ANDROID_TOOLS.id)
-    public val selectedGroup: StateFlow<ToolGroupId> = _selectedGroup.asStateFlow()
+    val selectedGroup: StateFlow<ToolGroupId> = _selectedGroup.asStateFlow()
 
     private val _resolvedSelection = MutableStateFlow<ResolvedSelection?>(null)
-    public val resolvedSelection: StateFlow<ResolvedSelection?> = _resolvedSelection.asStateFlow()
+    val resolvedSelection: StateFlow<ResolvedSelection?> = _resolvedSelection.asStateFlow()
 
     private val _selectedVersionId = MutableStateFlow<String?>(null)
-    public val selectedVersionId: StateFlow<String?> = _selectedVersionId.asStateFlow()
+    val selectedVersionId: StateFlow<String?> = _selectedVersionId.asStateFlow()
 
     /**
      * The group as the inventory shows it, with the operation the manager is running on it right now: the
@@ -93,21 +93,21 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
             ToolsPresentationMapper.mapRow(gState, isConnected = state.isConnected)
         }
 
-    public val rows: StateFlow<List<ToolRowPresentation>> =
+    val rows: StateFlow<List<ToolRowPresentation>> =
         manager.state.map { s ->
             computeRows(s)
         }.stateIn(scope, SharingStarted.Eagerly, computeRows(manager.state.value))
 
-    public val selectedGroupState: StateFlow<GroupState?> =
+    val selectedGroupState: StateFlow<GroupState?> =
         combine(manager.state, selectedGroup) { s, g ->
             liveGroupState(s, g)
         }.stateIn(scope, SharingStarted.Eagerly, liveGroupState(manager.state.value, _selectedGroup.value))
 
     private val _primaryButtonAction = MutableStateFlow(PrimaryButtonAction.Disabled)
-    public val primaryButtonAction: StateFlow<PrimaryButtonAction> = _primaryButtonAction.asStateFlow()
+    val primaryButtonAction: StateFlow<PrimaryButtonAction> = _primaryButtonAction.asStateFlow()
 
     private val _primaryButtonDisabledReason = MutableStateFlow<String?>(null)
-    public val primaryButtonDisabledReason: StateFlow<String?> = _primaryButtonDisabledReason.asStateFlow()
+    val primaryButtonDisabledReason: StateFlow<String?> = _primaryButtonDisabledReason.asStateFlow()
 
     init {
         recomputePrimaryAction()
@@ -118,7 +118,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public fun isGroupInstalling(group: ToolGroupId): Boolean {
+    fun isGroupInstalling(group: ToolGroupId): Boolean {
         val s = manager.state.value
         val gState = s.inventory?.groups?.get(group)
         val hasActiveOp = s.activeOperations.containsKey(group)
@@ -173,21 +173,21 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     private val _isInspectorOpen = MutableStateFlow(true)
-    public val isInspectorOpen: StateFlow<Boolean> = _isInspectorOpen.asStateFlow()
+    val isInspectorOpen: StateFlow<Boolean> = _isInspectorOpen.asStateFlow()
 
-    public fun openInspector() {
+    fun openInspector() {
         _isInspectorOpen.value = true
     }
 
-    public fun closeInspector() {
+    fun closeInspector() {
         _isInspectorOpen.value = false
     }
 
-    public fun toggleInspector() {
+    fun toggleInspector() {
         _isInspectorOpen.value = !_isInspectorOpen.value
     }
 
-    public fun selectPreviousGroup() {
+    fun selectPreviousGroup() {
         val all = ToolGroupCatalog.allGroups
         val currentIndex = all.indexOfFirst { it.id == _selectedGroup.value }
         if (currentIndex > 0) {
@@ -195,7 +195,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public fun selectNextGroup() {
+    fun selectNextGroup() {
         val all = ToolGroupCatalog.allGroups
         val currentIndex = all.indexOfFirst { it.id == _selectedGroup.value }
         if (currentIndex in 0 until all.size - 1) {
@@ -203,7 +203,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public fun selectGroup(group: ToolGroupId) {
+    fun selectGroup(group: ToolGroupId) {
         _selectedGroup.value = group
         _isInspectorOpen.value = true
         val currentVer = manager.state.value.inventory?.groups?.get(group)?.current?.id
@@ -235,35 +235,35 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     /** While a change runs on the selected group, its version and source choices are frozen until it ends. */
     private fun choicesLocked(): Boolean = isGroupInstalling(_selectedGroup.value)
 
-    public fun selectInstalledVersion(versionId: String) {
+    fun selectInstalledVersion(versionId: String) {
         if (choicesLocked()) return
         _selectedVersionId.value = versionId
         recomputePrimaryAction()
     }
 
-    public fun selectTargetVersion(versionId: String?) {
+    fun selectTargetVersion(versionId: String?) {
         if (choicesLocked()) return
         _selectedVersionId.value = versionId
         recomputePrimaryAction()
     }
 
-    public suspend fun refresh() {
+    suspend fun refresh() {
         manager.refresh()
         recomputePrimaryAction()
     }
 
-    public fun canUseVersion(versionId: String): Boolean = useDisabledReason(versionId) == null
+    fun canUseVersion(versionId: String): Boolean = useDisabledReason(versionId) == null
 
     @Suppress("UnusedParameter") // same shape as removeDisabledReason; a use is blocked only per group
-    public fun useDisabledReason(versionId: String): String? {
+    fun useDisabledReason(versionId: String): String? {
         if (isGroupInstalling(selectedGroup.value)) return "Another change is running for this group"
         return null
     }
 
-    public fun canRemoveVersion(versionId: String): Boolean = removeDisabledReason(versionId) == null
+    fun canRemoveVersion(versionId: String): Boolean = removeDisabledReason(versionId) == null
 
     @Suppress("ReturnCount")
-    public fun removeDisabledReason(versionId: String): String? {
+    fun removeDisabledReason(versionId: String): String? {
         if (isGroupInstalling(selectedGroup.value)) return "Another change is running for this group"
         val gState = manager.state.value.inventory?.groups?.get(selectedGroup.value) ?: return null
         if (versionId == gState.current?.id) return "Version is currently in use"
@@ -272,16 +272,16 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         return null
     }
 
-    public fun canRepair(): Boolean = repairDisabledReason() == null
+    fun canRepair(): Boolean = repairDisabledReason() == null
 
     @Suppress("ReturnCount")
-    public fun repairDisabledReason(): String? {
+    fun repairDisabledReason(): String? {
         if (isGroupInstalling(selectedGroup.value)) return "Another change is running for this group"
         if (manager.isRomJobRunning) return "A ROM job is running"
         return null
     }
 
-    public val canUseStudioVersion: Boolean
+    val canUseStudioVersion: Boolean
         get() {
             val gState = manager.state.value.inventory?.groups?.get(selectedGroup.value) ?: return false
             if (gState.selection == null) return false
@@ -289,7 +289,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
 
     @Suppress("ReturnCount")
-    public fun useStudioVersionDisabledReason(): String? {
+    fun useStudioVersionDisabledReason(): String? {
         val gState = manager.state.value.inventory?.groups?.get(selectedGroup.value) ?: return null
         if (gState.selection == null) return null
         if (isGroupInstalling(selectedGroup.value)) return "Another change is running for this group"
@@ -297,9 +297,9 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     private val _actionError = MutableStateFlow<ToolActionError?>(null)
-    public val actionError: StateFlow<ToolActionError?> = _actionError.asStateFlow()
+    val actionError: StateFlow<ToolActionError?> = _actionError.asStateFlow()
 
-    public fun dismissActionError() {
+    fun dismissActionError() {
         _actionError.value = null
     }
 
@@ -325,27 +325,27 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public fun use(versionId: String) {
+    fun use(versionId: String) {
         val group = selectedGroup.value
         launchChange(group) { manager.use(group, versionId) }
     }
 
-    public fun followStudio() {
+    fun followStudio() {
         val group = selectedGroup.value
         launchChange(group) { manager.followStudio(group) }
     }
 
-    public fun remove(versionId: String) {
+    fun remove(versionId: String) {
         val group = selectedGroup.value
         launchChange(group) { manager.remove(group, versionId) }
     }
 
-    public fun repair() {
+    fun repair() {
         val group = selectedGroup.value
         launchChange(group) { manager.repair(group) }
     }
 
-    public fun installAndUse(source: ResolvedSource) {
+    fun installAndUse(source: ResolvedSource) {
         val group = selectedGroup.value
         launchChange(group) { manager.installAndUse(group, source) }
     }
@@ -354,7 +354,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
      * Installs exactly what was chosen: the resolved commit of a git group, or the curated release picked in a
      * release group. Nothing when nothing valid is chosen for the selected group.
      */
-    public fun installResolved() {
+    fun installResolved() {
         val source: ResolvedSource? =
             if (isReleaseGroup) {
                 chosenRelease()?.let { ResolvedSource.Release(it.version, it.url, it.sha256, it.archiveMember) }
@@ -369,32 +369,32 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     /** Whether "Install & use" has something valid to install: a clean resolution, or a picked curated release. */
-    public fun canInstallSelected(): Boolean = if (isReleaseGroup) {
+    fun canInstallSelected(): Boolean = if (isReleaseGroup) {
         chosenRelease() != null
     } else {
         _resolvedSelection.value?.let { it.group == selectedGroup.value && it.check.layoutMissing.isEmpty() } == true
     }
 
-    public fun cancelActiveOperation() {
+    fun cancelActiveOperation() {
         val group = selectedGroup.value // the one clicked, not whichever is selected when the coroutine runs
         scope.launch {
             manager.cancel(group)
         }
     }
 
-    public suspend fun refs(repoUrl: String): Result<RefListing> = manager.refs(selectedGroup.value, repoUrl)
+    suspend fun refs(repoUrl: String): Result<RefListing> = manager.refs(selectedGroup.value, repoUrl)
 
-    public suspend fun resolve(repoUrl: String, ref: ToolRef): Result<ResolvedSourceCheck> =
+    suspend fun resolve(repoUrl: String, ref: ToolRef): Result<ResolvedSourceCheck> =
         manager.resolve(selectedGroup.value, repoUrl, ref)
 
-    public suspend fun isTrusted(repoUrl: String): Boolean = manager.isTrusted(repoUrl)
+    suspend fun isTrusted(repoUrl: String): Boolean = manager.isTrusted(repoUrl)
 
-    public suspend fun recordTrust(repoUrl: String): Result<Unit> = manager.recordTrust(repoUrl)
+    suspend fun recordTrust(repoUrl: String): Result<Unit> = manager.recordTrust(repoUrl)
 
     private val _selectedRefType = MutableStateFlow(RefType.Tag)
-    public val selectedRefType: StateFlow<RefType> = _selectedRefType.asStateFlow()
+    val selectedRefType: StateFlow<RefType> = _selectedRefType.asStateFlow()
 
-    public fun selectRefType(type: RefType) {
+    fun selectRefType(type: RefType) {
         if (type == _selectedRefType.value || choicesLocked()) return
         _selectedRefType.value = type
         // What was resolved belongs to the other kind of ref.
@@ -402,7 +402,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     /** The branch or commit text changed: the commit resolved for the old text must not be installed for the new. */
-    public fun refInputChanged() {
+    fun refInputChanged() {
         if (choicesLocked()) return
         if (_resolvedSelection.value != null || _isResolving.value || _resolveError.value != null) {
             invalidateResolution()
@@ -410,15 +410,15 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     private val _availableRefs = MutableStateFlow<RefListing?>(null)
-    public val availableRefs: StateFlow<RefListing?> = _availableRefs.asStateFlow()
+    val availableRefs: StateFlow<RefListing?> = _availableRefs.asStateFlow()
 
     private val _isLoadingRefs = MutableStateFlow(false)
-    public val isLoadingRefs: StateFlow<Boolean> = _isLoadingRefs.asStateFlow()
+    val isLoadingRefs: StateFlow<Boolean> = _isLoadingRefs.asStateFlow()
 
     private val _customRepoUrl = MutableStateFlow<String?>(null)
-    public val customRepoUrl: StateFlow<String?> = _customRepoUrl.asStateFlow()
+    val customRepoUrl: StateFlow<String?> = _customRepoUrl.asStateFlow()
 
-    public fun setCustomRepoUrl(url: String?) {
+    fun setCustomRepoUrl(url: String?) {
         if (url == _customRepoUrl.value || choicesLocked()) return
         _customRepoUrl.value = url
         invalidateResolution()
@@ -444,41 +444,41 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     private val _refsError = MutableStateFlow<String?>(null)
 
     /** Why the tags could not be listed, for a message and a retry; null when they were (or none were asked for). */
-    public val refsError: StateFlow<String?> = _refsError.asStateFlow()
+    val refsError: StateFlow<String?> = _refsError.asStateFlow()
 
     private val _selectedRef = MutableStateFlow<ToolRef?>(null)
-    public val selectedRef: StateFlow<ToolRef?> = _selectedRef.asStateFlow()
+    val selectedRef: StateFlow<ToolRef?> = _selectedRef.asStateFlow()
 
     private var refsGeneration = 0
     private var resolveGeneration = 0
 
     private val _resolvedCheck = MutableStateFlow<ResolvedSourceCheck?>(null)
-    public val resolvedCheck: StateFlow<ResolvedSourceCheck?> = _resolvedCheck.asStateFlow()
+    val resolvedCheck: StateFlow<ResolvedSourceCheck?> = _resolvedCheck.asStateFlow()
 
     private val _isResolving = MutableStateFlow(false)
-    public val isResolving: StateFlow<Boolean> = _isResolving.asStateFlow()
+    val isResolving: StateFlow<Boolean> = _isResolving.asStateFlow()
 
     private val _resolveError = MutableStateFlow<String?>(null)
-    public val resolveError: StateFlow<String?> = _resolveError.asStateFlow()
+    val resolveError: StateFlow<String?> = _resolveError.asStateFlow()
 
     private val _showTrustDialog = MutableStateFlow(false)
-    public val showTrustDialog: StateFlow<Boolean> = _showTrustDialog.asStateFlow()
+    val showTrustDialog: StateFlow<Boolean> = _showTrustDialog.asStateFlow()
 
     private val _untrustedRepoUrl = MutableStateFlow<String?>(null)
-    public val untrustedRepoUrl: StateFlow<String?> = _untrustedRepoUrl.asStateFlow()
+    val untrustedRepoUrl: StateFlow<String?> = _untrustedRepoUrl.asStateFlow()
 
     private class PendingTrust(val group: ToolGroupId, val url: String, val action: suspend () -> Unit)
 
     private var pendingTrust: PendingTrust? = null
 
-    public fun dismissTrustDialog() {
+    fun dismissTrustDialog() {
         pendingTrust = null
         _showTrustDialog.value = false
         _untrustedRepoUrl.value = null
     }
 
     /** Trusts the repository, then runs the action the user asked for (if they are still on that group). */
-    public fun confirmTrustAndProceed() {
+    fun confirmTrustAndProceed() {
         val pending = pendingTrust
         pendingTrust = null
         _showTrustDialog.value = false
@@ -496,7 +496,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public suspend fun requestWithTrustCheck(url: String, onTrusted: suspend () -> Unit) {
+    suspend fun requestWithTrustCheck(url: String, onTrusted: suspend () -> Unit) {
         val group = selectedGroup.value
         val groupDef = ToolGroupCatalog.group(group)
         val recommended = (groupDef?.source as? ToolSource.Git)?.recommendedUrl
@@ -521,25 +521,25 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
         }
     }
 
-    public val isReleaseGroup: Boolean
+    val isReleaseGroup: Boolean
         get() {
             val g = ToolGroupCatalog.group(selectedGroup.value) ?: return false
             return g.source is ToolSource.Release
         }
 
-    public val curatedReleases: List<ReleaseVersion>
+    val curatedReleases: List<ReleaseVersion>
         get() {
             val g = ToolGroupCatalog.group(selectedGroup.value) ?: return emptyList()
             return (g.recipe as? RecipeConfig.Release)?.versions ?: emptyList()
         }
 
-    public val recommendedUrl: String?
+    val recommendedUrl: String?
         get() {
             val g = ToolGroupCatalog.group(selectedGroup.value) ?: return null
             return (g.source as? ToolSource.Git)?.recommendedUrl
         }
 
-    public fun loadRefs(repoUrl: String? = null) {
+    fun loadRefs(repoUrl: String? = null) {
         val group = _selectedGroup.value
         val targetUrl = repoUrl ?: customRepoUrl.value ?: recommendedUrl ?: ""
         val generation = ++refsGeneration
@@ -559,7 +559,7 @@ public class ToolsPageState(public val manager: ToolManager, private val scope: 
     }
 
     /** Resolves [ref]; the result is kept only if the group, repository and ref are still the ones asked for. */
-    public fun resolveRef(ref: ToolRef, repoUrl: String? = null) {
+    fun resolveRef(ref: ToolRef, repoUrl: String? = null) {
         if (choicesLocked()) return
         val group = _selectedGroup.value
         val targetUrl = repoUrl ?: customRepoUrl.value ?: recommendedUrl ?: ""

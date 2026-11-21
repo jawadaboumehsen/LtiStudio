@@ -81,7 +81,7 @@ public class KotlinRecipeRunner(
     } catch (e: ToolErrorException) {
         val msg = e.toolError.message
         if (isConnectionLostMessage(msg) && e.toolError !is ToolError.ConnectionLost) {
-            Result.failure(ToolErrorException(ToolError.ConnectionLost(msg ?: "Connection lost")))
+            Result.failure(ToolErrorException(ToolError.ConnectionLost(msg)))
         } else {
             Result.failure(e)
         }

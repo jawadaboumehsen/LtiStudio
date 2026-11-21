@@ -390,8 +390,6 @@ class FileMutationAdapter : FileMutationPort {
                             message = result.message,
                         ),
                     )
-
-                    else -> Unit
                 }
             }
         }

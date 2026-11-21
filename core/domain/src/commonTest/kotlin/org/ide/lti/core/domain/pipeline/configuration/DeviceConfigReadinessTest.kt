@@ -59,10 +59,12 @@ class DeviceConfigReadinessTest {
             "firmware.sha256" to DeviceConfigReadiness.INVALID_FORMAT in
                 codes(s = withFirmware { it.copy(sha256 = "ABC") }),
         )
-        assertTrue(
-            "firmware.sha256" to DeviceConfigReadiness.CHECKSUM_CONFLICT in
-                codes(s = withFirmware { it.copy(checksumUnavailable = true) }),
-        )
+        val conflict = DeviceConfigReadiness.check(
+            target,
+            withFirmware { it.copy(checksumUnavailable = true) },
+        ).single { it.fieldPath == "firmware.sha256" }
+        assertEquals(DeviceConfigReadiness.CHECKSUM_CONFLICT, conflict.code)
+        assertEquals("integrity", conflict.objectId)
         assertEquals(
             emptyList(),
             DeviceConfigReadiness.check(

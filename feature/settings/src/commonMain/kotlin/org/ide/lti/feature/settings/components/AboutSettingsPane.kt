@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,6 +63,7 @@ fun AboutSettingsPane(
     modifier: Modifier = Modifier,
     environment: AppEnvironment? = null,
     onOpenFolder: (String) -> Unit = {},
+    stackSections: Boolean = false,
 ) {
     val appVersion = environment?.version
 
@@ -98,10 +100,11 @@ fun AboutSettingsPane(
             surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentPadding = Spacing.CardPadding,
         ) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 // Left 3D Brand Mark & Headings
                 Row(
@@ -191,14 +194,15 @@ fun AboutSettingsPane(
             modifier = Modifier.padding(horizontal = Spacing.ExtraSmall),
         )
 
-        // Lower Grid: Technical Information (weight 1.1f) & Diagnostics (weight 0.9f)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Large),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Large),
+            maxItemsInEachRow = if (stackSections) 1 else 2,
         ) {
             // Technical Information Card
             GlassCard(
-                modifier = Modifier.weight(1.15f),
+                modifier = if (stackSections) Modifier.fillMaxWidth() else Modifier.weight(1.15f),
                 surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentPadding = Spacing.CardPadding,
             ) {
@@ -230,16 +234,16 @@ fun AboutSettingsPane(
                         GlassHorizontalDivider()
                         TechInfoRow("Operating system", environment?.operatingSystem ?: "Unknown")
                         GlassHorizontalDivider()
-                        TechInfoRow("Data folder", environment?.dataDirectory ?: "Unknown")
+                        TechInfoRow("Data folder", environment?.dataDirectory ?: "Unknown", stacked = true)
                         GlassHorizontalDivider()
-                        TechInfoRow("Logs folder", environment?.logsDirectory ?: "Unknown")
+                        TechInfoRow("Logs folder", environment?.logsDirectory ?: "Unknown", stacked = true)
                     }
                 }
             }
 
             // Diagnostics Card
             GlassCard(
-                modifier = Modifier.weight(0.85f),
+                modifier = if (stackSections) Modifier.fillMaxWidth() else Modifier.weight(0.85f),
                 surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentPadding = Spacing.CardPadding,
             ) {
@@ -342,22 +346,35 @@ fun AboutSettingsPane(
 }
 
 @Composable
-private fun TechInfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+private fun TechInfoRow(label: String, value: String, stacked: Boolean = false) {
+    val labelText: @Composable () -> Unit = {
         Text(
             text = label,
             fontSize = FontSize.BodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+    val valueText: @Composable () -> Unit = {
         Text(
             text = value,
             fontSize = FontSize.BodySmall,
             fontFamily = codeFontFamily(),
             color = MaterialTheme.colorScheme.onSurface,
         )
+    }
+    if (stacked) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            labelText()
+            valueText()
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
+            verticalAlignment = Alignment.Top,
+        ) {
+            labelText()
+            Box(Modifier.weight(1f), contentAlignment = Alignment.TopEnd) { valueText() }
+        }
     }
 }

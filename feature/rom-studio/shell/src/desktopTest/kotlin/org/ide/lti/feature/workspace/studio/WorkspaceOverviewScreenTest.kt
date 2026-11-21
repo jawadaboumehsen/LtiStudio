@@ -16,11 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.text.TextLayoutResult
 import org.ide.lti.core.designsystem.theme.AppTheme
+import org.ide.lti.core.designsystem.theme.Appearance
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.model.run.StageId
@@ -141,6 +147,36 @@ class WorkspaceOverviewScreenTest {
         currentTheme = AppTheme.Blue
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag("WorkspaceOverview").assertIsDisplayed()
+    }
+
+    @Test
+    fun narrowOverviewKeepsReadinessTextAndControlsReachableAtLargeTextSize() {
+        val state = createTestOverviewState()
+        composeTestRule.setContent {
+            LtiTheme(appTheme = AppTheme.Dark, appearance = Appearance(textScale = 2f)) {
+                Box(Modifier.size(GlassDimens.ReferenceWindowWidth * 0.375f, GlassDimens.ReferenceWindowHeight / 2)) {
+                    WorkspaceOverview(state = state)
+                }
+            }
+        }
+
+        val readiness = composeTestRule.onNodeWithTag("ReadinessMatrix").fetchSemanticsNode()
+        val target = composeTestRule.onNodeWithTag("TargetProfileCard").fetchSemanticsNode()
+        assertEquals(readiness.positionInRoot.x, target.positionInRoot.x)
+        assertTrue(target.positionInRoot.y >= readiness.positionInRoot.y + readiness.size.height)
+
+        state.readinessItems.forEach { item ->
+            val description = composeTestRule.onNodeWithText(item.description, useUnmergedTree = true)
+            description.performScrollTo()
+            description.assertIsDisplayed()
+            val getLayout = description.fetchSemanticsNode().config.getOrNull(SemanticsActions.GetTextLayoutResult)
+            val layouts = mutableListOf<TextLayoutResult>()
+            assertTrue(getLayout?.action?.invoke(layouts) == true)
+            assertTrue(layouts.isNotEmpty() && layouts.none { it.hasVisualOverflow }, item.description)
+        }
+        composeTestRule.onNodeWithTag("EditProfileButton").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("OverviewCtaButton").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithTag("RecentActivitySection").performScrollTo().assertIsDisplayed()
     }
 
     private fun createTestOverviewState(): WorkspaceOverviewUiState {

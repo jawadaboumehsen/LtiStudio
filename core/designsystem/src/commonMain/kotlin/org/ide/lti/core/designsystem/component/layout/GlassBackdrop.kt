@@ -11,6 +11,7 @@ package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -31,15 +32,16 @@ import org.ide.lti.core.designsystem.theme.StudioBackdropColors
  * Renders a theme-adaptive canvas as the sampled source for Haze's real-time
  * blur/refraction glass rendering.
  *
- * For [AppTheme.Blue], preserves verbatim the saturated cosmic-aurora light fields of the
- * professional IDE shell so translucent surfaces read as rich glass instead of flat charcoal.
- * For [AppTheme.Dark] and [AppTheme.Light], adapts dynamically to the active MaterialTheme palette.
+ * A theme-colored veil keeps the wallpaper visible through chrome while quieting it behind text.
  *
  * @param modifier Modifier to be applied to the canvas.
  */
 @Composable
 fun GlassBackdrop(modifier: Modifier = Modifier) {
     val appTheme = GlassTheme.appTheme
+    val veil = MaterialTheme.colorScheme.background.copy(
+        alpha = if (appTheme == AppTheme.Blue) AlphaTokens.Prominent else AlphaTokens.Elevated,
+    )
 
     Canvas(
         modifier = modifier
@@ -51,6 +53,7 @@ fun GlassBackdrop(modifier: Modifier = Modifier) {
             AppTheme.Dark -> drawDarkBackdrop()
             AppTheme.Light -> drawLightBackdrop()
         }
+        drawRect(veil)
     }
 }
 

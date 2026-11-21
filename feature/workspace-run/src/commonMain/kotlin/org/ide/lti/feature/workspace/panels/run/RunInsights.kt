@@ -174,6 +174,7 @@ internal fun BuildReportDialog(report: BuildReportText?, title: String, onClose:
 }
 
 /** A Markdown text (a report, a comparison) with Copy; [problems] are listed above it. */
+@Suppress("DEPRECATION")
 @Composable
 internal fun MarkdownDialog(title: String, markdown: String, problems: List<String>, onClose: () -> Unit) {
     val clipboard = LocalClipboardManager.current

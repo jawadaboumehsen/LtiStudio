@@ -63,6 +63,7 @@ public fun ScriptsPane(
     /** The last `sh -n` of each script by name: `ok` or the error. */
     checks: Map<String, String> = emptyMap(),
     onCheck: (String) -> Unit = {},
+    saveError: String? = null,
 ) {
     val scripts = settings.scripts
     var selected by remember { mutableStateOf(scripts.firstOrNull()?.name) }
@@ -80,6 +81,7 @@ public fun ScriptsPane(
             .testTag("ScriptsPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
+        saveError?.let { Hint("Changes could not be saved. $it", isError = true) }
         Card("Scripts") {
             Hint(
                 "Shell scripts run on the work tree after the modules, top to bottom: \$1 is work/, \$2 the " +

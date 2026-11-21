@@ -44,7 +44,7 @@ public data class CodespaceDeleteCommand(
         if (codespace) args.add("--codespace")
         days?.let { val value = it
             args.add("--days")
-            args.add(value.toString())
+            args.add(value)
         }
         if (force) args.add("--force")
         if (help) args.add("--help")

@@ -140,7 +140,8 @@ private fun otaManifestProblems(settings: PublishSettings, release: ReleaseFiles
  * only ever runs when the person confirms it (the build never publishes by itself). Modelled on LtiRom's
  * scripts/release/publish.sh (journal, resume, verify after upload).
  */
-public class PublishReleaseUseCase(
+@Suppress("TooManyFunctions")
+class PublishReleaseUseCase(
     private val workspaces: WorkspaceRepository,
     private val store: WorkspaceSettingsStore,
     private val port: PipelineExecutionPort,
@@ -188,37 +189,44 @@ public class PublishReleaseUseCase(
         edited: PublishSettings? = null,
         onProgress: (PublishJournal) -> Unit = {},
         onTransfer: (PublishTransfer) -> Unit = {},
+        reviewed: PublishPreflight? = null,
     ): PublishJournal? {
         val ws = workspaces.getWorkspace(workspaceId) ?: return null
         val lock = jobLock
         return if (lock == null) {
-            publishHeld(workspaceId, edited, onProgress, onTransfer)
+            publishHeld(workspaceId, edited, onProgress, onTransfer, reviewed)
         } else {
             lock.withLock(
                 ws,
                 PUBLISH_HOLDER,
                 onLocked = { null },
-            ) { publishHeld(workspaceId, edited, onProgress, onTransfer) }
+            ) { publishHeld(workspaceId, edited, onProgress, onTransfer, reviewed) }
         }
     }
 
+    @Suppress("CyclomaticComplexMethod", "ComplexCondition")
     private suspend fun publishHeld(
         workspaceId: String,
         edited: PublishSettings?,
         onProgress: (PublishJournal) -> Unit,
         onTransfer: (PublishTransfer) -> Unit,
+        reviewed: PublishPreflight?,
     ): PublishJournal? {
         val ws = workspaces.getWorkspace(workspaceId)
         val check = preflight(workspaceId, edited)
         val release = check.release
         val destination = check.destination
-        if (ws == null || release == null || destination == null || check.problems.isNotEmpty()) return null
+        if (ws == null || release == null || destination == null || check.problems.isNotEmpty() ||
+            (reviewed != null && (reviewed.release != release || reviewed.destination != destination))
+        ) {
+            return null
+        }
         port.requireNoLinkInWorkspace(ws)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
         val requestKey = requestKey(ws, settings)
         val previous = check.journal
         // A finished publish asked for again checks its destination again: files there may be gone or changed.
-        var journal =
+        val initialJournal =
             previous?.let { if (it.finished) it.reverifying() else it.retryingFailedCopies() } ?: PublishJournal(
                 provider = settings.provider,
                 destination = destination,
@@ -227,7 +235,20 @@ public class PublishReleaseUseCase(
                 steps = stepsFor(settings.provider, release).map { (id, label) -> PublishJournalStep(id, label) },
                 requestKey = requestKey,
             )
-        onProgress(journal)
+        onProgress(initialJournal)
+        return executePublishSteps(ws, settings, release, destination, initialJournal, onProgress, onTransfer)
+    }
+
+    private suspend fun executePublishSteps(
+        ws: Workspace,
+        settings: PublishSettings,
+        release: ReleaseFiles,
+        destination: String,
+        initialJournal: PublishJournal,
+        onProgress: (PublishJournal) -> Unit,
+        onTransfer: (PublishTransfer) -> Unit,
+    ): PublishJournal {
+        var journal = initialJournal
         for (step in journal.steps.filter { it.state != PublishStepState.DONE }) {
             onTransfer(PublishTransfer(step.id))
             val report = { done: Long, total: Long -> onTransfer(PublishTransfer(step.id, done, total)) }

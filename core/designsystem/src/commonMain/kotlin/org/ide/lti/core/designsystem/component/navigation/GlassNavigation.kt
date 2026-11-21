@@ -151,6 +151,7 @@ private fun Modifier.dockedGlassSurface(): Modifier = this.ideShellSurface(
     drawBorder = false,
 )
 
+@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassNavigationBarPreview() {
@@ -188,6 +189,7 @@ private fun GlassNavigationBarPreview() {
     }
 }
 
+@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassNavigationRailPreview() {

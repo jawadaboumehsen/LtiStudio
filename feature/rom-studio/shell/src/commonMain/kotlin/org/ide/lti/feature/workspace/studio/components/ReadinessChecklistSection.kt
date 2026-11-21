@@ -18,12 +18,12 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -86,7 +86,10 @@ public fun ReadinessChecklistSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
+            ) {
                 Text(
                     text = "Build readiness",
                     color = MaterialTheme.colorScheme.onSurface,
@@ -145,7 +148,7 @@ private fun ReadinessRowItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .testTag("ReadinessRow_${item.id.name}")
@@ -153,77 +156,80 @@ private fun ReadinessRowItem(
                 if (isHovered) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent,
             )
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        // Stage Icon Box & Identity
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-            modifier = Modifier.width(
-                GlassDimens.ReadinessLabelColumnWidth + GlassDimens.OverviewStageIconBoxSize,
-            ),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(GlassDimens.OverviewStageIconBoxSize)
-                    .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
-                    .border(
-                        GlassDimens.HairlineBorder,
-                        MaterialTheme.colorScheme.outlineVariant,
-                        GlassShapes.ShellControl,
-                    ),
-                contentAlignment = Alignment.Center,
+            ReadinessIdentity(item)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = resolveReadinessIcon(item.id),
-                    contentDescription = item.title,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(IconSize.Medium),
+                IdeStatusBadge(
+                    label = item.statusLabel,
+                    severity = mapReadinessSeverity(item),
+                    useDot = true,
                 )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
-                Text(
-                    text = item.title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.BodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = GlassFontFamily.ide(),
-                )
-                Text(
-                    text = item.contextLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = FontSize.Micro,
-                    fontFamily = GlassFontFamily.ide(),
-                )
+                ReadinessActionButton(item = item, onAction = onAction)
             }
         }
 
-        // Status Badge (useDot variant for sleek presentation)
-        Box(modifier = Modifier.width(GlassDimens.ReadinessStatusColumnWidth + Spacing.ExtraExtraLarge)) {
-            IdeStatusBadge(
-                label = item.statusLabel,
-                severity = mapReadinessSeverity(item),
-                useDot = true,
-            )
-        }
-
-        // Description
         Text(
             text = item.description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = FontSize.BodySmall,
             fontFamily = GlassFontFamily.ide(),
-            modifier = Modifier.weight(1f),
-            maxLines = 2,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = GlassDimens.OverviewStageIconBoxSize + Spacing.SmallMedium),
         )
+    }
+}
 
-        // Action Button
-        if (item.action != null) {
-            ReadinessActionButton(
-                item = item,
-                onAction = onAction,
+@Composable
+private fun ReadinessIdentity(item: ReadinessItemUi, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(GlassDimens.OverviewStageIconBoxSize)
+                .background(MaterialTheme.colorScheme.surfaceContainer, GlassShapes.ShellControl)
+                .border(
+                    GlassDimens.HairlineBorder,
+                    MaterialTheme.colorScheme.outlineVariant,
+                    GlassShapes.ShellControl,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = resolveReadinessIcon(item.id),
+                contentDescription = item.title,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(IconSize.Medium),
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Hairline)) {
+            Text(
+                text = item.title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = FontSize.BodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = GlassFontFamily.ide(),
+            )
+            Text(
+                text = item.contextLabel,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.Micro,
+                fontFamily = GlassFontFamily.ide(),
             )
         }
     }

@@ -13,6 +13,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -24,16 +27,22 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -61,10 +70,75 @@ data class WindowControlActions(
     val onClose: () -> Unit = {},
     val onDragWindow: () -> Unit = {},
     val onDragDelta: (dx: Float, dy: Float) -> Unit = { _, _ -> },
+    val onDragEnd: () -> Unit = {},
     val isMaximized: () -> Boolean = { false },
 )
 
 val LocalWindowControlActions = compositionLocalOf { WindowControlActions() }
+
+/** Window actions for the Studio toolbar. Each dot has a full-size pointer and keyboard target. */
+@Composable
+internal fun StudioWindowControls(actions: WindowControlActions) {
+    val isMaximized = actions.isMaximized()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        StudioWindowButton(
+            AppIcons.ideWindowsCloseSmall(),
+            "Close",
+            WindowControlColors.StudioClose,
+            actions.onClose,
+        )
+        StudioWindowButton(
+            AppIcons.ideWindowsMinimizeSmall(),
+            "Minimize",
+            WindowControlColors.StudioMinimize,
+            actions.onMinimize,
+        )
+        StudioWindowButton(
+            if (isMaximized) AppIcons.ideWindowsRestoreSmall() else AppIcons.ideWindowsMaximizeSmall(),
+            if (isMaximized) "Restore" else "Maximize",
+            WindowControlColors.StudioZoom,
+            actions.onMaximize,
+        )
+    }
+}
+
+@Composable
+private fun StudioWindowButton(icon: Painter, label: String, color: Color, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val hovered by interactionSource.collectIsHoveredAsState()
+    val focused by interactionSource.collectIsFocusedAsState()
+    val pressed by interactionSource.collectIsPressedAsState()
+    val focusRing = if (focused) {
+        Modifier.glassOutlineBorder(
+            width = StrokeWidth.Focused,
+            color = MaterialTheme.colorScheme.primary,
+            shape = GlassShapes.Capsule,
+        )
+    } else {
+        Modifier
+    }
+    Box(
+        modifier = Modifier
+            .size(ComponentSize.StudioWindowButtonSize)
+            .then(focusRing)
+            .clickable(interactionSource = interactionSource, indication = null, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(IconSize.WindowControl)
+                .background(if (pressed) color.copy(alpha = AlphaTokens.Prominent) else color, GlassShapes.Capsule),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = label,
+                tint = WindowControlColors.StudioSymbol,
+                modifier = Modifier.size(IconSize.ExtraSmall).alpha(if (hovered || focused || pressed) 1f else 0f),
+            )
+        }
+    }
+}
 
 /**
  * Desktop Window control buttons (minimize, maximize, close).
@@ -194,45 +268,74 @@ fun WindowControlButton(
 
 /**
  * Window drag gesture detector modifier that coordinates with OS window dragging.
+ *
+ * Supports immediate mouse press, long press / long click before dragging, drag deltas,
+ * and optional double-click to toggle maximize/restore.
  */
 @OptIn(ExperimentalComposeUiApi::class)
+@Suppress("CyclomaticComplexMethod", "LoopWithTooManyJumpStatements")
+@Composable
 fun Modifier.windowDragGesture(
     onDrag: () -> Unit,
     onDragDelta: (dx: Float, dy: Float) -> Unit = { _, _ -> },
-): Modifier = pointerInput(onDrag, onDragDelta) {
-    awaitPointerEventScope {
-        var pendingDrag = false
-        var isDragging = false
-        while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Main)
-            event.changes.forEach { change ->
-                if (!change.isConsumed) {
-                    when (event.type) {
-                        PointerEventType.Press -> {
-                            if (event.button == PointerButton.Primary) {
-                                pendingDrag = true
-                                isDragging = false
-                            }
-                        }
-                        PointerEventType.Move -> {
-                            if (pendingDrag) {
-                                onDrag()
-                                pendingDrag = false
-                                isDragging = true
-                            }
-                            if (isDragging) {
-                                val delta = change.position - change.previousPosition
-                                if (delta.x != 0f || delta.y != 0f) {
-                                    onDragDelta(delta.x, delta.y)
-                                }
-                            }
-                        }
-                        PointerEventType.Release -> {
-                            pendingDrag = false
-                            isDragging = false
-                        }
-                    }
+    onDragEnd: () -> Unit = {},
+    onDoubleClick: (() -> Unit)? = null,
+): Modifier {
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragDelta by rememberUpdatedState(onDragDelta)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnDoubleClick by rememberUpdatedState(onDoubleClick)
+
+    return pointerInput(Unit) {
+        var lastClickTime = 0L
+        awaitPointerEventScope {
+            while (true) {
+                val downEvent = awaitPointerEvent(PointerEventPass.Main)
+                if (!isPrimaryPress(downEvent)) continue
+
+                val downChange = downEvent.changes.firstOrNull { !it.isConsumed } ?: continue
+                val now = if (downChange.uptimeMillis > 0L) downChange.uptimeMillis else 0L
+
+                // Handle double-click to maximize/restore
+                if (currentOnDoubleClick != null && lastClickTime > 0L && (now - lastClickTime) in 0L..500L) {
+                    currentOnDoubleClick?.invoke()
+                    lastClickTime = 0L
+                    downChange.consume()
+                    continue
                 }
+                lastClickTime = if (now > 0L) now else 1L
+
+                // Start window drag immediately on press so long-click coordinates are accurately captured
+                currentOnDrag()
+
+                try {
+                    trackDrag(downChange.id, currentOnDragDelta)
+                } finally {
+                    currentOnDragEnd()
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun isPrimaryPress(event: PointerEvent): Boolean = event.type == PointerEventType.Press &&
+    (event.button == null || event.button == PointerButton.Primary)
+
+private suspend fun AwaitPointerEventScope.trackDrag(
+    pointerId: PointerId,
+    onDragDelta: (dx: Float, dy: Float) -> Unit,
+) {
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Main)
+        val change = event.changes.firstOrNull { it.id == pointerId }
+        if (change == null || event.type == PointerEventType.Release) {
+            break
+        }
+        if (event.type == PointerEventType.Move) {
+            val delta = change.position - change.previousPosition
+            if (delta.x != 0f || delta.y != 0f) {
+                onDragDelta(delta.x, delta.y)
             }
         }
     }

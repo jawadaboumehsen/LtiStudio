@@ -109,6 +109,7 @@ object ComponentSize {
     val TopBarDividerHeight: Dp = 18.dp
     val WindowControlWidth: Dp = 36.dp
     val WindowControlHeight: Dp = 28.dp
+    val StudioWindowButtonSize: Dp = 26.dp
     val PanelHeaderAction: Dp = 24.dp
     val PanelHeaderActionTouchTarget: Dp = 32.dp
     val ListTileBadgeSize: Dp = 32.dp
@@ -137,6 +138,7 @@ object ComponentSize {
     val MinPanelHeight: Dp = 100.dp
     val MaxPanelHeight: Dp = 600.dp
     val DialogDefaultHeight: Dp = 400.dp
+    val StudioDialogMaxWidth: Dp = 560.dp
     val DropdownMenuMinWidth: Dp = 240.dp
     val SetupCockpitMaxWidth: Dp = 960.dp
     val SetupMaxContentWidth: Dp = 840.dp
@@ -227,6 +229,9 @@ object GlassDimens {
     val OverviewStageIconBoxSize: Dp = 32.dp
     val OverviewEmptyStateHeight: Dp = 136.dp
     val OverviewTargetCardWidth: Dp = 340.dp
+    val OverviewTwoColumnMinWidth: Dp = 840.dp
+    val SettingsTwoColumnMinWidth: Dp = 630.dp
+    val AppearancePreviewMaxWidth: Dp = 520.dp
     val AcquirePolicyLabelWidth: Dp = 220.dp
     val AcquireTableActionColWidth: Dp = 120.dp
     val AcquireTableIconColWidth: Dp = 36.dp

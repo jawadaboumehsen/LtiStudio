@@ -24,7 +24,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 
 @Composable
-public fun TrustRepositoryDialog(
+fun TrustRepositoryDialog(
     repoUrl: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,

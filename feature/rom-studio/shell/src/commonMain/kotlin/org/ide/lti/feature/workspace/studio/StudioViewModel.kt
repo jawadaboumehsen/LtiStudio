@@ -686,7 +686,7 @@ public class StudioViewModel(
             draft = snapshot?.let { WorkspacePipelineDraft.create(uiState.workspaceId, it, device) },
             validationReport = uiState.validationReport,
             runs = uiState.runs,
-            signingVerified = signed && signedBuildOf(uiState.runs, snapshot?.id),
+            signingVerified = signed && signedBuildOf(uiState.runs, snapshot.id),
             hasExplicitValidSource = snapshot != null && !acquisitionErrors,
         )
     }

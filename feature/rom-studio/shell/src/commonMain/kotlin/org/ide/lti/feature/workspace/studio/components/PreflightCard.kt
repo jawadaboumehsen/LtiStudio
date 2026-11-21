@@ -38,6 +38,8 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.stages.VintfEvidence
+import org.ide.lti.core.domain.pipeline.stages.VintfEvidenceKind
 import org.ide.lti.core.domain.pipeline.stages.VintfStatus
 import org.ide.lti.core.domain.workspace.NextBuildFacts
 import org.ide.lti.core.model.run.BuildRun
@@ -45,13 +47,20 @@ import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.feature.workspace.studio.PreflightUiState
 import org.ide.lti.feature.workspace.studio.PreflightViewModel
+import org.ide.lti.feature.workspace.studio.ReadinessStageLink
 
 /**
  * Will it build? Build & Sign's checks run against the current settings and work tree in seconds; each finding
  * comes with its fix: a setting changed here, or the screen that fixes it.
  */
 @Composable
-internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> Unit, modifier: Modifier = Modifier) {
+internal fun PreflightCard(
+    vm: PreflightViewModel,
+    onOpen: (StageId, String) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenSetup: () -> Unit = {},
+    resolveLink: (PreflightFix.Open) -> ReadinessStageLink = { ReadinessStageLink(it) },
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     Column(
         modifier = modifier
@@ -68,23 +77,25 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Will it build?",
+                    "Build plan and checks",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = FontSize.TitleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    "Runs Build & Sign's checks on the current settings and work tree, without building.",
+                    "Preview stages and check the current settings and work tree.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = FontSize.BodySmall,
                 )
             }
             GlassButton(
                 onClick = vm::check,
-                enabled = !state.checking,
+                enabled = !state.checking && !state.readingNext,
                 variant = GlassButtonVariant.Primary,
                 modifier = Modifier.testTag("PreflightCheck"),
-            ) { Text(if (state.checking) "Checking…" else "Check now", fontSize = FontSize.BodySmall) }
+            ) {
+                Text(if (state.checking || state.readingNext) "Checking…" else "Check now", fontSize = FontSize.BodySmall)
+            }
         }
         state.error?.let { Text(it, color = GlassTheme.diagnosticColors.error, fontSize = FontSize.BodySmall) }
         state.message?.let {
@@ -94,29 +105,64 @@ internal fun PreflightCard(vm: PreflightViewModel, onOpen: (StageId, String) -> 
                 fontSize = FontSize.BodySmall,
             )
         }
-        VintfResult(state)
+        BuildReadinessResults(state, onOpen, onOpenSetup, vm::check, vm::apply, resolveLink)
         SamePhone(state, vm)
-        state.findings?.let { findings ->
-            val stops = findings.count { it.blocks }
-            Text(
-                when {
-                    findings.isEmpty() -> "Nothing would stop the build."
-                    stops == 0 -> "Nothing would stop the build; ${findings.size} note(s)."
-                    else -> "$stops thing(s) would stop the build."
-                },
-                color = if (stops == 0) GlassTheme.diagnosticColors.success else GlassTheme.diagnosticColors.error,
-                fontSize = FontSize.BodySmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.testTag("PreflightSummary"),
-            )
-            findings.forEach { FindingRow(it, vm, onOpen) }
-        }
-        NextBuildSection(state)
     }
 }
 
 @Composable
-private fun VintfResult(state: PreflightUiState) {
+internal fun BuildReadinessResults(
+    state: PreflightUiState,
+    onOpen: (StageId, String) -> Unit,
+    onOpenSetup: () -> Unit,
+    onRetry: () -> Unit,
+    onApply: (PreflightFix.Setting) -> Unit,
+    resolveLink: (PreflightFix.Open) -> ReadinessStageLink = { ReadinessStageLink(it) },
+) {
+    val stageLink: @Composable (PreflightFix.Open) -> Unit = { requested ->
+        val link = resolveLink(requested)
+        Column {
+            link.explanation?.let { ReadinessText(it) }
+            EvidenceLink(link.fix.label) { onOpen(link.fix.stage, link.fix.objectId) }
+        }
+    }
+    val blockers = state.findings.orEmpty().filter { it.blocks }
+    if (state.inputsChanged) {
+        ReadinessText("Workspace inputs changed. Run the check again for a current result.")
+    }
+    if (state.findings != null) {
+        val complete = state.vintf?.status == VintfStatus.COMPATIBLE ||
+            state.vintf?.status == VintfStatus.INCOMPATIBLE && state.vintf.evidence.isEmpty()
+        Text(
+            when {
+                blockers.size == 1 -> "Blocked by 1 finding"
+                blockers.isNotEmpty() -> "Blocked by ${blockers.size} findings"
+                !complete -> "Checks incomplete"
+                else -> "No blocking findings"
+            },
+            color = when {
+                blockers.isNotEmpty() -> GlassTheme.diagnosticColors.error
+                !complete -> GlassTheme.diagnosticColors.warning
+                else -> GlassTheme.diagnosticColors.success
+            },
+            fontSize = FontSize.BodySmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.testTag("PreflightSummary"),
+        )
+        blockers.forEach { FindingRow(it, onApply, stageLink) }
+    }
+    NextBuildSection(state)
+    VintfResult(state, stageLink, onOpenSetup, onRetry)
+    state.findings.orEmpty().filterNot { it.blocks }.forEach { FindingRow(it, onApply, stageLink) }
+}
+
+@Composable
+private fun VintfResult(
+    state: PreflightUiState,
+    stageLink: @Composable (PreflightFix.Open) -> Unit,
+    onOpenSetup: () -> Unit,
+    onRetry: () -> Unit,
+) {
     val result = state.vintf
     val status = result?.status ?: VintfStatus.NOT_RUN
     val colors = GlassTheme.diagnosticColors
@@ -132,9 +178,77 @@ private fun VintfResult(state: PreflightUiState) {
         fontSize = FontSize.BodySmall,
         modifier = Modifier.testTag("PreflightVintfStatus"),
     )
-    result?.missingEvidence?.forEach { missing ->
-        Text(missing, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
+    if (result == null) return
+    val android = result.androidRelease?.let { "Android $it" }
+    val firstApi = result.firstApiLevel?.let { "Vendor first API level $it" }
+    listOfNotNull(android, firstApi).joinToString(" · ").takeIf(String::isNotEmpty)?.let { ReadinessText(it) }
+    if (result.skuResults.isNotEmpty()) {
+        ReadinessHeading("Checker results by SKU")
     }
+    result.skuResults.forEach { sku ->
+        val vendor = sku.vendorSku ?: "default"
+        val odm = sku.odmSku ?: "default"
+        val confidence = if (sku.provisional) " · Provisional" else ""
+        ReadinessText("Vendor SKU $vendor · ODM SKU $odm · ${sku.status.label}$confidence")
+    }
+    if (result.skuResults.any { it.status == VintfStatus.INCOMPATIBLE }) {
+        stageLink(PreflightFix.Open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline"))
+    }
+    if (result.evidence.isNotEmpty()) {
+        ReadinessHeading("Missing VINTF evidence")
+        result.evidence.forEach { VintfEvidenceRow(it, stageLink, onOpenSetup) }
+        if (result.evidence.any { it.kind == VintfEvidenceKind.SCAN }) EvidenceLink("Retry the checks", onRetry)
+    }
+}
+
+@Composable
+private fun VintfEvidenceRow(
+    evidence: VintfEvidence,
+    stageLink: @Composable (PreflightFix.Open) -> Unit,
+    onOpenSetup: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().testTag("VintfEvidence_${evidence.kind.name}")) {
+        ReadinessText(evidence.message)
+        val fix = when (evidence.kind) {
+            VintfEvidenceKind.ASSEMBLY ->
+                PreflightFix.Open("Open Assemble work trees", StageId.WORK_TREE_ASSEMBLY, "work-trees")
+
+            VintfEvidenceKind.PARTITION ->
+                PreflightFix.Open("Review extracted partitions", StageId.FIRMWARE_EXTRACTION, "dynamic-partitions")
+
+            VintfEvidenceKind.FIRMWARE_METADATA, VintfEvidenceKind.APEX ->
+                PreflightFix.Open("Inspect firmware files", StageId.WORK_TREE_ASSEMBLY, "image-browser")
+
+            VintfEvidenceKind.KERNEL ->
+                PreflightFix.Open("Open boot preparation", StageId.WORK_TREE_ASSEMBLY, "boot-preparation")
+
+            VintfEvidenceKind.TOOL, VintfEvidenceKind.SCAN -> null
+        }
+        if (fix != null) stageLink(fix)
+        if (evidence.kind == VintfEvidenceKind.TOOL) EvidenceLink("Open Setup for vintf-tools", onOpenSetup)
+    }
+}
+
+@Composable
+private fun ReadinessHeading(text: String) {
+    Text(
+        text,
+        color = MaterialTheme.colorScheme.onSurface,
+        fontSize = FontSize.BodySmall,
+        fontWeight = FontWeight.SemiBold,
+    )
+}
+
+@Composable
+private fun EvidenceLink(label: String, onClick: () -> Unit) {
+    GlassButton(onClick = onClick, variant = GlassButtonVariant.Text) {
+        Text(label, fontSize = FontSize.BodySmall)
+    }
+}
+
+@Composable
+private fun ReadinessText(text: String) {
+    Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
 }
 
 /** If you build now: what changed since the last build that worked, which stages run and why, time and disk. */
@@ -154,11 +268,16 @@ private fun NextBuildSection(state: PreflightUiState) {
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
         Text(
-            "If you build now",
+            "Planned stages",
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = FontSize.BodySmall,
             fontWeight = FontWeight.SemiBold,
         )
+        next.stages.forEach { stage ->
+            val label = PipelineStageSequence.label(stage.stageId)
+            val reason = stage.runsBecause
+            ReadinessText(if (reason == null) "$label · Reuse cached output" else "$label · Run — $reason")
+        }
         nextBuildLines(next).forEach { line ->
             Text(line, color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
         }
@@ -242,6 +361,7 @@ private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
     UpgradeReport(state)
     asked?.let { other ->
         GlassDialog(
+            scrollContent = true,
             onDismissRequest = { asked = null },
             title = "Use the settings of ${other.name}?",
             confirmButton = {
@@ -269,7 +389,11 @@ private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
 }
 
 @Composable
-private fun FindingRow(finding: PreflightFinding, vm: PreflightViewModel, onOpen: (StageId, String) -> Unit) {
+private fun FindingRow(
+    finding: PreflightFinding,
+    onApply: (PreflightFix.Setting) -> Unit,
+    stageLink: @Composable (PreflightFix.Open) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().testTag("PreflightFinding_${finding.code}"),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -285,14 +409,11 @@ private fun FindingRow(finding: PreflightFinding, vm: PreflightViewModel, onOpen
             Text(finding.message, color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
         }
         when (val fix = finding.fix) {
-            is PreflightFix.Setting -> GlassButton(onClick = { vm.apply(fix) }, variant = GlassButtonVariant.Standard) {
+            is PreflightFix.Setting -> GlassButton(onClick = { onApply(fix) }, variant = GlassButtonVariant.Standard) {
                 Text(fix.label, fontSize = FontSize.BodySmall)
             }
 
-            is PreflightFix.Open -> GlassButton(
-                onClick = { onOpen(fix.stage, fix.objectId) },
-                variant = GlassButtonVariant.Text,
-            ) { Text("${fix.label} →", fontSize = FontSize.BodySmall) }
+            is PreflightFix.Open -> stageLink(fix.copy(label = "${fix.label} →"))
 
             null -> Unit
         }

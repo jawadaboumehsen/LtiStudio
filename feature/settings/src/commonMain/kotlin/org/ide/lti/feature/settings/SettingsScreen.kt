@@ -9,17 +9,17 @@
  */
 package org.ide.lti.feature.settings
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -125,14 +125,14 @@ fun SettingsScreenContent(
                     )
                 }
             },
-            navigator = {
+            pipelineRail = {
                 IdeNavigatorPanel(
                     headerTitle = "SETTINGS",
                     headerSubtitle = null,
                     items = settingsNavItems,
                     selectedItemId = selectedNavId,
                     onSelectItem = { id -> selectedCategory = navIdToCategory(id) },
-                    iconsOnly = true,
+                    iconsOnly = isCompact,
                 )
             },
             statusBar = {
@@ -162,10 +162,11 @@ fun SettingsScreenContent(
                 )
             },
             content = {
-                Box(
+                val scrollState = key(selectedCategory) { rememberScrollState() }
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(
                             start = Spacing.ScreenHorizontal,
                             top = Spacing.ScreenVertical,
@@ -173,10 +174,12 @@ fun SettingsScreenContent(
                             bottom = Spacing.ScreenVertical + Spacing.ExtraExtraLarge * 2,
                         ),
                 ) {
+                    val stackSections = maxWidth < GlassDimens.SettingsTwoColumnMinWidth * density.fontScale
                     when (selectedCategory) {
                         SettingsCategory.Appearance -> {
                             AppearanceSettingsPane(
                                 appSettingsState = appSettingsState,
+                                stackSections = stackSections,
                                 onRestoreDefaults = {
                                     appSettingsState.theme = AppSettingsState.THEME_BLUE
                                     appSettingsState.effectsEnabled = true
@@ -188,6 +191,7 @@ fun SettingsScreenContent(
                         SettingsCategory.About -> {
                             AboutSettingsPane(
                                 environment = environment,
+                                stackSections = stackSections,
                                 onOpenFolder = { environmentPort?.openFolder(it) },
                             )
                         }

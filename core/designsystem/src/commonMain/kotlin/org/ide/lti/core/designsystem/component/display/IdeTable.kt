@@ -47,7 +47,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Standard data table container for IDE tool, baseline, and package listings.
- * Encapsulates the normative Blue Glass surface, header, and row styling.
+ * Shares the Studio's shallow header and quiet selection tint.
  */
 @Composable
 public fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -61,7 +61,7 @@ public fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnSc
 }
 
 /**
- * Header row for [IdeTable] with fixed 36 dp height and muted title-case labels.
+ * Header row for [IdeTable] with a minimum height and muted title-case labels.
  */
 @Composable
 public fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
@@ -69,8 +69,8 @@ public fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable Ro
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(GlassDimens.TableHeaderRowHeight)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .heightIn(min = GlassDimens.TableHeaderRowHeight)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(horizontal = Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
             content = content,
@@ -99,7 +99,7 @@ public fun IdeTableRow(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val rowBg = when {
-        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Faded)
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle)
         isHovered && isEnabled -> MaterialTheme.colorScheme.surfaceContainerHigh
         else -> Color.Transparent
     }

@@ -108,10 +108,10 @@ private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Un
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Workspace Restore Points",
                     fontSize = FontSize.BodyMedium,

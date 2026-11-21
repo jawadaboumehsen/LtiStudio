@@ -18,10 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -31,6 +28,8 @@ import org.ide.lti.core.designsystem.theme.ToggleDimensions
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.settings.SettingsScreenContent
 import org.ide.lti.feature.settings.model.SettingsCategory
+import org.ide.lti.feature.settings.runSettingsUiTest
+import org.ide.lti.feature.settings.scrollToSettingsNode
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.junit.Test
@@ -43,7 +42,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
     // --- 1. Blue Glass Theme ---
     @Test
     fun testSettingsAppearance_Blue_EffectsOn_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Blue,
                 effectsOn = true,
@@ -55,7 +54,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Blue_EffectsOn_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Blue,
                 effectsOn = true,
@@ -67,7 +66,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Blue_EffectsOff_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Blue,
                 effectsOn = false,
@@ -79,7 +78,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Blue_EffectsOff_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Blue,
                 effectsOn = false,
@@ -92,7 +91,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
     // --- 2. Dark Theme ---
     @Test
     fun testSettingsAppearance_Dark_EffectsOn_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Dark,
                 effectsOn = true,
@@ -104,7 +103,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Dark_EffectsOn_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Dark,
                 effectsOn = true,
@@ -116,7 +115,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Dark_EffectsOff_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Dark,
                 effectsOn = false,
@@ -128,7 +127,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Dark_EffectsOff_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Dark,
                 effectsOn = false,
@@ -141,7 +140,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
     // --- 3. Light Theme ---
     @Test
     fun testSettingsAppearance_Light_EffectsOn_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Light,
                 effectsOn = true,
@@ -153,7 +152,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Light_EffectsOn_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Light,
                 effectsOn = true,
@@ -165,7 +164,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Light_EffectsOff_PairA() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Light,
                 effectsOn = false,
@@ -177,7 +176,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
 
     @Test
     fun testSettingsAppearance_Light_EffectsOff_PairB() =
-        runDesktopComposeUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
+        runSettingsUiTest(width = WIDTH_STANDARD, height = HEIGHT_STANDARD) {
             renderAndSaveSettings(
                 AppTheme.Light,
                 effectsOn = false,
@@ -223,7 +222,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
         }
 
         waitForIdle()
-        val cardNode = onNodeWithTag("GlassCard_glass_and_motion").performScrollTo().assertIsDisplayed()
+        val cardNode = scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
         waitForIdle()
 
         val outputDir = File("build/reports/screenshots")

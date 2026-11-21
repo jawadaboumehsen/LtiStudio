@@ -14,11 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.usecase.publish.PublishPreflight
 import org.ide.lti.core.domain.usecase.publish.PublishReleaseUseCase
 import org.ide.lti.core.domain.usecase.publish.PublishTransfer
 import org.ide.lti.core.model.workspace.PublishSettings
@@ -30,10 +32,16 @@ import kotlin.time.TimeSource
  * The publishes of this app session, one per workspace. A publish runs here, not in its editor: it goes on when the
  * editor closes or the person leaves the workspace, and the editor shows it again when it comes back.
  */
-public class PublishSessions(
+public class PublishSessions internal constructor(
     private val publisher: PublishReleaseUseCase?,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val scope: CoroutineScope,
+    private val check: (suspend (String, PublishSettings) -> PublishPreflight)?,
 ) {
+    public constructor(
+        publisher: PublishReleaseUseCase?,
+        scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    ) : this(publisher, scope, publisher?.let { use -> { id, settings -> use.preflight(id, settings) } })
+
     private val states = mutableMapOf<String, MutableStateFlow<PublishUiState>>()
 
     // Publishes of several workspaces run at once on the default dispatcher: these maps are shared between them.
@@ -52,43 +60,52 @@ public class PublishSessions(
         synchronized(states) { states.getOrPut(workspaceId) { MutableStateFlow(PublishUiState()) } }
 
     /** Reads what Publish would do with [settings] (the editor's, maybe unsaved) and the last attempt's journal. */
+    @Synchronized
     public fun refresh(workspaceId: String, settings: PublishSettings) {
-        val use = publisher ?: return
+        val checkRelease = check ?: return
+        val state = flow(workspaceId)
         latestSettings[workspaceId] = settings
+        state.update { it.copy(review = null) }
         // The newest settings' check replaces an older one still running: its result is for settings left behind.
         refreshes[workspaceId]?.cancel()
         refreshes[workspaceId] = scope.launch {
-            val preflight = try {
-                use.preflight(workspaceId, settings)
+            val review = try {
+                PublishReview(settings, checkRelease(workspaceId, settings))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                flow(workspaceId).update { it.copy(error = "Could not check the release: ${e.message}") }
+                synchronized(this@PublishSessions) {
+                    coroutineContext.ensureActive()
+                    state.update { it.copy(error = "Could not check the release: ${e.message}") }
+                }
                 return@launch
             }
-            flow(workspaceId).update {
-                // While publishing, the live journal is the running one; the file is only as new as its last step.
-                it.copy(
-                    preflight = preflight,
-                    journal = if (it.publishing) it.journal else preflight.journal,
-                    // A good check ends a failed check's message, not a stopped publish's (it ran before this).
-                    error = it.error?.takeIf { e -> e.startsWith(PUBLISH_STOPPED) },
-                )
+            synchronized(this@PublishSessions) {
+                coroutineContext.ensureActive()
+                state.update {
+                    it.copy(
+                        review = review,
+                        journal = if (it.publishing) it.journal else review.preflight.journal,
+                        error = it.error?.takeIf { e -> e.startsWith(PUBLISH_STOPPED) },
+                    )
+                }
             }
         }
     }
 
     /** Publishes (or resumes the last attempt). Only called after the person confirms it. */
-    public fun publish(workspaceId: String, settings: PublishSettings) {
+    @Synchronized
+    public fun publish(workspaceId: String, review: PublishReview) {
         val use = publisher ?: return
         val state = flow(workspaceId)
-        if (state.value.publishing) return
+        if (state.value.readyReview(review.settings) !== review) return
         state.update { it.copy(publishing = true, transfer = null, bytesPerSecond = null, error = null) }
         jobs[workspaceId] = scope.launch {
             try {
                 val journal = use.publish(
                     workspaceId = workspaceId,
-                    edited = settings,
+                    edited = review.settings,
+                    reviewed = review.preflight,
                     onProgress = { journal -> state.update { it.copy(journal = journal) } },
                     onTransfer = { onTransfer(workspaceId, it) },
                 )
@@ -99,13 +116,16 @@ public class PublishSessions(
                 // Outside a step (the service gone, the journal not written): said, never a silent stop.
                 state.update { it.copy(error = "$PUBLISH_STOPPED ${e.message}") }
             } finally {
-                state.update { it.copy(publishing = false, cancelling = false, transfer = null) }
-                refresh(workspaceId, latestSettings[workspaceId] ?: settings)
+                synchronized(this@PublishSessions) {
+                    state.update { it.copy(publishing = false, cancelling = false, transfer = null, review = null) }
+                    refresh(workspaceId, latestSettings[workspaceId] ?: review.settings)
+                }
             }
         }
     }
 
     /** Stops the running publish; the journal keeps what is done, so publishing again resumes. */
+    @Synchronized
     public fun cancel(workspaceId: String) {
         val state = flow(workspaceId)
         if (!state.value.publishing) return

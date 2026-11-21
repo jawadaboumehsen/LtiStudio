@@ -37,12 +37,14 @@ public class PatchStageEditor : StageEditor {
         val viewModel: PatchViewModel = koinViewModel { parametersOf(context.workspaceId) }
         val settings by viewModel.settings.collectAsState()
         val facts by viewModel.facts.collectAsState()
+        val saveError by viewModel.saveError.collectAsState()
         if (selected == SCRIPTS) {
             val checks by viewModel.scriptCheck.collectAsState()
             ScriptsPane(
                 settings = settings,
                 onChange = viewModel::updateSettings,
                 checks = checks,
+                saveError = saveError,
                 onCheck = viewModel::checkScript,
                 modifier = modifier,
             )
@@ -59,6 +61,7 @@ public class PatchStageEditor : StageEditor {
             onRefresh = viewModel::refresh,
             onOpenPlugins = context.onOpenPlugins,
             selectedObjectId = selected,
+            saveError = saveError,
             modifier = modifier,
         )
     }

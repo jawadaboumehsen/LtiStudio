@@ -246,6 +246,7 @@ fun GlassLayout(
 /**
  * Preview of [GlassLayout] with sample panels.
  */
+@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassLayoutPreview() {

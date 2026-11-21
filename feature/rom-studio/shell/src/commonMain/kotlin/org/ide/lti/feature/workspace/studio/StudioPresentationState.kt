@@ -10,9 +10,11 @@
 package org.ide.lti.feature.workspace.studio
 
 import androidx.compose.runtime.Immutable
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
+import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
@@ -348,3 +350,28 @@ public fun lockStages(items: List<PipelineRailItemUi>, report: ValidationReport)
 /** The first stage before [target] (in [order]) whose settings have errors: the one to finish first; null when none. */
 internal fun stageBlocking(target: StageId, order: List<StageId>, report: ValidationReport): StageId? =
     order.takeWhile { it != target }.firstOrNull { report.blocks(it) }
+
+
+internal data class ReadinessStageLink(val fix: PreflightFix.Open, val explanation: String? = null)
+
+/** Make the rail's lock visible before clicking, and open the prerequisite's offending field. */
+internal fun readinessStageLink(
+    fix: PreflightFix.Open,
+    order: List<StageId>,
+    report: ValidationReport,
+): ReadinessStageLink {
+    val requested = PipelineStageSequence.label(fix.stage)
+    if (report.blocks(null)) {
+        return ReadinessStageLink(
+            fix.copy(label = "Fix device configuration first"),
+            "$requested is locked until device configuration errors are fixed.",
+        )
+    }
+    val blocker = stageBlocking(fix.stage, order, report) ?: return ReadinessStageLink(fix)
+    val stage = PipelineStageSequence.label(blocker)
+    val problem = report.errors.firstOrNull { it.stageId == blocker && it.severity == Severity.ERROR }
+    return ReadinessStageLink(
+        PreflightFix.Open("Fix $stage first", blocker, problem?.objectId.orEmpty()),
+        "$requested is locked until $stage is configured.",
+    )
+}

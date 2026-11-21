@@ -41,7 +41,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
  * output and a Cancel. Everything else about the group is frozen while it shows (see `ToolsPageState`).
  */
 @Composable
-public fun OperationProgressCard(
+fun OperationProgressCard(
     progress: OperationProgressPresentation,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,

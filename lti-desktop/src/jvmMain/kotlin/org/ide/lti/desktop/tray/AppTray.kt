@@ -22,6 +22,7 @@ import org.koin.core.context.GlobalContext
  * Uses Tao-native ComposeNativeTray to provide native Win32/Linux/macOS system tray presence,
  * quick action menu, and binds [DesktopNativeNotifier] to [DelegatingSystemNotifier] for OS notifications.
  */
+@Suppress("DEPRECATION")
 @Composable
 fun AppTray(
     icon: Painter = painterResource("icons/ic_launcher.png"),

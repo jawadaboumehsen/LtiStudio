@@ -18,6 +18,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -85,10 +86,11 @@ public fun OverviewBreadcrumbHeader(
         }
 
         // Title and Actions Row
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
@@ -118,12 +120,12 @@ private fun OverviewHeaderTargetAndActions(
     onReload: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         ) {
             Text(

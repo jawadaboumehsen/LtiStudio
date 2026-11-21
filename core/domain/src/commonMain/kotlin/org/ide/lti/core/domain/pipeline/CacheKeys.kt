@@ -92,6 +92,8 @@ public object CacheKeys {
     ): String {
         val raw = listOf(
             stage4Key,
+            "vintf-per-sku-1",
+            snapshot.build.vintfMismatchAcknowledgements.sorted().joinToString(","),
             deviceDigest,
             snapshot.build.filesystem,
             snapshot.build.keepStock.sorted().joinToString(","),

@@ -11,6 +11,8 @@ package org.ide.lti.feature.plugins
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -116,6 +118,8 @@ public class PluginManagerViewModel(
     )
     public val uiState: StateFlow<PluginManagerUiState> = _uiState.asStateFlow()
 
+    private var installedRefresh: Job? = null
+
     init {
         refreshInstalled()
         observeCurrentWorkspace()
@@ -169,9 +173,11 @@ public class PluginManagerViewModel(
     }
 
     public fun refreshInstalled() {
-        viewModelScope.launch {
+        installedRefresh?.cancel()
+        installedRefresh = viewModelScope.launch {
             val records = pluginInstallPort.installed()
             val refs = packageReferences(records, workspaceUsage?.usersOf().orEmpty())
+            coroutineContext.ensureActive()
             _uiState.update {
                 it.copy(installedPackages = records, packageReferences = refs)
             }

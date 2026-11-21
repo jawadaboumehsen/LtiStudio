@@ -153,7 +153,7 @@ public object KotlinStoreLayout {
                 data.url,
                 data.sha256,
                 data.member,
-            ).joinToString("\u0000") { it?.toString().orEmpty() }
+            ).joinToString("\u0000") { it.orEmpty() }
         val digest = java.security.MessageDigest.getInstance("SHA-256").digest(identity.toByteArray(Charsets.UTF_8))
         val short = (data.commit ?: data.sha256).orEmpty().take(SHORT_ID_LENGTH)
         return short + "-" + digest.take(DIGEST_BYTES).joinToString("") { "%02x".format(it) }

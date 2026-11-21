@@ -250,7 +250,6 @@ public object WorkspaceOverviewMapper {
         val firstError = errors.firstOrNull { it.severity == Severity.ERROR }
         val firstWarning = errors.firstOrNull { it.severity == Severity.WARNING }
         val debloat = draft?.debloat
-        val isConfigured = debloat != null && (debloat.enabled || debloat.removeSelectors.isNotEmpty())
 
         return when {
             firstError != null -> ReadinessItemUi(
@@ -277,7 +276,7 @@ public object WorkspaceOverviewMapper {
                 priority = PRIORITY_DEBLOAT_WARNING,
             )
 
-            isConfigured && debloat != null -> {
+            debloat != null && (debloat.enabled || debloat.removeSelectors.isNotEmpty()) -> {
                 val label = if (debloat.removeSelectors.isNotEmpty()) {
                     "${debloat.removeSelectors.size} rules active"
                 } else {
@@ -322,7 +321,6 @@ public object WorkspaceOverviewMapper {
         val customization = draft?.customization
         val hasCustomPackages = customization?.enabledPackages?.isNotEmpty() == true
         val hasLockfileEntries = customization?.lockfile?.entries?.isNotEmpty() == true
-        val hasPatches = hasCustomPackages || hasLockfileEntries
 
         return when {
             firstError != null -> ReadinessItemUi(
@@ -349,7 +347,7 @@ public object WorkspaceOverviewMapper {
                 priority = PRIORITY_PATCHES_WARNING,
             )
 
-            hasPatches && customization != null -> {
+            customization != null && (hasCustomPackages || hasLockfileEntries) -> {
                 val count = customization.enabledPackages.size.coerceAtLeast(customization.lockfile.entries.size)
                 ReadinessItemUi(
                     id = ReadinessId.PATCHES,

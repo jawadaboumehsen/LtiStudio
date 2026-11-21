@@ -65,7 +65,7 @@ class WorkspaceJailInterceptorTest {
 
             val result = interceptor.intercept(chain)
             assertTrue(result is ToolResult.Failure.SecurityViolation)
-            assertTrue((result as ToolResult.Failure.SecurityViolation).message.contains("Directory traversal escape"))
+            assertTrue(result.message.contains("Directory traversal escape"))
         } finally {
             tempDir.deleteRecursively()
         }
@@ -99,7 +99,7 @@ class WorkspaceJailInterceptorTest {
 
             val result = interceptor.intercept(chain)
             assertTrue(result is ToolResult.Failure.SecurityViolation)
-            assertTrue((result as ToolResult.Failure.SecurityViolation).message.contains("outside approved workspace roots"))
+            assertTrue(result.message.contains("outside approved workspace roots"))
         } finally {
             jailDir.deleteRecursively()
             outsideDir.deleteRecursively()
@@ -133,7 +133,7 @@ class WorkspaceJailInterceptorTest {
 
             val result = interceptor.intercept(chain)
             assertTrue(result is ToolResult.Success)
-            assertEquals("ok", (result as ToolResult.Success).value)
+            assertEquals("ok", result.value)
         } finally {
             jailDir.deleteRecursively()
         }

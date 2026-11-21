@@ -9,19 +9,17 @@
  */
 package org.ide.lti.feature.workspace.panels.run
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +46,6 @@ import org.ide.lti.core.designsystem.component.navigation.GlassTab
 import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.theme.ComponentSize
-import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
@@ -139,7 +136,7 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
                 )
                 Text(
                     text = if (uiState.currentWorkspace != null) {
-                        "Workspace: ${uiState.currentWorkspace?.name}"
+                        "Workspace: ${uiState.currentWorkspace.name}"
                     } else {
                         "Loading the workspace…"
                     },
@@ -212,10 +209,11 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
 /** Where the next run stops: the whole build, or after one stage (to inspect or configure what it produced). */
 @Composable
 private fun RunThroughSelector(selected: StageId?, onSelect: (StageId?) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).testTag("RunThroughSelector"),
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().testTag("RunThroughSelector"),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "Run through",
@@ -233,7 +231,7 @@ private fun RunThroughSelector(selected: StageId?, onSelect: (StageId?) -> Unit)
 @Composable
 private fun RunStateBanners(uiState: BuildRunUiState, onNavigateToSetup: (() -> Unit)?, onReattach: () -> Unit) {
     if (uiState.environmentReadiness != null &&
-        uiState.environmentReadiness?.state != EnvironmentReadinessState.READY
+        uiState.environmentReadiness.state != EnvironmentReadinessState.READY
     ) {
         GlassBanner(
             severity = GlassBannerSeverity.WARNING,
@@ -364,7 +362,7 @@ public fun ActiveRunContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = uiState.errorMessage ?: "",
+                        text = uiState.errorMessage,
                         style = typography.bodySmall,
                         color = GlassTheme.diagnosticColors.error,
                     )

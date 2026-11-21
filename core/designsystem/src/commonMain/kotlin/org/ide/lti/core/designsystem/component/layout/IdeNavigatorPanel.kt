@@ -14,6 +14,7 @@ package org.ide.lti.core.designsystem.component.layout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -229,14 +230,15 @@ private fun NavigatorItemRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
     val visuals = resolveNavVisuals(item = item, isSelected = isSelected, isPressed = isPressed, isHovered = isHovered)
 
-    val borderModifier = if (visuals.borderColor != null) {
+    val borderModifier = if (isFocused) {
         Modifier.glassOutlineBorder(
             width = GlassDimens.HairlineBorder,
-            color = visuals.borderColor,
-            shape = GlassShapes.ShellPill,
+            color = MaterialTheme.colorScheme.primary,
+            shape = GlassShapes.Small,
         )
     } else {
         Modifier
@@ -250,8 +252,8 @@ private fun NavigatorItemRow(
                 vertical = Spacing.Hairline,
             )
             .height(if (iconsOnly) GlassDimens.PipelineStageItemHeight else GlassDimens.NavigatorItemHeight)
-            .background(visuals.bg, shape = GlassShapes.ShellPill)
-            .clip(GlassShapes.ShellPill)
+            .background(visuals.bg, shape = GlassShapes.Small)
+            .clip(GlassShapes.Small)
             .then(borderModifier)
             .testTag("NavigatorItem_${item.id}")
             .semantics {
@@ -302,7 +304,7 @@ private fun NavigatorItemRow(
     }
 }
 
-private data class NavItemVisuals(val bg: Color, val contentColor: Color, val borderColor: Color?)
+private data class NavItemVisuals(val bg: Color, val contentColor: Color)
 
 @Composable
 private fun resolveNavVisuals(
@@ -318,7 +320,6 @@ private fun resolveNavVisuals(
     return NavItemVisuals(
         bg = navItemBackground(item.enabled, isSelected, isPressed, isHovered, effectsEnabled, colors),
         contentColor = navItemContentColor(item.enabled, isSelected, isHovered, isBlue, effectsEnabled, colors),
-        borderColor = if (isSelected) (if (isBlue) colors.outline else colors.primary) else null,
     )
 }
 

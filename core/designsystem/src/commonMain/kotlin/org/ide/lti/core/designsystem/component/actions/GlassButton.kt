@@ -111,7 +111,7 @@ fun GlassButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: HazeShape = GlassShapes.HazeCapsule,
+    shape: HazeShape = GlassShapes.HazeSmall,
     variant: GlassButtonVariant = GlassButtonVariant.Standard,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
@@ -232,7 +232,7 @@ private fun contentColor(colors: ColorScheme): Color = colors.onSurface
 fun GlassPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: HazeShape = GlassShapes.HazeCapsule,
+    shape: HazeShape = GlassShapes.HazeSmall,
     enabled: Boolean = true,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
@@ -259,7 +259,7 @@ fun GlassPrimaryButton(
 fun GlassSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: HazeShape = GlassShapes.HazeCapsule,
+    shape: HazeShape = GlassShapes.HazeSmall,
     enabled: Boolean = true,
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,

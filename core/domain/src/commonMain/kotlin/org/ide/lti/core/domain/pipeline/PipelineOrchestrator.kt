@@ -1186,7 +1186,7 @@ public class PipelineOrchestrator(
         driver.runtimeValues.clear()
         driver.runtimeValues.putAll(before)
         val reason = when {
-            stopsBefore -> "work/ holds what ${leftAfter?.let(::label)} did, and this run stops before it"
+            stopsBefore -> "work/ holds what ${label(leftAfter)} did, and this run stops before it"
 
             // The first stage says why itself; a later one is why the whole group runs again.
             stale != null -> stale.first.takeUnless { it == stages[index] }?.let { s ->

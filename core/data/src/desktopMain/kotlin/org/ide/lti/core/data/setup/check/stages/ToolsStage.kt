@@ -224,8 +224,8 @@ public class ToolsStage(private val toolManager: ToolManager? = null) : CheckSta
                     }
                 tool.copy(
                     path =
-                    if (exists && group != null && output != null) {
-                        "$home/LtiRomTools/bin/${group.id.value}/current/${output.file}"
+                    if (exists) {
+                        "$home/LtiRomTools/bin/${group!!.id.value}/current/${output!!.file}"
                     } else {
                         null
                     },

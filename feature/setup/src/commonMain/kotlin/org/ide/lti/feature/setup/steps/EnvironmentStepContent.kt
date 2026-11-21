@@ -321,11 +321,15 @@ fun EnvironmentStepContent(
 
             val activeRunIds = toolchainSetupState.stepRunIds.filterValues { it.isNotBlank() }
             if (activeRunIds.isNotEmpty()) {
-                val runSummary = activeRunIds.entries.joinToString(", ") { "${it.key.displayName}: ${it.value}" }
+                val runSummary = activeRunIds.entries.joinToString(", ") { (key, value) ->
+                    "${key.displayName}: $value"
+                }
                 GlassBanner(
                     severity = GlassBannerSeverity.INFO,
                     title = "Active Durable Run",
-                    description = "Executing durable background run ($runSummary). Reattaches automatically across session restarts.",
+                    description =
+                        "Executing durable background run ($runSummary). " +
+                            "Reattaches automatically across session restarts.",
                 )
             }
 

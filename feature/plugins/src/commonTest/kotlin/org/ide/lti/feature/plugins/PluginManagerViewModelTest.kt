@@ -9,12 +9,15 @@
  */
 package org.ide.lti.feature.plugins
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.plugin.AuthorProject
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort
@@ -170,6 +173,32 @@ class PluginManagerViewModelTest {
         assertIs<AuthorTaskResult.Success>(viewModel.uiState.value.authorTaskResult)
     }
 
+    @Test
+    fun anOlderInventoryCannotReplaceANewerRefresh() = runTest(testDispatcher) {
+        val previousRead = CompletableDeferred<Unit>()
+        val old = InstalledRecord(
+            PackageIdentity("test.pub", "test-pkg", "1.0.0", "digest-test"),
+            org.ide.lti.core.domain.plugin.TrustDecision.TRUSTED_SIGNATURE,
+            emptyList(),
+            revoked = false,
+            archived = false,
+            dependencies = emptyList(),
+            conflicts = emptyList(),
+        )
+        fakeInstallPort.records += old
+        fakeInstallPort.pauseInstalled = previousRead
+        testDispatcher.scheduler.runCurrent()
+
+        fakeInstallPort.records.clear()
+        viewModel.refreshInstalled()
+        testDispatcher.scheduler.runCurrent()
+        assertEquals(emptyList(), viewModel.uiState.value.installedPackages)
+
+        previousRead.complete(Unit)
+        testDispatcher.scheduler.runCurrent()
+        assertEquals(emptyList(), viewModel.uiState.value.installedPackages)
+    }
+
     private class FakePluginInstallPort : PluginInstallPort {
         val records = mutableListOf<InstalledRecord>()
         val quarantinedCalls = mutableListOf<String>()
@@ -187,7 +216,15 @@ class PluginManagerViewModelTest {
 
         override suspend fun promote(quarantined: Path, identity: PackageIdentity): Boolean = true
 
-        override suspend fun installed(): List<InstalledRecord> = records.toList()
+        var pauseInstalled: CompletableDeferred<Unit>? = null
+
+        override suspend fun installed(): List<InstalledRecord> {
+            val snapshot = records.toList()
+            val pause = pauseInstalled
+            pauseInstalled = null
+            if (pause != null) withContext(NonCancellable) { pause.await() }
+            return snapshot
+        }
 
         override suspend fun remove(identity: PackageIdentity): Boolean = records.removeAll { it.identity == identity }
 

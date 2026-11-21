@@ -53,6 +53,7 @@ private fun buildWindowControlActions(
     var dragStartMouseY = 0
     var dragStartWindowX = 0
     var dragStartWindowY = 0
+    var isDragging = false
 
     return WindowControlActions(
         onMinimize = {
@@ -80,6 +81,7 @@ private fun buildWindowControlActions(
         },
         onClose = onClose,
         onDragWindow = {
+            isDragging = true
             try {
                 nucleusWin.unsafe.taoWindow?.dragWindow()
             } catch (_: Throwable) {
@@ -94,17 +96,39 @@ private fun buildWindowControlActions(
                 }
             }
         },
-        onDragDelta = { _, _ ->
-            if (windowState.placement != WindowPlacement.Maximized) {
+        onDragDelta = { dx, dy ->
+            if (isDragging) {
                 awtWin?.let { win ->
                     val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
-                    if (mouseLoc != null) {
-                        val newX = dragStartWindowX + (mouseLoc.x - dragStartMouseX)
-                        val newY = dragStartWindowY + (mouseLoc.y - dragStartMouseY)
-                        win.setLocation(newX, newY)
+                    if (windowState.placement == WindowPlacement.Maximized) {
+                        if (mouseLoc != null && dragStartMouseY != 0 && (mouseLoc.y - dragStartMouseY) > 15) {
+                            windowState.placement = WindowPlacement.Floating
+                            try {
+                                nucleusWin.setMaximized(false)
+                            } catch (_: Throwable) {
+                            }
+                            dragStartWindowX = mouseLoc.x - (win.width / 2)
+                            dragStartWindowY = mouseLoc.y - 15
+                            dragStartMouseX = mouseLoc.x
+                            dragStartMouseY = mouseLoc.y
+                            win.setLocation(dragStartWindowX, dragStartWindowY)
+                        }
+                    } else {
+                        if (mouseLoc != null && (dragStartMouseX != 0 || dragStartMouseY != 0)) {
+                            val newX = dragStartWindowX + (mouseLoc.x - dragStartMouseX)
+                            val newY = dragStartWindowY + (mouseLoc.y - dragStartMouseY)
+                            win.setLocation(newX, newY)
+                        } else if (dx != 0f || dy != 0f) {
+                            win.setLocation(win.x + dx.toInt(), win.y + dy.toInt())
+                        }
                     }
                 }
             }
+        },
+        onDragEnd = {
+            isDragging = false
+            dragStartMouseX = 0
+            dragStartMouseY = 0
         },
         isMaximized = {
             windowState.placement == WindowPlacement.Maximized ||
@@ -117,6 +141,7 @@ private fun buildWindowControlActions(
     )
 }
 
+@Suppress("DEPRECATION")
 fun main(args: Array<String>) {
     StartupTiming.log("Process started")
     val instance = SingleInstanceGuard.acquireOrExplain(SingleInstanceGuard.defaultLockFile())
@@ -222,12 +247,13 @@ fun main(args: Array<String>) {
                 StartupTiming.log("DecoratedWindow composition entered")
             }
             val nucleusWin = LocalNucleusWindow.current
-            val windowControlActions =
+            val windowControlActions = remember(nucleusWin, windowState) {
                 buildWindowControlActions(
                     windowState = windowState,
                     nucleusWin = nucleusWin,
                     onClose = requestExit,
                 )
+            }
 
             DisposableEffect(nucleusWin) {
                 StartupTiming.log("DecoratedWindow native window attached")
