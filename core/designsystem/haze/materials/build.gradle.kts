@@ -24,6 +24,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(projects.core.designsystem.haze.blur)
+                implementation(projects.core.designsystem.haze.utils)
                 implementation(compose.runtime)
                 implementation(compose.material3)
                 implementation(compose.ui)

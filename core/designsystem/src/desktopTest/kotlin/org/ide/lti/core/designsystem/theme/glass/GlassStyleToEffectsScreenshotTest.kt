@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.GlassStyle
+import dev.chrisbanes.haze.glass.OpticalSizeValue
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -54,7 +55,9 @@ class GlassStyleToEffectsScreenshotTest {
                     if (applyStyle) {
                         val style = GlassStyle {
                             shape(RoundedCornerShape(CornerRadius.Medium))
-                            optics(blurRadius = BLUR_RADIUS)
+                            optics {
+                                copy(blurRadius = OpticalSizeValue.Fixed(BLUR_RADIUS))
+                            }
                         }
                         Box(
                             Modifier

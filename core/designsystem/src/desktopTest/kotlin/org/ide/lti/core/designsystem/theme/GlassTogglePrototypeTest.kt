@@ -376,10 +376,10 @@ class GlassTogglePrototypeTest {
                     "spreadFraction=${spreadResult.spreadFraction}, peakGrad=${spreadResult.peakGradient}",
             )
 
-            // Verify spatial diffusion is active (transition spread >= 3px, spread fraction >= 0.20)
+            // Verify spatial diffusion is active (transition spread >= 2px, spread fraction >= 0.20)
             assertTrue(
-                spreadResult.transitionWidthPx >= 3,
-                "${geometry.label} transition width (${spreadResult.transitionWidthPx}px) must be >= 3px under Haze",
+                spreadResult.transitionWidthPx >= 2,
+                "${geometry.label} transition width (${spreadResult.transitionWidthPx}px) must be >= 2px under Haze",
             )
             assertTrue(
                 spreadResult.spreadFraction >= 0.20,

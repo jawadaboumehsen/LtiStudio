@@ -1,12 +1,6 @@
-/*
- * Copyright 2026 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2026, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package dev.chrisbanes.haze
 
 import androidx.compose.runtime.CompositionLocal
@@ -14,16 +8,27 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isFinite
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.roundToIntSize
+import kotlin.math.ceil
+import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -33,8 +38,8 @@ import kotlinx.coroutines.CoroutineScope
  * independently owned renderer.
  */
 public fun interface HazeEffectFactory<Style> {
-    /** Creates renderer state owned by one `hazeEffect` modifier node. */
-    public fun createRenderer(): HazeEffectRenderer<Style>
+  /** Creates renderer state owned by one `hazeEffect` modifier node. */
+  public fun createRenderer(): HazeEffectRenderer<Style>
 }
 
 /**
@@ -46,25 +51,25 @@ public fun interface HazeEffectFactory<Style> {
  */
 public interface HazeEffectRenderer<Style> {
 
-    /** Draws the effect for the complete current [style]. */
-    public fun HazeEffectDrawScope.draw(style: Style)
+  /** Draws the effect for the complete current [style]. */
+  public fun HazeEffectDrawScope.draw(style: Style)
 
-    /**
-     * Returns the layer bounds required by the effect.
-     *
-     * The returned rect uses the same coordinate space as [HazeEffectLayoutScope.modifierBounds].
-     */
-    public fun HazeEffectLayoutScope.calculateLayerBounds(style: Style): Rect = modifierBounds
+  /**
+   * Returns the layer bounds required by the effect.
+   *
+   * The returned rect uses the same coordinate space as [HazeEffectLayoutScope.modifierBounds].
+   */
+  public fun HazeEffectLayoutScope.calculateLayerBounds(style: Style): Rect = modifierBounds
 
-    /** Releases cached resources in response to system memory pressure. */
-    public fun onTrimMemory(level: TrimMemoryLevel): Unit = Unit
+  /** Releases cached resources in response to system memory pressure. */
+  public fun onTrimMemory(level: TrimMemoryLevel): Unit = Unit
 
-    /**
-     * Releases all renderer-owned resources.
-     *
-     * Haze calls this once when the factory is replaced or the modifier node detaches.
-     */
-    public fun dispose(): Unit = Unit
+  /**
+   * Releases all renderer-owned resources.
+   *
+   * Haze calls this once when the factory is replaced or the modifier node detaches.
+   */
+  public fun dispose(): Unit = Unit
 }
 
 /**
@@ -75,17 +80,17 @@ public interface HazeEffectRenderer<Style> {
  */
 public interface HazeEffectDrawScope : DrawScope {
 
-    /** Bounds of the modifier in the current effect layer. */
-    public val modifierBounds: Rect
+  /** Bounds of the modifier in the current effect layer. */
+  public val modifierBounds: Rect
 
-    /** Input-sampling policy supplied to the typed `hazeEffect` modifier. */
-    public val sampling: HazeSampling
+  /** Input-sampling policy supplied to the typed `hazeEffect` modifier. */
+  public val sampling: HazeSampling
 
-    /** Draws the modifier's selected source-backed or own-content input. */
-    public fun drawInput()
+  /** Draws the modifier's selected source-backed or own-content input. */
+  public fun drawInput()
 
-    /** Returns the current value of [local] and observes it for redraw. */
-    public fun <T> currentValueOf(local: CompositionLocal<T>): T
+  /** Returns the current value of [local] and observes it for redraw. */
+  public fun <T> currentValueOf(local: CompositionLocal<T>): T
 }
 
 /**
@@ -96,11 +101,11 @@ public interface HazeEffectDrawScope : DrawScope {
  */
 public interface HazeEffectLayoutScope : Density {
 
-    /** Bounds of the modifier in the effect layer's coordinate space. */
-    public val modifierBounds: Rect
+  /** Bounds of the modifier in the effect layer's coordinate space. */
+  public val modifierBounds: Rect
 
-    /** Returns the current value of [local] and observes it for bounds recalculation. */
-    public fun <T> currentValueOf(local: CompositionLocal<T>): T
+  /** Returns the current value of [local] and observes it for bounds recalculation. */
+  public fun <T> currentValueOf(local: CompositionLocal<T>): T
 }
 
 /**
@@ -111,129 +116,143 @@ public interface HazeEffectLayoutScope : Density {
  */
 @InternalHazeApi
 public interface HazeEffectRendererLifecycle<Style> {
-    /** Acquires node-owned resources when the renderer becomes attached. */
-    public fun attach(scope: HazeEffectLifecycleScope): Unit = Unit
+  /** Acquires node-owned resources when the renderer becomes attached. */
+  public fun attach(scope: HazeEffectLifecycleScope): Unit = Unit
 
-    /** Applies the complete current [style] and [sampling] policy. */
-    public fun update(
-        scope: HazeEffectLifecycleScope,
-        style: Style,
-        sampling: HazeSampling,
-    ): Unit = Unit
+  /** Applies the complete current [style] and [sampling] policy. */
+  public fun update(
+    scope: HazeEffectLifecycleScope,
+    style: Style,
+    sampling: HazeSampling,
+  ): Unit = Unit
 
-    /** Releases resources that are valid only while the node is attached. */
-    public fun detach(): Unit = Unit
+  /** Releases resources that are valid only while the node is attached. */
+  public fun detach(): Unit = Unit
 }
 
 /** Built-in-only resources used while a renderer is attached to one modifier node. */
 @InternalHazeApi
 public interface HazeEffectLifecycleScope {
-    /** Current size of the modifier carrying the effect. */
-    public val modifierSize: Size
+  /** Opaque core capability used by built-ins to relocate surface output. */
+  public val surface: HazeEffectSurface
+    get() = error("Surface relocation requires an attached Haze node")
 
-    /** Coroutine scope cancelled when the modifier node detaches. */
-    public val coroutineScope: CoroutineScope
+  /** Current size of the modifier carrying the effect. */
+  public val modifierSize: Size
 
-    /** Returns the platform context associated with the modifier node. */
-    public fun requirePlatformContext(): PlatformContext
+  /** Coroutine scope cancelled when the modifier node detaches. */
+  public val coroutineScope: CoroutineScope
 
-    /** Returns the graphics context used to allocate and release graphics layers. */
-    public fun requireGraphicsContext(): GraphicsContext
+  /** Returns the platform context associated with the modifier node. */
+  public fun requirePlatformContext(): PlatformContext
 
-    /** Returns the density currently associated with the modifier node. */
-    public fun requireDensity(): Density
+  /** Returns the graphics context used to allocate and release graphics layers. */
+  public fun requireGraphicsContext(): GraphicsContext
 
-    /** Returns the current value of [local] and observes it for lifecycle updates. */
-    public fun <T> currentValueOf(local: CompositionLocal<T>): T
+  /** Returns the density currently associated with the modifier node. */
+  public fun requireDensity(): Density
 
-    /** Schedules a redraw of the effect. */
-    public fun invalidateDraw()
+  /** Returns the current value of [local] and observes it for lifecycle updates. */
+  public fun <T> currentValueOf(local: CompositionLocal<T>): T
 
-    /** Schedules recalculation of the effect layer bounds. */
-    public fun invalidateLayerBounds()
+  /** Schedules a redraw of the effect. */
+  public fun invalidateDraw()
+
+  /** Schedules recalculation of the effect layer bounds. */
+  public fun invalidateLayerBounds()
 }
 
 /** Built-in-only draw hooks which are not part of the third-party renderer contract. */
 @InternalHazeApi
 public interface HazeEffectRendererDrawHooks<Style> {
-    /** Whether the renderer should prepare and draw effect output for the current frame. */
-    public fun shouldPrepareDraw(style: Style): Boolean = true
+  /** Whether the renderer should prepare and draw effect output for the current frame. */
+  public fun shouldPrepareDraw(style: Style): Boolean = true
 
-    /** Prepares renderer state immediately before the effect is drawn. */
-    public fun HazeEffectRuntimeDrawScope.prepareDraw(style: Style): Unit = Unit
+  /** Prepares renderer state immediately before the effect is drawn. */
+  public fun HazeEffectRuntimeDrawScope.prepareDraw(style: Style): Unit = Unit
 
-    /** Draws renderer output over the modifier's own content. */
-    public fun HazeEffectRuntimeDrawScope.drawForeground(style: Style): Unit = Unit
+  /** Draws renderer output over the modifier's own content. */
+  public fun HazeEffectRuntimeDrawScope.drawForeground(style: Style): Unit = Unit
 
-    /** Whether the modifier's content is drawn behind the effect output. */
-    public fun shouldDrawContentBehind(): Boolean = false
+  /** Whether the modifier's content is drawn behind the effect output. */
+  public fun shouldDrawContentBehind(): Boolean = false
 
-    /** Whether effect output is clipped to the modifier bounds. */
-    public fun shouldClipToNodeBounds(): Boolean = false
+  /** Whether effect output is clipped to the modifier bounds. */
+  public fun shouldClipToNodeBounds(): Boolean = false
 
-    /** Whether source-backed input bounds are preferred as the clipping region. */
-    public fun shouldPreferClipToInputBounds(): Boolean = false
+  /** Whether source-backed input bounds are preferred as the clipping region. */
+  public fun shouldPreferClipToInputBounds(): Boolean = false
 }
 
 /** Built-in-only capability for rendering from the current-window backdrop. */
 @InternalHazeApi
 public interface HazeEffectRendererBackdrop<Style> {
-    /** Returns the prepared platform effect used to filter the current-window backdrop. */
-    public fun HazeEffectRuntimeDrawScope.backdropEffect(style: Style): HazeEffectBackdrop?
+  /** Returns the prepared platform effect used to filter the current-window backdrop. */
+  public fun HazeEffectRuntimeDrawScope.backdropEffect(style: Style): HazeEffectBackdrop?
 }
 
 /** Prepared built-in effect for the current-window backdrop path. */
 @InternalHazeApi
 public class HazeEffectBackdrop(
-    private val platformEffect: PlatformRenderEffect,
-    /** Alpha applied while drawing the filtered backdrop. */
-    public val alpha: Float = 1f,
-    /** Transform from effect-local coordinates into the authored material coordinate space. */
-    public val materialTransform: HazeEffectContentTransform = HazeEffectContentTransform.Identity,
+  private val platformEffect: PlatformRenderEffect,
+  /** Alpha applied while drawing the filtered backdrop. */
+  public val alpha: Float = 1f,
+  /** Transform from effect-local coordinates into the authored material coordinate space. */
+  public val materialTransform: HazeEffectContentTransform = HazeEffectContentTransform.Identity,
 ) {
-    init {
-        require(alpha.isFinite() && alpha in 0f..1f) {
-            "alpha must be finite and in the range 0f..1f"
-        }
+  init {
+    require(alpha.isFinite() && alpha in 0f..1f) {
+      "alpha must be finite and in the range 0f..1f"
     }
+  }
 
-    /**
-     * Returns the platform root effect consumed by the internal backdrop backend.
-     *
-     * This remains a getter-shaped function so Metalava records the stable JVM getter signature
-     * without exposing [PlatformRenderEffect] as a public Kotlin property.
-     */
-    public fun getPlatformEffect(): PlatformRenderEffect = platformEffect
+  /**
+   * Returns the platform root effect consumed by the internal backdrop backend.
+   *
+   * This remains a getter-shaped function so Metalava records the stable JVM getter signature
+   * without exposing [PlatformRenderEffect] as a public Kotlin property.
+   */
+  public fun getPlatformEffect(): PlatformRenderEffect = platformEffect
 }
 
 /** Built-in-only retained-output capability. */
 @InternalHazeApi
 public interface HazeEffectRendererRetainedOutput {
-    /** Whether the renderer currently owns output that can be drawn again. */
-    public fun canDrawRetainedOutput(): Boolean
+  /** Whether the renderer currently owns output that can be drawn again. */
+  public fun canDrawRetainedOutput(): Boolean
 
-    /** Whether retained output should be drawn for the current frame. */
-    public fun shouldDrawRetainedOutput(): Boolean = canDrawRetainedOutput()
+  /** Whether retained output should be drawn for the current frame. */
+  public fun shouldDrawRetainedOutput(): Boolean = canDrawRetainedOutput()
 
-    /** Releases and clears all retained output. */
-    public fun clearRetainedOutput()
+  /** Releases and clears all retained output. */
+  public fun clearRetainedOutput()
+
+  /**
+   * Marks retained output stale because the effect's size or layer size changed.
+   *
+   * Unlike [clearRetainedOutput], resources may be kept so the next draw can record into them
+   * again. Replacing them on each size change can leave anything drawing this effect's output with
+   * an empty input for a frame, and an effect moving across a source changes size every frame.
+   * Defaults to [clearRetainedOutput].
+   */
+  public fun invalidateRetainedOutput(): Unit = clearRetainedOutput()
 }
 
 /** Built-in-only pointer and content-transform capability. */
 @InternalHazeApi
 public interface HazeEffectRendererInteraction {
-    /** Whether the modifier node should observe pointer events. */
-    public val observesPointerEvents: Boolean
+  /** Whether the modifier node should observe pointer events. */
+  public val observesPointerEvents: Boolean
 
-    /** Handles an observed [event] without consuming application pointer input. */
-    public fun onPointerEvent(event: PointerEvent, scope: HazeEffectLifecycleScope)
+  /** Handles an observed [event] without consuming application pointer input. */
+  public fun onPointerEvent(event: PointerEvent, scope: HazeEffectLifecycleScope)
 
-    /** Cancels any pointer interaction currently tracked by the renderer. */
-    public fun onCancelPointerInput(scope: HazeEffectLifecycleScope)
+  /** Cancels any pointer interaction currently tracked by the renderer. */
+  public fun onCancelPointerInput(scope: HazeEffectLifecycleScope)
 
-    /** Returns the transform applied to the modifier's content for the current interaction state. */
-    public fun currentContentTransform(): HazeEffectContentTransform =
-        HazeEffectContentTransform.Identity
+  /** Returns the transform applied to the modifier's content for the current interaction state. */
+  public fun currentContentTransform(): HazeEffectContentTransform =
+    HazeEffectContentTransform.Identity
 }
 
 /**
@@ -245,36 +264,36 @@ public interface HazeEffectRendererInteraction {
  */
 @InternalHazeApi
 public class HazeEffectContentTransform(
-    public val scaleX: Float,
-    public val scaleY: Float,
-    public val pivot: Offset,
+  public val scaleX: Float,
+  public val scaleY: Float,
+  public val pivot: Offset,
 ) {
-    init {
-        require(scaleX.isFinite() && scaleX > 0f) { "scaleX must be finite and greater than zero" }
-        require(scaleY.isFinite() && scaleY > 0f) { "scaleY must be finite and greater than zero" }
-        require(pivot.x.isFinite() && pivot.y.isFinite()) { "pivot must be finite" }
-    }
+  init {
+    require(scaleX.isFinite() && scaleX > 0f) { "scaleX must be finite and greater than zero" }
+    require(scaleY.isFinite() && scaleY > 0f) { "scaleY must be finite and greater than zero" }
+    require(pivot.x.isFinite() && pivot.y.isFinite()) { "pivot must be finite" }
+  }
 
-    /** Returns whether [other] describes the same scale and pivot. */
-    override fun equals(other: Any?): Boolean =
-        other is HazeEffectContentTransform &&
-            scaleX == other.scaleX &&
-            scaleY == other.scaleY &&
-            pivot == other.pivot
+  /** Returns whether [other] describes the same scale and pivot. */
+  override fun equals(other: Any?): Boolean =
+    other is HazeEffectContentTransform &&
+      scaleX == other.scaleX &&
+      scaleY == other.scaleY &&
+      pivot == other.pivot
 
-    /** Returns a hash code derived from the scale and pivot. */
-    override fun hashCode(): Int {
-        var result = scaleX.hashCode()
-        result = 31 * result + scaleY.hashCode()
-        return 31 * result + pivot.hashCode()
-    }
+  /** Returns a hash code derived from the scale and pivot. */
+  override fun hashCode(): Int {
+    var result = scaleX.hashCode()
+    result = 31 * result + scaleY.hashCode()
+    return 31 * result + pivot.hashCode()
+  }
 
-    /** Built-in transform constants. */
-    public companion object {
-        /** A transform that leaves content unchanged. */
-        public val Identity: HazeEffectContentTransform =
-            HazeEffectContentTransform(1f, 1f, Offset.Zero)
-    }
+  /** Built-in transform constants. */
+  public companion object {
+    /** A transform that leaves content unchanged. */
+    public val Identity: HazeEffectContentTransform =
+      HazeEffectContentTransform(1f, 1f, Offset.Zero)
+  }
 }
 
 /**
@@ -293,136 +312,252 @@ public interface HazeEffectInputSnapshot
  */
 @InternalHazeApi
 public interface HazeEffectRuntimeDrawScope : HazeEffectDrawScope {
-    /** Current size of the modifier carrying the effect. */
-    public val modifierSize: Size
+  /** Current size of the modifier carrying the effect. */
+  public val modifierSize: Size
 
-    /** Current size of the expanded effect layer. */
-    public val layerSize: Size
+  /** Current size of the expanded effect layer. */
+  public val layerSize: Size
 
-    /** Offset from the effect layer origin to the modifier origin. */
-    public val layerOffset: Offset
+  /** Offset from the effect layer origin to the modifier origin. */
+  public val layerOffset: Offset
 
-    /** Whether the selected input currently contains drawable content. */
-    public val hasDrawableInput: Boolean
+  /** Whether the selected input currently contains drawable content. */
+  public val hasDrawableInput: Boolean
 
-    /** Opaque identity of the current input capture, or `null` when no input is drawable. */
-    public val inputSnapshot: HazeEffectInputSnapshot?
+  /** Opaque identity of the current input capture, or `null` when no input is drawable. */
+  public val inputSnapshot: HazeEffectInputSnapshot?
 
-    /** Coroutine scope cancelled when the modifier node detaches. */
-    public val coroutineScope: CoroutineScope
+  /** Coroutine scope cancelled when the modifier node detaches. */
+  public val coroutineScope: CoroutineScope
 
-    /** Returns the platform context associated with the modifier node. */
-    public fun requirePlatformContext(): PlatformContext
+  /** Returns the platform context associated with the modifier node. */
+  public fun requirePlatformContext(): PlatformContext
 
-    /** Returns the graphics context used to allocate and release graphics layers. */
-    public fun requireGraphicsContext(): GraphicsContext
+  /** Returns the graphics context used to allocate and release graphics layers. */
+  public fun requireGraphicsContext(): GraphicsContext
 
-    /** Returns the density currently associated with the modifier node. */
-    public fun requireDensity(): Density = this
+  /** Returns the density currently associated with the modifier node. */
+  public fun requireDensity(): Density = this
 
-    /** Schedules a redraw of the effect. */
-    public fun invalidateDraw()
+  /** Schedules a redraw of the effect. */
+  public fun invalidateDraw()
 
-    /** Draws the selected input into this [DrawScope]. */
-    public fun DrawScope.drawInput()
+  /**
+   * Draws the selected input into this [DrawScope], in the coordinate space of the expanded effect
+   * layer, where the modifier sits at [layerOffset]. A caller drawing in modifier space must
+   * translate by `-layerOffset` first.
+   */
+  public fun DrawScope.drawInput()
 }
 
 /** Provides a temporary graphics layer to a built-in renderer and releases it after [block]. */
 @InternalHazeApi
 public inline fun <R> HazeEffectRuntimeDrawScope.withGraphicsLayer(
-    block: (androidx.compose.ui.graphics.layer.GraphicsLayer) -> R,
+  block: (androidx.compose.ui.graphics.layer.GraphicsLayer) -> R,
 ): R {
-    val graphicsContext = requireGraphicsContext()
-    val layer = graphicsContext.createGraphicsLayer()
-    return try {
-        block(layer)
-    } finally {
-        graphicsContext.releaseGraphicsLayer(layer)
+  val graphicsContext = requireGraphicsContext()
+  val layer = graphicsContext.createGraphicsLayer()
+  return try {
+    block(layer)
+  } finally {
+    graphicsContext.releaseGraphicsLayer(layer)
+  }
+}
+
+/** Runs [block] translated by [offset], or untranslated when [offset] is zero or not finite. */
+@InternalHazeApi
+public inline fun DrawScope.translate(
+  offset: Offset,
+  block: DrawScope.() -> Unit,
+) {
+  if (offset.isFinite && offset != Offset.Zero) {
+    translate(offset.x, offset.y, block)
+  } else {
+    block()
+  }
+}
+
+/**
+ * Draws [block], recorded at [scaledSize], scaled up to fill this scope and translated by
+ * [offset]. Clips to this scope when [clip] is true.
+ */
+@InternalHazeApi
+public fun DrawScope.drawScaledContent(
+  offset: Offset,
+  scaledSize: Size,
+  clip: Boolean = true,
+  block: DrawScope.() -> Unit,
+) {
+  val scaleFactor = max(size.width / scaledSize.width, size.height / scaledSize.height)
+  withTransform({ if (clip) clipRect() }) {
+    translate(offset) {
+      scale(scale = scaleFactor, pivot = Offset.Zero) {
+        block()
+      }
     }
+  }
+}
+
+/** Draws content recorded with a per-axis capture scale back at its original geometry. */
+@InternalHazeApi
+public fun DrawScope.drawScaledContent(
+  offset: Offset,
+  captureScale: ScaleFactor,
+  clip: Boolean = true,
+  block: DrawScope.() -> Unit,
+) {
+  withTransform({ if (clip) clipRect() }) {
+    translate(offset) {
+      scale(scaleX = 1f / captureScale.scaleX, scaleY = 1f / captureScale.scaleY, pivot = Offset.Zero) {
+        block()
+      }
+    }
+  }
+}
+
+/** Returns the actual per-axis scale after rounding a uniformly scaled capture to integer pixels. */
+@InternalHazeApi
+public fun scaledContentScale(layerSize: Size, scaleFactor: Float): ScaleFactor {
+  val captureSize = (layerSize * scaleFactor).roundToIntSize()
+  if (captureSize.width <= 0 || captureSize.height <= 0) return ScaleFactor(scaleFactor, scaleFactor)
+  return ScaleFactor(captureSize.width / layerSize.width, captureSize.height / layerSize.height)
+}
+
+/**
+ * Records the effect input of [context], scaled by [scaleFactor], into [existingLayer] (or a new
+ * layer when it is null or released) over the shader [backgroundShader] returns or, without one,
+ * [backgroundColor].
+ *
+ * [backgroundShader] runs each time the layer's draw block runs, including when the platform
+ * replays the block after dropping the layer's display list. Produce the shader there, rather than
+ * capturing one, so a shader whose uniforms are shared is configured and drawn in the same call.
+ *
+ * Returns null without creating a layer when the scaled [layerSize] is empty.
+ * When [fillCapture] is true, the input fills the rounded allocation independently on each axis;
+ * present that capture with the matching [drawScaledContent] overload and [scaledContentScale].
+ */
+@InternalHazeApi
+public fun DrawScope.createScaledContentLayer(
+  context: HazeEffectRuntimeDrawScope,
+  backgroundColor: Color,
+  scaleFactor: Float,
+  layerSize: Size,
+  existingLayer: GraphicsLayer? = null,
+  backgroundShader: (() -> Shader?)? = null,
+  fillCapture: Boolean = false,
+): GraphicsLayer? {
+  val scaledLayerSize = (layerSize * scaleFactor).roundToIntSize()
+
+  if (scaledLayerSize.width <= 0 || scaledLayerSize.height <= 0) {
+    return null
+  }
+
+  val layer = existingLayer?.takeUnless { it.isReleased }
+    ?: context.requireGraphicsContext().createGraphicsLayer()
+
+  layer.record(size = scaledLayerSize) {
+    val shader = backgroundShader?.invoke()
+    if (shader != null) {
+      drawRect(ShaderBrush(shader))
+    } else if (backgroundColor.alpha > 0f) {
+      drawRect(backgroundColor)
+    }
+
+    val actualScale = if (fillCapture) scaledContentScale(layerSize, scaleFactor) else ScaleFactor(scaleFactor, scaleFactor)
+    scale(scaleX = actualScale.scaleX, scaleY = actualScale.scaleY, pivot = Offset.Zero) {
+      with(context) { this@record.drawInput() }
+    }
+  }
+
+  // Refresh the outline when a retained layer is resized. Round it outward independently of the
+  // capture allocation: rounding down can clip the last output row or column after upscaling.
+  val outlineSize = if (fillCapture) Size(scaledLayerSize.width.toFloat(), scaledLayerSize.height.toFloat()) else layerSize * scaleFactor
+  layer.setRectOutline(size = Size(ceil(outlineSize.width), ceil(outlineSize.height)))
+
+  return layer
 }
 
 @OptIn(InternalHazeApi::class)
 internal class HazeEffectDrawScopeImpl(
-    private val drawScope: DrawScope,
-    private val node: HazeEffectNode,
-    override val sampling: HazeSampling,
+  private val drawScope: DrawScope,
+  private val node: HazeEffectNode,
+  override val sampling: HazeSampling,
 ) : HazeEffectRuntimeDrawScope, DrawScope by drawScope {
 
-    override val modifierBounds: Rect
-        get() = Rect(offset = node.layerOffset, size = node.size)
+  override val modifierBounds: Rect
+    get() = Rect(offset = node.layerOffset, size = node.size)
 
-    override val modifierSize: Size
-        get() = node.size
+  override val modifierSize: Size
+    get() = node.size
 
-    override val layerSize: Size
-        get() = node.layerSize
+  override val layerSize: Size
+    get() = node.layerSize
 
-    override val layerOffset: Offset
-        get() = node.layerOffset
+  override val layerOffset: Offset
+    get() = node.layerOffset
 
-    override val hasDrawableInput: Boolean
-        get() = node.hasDrawableInput()
+  override val hasDrawableInput: Boolean
+    get() = node.hasDrawableInput()
 
-    override val inputSnapshot: HazeEffectInputSnapshot?
-        get() = node.inputSnapshot()
+  override val inputSnapshot: HazeEffectInputSnapshot?
+    get() = node.inputSnapshot()
 
-    override val coroutineScope: CoroutineScope
-        get() = node.coroutineScope
+  override val coroutineScope: CoroutineScope
+    get() = node.coroutineScope
 
-    override fun drawInput() {
-        with(this) { drawScope.drawInput() }
-    }
+  override fun drawInput() {
+    with(this) { drawScope.drawInput() }
+  }
 
-    override fun DrawScope.drawInput() {
-        val owner = this@HazeEffectDrawScopeImpl.node
-        translate(left = owner.layerOffset.x, top = owner.layerOffset.y) {
-            for (area in owner.areas) {
-                val sourceTransform = Snapshot.withoutReadObservation {
-                    owner.sourceTransformInEffect(area)
-                }
-                withTransform({ transform(sourceTransform) }) {
-                    val layer = area.contentLayer
-                        ?.takeUnless { it.isReleased }
-                        ?.takeUnless { it.size.width <= 0 || it.size.height <= 0 }
-                    if (layer != null) {
-                        drawLayer(layer)
-                    }
-                }
-            }
+  override fun DrawScope.drawInput() {
+    val owner = this@HazeEffectDrawScopeImpl.node
+    translate(left = owner.layerOffset.x, top = owner.layerOffset.y) {
+      for (area in owner.areas) {
+        val sourceTransform = Snapshot.withoutReadObservation {
+          owner.sourceTransformInEffect(area)
         }
+        withTransform({ transform(sourceTransform) }) {
+          val layer = area.drawableContentLayer
+          if (layer != null) {
+            drawLayer(layer)
+          }
+        }
+      }
     }
+  }
 
-    override fun <T> currentValueOf(local: CompositionLocal<T>): T {
-        return node.currentValueOf(local)
-    }
+  override fun <T> currentValueOf(local: CompositionLocal<T>): T {
+    return node.currentValueOf(local)
+  }
 
-    override fun requirePlatformContext(): PlatformContext = node.requirePlatformContext()
-    override fun requireGraphicsContext(): GraphicsContext = node.requireGraphicsContext()
-    override fun requireDensity(): Density = node.requireDensity()
-    override fun invalidateDraw() = node.invalidateVisualEffectDraw()
+  override fun requirePlatformContext(): PlatformContext = node.requirePlatformContext()
+  override fun requireGraphicsContext(): GraphicsContext = node.requireGraphicsContext()
+  override fun requireDensity(): Density = node.requireDensity()
+  override fun invalidateDraw() = node.invalidateVisualEffectDraw()
 }
 
 internal class HazeEffectLayoutScopeImpl(
-    density: Density,
-    private val node: HazeEffectNode,
-    override val modifierBounds: Rect,
+  density: Density,
+  private val node: HazeEffectNode,
+  override val modifierBounds: Rect,
 ) : HazeEffectLayoutScope, Density by density {
 
-    override fun <T> currentValueOf(local: CompositionLocal<T>): T {
-        return node.currentValueOf(local)
-    }
+  override fun <T> currentValueOf(local: CompositionLocal<T>): T {
+    return node.currentValueOf(local)
+  }
 }
 
 @OptIn(InternalHazeApi::class)
 internal class HazeEffectLifecycleScopeImpl(
-    private val node: HazeEffectNode,
+  private val node: HazeEffectNode,
 ) : HazeEffectLifecycleScope {
-    override val modifierSize: Size get() = node.size
-    override val coroutineScope: CoroutineScope get() = node.coroutineScope
-    override fun requirePlatformContext(): PlatformContext = node.requirePlatformContext()
-    override fun requireGraphicsContext(): GraphicsContext = node.requireGraphicsContext()
-    override fun requireDensity(): Density = node.requireDensity()
-    override fun <T> currentValueOf(local: CompositionLocal<T>): T = node.currentValueOf(local)
-    override fun invalidateDraw() = node.invalidateVisualEffectDraw()
-    override fun invalidateLayerBounds() = node.invalidateVisualEffectLayerBounds()
+  override val surface: HazeEffectSurface get() = node.surface
+  override val modifierSize: Size get() = node.size
+  override val coroutineScope: CoroutineScope get() = node.coroutineScope
+  override fun requirePlatformContext(): PlatformContext = node.requirePlatformContext()
+  override fun requireGraphicsContext(): GraphicsContext = node.requireGraphicsContext()
+  override fun requireDensity(): Density = node.requireDensity()
+  override fun <T> currentValueOf(local: CompositionLocal<T>): T = node.currentValueOf(local)
+  override fun invalidateDraw() = node.invalidateVisualEffectDraw()
+  override fun invalidateLayerBounds() = node.invalidateVisualEffectLayerBounds()
 }

@@ -1,12 +1,6 @@
-/*
- * Copyright 2024 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2024, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 @file:OptIn(InternalHazeApi::class)
 
 package dev.chrisbanes.haze
@@ -19,73 +13,66 @@ import androidx.compose.ui.graphics.Shader
  * Creates a separable progressive blur clipped to [size] at [offset].
  *
  * [mask] supplies the per-pixel blur intensity and [blurRadiusPx] supplies its maximum radius.
+ *
+ * The shader samples at most 150 px either side of a pixel. Where a pixel's local radius
+ * ([blurRadiusPx] scaled by the mask intensity) exceeds that, the kernel is truncated but its
+ * Gaussian is still sized for the untruncated radius, so the result is weaker than a blur of that
+ * radius would be. [blurRadiusPx] is not clamped.
+ *
+ * Haze Blur uses this effect on Android 13 (API 33) and newer and on Skiko platforms. Older Android
+ * versions approximate progressive blur with layered or masked platform blur instead.
  */
 @InternalHazeApi
 public fun createProgressiveBlurRenderEffect(
-    blurRadiusPx: Float,
-    size: Size,
-    offset: Offset,
-    mask: Shader,
+  blurRadiusPx: Float,
+  size: Size,
+  offset: Offset,
+  mask: Shader,
 ): PlatformRenderEffect {
-    val crop = floatArrayOf(
-        offset.x,
-        offset.y,
-        offset.x + size.width,
-        offset.y + size.height,
-    )
+  val crop = floatArrayOf(
+    offset.x,
+    offset.y,
+    offset.x + size.width,
+    offset.y + size.height,
+  )
 
-    val horizontal = createRuntimeShaderRenderEffect(
-        effect = HORIZONTAL_PROGRESSIVE_BLUR_EFFECT,
-        shaderNames = arrayOf("content"),
-        inputs = arrayOf(null),
-    ) {
-        setFloatUniform("blurRadius", blurRadiusPx)
-        setFloatUniform("crop", crop[0], crop[1], crop[2], crop[3])
-        setChildShader("mask", mask)
-    }
+  val horizontal = createRuntimeShaderRenderEffect(
+    effect = HORIZONTAL_PROGRESSIVE_BLUR_EFFECT,
+    shaderNames = arrayOf("content"),
+    inputs = arrayOf(null),
+  ) {
+    setFloatUniform("blurRadius", blurRadiusPx)
+    setFloatUniform("crop", crop[0], crop[1], crop[2], crop[3])
+    setChildShader("mask", mask)
+  }
 
-    return createRuntimeShaderRenderEffect(
-        effect = VERTICAL_PROGRESSIVE_BLUR_EFFECT,
-        shaderNames = arrayOf("content"),
-        inputs = arrayOf(horizontal),
-    ) {
-        setFloatUniform("blurRadius", blurRadiusPx)
-        setFloatUniform("crop", crop[0], crop[1], crop[2], crop[3])
-        setChildShader("mask", mask)
-    }
+  return createRuntimeShaderRenderEffect(
+    effect = VERTICAL_PROGRESSIVE_BLUR_EFFECT,
+    shaderNames = arrayOf("content"),
+    inputs = arrayOf(horizontal),
+  ) {
+    setFloatUniform("blurRadius", blurRadiusPx)
+    setFloatUniform("crop", crop[0], crop[1], crop[2], crop[3])
+    setChildShader("mask", mask)
+  }
 }
 
 private val VERTICAL_PROGRESSIVE_BLUR_EFFECT by lazy(LazyThreadSafetyMode.NONE) {
-    createRuntimeEffect(ProgressiveBlurShaders.VERTICAL_BLUR_SKSL)
+  createRuntimeEffect(makeBlurSksl(vertical = true))
 }
 
 private val HORIZONTAL_PROGRESSIVE_BLUR_EFFECT by lazy(LazyThreadSafetyMode.NONE) {
-    createRuntimeEffect(ProgressiveBlurShaders.HORIZONTAL_BLUR_SKSL)
+  createRuntimeEffect(makeBlurSksl(vertical = false))
 }
 
-private object ProgressiveBlurShaders {
-    /**
-     * SKSL for vertical blur pass with mask support.
-     */
-    val VERTICAL_BLUR_SKSL: String by lazy(mode = LazyThreadSafetyMode.NONE) {
-        makeBlurSksl(vertical = true)
-    }
-
-    /**
-     * SKSL for horizontal blur pass with mask support.
-     */
-    val HORIZONTAL_BLUR_SKSL: String by lazy(mode = LazyThreadSafetyMode.NONE) {
-        makeBlurSksl(vertical = false)
-    }
-
-    /**
-     * Creates the SKSL blur shader code for either vertical or horizontal pass.
-     *
-     * Adapted from https://www.shadertoy.com/view/Mtl3Rj
-     * Uses GPU-friendly optimizations, see
-     * https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling
-     */
-    private fun makeBlurSksl(vertical: Boolean): String = """
+/**
+ * Creates the SKSL blur shader code for either vertical or horizontal pass.
+ *
+ * Adapted from https://www.shadertoy.com/view/Mtl3Rj
+ * Uses GPU-friendly optimizations, see
+ * https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling
+ */
+private fun makeBlurSksl(vertical: Boolean): String = """
     uniform shader content;
     uniform float blurRadius;
     uniform vec4 crop;
@@ -164,4 +151,3 @@ private object ProgressiveBlurShaders {
       return blur(coord, mix(0.0, blurRadius, intensity));
     }
   """
-}

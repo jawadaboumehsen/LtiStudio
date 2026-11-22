@@ -1,12 +1,6 @@
-/*
- * Copyright 2026 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2026, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package dev.chrisbanes.haze
 
 import androidx.compose.runtime.Stable
@@ -16,51 +10,59 @@ import androidx.compose.runtime.Stable
  */
 public sealed interface HazeInput {
 
-    /**
-     * Content captured by [hazeSource] modifiers associated with [state].
-     *
-     * @property state Shared state that identifies the available sources.
-     * @property selection Policy that selects which associated sources are consumed.
-     * @property retention Policy for output retained while selected sources are unavailable.
-     */
-    @Stable
-    public data class Sources(
-        public val state: HazeState,
-        public val selection: HazeSourceSelection = HazeSourceSelection.Behind,
-        public val retention: HazeSourceRetention = HazeSourceRetention.KeepLastFrame,
-    ) : HazeInput
+  /**
+   * Content captured by [hazeSource] modifiers associated with [state].
+   *
+   * @property state Shared state that identifies the available sources.
+   * @property selection Policy that selects which associated sources are consumed.
+   * @property retention Policy for output retained while selected sources are unavailable.
+   */
+  @Stable
+  public data class Sources(
+    public val state: HazeState,
+    public val selection: HazeSourceSelection = HazeSourceSelection.Behind,
+    public val retention: HazeSourceRetention = HazeSourceRetention.KeepLastFrame,
+  ) : HazeInput
 
-    /**
-     * The intent to consume pixels already drawn behind the effect in the current window.
-     *
-     * This is the normal portable input for built-in effects. When
-     * [HazeFeatureFlags.isPlatformBackdropEnabled] is enabled before attachment, the native path is
-     * eligible on supported Android releases and for built-in effects that expose a compatible
-     * platform effect. Eligibility is not a guarantee: the fallback options are used everywhere
-     * else and after any native setup or draw failure. Native backdrop rendering samples earlier
-     * pixels in the same window; it does not select individual source instances, include later
-     * drawing, or sample content from another window.
-     *
-     * The experimental flag defaults to `false` and is read when the modifier node attaches.
-     * Changing it affects later attachments only. A native-to-source fallback transition can take
-     * one frame and remains selected until detachment after a known native failure.
-     *
-     * @property fallback Optional source input used only when the native backdrop is unavailable or
-     * fails. A `null` fallback leaves the content unchanged when native backdrop rendering is not
-     * available. It does not filter native window pixels.
-     */
-    @Stable
-    public data class Backdrop(
-        public val fallback: HazeInput.Sources?,
-    ) : HazeInput {
-        /** Creates a backdrop input with the default source fallback for [state], when provided. */
-        public constructor(state: HazeState? = null) : this(state?.let(::Sources))
-    }
+  /**
+   * The intent to consume pixels already drawn behind the effect in the current window.
+   *
+   * This is the normal portable input for built-in effects. When
+   * [HazeFeatureFlags.isPlatformBackdropEnabled] is enabled before attachment, the native path is
+   * eligible on supported Android releases and for built-in effects that expose a compatible
+   * platform effect. Eligibility is not a guarantee: the fallback options are used everywhere
+   * else and after any native setup or draw failure. Native backdrop rendering samples earlier
+   * pixels in the same window; it does not select individual source instances, include later
+   * drawing, or sample content from another window.
+   *
+   * Inside a dialog or popup, an eligible native backdrop therefore filters only that window's
+   * earlier pixels. Haze does not switch it to [fallback] because the fallback sources are in
+   * another window. To consume sources from the window behind, use [Sources] directly.
+   *
+   * The experimental flag defaults to `false` and is read when the modifier node attaches.
+   * Changing it affects later attachments only. After a known native failure the fallback remains
+   * selected until detachment.
+   *
+   * When a native Backdrop switches to its [fallback], the first frame after the switch may draw the
+   * content unchanged, or the effect without input. The sources only record their layers while an
+   * effect asks for them, and on the native path no effect does. Later frames have input.
+   *
+   * @property fallback Optional source input used only when the native backdrop is unavailable or
+   * fails. A `null` fallback leaves the content unchanged when native backdrop rendering is not
+   * available. It does not filter native window pixels.
+   */
+  @Stable
+  public data class Backdrop(
+    public val fallback: HazeInput.Sources?,
+  ) : HazeInput {
+    /** Creates a backdrop input with the default source fallback for [state], when provided. */
+    public constructor(state: HazeState? = null) : this(state?.let(::Sources))
+  }
 
-    /**
-     * The content of the composable carrying the effect modifier.
-     */
-    public data object Content : HazeInput
+  /**
+   * The content of the composable carrying the effect modifier.
+   */
+  public data object Content : HazeInput
 }
 
 /**
@@ -72,8 +74,8 @@ public sealed interface HazeInput {
  * @property zIndex Source ordering value supplied to `hazeSource`.
  */
 public class HazeSourceMetadata internal constructor(
-    public val key: Any?,
-    public val zIndex: Float,
+  public val key: Any?,
+  public val zIndex: Float,
 )
 
 /**
@@ -81,73 +83,85 @@ public class HazeSourceMetadata internal constructor(
  */
 public sealed interface HazeSourceSelection {
 
-    /**
-     * Refines this selection using immutable source metadata.
-     *
-     * Repeated refinements compose with logical AND.
-     */
-    public fun where(
-        predicate: (HazeSourceMetadata) -> Boolean,
-    ): HazeSourceSelection = FilteredHazeSourceSelection(
-        selection = this,
-        predicate = predicate,
-    )
+  /**
+   * Refines this selection using immutable source metadata.
+   *
+   * Repeated refinements compose with logical AND.
+   *
+   * Two refinements are equal only when they share the same base selection and equal
+   * [predicate]s: the same lambda instance, or equal function references on platforms where those
+   * compare equal. Lambdas compare by identity, so two separate lambda literals with identical
+   * bodies are not equal. Hoist or `remember` a refined selection that is shared, for example
+   * between Glass container members that should merge; they must use one selection value.
+   */
+  public fun where(
+    predicate: (HazeSourceMetadata) -> Boolean,
+  ): HazeSourceSelection = FilteredHazeSourceSelection(
+    selection = this,
+    predicate = predicate,
+  )
 
-    /**
-     * Sources behind the nearest ancestor [hazeSource], or every source when there is no matching
-     * ancestor.
-     */
-    public data object Behind : HazeSourceSelection
+  /**
+   * Sources behind the nearest ancestor [hazeSource], or every source when there is no matching
+   * ancestor.
+   */
+  public data object Behind : HazeSourceSelection
 
-    /**
-     * Every source associated with the input state.
-     */
-    public data object All : HazeSourceSelection
+  /**
+   * Every source associated with the input state.
+   */
+  public data object All : HazeSourceSelection
 }
 
+@Poko
 private class FilteredHazeSourceSelection(
-    val selection: HazeSourceSelection,
-    val predicate: (HazeSourceMetadata) -> Boolean,
+  val selection: HazeSourceSelection,
+  val predicate: (HazeSourceMetadata) -> Boolean,
 ) : HazeSourceSelection
 
 internal fun HazeSourceSelection.baseSelection(): HazeSourceSelection = when (this) {
-    HazeSourceSelection.All,
-    HazeSourceSelection.Behind,
-    -> this
-    is FilteredHazeSourceSelection -> selection.baseSelection()
+  HazeSourceSelection.All,
+  HazeSourceSelection.Behind,
+  -> this
+  is FilteredHazeSourceSelection -> selection.baseSelection()
 }
 
 internal fun HazeSourceSelection.matches(metadata: HazeSourceMetadata): Boolean = when (this) {
-    HazeSourceSelection.All,
-    HazeSourceSelection.Behind,
-    -> true
-    is FilteredHazeSourceSelection -> selection.matches(metadata) && predicate(metadata)
+  HazeSourceSelection.All,
+  HazeSourceSelection.Behind,
+  -> true
+  is FilteredHazeSourceSelection -> selection.matches(metadata) && predicate(metadata)
 }
 
 internal fun HazeSourceSelection.hasRefinements(): Boolean =
-    this is FilteredHazeSourceSelection
+  this is FilteredHazeSourceSelection
 
 /**
  * Controls retained output when source content is temporarily unavailable.
  */
 public sealed interface HazeSourceRetention {
 
-    /**
-     * Continue drawing the most recently rendered output.
-     *
-     * This visually compatible behavior is the default for source transitions.
-     */
-    public data object KeepLastFrame : HazeSourceRetention
+  /**
+   * Continue drawing the most recently rendered output.
+   *
+   * This visually compatible behavior is the default for source transitions.
+   *
+   * Retained output is not guaranteed to be a frozen copy of the last displayed pixels. On
+   * Android, retained Glass output can redraw from live source content after its source is lost,
+   * including descendant changes made after capture. Use [ClearWhenUnavailable] when retained
+   * output must not show source content that is no longer selected.
+   */
+  public data object KeepLastFrame : HazeSourceRetention
 
-    /**
-     * Clear retained output as soon as no source content is available.
-     *
-     * Prefer this policy for privacy-sensitive surfaces where stale source pixels must not remain.
-     */
-    public data object ClearWhenUnavailable : HazeSourceRetention
+  /**
+   * Clear retained output as soon as no source content is available.
+   *
+   * Prefer this policy for privacy-sensitive surfaces where stale source pixels must not remain.
+   */
+  public data object ClearWhenUnavailable : HazeSourceRetention
 }
 
 internal fun HazeSourceRetention.keepsLastFrame(): Boolean = when (this) {
-    HazeSourceRetention.KeepLastFrame -> true
-    HazeSourceRetention.ClearWhenUnavailable -> false
+  HazeSourceRetention.KeepLastFrame -> true
+  HazeSourceRetention.ClearWhenUnavailable -> false
 }

@@ -184,6 +184,7 @@ These remain separate libraries; the `haze/` container has no implementation or 
 dependency. Haze libraries depend only on each other and external libraries, never on
 design-system components or application modules. Packages remain `dev.chrisbanes.haze.*`.
 Application component guardrails scan `core/designsystem/src`, excluding vendored Haze.
+Vendored from upstream Haze `2.1.0` (`ca21ff2060e52e1882afdb94f9b055f7fc834bd9`, Shatterproof Glass).
 
 The old `:backdrop` module (`drawBackdrop`, `LayerBackdrop`, `BackdropEffectScope`) is
 gone - do not reintroduce it.

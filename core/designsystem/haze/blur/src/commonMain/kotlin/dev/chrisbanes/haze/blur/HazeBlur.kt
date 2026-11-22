@@ -1,12 +1,6 @@
-/*
- * Copyright 2026 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2026, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.runtime.Stable
@@ -22,34 +16,39 @@ import dev.chrisbanes.haze.hazeEffect
 /**
  * Applies Blur to an explicit [input].
  *
- * [style] is an opaque, shareable program. Resolution starts from [HazeBlurDefaults.style], then
- * replays [LocalHazeBlurStyle], then [style]. Later writes win. Each modifier node owns its Blur
- * runtime, delegate, retained output, adaptive-performance history, cache, and lifecycle resources.
+ * [style] is an opaque, shareable sequence of writes. Resolution starts from
+ * [HazeBlurDefaults.style], then applies [LocalHazeBlurStyle], then [style]. Later writes win. Each
+ * modifier node owns its Blur runtime, delegate, retained output, performance-mode configuration,
+ * cache, and lifecycle resources.
+ *
+ * Snapshot state read by a Style block is observed by this node: a change resolves the Style again
+ * and redraws on the next frame without recomposition. Styles created with [HazeBlurStyle] compare
+ * by identity, so `remember` or hoist them. Built-in material presets compare by value.
  *
  * @param input Source-backed content or this modifier's own content.
- * @param style Explicit Blur Style replayed after [LocalHazeBlurStyle].
+ * @param style Explicit Blur Style applied after [LocalHazeBlurStyle].
  * @param performanceMode Rendering-fidelity policy, or `null` to inherit [LocalHazePerformanceMode].
  * @param expandLayerBounds Whether Blur may expand its capture layer by the resolved radius.
  */
 @Stable
 public fun Modifier.hazeBlur(
-    input: HazeInput,
-    style: HazeBlurStyle = HazeBlurStyle,
-    performanceMode: HazePerformanceMode? = null,
-    expandLayerBounds: Boolean = true,
+  input: HazeInput,
+  style: HazeBlurStyle = HazeBlurStyle,
+  performanceMode: HazePerformanceMode? = null,
+  expandLayerBounds: Boolean = true,
 ): Modifier = hazeEffect(
-    factory = HazeBlurFactory,
-    input = input,
-    style = BlurConfiguration(style, performanceMode),
-    expandLayerBounds = expandLayerBounds,
+  factory = HazeBlurFactory,
+  input = input,
+  style = BlurConfiguration(style, performanceMode),
+  expandLayerBounds = expandLayerBounds,
 )
 
 @Poko
 internal class BlurConfiguration(
-    val style: HazeBlurStyle,
-    val performanceMode: HazePerformanceMode?,
+  val style: HazeBlurStyle,
+  val performanceMode: HazePerformanceMode?,
 )
 
 internal object HazeBlurFactory : HazeEffectFactory<BlurConfiguration> {
-    override fun createRenderer(): HazeEffectRenderer<BlurConfiguration> = BlurVisualEffect()
+  override fun createRenderer(): HazeEffectRenderer<BlurConfiguration> = BlurVisualEffect()
 }

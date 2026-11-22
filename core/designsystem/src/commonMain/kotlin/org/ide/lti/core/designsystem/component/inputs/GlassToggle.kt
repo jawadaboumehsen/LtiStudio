@@ -359,10 +359,12 @@ internal fun GlassToggleImpl(
         } else {
             base.then {
                 shape(GlassShapes.HazeCapsule)
-                optics(
-                    refractionStrength = 0.85f * thumbRefractionFactor,
-                    refractionDisplacement = Spacing.SmallMedium * thumbRefractionFactor,
-                )
+                optics {
+                    copy(
+                        refractionStrength = 0.85f * thumbRefractionFactor,
+                        refractionDisplacement = Spacing.SmallMedium * thumbRefractionFactor,
+                    )
+                }
             }
         }
     }

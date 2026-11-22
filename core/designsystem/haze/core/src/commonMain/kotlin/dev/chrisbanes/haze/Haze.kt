@@ -1,12 +1,6 @@
-/*
- * Copyright 2023 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2023, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 @file:OptIn(InternalHazeApi::class, ExperimentalHazeApi::class)
 
 package dev.chrisbanes.haze
@@ -27,11 +21,16 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.isUnspecified
+import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.graphics.LayerOutsets
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.unit.Dp
 
 /** Creates and remembers a [HazeState] for coordinating Haze sources and effects. */
 @Composable
@@ -40,70 +39,69 @@ public fun rememberHazeState(): HazeState = remember { HazeState() }
 /** Shared state that associates [hazeSource] content with source-backed Haze effects. */
 @Stable
 public class HazeState {
-    internal var positionStrategy: HazePositionStrategy by mutableStateOf(HazePositionStrategy.Auto)
+  // Only tests set this, before the state is used, so it is not snapshot state and effects do not observe it.
+  internal var positionStrategy: HazePositionStrategy = HazePositionStrategy.Auto
 
-    private val _areas = mutableStateListOf<HazeArea>()
-    internal val areas: List<HazeArea> get() = _areas
+  private val _areas = mutableStateListOf<HazeArea>()
+  internal val areas: List<HazeArea> get() = _areas
 
-    private val sourceDemand = mutableStateSetOf<Any>()
+  private val sourceDemand = mutableStateSetOf<Any>()
 
-    internal val hasSourceDemand: Boolean
-        get() = sourceDemand.isNotEmpty()
+  internal val hasSourceDemand: Boolean
+    get() = sourceDemand.isNotEmpty()
 
-    internal fun addSourceDemand(key: Any) {
-        sourceDemand += key
-    }
+  internal fun addSourceDemand(key: Any) {
+    sourceDemand += key
+  }
 
-    internal fun removeSourceDemand(key: Any) {
-        sourceDemand -= key
-    }
+  internal fun removeSourceDemand(key: Any) {
+    sourceDemand -= key
+  }
 
-    internal fun addArea(area: HazeArea) {
-        _areas += area
-    }
+  internal fun addArea(area: HazeArea) {
+    _areas += area
+  }
 
-    internal fun removeArea(area: HazeArea) {
-        _areas -= area
-    }
+  internal fun removeArea(area: HazeArea) {
+    _areas -= area
+  }
 }
 
 internal fun resolvePositionStrategy(
-    configured: HazePositionStrategy,
-    areas: List<HazeArea>,
-    windowId: Any?,
+  configured: HazePositionStrategy,
+  areas: List<HazeArea>,
+  windowId: Any?,
+  hasDifferentRoot: Boolean = false,
 ): HazePositionStrategy = when (configured) {
-    HazePositionStrategy.Auto -> {
-        if (areas.any { it.windowId != null && it.windowId != windowId }) {
-            HazePositionStrategy.Screen
-        } else {
-            HazePositionStrategy.Local
-        }
+  HazePositionStrategy.Auto -> {
+    if (hasDifferentRoot || areas.any { it.windowId != null && it.windowId != windowId }) {
+      HazePositionStrategy.Screen
+    } else {
+      HazePositionStrategy.Local
     }
-    else -> configured
+  }
+  else -> configured
 }
 
 @Stable
 internal class HazeCoordinates(
-    localPosition: Offset = Offset.Unspecified,
-    screenPosition: Offset = Offset.Unspecified,
+  localPosition: Offset = Offset.Unspecified,
+  screenPosition: Offset = Offset.Unspecified,
 ) {
-    internal var localPosition: Offset by mutableStateOf(localPosition)
-        internal set
+  internal var localPosition: Offset by mutableStateOf(localPosition)
+  internal var screenPosition: Offset by mutableStateOf(screenPosition)
 
-    internal var screenPosition: Offset by mutableStateOf(screenPosition)
-        internal set
+  internal fun positionFor(strategy: HazePositionStrategy): Offset = when (strategy) {
+    HazePositionStrategy.Local,
+    HazePositionStrategy.Auto,
+    -> localPosition
+    HazePositionStrategy.Screen -> screenPosition
+  }
 
-    internal fun positionFor(strategy: HazePositionStrategy): Offset = when (strategy) {
-        HazePositionStrategy.Local,
-        HazePositionStrategy.Auto,
-        -> localPosition
-        HazePositionStrategy.Screen -> screenPosition
-    }
-
-    internal fun boundsFor(strategy: HazePositionStrategy, size: Size): Rect? {
-        val position = positionFor(strategy)
-        return if (position.isSpecified && size.isSpecified) Rect(position, size) else null
-    }
+  internal fun boundsFor(strategy: HazePositionStrategy, size: Size): Rect? {
+    val position = positionFor(strategy)
+    return if (position.isSpecified && size.isSpecified) Rect(position, size) else null
+  }
 }
 
 /**
@@ -111,125 +109,180 @@ internal class HazeCoordinates(
  * is [Offset.Unspecified].
  */
 internal val HazeCoordinates.isUnspecified: Boolean
-    get() = localPosition.isUnspecified || screenPosition.isUnspecified
+  get() = localPosition.isUnspecified || screenPosition.isUnspecified
 
 @Stable
 internal class HazeArea {
 
-    internal val coordinates: HazeCoordinates = HazeCoordinates()
+  internal val coordinates: HazeCoordinates = HazeCoordinates()
 
-    internal var layoutCoordinates: LayoutCoordinates? = null
-        private set
+  internal var layoutCoordinates: LayoutCoordinates? = null
+    private set
 
-    private var coordinateTransformValues: FloatArray? = null
+  internal var rootCoordinates: LayoutCoordinates? = null
+    private set
 
-    internal var coordinateVersion: Int by mutableIntStateOf(0)
-        private set
+  private var coordinateTransformValues: FloatArray? = null
+  private val coordinateTransformScratch = Matrix()
 
-    internal fun updateLayoutCoordinates(coordinates: LayoutCoordinates) {
-        layoutCoordinates = coordinates
-        val transform = coordinates.transformToScreenOrRoot()
-        if (coordinateTransformValues?.contentEquals(transform.values) != true) {
-            coordinateTransformValues = transform.values.copyOf()
-            coordinateVersion++
-        }
+  internal var coordinateVersion: Int by mutableIntStateOf(0)
+    private set
+
+  internal fun updateLayoutCoordinates(coordinates: LayoutCoordinates) {
+    layoutCoordinates = coordinates
+    val root = coordinates.findRootCoordinates()
+    coordinates.transformToScreenOrRoot(coordinateTransformScratch)
+    val transform = coordinateTransformScratch.values
+    if (rootCoordinates !== root || coordinateTransformValues?.contentEquals(transform) != true) {
+      rootCoordinates = root
+      coordinateTransformValues = transform.copyOf()
+      coordinateVersion++
+    }
+  }
+
+  internal fun clearLayoutCoordinates() {
+    layoutCoordinates = null
+    rootCoordinates = null
+    coordinateTransformValues = null
+  }
+
+  internal var size: Size by mutableStateOf(Size.Unspecified)
+  private var zIndexState by mutableFloatStateOf(0f)
+  private var keyState by mutableStateOf<Any?>(null)
+
+  /** Counts [key] and [zIndex] changes, which can change how effects select and order this area. */
+  internal var selectionVersion: Int by mutableIntStateOf(0)
+    private set
+
+  internal var zIndex: Float
+    get() = zIndexState
+    set(value) {
+      if (value != zIndexState) {
+        zIndexState = value
+        selectionVersion++
+      }
     }
 
-    internal fun clearLayoutCoordinates() {
-        layoutCoordinates = null
-        coordinateTransformValues = null
+  internal var key: Any?
+    get() = keyState
+    set(value) {
+      if (value != keyState) {
+        keyState = value
+        selectionVersion++
+      }
     }
 
-    internal var size: Size by mutableStateOf(Size.Unspecified)
-        internal set
+  internal var windowId: Any? = null
 
-    internal var zIndex: Float by mutableFloatStateOf(0f)
-        internal set
+  internal val preDrawListeners = mutableStateSetOf<OnPreDrawListener>()
 
-    internal var key: Any? by mutableStateOf(null)
-        internal set
+  private val captureConsumers = mutableStateSetOf<Any>()
 
-    internal var windowId: Any? = null
-        internal set
+  internal val hasCaptureDemand: Boolean
+    get() = captureConsumers.isNotEmpty()
 
-    internal val preDrawListeners = mutableStateSetOf<OnPreDrawListener>()
+  internal val captureConsumerCount: Int
+    get() = captureConsumers.size
 
-    private val captureConsumers = mutableStateSetOf<Any>()
+  internal fun addCaptureConsumer(consumer: Any) {
+    captureConsumers += consumer
+  }
 
-    internal val hasCaptureDemand: Boolean
-        get() = captureConsumers.isNotEmpty()
+  internal fun removeCaptureConsumer(consumer: Any) {
+    captureConsumers -= consumer
+  }
 
-    internal val captureConsumerCount: Int
-        get() = captureConsumers.size
+  /**
+   * Internal content [GraphicsLayer] used when capturing source content for effects.
+   *
+   * This is exposed for effect implementations and is not a stable public contract.
+   */
+  internal var contentLayer: GraphicsLayer? by mutableStateOf(null)
+    internal set
 
-    internal fun addCaptureConsumer(consumer: Any) {
-        captureConsumers += consumer
+  /**
+   * The bounds of [contentLayer] that effects sample, in this area's local pixels, while input
+   * sharing expands them with outsets. Null means the layout bounds, `(0, 0)` to [size].
+   */
+  internal var inputBounds: Rect? by mutableStateOf(null)
+    internal set
+
+  /** Releases [contentLayer] through [graphicsContext], if there is one, and clears it. */
+  internal fun releaseContentLayer(graphicsContext: GraphicsContext) {
+    contentLayer?.let { layer ->
+      HazeLogger.d("HazeArea") { "Releasing content layer: $layer" }
+      graphicsContext.releaseGraphicsLayer(layer)
+    }
+    contentLayer = null
+    inputBounds = null
+  }
+
+  /**
+   * [contentLayer] when it can be drawn: not released and with a non-empty size.
+   *
+   * Also reads [inputBounds]: Skia applies a layer's outsets when a consumer records it, so every
+   * consumer that reads the layer must redraw when they change.
+   */
+  internal val drawableContentLayer: GraphicsLayer?
+    get() {
+      inputBounds
+      return contentLayer?.takeUnless { it.isReleased || it.size.width <= 0 || it.size.height <= 0 }
     }
 
-    internal fun removeCaptureConsumer(consumer: Any) {
-        captureConsumers -= consumer
-    }
+  internal var contentDrawing: Boolean = false
 
-    /**
-     * Internal content [GraphicsLayer] used when capturing source content for effects.
-     *
-     * This is exposed for effect implementations and is not a stable public contract.
-     */
-    internal var contentLayer: GraphicsLayer? by mutableStateOf(null)
-        internal set
+  /**
+   * Monotonically increasing version of successfully recorded content.
+   *
+   * This intentionally survives [reset] so an area reused by a modifier node cannot report a
+   * stale version as newly recorded content.
+   */
+  internal var contentVersion: Long = 0
 
-    internal var contentDrawing: Boolean = false
+  internal val isContentDrawing: Boolean
+    get() = contentDrawing
 
-    /**
-     * Monotonically increasing version of successfully recorded content.
-     *
-     * This intentionally survives [reset] so an area reused by a modifier node cannot report a
-     * stale version as newly recorded content.
-     */
-    internal var contentVersion: Long = 0
-
-    internal val isContentDrawing: Boolean
-        get() = contentDrawing
-
-    override fun toString(): String = buildString {
-        append("HazeArea(")
-        append("localPosition=${coordinates.localPosition}, ")
-        append("screenPosition=${coordinates.screenPosition}, ")
-        append("size=$size, ")
-        append("zIndex=$zIndex")
-        append(")")
-    }
+  override fun toString(): String = buildString {
+    append("HazeArea(")
+    append("localPosition=${coordinates.localPosition}, ")
+    append("screenPosition=${coordinates.screenPosition}, ")
+    append("size=$size, ")
+    append("zIndex=$zIndex")
+    append(")")
+  }
 }
 
 internal fun HazeArea.reset() {
-    clearLayoutCoordinates()
-    coordinates.localPosition = Offset.Unspecified
-    coordinates.screenPosition = Offset.Unspecified
-    size = Size.Unspecified
-    windowId = null
-    contentDrawing = false
+  clearLayoutCoordinates()
+  coordinates.localPosition = Offset.Unspecified
+  coordinates.screenPosition = Offset.Unspecified
+  size = Size.Unspecified
+  inputBounds = null
+  windowId = null
+  contentDrawing = false
 }
 
 internal class OnPreDrawListener(
-    private val effectWindowId: () -> Any?,
-    private val onPreDraw: (invalidateInputCapture: Boolean) -> Unit,
+  private val effectWindowId: () -> Any?,
+  private val onPreDraw: (invalidateInputCapture: Boolean) -> Unit,
 ) {
-    fun needsSnapshotApplyObservation(area: HazeArea): Boolean = area.windowId != effectWindowId()
+  fun needsSnapshotApplyObservation(area: HazeArea): Boolean =
+    area.windowId != effectWindowId() || observesSameWindowSourceSnapshots()
 
-    operator fun invoke(invalidateInputCapture: Boolean) = onPreDraw(invalidateInputCapture)
+  operator fun invoke(invalidateInputCapture: Boolean) = onPreDraw(invalidateInputCapture)
 }
 
 internal fun HazeArea.notifyPreDrawListeners(
-    regularPreDraw: Boolean,
-    snapshotApplied: Boolean,
+  regularPreDraw: Boolean,
+  snapshotApplied: Boolean,
 ) {
-    preDrawListeners.forEach { listener ->
-        val invalidateInputCapture =
-            snapshotApplied && listener.needsSnapshotApplyObservation(this)
-        if (regularPreDraw || invalidateInputCapture) {
-            listener(invalidateInputCapture)
-        }
+  preDrawListeners.forEach { listener ->
+    val invalidateInputCapture =
+      snapshotApplied && listener.needsSnapshotApplyObservation(this)
+    if (regularPreDraw || invalidateInputCapture) {
+      listener(invalidateInputCapture)
     }
+  }
 }
 
 /**
@@ -242,28 +295,76 @@ internal fun HazeArea.notifyPreDrawListeners(
  */
 @Stable
 public fun Modifier.hazeSource(
-    state: HazeState,
-    zIndex: Float = 0f,
-    key: Any? = null,
+  state: HazeState,
+  zIndex: Float = 0f,
+  key: Any? = null,
 ): Modifier = this then HazeSourceElement(state, zIndex, key)
 
+/**
+ * Captures background content for [hazeEffect] child nodes, like the [hazeSource] overload without
+ * [inputSharing], which uses [HazeInputSharing.Never].
+ *
+ * While sharing is active, this source draws its content, both on screen and as effect input,
+ * clipped to its layout bounds expanded by [inputSharingOutsets]. Anything drawn beyond that is not
+ * shown. The outsets do not change this source's layout size or position, and they have no effect
+ * while sharing is inactive, when the source draws as it would without sharing.
+ *
+ * @param inputSharing Whether this source renders once into an offscreen layer that it draws on
+ * screen and that effects sampling it share. Only Android reuses a render. See [HazeInputSharing].
+ * @param inputSharingOutsets How far beyond each edge of its layout bounds this source keeps drawing
+ * while sharing is active. Each edge must be finite and non-negative. The edges are absolute and do
+ * not flip in a right-to-left layout, so `LayerOutsets(right = ...)` expands the right edge
+ * whatever the layout direction. Pass values adjusted for the layout direction.
+ */
+@ExperimentalHazeApi
+@Stable
+public fun Modifier.hazeSource(
+  state: HazeState,
+  zIndex: Float = 0f,
+  key: Any? = null,
+  inputSharing: HazeInputSharing,
+  inputSharingOutsets: LayerOutsets = LayerOutsets.Zero,
+): Modifier {
+  with(inputSharingOutsets) {
+    require(left.isValidOutset() && top.isValidOutset() && right.isValidOutset() && bottom.isValidOutset()) {
+      "inputSharingOutsets edges must be finite and non-negative: $inputSharingOutsets"
+    }
+  }
+  return this then HazeSourceElement(state, zIndex, key, inputSharing, inputSharingOutsets)
+}
+
+private fun Dp.isValidOutset(): Boolean = value.isFinite() && value >= 0f
+
+@OptIn(ExperimentalHazeApi::class)
 internal data class HazeSourceElement(
-    val state: HazeState,
-    val zIndex: Float = 0f,
-    val key: Any? = null,
+  val state: HazeState,
+  val zIndex: Float = 0f,
+  val key: Any? = null,
+  val inputSharing: HazeInputSharing = HazeInputSharing.Never,
+  val inputSharingOutsets: LayerOutsets = LayerOutsets.Zero,
 ) : ModifierNodeElement<HazeSourceNode>() {
 
-    override fun create(): HazeSourceNode = HazeSourceNode(state = state, zIndex = zIndex, key = key)
+  override fun create(): HazeSourceNode = HazeSourceNode(
+    state = state,
+    zIndex = zIndex,
+    key = key,
+    inputSharing = inputSharing,
+    inputSharingOutsets = inputSharingOutsets,
+  )
 
-    override fun update(node: HazeSourceNode) {
-        node.state = state
-        node.zIndex = zIndex
-        node.key = key
-    }
+  override fun update(node: HazeSourceNode) {
+    node.state = state
+    node.zIndex = zIndex
+    node.key = key
+    node.inputSharing = inputSharing
+    node.inputSharingOutsets = inputSharingOutsets
+  }
 
-    override fun InspectorInfo.inspectableProperties() {
-        name = "hazeSource"
-        properties["zIndex"] = zIndex
-        properties["key"] = key
-    }
+  override fun InspectorInfo.inspectableProperties() {
+    name = "hazeSource"
+    properties["zIndex"] = zIndex
+    properties["key"] = key
+    properties["inputSharing"] = inputSharing
+    properties["inputSharingOutsets"] = inputSharingOutsets
+  }
 }

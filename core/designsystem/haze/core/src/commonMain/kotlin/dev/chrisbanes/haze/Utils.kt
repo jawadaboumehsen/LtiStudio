@@ -1,12 +1,6 @@
-/*
- * Copyright 2024 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2024, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 @file:Suppress("NOTHING_TO_INLINE")
 
 package dev.chrisbanes.haze
@@ -29,33 +23,44 @@ import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
  * JVM errors propagate rather than being silently swallowed as an "unspecified position".
  */
 internal fun LayoutCoordinates.safePositionOnScreen(): Offset = try {
-    positionOnScreen()
+  positionOnScreen()
 } catch (_: Exception) {
-    Offset.Unspecified
+  Offset.Unspecified
 }
 
-internal fun LayoutCoordinates.safeTransformToScreen(): Matrix? = try {
-    Matrix().also { transformToScreen(it) }
+internal fun LayoutCoordinates.safeTransformToScreen(): Matrix? =
+  Matrix().takeIf { safeTransformToScreen(it) }
+
+/** Writes this layout's screen transform into [matrix]; returns false if it is unavailable. */
+internal fun LayoutCoordinates.safeTransformToScreen(matrix: Matrix): Boolean = try {
+  matrix.reset()
+  transformToScreen(matrix)
+  true
 } catch (_: Exception) {
-    null
+  false
 }
 
 internal fun LayoutCoordinates.positionForHaze(
-    strategy: HazePositionStrategy,
+  strategy: HazePositionStrategy,
 ): Offset = when (strategy) {
-    HazePositionStrategy.Local, HazePositionStrategy.Auto -> positionInRoot()
-    HazePositionStrategy.Screen -> safePositionOnScreen()
+  HazePositionStrategy.Local, HazePositionStrategy.Auto -> positionInRoot()
+  HazePositionStrategy.Screen -> safePositionOnScreen()
 }
 
-internal fun LayoutCoordinates.transformToRoot(): Matrix = Matrix().also { matrix ->
-    findRootCoordinates().transformFrom(this, matrix)
+internal fun LayoutCoordinates.transformToRoot(): Matrix = Matrix().also { transformToRoot(it) }
+
+internal fun LayoutCoordinates.transformToRoot(matrix: Matrix) {
+  matrix.reset()
+  findRootCoordinates().transformFrom(this, matrix)
 }
 
-internal fun LayoutCoordinates.transformToScreenOrRoot(): Matrix =
-    safeTransformToScreen() ?: transformToRoot()
+/** Writes this layout's screen transform, or its root transform if unavailable, into [matrix]. */
+internal fun LayoutCoordinates.transformToScreenOrRoot(matrix: Matrix) {
+  if (!safeTransformToScreen(matrix)) transformToRoot(matrix)
+}
 
 internal expect fun CompositionLocalConsumerModifierNode.getWindowId(): Any?
 
 internal inline fun <T> T.letIf(condition: Boolean, block: (T) -> T): T {
-    return if (condition) block(this) else this
+  return if (condition) block(this) else this
 }

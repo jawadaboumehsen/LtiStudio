@@ -97,7 +97,7 @@ object GlassMaterialStyles {
     /**
      * Constructs the calibrated 3D Superquadric Liquid [GlassStyle] strictly for [GlassToggle]'s thumb.
      *
-     * Activates [SurfaceProfile.SuperquadricLiquid] for authentic 3D Snell's law refraction,
+     * Activates [SurfaceProfile.Squircle] for authentic 3D Snell's law refraction,
      * analytic squircle gradient normal, and 12th-power grazing Fresnel highlights.
      */
     fun liquidToggleStyle(
@@ -107,7 +107,7 @@ object GlassMaterialStyles {
     ): GlassStyle {
         val baseClear = clearStyle(theme, opticalTint, captureBacking)
         return baseClear.then {
-            surfaceProfile(dev.chrisbanes.haze.glass.SurfaceProfile.SuperquadricLiquid)
+            surfaceProfile(dev.chrisbanes.haze.glass.SurfaceProfile.Squircle)
             specularIntensity(0.45f)
             ambientResponse(0.85f)
         }

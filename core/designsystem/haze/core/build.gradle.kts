@@ -24,6 +24,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.designsystem.haze.utils)
+                implementation(libs.jb.composeLifeCycle)
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.animation)

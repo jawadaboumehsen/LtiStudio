@@ -65,11 +65,11 @@ fun GlassSurface(
     val glassOrSolidModifier = if (GlassTheme.effectsEnabled) {
         Modifier.hazeGlass(
             input = sceneHazeInput(GlassTheme.hazeState),
-            style = remember(theme, shape, tint, captureBacking) {
+            style = remember(theme, shape, tint, captureBacking, surfaceColor) {
                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                     theme = theme,
                     opticalTint = tint,
-                    captureBacking = captureBacking,
+                    captureBacking = if (captureBacking.isSpecified) captureBacking else surfaceColor,
                 ).then {
                     this.shape(shape)
                 }

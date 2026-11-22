@@ -1,12 +1,8 @@
-/*
- * Copyright 2026 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2026, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
+@file:OptIn(InternalHazeApi::class)
+
 package dev.chrisbanes.haze.blur.material3
 
 import androidx.compose.material3.MaterialTheme
@@ -14,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import dev.chrisbanes.haze.InternalHazeApi
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeBlurStyleScope
+import dev.chrisbanes.haze.blur.valueBackedHazeBlurStyle
 
 /**
  * Creates a Blur Style with a Material 3 surface background.
@@ -25,9 +23,9 @@ import dev.chrisbanes.haze.blur.HazeBlurStyleScope
  */
 @Composable
 public fun HazeBlurStyle.Companion.Material3(
-    containerColor: Color = MaterialTheme.colorScheme.surface,
+  containerColor: Color = MaterialTheme.colorScheme.surface,
 ): HazeBlurStyle = remember(containerColor) {
-    HazeBlurStyle { backgroundColor(containerColor) }
+  HazeBlurStyle { backgroundColor(containerColor) }
 }
 
 /**
@@ -36,13 +34,19 @@ public fun HazeBlurStyle.Companion.Material3(
  * The default [containerColor] comes from the current [MaterialTheme]. The supplied color is
  * recorded before [block], so the block can override it without changing unrelated inherited
  * Style writes.
+ *
+ * The returned Style compares by value: two Styles are equal when they have the same
+ * [containerColor] and the same [block] instance. It is therefore equal across recompositions only
+ * while the caller's [block] is the same instance. Strong skipping memoizes a lambda created in a
+ * composable, so the Style stays equal unless a captured value changes. A lambda recreated on every
+ * composition yields an unequal Style; `remember` the Style or hoist the lambda in that case.
  */
 @Composable
 @ReadOnlyComposable
 public fun HazeBlurStyle.Companion.Material3(
-    containerColor: Color = MaterialTheme.colorScheme.surface,
-    block: HazeBlurStyleScope.() -> Unit,
-): HazeBlurStyle = HazeBlurStyle {
-    backgroundColor(containerColor)
-    block()
+  containerColor: Color = MaterialTheme.colorScheme.surface,
+  block: HazeBlurStyleScope.() -> Unit,
+): HazeBlurStyle = valueBackedHazeBlurStyle("Material3", containerColor, block) {
+  backgroundColor(containerColor)
+  block()
 }

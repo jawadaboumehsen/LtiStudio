@@ -1,170 +1,183 @@
-/*
- * Copyright 2026 Mifos Initiative
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
- */
+// Copyright 2026, Christopher Banes and the Haze project contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.animation.core.FiniteAnimationSpec
-import dev.chrisbanes.haze.ExperimentalHazeApi
 
-/** Selects which visual layers receive the interaction scale transform. */
-@ExperimentalHazeApi
+/**
+ * Selects which visual layers receive the interaction scale transform.
+ *
+ * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
+ */
 public enum class GlassTransformTarget {
-    /** Scales the generated Glass material while leaving the composable content unchanged. */
-    MaterialOnly,
+  /** Scales the generated Glass material while leaving the composable content unchanged. */
+  MaterialOnly,
 
-    /** Scales both the generated Glass material and the composable content. */
-    MaterialAndContent,
+  /** Scales both the generated Glass material and the composable content. */
+  MaterialAndContent,
 }
 
-/** Selects the pivot used by the interaction scale transform. */
-@ExperimentalHazeApi
+/**
+ * Selects the pivot used by the interaction scale transform.
+ *
+ * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
+ */
 public enum class GlassTransformPivot {
-    /** Uses the current pointer or interaction position as the transform pivot. */
-    Pointer,
+  /** Uses the current pointer or interaction position as the transform pivot. */
+  Pointer,
 
-    /** Uses the center of the material as the transform pivot. */
-    Center,
+  /** Uses the center of the material as the transform pivot. */
+  Center,
 }
 
-/** Controls whether interaction motion is reduced. */
-@ExperimentalHazeApi
+/**
+ * Controls whether Glass motion is reduced.
+ *
+ * `hazeGlass` applies it to interaction responses. [hazeGlassContainer] applies it to member
+ * transitions.
+ *
+ * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
+ */
 public enum class GlassReducedMotionPolicy {
-    /** Follows the current platform motion-duration scale. */
-    System,
+  /**
+   * Follows the current platform motion-duration scale. At a non-zero scale, interaction responses
+   * and container member transitions run under that scale. At zero (animations off), interaction
+   * responses behave as [Reduced] and snap, and container member transitions snap with no
+   * transition, as with [GlassMemberTransition.None].
+   */
+  System,
 
-    /** Disables interaction scale motion and snaps animated responses to their targets. */
-    Reduced,
+  /**
+   * Reduces motion: interaction scale motion is disabled and animated responses snap to their
+   * targets. Container member transitions keep the morph with a critically damped spring at full
+   * duration, with no overshoot, whatever the platform motion-duration scale is.
+   */
+  Reduced,
 
-    /** Preserves full interaction motion regardless of the platform motion-duration scale. */
-    Full,
+  /** Preserves full motion regardless of the platform motion-duration scale. */
+  Full,
 }
 
 /**
  * Declares the visual response for one Glass interaction state.
  *
  * This sealed receiver is implemented by Haze and is a declaration DSL, not a consumer
- * implementation point. Each node evaluates recorded declarations into node-owned runtime state.
+ * implementation point. Each node evaluates these declarations into node-owned runtime state.
  */
-@ExperimentalHazeApi
 @GlassStyleDsl
 public sealed interface GlassInteractionScope {
-    /** Sets the finite lighting multiplier in the inclusive range `0f..1f`. */
-    public fun lightingIntensity(intensity: Float)
+  /** Sets the finite lighting multiplier in the inclusive range `0f..1f`. */
+  public fun lightingIntensity(intensity: Float)
 
-    /** Sets the finite refraction multiplier in the inclusive range `0f..2f`. */
-    public fun refractionMultiplier(multiplier: Float)
+  /** Sets the finite refraction multiplier in the inclusive range `0f..2f`. */
+  public fun refractionMultiplier(multiplier: Float)
 
-    /** Sets the finite additive white-point adjustment in the inclusive range `-1f..1f`. */
-    public fun whitePointDelta(delta: Float)
+  /** Sets the finite additive white-point adjustment in the inclusive range `-1f..1f`. */
+  public fun whitePointDelta(delta: Float)
 
-    /** Sets a finite uniform scale in `0f < scale <= 1f`. */
-    public fun scale(scale: Float) {
-        scale(scaleX = scale, scaleY = scale)
-    }
+  /** Sets a finite uniform scale in `0f < scale <= 1f`. */
+  public fun scale(scale: Float) {
+    scale(scaleX = scale, scaleY = scale)
+  }
 
-    /** Sets finite horizontal and vertical scales in `0f < value <= 1f`. */
-    public fun scale(scaleX: Float, scaleY: Float)
+  /** Sets finite horizontal and vertical scales in `0f < value <= 1f`. */
+  public fun scale(scaleX: Float, scaleY: Float)
 
-    /**
-     * Applies [toSpec] when entering and [fromSpec] when leaving the response declared by [block].
-     * Animation specs retain the contract of their owning [FiniteAnimationSpec] type.
-     */
-    public fun animate(
-        toSpec: FiniteAnimationSpec<Float>,
-        fromSpec: FiniteAnimationSpec<Float>,
-        block: GlassInteractionScope.() -> Unit,
-    )
+  /**
+   * Applies [toSpec] when entering and [fromSpec] when leaving the response declared by [block].
+   * Animation specs retain the contract of their owning [FiniteAnimationSpec] type.
+   */
+  public fun animate(
+    toSpec: FiniteAnimationSpec<Float>,
+    fromSpec: FiniteAnimationSpec<Float>,
+    block: GlassInteractionScope.() -> Unit,
+  )
 }
 
 internal data class GlassResponseValue(
-    val value: Float,
-    val toSpec: FiniteAnimationSpec<Float>?,
-    val fromSpec: FiniteAnimationSpec<Float>?,
+  val value: Float,
+  val toSpec: FiniteAnimationSpec<Float>?,
+  val fromSpec: FiniteAnimationSpec<Float>?,
 )
 
 internal data class GlassInteractionResponse(
-    val lightingIntensity: GlassResponseValue? = null,
-    val refractionMultiplier: GlassResponseValue? = null,
-    val whitePointDelta: GlassResponseValue? = null,
-    val scaleX: GlassResponseValue? = null,
-    val scaleY: GlassResponseValue? = null,
+  val lightingIntensity: GlassResponseValue? = null,
+  val refractionMultiplier: GlassResponseValue? = null,
+  val whitePointDelta: GlassResponseValue? = null,
+  val scaleX: GlassResponseValue? = null,
+  val scaleY: GlassResponseValue? = null,
 )
 
 internal data class GlassInteractionSlot(
-    val revision: Long,
-    val response: GlassInteractionResponse,
+  val revision: Long,
+  val response: GlassInteractionResponse,
 )
 
 internal class GlassInteractionScopeImpl : GlassInteractionScope {
-    private var toSpec: FiniteAnimationSpec<Float>? = null
-    private var fromSpec: FiniteAnimationSpec<Float>? = null
-    private var lighting: GlassResponseValue? = null
-    private var refraction: GlassResponseValue? = null
-    private var whitePoint: GlassResponseValue? = null
-    private var xScale: GlassResponseValue? = null
-    private var yScale: GlassResponseValue? = null
+  private var toSpec: FiniteAnimationSpec<Float>? = null
+  private var fromSpec: FiniteAnimationSpec<Float>? = null
+  private var lighting: GlassResponseValue? = null
+  private var refraction: GlassResponseValue? = null
+  private var whitePoint: GlassResponseValue? = null
+  private var xScale: GlassResponseValue? = null
+  private var yScale: GlassResponseValue? = null
 
-    override fun lightingIntensity(intensity: Float) {
-        lighting = value(
-            requireFiniteInRange("lightingIntensity", intensity, 0f..1f, UNIT_INTERVAL_DOMAIN),
-        )
-    }
-
-    override fun refractionMultiplier(multiplier: Float) {
-        refraction = value(
-            requireFiniteInRange("refractionMultiplier", multiplier, 0f..2f, DOUBLE_INTERVAL_DOMAIN),
-        )
-    }
-
-    override fun whitePointDelta(delta: Float) {
-        whitePoint = value(
-            requireFiniteInRange("whitePointDelta", delta, -1f..1f, SIGNED_UNIT_INTERVAL_DOMAIN),
-        )
-    }
-
-    override fun scale(scaleX: Float, scaleY: Float) {
-        val validatedX = requirePositiveAtMostOne("scaleX", scaleX)
-        val validatedY = requirePositiveAtMostOne("scaleY", scaleY)
-        xScale = value(validatedX)
-        yScale = value(validatedY)
-    }
-
-    override fun animate(
-        toSpec: FiniteAnimationSpec<Float>,
-        fromSpec: FiniteAnimationSpec<Float>,
-        block: GlassInteractionScope.() -> Unit,
-    ) {
-        val previousTo = this.toSpec
-        val previousFrom = this.fromSpec
-        this.toSpec = toSpec
-        this.fromSpec = fromSpec
-        try {
-            block()
-        } finally {
-            this.toSpec = previousTo
-            this.fromSpec = previousFrom
-        }
-    }
-
-    fun build(): GlassInteractionResponse = GlassInteractionResponse(
-        lightingIntensity = lighting,
-        refractionMultiplier = refraction,
-        whitePointDelta = whitePoint,
-        scaleX = xScale,
-        scaleY = yScale,
+  override fun lightingIntensity(intensity: Float) {
+    lighting = value(
+      requireFiniteInRange("lightingIntensity", intensity, 0f..1f, UNIT_INTERVAL_DOMAIN),
     )
+  }
 
-    private fun value(value: Float): GlassResponseValue {
-        return GlassResponseValue(value = value, toSpec = toSpec, fromSpec = fromSpec)
+  override fun refractionMultiplier(multiplier: Float) {
+    refraction = value(
+      requireFiniteInRange("refractionMultiplier", multiplier, 0f..2f, DOUBLE_INTERVAL_DOMAIN),
+    )
+  }
+
+  override fun whitePointDelta(delta: Float) {
+    whitePoint = value(
+      requireFiniteInRange("whitePointDelta", delta, -1f..1f, SIGNED_UNIT_INTERVAL_DOMAIN),
+    )
+  }
+
+  override fun scale(scaleX: Float, scaleY: Float) {
+    val validatedX = requirePositiveAtMostOne("scaleX", scaleX)
+    val validatedY = requirePositiveAtMostOne("scaleY", scaleY)
+    xScale = value(validatedX)
+    yScale = value(validatedY)
+  }
+
+  override fun animate(
+    toSpec: FiniteAnimationSpec<Float>,
+    fromSpec: FiniteAnimationSpec<Float>,
+    block: GlassInteractionScope.() -> Unit,
+  ) {
+    val previousTo = this.toSpec
+    val previousFrom = this.fromSpec
+    this.toSpec = toSpec
+    this.fromSpec = fromSpec
+    try {
+      block()
+    } finally {
+      this.toSpec = previousTo
+      this.fromSpec = previousFrom
     }
+  }
+
+  fun build(): GlassInteractionResponse = GlassInteractionResponse(
+    lightingIntensity = lighting,
+    refractionMultiplier = refraction,
+    whitePointDelta = whitePoint,
+    scaleX = xScale,
+    scaleY = yScale,
+  )
+
+  private fun value(value: Float): GlassResponseValue {
+    return GlassResponseValue(value = value, toSpec = toSpec, fromSpec = fromSpec)
+  }
 }
 
 internal fun buildGlassInteractionResponse(
-    block: GlassInteractionScope.() -> Unit,
+  block: GlassInteractionScope.() -> Unit,
 ): GlassInteractionResponse = GlassInteractionScopeImpl().apply(block).build()

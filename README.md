@@ -331,8 +331,8 @@ Contributor notes on architecture, the design system and each pipeline stage are
 These parts come from other projects under the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0), which applies to them:
 
-- **[Haze](https://github.com/chrisbanes/haze)** (Chris Banes), vendored under `core/designsystem/haze/` from commit
-  `a9bc783540bd9dec472bab66057b4601586f09a3`. The sources keep their `dev.chrisbanes.haze.*` packages and their
+- **[Haze](https://github.com/chrisbanes/haze)** (Chris Banes), vendored under `core/designsystem/haze/` from tag
+  `2.1.0` (commit `ca21ff2060e52e1882afdb94f9b055f7fc834bd9`, Shatterproof Glass). The sources keep their `dev.chrisbanes.haze.*` packages and their
   licence headers.
 - **IntelliJ Platform icons** (Copyright 2000-2025 JetBrains s.r.o. and contributors): the `ide*.svg` icons under
   `core/designsystem/src/commonMain/composeResources/drawable/`, unmodified files from

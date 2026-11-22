@@ -508,10 +508,12 @@ class GlassToggleLiquidMotionTest {
                                     captureBacking = Color.Transparent,
                                 ).then {
                                     shape(GlassShapes.HazeCapsule)
-                                    optics(
-                                        refractionStrength = 0f,
-                                        refractionDisplacement = 0.dp,
-                                    )
+                                    optics {
+                                        copy(
+                                            refractionStrength = 0f,
+                                            refractionDisplacement = 0.dp,
+                                        )
+                                    }
                                 },
                             ),
                     )
