@@ -11,7 +11,6 @@ package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeSourceMetadata
 import dev.chrisbanes.haze.HazeSourceSelection
@@ -26,7 +25,6 @@ data class ControlSourceKey(val type: String, val id: String)
 /**
  * Central policy for scene consumers: excludes all control-local sources to eliminate bloom halos.
  */
-@OptIn(ExperimentalHazeApi::class)
 val SceneConsumersSelection: HazeSourceSelection = HazeSourceSelection.Behind.where { metadata: HazeSourceMetadata ->
     metadata.key !is ControlSourceKey
 }
@@ -35,7 +33,6 @@ val SceneConsumersSelection: HazeSourceSelection = HazeSourceSelection.Behind.wh
  * Thumb selection policy: samples all scene sources (keyed or unkeyed) and the control's own track,
  * while excluding peer control sources.
  */
-@OptIn(ExperimentalHazeApi::class)
 fun toggleThumbSelection(myKey: ControlSourceKey): HazeSourceSelection =
     HazeSourceSelection.Behind.where { metadata: HazeSourceMetadata ->
         metadata.key !is ControlSourceKey || metadata.key == myKey
@@ -44,7 +41,6 @@ fun toggleThumbSelection(myKey: ControlSourceKey): HazeSourceSelection =
 /**
  * Single shared factory for scene consumers to sample [HazeState] with the halo-exclusion policy.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun sceneHazeInput(
     state: HazeState = GlassTheme.hazeState,

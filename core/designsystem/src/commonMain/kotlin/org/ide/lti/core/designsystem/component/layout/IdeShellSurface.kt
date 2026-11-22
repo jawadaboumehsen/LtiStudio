@@ -10,6 +10,7 @@
 package org.ide.lti.core.designsystem.component.layout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -18,10 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.glass.GlassDefaults
 import dev.chrisbanes.haze.glass.GlassStyleScope
 import dev.chrisbanes.haze.glass.hazeGlass
+import dev.chrisbanes.haze.glass.hazeGlassContainer
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassMaterialStyles
@@ -47,7 +49,6 @@ import org.ide.lti.core.designsystem.theme.sceneHazeInput
  * @param borderWidth Border stroke thickness.
  * @param styleOverride Optional styling hook to customize or override glass optics.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun Modifier.glassSurface(
     role: GlassRole = GlassRole.Shell,
@@ -141,4 +142,18 @@ fun Modifier.ideShellSurface(
     borderColor = borderColor,
     borderWidth = borderWidth,
     styleOverride = styleOverride,
+)
+
+/**
+ * Container modifier for groups of glass surfaces that merge continuous boundaries
+ * when clustered within [mergeDistance].
+ *
+ * Backed by Haze 2.1.0's [hazeGlassContainer].
+ */
+fun Modifier.glassContainer(
+    mergeDistance: Dp = GlassDefaults.mergeDistance,
+    scrollState: ScrollableState? = null,
+): Modifier = this.hazeGlassContainer(
+    mergeDistance = mergeDistance,
+    scrollState = scrollState,
 )

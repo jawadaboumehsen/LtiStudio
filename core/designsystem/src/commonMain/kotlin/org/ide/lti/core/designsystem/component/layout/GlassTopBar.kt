@@ -43,7 +43,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
@@ -112,7 +111,6 @@ data class TopBarSearch(
  * Single, unified canonical Top App Bar across the application adhering to Clean Architecture
  * and SOLID principles with type-safe sealed interfaces and cohesive data classes.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassTopBar(
     modifier: Modifier = Modifier,

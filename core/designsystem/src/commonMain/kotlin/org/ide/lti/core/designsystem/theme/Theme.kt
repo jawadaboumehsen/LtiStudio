@@ -20,7 +20,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import dev.chrisbanes.haze.glass.LocalGlassAccessibilitySettings
@@ -204,7 +203,6 @@ object GlassTheme {
  *   inherits the ambient [LocalGlassReducedMotionPolicy] from an enclosing [LtiTheme], or defaults
  *   to `false` (system motion policy) if unprovided.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LtiTheme(
     appTheme: AppTheme = AppTheme.Blue,

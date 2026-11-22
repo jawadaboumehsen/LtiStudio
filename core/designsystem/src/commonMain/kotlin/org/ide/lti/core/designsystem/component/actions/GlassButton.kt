@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
@@ -106,7 +105,6 @@ object GlassButtonDefaults {
  * sample `GlassButton` (haze/sample/shared/.../sample/components/GlassButton.kt): one
  * `GlassStyle.regular.then { }` per press/hover/focus state, no hand-rolled animation.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassButton(
     onClick: () -> Unit,

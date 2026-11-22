@@ -11,7 +11,6 @@ package org.ide.lti.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.GlassStyle
 
 /**
@@ -29,7 +28,6 @@ import dev.chrisbanes.haze.glass.GlassStyle
  * 8. Appends writes after [GlassStyle.regular] or [GlassStyle.clear], allowing component callers
  *    to chain `.then { ... }` for shapes, interaction states, and local lighting.
  */
-@OptIn(ExperimentalHazeApi::class)
 object GlassMaterialStyles {
 
     /**
