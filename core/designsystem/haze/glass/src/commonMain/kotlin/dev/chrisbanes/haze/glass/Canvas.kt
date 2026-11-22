@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.ui.geometry.Offset
@@ -25,135 +31,135 @@ import dev.chrisbanes.haze.InternalHazeApi
 import kotlin.math.max
 
 internal fun DrawScope.recordDepthMix(
-  layer: GraphicsLayer,
-  size: IntSize,
-  source: GraphicsLayer,
-  blurred: GraphicsLayer,
-  depth: Float,
+    layer: GraphicsLayer,
+    size: IntSize,
+    source: GraphicsLayer,
+    blurred: GraphicsLayer,
+    depth: Float,
 ) {
-  recordDepthMix(
-    layer = layer,
-    size = size,
-    depth = depth,
-    drawSource = { drawLayer(source) },
-    drawBlurred = { drawLayer(blurred) },
-  )
+    recordDepthMix(
+        layer = layer,
+        size = size,
+        depth = depth,
+        drawSource = { drawLayer(source) },
+        drawBlurred = { drawLayer(blurred) },
+    )
 }
 
 internal fun DrawScope.recordDepthMix(
-  layer: GraphicsLayer,
-  size: IntSize,
-  depth: Float,
-  drawSource: DrawScope.() -> Unit,
-  drawBlurred: DrawScope.() -> Unit,
+    layer: GraphicsLayer,
+    size: IntSize,
+    depth: Float,
+    drawSource: DrawScope.() -> Unit,
+    drawBlurred: DrawScope.() -> Unit,
 ) {
-  layer.compositingStrategy = CompositingStrategy.Offscreen
-  layer.record(size) {
-    withLayerPaint(alpha = 1f - depth, blendMode = BlendMode.SrcOver) {
-      drawSource()
+    layer.compositingStrategy = CompositingStrategy.Offscreen
+    layer.record(size) {
+        withLayerPaint(alpha = 1f - depth, blendMode = BlendMode.SrcOver) {
+            drawSource()
+        }
+        withLayerPaint(alpha = depth, blendMode = BlendMode.Plus) {
+            drawBlurred()
+        }
     }
-    withLayerPaint(alpha = depth, blendMode = BlendMode.Plus) {
-      drawBlurred()
-    }
-  }
 }
 
 private inline fun DrawScope.withLayerPaint(
-  alpha: Float,
-  blendMode: BlendMode,
-  block: DrawScope.() -> Unit,
+    alpha: Float,
+    blendMode: BlendMode,
+    block: DrawScope.() -> Unit,
 ) {
-  val canvas = drawContext.canvas
-  val paint = Paint().apply {
-    this.alpha = alpha
-    this.blendMode = blendMode
-  }
-  canvas.saveLayer(Rect(Offset.Zero, size), paint)
-  try {
-    block()
-  } finally {
-    canvas.restore()
-  }
+    val canvas = drawContext.canvas
+    val paint = Paint().apply {
+        this.alpha = alpha
+        this.blendMode = blendMode
+    }
+    canvas.saveLayer(Rect(Offset.Zero, size), paint)
+    try {
+        block()
+    } finally {
+        canvas.restore()
+    }
 }
 
 @OptIn(ExperimentalHazeApi::class, InternalHazeApi::class)
 internal fun DrawScope.drawInputWithAlpha(
-  context: HazeEffectRuntimeDrawScope,
-  alpha: Float,
+    context: HazeEffectRuntimeDrawScope,
+    alpha: Float,
 ) {
-  withLayerPaint(alpha = alpha, blendMode = BlendMode.SrcOver) {
-    with(context) { this@drawInputWithAlpha.drawInput() }
-  }
+    withLayerPaint(alpha = alpha, blendMode = BlendMode.SrcOver) {
+        with(context) { this@drawInputWithAlpha.drawInput() }
+    }
 }
 
 @OptIn(ExperimentalHazeApi::class, InternalHazeApi::class)
 internal fun DrawScope.createScaledContentLayer(
-  context: HazeEffectRuntimeDrawScope,
-  backgroundColor: Color,
-  scaleFactor: Float,
-  layerSize: Size,
-  existingLayer: GraphicsLayer? = null,
+    context: HazeEffectRuntimeDrawScope,
+    backgroundColor: Color,
+    scaleFactor: Float,
+    layerSize: Size,
+    existingLayer: GraphicsLayer? = null,
 ): GraphicsLayer? {
-  val scaledLayerSize = (layerSize * scaleFactor).roundToIntSize()
+    val scaledLayerSize = (layerSize * scaleFactor).roundToIntSize()
 
-  if (scaledLayerSize.width <= 0 || scaledLayerSize.height <= 0) {
-    return null
-  }
-
-  val graphicsContext = context.requireGraphicsContext()
-  val layer = existingLayer?.takeUnless { it.isReleased }
-    ?: graphicsContext.createGraphicsLayer()
-
-  layer.record(size = scaledLayerSize) {
-    if (backgroundColor.alpha > 0f) {
-      drawRect(backgroundColor)
+    if (scaledLayerSize.width <= 0 || scaledLayerSize.height <= 0) {
+        return null
     }
 
-    scale(scale = scaleFactor, pivot = Offset.Zero) {
-      with(context) { this@record.drawInput() }
-    }
-  }
+    val graphicsContext = context.requireGraphicsContext()
+    val layer = existingLayer?.takeUnless { it.isReleased }
+        ?: graphicsContext.createGraphicsLayer()
 
-  return layer
+    layer.record(size = scaledLayerSize) {
+        if (backgroundColor.alpha > 0f) {
+            drawRect(backgroundColor)
+        }
+
+        scale(scale = scaleFactor, pivot = Offset.Zero) {
+            with(context) { this@record.drawInput() }
+        }
+    }
+
+    return layer
 }
 
 internal fun DrawScope.drawScaledContent(
-  offset: Offset,
-  scaledSize: Size,
-  clip: Boolean = true,
-  block: DrawScope.() -> Unit,
+    offset: Offset,
+    scaledSize: Size,
+    clip: Boolean = true,
+    block: DrawScope.() -> Unit,
 ) {
-  val scaleFactor = max(size.width / scaledSize.width, size.height / scaledSize.height)
-  withTransform({ if (clip) clipRect() }) {
-    translate(offset) {
-      scale(scale = scaleFactor, pivot = Offset.Zero) {
-        block()
-      }
+    val scaleFactor = max(size.width / scaledSize.width, size.height / scaledSize.height)
+    withTransform({ if (clip) clipRect() }) {
+        translate(offset) {
+            scale(scale = scaleFactor, pivot = Offset.Zero) {
+                block()
+            }
+        }
     }
-  }
 }
 
 internal inline fun DrawScope.recordAndDrawGlassGroupAlpha(
-  layer: GraphicsLayer,
-  alpha: Float,
-  size: IntSize,
-  crossinline block: DrawScope.() -> Unit,
+    layer: GraphicsLayer,
+    alpha: Float,
+    size: IntSize,
+    crossinline block: DrawScope.() -> Unit,
 ) {
-  layer.alpha = alpha
-  layer.blendMode = BlendMode.SrcOver
-  layer.compositingStrategy = CompositingStrategy.Offscreen
-  layer.renderEffect = null
-  layer.record(size = size) { block() }
-  drawLayer(layer)
+    layer.alpha = alpha
+    layer.blendMode = BlendMode.SrcOver
+    layer.compositingStrategy = CompositingStrategy.Offscreen
+    layer.renderEffect = null
+    layer.record(size = size) { block() }
+    drawLayer(layer)
 }
 
 internal inline fun DrawScope.translate(
-  offset: Offset,
-  block: DrawScope.() -> Unit,
+    offset: Offset,
+    block: DrawScope.() -> Unit,
 ) {
-  if (offset != Offset.Zero) {
-    translate(offset.x, offset.y, block)
-  } else {
-    block()
-  }
+    if (offset != Offset.Zero) {
+        translate(offset.x, offset.y, block)
+    } else {
+        block()
+    }
 }

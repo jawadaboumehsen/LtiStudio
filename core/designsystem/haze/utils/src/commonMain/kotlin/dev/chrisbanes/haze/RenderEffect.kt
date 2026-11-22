@@ -1,6 +1,12 @@
-// Copyright 2024, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2024 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze
 
 import androidx.compose.ui.geometry.Offset
@@ -38,10 +44,10 @@ public expect fun createShaderRenderEffect(shader: Shader, crop: Rect? = null): 
  */
 @InternalHazeApi
 public expect fun createBlendRenderEffect(
-  blendMode: BlendMode,
-  background: PlatformRenderEffect,
-  foreground: PlatformRenderEffect,
-  crop: Rect? = null,
+    blendMode: BlendMode,
+    background: PlatformRenderEffect,
+    foreground: PlatformRenderEffect,
+    crop: Rect? = null,
 ): PlatformRenderEffect
 
 /**
@@ -49,9 +55,9 @@ public expect fun createBlendRenderEffect(
  */
 @InternalHazeApi
 public expect fun createColorFilterRenderEffect(
-  colorFilter: PlatformColorFilter,
-  input: PlatformRenderEffect? = null,
-  crop: Rect? = null,
+    colorFilter: PlatformColorFilter,
+    input: PlatformRenderEffect? = null,
+    crop: Rect? = null,
 ): PlatformRenderEffect
 
 /**
@@ -64,11 +70,11 @@ public expect fun createColorFilterRenderEffect(
  */
 @InternalHazeApi
 public expect fun createBlurRenderEffect(
-  radiusX: Float,
-  radiusY: Float,
-  tileMode: TileMode,
-  input: PlatformRenderEffect? = null,
-  crop: Rect? = null,
+    radiusX: Float,
+    radiusY: Float,
+    tileMode: TileMode,
+    input: PlatformRenderEffect? = null,
+    crop: Rect? = null,
 ): PlatformRenderEffect?
 
 /**
@@ -76,10 +82,10 @@ public expect fun createBlurRenderEffect(
  */
 @InternalHazeApi
 public expect fun createOffsetRenderEffect(
-  offsetX: Float,
-  offsetY: Float,
-  input: PlatformRenderEffect? = null,
-  crop: Rect? = null,
+    offsetX: Float,
+    offsetY: Float,
+    input: PlatformRenderEffect? = null,
+    crop: Rect? = null,
 ): PlatformRenderEffect
 
 /**
@@ -93,17 +99,17 @@ public expect fun PlatformRenderEffect.then(other: PlatformRenderEffect): Platfo
  */
 @InternalHazeApi
 public fun PlatformRenderEffect.blendForeground(
-  foreground: PlatformRenderEffect,
-  blendMode: BlendMode,
-  offset: Offset = Offset.Unspecified,
+    foreground: PlatformRenderEffect,
+    blendMode: BlendMode,
+    offset: Offset = Offset.Unspecified,
 ): PlatformRenderEffect = createBlendRenderEffect(
-  blendMode = blendMode,
-  background = this,
-  foreground = when {
-    offset.isUnspecified -> foreground
-    offset == Offset.Zero -> foreground
-    else -> createOffsetRenderEffect(offset.x, offset.y, foreground)
-  },
+    blendMode = blendMode,
+    background = this,
+    foreground = when {
+        offset.isUnspecified -> foreground
+        offset == Offset.Zero -> foreground
+        else -> createOffsetRenderEffect(offset.x, offset.y, foreground)
+    },
 )
 
 /**

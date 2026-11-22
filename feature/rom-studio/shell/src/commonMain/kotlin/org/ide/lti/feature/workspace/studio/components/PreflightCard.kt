@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
 import org.ide.lti.core.domain.pipeline.stages.VintfEvidence
 import org.ide.lti.core.domain.pipeline.stages.VintfEvidenceKind
 import org.ide.lti.core.domain.pipeline.stages.VintfStatus
@@ -95,7 +96,10 @@ internal fun PreflightCard(
                 variant = GlassButtonVariant.Primary,
                 modifier = Modifier.testTag("PreflightCheck"),
             ) {
-                Text(if (state.checking || state.readingNext) "Checking…" else "Check now", fontSize = FontSize.BodySmall)
+                Text(
+                    text = if (state.checking || state.readingNext) "Checking…" else "Check now",
+                    fontSize = FontSize.BodySmall,
+                )
             }
         }
         state.error?.let { Text(it, color = GlassTheme.diagnosticColors.error, fontSize = FontSize.BodySmall) }
@@ -137,29 +141,34 @@ internal fun BuildReadinessResults(
         ReadinessText("Workspace inputs changed. Run the check again for a current result.")
     }
     if (state.findings != null) {
-        val complete = state.vintf?.status == VintfStatus.COMPATIBLE ||
-            state.vintf?.status == VintfStatus.INCOMPATIBLE && state.vintf.evidence.isEmpty()
-        Text(
-            when {
-                blockers.size == 1 -> "Blocked by 1 finding"
-                blockers.isNotEmpty() -> "Blocked by ${blockers.size} findings"
-                !complete -> "Checks incomplete"
-                else -> "No blocking findings"
-            },
-            color = when {
-                blockers.isNotEmpty() -> GlassTheme.diagnosticColors.error
-                !complete -> GlassTheme.diagnosticColors.warning
-                else -> GlassTheme.diagnosticColors.success
-            },
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.testTag("PreflightSummary"),
-        )
+        PreflightSummaryText(blockers = blockers, state = state)
         blockers.forEach { FindingRow(it, onApply, stageLink) }
     }
     NextBuildSection(state)
     VintfResult(state, stageLink, onOpenSetup, onRetry)
     state.findings.orEmpty().filterNot { it.blocks }.forEach { FindingRow(it, onApply, stageLink) }
+}
+
+@Composable
+private fun PreflightSummaryText(blockers: List<PreflightFinding>, state: PreflightUiState) {
+    val complete = state.vintf?.status == VintfStatus.COMPATIBLE ||
+        (state.vintf?.status == VintfStatus.INCOMPATIBLE && state.vintf.evidence.isEmpty())
+    Text(
+        text = when {
+            blockers.size == 1 -> "Blocked by 1 finding"
+            blockers.isNotEmpty() -> "Blocked by ${blockers.size} findings"
+            !complete -> "Checks incomplete"
+            else -> "No blocking findings"
+        },
+        color = when {
+            blockers.isNotEmpty() -> GlassTheme.diagnosticColors.error
+            !complete -> GlassTheme.diagnosticColors.warning
+            else -> GlassTheme.diagnosticColors.success
+        },
+        fontSize = FontSize.BodySmall,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.testTag("PreflightSummary"),
+    )
 }
 
 @Composable
@@ -188,6 +197,16 @@ private fun VintfResult(
     val android = result.androidRelease?.let { "Android $it" }
     val firstApi = result.firstApiLevel?.let { "Vendor first API level $it" }
     listOfNotNull(android, firstApi).joinToString(" · ").takeIf(String::isNotEmpty)?.let { ReadinessText(it) }
+    VintfSkuSection(result, stageLink)
+    if (result.evidence.isNotEmpty()) {
+        ReadinessHeading("Missing VINTF evidence")
+        result.evidence.forEach { VintfEvidenceRow(it, stageLink, onOpenSetup) }
+        if (result.evidence.any { it.kind == VintfEvidenceKind.SCAN }) EvidenceLink("Retry the checks", onRetry)
+    }
+}
+
+@Composable
+private fun VintfSkuSection(result: VintfAssessment, stageLink: @Composable (PreflightFix.Open) -> Unit) {
     if (result.skuResults.isNotEmpty()) {
         ReadinessHeading("Checker results by SKU")
     }
@@ -199,11 +218,6 @@ private fun VintfResult(
     }
     if (result.skuResults.any { it.status == VintfStatus.INCOMPATIBLE }) {
         stageLink(PreflightFix.Open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline"))
-    }
-    if (result.evidence.isNotEmpty()) {
-        ReadinessHeading("Missing VINTF evidence")
-        result.evidence.forEach { VintfEvidenceRow(it, stageLink, onOpenSetup) }
-        if (result.evidence.any { it.kind == VintfEvidenceKind.SCAN }) EvidenceLink("Retry the checks", onRetry)
     }
 }
 
@@ -261,7 +275,7 @@ private fun ReadinessText(text: String) {
 @Composable
 private fun NextBuildSection(state: PreflightUiState) {
     state.nextError?.let { Text(it, color = GlassTheme.diagnosticColors.error, fontSize = FontSize.BodySmall) }
-    if (state.readingNext || state.checking && state.next == null && state.nextError == null) {
+    if (state.readingNext || (state.checking && state.next == null && state.nextError == null)) {
         GlassLoadingPlaceholder("Reading the build plan…", Modifier.testTag("PreflightPlanLoading"))
         return
     }

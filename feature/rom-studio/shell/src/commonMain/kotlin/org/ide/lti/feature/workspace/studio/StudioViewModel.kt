@@ -110,7 +110,7 @@ public data class StudioUiState(
  * - Guaranteed: Selecting a stage or object NEVER starts work, never mutates a ConfigurationSnapshot,
  *   and never resets a draft.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 public class StudioViewModel(
     private val studioPresentationStore: StudioPresentationStorePort,
     public val stageEditorRegistry: StageEditorRegistry =

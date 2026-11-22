@@ -179,6 +179,11 @@ object ComponentSize {
     val PluginActionBtnCompactWidth: Dp = 104.dp
     val AboutLogoBoxSize: Dp = 68.dp
     val AppearanceLivePreviewHeight: Dp = 360.dp
+    val SkeletonRowIconSize: Dp = 32.dp
+    val SkeletonTrailingBadgeWidth: Dp = 56.dp
+    val SkeletonCardHeaderIconSize: Dp = 28.dp
+    val SkeletonCardActionWidth: Dp = 96.dp
+    val SkeletonCardActionHeight: Dp = 30.dp
 }
 
 /**

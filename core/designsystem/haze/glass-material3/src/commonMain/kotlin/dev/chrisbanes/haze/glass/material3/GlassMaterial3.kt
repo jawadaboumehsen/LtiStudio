@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass.material3
 
 import androidx.compose.material3.MaterialTheme
@@ -22,11 +28,11 @@ import dev.chrisbanes.haze.glass.GlassStyleScope
 @Composable
 @ExperimentalHazeApi
 public fun GlassStyle.material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
-  tint: Color? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    tint: Color? = null,
 ): GlassStyle {
-  val material3Style = GlassStyle.Material3(containerColor, tint)
-  return remember(this, material3Style) { material3Style.then(this) }
+    val material3Style = GlassStyle.Material3(containerColor, tint)
+    return remember(this, material3Style) { material3Style.then(this) }
 }
 
 /**
@@ -39,13 +45,13 @@ public fun GlassStyle.material3(
 @Composable
 @ExperimentalHazeApi
 public fun GlassStyle.Companion.Material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
-  tint: Color? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    tint: Color? = null,
 ): GlassStyle = remember(containerColor, tint) {
-  GlassStyle {
-    backgroundColor(containerColor)
-    if (tint != null) tint(tint)
-  }
+    GlassStyle {
+        backgroundColor(containerColor)
+        if (tint != null) tint(tint)
+    }
 }
 
 /**
@@ -60,11 +66,11 @@ public fun GlassStyle.Companion.Material3(
 @ReadOnlyComposable
 @ExperimentalHazeApi
 public fun GlassStyle.Companion.Material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
-  tint: Color? = null,
-  block: GlassStyleScope.() -> Unit,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    tint: Color? = null,
+    block: GlassStyleScope.() -> Unit,
 ): GlassStyle = GlassStyle {
-  backgroundColor(containerColor)
-  if (tint != null) tint(tint)
-  block()
+    backgroundColor(containerColor)
+    if (tint != null) tint(tint)
+    block()
 }

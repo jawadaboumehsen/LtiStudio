@@ -40,6 +40,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -418,20 +419,33 @@ private fun ReviewCard(
         val resumes = journal != null && !journal.finished && journal.sha256 == preflight?.release?.sha256
         PublishButtons(state, ready, resumes, onPublish = { confirming = true }, onCancel = onCancel)
         if (state.publishing && journal != null) PublishProgress(journal, state.transfer, state.bytesPerSecond)
-        if (state.publishing && journal == null) GlassLoadingStatus("Preparing to publish…")
+        if (state.publishing && journal == null) {
+            GlassLoadingStatus("Preparing to publish…")
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.ExtraSmall),
+            )
+        }
         if (resumes && !state.publishing) Hint("Publishing again resumes here; finished steps are not redone.")
         // The result first: a finished publish says where it went, above the steps that got it there.
         journal?.outcome?.takeIf { !state.publishing }?.let { Success(withShownPaths(it)) }
         journal?.let { JournalSteps(it, state.transfer?.stepId.takeIf { state.publishing }) }
     }
-    val release = review?.preflight?.release
-    if (confirming && review != null && release != null) {
-        val what = release.ota?.let { "${release.zip} and ${it.zip} go" } ?: "${release.zip} goes"
-        val destination = review.preflight.destination?.let(::shownPath)
-        ConfirmPublish("$what to $destination.", onDismiss = { confirming = false }) {
-            confirming = false
-            onPublish(review)
-        }
+    if (confirming && review?.preflight?.release != null) {
+        ReviewPublishDialog(review, onDismiss = { confirming = false }, onPublish = onPublish)
+    }
+}
+
+@Composable
+private fun ReviewPublishDialog(review: PublishReview, onDismiss: () -> Unit, onPublish: (PublishReview) -> Unit) {
+    val release = review.preflight.release ?: return
+    val what = release.ota?.let { "${release.zip} and ${it.zip} go" } ?: "${release.zip} goes"
+    val destination = review.preflight.destination?.let(::shownPath)
+    ConfirmPublish("$what to $destination.", onDismiss = onDismiss) {
+        onDismiss()
+        onPublish(review)
     }
 }
 

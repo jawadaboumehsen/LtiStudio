@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(InternalHazeApi::class)
 
 package dev.chrisbanes.haze.glass
@@ -19,49 +25,49 @@ import org.jetbrains.skia.RuntimeEffect
 import org.jetbrains.skia.RuntimeShaderBuilder
 
 internal actual fun createGlassDepthInputRenderEffect(
-  sharp: PlatformRenderEffect?,
-  blur: PlatformRenderEffect?,
-  depth: Float,
+    sharp: PlatformRenderEffect?,
+    blur: PlatformRenderEffect?,
+    depth: Float,
 ): PlatformRenderEffect? = null
 
 internal actual val supportsFusedGlassRenderEffect: Boolean = false
 
 internal actual fun createGlassRimBrushProvider(): GlassRimBrushProvider? {
-  val builder = runCatchingGlassRim {
-    RuntimeShaderBuilder(RuntimeEffect.makeForShader(GlassShaders.buildRim()))
-  }.getOrNull() ?: return null
-  val uniforms = GlassRimUniformProvider(builder)
-  return GlassRimBrushProvider { key ->
-    uniforms.setRimUniforms(key)
-    runCatchingGlassRim {
-      // Skia snapshots the uniforms, so each recorded rim needs its own shader.
-      ShaderBrush(builder.makeShader().asComposeShader())
-    }.getOrNull()
-  }
+    val builder = runCatchingGlassRim {
+        RuntimeShaderBuilder(RuntimeEffect.makeForShader(GlassShaders.buildRim()))
+    }.getOrNull() ?: return null
+    val uniforms = GlassRimUniformProvider(builder)
+    return GlassRimBrushProvider { key ->
+        uniforms.setRimUniforms(key)
+        runCatchingGlassRim {
+            // Skia snapshots the uniforms, so each recorded rim needs its own shader.
+            ShaderBrush(builder.makeShader().asComposeShader())
+        }.getOrNull()
+    }
 }
 
 internal actual fun DrawScope.supportsGlassRimBrush(): Boolean = true
 
 private class GlassRimUniformProvider(private val builder: RuntimeShaderBuilder) : RuntimeShaderUniformProvider {
-  override fun setColorUniform(name: String, color: Color) {
-    val extendedSrgb = color.convert(ColorSpaces.ExtendedSrgb)
-    builder.uniform(
-      name,
-      extendedSrgb.red,
-      extendedSrgb.green,
-      extendedSrgb.blue,
-      extendedSrgb.alpha,
-    )
-  }
+    override fun setColorUniform(name: String, color: Color) {
+        val extendedSrgb = color.convert(ColorSpaces.ExtendedSrgb)
+        builder.uniform(
+            name,
+            extendedSrgb.red,
+            extendedSrgb.green,
+            extendedSrgb.blue,
+            extendedSrgb.alpha,
+        )
+    }
 
-  override fun setFloatUniform(name: String, value: Float) = builder.uniform(name, value)
+    override fun setFloatUniform(name: String, value: Float) = builder.uniform(name, value)
 
-  override fun setFloatUniform(name: String, value1: Float, value2: Float) = builder.uniform(name, value1, value2)
+    override fun setFloatUniform(name: String, value1: Float, value2: Float) = builder.uniform(name, value1, value2)
 
-  override fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float) =
-    builder.uniform(name, value1, value2, value3, value4)
+    override fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float) =
+        builder.uniform(name, value1, value2, value3, value4)
 
-  override fun setIntUniform(name: String, value: Int) = builder.uniform(name, value)
+    override fun setIntUniform(name: String, value: Int) = builder.uniform(name, value)
 
-  override fun setChildShader(name: String, shader: Shader) = builder.child(name, shader.skiaShader)
+    override fun setChildShader(name: String, shader: Shader) = builder.child(name, shader.skiaShader)
 }

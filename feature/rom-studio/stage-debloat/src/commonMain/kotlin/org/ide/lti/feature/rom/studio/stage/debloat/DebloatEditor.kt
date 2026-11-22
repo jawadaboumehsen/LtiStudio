@@ -56,6 +56,8 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -151,7 +153,25 @@ public fun DebloatEditor(
                             modifier = Modifier.fillMaxWidth().testTag("DebloatSearch"),
                         )
                     }
-                    if (shown == null) item { GlassLoadingStatus("Searching apps…") }
+                    if (shown == null || (facts.loading && facts.inventory.isEmpty())) {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Small),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                            ) {
+                                GlassLoadingStatus(if (shown == null) "Searching apps…" else "Reading apps inventory…")
+                                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+                                GlassSkeletonList(count = 5, hasIcon = true, hasSubtitle = true, hasTrailingBadge = true)
+                            }
+                        }
+                    } else if (facts.loading) {
+                        item {
+                            GlassProgressBar(
+                                progress = null,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+                            )
+                        }
+                    }
                     items(shown.orEmpty(), key = { DebloatViewModel.selectorOf(it) }) { candidate ->
                         val selector = DebloatViewModel.selectorOf(candidate)
                         val details = remember(facts.apps, selector) { details(facts.apps[selector], selector, facts) }

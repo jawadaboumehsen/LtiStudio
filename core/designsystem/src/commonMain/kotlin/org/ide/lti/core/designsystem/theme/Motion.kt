@@ -49,6 +49,9 @@ object MotionDuration {
 
     /** Hover delay before a tooltip appears (500ms). */
     const val TooltipDelay: Int = 500
+
+    /** Shimmer highlight sweep animation duration across frosted glass elements (1400ms). */
+    const val ShimmerSweep: Int = 1400
 }
 
 /**

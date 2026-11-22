@@ -47,6 +47,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.workbench.DeviceCheckResult
@@ -108,6 +109,9 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                 }
             }
         } else {
+            if (uiState.isLoading) {
+                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Small))
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

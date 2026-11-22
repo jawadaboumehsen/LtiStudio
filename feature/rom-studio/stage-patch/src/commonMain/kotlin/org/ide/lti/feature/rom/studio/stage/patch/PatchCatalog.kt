@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -44,8 +46,15 @@ internal fun PatchCatalog(
         GlassButton(onClick = onOpenPlugins, variant = GlassButtonVariant.Standard) {
             Text("Install plugins…", fontSize = FontSize.BodySmall)
         }
-        if (facts.loading || (!facts.loaded && facts.loadError == null)) {
+        if (facts.installed.isEmpty() && (facts.loading || (!facts.loaded && facts.loadError == null))) {
             GlassLoadingPlaceholder("Loading installed plugins…")
+        } else if (facts.loading) {
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.ExtraSmall),
+            )
         }
         facts.loadError?.let { message ->
             PatchProblem("Could not load installed plugins. $message")

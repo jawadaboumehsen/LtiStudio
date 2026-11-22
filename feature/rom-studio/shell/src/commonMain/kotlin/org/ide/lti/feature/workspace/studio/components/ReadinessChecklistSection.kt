@@ -48,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.BrandColors
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -121,20 +123,31 @@ public fun ReadinessChecklistSection(
                 .background(MaterialTheme.colorScheme.outlineVariant),
         )
 
-        items.forEachIndexed { index, item ->
-            if (index > 0) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(Spacing.Hairline)
-                        .background(MaterialTheme.colorScheme.outlineVariant),
+        if (items.isEmpty()) {
+            GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+            GlassSkeletonList(
+                count = 5,
+                hasIcon = true,
+                hasSubtitle = true,
+                hasTrailingBadge = true,
+                modifier = Modifier.padding(Spacing.Medium),
+            )
+        } else {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(Spacing.Hairline)
+                            .background(MaterialTheme.colorScheme.outlineVariant),
+                    )
+                }
+
+                ReadinessRowItem(
+                    item = item,
+                    onAction = onAction,
                 )
             }
-
-            ReadinessRowItem(
-                item = item,
-                onAction = onAction,
-            )
         }
     }
 }

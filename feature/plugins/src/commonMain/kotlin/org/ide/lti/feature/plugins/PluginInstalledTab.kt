@@ -54,6 +54,7 @@ import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.ideNodesPlugin
@@ -129,7 +130,13 @@ internal fun PluginInstalledTab(
                 )
             }
 
-            if (loading) GlassLoadingStatus("Refreshing installed packages…")
+            if (loading) {
+                GlassLoadingStatus("Refreshing installed packages…")
+                GlassProgressBar(
+                    progress = null,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+                )
+            }
 
             // 2-Column Main Content
             Row(

@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.ui.geometry.Offset
@@ -20,233 +26,233 @@ import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeEffectInputSnapshot
 import dev.chrisbanes.haze.HazeEffectLifecycleScope
 import dev.chrisbanes.haze.HazeEffectRuntimeDrawScope
-import dev.chrisbanes.haze.HazeProgressive as RootHazeProgressive
 import dev.chrisbanes.haze.InternalHazeApi
 import dev.chrisbanes.haze.Poko
 import dev.chrisbanes.haze.TrimMemoryLevel
 import dev.chrisbanes.haze.asComposeRenderEffect
 import kotlin.math.ceil
+import dev.chrisbanes.haze.HazeProgressive as RootHazeProgressive
 
 @OptIn(ExperimentalHazeApi::class, InternalHazeApi::class)
 internal class RenderEffectBlurVisualEffectDelegate(
-  val blurVisualEffect: BlurVisualEffect,
+    val blurVisualEffect: BlurVisualEffect,
 ) : BlurVisualEffect.Delegate, RetainedOutputDelegate {
-  private var renderEffect: RenderEffect? = null
-  private var scaledContentLayer: GraphicsLayer? = null
-  private var lastScaledLayerSize: Size? = null
-  private var graphicsContext: GraphicsContext? = null
-  private var retainedOutputAvailable: Boolean = false
-  private var inputCaptureKey: InputCaptureKey? = null
+    private var renderEffect: RenderEffect? = null
+    private var scaledContentLayer: GraphicsLayer? = null
+    private var lastScaledLayerSize: Size? = null
+    private var graphicsContext: GraphicsContext? = null
+    private var retainedOutputAvailable: Boolean = false
+    private var inputCaptureKey: InputCaptureKey? = null
 
-  override fun DrawScope.draw(context: HazeEffectRuntimeDrawScope) {
-    if (blurVisualEffect.alpha == 0f) return
+    override fun DrawScope.draw(context: HazeEffectRuntimeDrawScope) {
+        if (blurVisualEffect.alpha == 0f) return
 
-    // Calculate scaled layer size to detect size changes (needs re-allocation)
-    val scaleFactor = blurVisualEffect.resolveInputScaleFactor(context)
-    val currentScaledSize = (context.layerSize * scaleFactor).roundToIntSize().let {
-      Size(it.width.toFloat(), it.height.toFloat())
-    }
-    val hasDrawableSourceLayers = context.hasDrawableInput
-
-    if (!hasDrawableSourceLayers) {
-      val retainedLayer = scaledContentLayer
-        ?.takeUnless {
-          if (it.isReleased) {
-            inputCaptureKey = null
-            retainedOutputAvailable = false
-            true
-          } else {
-            false
-          }
+        // Calculate scaled layer size to detect size changes (needs re-allocation)
+        val scaleFactor = blurVisualEffect.resolveInputScaleFactor(context)
+        val currentScaledSize = (context.layerSize * scaleFactor).roundToIntSize().let {
+            Size(it.width.toFloat(), it.height.toFloat())
         }
-        ?.takeIf { retainedOutputAvailable }
-        ?: return
+        val hasDrawableSourceLayers = context.hasDrawableInput
 
-      if (lastScaledLayerSize != currentScaledSize) {
-        retainedOutputAvailable = false
-        return
-      }
+        if (!hasDrawableSourceLayers) {
+            val retainedLayer = scaledContentLayer
+                ?.takeUnless {
+                    if (it.isReleased) {
+                        inputCaptureKey = null
+                        retainedOutputAvailable = false
+                        true
+                    } else {
+                        false
+                    }
+                }
+                ?.takeIf { retainedOutputAvailable }
+                ?: return
 
-      drawRetainedLayer(retainedLayer, context, scaleFactor)
-      return
+            if (lastScaledLayerSize != currentScaledSize) {
+                retainedOutputAvailable = false
+                return
+            }
+
+            drawRetainedLayer(retainedLayer, context, scaleFactor)
+            return
+        }
+
+        val currentCaptureKey = InputCaptureKey(
+            inputSnapshot = context.inputSnapshot,
+            scaleFactor = scaleFactor,
+            scaledLayerSize = currentScaledSize,
+            layerOffset = context.layerOffset,
+            backgroundColor = blurVisualEffect.backgroundColor,
+        )
+
+        // Allocate the scaled content layer when its capture geometry changes.
+        if (scaledContentLayer == null || scaledContentLayer!!.isReleased || lastScaledLayerSize != currentScaledSize) {
+            graphicsContext = context.requireGraphicsContext()
+            scaledContentLayer?.let { graphicsContext!!.releaseGraphicsLayer(it) }
+            scaledContentLayer = graphicsContext!!.createGraphicsLayer()
+            lastScaledLayerSize = currentScaledSize
+            retainedOutputAvailable = false
+            inputCaptureKey = null
+        }
+
+        val layer = scaledContentLayer!!
+
+        val resultLayer = if (inputCaptureKey == currentCaptureKey) {
+            layer
+        } else {
+            // Returns null when the scaled size is 0 (e.g., window minimized).
+            createScaledContentLayer(
+                context = context,
+                scaleFactor = scaleFactor,
+                layerSize = context.layerSize,
+                backgroundColor = blurVisualEffect.backgroundColor,
+                existingLayer = layer,
+            )?.also {
+                inputCaptureKey = currentCaptureKey
+            } ?: return
+        }
+
+        retainedOutputAvailable = true
+        drawRetainedLayer(resultLayer, context, scaleFactor)
     }
 
-    val currentCaptureKey = InputCaptureKey(
-      inputSnapshot = context.inputSnapshot,
-      scaleFactor = scaleFactor,
-      scaledLayerSize = currentScaledSize,
-      layerOffset = context.layerOffset,
-      backgroundColor = blurVisualEffect.backgroundColor,
+    private fun DrawScope.drawRetainedLayer(
+        layer: GraphicsLayer,
+        context: HazeEffectRuntimeDrawScope,
+        scaleFactor: Float,
+    ) {
+        val clip = blurVisualEffect.shouldClipToNodeBounds()
+        layer.clip = clip
+        drawScaledContent(
+            offset = -context.layerOffset,
+            scaledSize = size * scaleFactor,
+            clip = clip,
+        ) {
+            val p = blurVisualEffect.progressive
+            if (p != null) {
+                drawProgressiveEffect(
+                    drawScope = this,
+                    progressive = p,
+                    contentLayer = layer,
+                    context = context,
+                    inputScale = scaleFactor,
+                )
+            } else {
+                updateRenderEffectIfDirty(context, scaleFactor)
+                layer.renderEffect = renderEffect
+                layer.alpha = blurVisualEffect.alpha
+                drawLayer(layer)
+            }
+        }
+    }
+
+    override fun canDrawRetainedOutput(): Boolean {
+        return retainedOutputAvailable && scaledContentLayer?.isReleased == false
+    }
+
+    override fun clearRetainedOutput() {
+        releaseRetainedResources()
+    }
+
+    override fun detach() {
+        releaseRetainedResources()
+    }
+
+    override fun onTrimMemory(context: HazeEffectLifecycleScope, level: TrimMemoryLevel) {
+        if (level.severity >= TrimMemoryLevel.MODERATE.severity) {
+            releaseRetainedResources()
+            context.invalidateDraw()
+        }
+    }
+
+    private fun releaseRetainedResources() {
+        scaledContentLayer?.let { layer ->
+            graphicsContext?.releaseGraphicsLayer(layer)
+        }
+        scaledContentLayer = null
+        lastScaledLayerSize = null
+        renderEffect = null
+        graphicsContext = null
+        retainedOutputAvailable = false
+        inputCaptureKey = null
+    }
+
+    private fun updateRenderEffectIfDirty(
+        context: HazeEffectRuntimeDrawScope,
+        scaleFactor: Float,
+    ) {
+        // Always resolve the current RenderEffect using the memoized cache keyed by params.
+        // This ensures that changes coming from either the effect itself OR the hosting node
+        // (e.g., size, layer offset, input scale, etc.) will be reflected without relying on
+        // the effect's local dirty flags only.
+        renderEffect = blurVisualEffect
+            .getOrCreateRenderEffect(context, inputScale = scaleFactor)
+            .asComposeRenderEffect()
+    }
+
+    @Poko
+    private class InputCaptureKey(
+        val inputSnapshot: HazeEffectInputSnapshot?,
+        val scaleFactor: Float,
+        val scaledLayerSize: Size,
+        val layerOffset: Offset,
+        val backgroundColor: Color,
     )
 
-    // Allocate the scaled content layer when its capture geometry changes.
-    if (scaledContentLayer == null || scaledContentLayer!!.isReleased || lastScaledLayerSize != currentScaledSize) {
-      graphicsContext = context.requireGraphicsContext()
-      scaledContentLayer?.let { graphicsContext!!.releaseGraphicsLayer(it) }
-      scaledContentLayer = graphicsContext!!.createGraphicsLayer()
-      lastScaledLayerSize = currentScaledSize
-      retainedOutputAvailable = false
-      inputCaptureKey = null
+    companion object {
+        const val TAG = "RenderEffectBlurVisualEffectDelegate"
     }
-
-    val layer = scaledContentLayer!!
-
-    val resultLayer = if (inputCaptureKey == currentCaptureKey) {
-      layer
-    } else {
-      // Returns null when the scaled size is 0 (e.g., window minimized).
-      createScaledContentLayer(
-        context = context,
-        scaleFactor = scaleFactor,
-        layerSize = context.layerSize,
-        backgroundColor = blurVisualEffect.backgroundColor,
-        existingLayer = layer,
-      )?.also {
-        inputCaptureKey = currentCaptureKey
-      } ?: return
-    }
-
-    retainedOutputAvailable = true
-    drawRetainedLayer(resultLayer, context, scaleFactor)
-  }
-
-  private fun DrawScope.drawRetainedLayer(
-    layer: GraphicsLayer,
-    context: HazeEffectRuntimeDrawScope,
-    scaleFactor: Float,
-  ) {
-    val clip = blurVisualEffect.shouldClipToNodeBounds()
-    layer.clip = clip
-    drawScaledContent(
-      offset = -context.layerOffset,
-      scaledSize = size * scaleFactor,
-      clip = clip,
-    ) {
-      val p = blurVisualEffect.progressive
-      if (p != null) {
-        drawProgressiveEffect(
-          drawScope = this,
-          progressive = p,
-          contentLayer = layer,
-          context = context,
-          inputScale = scaleFactor,
-        )
-      } else {
-        updateRenderEffectIfDirty(context, scaleFactor)
-        layer.renderEffect = renderEffect
-        layer.alpha = blurVisualEffect.alpha
-        drawLayer(layer)
-      }
-    }
-  }
-
-  override fun canDrawRetainedOutput(): Boolean {
-    return retainedOutputAvailable && scaledContentLayer?.isReleased == false
-  }
-
-  override fun clearRetainedOutput() {
-    releaseRetainedResources()
-  }
-
-  override fun detach() {
-    releaseRetainedResources()
-  }
-
-  override fun onTrimMemory(context: HazeEffectLifecycleScope, level: TrimMemoryLevel) {
-    if (level.severity >= TrimMemoryLevel.MODERATE.severity) {
-      releaseRetainedResources()
-      context.invalidateDraw()
-    }
-  }
-
-  private fun releaseRetainedResources() {
-    scaledContentLayer?.let { layer ->
-      graphicsContext?.releaseGraphicsLayer(layer)
-    }
-    scaledContentLayer = null
-    lastScaledLayerSize = null
-    renderEffect = null
-    graphicsContext = null
-    retainedOutputAvailable = false
-    inputCaptureKey = null
-  }
-
-  private fun updateRenderEffectIfDirty(
-    context: HazeEffectRuntimeDrawScope,
-    scaleFactor: Float,
-  ) {
-    // Always resolve the current RenderEffect using the memoized cache keyed by params.
-    // This ensures that changes coming from either the effect itself OR the hosting node
-    // (e.g., size, layer offset, input scale, etc.) will be reflected without relying on
-    // the effect's local dirty flags only.
-    renderEffect = blurVisualEffect
-      .getOrCreateRenderEffect(context, inputScale = scaleFactor)
-      .asComposeRenderEffect()
-  }
-
-  @Poko
-  private class InputCaptureKey(
-    val inputSnapshot: HazeEffectInputSnapshot?,
-    val scaleFactor: Float,
-    val scaledLayerSize: Size,
-    val layerOffset: Offset,
-    val backgroundColor: Color,
-  )
-
-  companion object {
-    const val TAG = "RenderEffectBlurVisualEffectDelegate"
-  }
 }
 
 internal expect fun RenderEffectBlurVisualEffectDelegate.drawProgressiveEffect(
-  drawScope: DrawScope,
-  progressive: RootHazeProgressive,
-  contentLayer: GraphicsLayer,
-  context: HazeEffectRuntimeDrawScope,
-  inputScale: Float,
+    drawScope: DrawScope,
+    progressive: RootHazeProgressive,
+    contentLayer: GraphicsLayer,
+    context: HazeEffectRuntimeDrawScope,
+    inputScale: Float,
 )
 
 internal fun shouldDrawProgressiveWithLayers(
-  progressive: RootHazeProgressive,
-  inputScale: Float,
+    progressive: RootHazeProgressive,
+    inputScale: Float,
 ): Boolean = progressive is RootHazeProgressive.LinearGradient &&
-  inputScale == BlurInputScalePolicy.NONE_SCALE
+    inputScale == BlurInputScalePolicy.NONE_SCALE
 
 internal fun DrawScope.drawProgressiveWithMultipleLayers(
-  progressive: RootHazeProgressive.LinearGradient,
-  stepHeight: Dp = 64.dp,
-  block: (mask: Brush, intensity: Float) -> Unit,
+    progressive: RootHazeProgressive.LinearGradient,
+    stepHeight: Dp = 64.dp,
+    block: (mask: Brush, intensity: Float) -> Unit,
 ) {
-  // Here we're going to calculate an appropriate amount of steps for the length.
-  // We use a calculation of 60dp per step, which is a good balance between
-  // quality vs performance
-  val stepHeightPx = with(drawContext.density) { stepHeight.toPx() }
-  val length = calculateLength(progressive.start, progressive.end, size)
-  val steps = ceil(length / stepHeightPx).toInt().coerceAtLeast(2)
+    // Here we're going to calculate an appropriate amount of steps for the length.
+    // We use a calculation of 60dp per step, which is a good balance between
+    // quality vs performance
+    val stepHeightPx = with(drawContext.density) { stepHeight.toPx() }
+    val length = calculateLength(progressive.start, progressive.end, size)
+    val steps = ceil(length / stepHeightPx).toInt().coerceAtLeast(2)
 
-  val seq = when {
-    progressive.endIntensity >= progressive.startIntensity -> 0..steps
-    else -> steps downTo 0
-  }
+    val seq = when {
+        progressive.endIntensity >= progressive.startIntensity -> 0..steps
+        else -> steps downTo 0
+    }
 
-  for (i in seq) {
-    val fraction = i / steps.toFloat()
+    for (i in seq) {
+        val fraction = i / steps.toFloat()
 
-    val intensity = lerp(
-      progressive.startIntensity,
-      progressive.endIntensity,
-      progressive.easing.transform(fraction),
-    )
+        val intensity = lerp(
+            progressive.startIntensity,
+            progressive.endIntensity,
+            progressive.easing.transform(fraction),
+        )
 
-    val mask = Brush.linearGradient(
-      (i - 2f) / steps to Color.Transparent,
-      (i - 1f) / steps to Color.Black,
-      (i + 0f) / steps to Color.Black,
-      (i + 1f) / steps to Color.Transparent,
-      start = progressive.start,
-      end = progressive.end,
-    )
+        val mask = Brush.linearGradient(
+            (i - 2f) / steps to Color.Transparent,
+            (i - 1f) / steps to Color.Black,
+            (i + 0f) / steps to Color.Black,
+            (i + 1f) / steps to Color.Transparent,
+            start = progressive.start,
+            end = progressive.end,
+        )
 
-    block(mask, intensity)
-  }
+        block(mask, intensity)
+    }
 }

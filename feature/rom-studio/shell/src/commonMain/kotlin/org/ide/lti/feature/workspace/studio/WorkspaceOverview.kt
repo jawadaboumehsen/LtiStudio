@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.feature.workspace.studio.components.OverviewBreadcrumbHeader
@@ -92,6 +93,11 @@ public fun WorkspaceOverview(
                 targetDetail = (summary.revision as? DisplayValue.Available)?.text
                     ?.let { "Device ${it.replace("rev ", "revision ")}" }.orEmpty(),
             )
+
+            if (state.loadState == ContentLoadState.Loading) {
+                GlassLoadingPlaceholder("Loading workspace overview…")
+                return@Column
+            }
 
             preflight?.invoke()
 

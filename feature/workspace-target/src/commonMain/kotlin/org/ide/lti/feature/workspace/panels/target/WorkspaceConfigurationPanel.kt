@@ -38,6 +38,8 @@ import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -64,7 +66,14 @@ fun WorkspaceConfigurationPanel(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val draft = uiState.draft
 
-    if (uiState.currentWorkspace == null || draft == null) {
+    if (uiState.currentWorkspace != null && draft == null) {
+        Box(
+            modifier = modifier.fillMaxSize().padding(Spacing.Large),
+            contentAlignment = Alignment.Center,
+        ) {
+            GlassLoadingPlaceholder("Loading target configuration…")
+        }
+    } else if (uiState.currentWorkspace == null || draft == null) {
         Box(
             modifier = modifier.fillMaxSize().padding(Spacing.Large),
             contentAlignment = Alignment.Center,
@@ -89,6 +98,12 @@ fun WorkspaceConfigurationPanel(
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
         ) {
             ConfigurationHeader(uiState)
+            if (uiState.isSaving) {
+                GlassProgressBar(
+                    progress = null,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+                )
+            }
             ConfigurationNotices(uiState)
             uiState.currentTarget?.let { TargetProfileCard(it) }
             WorkspaceDeviceSection(deviceViewModel, phone = phoneViewModel)

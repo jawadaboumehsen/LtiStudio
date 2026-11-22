@@ -55,6 +55,9 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.ideToolwindowsRepositories
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -140,6 +143,7 @@ internal fun PluginMarketplaceTab(
                     installed = installed,
                     onSelectEntry = { selectedEntryId = it.id },
                     onNavigateToImport = onNavigateToImport,
+                    isLoading = isLoading,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -352,6 +356,7 @@ private fun MarketplaceMasterTable(
     onSelectEntry: (IndexEntry) -> Unit,
     onNavigateToImport: () -> Unit,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
 ) {
     Box(
         modifier = modifier
@@ -364,7 +369,34 @@ private fun MarketplaceMasterTable(
                 shape = GlassShapes.Medium,
             ),
     ) {
-        if (filtered.isEmpty()) {
+        if (isLoading && filtered.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(Spacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GlassSpinner(modifier = Modifier.size(IconSize.Small))
+                    Text(
+                        text = "Loading marketplace packages…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+                GlassSkeletonList(
+                    count = 6,
+                    hasIcon = true,
+                    hasSubtitle = true,
+                    hasTrailingBadge = true,
+                    titleFractions = listOf(0.35f, 0.48f, 0.28f, 0.52f, 0.40f, 0.32f),
+                    subtitleFractions = listOf(0.75f, 0.60f, 0.85f, 0.50f, 0.70f, 0.65f),
+                )
+            }
+        } else if (filtered.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(Spacing.Large),
                 contentAlignment = Alignment.Center,
@@ -395,6 +427,9 @@ private fun MarketplaceMasterTable(
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
                 MarketplaceTableHeader()
+                if (isLoading) {
+                    GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+                }
 
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     itemsIndexed(

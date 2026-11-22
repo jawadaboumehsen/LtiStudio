@@ -22,12 +22,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -113,12 +113,7 @@ internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
 
 @Suppress("DEPRECATION")
 @Composable
-private fun OpenOutput(
-    log: WorkbenchLog,
-    snapshot: OutputSnapshot,
-    filter: LogLevel?,
-    onFilter: (LogLevel?) -> Unit,
-) {
+private fun OpenOutput(log: WorkbenchLog, snapshot: OutputSnapshot, filter: LogLevel?, onFilter: (LogLevel?) -> Unit) {
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val shown = snapshot.newestFirst
@@ -147,7 +142,9 @@ private fun OpenOutput(
         GlassButton(
             onClick = {
                 scope.launch {
-                    val text = withContext(Dispatchers.Default) { shown.asReversed().joinToString("\n", transform = ::line) }
+                    val text = withContext(Dispatchers.Default) {
+                        shown.asReversed().joinToString("\n", transform = ::line)
+                    }
                     clipboard.setText(AnnotatedString(text))
                 }
             },

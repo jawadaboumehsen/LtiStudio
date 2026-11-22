@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.ui.geometry.Offset
@@ -13,29 +19,29 @@ import dev.chrisbanes.haze.HazeEffectRuntimeDrawScope
 import dev.chrisbanes.haze.withGraphicsLayer
 
 internal inline fun DrawScope.translate(
-  offset: Offset,
-  block: DrawScope.() -> Unit,
+    offset: Offset,
+    block: DrawScope.() -> Unit,
 ) {
-  if (offset.isFinite && offset != Offset.Zero) {
-    translate(offset.x, offset.y, block)
-  } else {
-    block()
-  }
+    if (offset.isFinite && offset != Offset.Zero) {
+        translate(offset.x, offset.y, block)
+    } else {
+        block()
+    }
 }
 
 @OptIn(ExperimentalHazeApi::class)
 internal inline fun DrawScope.withAlpha(
-  alpha: Float,
-  context: HazeEffectRuntimeDrawScope,
-  crossinline block: DrawScope.() -> Unit,
+    alpha: Float,
+    context: HazeEffectRuntimeDrawScope,
+    crossinline block: DrawScope.() -> Unit,
 ) {
-  if (alpha < 1f) {
-    context.withGraphicsLayer { layer ->
-      layer.alpha = alpha
-      layer.record { block() }
-      drawLayer(layer)
+    if (alpha < 1f) {
+        context.withGraphicsLayer { layer ->
+            layer.alpha = alpha
+            layer.record { block() }
+            drawLayer(layer)
+        }
+    } else {
+        block()
     }
-  } else {
-    block()
-  }
 }

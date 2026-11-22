@@ -1,11 +1,11 @@
 /*
- * Copyright 2025 LtiRomGui
+ * Copyright 2025 Mifos Initiative
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 plugins {
     alias(libs.plugins.kotlinMultiplatform)

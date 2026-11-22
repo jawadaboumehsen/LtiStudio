@@ -512,14 +512,16 @@ private fun AuthorTaskRowItem(
                 )
                 if (isRunning) {
                     GlassLoadingStatus(statusLabel)
-                } else Text(
-                    text = statusLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                } else {
+                    Text(
+                        text = statusLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 

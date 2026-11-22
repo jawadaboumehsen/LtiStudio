@@ -380,69 +380,71 @@ private fun MiniFormInput(
 
 @Composable
 private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier: Modifier = Modifier) {
-    Box(modifier.drawWithCache {
-        val skyGradient = when {
-            isBlueGlass -> Brush.verticalGradient(
-                listOf(
-                    StudioBackdropColors.Vignette,
-                    StudioBackdropColors.Base,
-                    StudioBackdropColors.SidebarEnd,
-                ),
-            )
+    Box(
+        modifier.drawWithCache {
+            val skyGradient = when {
+                isBlueGlass -> Brush.verticalGradient(
+                    listOf(
+                        StudioBackdropColors.Vignette,
+                        StudioBackdropColors.Base,
+                        StudioBackdropColors.SidebarEnd,
+                    ),
+                )
 
-            isDark -> Brush.verticalGradient(
-                listOf(
-                    WallpaperColors.DarkSkyTop,
-                    WallpaperColors.DarkSkyMiddle,
-                    WallpaperColors.DarkSkyHorizon,
-                ),
-            )
+                isDark -> Brush.verticalGradient(
+                    listOf(
+                        WallpaperColors.DarkSkyTop,
+                        WallpaperColors.DarkSkyMiddle,
+                        WallpaperColors.DarkSkyHorizon,
+                    ),
+                )
 
-            else -> Brush.verticalGradient(
-                listOf(
-                    WallpaperColors.LightSkyTop,
-                    WallpaperColors.LightSkyMiddle,
-                    WallpaperColors.LightSkyHorizon,
-                ),
-            )
-        }
+                else -> Brush.verticalGradient(
+                    listOf(
+                        WallpaperColors.LightSkyTop,
+                        WallpaperColors.LightSkyMiddle,
+                        WallpaperColors.LightSkyHorizon,
+                    ),
+                )
+            }
 
-        // Draw Mountain Silhouette Layers
-        val mountainFarColor = if (isDark || isBlueGlass) {
-            WallpaperColors.DarkMountainFar
-        } else {
-            WallpaperColors.LightMountainFar
-        }
-        val mountainFarPath = Path().apply {
-            moveTo(0f, size.height * 0.70f)
-            lineTo(size.width * 0.25f, size.height * 0.50f)
-            lineTo(size.width * 0.45f, size.height * 0.65f)
-            lineTo(size.width * 0.75f, size.height * 0.40f)
-            lineTo(size.width, size.height * 0.60f)
-            lineTo(size.width, size.height)
-            lineTo(0f, size.height)
-            close()
-        }
+            // Draw Mountain Silhouette Layers
+            val mountainFarColor = if (isDark || isBlueGlass) {
+                WallpaperColors.DarkMountainFar
+            } else {
+                WallpaperColors.LightMountainFar
+            }
+            val mountainFarPath = Path().apply {
+                moveTo(0f, size.height * 0.70f)
+                lineTo(size.width * 0.25f, size.height * 0.50f)
+                lineTo(size.width * 0.45f, size.height * 0.65f)
+                lineTo(size.width * 0.75f, size.height * 0.40f)
+                lineTo(size.width, size.height * 0.60f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
 
-        val mountainNearColor = if (isDark || isBlueGlass) {
-            WallpaperColors.DarkMountainNear
-        } else {
-            WallpaperColors.LightMountainNear
-        }
-        val mountainNearPath = Path().apply {
-            moveTo(0f, size.height * 0.85f)
-            lineTo(size.width * 0.35f, size.height * 0.68f)
-            lineTo(size.width * 0.60f, size.height * 0.82f)
-            lineTo(size.width * 0.85f, size.height * 0.62f)
-            lineTo(size.width, size.height * 0.78f)
-            lineTo(size.width, size.height)
-            lineTo(0f, size.height)
-            close()
-        }
-        onDrawBehind {
-            drawRect(brush = skyGradient)
-            drawPath(path = mountainFarPath, color = mountainFarColor)
-            drawPath(path = mountainNearPath, color = mountainNearColor)
-        }
-    })
+            val mountainNearColor = if (isDark || isBlueGlass) {
+                WallpaperColors.DarkMountainNear
+            } else {
+                WallpaperColors.LightMountainNear
+            }
+            val mountainNearPath = Path().apply {
+                moveTo(0f, size.height * 0.85f)
+                lineTo(size.width * 0.35f, size.height * 0.68f)
+                lineTo(size.width * 0.60f, size.height * 0.82f)
+                lineTo(size.width * 0.85f, size.height * 0.62f)
+                lineTo(size.width, size.height * 0.78f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            onDrawBehind {
+                drawRect(brush = skyGradient)
+                drawPath(path = mountainFarPath, color = mountainFarColor)
+                drawPath(path = mountainNearPath, color = mountainNearColor)
+            }
+        },
+    )
 }

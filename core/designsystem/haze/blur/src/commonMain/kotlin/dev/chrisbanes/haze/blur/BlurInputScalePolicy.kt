@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.ui.geometry.Size
@@ -14,124 +20,124 @@ import kotlin.time.TimeSource
  * hysteresis. Thresholds are expressed in physical pixels so the policy is density-independent.
  */
 internal class BlurInputScalePolicy(
-  timeSource: TimeSource = TimeSource.Monotonic,
+    timeSource: TimeSource = TimeSource.Monotonic,
 ) {
-  private var previousAutomaticScale: Float = NONE_SCALE
-  private var previousProgressive: Boolean? = null
-  private val inputUpdateCadence = HazeInputUpdateCadence(timeSource)
+    private var previousAutomaticScale: Float = NONE_SCALE
+    private var previousProgressive: Boolean? = null
+    private val inputUpdateCadence = HazeInputUpdateCadence(timeSource)
 
-  fun observeUpdate(updateKey: Any?): Boolean = inputUpdateCadence.observeUpdate(updateKey)
+    fun observeUpdate(updateKey: Any?): Boolean = inputUpdateCadence.observeUpdate(updateKey)
 
-  fun resolve(
-    performanceMode: HazePerformanceMode,
-    blurRadiusPx: Float,
-    layerSize: Size,
-    progressive: Boolean = false,
-  ): Float {
-    return when (performanceMode) {
-      HazePerformanceMode.Adaptive -> {
-        if (previousProgressive != null && previousProgressive != progressive) {
-          previousAutomaticScale = NONE_SCALE
-          inputUpdateCadence.reset()
+    fun resolve(
+        performanceMode: HazePerformanceMode,
+        blurRadiusPx: Float,
+        layerSize: Size,
+        progressive: Boolean = false,
+    ): Float {
+        return when (performanceMode) {
+            HazePerformanceMode.Adaptive -> {
+                if (previousProgressive != null && previousProgressive != progressive) {
+                    previousAutomaticScale = NONE_SCALE
+                    inputUpdateCadence.reset()
+                }
+                resolveAutomaticScale(
+                    blurRadiusPx = blurRadiusPx,
+                    areaPx = layerSize.width * layerSize.height * inputUpdateCadence.multiplier,
+                    progressive = progressive,
+                ).also {
+                    previousAutomaticScale = it
+                    previousProgressive = progressive
+                }
+            }
+
+            is HazePerformanceMode.Fixed -> {
+                reset()
+                resolveFixedProfile(performanceMode.qualityFraction)
+            }
         }
-        resolveAutomaticScale(
-          blurRadiusPx = blurRadiusPx,
-          areaPx = layerSize.width * layerSize.height * inputUpdateCadence.multiplier,
-          progressive = progressive,
-        ).also {
-          previousAutomaticScale = it
-          previousProgressive = progressive
+    }
+
+    fun reset() {
+        previousAutomaticScale = NONE_SCALE
+        previousProgressive = null
+        inputUpdateCadence.reset()
+    }
+
+    private fun resolveAutomaticScale(
+        blurRadiusPx: Float,
+        areaPx: Float,
+        progressive: Boolean,
+    ): Float {
+        if (!blurRadiusPx.isFinite() || !areaPx.isFinite() || blurRadiusPx <= 0f || areaPx <= 0f) {
+            return NONE_SCALE
         }
-      }
 
-      is HazePerformanceMode.Fixed -> {
-        reset()
-        resolveFixedProfile(performanceMode.qualityFraction)
-      }
+        if (progressive) {
+            return when {
+                previousAutomaticScale <= BALANCED_SCALE &&
+                    blurRadiusPx >= BALANCED_RADIUS_EXIT_PX &&
+                    areaPx >= BALANCED_AREA_EXIT_PX -> BALANCED_SCALE
+
+                blurRadiusPx >= BALANCED_RADIUS_PX && areaPx >= BALANCED_AREA_PX -> BALANCED_SCALE
+                else -> NONE_SCALE
+            }
+        }
+
+        return when (previousAutomaticScale) {
+            AGGRESSIVE_SCALE -> when {
+                blurRadiusPx < AGGRESSIVE_RADIUS_EXIT_PX || areaPx < AGGRESSIVE_AREA_EXIT_PX ->
+                    resolveAdaptiveScaleWithoutAggressiveTier(blurRadiusPx, areaPx)
+
+                else -> AGGRESSIVE_SCALE
+            }
+
+            BALANCED_SCALE -> when {
+                blurRadiusPx >= AGGRESSIVE_RADIUS_PX && areaPx >= AGGRESSIVE_AREA_PX -> AGGRESSIVE_SCALE
+                blurRadiusPx < BALANCED_RADIUS_EXIT_PX || areaPx < BALANCED_AREA_EXIT_PX -> NONE_SCALE
+                else -> BALANCED_SCALE
+            }
+
+            else -> when {
+                blurRadiusPx >= AGGRESSIVE_RADIUS_PX && areaPx >= AGGRESSIVE_AREA_PX -> AGGRESSIVE_SCALE
+                blurRadiusPx >= BALANCED_RADIUS_PX && areaPx >= BALANCED_AREA_PX -> BALANCED_SCALE
+                else -> NONE_SCALE
+            }
+        }
     }
-  }
 
-  fun reset() {
-    previousAutomaticScale = NONE_SCALE
-    previousProgressive = null
-    inputUpdateCadence.reset()
-  }
-
-  private fun resolveAutomaticScale(
-    blurRadiusPx: Float,
-    areaPx: Float,
-    progressive: Boolean,
-  ): Float {
-    if (!blurRadiusPx.isFinite() || !areaPx.isFinite() || blurRadiusPx <= 0f || areaPx <= 0f) {
-      return NONE_SCALE
+    private fun resolveAdaptiveScaleWithoutAggressiveTier(
+        blurRadiusPx: Float,
+        areaPx: Float,
+    ): Float {
+        return when {
+            blurRadiusPx >= BALANCED_RADIUS_EXIT_PX && areaPx >= BALANCED_AREA_EXIT_PX -> BALANCED_SCALE
+            else -> NONE_SCALE
+        }
     }
 
-    if (progressive) {
-      return when {
-        previousAutomaticScale <= BALANCED_SCALE &&
-          blurRadiusPx >= BALANCED_RADIUS_EXIT_PX &&
-          areaPx >= BALANCED_AREA_EXIT_PX -> BALANCED_SCALE
+    private fun resolveFixedProfile(qualityFraction: Float): Float =
+        sqrt(MIN_FIXED_PIXEL_FRACTION + (MAX_FIXED_PIXEL_FRACTION - MIN_FIXED_PIXEL_FRACTION) * qualityFraction)
 
-        blurRadiusPx >= BALANCED_RADIUS_PX && areaPx >= BALANCED_AREA_PX -> BALANCED_SCALE
-        else -> NONE_SCALE
-      }
+    internal companion object {
+        private const val MIN_FIXED_PIXEL_FRACTION = 0.25f
+        private const val MAX_FIXED_PIXEL_FRACTION = 1f
+
+        const val BALANCED_SCALE = 0.8f
+        const val AGGRESSIVE_SCALE = 0.5f
+        const val NONE_SCALE = 1f
+
+        // At these boundaries, the downsampled blur kernel remains at least 25.6px / 30px.
+        const val BALANCED_RADIUS_PX = 32f
+        const val AGGRESSIVE_RADIUS_PX = 60f
+
+        // These boundaries avoid reallocating for savings below roughly 0.1M / 0.375M pixels.
+        const val BALANCED_AREA_PX = 300_000f
+        const val AGGRESSIVE_AREA_PX = 500_000f
+
+        // A 12.5% exit margin absorbs common one-frame layout and radius animation jitter.
+        const val BALANCED_RADIUS_EXIT_PX = 28f
+        const val AGGRESSIVE_RADIUS_EXIT_PX = 52.5f
+        const val BALANCED_AREA_EXIT_PX = 262_500f
+        const val AGGRESSIVE_AREA_EXIT_PX = 437_500f
     }
-
-    return when (previousAutomaticScale) {
-      AGGRESSIVE_SCALE -> when {
-        blurRadiusPx < AGGRESSIVE_RADIUS_EXIT_PX || areaPx < AGGRESSIVE_AREA_EXIT_PX ->
-          resolveAdaptiveScaleWithoutAggressiveTier(blurRadiusPx, areaPx)
-
-        else -> AGGRESSIVE_SCALE
-      }
-
-      BALANCED_SCALE -> when {
-        blurRadiusPx >= AGGRESSIVE_RADIUS_PX && areaPx >= AGGRESSIVE_AREA_PX -> AGGRESSIVE_SCALE
-        blurRadiusPx < BALANCED_RADIUS_EXIT_PX || areaPx < BALANCED_AREA_EXIT_PX -> NONE_SCALE
-        else -> BALANCED_SCALE
-      }
-
-      else -> when {
-        blurRadiusPx >= AGGRESSIVE_RADIUS_PX && areaPx >= AGGRESSIVE_AREA_PX -> AGGRESSIVE_SCALE
-        blurRadiusPx >= BALANCED_RADIUS_PX && areaPx >= BALANCED_AREA_PX -> BALANCED_SCALE
-        else -> NONE_SCALE
-      }
-    }
-  }
-
-  private fun resolveAdaptiveScaleWithoutAggressiveTier(
-    blurRadiusPx: Float,
-    areaPx: Float,
-  ): Float {
-    return when {
-      blurRadiusPx >= BALANCED_RADIUS_EXIT_PX && areaPx >= BALANCED_AREA_EXIT_PX -> BALANCED_SCALE
-      else -> NONE_SCALE
-    }
-  }
-
-  private fun resolveFixedProfile(qualityFraction: Float): Float =
-    sqrt(MIN_FIXED_PIXEL_FRACTION + (MAX_FIXED_PIXEL_FRACTION - MIN_FIXED_PIXEL_FRACTION) * qualityFraction)
-
-  internal companion object {
-    private const val MIN_FIXED_PIXEL_FRACTION = 0.25f
-    private const val MAX_FIXED_PIXEL_FRACTION = 1f
-
-    const val BALANCED_SCALE = 0.8f
-    const val AGGRESSIVE_SCALE = 0.5f
-    const val NONE_SCALE = 1f
-
-    // At these boundaries, the downsampled blur kernel remains at least 25.6px / 30px.
-    const val BALANCED_RADIUS_PX = 32f
-    const val AGGRESSIVE_RADIUS_PX = 60f
-
-    // These boundaries avoid reallocating for savings below roughly 0.1M / 0.375M pixels.
-    const val BALANCED_AREA_PX = 300_000f
-    const val AGGRESSIVE_AREA_PX = 500_000f
-
-    // A 12.5% exit margin absorbs common one-frame layout and radius animation jitter.
-    const val BALANCED_RADIUS_EXIT_PX = 28f
-    const val AGGRESSIVE_RADIUS_EXIT_PX = 52.5f
-    const val BALANCED_AREA_EXIT_PX = 262_500f
-    const val AGGRESSIVE_AREA_EXIT_PX = 437_500f
-  }
 }

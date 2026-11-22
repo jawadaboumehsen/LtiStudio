@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -105,8 +106,11 @@ public fun MetadataEditor(
                 }
 
                 "manifest-preview", "manifest_preview" -> item {
-                    if (manifestLoading) GlassLoadingPlaceholder("Loading the release manifest…")
-                    else ManifestCard(manifest)
+                    if (manifestLoading) {
+                        GlassLoadingPlaceholder("Loading the release manifest…")
+                    } else {
+                        ManifestCard(manifest)
+                    }
                 }
 
                 else -> item {
@@ -259,13 +263,24 @@ private fun ChangelogCard(
         )
         // The draft replaces the notes: written ones are confirmed first.
         var asking by remember { mutableStateOf(false) }
+        if (draftLoading) {
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.ExtraSmall),
+            )
+        }
         GlassButton(
             onClick = { if (settings.changelog.isBlank()) onDraft() else asking = true },
             variant = GlassButtonVariant.Standard,
             modifier = Modifier.testTag("DraftChangelog"),
             loading = draftLoading,
         ) {
-            Text(if (draftLoading) "Drafting changelog…" else "Draft from the last build", fontSize = FontSize.BodySmall)
+            Text(
+                text = if (draftLoading) "Drafting changelog…" else "Draft from the last build",
+                fontSize = FontSize.BodySmall,
+            )
         }
         if (asking) {
             GlassDialog(

@@ -56,7 +56,9 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -195,17 +197,28 @@ private fun EntryTable(
             }
         }
         val entries = state.entries
+        if (state.busy != null && entries.isNotEmpty()) {
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = Spacing.ExtraSmall),
+            )
+        }
         if (entries.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(Spacing.Large).testTag("ImageTreeEmptyView"), Alignment.Center) {
-                ImageHint(
-                    when {
-                        state.tree == null && state.busy != null -> "${state.busy}…"
-                        state.tree == null && state.members != null -> "Pick a partition of the super image above."
-                        state.tree == null -> "Pick a partition, or Browse an image, to read its files."
-                        state.filter.isNotBlank() -> "No entries match '${state.filter}'."
-                        else -> "The ${state.partition} tree is empty."
-                    },
-                )
+                if (state.tree == null && state.busy != null) {
+                    GlassLoadingPlaceholder("${state.busy}…")
+                } else {
+                    ImageHint(
+                        when {
+                            state.tree == null && state.members != null -> "Pick a partition of the super image above."
+                            state.tree == null -> "Pick a partition, or Browse an image, to read its files."
+                            state.filter.isNotBlank() -> "No entries match '${state.filter}'."
+                            else -> "The ${state.partition} tree is empty."
+                        },
+                    )
+                }
             }
         } else {
             LazyColumn(

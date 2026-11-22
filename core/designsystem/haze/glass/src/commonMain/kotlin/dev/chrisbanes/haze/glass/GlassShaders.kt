@@ -1,13 +1,19 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 internal object GlassShaders {
-  fun buildFused(
-    interactionOptics: Boolean = false,
-    sharpDetail: Boolean = true,
-  ): String = """
+    fun buildFused(
+        interactionOptics: Boolean = false,
+        sharpDetail: Boolean = true,
+    ): String = """
     uniform shader content;
     uniform float2 sampleSize;
     uniform float2 materialOrigin;
@@ -33,23 +39,23 @@ internal object GlassShaders {
     uniform float contentNormalBlend;
     uniform float fresnelExponent;
     ${if (sharpDetail) {
-    """
+        """
     uniform float detailWidth;
     uniform float detailIntensity;
     uniform float detailVisibility;
     """
-  } else {
-    ""
-  }}
+    } else {
+        ""
+    }}
     ${if (interactionOptics) {
-    interactionUniforms(
-      includeRefraction = true,
-      includeWhitePoint = true,
-      includeLighting = false,
-    ) + "uniform float interactionOpticalActive;"
-  } else {
-    ""
-  }}
+        interactionUniforms(
+            includeRefraction = true,
+            includeWhitePoint = true,
+            includeLighting = false,
+        ) + "uniform float interactionOpticalActive;"
+    } else {
+        ""
+    }}
 
     vec2 materialCoord(vec2 coord) { return coord - materialOrigin; }
 
@@ -86,7 +92,7 @@ internal object GlassShaders {
         ? 1.0
         : smootherstep(clamp(outputDistToEdge / max(edgeSoftness, 0.0001), 0.0, 1.0));
       ${if (interactionOptics) {
-    """
+        """
       float localizedRefractionMultiplier = 1.0;
       float localizedWhitePoint = whitePoint;
       if (interactionOpticalActive > 0.5) {
@@ -100,9 +106,9 @@ internal object GlassShaders {
         );
       }
       """
-  } else {
-    ""
-  }}
+    } else {
+        ""
+    }}
       float fieldWeight = opticalFieldWeight();
       float opticalDistance =
         opticalDistanceFromSignedDistance(localCoord, outputSd, fieldWeight);
@@ -158,14 +164,14 @@ internal object GlassShaders {
       }
 
       ${if (sharpDetail) {
-    """
+        """
       float detailAlpha = 0.0;
       float maxPossibleDisplacement = min(
         ${if (interactionOptics) {
-      "abs(refractionScale * refractionStrength) * max(1.0, localizedRefractionMultiplier)"
-    } else {
-      "abs(refractionScale * refractionStrength)"
-    }},
+            "abs(refractionScale * refractionStrength) * max(1.0, localizedRefractionMultiplier)"
+        } else {
+            "abs(refractionScale * refractionStrength)"
+        }},
         length(sampleSize)
       );
       if (outputDistToEdge <= detailWidth + maxPossibleDisplacement) {
@@ -187,35 +193,35 @@ internal object GlassShaders {
       }
       opticalColor *= 1.0 - detailAlpha;
       """
-  } else {
-    ""
-  }}
+    } else {
+        ""
+    }}
       return opticalColor.a > 0.0 ? opticalColor * coverage : vec4(0.0);
     }
   """
 
-  fun buildBlur(horizontal: Boolean, progressive: Boolean = false): String {
-    val samples = buildString {
-      repeat(SemanticBlurKernel.MAX_TAP_PAIRS) { index ->
-        val direction = if (horizontal) {
-          "vec2(offset$index * blurScale, 0.0)"
-        } else {
-          "vec2(0.0, offset$index * blurScale)"
+    fun buildBlur(horizontal: Boolean, progressive: Boolean = false): String {
+        val samples = buildString {
+            repeat(SemanticBlurKernel.MAX_TAP_PAIRS) { index ->
+                val direction = if (horizontal) {
+                    "vec2(offset$index * blurScale, 0.0)"
+                } else {
+                    "vec2(0.0, offset$index * blurScale)"
+                }
+                appendLine("if (weight$index > 0.0) {")
+                appendLine("  vec2 direction$index = $direction;")
+                appendLine("  result += weight$index * content.eval(clampSample(coord - direction$index));")
+                appendLine("  result += weight$index * content.eval(clampSample(coord + direction$index));")
+                appendLine("}")
+            }
         }
-        appendLine("if (weight$index > 0.0) {")
-        appendLine("  vec2 direction$index = $direction;")
-        appendLine("  result += weight$index * content.eval(clampSample(coord - direction$index));")
-        appendLine("  result += weight$index * content.eval(clampSample(coord + direction$index));")
-        appendLine("}")
-      }
-    }
-    val tapUniforms = buildString {
-      repeat(SemanticBlurKernel.MAX_TAP_PAIRS) { index ->
-        appendLine("uniform float offset$index;")
-        appendLine("uniform float weight$index;")
-      }
-    }
-    return """
+        val tapUniforms = buildString {
+            repeat(SemanticBlurKernel.MAX_TAP_PAIRS) { index ->
+                appendLine("uniform float offset$index;")
+                appendLine("uniform float weight$index;")
+            }
+        }
+        return """
       uniform shader content;
       ${if (progressive) "uniform shader mask;" else ""}
       uniform float2 sampleSize;
@@ -244,11 +250,11 @@ internal object GlassShaders {
         return result.a > 0.0 ? result : vec4(0.0);
       }
     """
-  }
+    }
 
-  fun buildOptical(
-    interactive: Boolean = false,
-  ): String = """
+    fun buildOptical(
+        interactive: Boolean = false,
+    ): String = """
     uniform shader content;
     uniform float2 sampleSize;
     uniform float2 materialOrigin;
@@ -310,7 +316,7 @@ internal object GlassShaders {
         ? 1.0
         : smootherstep(clamp(distToEdge / max(edgeSoftness, 0.0001), 0.0, 1.0));
       ${if (interactive) {
-    """
+        """
       float interactionWeight = interactionFalloff(coord);
       float localizedRefractionMultiplier =
         mix(1.0, interactionRefractionMultiplier, interactionWeight);
@@ -320,9 +326,9 @@ internal object GlassShaders {
         1.0
       );
       """
-  } else {
-    ""
-  }}
+    } else {
+        ""
+    }}
 
       float fieldWeight = opticalFieldWeight();
       float opticalDistance =
@@ -383,10 +389,10 @@ internal object GlassShaders {
     }
   """
 
-  fun buildRefractionDetail(
-    interactive: Boolean = false,
-    coverageOnly: Boolean = false,
-  ): String = """
+    fun buildRefractionDetail(
+        interactive: Boolean = false,
+        coverageOnly: Boolean = false,
+    ): String = """
     uniform shader content;
     uniform float2 sampleSize;
     uniform float2 materialOrigin;
@@ -409,14 +415,14 @@ internal object GlassShaders {
     vec2 materialCoord(vec2 coord) { return coord - materialOrigin; }
 
     ${if (coverageOnly) {
-    ""
-  } else {
-    """
+        ""
+    } else {
+        """
     vec2 clampSample(vec2 coord) {
       return clamp(coord, vec2(0.5), sampleSize - vec2(0.5));
     }
     """
-  }}
+    }}
 
     ${sdfHelpers()}
 
@@ -432,14 +438,14 @@ internal object GlassShaders {
 
       float outputDistToEdge = max(-outputSd, 0.0);
       ${if (interactive) {
-    """
+        """
       float interactionWeight = interactionFalloff(coord);
       float localizedRefractionMultiplier =
         mix(1.0, interactionRefractionMultiplier, interactionWeight);
       """
-  } else {
-    ""
-  }}
+    } else {
+        ""
+    }}
       float sampleDiagonal = length(sampleSize);
       float maxPossibleDisplacement = min(
         abs(refractionScale * refractionStrength)${if (interactive) " * max(1.0, localizedRefractionMultiplier)" else ""},
@@ -476,20 +482,20 @@ internal object GlassShaders {
       if (detailAlpha <= 0.0) return vec4(0.0);
 
       ${if (coverageOnly) {
-    // DstOut removes a fraction of an optical layer that already has shape coverage.
-    // Applying coverage here too would leave excess optical colour at the boundary.
-    "return vec4(vec3(detailAlpha), detailAlpha);"
-  } else {
-    """
+        // DstOut removes a fraction of an optical layer that already has shape coverage.
+        // Applying coverage here too would leave excess optical colour at the boundary.
+        "return vec4(vec3(detailAlpha), detailAlpha);"
+    } else {
+        """
       vec4 sharpSample = content.eval(refractCoord);
       vec4 detailColor = sharpSample * (detailAlpha * coverage);
       return detailColor.a > 0.0 ? detailColor : vec4(0.0);
       """
-  }}
+    }}
     }
   """
 
-  fun buildInteractionLighting(): String = """
+    fun buildInteractionLighting(): String = """
     uniform shader content;
     uniform float2 materialOrigin;
     uniform float2 materialSize;
@@ -515,7 +521,7 @@ internal object GlassShaders {
     }
   """
 
-  fun buildInteractionOutputComposite(): String = """
+    fun buildInteractionOutputComposite(): String = """
     uniform shader content;
     uniform float2 interactionPosition;
     uniform float interactionRadius;
@@ -531,7 +537,7 @@ internal object GlassShaders {
     }
   """
 
-  fun buildRim(): String = """
+    fun buildRim(): String = """
     uniform shader content;
     uniform float2 sampleSize;
     uniform float2 materialOrigin;
@@ -587,13 +593,13 @@ internal object GlassShaders {
     }
   """
 
-  private fun sdfHelpers(): String = """
+    private fun sdfHelpers(): String = """
     ${sdfShapeHelpers()}
 
     ${sdfGradientHelpers()}
   """
 
-  private fun sdfShapeHelpers(): String = """
+    private fun sdfShapeHelpers(): String = """
     float shapeCoverage(float sd, float pixelWidth) {
       // Pixel coverage is independent of the authored optical edge softness and density.
       // sampleStep is two physical pixels expressed in the current working coordinates.
@@ -640,7 +646,7 @@ internal object GlassShaders {
     }
   """
 
-  private fun sdfGradientHelpers(): String = """
+    private fun sdfGradientHelpers(): String = """
     vec4 reversedSmootherstep(vec4 t) {
       t = clamp(t, 0.0, 1.0);
       return vec4(1.0) - t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
@@ -702,7 +708,7 @@ internal object GlassShaders {
 
   """
 
-  private fun surfaceAndDisplacementHelpers(): String = """
+    private fun surfaceAndDisplacementHelpers(): String = """
     float circleMap(float x) {
       return 1.0 - sqrt(max(0.0, 1.0 - x * x));
     }
@@ -941,7 +947,7 @@ internal object GlassShaders {
     }
   """
 
-  private fun opticalHelpers(): String = """
+    private fun opticalHelpers(): String = """
     vec2 surfaceGradient(vec2 localCoord, float fieldWeight) {
       float left = surfaceHeight(
         clampMaterial(localCoord - vec2(sampleStep, 0.0)),
@@ -1096,11 +1102,11 @@ internal object GlassShaders {
     }
   """
 
-  private fun interactionUniforms(
-    includeRefraction: Boolean,
-    includeWhitePoint: Boolean,
-    includeLighting: Boolean,
-  ): String = """
+    private fun interactionUniforms(
+        includeRefraction: Boolean,
+        includeWhitePoint: Boolean,
+        includeLighting: Boolean,
+    ): String = """
     uniform float2 interactionPosition;
     uniform float interactionRadius;
     ${if (includeRefraction) "uniform float interactionRefractionMultiplier;" else ""}
@@ -1108,7 +1114,7 @@ internal object GlassShaders {
     ${if (includeLighting) "uniform float interactionLightingIntensity;" else ""}
   """
 
-  private fun interactionFalloffHelper(): String = """
+    private fun interactionFalloffHelper(): String = """
     float interactionFalloff(vec2 coord) {
       float normalized = distance(coord, interactionPosition) / max(interactionRadius, 0.0001);
       return 1.0 - smootherstep(clamp(normalized, 0.0, 1.0));

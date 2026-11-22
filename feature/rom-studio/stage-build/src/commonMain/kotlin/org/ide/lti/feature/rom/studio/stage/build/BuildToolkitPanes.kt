@@ -35,6 +35,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -242,7 +243,13 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
                 enabled = state.busy == null,
             ) { Text("Check the work tree", fontSize = FontSize.BodySmall) }
         }
-        state.busy?.let { GlassLoadingStatus("$it…") }
+        state.busy?.let { busy ->
+            GlassLoadingStatus("$busy…")
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+            )
+        }
         state.refusal?.let { RefusalView(refusal = it) }
         state.saveError?.let {
             RefusalView(refusal = Refusal(it, "Coverage settings", "Change the setting again to retry."))

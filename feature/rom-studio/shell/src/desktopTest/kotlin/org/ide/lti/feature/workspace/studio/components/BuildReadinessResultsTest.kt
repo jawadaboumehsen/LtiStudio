@@ -104,7 +104,12 @@ class BuildReadinessResultsTest {
             """.trimIndent(),
         )
         val opened = mutableListOf<Pair<StageId, String>>()
-        show(PreflightUiState(findings = emptyList(), vintf = assessment), onOpen = { stage, id -> opened += stage to id })
+        show(
+            PreflightUiState(findings = emptyList(), vintf = assessment),
+            onOpen = { stage, id ->
+                opened += stage to id
+            },
+        )
 
         compose.onNodeWithText("Checks incomplete").assertExists()
         compose.onNodeWithText("Android 14 · Vendor first API level 34").assertExists()
@@ -114,7 +119,10 @@ class BuildReadinessResultsTest {
         compose.onNodeWithText("Inspect firmware files").performClick()
         compose.runOnIdle {
             assertEquals(
-                listOf(StageId.FIRMWARE_EXTRACTION to "dynamic-partitions", StageId.WORK_TREE_ASSEMBLY to "image-browser"),
+                listOf(
+                    StageId.FIRMWARE_EXTRACTION to "dynamic-partitions",
+                    StageId.WORK_TREE_ASSEMBLY to "image-browser",
+                ),
                 opened,
             )
         }

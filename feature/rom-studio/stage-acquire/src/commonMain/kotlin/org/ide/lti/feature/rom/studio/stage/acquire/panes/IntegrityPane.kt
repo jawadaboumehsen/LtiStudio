@@ -83,18 +83,20 @@ public fun IntegrityPane(
         }
         if (facts.measuring) {
             GlassLoadingPlaceholder("Reading archive details…")
-        } else Card {
-            Detail("Archive", facts.archivePath ?: "not in the workspace yet")
-            Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
-            Detail(
-                "Source URL",
-                settings.firmware.acquisitionUrl.takeIf { settings.mode == AcquisitionMode.DOWNLOAD }
-                    ?: "not used (an archive of the workspace)",
-            )
-            Detail("Expected SHA-256", expected ?: "not set")
-            Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
-            GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, shape = GlassShapes.ShellControl) {
-                Text("Refresh", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
+        } else {
+            Card {
+                Detail("Archive", facts.archivePath ?: "not in the workspace yet")
+                Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
+                Detail(
+                    "Source URL",
+                    settings.firmware.acquisitionUrl.takeIf { settings.mode == AcquisitionMode.DOWNLOAD }
+                        ?: "not used (an archive of the workspace)",
+                )
+                Detail("Expected SHA-256", expected ?: "not set")
+                Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
+                GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, shape = GlassShapes.ShellControl) {
+                    Text("Refresh", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
+                }
             }
         }
         ExpectedCard(settings.expectedSha256.orEmpty(), measured, onExpectedChange)

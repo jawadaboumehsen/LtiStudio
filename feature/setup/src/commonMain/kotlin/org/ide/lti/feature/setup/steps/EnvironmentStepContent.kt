@@ -46,6 +46,7 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusSuccess
@@ -332,8 +333,15 @@ fun EnvironmentStepContent(
                     severity = GlassBannerSeverity.INFO,
                     title = "Active Durable Run",
                     description =
-                        "Executing durable background run ($runSummary). " +
-                            "Reattaches automatically across session restarts.",
+                    "Executing durable background run ($runSummary). " +
+                        "Reattaches automatically across session restarts.",
+                )
+            }
+
+            if (toolchainSetupState.isChecking) {
+                GlassProgressBar(
+                    progress = null,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.ExtraSmall),
                 )
             }
 

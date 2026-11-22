@@ -1,6 +1,12 @@
-// Copyright 2024, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2024 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:Suppress("NOTHING_TO_INLINE")
 
 package dev.chrisbanes.haze
@@ -23,33 +29,33 @@ import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
  * JVM errors propagate rather than being silently swallowed as an "unspecified position".
  */
 internal fun LayoutCoordinates.safePositionOnScreen(): Offset = try {
-  positionOnScreen()
+    positionOnScreen()
 } catch (_: Exception) {
-  Offset.Unspecified
+    Offset.Unspecified
 }
 
 internal fun LayoutCoordinates.safeTransformToScreen(): Matrix? = try {
-  Matrix().also { transformToScreen(it) }
+    Matrix().also { transformToScreen(it) }
 } catch (_: Exception) {
-  null
+    null
 }
 
 internal fun LayoutCoordinates.positionForHaze(
-  strategy: HazePositionStrategy,
+    strategy: HazePositionStrategy,
 ): Offset = when (strategy) {
-  HazePositionStrategy.Local, HazePositionStrategy.Auto -> positionInRoot()
-  HazePositionStrategy.Screen -> safePositionOnScreen()
+    HazePositionStrategy.Local, HazePositionStrategy.Auto -> positionInRoot()
+    HazePositionStrategy.Screen -> safePositionOnScreen()
 }
 
 internal fun LayoutCoordinates.transformToRoot(): Matrix = Matrix().also { matrix ->
-  findRootCoordinates().transformFrom(this, matrix)
+    findRootCoordinates().transformFrom(this, matrix)
 }
 
 internal fun LayoutCoordinates.transformToScreenOrRoot(): Matrix =
-  safeTransformToScreen() ?: transformToRoot()
+    safeTransformToScreen() ?: transformToRoot()
 
 internal expect fun CompositionLocalConsumerModifierNode.getWindowId(): Any?
 
 internal inline fun <T> T.letIf(condition: Boolean, block: (T) -> T): T {
-  return if (condition) block(this) else this
+    return if (condition) block(this) else this
 }

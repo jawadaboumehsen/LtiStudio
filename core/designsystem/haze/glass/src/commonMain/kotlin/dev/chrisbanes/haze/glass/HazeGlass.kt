@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(dev.chrisbanes.haze.InternalHazeApi::class)
 
 package dev.chrisbanes.haze.glass
@@ -49,60 +55,60 @@ import dev.chrisbanes.haze.hazeEffect
 @Stable
 @ExperimentalHazeApi
 public fun Modifier.hazeGlass(
-  input: HazeInput,
-  style: GlassStyle = GlassStyle,
-  performanceMode: HazePerformanceMode? = null,
-  expandLayerBounds: Boolean = true,
-  interactionSource: InteractionSource? = null,
-  interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+    input: HazeInput,
+    style: GlassStyle = GlassStyle,
+    performanceMode: HazePerformanceMode? = null,
+    expandLayerBounds: Boolean = true,
+    interactionSource: InteractionSource? = null,
+    interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
 ): Modifier = hazeGlass(
-  factory = GlassHazeEffectFactory,
-  input = input,
-  style = style,
-  performanceMode = performanceMode,
-  expandLayerBounds = expandLayerBounds,
-  interactionSource = interactionSource,
-  interactionTransformTarget = interactionTransformTarget,
-  interactionTransformPivot = interactionTransformPivot,
-  interactionReducedMotionPolicy = interactionReducedMotionPolicy,
-)
-
-internal fun Modifier.hazeGlass(
-  factory: HazeEffectFactory<GlassNodeConfiguration>,
-  input: HazeInput,
-  style: GlassStyle,
-  performanceMode: HazePerformanceMode?,
-  expandLayerBounds: Boolean,
-  interactionSource: InteractionSource?,
-  interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
-): Modifier = hazeEffect(
-  factory = factory,
-  input = input,
-  style = GlassNodeConfiguration(
+    factory = GlassHazeEffectFactory,
+    input = input,
     style = style,
     performanceMode = performanceMode,
+    expandLayerBounds = expandLayerBounds,
     interactionSource = interactionSource,
     interactionTransformTarget = interactionTransformTarget,
     interactionTransformPivot = interactionTransformPivot,
     interactionReducedMotionPolicy = interactionReducedMotionPolicy,
-  ),
-  expandLayerBounds = expandLayerBounds,
+)
+
+internal fun Modifier.hazeGlass(
+    factory: HazeEffectFactory<GlassNodeConfiguration>,
+    input: HazeInput,
+    style: GlassStyle,
+    performanceMode: HazePerformanceMode?,
+    expandLayerBounds: Boolean,
+    interactionSource: InteractionSource?,
+    interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+): Modifier = hazeEffect(
+    factory = factory,
+    input = input,
+    style = GlassNodeConfiguration(
+        style = style,
+        performanceMode = performanceMode,
+        interactionSource = interactionSource,
+        interactionTransformTarget = interactionTransformTarget,
+        interactionTransformPivot = interactionTransformPivot,
+        interactionReducedMotionPolicy = interactionReducedMotionPolicy,
+    ),
+    expandLayerBounds = expandLayerBounds,
 )
 
 @Poko
 internal class GlassNodeConfiguration(
-  val style: GlassStyle,
-  val performanceMode: HazePerformanceMode? = null,
-  val interactionSource: InteractionSource?,
-  val interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  val interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  val interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+    val style: GlassStyle,
+    val performanceMode: HazePerformanceMode? = null,
+    val interactionSource: InteractionSource?,
+    val interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    val interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    val interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
 )
 
 internal object GlassHazeEffectFactory : HazeEffectFactory<GlassNodeConfiguration> {
-  override fun createRenderer(): HazeEffectRenderer<GlassNodeConfiguration> = GlassRuntimeEffect()
+    override fun createRenderer(): HazeEffectRenderer<GlassNodeConfiguration> = GlassRuntimeEffect()
 }

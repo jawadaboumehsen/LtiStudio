@@ -68,12 +68,15 @@ import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
-import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.SetupTokens
@@ -209,7 +212,13 @@ fun ProjectsStepContent(
             )
         }
 
-        if (state.openingWorkspace) GlassLoadingStatus("Opening workspace…")
+        if (state.openingWorkspace) {
+            GlassLoadingStatus("Opening workspace…")
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+            )
+        }
 
         // 2. Recent Workspaces Header & Labeled Search
         WorkspaceSearchSection(
@@ -222,10 +231,13 @@ fun ProjectsStepContent(
 
         // 3. Virtualized Recents List / Distinct Empty State
         if (state.projectsLoading && state.recentProjects.isEmpty()) {
-            GlassLoadingPlaceholder("Loading recent workspaces…")
+            WorkspaceListLoadingSkeleton()
         } else if (state.filteredProjects.isEmpty()) {
             WorkspaceEmptyStateSection(searchQuery = state.searchQuery)
         } else {
+            if (state.projectsLoading) {
+                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Small))
+            }
             val pendingRecentId = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenRecent)
                 ?.project?.workspaceId
             LazyColumn(
@@ -255,6 +267,29 @@ fun ProjectsStepContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WorkspaceListLoadingSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassSpinner(modifier = Modifier.size(IconSize.Small))
+            Text(
+                "Loading recent workspaces…",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = FontSize.BodySmall,
+            )
+        }
+        GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+        GlassSkeletonList(count = 3, hasIcon = true, hasSubtitle = true, hasTrailingBadge = true)
     }
 }
 

@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur.material3
 
 import androidx.compose.material3.MaterialTheme
@@ -19,9 +25,9 @@ import dev.chrisbanes.haze.blur.HazeBlurStyleScope
  */
 @Composable
 public fun HazeBlurStyle.Companion.Material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
 ): HazeBlurStyle = remember(containerColor) {
-  HazeBlurStyle { backgroundColor(containerColor) }
+    HazeBlurStyle { backgroundColor(containerColor) }
 }
 
 /**
@@ -34,9 +40,9 @@ public fun HazeBlurStyle.Companion.Material3(
 @Composable
 @ReadOnlyComposable
 public fun HazeBlurStyle.Companion.Material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
-  block: HazeBlurStyleScope.() -> Unit,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    block: HazeBlurStyleScope.() -> Unit,
 ): HazeBlurStyle = HazeBlurStyle {
-  backgroundColor(containerColor)
-  block()
+    backgroundColor(containerColor)
+    block()
 }

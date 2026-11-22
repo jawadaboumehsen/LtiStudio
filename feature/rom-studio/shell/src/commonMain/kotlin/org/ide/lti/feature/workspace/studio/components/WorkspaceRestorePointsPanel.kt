@@ -35,6 +35,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -76,7 +77,13 @@ public fun WorkspaceRestorePointsPanel(
                     onRefresh = onRefresh,
                     busy = restoreOperation != null,
                 )
-                if (restoreOperation != null && restoreIndex.items.isNotEmpty()) GlassLoadingStatus(restoreOperation)
+                if (restoreOperation != null && restoreIndex.items.isNotEmpty()) {
+                    GlassLoadingStatus(restoreOperation)
+                    GlassProgressBar(
+                        progress = null,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+                    )
+                }
             }
 
             if (restoreMessage != null) {
@@ -96,7 +103,11 @@ public fun WorkspaceRestorePointsPanel(
                 }
             } else {
                 items(restoreIndex.items) { point ->
-                    RestorePointCard(point = point, onRestore = { onRestoreOne(point.id) }, busy = restoreOperation != null)
+                    RestorePointCard(
+                        point = point,
+                        onRestore = { onRestoreOne(point.id) },
+                        busy = restoreOperation != null,
+                    )
                 }
             }
         }

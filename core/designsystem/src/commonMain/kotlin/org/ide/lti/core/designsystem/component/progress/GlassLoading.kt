@@ -9,13 +9,10 @@
  */
 package org.ide.lti.core.designsystem.component.progress
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.MaterialTheme
@@ -23,9 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 
@@ -42,16 +37,38 @@ fun GlassLoadingStatus(label: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Static placeholder for a section whose content has not arrived. */
+/**
+ * macOS-style polished placeholder for a section, tab, or screen whose content is loading.
+ * Shows a status header with a spinner, an Apple-inspired slim progress bar, and shimmering
+ * frosted glass skeleton rows.
+ */
 @Composable
-fun GlassLoadingPlaceholder(label: String, modifier: Modifier = Modifier) {
+fun GlassLoadingPlaceholder(
+    label: String,
+    modifier: Modifier = Modifier,
+    showProgressBar: Boolean = true,
+    rowsCount: Int = 3,
+) {
     Column(
         modifier = modifier.fillMaxWidth().progressSemantics(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
-        val color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = AlphaTokens.Subtle)
-        Box(Modifier.fillMaxWidth(0.72f).height(Spacing.SmallMedium).background(color, GlassShapes.HazeCapsule))
-        Box(Modifier.fillMaxWidth(0.53f).height(Spacing.SmallMedium).background(color, GlassShapes.HazeCapsule))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassSpinner(modifier = Modifier.size(IconSize.Small))
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.BodySmall)
+        }
+        if (showProgressBar) {
+            GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+        }
+        GlassSkeletonList(
+            count = rowsCount,
+            hasIcon = true,
+            hasSubtitle = true,
+            hasTrailingBadge = true,
+        )
     }
 }

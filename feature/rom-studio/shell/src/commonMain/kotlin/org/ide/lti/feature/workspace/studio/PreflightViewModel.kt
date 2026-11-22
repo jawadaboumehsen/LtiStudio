@@ -149,8 +149,13 @@ public class PreflightViewModel internal constructor(
         val checker = report ?: return readNext()
         _state.update {
             it.copy(
-                checking = true, error = null, findings = null, vintf = null, inputsChanged = false,
-                next = null, nextError = null,
+                checking = true,
+                error = null,
+                findings = null,
+                vintf = null,
+                inputsChanged = false,
+                next = null,
+                nextError = null,
             )
         }
         checkJob = viewModelScope.launch {

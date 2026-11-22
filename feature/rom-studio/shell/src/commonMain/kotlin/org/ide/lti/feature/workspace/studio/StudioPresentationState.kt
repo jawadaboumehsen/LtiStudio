@@ -351,7 +351,6 @@ public fun lockStages(items: List<PipelineRailItemUi>, report: ValidationReport)
 internal fun stageBlocking(target: StageId, order: List<StageId>, report: ValidationReport): StageId? =
     order.takeWhile { it != target }.firstOrNull { report.blocks(it) }
 
-
 internal data class ReadinessStageLink(val fix: PreflightFix.Open, val explanation: String? = null)
 
 /** Make the rail's lock visible before clicking, and open the prerequisite's offending field. */
@@ -367,11 +366,15 @@ internal fun readinessStageLink(
             "$requested is locked until device configuration errors are fixed.",
         )
     }
-    val blocker = stageBlocking(fix.stage, order, report) ?: return ReadinessStageLink(fix)
-    val stage = PipelineStageSequence.label(blocker)
-    val problem = report.errors.firstOrNull { it.stageId == blocker && it.severity == Severity.ERROR }
-    return ReadinessStageLink(
-        PreflightFix.Open("Fix $stage first", blocker, problem?.objectId.orEmpty()),
-        "$requested is locked until $stage is configured.",
-    )
+    val blocker = stageBlocking(fix.stage, order, report)
+    return if (blocker == null) {
+        ReadinessStageLink(fix)
+    } else {
+        val stage = PipelineStageSequence.label(blocker)
+        val problem = report.errors.firstOrNull { it.stageId == blocker && it.severity == Severity.ERROR }
+        ReadinessStageLink(
+            PreflightFix.Open("Fix $stage first", blocker, problem?.objectId.orEmpty()),
+            "$requested is locked until $stage is configured.",
+        )
+    }
 }

@@ -44,6 +44,8 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
+import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -121,6 +123,22 @@ public fun WorkspaceStoragePanel(viewModel: WorkspaceStorageViewModel, modifier:
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             item { Summary(state, onRefresh = viewModel::refresh) }
+            if (state.busy == "Measuring") {
+                item {
+                    GlassProgressBar(
+                        progress = null,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+                    )
+                }
+            }
+            if (!state.loaded) {
+                item {
+                    GlassSkeletonList(
+                        count = 4,
+                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.Small),
+                    )
+                }
+            }
             state.message?.let { message ->
                 item {
                     GlassBanner(

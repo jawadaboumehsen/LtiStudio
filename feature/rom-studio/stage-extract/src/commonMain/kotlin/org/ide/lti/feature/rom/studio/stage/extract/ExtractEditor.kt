@@ -43,6 +43,7 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -269,6 +270,12 @@ private fun ReplacementsCard(
                 "expanded; Build & Sign rebuilds it as the filesystem you choose there). The build stops if the " +
                 "file changes outside the Studio. Re-extract unpacks one partition again without a whole Extract run.",
         )
+        if (facts.replacing != null || facts.reextracting != null) {
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+            )
+        }
         facts.replaceRefusal?.let { RefusalView(refusal = it) }
         facts.reextractMessage?.let { Hint(it) }
         val partitions = settings.dynamicPartitions.ifEmpty { target.dynamicPartitions }

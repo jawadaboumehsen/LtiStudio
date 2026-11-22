@@ -1,6 +1,12 @@
-// Copyright 2024, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2024 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze
 
 import androidx.compose.ui.graphics.Color
@@ -22,16 +28,16 @@ public expect class PlatformRuntimeEffect
  */
 @InternalHazeApi
 public class RuntimeShaderRenderEffectException(
-  cause: Throwable,
+    cause: Throwable,
 ) : RuntimeException("Unable to construct a runtime shader render effect", cause)
 
 @OptIn(InternalHazeApi::class)
 internal inline fun <T> wrapRuntimeShaderConstruction(block: () -> T): T = try {
-  block()
+    block()
 } catch (failure: RuntimeShaderRenderEffectException) {
-  throw failure
+    throw failure
 } catch (failure: RuntimeException) {
-  throw RuntimeShaderRenderEffectException(failure)
+    throw RuntimeShaderRenderEffectException(failure)
 }
 
 /**
@@ -54,33 +60,33 @@ public expect fun isRuntimeShaderRenderEffectSupported(): Boolean
  */
 @InternalHazeApi
 public expect fun createRuntimeShaderRenderEffect(
-  effect: PlatformRuntimeEffect,
-  shaderNames: Array<String>,
-  inputs: Array<PlatformRenderEffect?>,
-  uniforms: RuntimeShaderUniformProvider.() -> Unit = {},
+    effect: PlatformRuntimeEffect,
+    shaderNames: Array<String>,
+    inputs: Array<PlatformRenderEffect?>,
+    uniforms: RuntimeShaderUniformProvider.() -> Unit = {},
 ): PlatformRenderEffect
 
 /** A runtime shader render effect whose uniforms can be updated without recompiling its source. */
 @InternalHazeApi
 public interface MutableRuntimeShaderRenderEffect {
-  /** Applies [uniforms] and returns the render effect containing the updated values. */
-  public fun updateUniforms(
-    uniforms: RuntimeShaderUniformProvider.() -> Unit,
-  ): PlatformRenderEffect
+    /** Applies [uniforms] and returns the render effect containing the updated values. */
+    public fun updateUniforms(
+        uniforms: RuntimeShaderUniformProvider.() -> Unit,
+    ): PlatformRenderEffect
 
-  /**
-   * Replaces the child [inputs], applies [uniforms], and returns the updated render effect.
-   *
-   * The compiled runtime shader is retained when the platform supports it.
-   *
-   * @throws UnsupportedOperationException if replacing child inputs is not supported.
-   */
-  public fun updateInputs(
-    inputs: Array<PlatformRenderEffect?>,
-    uniforms: RuntimeShaderUniformProvider.() -> Unit,
-  ): PlatformRenderEffect = throw UnsupportedOperationException(
-    "Updating runtime shader inputs is not supported by this implementation",
-  )
+    /**
+     * Replaces the child [inputs], applies [uniforms], and returns the updated render effect.
+     *
+     * The compiled runtime shader is retained when the platform supports it.
+     *
+     * @throws UnsupportedOperationException if replacing child inputs is not supported.
+     */
+    public fun updateInputs(
+        inputs: Array<PlatformRenderEffect?>,
+        uniforms: RuntimeShaderUniformProvider.() -> Unit,
+    ): PlatformRenderEffect = throw UnsupportedOperationException(
+        "Updating runtime shader inputs is not supported by this implementation",
+    )
 }
 
 /**
@@ -91,9 +97,9 @@ public interface MutableRuntimeShaderRenderEffect {
  */
 @InternalHazeApi
 public expect fun createMutableRuntimeShaderRenderEffect(
-  effect: PlatformRuntimeEffect,
-  shaderNames: Array<String>,
-  inputs: Array<PlatformRenderEffect?>,
+    effect: PlatformRuntimeEffect,
+    shaderNames: Array<String>,
+    inputs: Array<PlatformRenderEffect?>,
 ): MutableRuntimeShaderRenderEffect
 
 /**
@@ -101,33 +107,33 @@ public expect fun createMutableRuntimeShaderRenderEffect(
  */
 @InternalHazeApi
 public interface RuntimeShaderUniformProvider {
-  /**
-   * Sets a color-managed uniform.
-   */
-  public fun setColorUniform(name: String, color: Color)
+    /**
+     * Sets a color-managed uniform.
+     */
+    public fun setColorUniform(name: String, color: Color)
 
-  /**
-   * Sets a float uniform.
-   */
-  public fun setFloatUniform(name: String, value: Float)
+    /**
+     * Sets a float uniform.
+     */
+    public fun setFloatUniform(name: String, value: Float)
 
-  /**
-   * Sets a float2 uniform.
-   */
-  public fun setFloatUniform(name: String, value1: Float, value2: Float)
+    /**
+     * Sets a float2 uniform.
+     */
+    public fun setFloatUniform(name: String, value1: Float, value2: Float)
 
-  /**
-   * Sets a float4 uniform.
-   */
-  public fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float)
+    /**
+     * Sets a float4 uniform.
+     */
+    public fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float)
 
-  /**
-   * Sets an int uniform.
-   */
-  public fun setIntUniform(name: String, value: Int)
+    /**
+     * Sets an int uniform.
+     */
+    public fun setIntUniform(name: String, value: Int)
 
-  /**
-   * Sets a child shader uniform.
-   */
-  public fun setChildShader(name: String, shader: Shader)
+    /**
+     * Sets a child shader uniform.
+     */
+    public fun setChildShader(name: String, shader: Shader)
 }

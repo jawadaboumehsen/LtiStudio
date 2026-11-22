@@ -96,15 +96,15 @@ class PreflightViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val saved = CompletableDeferred<Unit>()
-            val settings = TestSettings { 
+            val settings = TestSettings {
                 saved.await()
                 Result.success(Unit)
-             }
+            }
             var reads = 0
-            val vm = PreflightViewModel("one", report = { 
+            val vm = PreflightViewModel("one", report = {
                 reads++
                 compatible()
-             }, settings = settings)
+            }, settings = settings)
             vm.check()
             runCurrent()
             assertTrue(vm.state.value.checking)
@@ -121,9 +121,8 @@ class PreflightViewModelTest {
 
     private fun compatible() = PreflightReport(emptyList(), VintfAssessment(VintfStatus.COMPATIBLE))
 
-    private class TestSettings(
-        private val savePending: suspend () -> Result<Unit> = { Result.success(Unit) },
-    ) : WorkspaceSettingsStore {
+    private class TestSettings(private val savePending: suspend () -> Result<Unit> = { Result.success(Unit) }) :
+        WorkspaceSettingsStore {
         override suspend fun flush(workspaceId: String): Result<Unit> = savePending()
 
         override val changes = MutableSharedFlow<String>(extraBufferCapacity = 1)
