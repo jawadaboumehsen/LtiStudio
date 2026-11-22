@@ -11,12 +11,14 @@ package org.ide.lti.feature.plugins
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.plugin.AuthorProject
@@ -63,6 +65,7 @@ public data class PluginManagerUiState(
     val activeWorkspaceId: String? = null,
     val searchQuery: String = "",
     val installedPackages: List<InstalledRecord> = emptyList(),
+    val isInstalledLoading: Boolean = false,
     val packageReferences: Map<String, List<String>> = emptyMap(),
     val selectedPackageKey: String? = null,
     val detailsRecord: InstalledRecord? = null,
@@ -174,12 +177,19 @@ public class PluginManagerViewModel(
 
     public fun refreshInstalled() {
         installedRefresh?.cancel()
+        _uiState.update { it.copy(isInstalledLoading = true) }
         installedRefresh = viewModelScope.launch {
-            val records = pluginInstallPort.installed()
-            val refs = packageReferences(records, workspaceUsage?.usersOf().orEmpty())
-            coroutineContext.ensureActive()
-            _uiState.update {
-                it.copy(installedPackages = records, packageReferences = refs)
+            try {
+                val records = pluginInstallPort.installed()
+                val refs = packageReferences(records, workspaceUsage?.usersOf().orEmpty())
+                coroutineContext.ensureActive()
+                _uiState.update { it.copy(installedPackages = records, packageReferences = refs) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                _uiState.update { it.copy(errorMessage = error.message ?: "Could not read installed plugins") }
+            } finally {
+                if (coroutineContext.isActive) _uiState.update { it.copy(isInstalledLoading = false) }
             }
         }
     }

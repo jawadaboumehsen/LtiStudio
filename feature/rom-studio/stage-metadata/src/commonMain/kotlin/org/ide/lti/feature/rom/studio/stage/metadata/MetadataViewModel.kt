@@ -42,6 +42,7 @@ public class MetadataViewModel(
         write = { snapshot, value -> snapshot.copy(release = value) },
     )
 
+    public val settingsLoading: StateFlow<Boolean> = sync.loading
     public val settings: StateFlow<ReleaseSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
@@ -55,6 +56,11 @@ public class MetadataViewModel(
     }
 
     private val _manifest = MutableStateFlow<String?>(null)
+    private val _manifestLoading = MutableStateFlow(workspaceFacts != null)
+    private val _draftLoading = MutableStateFlow(false)
+
+    val manifestLoading: StateFlow<Boolean> = _manifestLoading.asStateFlow()
+    val draftLoading: StateFlow<Boolean> = _draftLoading.asStateFlow()
 
     /** The manifest the last build wrote (`out/manifest.json`), or null before Release metadata has run. */
     public val manifest: StateFlow<String?> = _manifest.asStateFlow()
@@ -65,22 +71,35 @@ public class MetadataViewModel(
      */
     public fun draftChangelog() {
         val facts = workspaceFacts ?: return
+        if (_draftLoading.value) return
+        _draftLoading.value = true
         val asked = settings.value.changelog
         viewModelScope.launch {
-            val draft = ChangelogDraft.of(
-                facts.read(workspaceId, ChangelogDraft.PLAN),
-                facts.read(workspaceId, DebloatStage.RESULT),
-                store?.current(workspaceId),
-            )
-            // Notes typed while it was read are newer than the request: they stay.
-            if (draft.isNotBlank() && settings.value.changelog == asked) {
-                updateSettings(settings.value.copy(changelog = draft))
+            try {
+                val draft = ChangelogDraft.of(
+                    facts.read(workspaceId, ChangelogDraft.PLAN),
+                    facts.read(workspaceId, DebloatStage.RESULT),
+                    store?.current(workspaceId),
+                )
+                // Notes typed while it was read are newer than the request: they stay.
+                if (draft.isNotBlank() && settings.value.changelog == asked) {
+                    updateSettings(settings.value.copy(changelog = draft))
+                }
+            } finally {
+                _draftLoading.value = false
             }
         }
     }
 
     public fun refreshManifest() {
         val facts = workspaceFacts ?: return
-        viewModelScope.launch { _manifest.value = facts.read(workspaceId, "out/manifest.json") }
+        _manifestLoading.value = true
+        viewModelScope.launch {
+            try {
+                _manifest.value = facts.read(workspaceId, "out/manifest.json")
+            } finally {
+                _manifestLoading.value = false
+            }
+        }
     }
 }

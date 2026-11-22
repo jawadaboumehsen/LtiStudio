@@ -55,11 +55,12 @@ internal fun RoundedCornerShape.toCornerRadiiPx(
   )
 }
 
-internal fun RoundedCornerShape.toValidCornerRadiiPxOrNull(
+internal fun RoundedCornerShape?.toValidCornerRadiiPxOrNull(
   layerSize: Size,
   density: Density,
   layoutDirection: LayoutDirection,
 ): CornerRadii? {
+  if (this == null) return null
   val topStartPx = topStart.toPx(layerSize, density)
   val topEndPx = topEnd.toPx(layerSize, density)
   val bottomEndPx = bottomEnd.toPx(layerSize, density)

@@ -23,5 +23,5 @@ public interface AppEnvironmentPort {
     public fun environment(): AppEnvironment
 
     /** Opens [path] in the system file manager; false when it cannot. */
-    public fun openFolder(path: String): Boolean
+    public suspend fun openFolder(path: String): Boolean
 }

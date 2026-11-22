@@ -72,7 +72,7 @@ internal fun PhoneCard(
             GlassButton(
                 onClick = { vm.read(workspaceId) },
                 variant = GlassButtonVariant.Secondary,
-                enabled = phone.busy == null,
+                loading = phone.busy != null,
                 modifier = Modifier.testTag("ReadPhoneButton"),
             ) { Text(phone.busy ?: "Read the phone") }
         }

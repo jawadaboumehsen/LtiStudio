@@ -63,6 +63,7 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -552,7 +553,7 @@ fun ToolInspector(state: ToolsPageState, modifier: Modifier = Modifier) {
                                 )
 
                                 if (isLoadingRefs) {
-                                    Text("Loading tags…", style = MaterialTheme.typography.bodySmall)
+                                    GlassLoadingPlaceholder("Loading tags…")
                                 } else if (refsError != null) {
                                     Text(
                                         text = "Couldn't load tags: $refsError",

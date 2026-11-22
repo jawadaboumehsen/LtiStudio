@@ -100,11 +100,13 @@ class AppSettingsState(
     private val pendingWrites = mutableStateOf(0)
     private val failedSettings = mutableStateOf(setOf<String>())
 
+    val isSaving: Boolean get() = pendingWrites.value > 0
+
     val saveStatus: String
         get() = when {
             failedSettings.value.isNotEmpty() ->
                 "Could not save: ${failedSettings.value.sorted().joinToString()}. Changes apply for this session."
-            pendingWrites.value > 0 -> "Saving changes…"
+            isSaving -> "Saving changes…"
             userDataRepository == null || coroutineScope == null -> "Changes apply for this session."
             else -> "Changes apply at once and are saved for this app."
         }

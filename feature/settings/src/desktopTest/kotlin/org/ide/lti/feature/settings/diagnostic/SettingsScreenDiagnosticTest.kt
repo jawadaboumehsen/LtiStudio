@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.settings.diagnostic
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -43,13 +44,15 @@ class SettingsScreenDiagnosticTest {
     @Test
     fun aboutStartsAtItsHeadingAfterScrollingAppearance() = runSettingsUiTest(width = 947, height = 816) {
         val settingsState = AppSettingsState(initialTheme = AppSettingsState.THEME_DARK)
+        val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = AppTheme.Dark, appearance = Appearance(textScale = 1.25f)) {
-                SettingsScreenContent(onBackClick = {}, appSettingsState = settingsState)
+                SettingsScreenContent(onBackClick = {}, appSettingsState = settingsState, appearanceScrollState = scrollState)
             }
         }
 
-        scrollToSettingsNode("AppearanceActionFooter").assertIsDisplayed()
+        mainClock.advanceTimeByFrame()
+        scrollToSettingsNode("AppearanceActionFooter", scrollState).assertIsDisplayed()
         onNodeWithTag("NavigatorItem_about").performClick()
         mainClock.advanceTimeByFrame()
         onNodeWithText("About LtiRom Studio").assertIsDisplayed()
@@ -94,6 +97,7 @@ class SettingsScreenDiagnosticTest {
             initialEffectsEnabled = effectsEnabled,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = theme, effectsEnabled = effectsEnabled) {
                 Box(Modifier.fillMaxSize()) {
@@ -101,12 +105,14 @@ class SettingsScreenDiagnosticTest {
                     SettingsScreenContent(
                         onBackClick = {},
                         appSettingsState = settingsState,
+                        appearanceScrollState = scrollState,
                         initialCategory = SettingsCategory.Appearance,
                     )
                 }
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
 
         // 1. Measure unboxed header text at the top of the appearance panel
@@ -118,7 +124,7 @@ class SettingsScreenDiagnosticTest {
             ).toInt()
 
         // 2. Scroll to "Glass & motion" card and the switch inside it
-        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion", scrollState).assertIsDisplayed()
         waitForIdle()
 
         val glassCardTitleBounds = onNodeWithText("Glass & motion").getBoundsInRoot()
@@ -191,6 +197,7 @@ class SettingsScreenDiagnosticTest {
             initialEffectsEnabled = true,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
                 Box(Modifier.fillMaxSize()) {
@@ -198,16 +205,17 @@ class SettingsScreenDiagnosticTest {
                     SettingsScreenContent(
                         onBackClick = {},
                         appSettingsState = settingsState,
+                        appearanceScrollState = scrollState,
                         initialCategory = SettingsCategory.Appearance,
                     )
                 }
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
-        // At 900x600, "Glass & motion" card is initially below the fold.
-        // Verify scrolling reaches and displays the card.
-        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion", scrollState).assertIsDisplayed()
+        assertTrue(scrollState.value > 0, "The compact Settings viewport should scroll to the card")
         onNodeWithText("Glass & motion").assertIsDisplayed()
         onNodeWithText("Glass effects").assertIsDisplayed()
     }
@@ -222,6 +230,7 @@ class SettingsScreenDiagnosticTest {
             initialEffectsEnabled = true,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
                 Box(Modifier.fillMaxSize()) {
@@ -229,12 +238,14 @@ class SettingsScreenDiagnosticTest {
                     SettingsScreenContent(
                         onBackClick = {},
                         appSettingsState = settingsState,
+                        appearanceScrollState = scrollState,
                         initialCategory = SettingsCategory.Appearance,
                     )
                 }
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
         onNodeWithTag("SettingsRightRail").assertExists()
         val bounds = onNodeWithTag("SettingsRightRail").getBoundsInRoot()

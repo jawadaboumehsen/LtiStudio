@@ -122,6 +122,10 @@ public class StageSettingsSync<T>(
 
     private var pendingSave: Job? = null
     private val connected = store != null && workspaceId.isNotBlank()
+    private val _loading = MutableStateFlow(connected)
+
+    /** True until the initial settings read completes. Refreshes keep the current editor visible. */
+    public val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
     // Each stage uses a distinct settings type. Reopening it replaces, rather than competes with, an old draft.
     private val owner = workspaceId to initial?.let { it::class }
@@ -161,11 +165,15 @@ public class StageSettingsSync<T>(
     private suspend fun reload() {
         val requestedAt = revision
         val generation = ++loadGeneration
-        val snapshot = store?.current(workspaceId)
-        if (snapshot != null && revision == requestedAt && generation == loadGeneration) {
-            val effectiveSettings = read(edits.applyTo(owner, snapshot))
-            _settings.value = effectiveSettings
-            if (read(snapshot) == effectiveSettings) _saveError.value = null
+        try {
+            val snapshot = store?.current(workspaceId)
+            if (snapshot != null && revision == requestedAt && generation == loadGeneration) {
+                val effectiveSettings = read(edits.applyTo(owner, snapshot))
+                _settings.value = effectiveSettings
+                if (read(snapshot) == effectiveSettings) _saveError.value = null
+            }
+        } finally {
+            if (generation == loadGeneration) _loading.value = false
         }
     }
 

@@ -33,6 +33,8 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -54,6 +56,7 @@ public fun WorkspaceRestorePointsPanel(
     onRestoreOne: (String) -> Unit = {},
     onRefresh: () -> Unit = {},
     modifier: Modifier = Modifier,
+    restoreOperation: String? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize().testTag("WorkspaceRestorePointsPanel"),
@@ -71,7 +74,9 @@ public fun WorkspaceRestorePointsPanel(
                     totalCount = restoreIndex.items.size,
                     availableCount = restoreIndex.items.count { it.state == RestorePointState.Available },
                     onRefresh = onRefresh,
+                    busy = restoreOperation != null,
                 )
+                if (restoreOperation != null && restoreIndex.items.isNotEmpty()) GlassLoadingStatus(restoreOperation)
             }
 
             if (restoreMessage != null) {
@@ -83,13 +88,15 @@ public fun WorkspaceRestorePointsPanel(
                 }
             }
 
-            if (restoreIndex.items.isEmpty()) {
+            if (restoreOperation != null && restoreIndex.items.isEmpty()) {
+                item { GlassLoadingPlaceholder(restoreOperation) }
+            } else if (restoreIndex.items.isEmpty()) {
                 item {
                     EmptyCard()
                 }
             } else {
                 items(restoreIndex.items) { point ->
-                    RestorePointCard(point = point, onRestore = { onRestoreOne(point.id) })
+                    RestorePointCard(point = point, onRestore = { onRestoreOne(point.id) }, busy = restoreOperation != null)
                 }
             }
         }
@@ -97,7 +104,7 @@ public fun WorkspaceRestorePointsPanel(
 }
 
 @Composable
-private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Unit) {
+private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Unit, busy: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,7 +133,7 @@ private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Un
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard) {
+            GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, loading = busy) {
                 Text("Refresh", fontSize = FontSize.Micro)
             }
         }
@@ -142,7 +149,7 @@ private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Un
 }
 
 @Composable
-private fun RestorePointCard(point: RestorePoint, onRestore: () -> Unit) {
+private fun RestorePointCard(point: RestorePoint, onRestore: () -> Unit, busy: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -175,7 +182,7 @@ private fun RestorePointCard(point: RestorePoint, onRestore: () -> Unit) {
         }
 
         if (point.state == RestorePointState.Available) {
-            GlassButton(onClick = onRestore, variant = GlassButtonVariant.Standard) {
+            GlassButton(onClick = onRestore, variant = GlassButtonVariant.Standard, enabled = !busy) {
                 Text("Restore", fontSize = FontSize.Micro)
             }
         } else {

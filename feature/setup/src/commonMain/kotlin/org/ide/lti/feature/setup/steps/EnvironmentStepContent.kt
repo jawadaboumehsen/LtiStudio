@@ -37,6 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import org.ide.lti.core.designsystem.component.actions.GlassButton
+import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -310,9 +312,11 @@ fun EnvironmentStepContent(
                         label = "Bridge: ${bridgePres.chipText}",
                         selected = bridgePres.isReady,
                     )
-                    GlassSecondaryButton(
+                    GlassButton(
                         onClick = onCheckEnvironment,
                         enabled = !toolchainSetupState.isBusy,
+                        loading = toolchainSetupState.isChecking,
+                        variant = GlassButtonVariant.Secondary,
                     ) {
                         Text(if (toolchainSetupState.isChecking) "Checking…" else "Check again")
                     }

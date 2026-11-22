@@ -41,6 +41,7 @@ import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -210,7 +211,7 @@ private fun RecordedForBuild(state: ImagePaneState) {
     Section("Recorded for the build")
     val details = state.details
     if (details == null) {
-        ImageHint("Reading…")
+        GlassLoadingPlaceholder("Reading file…")
         return
     }
     val preview = details.preview

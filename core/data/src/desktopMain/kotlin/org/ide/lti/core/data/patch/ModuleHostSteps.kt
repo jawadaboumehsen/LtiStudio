@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -67,11 +69,12 @@ class ModuleHostSteps(
     private val execution: PipelineExecutionPort? = null,
     /** The WSL distribution the workspaces live in; null when setup has not found one. */
     private val distro: () -> String?,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : HostStepPort {
 
-    override suspend fun run(workspace: Workspace, request: HostRequest): String {
+    override suspend fun run(workspace: Workspace, request: HostRequest): String = withContext(ioDispatcher) {
         yield()
-        return when (request) {
+        when (request) {
             is ApplyModules -> applyModules(workspace, request)
             is CheckModules -> labRows(workspace, request.apply).summary()
             is LabModules -> LabRow.encode(labRows(workspace, request.apply, request.decode))
@@ -693,7 +696,7 @@ internal suspend fun sandboxVerdicts(
     plans: List<ConcreteMutationPlan>,
     mixed: Set<PartitionPath>,
     prepare: (ConcreteOperation) -> ConcreteOperation,
-): Map<Pair<String, String>, LabRow> {
+): Map<Pair<String, String>, LabRow> = withContext(Dispatchers.IO) {
     val root = sandbox.root
     root.toFile().deleteRecursively()
     try {
@@ -707,7 +710,7 @@ internal suspend fun sandboxVerdicts(
         val ctx = MutationContext(root.toString(), mixed.map { it.partition }.distinct().associateWith { it })
         val run = SandboxRun(sandbox, files, adapter, ctx, prepare)
         plans.forEach { plan -> run.simulate(plan, mixed) }
-        return run.rows
+        run.rows
     } finally {
         withContext(NonCancellable) { runCatching { root.toFile().deleteRecursively() } }
     }

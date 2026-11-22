@@ -1050,21 +1050,16 @@ internal class GlassRuntimeEffect() :
   }
 
   internal fun calculateLayerBounds(rect: Rect, density: Density): Rect {
-    val resolvedStyle = resolveGlassStyle(
-      effect = this@GlassRuntimeEffect,
-      materialSizePx = rect.size,
-      density = density,
-      layoutDirection = LayoutDirection.Ltr,
-    )
-    val resolved = resolvedStyle.resolvedOptics
+    val sampling = resolveGlassSamplingStyle(this, rect.size, density)
+    val resolved = sampling.optics
     val paddingPx = calculateGlassSamplePaddingPx(
       blurRadiusPx = if (resolved.depth <= 0f) 0f else resolved.blurRadiusPx,
       refractionScale = resolved.refractionScalePx,
       refractionStrength = (
         resolved.refractionStrength * maximumInteractionRefractionMultiplier()
         ).coerceIn(0f, 1f),
-      chromaticAberrationStrength = resolvedStyle.chromaticAberrationStrength,
-      edgeSoftnessPx = resolvedStyle.edgeSoftnessPx,
+      chromaticAberrationStrength = sampling.chromaticAberrationStrength,
+      edgeSoftnessPx = sampling.edgeSoftnessPx,
       foregroundOutsetPx = 0f,
     )
     return rect.inflate(paddingPx)

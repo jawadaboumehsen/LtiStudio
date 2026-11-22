@@ -65,6 +65,7 @@ class PublishViewModel(
         write = { snapshot, value -> snapshot.copy(publish = value) },
     )
 
+    val settingsLoading: StateFlow<Boolean> = sync.loading
     val settings: StateFlow<PublishSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */

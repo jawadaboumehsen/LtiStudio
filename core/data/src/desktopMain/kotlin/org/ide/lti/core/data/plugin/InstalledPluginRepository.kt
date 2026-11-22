@@ -11,6 +11,7 @@ package org.ide.lti.core.data.plugin
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -270,21 +271,25 @@ class InstalledPluginRepository(
         return true
     }
 
-    override suspend fun installed(): List<InstalledRecord> {
+    override suspend fun installed(): List<InstalledRecord> = withContext(Dispatchers.IO) {
         val packagesDir = storeDir.resolve("packages")
-        if (!Files.exists(packagesDir)) return emptyList()
+        if (!Files.exists(packagesDir)) return@withContext emptyList()
 
         val records = mutableListOf<Pair<InstalledRecord, Path>>()
         Files.walk(packagesDir).use { stream ->
             stream.filter { it.fileName?.toString() == "record.json" && Files.isRegularFile(it) }
                 .forEach { path ->
+                    ensureActive()
                     runCatchingCancellable {
                         val text = Files.readString(path)
                         json.decodeFromString(InstalledRecord.serializer(), text)
                     }.getOrNull()?.let { records.add(it to path.parent) }
                 }
         }
-        return records.map { (record, dir) -> withPackageFacts(record, dir) }.sortedWith(
+        records.map { (record, dir) ->
+            ensureActive()
+            withPackageFacts(record, dir)
+        }.sortedWith(
             compareBy({ it.identity.publisher }, { it.identity.id }, { it.identity.version }),
         )
     }

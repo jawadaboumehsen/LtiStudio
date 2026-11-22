@@ -124,6 +124,8 @@ fun SetupScreen(
 ) {
     val toolchainSetupState by viewModel.toolchainSetupState.collectAsState()
     val recentProjects by viewModel.recentProjects.collectAsState()
+    val projectsLoading by viewModel.projectsLoading.collectAsState()
+    val openingWorkspaces by viewModel.openingWorkspaces.collectAsState()
     val filteredProjects by viewModel.filteredRecentProjects.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedWorkspaceId by viewModel.selectedWorkspaceId.collectAsState()
@@ -159,6 +161,8 @@ fun SetupScreen(
             selectedTarget = selectedTarget,
             availableTargets = availableTargets,
             recentProjects = recentProjects,
+            projectsLoading = projectsLoading,
+            openingWorkspace = openingWorkspaces > 0,
             filteredProjects = filteredProjects,
             searchQuery = searchQuery,
             selectedWorkspaceId = selectedWorkspaceId,

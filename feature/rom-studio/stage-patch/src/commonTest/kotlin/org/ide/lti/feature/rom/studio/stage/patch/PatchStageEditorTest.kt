@@ -10,9 +10,11 @@
 package org.ide.lti.feature.rom.studio.stage.patch
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -87,6 +89,41 @@ class PluginConflictsTest {
 }
 
 class PatchViewModelToggleTest {
+    private fun testViewModel(
+        workspaceId: String,
+        initialSettings: CustomizationSettings? = null,
+        store: WorkspaceSettingsStore? = null,
+        plugins: PluginInstallPort? = null,
+        catalog: PluginCatalogPort? = null,
+        computeDispatcher: CoroutineDispatcher = Dispatchers.Unconfined,
+    ) = PatchViewModel(
+        workspaceId = workspaceId,
+        initialSettings = initialSettings,
+        store = store,
+        plugins = plugins,
+        catalog = catalog,
+        ioDispatcher = Dispatchers.Unconfined,
+        computeDispatcher = computeDispatcher,
+    )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun queuedTogglesUseTheLatestSelection() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val vm = testViewModel("ws", plugins = port, computeDispatcher = StandardTestDispatcher(testScheduler))
+            vm.refresh()
+            vm.toggle("io.ltirom:logpersist")
+            vm.toggle("io.ltirom:selinux")
+            assertTrue(vm.settings.value.enabledPackages.isEmpty())
+            advanceUntilIdle()
+            assertEquals(listOf("io.ltirom:selinux", "io.ltirom:logpersist"), vm.settings.value.enabledPackages)
+            assertNotNull(vm.facts.value.lockError)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
     private fun record(id: String, needs: List<String> = emptyList()) = InstalledRecord(
         identity = PackageIdentity("io.ltirom", id, "1.0.0", "sha256:$id"),
         trust = TrustDecision.TRUSTED_UNVERIFIED,
@@ -144,7 +181,7 @@ class PatchViewModelToggleTest {
     fun enablingAPluginBringsItsDependencyFirstAndTheDependencyCannotBeDisabledAlone() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         try {
-            val vm = PatchViewModel(workspaceId = "ws", plugins = port)
+            val vm = testViewModel(workspaceId = "ws", plugins = port)
             vm.refresh()
             vm.toggle("io.ltirom:logpersist")
             assertEquals(listOf("io.ltirom:selinux", "io.ltirom:logpersist"), vm.settings.value.enabledPackages)
@@ -180,7 +217,7 @@ class PatchViewModelToggleTest {
             val store = SavedSettings()
             var records = installed
             val installedPort = pluginPort { records }
-            val vm = PatchViewModel(workspaceId = "ws", store = store, plugins = installedPort, catalog = catalog)
+            val vm = testViewModel(workspaceId = "ws", store = store, plugins = installedPort, catalog = catalog)
             vm.refresh()
             vm.toggle("io.ltirom:logpersist")
             advanceUntilIdle()
@@ -195,7 +232,7 @@ class PatchViewModelToggleTest {
 
             vm.toggle("io.ltirom:logpersist")
             advanceUntilIdle()
-            val reopened = PatchViewModel(
+            val reopened = testViewModel(
                 workspaceId = "ws",
                 store = store,
                 plugins = installedPort,
@@ -224,7 +261,7 @@ class PatchViewModelToggleTest {
                 check(canRead) { "Could not read the plugin directory" }
                 installed
             }
-            val vm = PatchViewModel(workspaceId = "ws", store = store, plugins = flakyPort)
+            val vm = testViewModel(workspaceId = "ws", store = store, plugins = flakyPort)
             vm.refresh()
             assertEquals("Could not read the plugin directory", vm.facts.value.loadError)
 
@@ -266,7 +303,7 @@ class PatchViewModelToggleTest {
                 enabledPackages = listOf("selinux"),
                 lockfile = PluginLockfile(entries = listOf(pin)),
             )
-            val vm = PatchViewModel(workspaceId = "ws", initialSettings = initial, plugins = port)
+            val vm = testViewModel(workspaceId = "ws", initialSettings = initial, plugins = port)
             assertEquals(pin, vm.settings.value.lockedEntry("selinux"))
 
             vm.refresh()
@@ -315,7 +352,7 @@ class PatchViewModelToggleTest {
                 ) = Result.failure<ConfigurationSnapshot>(IllegalStateException("read-only"))
                 override suspend fun device(workspaceId: String) = DefaultTargetCatalog.PQ84P01_DEFAULT
             }
-            val vm = PatchViewModel(workspaceId = "ws", store = store, plugins = port, catalog = catalog)
+            val vm = testViewModel(workspaceId = "ws", store = store, plugins = port, catalog = catalog)
             vm.refresh()
 
             val why = vm.facts.value.incompatible["io.ltirom:selinux"]

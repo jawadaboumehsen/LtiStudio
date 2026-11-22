@@ -50,6 +50,8 @@ data class SetupUiState(
     val isHandoffSheetVisible: Boolean = false,
     val handoffSheetState: TerminalHandoffState = TerminalHandoffState.Idle,
     val attemptRecord: SetupAttemptRecord? = null,
+    val projectsLoading: Boolean = false,
+    val openingWorkspace: Boolean = false,
 ) {
     val environmentPresentation: EnvironmentPresentation
         get() =

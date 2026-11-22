@@ -158,7 +158,12 @@ private fun Summary(state: StorageState, onRefresh: () -> Unit) {
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(1f),
             )
-            GlassButton(onClick = onRefresh, enabled = state.busy == null, variant = GlassButtonVariant.Standard) {
+            GlassButton(
+                onClick = onRefresh,
+                enabled = state.busy == null,
+                loading = state.busy == "Measuring",
+                variant = GlassButtonVariant.Standard,
+            ) {
                 Text(if (state.busy == "Measuring") "Measuring…" else "Measure again", fontSize = FontSize.BodySmall)
             }
         }

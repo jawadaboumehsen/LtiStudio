@@ -626,7 +626,8 @@ private fun ImportRightReviewColumn(
 
             GlassButton(
                 onClick = { onConfirmInstall(TrustDecision.TRUSTED_UNVERIFIED) },
-                enabled = canInstall && !isInstalling,
+                enabled = canInstall,
+                loading = isInstalling,
                 variant = GlassButtonVariant.Primary,
                 shape = GlassShapes.HazeMediumSmall,
                 minHeight = ComponentSize.PluginActionBtnCompactHeight,

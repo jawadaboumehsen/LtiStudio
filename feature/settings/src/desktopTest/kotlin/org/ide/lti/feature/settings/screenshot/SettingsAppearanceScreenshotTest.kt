@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.settings.screenshot
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
@@ -104,6 +105,7 @@ class SettingsAppearanceScreenshotTest {
             initialEffectsEnabled = true,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = AppTheme.Blue) {
                 Box(Modifier.fillMaxSize()) {
@@ -111,22 +113,25 @@ class SettingsAppearanceScreenshotTest {
                     SettingsScreenContent(
                         onBackClick = {},
                         appSettingsState = settingsState,
+                        appearanceScrollState = scrollState,
                         initialCategory = SettingsCategory.About,
                     )
                 }
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
         // Verify we started on About in the navigator
         onNodeWithTag("NavigatorItem_about").assertIsDisplayed()
 
         // Click the real navigation item in IdeNavigatorPanel
         onNodeWithTag("NavigatorItem_appearance").performClick()
+        mainClock.advanceTimeByFrame()
         waitForIdle()
 
         // Verify that Appearance category is now active and "Glass & motion" card is rendered
-        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion", scrollState).assertIsDisplayed()
     }
 
     // =============================================================================================
@@ -151,6 +156,7 @@ class SettingsAppearanceScreenshotTest {
             initialEffectsEnabled = effectsOn,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             CompositionLocalProvider(
                 // fontScale must strictly remain 1.0f; only density varies if testing high-DPI
@@ -162,6 +168,7 @@ class SettingsAppearanceScreenshotTest {
                         SettingsScreenContent(
                             onBackClick = {},
                             appSettingsState = settingsState,
+                            appearanceScrollState = scrollState,
                             initialCategory = SettingsCategory.Appearance,
                         )
                     }
@@ -169,9 +176,10 @@ class SettingsAppearanceScreenshotTest {
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
         // Scroll to target card to ensure the entire card region is in view
-        scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+        scrollToSettingsNode("GlassCard_glass_and_motion", scrollState).assertIsDisplayed()
         waitForIdle()
 
         val effectsTag = if (effectsOn) "effects_on" else "effects_off"

@@ -240,6 +240,7 @@ private fun ConfigurationActions(uiState: WorkspaceConfigurationUiState, viewMod
             onClick = { viewModel.saveConfiguration() },
             variant = GlassButtonVariant.Primary,
             enabled = canAct,
+            loading = uiState.isSaving,
         ) {
             Text(if (uiState.isSaving) "Saving..." else "Save Changes")
         }

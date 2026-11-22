@@ -9,6 +9,7 @@ import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.StreamEvent
 import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import java.security.MessageDigest
 
@@ -137,6 +138,8 @@ public class RemoteWslToolRepository(
                 )
                 ToolResult.Success(command.parseResult(executionResult), response.durationMs)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             ToolResult.Failure.ExecutionError(e.message ?: "Remote execution failed", e)
         }

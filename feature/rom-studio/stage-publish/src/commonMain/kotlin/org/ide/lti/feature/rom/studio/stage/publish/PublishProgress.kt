@@ -38,6 +38,7 @@ internal fun PublishButtons(
         GlassButton(
             onClick = onPublish,
             enabled = ready,
+            loading = state.publishing,
             variant = GlassButtonVariant.Primary,
             modifier = Modifier.testTag("PublishButton"),
         ) {
@@ -53,7 +54,7 @@ internal fun PublishButtons(
         if (state.publishing) {
             GlassButton(
                 onClick = onCancel,
-                enabled = !state.cancelling,
+                loading = state.cancelling,
                 variant = GlassButtonVariant.Standard,
                 modifier = Modifier.testTag("CancelPublishButton"),
             ) {

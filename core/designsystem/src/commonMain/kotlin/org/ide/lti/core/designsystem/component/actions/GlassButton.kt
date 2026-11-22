@@ -44,6 +44,7 @@ import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.GlassIcon
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -116,8 +117,10 @@ fun GlassButton(
     minWidth: Dp = GlassButtonDefaults.MinWidth,
     minHeight: Dp = GlassButtonDefaults.MinHeight,
     contentPadding: PaddingValues = GlassButtonDefaults.ContentPadding,
+    loading: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val interactive = enabled && !loading
     val colors = MaterialTheme.colorScheme
     val interactionSource = remember { MutableInteractionSource() }
     val effectsEnabled = GlassTheme.effectsEnabled
@@ -129,11 +132,11 @@ fun GlassButton(
                 if (variant != GlassButtonVariant.Text) {
                     val theme = GlassTheme.appTheme
                     val surfaceColor = backgroundColor(variant, colors)
-                    val buttonTint = tint(variant, colors, enabled)
+                    val buttonTint = tint(variant, colors, interactive)
                     if (effectsEnabled) {
                         Modifier.hazeGlass(
                             input = sceneHazeInput(GlassTheme.hazeState),
-                            style = remember(theme, shape, variant, enabled, colors) {
+                            style = remember(theme, shape, variant, interactive, colors) {
                                 org.ide.lti.core.designsystem.theme.GlassMaterialStyles.baseStyle(
                                     theme = theme,
                                     opticalTint = buttonTint,
@@ -160,7 +163,7 @@ fun GlassButton(
                             interactionReducedMotionPolicy = GlassTheme.reducedMotionPolicy,
                         )
                     } else {
-                        val solidBorder = if (enabled) {
+                        val solidBorder = if (interactive) {
                             when (variant) {
                                 GlassButtonVariant.Primary ->
                                     Modifier.border(StrokeWidth.Standard, colors.primary, shape)
@@ -187,7 +190,7 @@ fun GlassButton(
             )
             .clip(shape)
             .clickable(
-                enabled = enabled,
+                enabled = interactive,
                 interactionSource = interactionSource,
                 indication = if (effectsEnabled) null else LocalIndication.current,
                 role = Role.Button,
@@ -198,9 +201,10 @@ fun GlassButton(
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val contentColor = if (enabled) contentColor(colors) else colors.onSurfaceVariant
+        val contentColor = if (interactive) contentColor(colors) else colors.onSurfaceVariant
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             ProvideTextStyle(GlassButtonDefaults.TextStyle) {
+                if (loading) GlassSpinner(Modifier.size(IconSize.Small), color = contentColor)
                 content()
             }
         }

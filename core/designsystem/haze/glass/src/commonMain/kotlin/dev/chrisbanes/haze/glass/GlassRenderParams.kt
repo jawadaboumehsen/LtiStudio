@@ -3,6 +3,7 @@
 
 package dev.chrisbanes.haze.glass
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAbsoluteAlignment
 import androidx.compose.ui.BiasAlignment
@@ -467,42 +468,72 @@ internal data class ResolvedGlassStyle(
   val cornerRadii: CornerRadii,
 )
 
+internal data class GlassSamplingStyle(
+  val optics: ResolvedGlassOptics,
+  val edgeSoftnessPx: Float,
+  val chromaticAberrationStrength: Float,
+)
+
+internal fun resolveGlassSamplingStyle(
+  effect: GlassRuntimeEffect,
+  materialSizePx: Size,
+  density: Density,
+): GlassSamplingStyle {
+  val accessibility = effect.accessibilitySettings
+  val optics = resolveGlassOptics(effect.optics, materialSizePx, density)
+  val blurMultiplier = if (accessibility.reduceTransparency) 0.65f else 1f
+  val adjustedOptics = if (accessibility.reduceTransparency || accessibility.increaseContrast || accessibility.showBorders) {
+    optics.copy(
+      blurRadiusPx = (optics.blurRadiusPx * blurMultiplier).coerceAtMost(SemanticBlurKernel.MAX_SUPPORTED_RADIUS_PX),
+    )
+  } else {
+    optics
+  }
+  val defaultSoftness = with(density) { GlassDefaults.edgeSoftness.toPx() }.finiteOrZero().coerceAtLeast(0f)
+  val softness = with(density) { effect.edgeSoftness.toPx() }.finiteOr(defaultSoftness).coerceAtLeast(0f)
+  return GlassSamplingStyle(
+    optics = adjustedOptics,
+    edgeSoftnessPx = if (accessibility.increaseContrast || accessibility.showBorders) {
+      maxOf(softness, defaultSoftness)
+    } else {
+      softness
+    },
+    chromaticAberrationStrength = effect.chromaticAberrationStrength,
+  )
+}
+
+internal fun resolveGlassCornerRadii(
+  shape: RoundedCornerShape?,
+  materialSizePx: Size,
+  density: Density,
+  layoutDirection: LayoutDirection,
+): CornerRadii = shape.toValidCornerRadiiPxOrNull(materialSizePx, density, layoutDirection)
+  ?.takeIf(CornerRadii::isFiniteAndNonNegative)
+  ?: GlassDefaults.shape.toValidCornerRadiiPxOrNull(materialSizePx, density, layoutDirection)
+    ?.takeIf(CornerRadii::isFiniteAndNonNegative)
+  ?: CornerRadii.zero
+
 internal fun resolveGlassStyle(
   effect: GlassRuntimeEffect,
   materialSizePx: Size,
   density: Density,
   layoutDirection: LayoutDirection,
 ): ResolvedGlassStyle {
-  val requestedRadii = effect.shape.toValidCornerRadiiPxOrNull(
-    materialSizePx,
-    density,
-    layoutDirection,
-  )
-  val defaultRadii = GlassDefaults.shape.toCornerRadiiPx(materialSizePx, density, layoutDirection)
-  val defaultEdgeSoftnessPx = with(density) { GlassDefaults.edgeSoftness.toPx() }
-    .finiteOrZero()
-    .coerceAtLeast(0f)
-  val cornerRadii = when {
-    requestedRadii?.isFiniteAndNonNegative() == true -> requestedRadii
-    defaultRadii.isFiniteAndNonNegative() -> defaultRadii
-    else -> CornerRadii.zero
-  }
+  val sampling = resolveGlassSamplingStyle(effect, materialSizePx, density)
   val alignedLightPosition = effect.lightPosition.resolveLightPosition(
     materialSizePx = materialSizePx,
     layoutDirection = layoutDirection,
   )
   return ResolvedGlassStyle(
-    resolvedOptics = resolveGlassOptics(effect.optics, materialSizePx, density),
+    resolvedOptics = sampling.optics,
     specularIntensity = effect.specularIntensity,
     edgeShadow = effect.edgeShadow,
     ambientResponse = effect.ambientResponse,
     backgroundColor = effect.backgroundColor,
     tint = effect.tint,
-    edgeSoftnessPx = with(density) { effect.edgeSoftness.toPx() }
-      .finiteOr(defaultEdgeSoftnessPx)
-      .coerceAtLeast(0f),
+    edgeSoftnessPx = sampling.edgeSoftnessPx,
     lightPosition = alignedLightPosition,
-    chromaticAberrationStrength = effect.chromaticAberrationStrength,
+    chromaticAberrationStrength = sampling.chromaticAberrationStrength,
     surfaceProfile = effect.surfaceProfile.ordinal.toFloat(),
     chromaticAberrationMode = effect.chromaticAberrationMode.ordinal.toFloat(),
     alpha = effect.alpha,
@@ -512,43 +543,19 @@ internal fun resolveGlassStyle(
     contentNormalBlend = effect.contentNormalBlend,
     specularExponent = effect.specularExponent,
     fresnelExponent = effect.fresnelExponent,
-    cornerRadii = cornerRadii,
-  ).withAccessibility(
-    settings = effect.accessibilitySettings,
-    minimumBorderSoftnessPx = defaultEdgeSoftnessPx,
-  )
+    cornerRadii = resolveGlassCornerRadii(effect.shape, materialSizePx, density, layoutDirection),
+  ).withAccessibility(effect.accessibilitySettings)
 }
 
 private fun ResolvedGlassStyle.withAccessibility(
   settings: GlassAccessibilitySettings,
-  minimumBorderSoftnessPx: Float,
 ): ResolvedGlassStyle {
-  if (
-    !settings.reduceTransparency &&
-    !settings.increaseContrast &&
-    !settings.showBorders
-  ) {
-    return this
-  }
-  val blurMultiplier = if (settings.reduceTransparency) 0.65f else 1f
-  val blurRadiusPx = (resolvedOptics.blurRadiusPx * blurMultiplier)
-    .coerceAtMost(SemanticBlurKernel.MAX_SUPPORTED_RADIUS_PX)
-  val optics = resolvedOptics.copy(
-    blurRadiusPx = blurRadiusPx,
-  )
   val strengthenEdge = settings.increaseContrast || settings.showBorders
+  if (!strengthenEdge) return this
   return copy(
-    resolvedOptics = optics,
     contrast = if (settings.increaseContrast) maxOf(contrast, 0.16f) else contrast,
-    specularIntensity = if (strengthenEdge) maxOf(specularIntensity, 0.58f) else specularIntensity,
-    edgeSoftnessPx = if (strengthenEdge) {
-      maxOf(edgeSoftnessPx, minimumBorderSoftnessPx)
-    } else {
-      edgeSoftnessPx
-    },
-    edgeShadow = edgeShadow.copy(
-      alpha = if (strengthenEdge) maxOf(edgeShadow.alpha, 0.32f) else edgeShadow.alpha,
-    ),
+    specularIntensity = maxOf(specularIntensity, 0.58f),
+    edgeShadow = edgeShadow.copy(alpha = maxOf(edgeShadow.alpha, 0.32f)),
   )
 }
 

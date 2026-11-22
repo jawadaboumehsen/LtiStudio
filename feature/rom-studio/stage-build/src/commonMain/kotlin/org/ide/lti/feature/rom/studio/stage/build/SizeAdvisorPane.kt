@@ -125,6 +125,7 @@ internal fun SizeAdvisorCard(
                 GlassButton(
                     onClick = { vm.trial(row.partition, settings, room, facts.erofsCompressions.orEmpty()) },
                     enabled = !state.busy,
+                    loading = state.busy && state.partition == row.partition,
                     variant = GlassButtonVariant.Standard,
                     modifier = Modifier.testTag("SizeTrial_${row.partition}"),
                 ) {

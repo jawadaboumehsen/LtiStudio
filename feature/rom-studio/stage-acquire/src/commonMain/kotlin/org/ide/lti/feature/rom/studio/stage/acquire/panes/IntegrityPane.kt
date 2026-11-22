@@ -33,6 +33,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -80,8 +81,10 @@ public fun IntegrityPane(
                 fontFamily = ideFontFamily(),
             )
         }
-        Card {
-            Detail("Archive", facts.archivePath ?: if (facts.measuring) "reading…" else "not in the workspace yet")
+        if (facts.measuring) {
+            GlassLoadingPlaceholder("Reading archive details…")
+        } else Card {
+            Detail("Archive", facts.archivePath ?: "not in the workspace yet")
             Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
             Detail(
                 "Source URL",

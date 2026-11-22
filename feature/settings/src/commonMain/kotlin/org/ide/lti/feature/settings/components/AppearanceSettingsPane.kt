@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AccentColor
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.Appearance
@@ -252,11 +253,15 @@ fun AppearanceSettingsPane(
             }
 
             // Changes are live and saved; there is nothing to apply or cancel.
-            Text(
-                text = appSettingsState.saveStatus,
-                fontSize = FontSize.LabelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (appSettingsState.isSaving) {
+                GlassLoadingStatus(appSettingsState.saveStatus)
+            } else {
+                Text(
+                    text = appSettingsState.saveStatus,
+                    fontSize = FontSize.LabelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(Spacing.Large))

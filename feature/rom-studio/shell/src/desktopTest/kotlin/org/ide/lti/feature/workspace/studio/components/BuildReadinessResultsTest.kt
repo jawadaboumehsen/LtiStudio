@@ -10,8 +10,10 @@
 package org.ide.lti.feature.workspace.studio.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -23,7 +25,9 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
 import org.ide.lti.core.domain.pipeline.stages.VintfCheck
+import org.ide.lti.core.domain.pipeline.stages.VintfStatus
 import org.ide.lti.core.domain.workspace.NextBuildFacts
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.workspace.studio.PreflightUiState
@@ -104,7 +108,7 @@ class BuildReadinessResultsTest {
 
         compose.onNodeWithText("Checks incomplete").assertExists()
         compose.onNodeWithText("Android 14 · Vendor first API level 34").assertExists()
-        compose.onNodeWithText("Vendor SKU global · ODM SKU cellular · Compatible").assertExists()
+        compose.onNodeWithText("Vendor SKU global · ODM SKU cellular · Compatible · Provisional").assertExists()
         compose.onNodeWithText("system/system/apex/com.android.test.apex", substring = true).assertExists()
         compose.onNodeWithText("Review extracted partitions").performClick()
         compose.onNodeWithText("Inspect firmware files").performClick()
@@ -155,6 +159,42 @@ class BuildReadinessResultsTest {
         compose.onAllNodesWithText("Assemble is locked until Acquire firmware is configured.")[0].assertExists()
         compose.onAllNodesWithText("Fix Acquire firmware first")[0].performClick()
         compose.runOnIdle { assertEquals(listOf(StageId.FIRMWARE_ACQUISITION to "integrity"), opened) }
+    }
+
+    @Test
+    fun placeholdersGiveWayToEachResultAsItArrives() {
+        val state = mutableStateOf(PreflightUiState(checking = true, readingNext = true))
+        compose.setContent {
+            LtiTheme(appTheme = AppTheme.Dark, effectsEnabled = false) {
+                Column {
+                    BuildReadinessResults(state.value, { _, _ -> }, {}, onRetry = {}, onApply = {})
+                }
+            }
+        }
+
+        compose.onNodeWithTag("PreflightPlanLoading").assertExists()
+        compose.onNodeWithTag("PreflightChecksLoading").assertExists()
+        compose.onNodeWithTag("PreflightVintfStatus").assertDoesNotExist()
+
+        compose.runOnIdle {
+            state.value = state.value.copy(
+                readingNext = false,
+                next = NextBuildFacts(null, null, listOf(StagePreview(StageId.WORK_TREE_ASSEMBLY, null)), null),
+            )
+        }
+        compose.onNodeWithTag("PreflightPlanLoading").assertDoesNotExist()
+        compose.onNodeWithText("Assemble · Reuse cached output").assertExists()
+        compose.onNodeWithTag("PreflightChecksLoading").assertExists()
+
+        compose.runOnIdle {
+            state.value = state.value.copy(
+                checking = false,
+                findings = emptyList(),
+                vintf = VintfAssessment(VintfStatus.COMPATIBLE),
+            )
+        }
+        compose.onNodeWithTag("PreflightChecksLoading").assertDoesNotExist()
+        compose.onNodeWithText("VINTF · Compatible").assertExists()
     }
 
     private fun show(

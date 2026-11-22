@@ -68,6 +68,8 @@ import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -193,6 +195,7 @@ fun ProjectsStepContent(
         // Pending folder open banner while verification is in progress
         val pendingPath = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenPath)?.path
         if (pendingPath != null) {
+            GlassLoadingStatus("Opening directory after checks…")
             GlassBanner(
                 severity = GlassBannerSeverity.INFO,
                 title = "Opening Directory",
@@ -206,6 +209,8 @@ fun ProjectsStepContent(
             )
         }
 
+        if (state.openingWorkspace) GlassLoadingStatus("Opening workspace…")
+
         // 2. Recent Workspaces Header & Labeled Search
         WorkspaceSearchSection(
             searchQuery = state.searchQuery,
@@ -216,7 +221,9 @@ fun ProjectsStepContent(
         )
 
         // 3. Virtualized Recents List / Distinct Empty State
-        if (state.filteredProjects.isEmpty()) {
+        if (state.projectsLoading && state.recentProjects.isEmpty()) {
+            GlassLoadingPlaceholder("Loading recent workspaces…")
+        } else if (state.filteredProjects.isEmpty()) {
             WorkspaceEmptyStateSection(searchQuery = state.searchQuery)
         } else {
             val pendingRecentId = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenRecent)
@@ -360,10 +367,7 @@ private fun WorkspaceRowItem(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
                     ) {
-                        GlassChip(
-                            label = "Opening after checks…",
-                            selected = true,
-                        )
+                        GlassLoadingStatus("Opening after checks…")
                         GlassTextButton(
                             onClick = onCancelPendingOpen,
                         ) {

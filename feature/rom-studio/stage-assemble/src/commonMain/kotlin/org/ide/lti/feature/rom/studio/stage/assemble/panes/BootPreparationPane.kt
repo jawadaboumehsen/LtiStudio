@@ -38,6 +38,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassPasswordField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -385,7 +386,7 @@ private fun Status(state: BootPaneState, actions: BootPaneActions) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Mono("$busy…")
+                GlassLoadingStatus("$busy…")
                 GlassButton(onClick = actions.cancel, variant = GlassButtonVariant.Secondary) {
                     Text("Cancel", fontSize = FontSize.BodySmall)
                 }

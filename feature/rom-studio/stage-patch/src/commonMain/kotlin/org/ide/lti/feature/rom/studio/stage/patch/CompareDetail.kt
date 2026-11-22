@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -46,7 +47,7 @@ internal fun EntryCard(opened: TreeChange, entry: EntryComparison?, busy: Boolea
     CompareCard(opened.path) {
         if (opened.details.isNotEmpty()) CompareHint(opened.details.joinToString(" · "))
         when (entry) {
-            null -> CompareHint(if (busy) "Reading both sides…" else "")
+            null -> if (busy) GlassLoadingPlaceholder("Reading both sides…") else Unit
             is EntryComparison.NoContent -> CompareHint(entry.reason)
             is EntryComparison.Text -> TextDiff(entry.lines)
             is EntryComparison.Archive -> Entries(entry.entries)

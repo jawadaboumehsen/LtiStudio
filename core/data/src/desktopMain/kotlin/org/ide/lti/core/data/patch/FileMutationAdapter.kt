@@ -9,6 +9,9 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.configuration.Severity
@@ -45,21 +48,23 @@ import java.security.MessageDigest
  * [MutationEffect.sidecarUpdates] so callers can act.
  */
 @Suppress("LargeClass", "TooManyFunctions")
-class FileMutationAdapter : FileMutationPort {
+class FileMutationAdapter(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : FileMutationPort {
 
     override suspend fun preview(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome =
-        previewWith(plan, ctx, assetRoot, mutableMapOf())
+        withContext(ioDispatcher) {
+            previewWith(plan, ctx, assetRoot, mutableMapOf())
+        }
 
     override suspend fun previewAfter(
         plan: ConcreteMutationPlan,
         ctx: MutationContext,
         assetRoot: String,
         staged: MutableMap<String, String>,
-    ): MutationOutcome {
+    ): MutationOutcome = withContext(ioDispatcher) {
         val paths = staged.mapKeys { Path.of(it.key) }.toMutableMap()
         val outcome = previewWith(plan, ctx, assetRoot, paths)
         staged.putAll(paths.mapKeys { it.key.toString() })
-        return outcome
+        outcome
     }
 
     private fun previewWith(
@@ -80,29 +85,30 @@ class FileMutationAdapter : FileMutationPort {
      * through leaves the earlier writes in place: callers run this against a private staging copy of a
      * checkpoint and discard that copy on refusal - nothing mutates an upstream tree.
      */
-    override suspend fun apply(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome {
-        yield()
-        val ready = when (val checked = check(plan, ctx, assetRoot)) {
-            is CheckedPlan.Refused -> return MutationOutcome.Refused(checked.report)
-            is CheckedPlan.Ready -> checked.operations
-        }
-        val effects = mutableListOf<MutationEffect>()
-        val recheckFailure = ready.firstNotNullOfOrNull { op ->
+    override suspend fun apply(plan: ConcreteMutationPlan, ctx: MutationContext, assetRoot: String): MutationOutcome =
+        withContext(ioDispatcher) {
             yield()
-            // Right before it writes, the edit meets the file as the earlier writes left it on disk.
-            val recheck = validateOperation(op.operation, ctx, assetRoot, mutableMapOf())
-            if (recheck.isNotEmpty()) {
-                recheck
-            } else {
-                effects += computeEffect(op.operation, op.path, op.partitionRoot)
-                executeOperation(op.operation, op.path, assetRoot)
-                null
+            val ready = when (val checked = check(plan, ctx, assetRoot)) {
+                is CheckedPlan.Refused -> return@withContext MutationOutcome.Refused(checked.report)
+                is CheckedPlan.Ready -> checked.operations
             }
+            val effects = mutableListOf<MutationEffect>()
+            val recheckFailure = ready.firstNotNullOfOrNull { op ->
+                yield()
+                // Right before it writes, the edit meets the file as the earlier writes left it on disk.
+                val recheck = validateOperation(op.operation, ctx, assetRoot, mutableMapOf())
+                if (recheck.isNotEmpty()) {
+                    recheck
+                } else {
+                    effects += computeEffect(op.operation, op.path, op.partitionRoot)
+                    executeOperation(op.operation, op.path, assetRoot)
+                    null
+                }
+            }
+            recheckFailure
+                ?.let { MutationOutcome.Refused(ValidationReport(errors = it)) }
+                ?: MutationOutcome.Applied(effects)
         }
-        return recheckFailure
-            ?.let { MutationOutcome.Refused(ValidationReport(errors = it)) }
-            ?: MutationOutcome.Applied(effects)
-    }
 
     private fun ConcreteOperation.isInPlaceEdit() =
         this is ConcreteOperation.PropertyPatch || this is ConcreteOperation.TextPatch

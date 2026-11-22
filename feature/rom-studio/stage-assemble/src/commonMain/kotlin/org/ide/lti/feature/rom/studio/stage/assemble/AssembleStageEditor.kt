@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
@@ -28,6 +29,11 @@ public class AssembleStageEditor : StageEditor {
     @Composable
     override fun Content(context: StageEditorContext, modifier: Modifier) {
         val viewModel: AssembleViewModel = koinViewModel { parametersOf(context.workspaceId) }
+        val loading by viewModel.settingsLoading.collectAsState()
+        if (loading) {
+            GlassLoadingPlaceholder("Loading assembly settings…", modifier)
+            return
+        }
         val settings by viewModel.settings.collectAsState()
         val device by viewModel.device.collectAsState()
         val imageState by viewModel.imagePane.state.collectAsState()

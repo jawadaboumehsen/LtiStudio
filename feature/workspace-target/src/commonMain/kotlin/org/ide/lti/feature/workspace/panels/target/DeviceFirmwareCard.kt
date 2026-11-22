@@ -52,7 +52,7 @@ internal fun DeviceFirmwareCard(state: WorkspaceDeviceUiState, vm: WorkspaceDevi
             GlassButton(
                 onClick = vm::checkFirmware,
                 variant = GlassButtonVariant.Secondary,
-                enabled = !state.firmwareChecking,
+                loading = state.firmwareChecking,
                 modifier = Modifier.testTag("CheckFirmwareButton"),
             ) {
                 Text(if (state.firmwareChecking) "Reading..." else "Check against the firmware")

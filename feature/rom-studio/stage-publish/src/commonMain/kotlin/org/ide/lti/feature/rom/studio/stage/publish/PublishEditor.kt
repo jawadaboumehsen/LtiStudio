@@ -38,6 +38,8 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -384,7 +386,8 @@ private fun VerificationCard(state: PublishUiState) {
         val preflight = state.preflight
         state.error?.let { Problem(it) }
         when {
-            preflight == null -> Hint("Checking the last build…")
+            preflight == null && state.error == null -> GlassLoadingPlaceholder("Checking the last build…")
+            preflight == null -> Unit
 
             preflight.problems.isEmpty() -> {
                 Hint("Ready: a signed build and a destination. Publishing checks the package against its hash first.")
@@ -415,6 +418,7 @@ private fun ReviewCard(
         val resumes = journal != null && !journal.finished && journal.sha256 == preflight?.release?.sha256
         PublishButtons(state, ready, resumes, onPublish = { confirming = true }, onCancel = onCancel)
         if (state.publishing && journal != null) PublishProgress(journal, state.transfer, state.bytesPerSecond)
+        if (state.publishing && journal == null) GlassLoadingStatus("Preparing to publish…")
         if (resumes && !state.publishing) Hint("Publishing again resumes here; finished steps are not redone.")
         // The result first: a finished publish says where it went, above the steps that got it there.
         journal?.outcome?.takeIf { !state.publishing }?.let { Success(withShownPaths(it)) }

@@ -222,7 +222,12 @@ private fun DeviceBootChain(state: WorkspaceDeviceUiState, device: TargetDevice,
 private fun DeviceActions(state: WorkspaceDeviceUiState, vm: WorkspaceDeviceViewModel) {
     val canAct = state.canSave
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Medium), verticalAlignment = Alignment.CenterVertically) {
-        GlassButton(onClick = vm::save, variant = GlassButtonVariant.Primary, enabled = canAct) {
+        GlassButton(
+            onClick = vm::save,
+            variant = GlassButtonVariant.Primary,
+            enabled = canAct,
+            loading = state.isSaving,
+        ) {
             Text(if (state.isSaving) "Saving..." else "Save device")
         }
         GlassButton(onClick = vm::discard, variant = GlassButtonVariant.Secondary, enabled = canAct) {

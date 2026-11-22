@@ -143,7 +143,7 @@ internal fun CompressionGoalCard(vm: CompressionGoalViewModel, shortBytes: Long)
     ) {
         GlassButton(
             onClick = { vm.measure(shortBytes) },
-            enabled = !state.measuring,
+            loading = state.measuring,
             variant = GlassButtonVariant.Standard,
             modifier = Modifier.testTag("CompressionGoalMeasure"),
         ) {

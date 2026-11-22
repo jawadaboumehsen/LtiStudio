@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
@@ -53,6 +55,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -100,6 +103,18 @@ public fun DebloatEditor(
 ) {
     LaunchedEffect(Unit) { if (!facts.loaded) onRefresh() }
     var query by remember { mutableStateOf("") }
+    var filtered by remember(facts.inventory, facts.apps, query) { mutableStateOf<List<DebloatCandidate>?>(null) }
+    LaunchedEffect(facts.inventory, facts.apps, query) {
+        if (query.isEmpty()) return@LaunchedEffect
+        filtered = withContext(Dispatchers.Default) {
+            facts.inventory.filter { candidate ->
+                ensureActive()
+                candidate.relativePath.contains(query, ignoreCase = true) ||
+                    facts.apps[DebloatViewModel.selectorOf(candidate)]?.label?.contains(query, ignoreCase = true) == true
+            }
+        }
+    }
+    val shown = if (query.isEmpty()) facts.inventory else filtered
     val picked = settings.removeSelectors.toSet()
     val risks = remember(facts.inventory, facts.apps, picked) { facts.risks(picked) }
 
@@ -136,12 +151,8 @@ public fun DebloatEditor(
                             modifier = Modifier.fillMaxWidth().testTag("DebloatSearch"),
                         )
                     }
-                    val shown = facts.inventory.filter { candidate ->
-                        candidate.relativePath.contains(query, ignoreCase = true) ||
-                            facts.apps[DebloatViewModel.selectorOf(candidate)]?.label
-                                ?.contains(query, ignoreCase = true) == true
-                    }
-                    items(shown) { candidate ->
+                    if (shown == null) item { GlassLoadingStatus("Searching apps…") }
+                    items(shown.orEmpty(), key = { DebloatViewModel.selectorOf(it) }) { candidate ->
                         val selector = DebloatViewModel.selectorOf(candidate)
                         val details = remember(facts.apps, selector) { details(facts.apps[selector], selector, facts) }
                         InventoryRow(
@@ -220,7 +231,7 @@ private fun Header(
                 fontFamily = ideFontFamily(),
                 modifier = Modifier.weight(1f),
             )
-            GlassButton(onClick = onRefresh, enabled = !facts.loading, variant = GlassButtonVariant.Standard) {
+            GlassButton(onClick = onRefresh, loading = facts.loading, variant = GlassButtonVariant.Standard) {
                 Text(if (facts.loading) "Reading…" else "Refresh", fontSize = FontSize.BodySmall)
             }
         }
@@ -407,7 +418,7 @@ private fun DebloatFacts.app(selector: String): ShownApp {
 
 /** The app's own icon, read off the disk away from the UI thread; a plain file icon when it has none. */
 @Composable
-private fun AppIcon(file: String?) {
+private fun AppIcon(file: String?) = key(file) {
     val bitmap by produceState<ImageBitmap?>(null, file) {
         value = file?.let {
             withContext(Dispatchers.IO) {

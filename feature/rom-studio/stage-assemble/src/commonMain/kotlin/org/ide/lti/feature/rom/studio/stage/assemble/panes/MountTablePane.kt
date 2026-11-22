@@ -37,6 +37,7 @@ import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -129,7 +130,7 @@ public fun MountTablePane(
                     modifier = Modifier.testTag("AddMountLinesButton"),
                 ) { Text(text = "Add mount lines", fontSize = FontSize.BodySmall) }
             }
-            boot.busy?.let { Muted("$it…") }
+            boot.busy?.let { GlassLoadingStatus("$it…") }
             boot.message?.let { GlassBanner(severity = GlassBannerSeverity.INFO, title = it) }
             boot.refusal?.let { RefusalView(refusal = it) }
         }

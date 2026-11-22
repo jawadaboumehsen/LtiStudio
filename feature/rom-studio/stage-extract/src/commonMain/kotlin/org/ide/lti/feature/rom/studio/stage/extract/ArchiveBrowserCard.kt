@@ -35,6 +35,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -105,7 +106,7 @@ internal fun ArchiveBrowserCard(browse: ArchiveBrowse, actions: ArchiveActions) 
                 Text("Copy out ${browse.selected.size} selected", fontSize = FontSize.BodySmall)
             }
         }
-        browse.busy?.let { Note("$it…") }
+        browse.busy?.let { GlassLoadingStatus("$it…") }
         browse.refusal?.let { RefusalView(refusal = it) }
         browse.message?.let { GlassBanner(severity = GlassBannerSeverity.INFO, title = it) }
         listing?.let { MemberTable(it.members.filterNot(ArchiveMember::folder), browse, actions) }

@@ -38,6 +38,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -67,6 +68,8 @@ public fun MetadataEditor(
     /** Fills the changelog from what the last build did. */
     onDraftChangelog: () -> Unit = {},
     saveError: String? = null,
+    manifestLoading: Boolean = false,
+    draftLoading: Boolean = false,
 ) {
     val errors = validationErrors.filter { it.fieldPath.startsWith("release.") || !it.fieldPath.contains('.') }
 
@@ -94,7 +97,7 @@ public fun MetadataEditor(
                 }
 
                 "changelog" -> item {
-                    ChangelogCard(settings, errors, dirtyPaths, onChange, onDraftChangelog)
+                    ChangelogCard(settings, errors, dirtyPaths, onChange, onDraftChangelog, draftLoading)
                 }
 
                 "compatibility" -> item {
@@ -102,7 +105,8 @@ public fun MetadataEditor(
                 }
 
                 "manifest-preview", "manifest_preview" -> item {
-                    ManifestCard(manifest)
+                    if (manifestLoading) GlassLoadingPlaceholder("Loading the release manifest…")
+                    else ManifestCard(manifest)
                 }
 
                 else -> item {
@@ -223,6 +227,7 @@ private fun ChangelogCard(
     dirtyPaths: Set<String>,
     onChange: (ReleaseSettings) -> Unit,
     onDraft: () -> Unit,
+    draftLoading: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -258,8 +263,9 @@ private fun ChangelogCard(
             onClick = { if (settings.changelog.isBlank()) onDraft() else asking = true },
             variant = GlassButtonVariant.Standard,
             modifier = Modifier.testTag("DraftChangelog"),
+            loading = draftLoading,
         ) {
-            Text("Draft from the last build", fontSize = FontSize.BodySmall)
+            Text(if (draftLoading) "Drafting changelog…" else "Draft from the last build", fontSize = FontSize.BodySmall)
         }
         if (asking) {
             GlassDialog(

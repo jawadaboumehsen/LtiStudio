@@ -32,6 +32,10 @@ kotlin {
             }
         }
 
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+
         val skikoMain by creating {
             dependsOn(commonMain)
         }

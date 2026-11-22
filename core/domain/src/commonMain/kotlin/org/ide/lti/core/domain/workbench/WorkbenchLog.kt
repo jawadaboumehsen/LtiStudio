@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.workbench
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -21,7 +22,7 @@ import kotlinx.datetime.toLocalDateTime
 /** How a line of the output reads: a step that worked, information, a warning, an error. */
 public enum class LogLevel { OK, INF, WRN, ERR }
 
-public data class LogLine(val atMillis: Long, val level: LogLevel, val text: String) {
+public data class LogLine(val atMillis: Long, val level: LogLevel, val text: String, val id: Long = 0) {
     /** The wall-clock time on this computer, `HH:MM:SS.mmm`. */
     public val localTime: String
         get() = Instant.fromEpochMilliseconds(atMillis).toLocalDateTime(TimeZone.currentSystemDefault()).time.toString()
@@ -33,11 +34,15 @@ public data class LogLine(val atMillis: Long, val level: LogLevel, val text: Str
  */
 public class WorkbenchLog(private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() }) {
     private val _lines = MutableStateFlow<List<LogLine>>(emptyList())
+    private val nextId = MutableStateFlow(0L)
     public val lines: StateFlow<List<LogLine>> = _lines.asStateFlow()
 
     public fun add(level: LogLevel, text: String) {
         val at = now()
-        val added = text.lines().filter(String::isNotBlank).map { LogLine(at, level, it) }
+        val messages = text.lines().filter(String::isNotBlank)
+        if (messages.isEmpty()) return
+        val firstId = nextId.getAndUpdate { it + messages.size }
+        val added = messages.mapIndexed { index, message -> LogLine(at, level, message, firstId + index) }
         _lines.update { (it + added).takeLast(MAX) }
     }
 

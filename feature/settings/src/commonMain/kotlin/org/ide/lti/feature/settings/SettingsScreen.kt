@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.settings
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,8 +23,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -80,7 +83,9 @@ fun SettingsScreenContent(
     initialCategory: SettingsCategory = SettingsCategory.Appearance,
     /** What About shows about the running app; null in previews and tests. */
     environmentPort: AppEnvironmentPort? = null,
+    appearanceScrollState: ScrollState? = null,
 ) {
+    val scope = rememberCoroutineScope()
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
     val environment = remember(environmentPort) { environmentPort?.environment() }
 
@@ -162,7 +167,10 @@ fun SettingsScreenContent(
                 )
             },
             content = {
-                val scrollState = key(selectedCategory) { rememberScrollState() }
+                val scrollState = key(selectedCategory) {
+                    appearanceScrollState?.takeIf { selectedCategory == SettingsCategory.Appearance }
+                        ?: rememberScrollState()
+                }
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
@@ -192,7 +200,7 @@ fun SettingsScreenContent(
                             AboutSettingsPane(
                                 environment = environment,
                                 stackSections = stackSections,
-                                onOpenFolder = { environmentPort?.openFolder(it) },
+                                onOpenFolder = { path -> scope.launch { environmentPort?.openFolder(path) } },
                             )
                         }
                     }

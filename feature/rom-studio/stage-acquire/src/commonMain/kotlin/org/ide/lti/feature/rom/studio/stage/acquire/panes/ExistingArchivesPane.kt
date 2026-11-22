@@ -44,6 +44,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -97,7 +98,8 @@ public fun ExistingArchivesPane(
                 else -> null
             }
             status?.let {
-                Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
+                if (archiveState.busy) GlassLoadingStatus(it)
+                else Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = FontSize.Micro)
             }
         }
 

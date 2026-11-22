@@ -54,6 +54,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.ideToolwindowsRepositories
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -325,8 +326,9 @@ private fun MarketplaceHeader(
 
                 if (fetchResult is IndexFetchResult.Cached) {
                     GlassChip(label = "Offline")
-                } else if (isLoading) {
-                    GlassChip(label = "Fetching...")
+                }
+                if (isLoading) {
+                    GlassLoadingStatus("Fetching packages…")
                 }
             }
 
@@ -764,7 +766,8 @@ private fun MarketplaceInspectorPanel(
 
                     GlassButton(
                         onClick = onInstallClick,
-                        enabled = !isInstalling && status?.installedThis != true,
+                        enabled = status?.installedThis != true,
+                        loading = isInstalling,
                         variant = GlassButtonVariant.Primary,
                         shape = GlassShapes.HazeMediumSmall,
                         minHeight = ComponentSize.PluginActionBtnHeight,

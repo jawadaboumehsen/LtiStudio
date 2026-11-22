@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.common
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.ports.AppEnvironment
 import org.ide.lti.core.domain.ports.AppEnvironmentPort
 import java.awt.Desktop
@@ -28,11 +30,11 @@ internal class DesktopAppEnvironment : AppEnvironmentPort {
         )
     }
 
-    override fun openFolder(path: String): Boolean {
+    override suspend fun openFolder(path: String): Boolean = withContext(Dispatchers.IO) {
         val folder = File(path)
         // A WSL path is not absolute on Windows: it would make, and open, an empty C:\home\... instead.
         val canOpen = folder.isAbsolute && Desktop.isDesktopSupported() &&
             Desktop.getDesktop().isSupported(Desktop.Action.OPEN)
-        return canOpen && runCatching { Desktop.getDesktop().open(folder.apply { mkdirs() }) }.isSuccess
+        canOpen && runCatching { Desktop.getDesktop().open(folder.apply { mkdirs() }) }.isSuccess
     }
 }

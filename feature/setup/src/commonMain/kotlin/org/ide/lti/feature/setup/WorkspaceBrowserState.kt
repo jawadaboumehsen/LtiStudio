@@ -11,6 +11,8 @@ package org.ide.lti.feature.setup
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,7 +74,13 @@ class WorkspaceBrowserState(
     private val selectDirectory: suspend () -> String? = { DialogUtils.selectDirectory() },
     private val onFailingCheckFocus: (() -> Unit)? = null,
 ) {
+    private val _projectsLoading = MutableStateFlow(true)
+    val projectsLoading: StateFlow<Boolean> = _projectsLoading.asStateFlow()
+    private val _openingWorkspaces = MutableStateFlow(0)
+    val openingWorkspaces: StateFlow<Int> = _openingWorkspaces.asStateFlow()
+
     val recentProjects: StateFlow<List<RecentProject>> = getRecentWorkspacesUseCase()
+        .onEach { _projectsLoading.value = false }
         .stateIn(
             scope = scope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -266,10 +274,10 @@ class WorkspaceBrowserState(
             openRecentProject(project, onWorkspaceOpened)
             return
         }
-        scope.launch {
+        openWithProgress {
             if (!toolchainSetupState.value.canLaunchWorkspace) {
                 openRecentProject(project, onWorkspaceOpened)
-                return@launch
+                return@openWithProgress
             }
             val result = runCatchingCancellable {
                 openWorkspaceUseCase(
@@ -304,10 +312,10 @@ class WorkspaceBrowserState(
             openPath(path, onWorkspaceOpened)
             return
         }
-        scope.launch {
+        openWithProgress {
             if (!toolchainSetupState.value.canLaunchWorkspace) {
                 openPath(path, onWorkspaceOpened)
-                return@launch
+                return@openWithProgress
             }
             val result = runCatchingCancellable { openWorkspaceByPathUseCase(path) }.getOrElse { Result.failure(it) }
             result.fold(
@@ -329,6 +337,17 @@ class WorkspaceBrowserState(
                     )
                 },
             )
+        }
+    }
+
+    private fun openWithProgress(action: suspend () -> Unit) {
+        _openingWorkspaces.update { it + 1 }
+        scope.launch {
+            try {
+                action()
+            } finally {
+                _openingWorkspaces.update { it - 1 }
+            }
         }
     }
 

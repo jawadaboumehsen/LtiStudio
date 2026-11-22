@@ -45,6 +45,8 @@ import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.workbench.DeviceCheckResult
@@ -88,7 +90,9 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
             Text(text = error, style = typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
 
-        if (uiState.runs.isEmpty()) {
+        if (uiState.isLoading && uiState.runs.isEmpty()) {
+            GlassLoadingPlaceholder("Loading run history…")
+        } else if (uiState.runs.isEmpty()) {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
@@ -228,20 +232,25 @@ private fun HistoryHeader(uiState: RunHistoryUiState, onRefresh: () -> Unit) {
                 style = typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = if (uiState.currentWorkspace != null) {
-                    "${uiState.runs.size} previous runs recorded"
-                } else {
-                    "Loading the workspace…"
-                },
-                style = typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (uiState.currentWorkspace == null && uiState.errorMessage == null) {
+                GlassLoadingStatus("Loading the workspace…")
+            } else {
+                Text(
+                    text = if (uiState.currentWorkspace != null) {
+                        "${uiState.runs.size} previous runs recorded"
+                    } else {
+                        "Workspace unavailable"
+                    },
+                    style = typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         GlassButton(
             onClick = onRefresh,
-            enabled = !uiState.isLoading && uiState.currentWorkspace != null,
+            enabled = uiState.currentWorkspace != null,
+            loading = uiState.isLoading,
             variant = GlassButtonVariant.Secondary,
         ) {
             Text(
@@ -261,12 +270,16 @@ private fun CompareWithRow(others: List<BuildRun>, busy: Boolean, onCompare: (Bu
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        Text(
-            if (busy) "Comparing…" else "Compare with",
-            style = GlassTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterVertically),
-        )
+        if (busy) {
+            GlassLoadingStatus("Comparing…", Modifier.align(Alignment.CenterVertically))
+        } else {
+            Text(
+                "Compare with",
+                style = GlassTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+        }
         others.forEach { run ->
             GlassChip(
                 label = "${run.startedAt.toString().take(STARTED_SHOWN).replace('T', ' ')} " +

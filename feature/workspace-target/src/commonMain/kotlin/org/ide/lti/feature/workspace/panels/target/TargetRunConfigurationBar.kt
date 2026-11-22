@@ -48,6 +48,7 @@ import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuDivid
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -376,13 +377,18 @@ private fun ConnectedDeviceSegment(
                 text = if (isRefreshingDevices) "Scanning Devices..." else "Refresh Devices (adb devices)",
                 subtitle = "Probe USB bus and WSL ADB daemon",
                 leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(IconSize.Small),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
+                    if (isRefreshingDevices) {
+                        GlassSpinner(Modifier.size(IconSize.Small))
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(IconSize.Small),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 },
+                enabled = !isRefreshingDevices,
                 onClick = onRefreshConnectedDevices,
             )
 

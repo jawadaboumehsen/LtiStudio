@@ -9,8 +9,7 @@
  */
 package org.ide.lti.feature.settings
 
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -23,14 +22,18 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalTestApi::class)
 internal fun runSettingsUiTest(width: Int, height: Int, block: suspend DesktopComposeUiTest.() -> Unit) =
-    runDesktopComposeUiTest(width = width, height = height, testTimeout = 30.seconds, block = block)
+    runDesktopComposeUiTest(width = width, height = height, testTimeout = 30.seconds) {
+        // Render only the frames the test needs. Glass can request another draw during capture.
+        mainClock.autoAdvance = false
+        block()
+    }
 
 /**
- * Reveal a Settings control with one whole-pixel scroll. Compose's performScrollTo retries until its
- * exact alignment is reached, which can loop when the viewport edge falls between scroll positions.
+ * Reveal a Settings control with one whole-pixel layout change. The semantics scroll action
+ * animates over many glass frames, which is unnecessary when testing layout or capturing a still.
  */
 @OptIn(ExperimentalTestApi::class)
-internal fun DesktopComposeUiTest.scrollToSettingsNode(tag: String): SemanticsNodeInteraction {
+internal fun DesktopComposeUiTest.scrollToSettingsNode(tag: String, scrollState: ScrollState): SemanticsNodeInteraction {
     val interaction = onNodeWithTag(tag)
     val node = interaction.fetchSemanticsNode()
     val scrollParent = checkNotNull(
@@ -48,19 +51,10 @@ internal fun DesktopComposeUiTest.scrollToSettingsNode(tag: String): SemanticsNo
         bottom > viewport.bottom -> bottom - viewport.bottom
         else -> 0f
     }
-    // Frozen clocks let Compose settle layout and draw the capture without waiting for more glass effect frames.
-    mainClock.autoAdvance = false
     if (delta != 0f) {
         val pixels = if (delta > 0f) ceil(delta) else floor(delta)
-        val range = scrollParent.config[SemanticsProperties.VerticalScrollAxisRange]
-        val target = runOnUiThread {
-            val destination = (range.value() + pixels).coerceIn(0f, range.maxValue())
-            check(scrollParent.config[SemanticsActions.ScrollBy].action?.invoke(0f, pixels) == true) {
-                "Settings scroll container refused to reveal $tag"
-            }
-            destination
-        }
-        mainClock.advanceTimeUntil(timeoutMillis = 1_000) { range.value() == target }
+        runOnUiThread { scrollState.dispatchRawDelta(pixels) }
+        mainClock.advanceTimeByFrame()
     }
     return interaction
 }

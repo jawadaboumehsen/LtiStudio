@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -107,7 +108,9 @@ fun IdeStatusBadge(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
     ) {
-        if (useDot) {
+        if (severity == IdeStatusSeverity.Running) {
+            GlassSpinner(Modifier.size(GlassDimens.StatusBadgeIconSize), color = style.fgColor)
+        } else if (useDot) {
             Box(
                 modifier = Modifier
                     .size(IconSize.Indicator)

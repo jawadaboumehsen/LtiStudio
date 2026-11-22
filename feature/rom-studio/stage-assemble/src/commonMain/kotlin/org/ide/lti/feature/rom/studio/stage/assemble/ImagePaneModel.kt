@@ -256,8 +256,7 @@ public class ImagePaneModel(
         val folder = state.value.tree?.hostFolder ?: return
         val inside = entry.path.trimEnd('/').substringBeforeLast('/', "")
         val path = if (inside.isEmpty()) folder else folder + "\\" + inside.replace('/', '\\')
-        val opened = environment?.openFolder(path) == true
-        if (!opened) mutableState.update { it.copy(message = "Open $path in Explorer") }
+        openInExplorer(path)
     }
 
     private fun rename(newName: String) {
@@ -342,8 +341,14 @@ public class ImagePaneModel(
     /** The whole tree is already unpacked by Extract: this opens it in Explorer. */
     private fun openTree() {
         val folder = state.value.tree?.hostFolder ?: return
-        val opened = environment?.openFolder(folder) == true
-        if (!opened) mutableState.update { it.copy(message = "Open $folder in Explorer") }
+        openInExplorer(folder)
+    }
+
+    private fun openInExplorer(folder: String) {
+        scope.launch {
+            val opened = environment?.openFolder(folder) == true
+            if (!opened) mutableState.update { it.copy(message = "Open $folder in Explorer") }
+        }
     }
 
     /** A read that must not cancel the running job (details while browsing); its failure shows as a refusal. */

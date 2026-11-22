@@ -46,6 +46,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.layout.GlassTopBar
 import org.ide.lti.core.designsystem.component.layout.TopBarNavigation
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -291,7 +292,7 @@ private fun ConfigurationActionBar(
             onClick = onApply,
             enabled = !hasValidationErrors && !isSyncing,
         ) {
-            Text(if (isSyncing) "Syncing..." else "Apply & Close")
+            if (isSyncing) GlassLoadingStatus("Syncing…") else Text("Apply & Close")
         }
     }
 }

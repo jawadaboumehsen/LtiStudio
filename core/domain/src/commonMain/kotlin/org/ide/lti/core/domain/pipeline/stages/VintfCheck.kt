@@ -496,7 +496,7 @@ exit 0"""
 
     private fun missingEvidence(s: Sections): List<VintfEvidence> = buildList {
         addAll(s.missing)
-        if (s.skuInferred || s.results.any { it.provisional }) {
+        if (s.skuInferred || !s.hasMissingPartition && s.results.any { it.provisional }) {
             add(VintfEvidence(
                 "Some SKU combinations could not be verified from the firmware's META/misc_info.txt. " +
                     "Results for those combinations are provisional.",

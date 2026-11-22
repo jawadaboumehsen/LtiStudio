@@ -22,11 +22,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -54,10 +61,21 @@ import org.ide.lti.core.domain.workbench.WorkbenchLog
  */
 @Composable
 internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
-    val lines by log.lines.collectAsStateWithLifecycle()
+    val filter = remember(log) { MutableStateFlow<LogLevel?>(null) }
+    val selected by filter.collectAsStateWithLifecycle()
+    val output = remember(log) {
+        combine(log.lines, filter) { lines, level ->
+            OutputSnapshot(
+                latest = lines.lastOrNull(),
+                count = lines.size,
+                counts = lines.groupingBy { it.level }.eachCount(),
+                newestFirst = (if (level == null) lines else lines.filter { it.level == level }).asReversed(),
+                filter = level,
+            )
+        }.flowOn(Dispatchers.Default)
+    }
+    val snapshot by output.collectAsStateWithLifecycle(initialValue = OutputSnapshot())
     var open by remember { mutableStateOf(false) }
-    var filter by remember { mutableStateOf<LogLevel?>(null) }
-    val counts = remember(lines) { lines.groupingBy { it.level }.eachCount() }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -77,8 +95,8 @@ internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = lines.lastOrNull()?.let { "${it.level}  ${it.text}" } ?: "No workbench job has run yet.",
-                color = lines.lastOrNull()?.let { levelColor(it.level) } ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                text = snapshot.latest?.let { "${it.level}  ${it.text}" } ?: "No workbench job has run yet.",
+                color = snapshot.latest?.let { levelColor(it.level) } ?: MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = FontSize.Micro,
                 fontFamily = codeFontFamily(),
                 maxLines = 1,
@@ -86,10 +104,10 @@ internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
             )
             LogLevel.entries.forEach { level ->
-                Text("${counts[level] ?: 0} $level", color = levelColor(level), fontSize = FontSize.Micro)
+                Text("${snapshot.counts[level] ?: 0} $level", color = levelColor(level), fontSize = FontSize.Micro)
             }
         }
-        if (open) OpenOutput(log, lines, filter, counts) { filter = it }
+        if (open) OpenOutput(log, snapshot, selected) { filter.value = it }
     }
 }
 
@@ -97,28 +115,42 @@ internal fun OutputPanel(log: WorkbenchLog, modifier: Modifier = Modifier) {
 @Composable
 private fun OpenOutput(
     log: WorkbenchLog,
-    lines: List<LogLine>,
+    snapshot: OutputSnapshot,
     filter: LogLevel?,
-    counts: Map<LogLevel, Int>,
     onFilter: (LogLevel?) -> Unit,
 ) {
     val clipboard = LocalClipboardManager.current
-    val shown = remember(lines, filter) { if (filter == null) lines else lines.filter { it.level == filter } }
+    val scope = rememberCoroutineScope()
+    val shown = snapshot.newestFirst
     val list = rememberLazyListState()
-    // New lines keep the end in view.
-    LaunchedEffect(shown.size) { if (shown.isNotEmpty()) list.scrollToItem(shown.lastIndex) }
+    var previousHead by remember { mutableStateOf<Long?>(null) }
+    var previousFilter by remember { mutableStateOf<LogLevel?>(null) }
+    // Keep the newest row visible at the bottom. When scrolled up, stable IDs keep older rows anchored.
+    SideEffect {
+        val head = shown.firstOrNull()?.id
+        if (head != null && (previousFilter != snapshot.filter || (head != previousHead && !list.canScrollBackward))) {
+            list.requestScrollToItem(0)
+        }
+        previousFilter = snapshot.filter
+        previousHead = head
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small), verticalAlignment = Alignment.CenterVertically) {
-        GlassChip(label = "All ${lines.size}", selected = filter == null, onClick = { onFilter(null) })
+        GlassChip(label = "All ${snapshot.count}", selected = filter == null, onClick = { onFilter(null) })
         LogLevel.entries.forEach { level ->
             GlassChip(
-                label = "$level ${counts[level] ?: 0}",
+                label = "$level ${snapshot.counts[level] ?: 0}",
                 selected = filter == level,
                 onClick = { onFilter(level) },
                 modifier = Modifier.testTag("OutputFilter_$level"),
             )
         }
         GlassButton(
-            onClick = { clipboard.setText(AnnotatedString(shown.joinToString("\n") { line(it) })) },
+            onClick = {
+                scope.launch {
+                    val text = withContext(Dispatchers.Default) { shown.asReversed().joinToString("\n", transform = ::line) }
+                    clipboard.setText(AnnotatedString(text))
+                }
+            },
             variant = GlassButtonVariant.Text,
         ) { Text("Copy", fontSize = FontSize.BodySmall) }
         GlassButton(
@@ -126,8 +158,12 @@ private fun OpenOutput(
             variant = GlassButtonVariant.Text,
         ) { Text("Clear", fontSize = FontSize.BodySmall) }
     }
-    LazyColumn(state = list, modifier = Modifier.fillMaxWidth().height(ComponentSize.MinPanelHeight * 2)) {
-        items(shown) { entry ->
+    LazyColumn(
+        state = list,
+        reverseLayout = true,
+        modifier = Modifier.fillMaxWidth().height(ComponentSize.MinPanelHeight * 2).testTag("WorkbenchOutputLines"),
+    ) {
+        items(shown, key = LogLine::id) { entry ->
             Text(
                 text = line(entry),
                 color = levelColor(entry.level),
@@ -137,6 +173,14 @@ private fun OpenOutput(
         }
     }
 }
+
+private data class OutputSnapshot(
+    val latest: LogLine? = null,
+    val count: Int = 0,
+    val counts: Map<LogLevel, Int> = emptyMap(),
+    val newestFirst: List<LogLine> = emptyList(),
+    val filter: LogLevel? = null,
+)
 
 private fun line(entry: LogLine): String = "${entry.localTime} ${entry.level} ${entry.text}"
 

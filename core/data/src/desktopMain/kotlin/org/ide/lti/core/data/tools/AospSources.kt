@@ -9,6 +9,9 @@
  */
 package org.ide.lti.core.data.tools
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.tools.ToolError
 import java.util.Base64
@@ -21,6 +24,9 @@ import java.util.Base64
  * uploads only into workspaces, and the tools folder is not one.
  */
 internal class AospSources(private val run: suspend (tool: String, args: List<String>, accepted: Set<Int>) -> Int) {
+
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
     /** The folder of the written build files (CMake's source). */
     suspend fun prepare(srcDir: String, recipe: RecipeConfig.AospCMake): String {
         for (project in recipe.projects) {
@@ -32,10 +38,11 @@ internal class AospSources(private val run: suspend (tool: String, args: List<St
         val buildFiles = "$srcDir/$BUNDLED_DIR"
         for (file in recipe.bundledFiles) {
             KotlinStoreLayout.validateRelativePath(file)
-            val bytes = javaClass.getResourceAsStream("/tool-recipes/${recipe.bundle}/$file")?.use { it.readBytes() }
-                ?: throw ToolErrorException(
-                    ToolError.BuildFailed("The app lacks its build file ${recipe.bundle}/$file"),
-                )
+            val bytes = withContext(ioDispatcher) {
+                javaClass.getResourceAsStream("/tool-recipes/${recipe.bundle}/$file")?.use { it.readBytes() }
+            } ?: throw ToolErrorException(
+                ToolError.BuildFailed("The app lacks its build file ${recipe.bundle}/$file"),
+            )
             val base64 = Base64.getEncoder().encodeToString(bytes)
             run("sh", listOf("-c", WRITE_FILE, "sh", "$buildFiles/$file", base64), setOf(0))
         }

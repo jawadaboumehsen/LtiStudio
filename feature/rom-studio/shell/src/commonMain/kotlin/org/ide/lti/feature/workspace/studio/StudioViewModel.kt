@@ -97,6 +97,7 @@ public data class StudioUiState(
     val runs: List<BuildRun> = emptyList(),
     val restoreIndex: RestoreIndex = RestoreIndex.Empty,
     val restoreMessage: String? = null,
+    val restoreOperation: String? = null,
 )
 
 /**
@@ -266,6 +267,9 @@ public class StudioViewModel(
                     entry = entry,
                     presentation = updatedPresentation,
                     railItems = railItems,
+                    restoreIndex = if (current.workspaceId == workspaceId) current.restoreIndex else RestoreIndex.Empty,
+                    restoreMessage = current.restoreMessage.takeIf { current.workspaceId == workspaceId },
+                    restoreOperation = current.restoreOperation.takeIf { current.workspaceId == workspaceId },
                 )
                 updated.copy(overviewState = recomputeOverview(updated))
             }
@@ -471,14 +475,12 @@ public class StudioViewModel(
     /** Reads the workspace's one restore index; a point whose backup was deleted shows as such (FR-038). */
     public fun refreshRestorePoints() {
         val workbench = restore ?: return
-        val workspaceId = _uiState.value.workspaceId
-        if (workspaceId.isBlank()) return
-        viewModelScope.launch {
-            val index = runCatchingCancellable { workbench.list(workspaceId) }.getOrDefault(RestoreIndex.Empty)
+        withRestoreProgress("Loading restore points…") { workspaceId ->
+            val result = runCatchingCancellable { workbench.list(workspaceId) }
             _uiState.update {
                 if (it.workspaceId == workspaceId) {
                     it.copy(
-                        restoreIndex = index,
+                        restoreIndex = result.getOrDefault(it.restoreIndex),
                         restoreMessage = null,
                     )
                 } else {
@@ -494,8 +496,7 @@ public class StudioViewModel(
      */
     public fun restorePoint(pointId: String) {
         val workbench = restore ?: return
-        val workspaceId = _uiState.value.workspaceId
-        viewModelScope.launch {
+        withRestoreProgress("Restoring backup…") { workspaceId ->
             val message = try {
                 val point = workbench.restore(workspaceId, pointId)
                 val unpicked = if (point.tool == DebloatStage.TOOL) {
@@ -519,6 +520,21 @@ public class StudioViewModel(
             val index = runCatchingCancellable { workbench.list(workspaceId) }.getOrDefault(_uiState.value.restoreIndex)
             _uiState.update {
                 if (it.workspaceId == workspaceId) it.copy(restoreIndex = index, restoreMessage = message) else it
+            }
+        }
+    }
+
+    private fun withRestoreProgress(label: String, action: suspend (String) -> Unit) {
+        val current = _uiState.value
+        if (current.workspaceId.isBlank() || current.restoreOperation != null) return
+        _uiState.update { it.copy(restoreOperation = label, restoreMessage = null) }
+        viewModelScope.launch {
+            try {
+                action(current.workspaceId)
+            } finally {
+                _uiState.update {
+                    if (it.workspaceId == current.workspaceId) it.copy(restoreOperation = null) else it
+                }
             }
         }
     }

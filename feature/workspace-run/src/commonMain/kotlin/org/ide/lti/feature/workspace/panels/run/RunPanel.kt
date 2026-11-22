@@ -45,6 +45,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.navigation.GlassTab
 import org.ide.lti.core.designsystem.component.navigation.GlassTabBar
 import org.ide.lti.core.designsystem.component.progress.GlassConsoleDrawer
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -134,17 +135,18 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = if (uiState.currentWorkspace != null) {
-                        "Workspace: ${uiState.currentWorkspace.name}"
-                    } else {
-                        "Loading the workspace…"
-                    },
-                    style = typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                val workspace = uiState.currentWorkspace
+                if (workspace == null && uiState.errorMessage == null) {
+                    GlassLoadingStatus("Loading the workspace…")
+                } else {
+                    Text(
+                        text = workspace?.let { "Workspace: ${it.name}" } ?: "Workspace unavailable",
+                        style = typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 
@@ -156,7 +158,7 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
                 if (uiState.canCancelRun) {
                     GlassButton(
                         onClick = onCancel,
-                        enabled = !uiState.isCancelling,
+                        loading = uiState.isCancelling,
                         variant = GlassButtonVariant.Secondary,
                     ) {
                         Text(
@@ -172,10 +174,15 @@ private fun RunTopActionBar(uiState: BuildRunUiState, onCancel: () -> Unit, onSt
                 GlassButton(
                     onClick = onStart,
                     enabled = !uiState.isRunDisabled,
+                    loading = uiState.isStartingRun || uiState.isRunning,
                     variant = GlassButtonVariant.Primary,
                 ) {
                     Text(
-                        text = if (uiState.isRunning) "Building..." else "Start Pipeline",
+                        text = when {
+                            uiState.isStartingRun -> "Starting…"
+                            uiState.isRunning -> "Building…"
+                            else -> "Start Pipeline"
+                        },
                         style = typography.labelMedium,
                         maxLines = 1,
                         softWrap = false,
@@ -399,13 +406,13 @@ public fun ActiveRunContent(
                     // After installing the package: does the phone run this build, and is it healthy?
                     GlassButton(
                         onClick = onCheckPhone,
-                        enabled = !uiState.isCheckingPhone,
+                        loading = uiState.isCheckingPhone,
                         variant = GlassButtonVariant.Standard,
                         modifier = Modifier.testTag("CheckPhoneButton"),
                     ) { Text(if (uiState.isCheckingPhone) "Checking…" else "Check the phone") }
                     GlassButton(
                         onClick = onReport,
-                        enabled = !uiState.isReporting,
+                        loading = uiState.isReporting,
                         variant = GlassButtonVariant.Standard,
                         modifier = Modifier.testTag("BuildReportButton"),
                     ) { Text(if (uiState.isReporting) "Reading…" else "Build report") }

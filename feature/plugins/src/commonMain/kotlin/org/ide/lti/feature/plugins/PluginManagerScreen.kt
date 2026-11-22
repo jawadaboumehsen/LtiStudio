@@ -242,6 +242,7 @@ public fun PluginManagerContent(
                             PluginDestination.INSTALLED -> {
                                 PluginInstalledTab(
                                     records = state.installedPackages,
+                                    loading = state.isInstalledLoading,
                                     references = state.packageReferences,
                                     searchQuery = state.searchQuery,
                                     onSearchChange = actions.onSearchQueryChange,

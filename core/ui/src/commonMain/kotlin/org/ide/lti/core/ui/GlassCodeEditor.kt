@@ -28,9 +28,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LineHeight
@@ -91,16 +96,21 @@ fun GlassCodeEditor(
         }
     }
 
-    // Memoize syntax tokenization keyed on content and language to avoid re-tokenizing during recomposition
-    val tokens = remember(content, language) {
-        language.tokenizer.tokenize(content)
-    }
-
-    // Memoize the VisualTransformation keyed on tokens and active syntax theme colors
     val syntaxColors = GlassTheme.syntaxColors
-    val visualTransformation = remember(tokens, syntaxColors) {
-        SyntaxHighlightingTransformation(syntaxColors, tokens)
+    var highlighting by remember(content, language, syntaxColors) { mutableStateOf<VisualTransformation?>(null) }
+    LaunchedEffect(content, language, syntaxColors, readOnly) {
+        if (language == SyntaxLanguage.PLAIN_TEXT) return@LaunchedEffect
+        if (!readOnly) delay(100)
+        highlighting = withContext(Dispatchers.Default) {
+            val source = AnnotatedString(content)
+            val tokens = language.tokenizer.tokenize(content)
+            val styled = SyntaxHighlightingTransformation(syntaxColors, tokens).filter(source)
+            VisualTransformation { incoming ->
+                if (incoming.text == source.text) styled else VisualTransformation.None.filter(incoming)
+            }
+        }
     }
+    val visualTransformation = highlighting ?: VisualTransformation.None
 
     Box(
         modifier = modifier

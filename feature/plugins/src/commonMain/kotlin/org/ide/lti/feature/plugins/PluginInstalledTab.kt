@@ -52,6 +52,8 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.generated.resources.Res
 import org.ide.lti.core.designsystem.generated.resources.ideNodesPlugin
@@ -82,7 +84,12 @@ internal fun PluginInstalledTab(
     onArchive: (InstalledRecord) -> Unit,
     onUninstall: (InstalledRecord) -> Unit,
     modifier: Modifier = Modifier,
+    loading: Boolean = false,
 ) {
+    if (loading && records.isEmpty()) {
+        GlassLoadingPlaceholder("Loading installed packages…", modifier.padding(Spacing.Large))
+        return
+    }
     val filtered = records.filter { record ->
         searchQuery.isBlank() ||
             record.identity.publisher.contains(searchQuery, ignoreCase = true) ||
@@ -121,6 +128,8 @@ internal fun PluginInstalledTab(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            if (loading) GlassLoadingStatus("Refreshing installed packages…")
 
             // 2-Column Main Content
             Row(

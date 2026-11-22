@@ -105,6 +105,7 @@ public class ExtractViewModel(
         write = { snapshot, value -> snapshot.copy(extraction = value) },
     )
 
+    public val settingsLoading: StateFlow<Boolean> = sync.loading
     public val settings: StateFlow<ExtractionSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */

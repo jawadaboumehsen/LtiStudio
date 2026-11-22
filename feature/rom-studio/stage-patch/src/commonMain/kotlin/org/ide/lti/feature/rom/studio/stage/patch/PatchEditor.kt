@@ -35,6 +35,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -85,10 +86,14 @@ public fun PatchEditor(
         ) {
             saveError?.let { message -> item { PatchProblem("Changes could not be saved. $message") } }
             facts.lockError?.let { message -> item { PatchProblem(message) } }
-            if (facts.loaded && selected in PLAN_PREVIEWS && missingPlans.isNotEmpty()) {
+            if (facts.loaded && !facts.plansLoading && selected in PLAN_PREVIEWS && missingPlans.isNotEmpty()) {
                 item { PatchProblem("Locked plugin plans unavailable: ${missingPlans.joinToString()}.") }
             }
             item {
+                if (selected in PLAN_PREVIEWS && (facts.loading || facts.plansLoading)) {
+                    GlassLoadingStatus("Reading mod plans…")
+                    return@item
+                }
                 when (selected) {
                     "enabled-ordered-modules" -> Column(
                         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
@@ -277,7 +282,7 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(
                 onClick = { onCheck(false) },
-                enabled = !lab.checking,
+                loading = lab.checking,
                 variant = GlassButtonVariant.Standard,
                 modifier = Modifier.testTag("PatchModLabCheck"),
             ) { Text(if (lab.checking) "Checking…" else "Check against this firmware", fontSize = FontSize.Micro) }

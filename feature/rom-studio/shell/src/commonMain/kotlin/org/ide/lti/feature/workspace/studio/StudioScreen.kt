@@ -45,6 +45,7 @@ import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
 import org.ide.lti.core.designsystem.component.layout.RailStageStatus
 import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -241,6 +242,7 @@ private fun StudioContent(
         WorkspaceRestorePointsPanel(
             restoreIndex = uiState.restoreIndex,
             restoreMessage = uiState.restoreMessage,
+            restoreOperation = uiState.restoreOperation,
             onRestoreOne = { viewModel.restorePoint(it) },
             onRefresh = { viewModel.refreshRestorePoints() },
             modifier = Modifier.fillMaxSize(),
@@ -488,6 +490,9 @@ public fun StudioShellContent(
                             .fillMaxWidth()
                             .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
                     )
+                }
+                if (uiState.saveOperation is OperationUiState.Running) {
+                    GlassLoadingStatus("Saving workspace…", Modifier.padding(horizontal = Spacing.ExtraLarge))
                 }
                 // The result of Validate / Check readiness, until the next one.
                 (uiState.validateOperation as? OperationUiState.Succeeded)?.message?.let { message ->

@@ -88,7 +88,7 @@ private fun WorkspaceCheck(
         Line(move.name + (answer?.let { ": $it" } ?: ""), modifier = Modifier.weight(1f))
         GlassButton(
             onClick = { onCheck(move) },
-            enabled = answer != CHECKING,
+            loading = answer == CHECKING,
             variant = GlassButtonVariant.Standard,
             modifier = Modifier.testTag("UpdateCheck_${move.workspaceId}"),
         ) { Text(if (answer == null) "Check it" else "Check again") }

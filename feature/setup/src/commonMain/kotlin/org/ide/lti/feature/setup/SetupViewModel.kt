@@ -238,6 +238,8 @@ class SetupViewModel(
         )
 
     val recentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.recentProjects
+    val projectsLoading: StateFlow<Boolean> = workspaceBrowserState.projectsLoading
+    val openingWorkspaces: StateFlow<Int> = workspaceBrowserState.openingWorkspaces
     val searchQuery: StateFlow<String> = workspaceBrowserState.searchQuery
     val filteredRecentProjects: StateFlow<List<RecentProject>> = workspaceBrowserState.filteredProjects
     val selectedWorkspaceId: StateFlow<String?> = workspaceBrowserState.selectedWorkspaceId

@@ -9,6 +9,9 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
@@ -40,7 +43,10 @@ import java.nio.file.Path
  * rebuilding and discards the decoded tree, leaving the container intact.
  */
 @Suppress("LargeClass", "TooManyFunctions", "ReturnCount")
-class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
+class ApkJarMutationAdapter(
+    private val patchPort: ComponentPatchPort,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) {
 
     private fun patchError(objectId: String, fieldPath: String, code: String, message: String) =
         ValidationError(StageId.MODULE_APPLICATION, objectId, fieldPath, code, Severity.ERROR, message)
@@ -49,7 +55,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
         operations: List<ConcreteOperation>,
         ctx: MutationContext,
         preview: Boolean = false,
-    ): ApkJarOutcome {
+    ): ApkJarOutcome = withContext(ioDispatcher) {
         val resolutionErrors = mutableListOf<ValidationError>()
         val componentOperations = mutableMapOf<Path, MutableList<ConcreteOperation>>()
 
@@ -96,7 +102,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
         }
 
         if (resolutionErrors.isNotEmpty()) {
-            return ApkJarOutcome.Refused(ValidationReport(resolutionErrors))
+            return@withContext ApkJarOutcome.Refused(ValidationReport(resolutionErrors))
         }
 
         val allEffects = mutableListOf<MutationEffect>()
@@ -106,7 +112,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
             yield()
             val outcome = processComponent(componentPath, ops, preview)
             when (outcome) {
-                is ComponentProcessResult.Refused -> return ApkJarOutcome.Refused(outcome.report)
+                is ComponentProcessResult.Refused -> return@withContext ApkJarOutcome.Refused(outcome.report)
 
                 is ComponentProcessResult.Applied -> {
                     allEffects.addAll(outcome.effects)
@@ -115,7 +121,7 @@ class ApkJarMutationAdapter(private val patchPort: ComponentPatchPort) {
             }
         }
 
-        return ApkJarOutcome.Applied(allEffects, allReceipts)
+        ApkJarOutcome.Applied(allEffects, allReceipts)
     }
 
     private suspend fun processComponent(

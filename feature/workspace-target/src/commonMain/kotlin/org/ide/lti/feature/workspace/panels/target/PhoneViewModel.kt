@@ -49,7 +49,7 @@ class PhoneViewModel(private val probe: PhoneProbe? = null) : ViewModel() {
         if (workspace == workspaceId) return
         workspace = workspaceId
         job?.cancel()
-        _state.value = PhoneUiState()
+        _state.update { PhoneUiState() }
     }
 
     fun read(workspaceId: String) = busy(workspaceId, "Reading the phone…") {

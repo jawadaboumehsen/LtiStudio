@@ -91,6 +91,7 @@ public class BuildViewModel(
         write = { snapshot, value -> snapshot.copy(build = value) },
     )
 
+    public val settingsLoading: StateFlow<Boolean> = sync.loading
     public val settings: StateFlow<BuildSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */

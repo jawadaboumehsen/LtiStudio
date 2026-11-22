@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.settings.components
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -380,7 +380,7 @@ private fun MiniFormInput(
 
 @Composable
 private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
+    Box(modifier.drawWithCache {
         val skyGradient = when {
             isBlueGlass -> Brush.verticalGradient(
                 listOf(
@@ -406,7 +406,6 @@ private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier
                 ),
             )
         }
-        drawRect(brush = skyGradient)
 
         // Draw Mountain Silhouette Layers
         val mountainFarColor = if (isDark || isBlueGlass) {
@@ -424,7 +423,6 @@ private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier
             lineTo(0f, size.height)
             close()
         }
-        drawPath(path = mountainFarPath, color = mountainFarColor)
 
         val mountainNearColor = if (isDark || isBlueGlass) {
             WallpaperColors.DarkMountainNear
@@ -441,6 +439,10 @@ private fun ScenicBackdropCanvas(isBlueGlass: Boolean, isDark: Boolean, modifier
             lineTo(0f, size.height)
             close()
         }
-        drawPath(path = mountainNearPath, color = mountainNearColor)
-    }
+        onDrawBehind {
+            drawRect(brush = skyGradient)
+            drawPath(path = mountainFarPath, color = mountainFarColor)
+            drawPath(path = mountainNearPath, color = mountainNearColor)
+        }
+    })
 }

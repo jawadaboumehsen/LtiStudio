@@ -176,11 +176,11 @@ class SetupActivityState(
     }
 
     fun selectAll() {
-        _selectedEventIds.value = retainedIds.toSet()
+        _selectedEventIds.update { retainedIds.toSet() }
     }
 
     fun clearSelection() {
-        _selectedEventIds.value = emptySet()
+        _selectedEventIds.update { emptySet() }
     }
 
     fun copyAll(): String = _visibleEvents.value.joinToString("\n") { it.text }
@@ -197,9 +197,9 @@ class SetupActivityState(
         retainedIds.clear()
         currentPayloadBytes = 0L
         _visibleEvents.value = emptyList()
-        _droppedLineCount.value = 0
+        _droppedLineCount.update { 0 }
         _totalPayloadBytes.value = 0L
-        _selectedEventIds.value = emptySet()
+        _selectedEventIds.update { emptySet() }
         _operationId.value = null
         _followingLatest.value = true
     }

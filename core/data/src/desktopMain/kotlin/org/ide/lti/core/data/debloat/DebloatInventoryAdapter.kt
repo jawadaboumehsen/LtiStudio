@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.debloat
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.debloat.DebloatCandidate
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -35,16 +37,17 @@ public class DebloatInventoryAdapter {
          * (`app/<Name>/<Name>.apk` or `priv-app/<Name>/<Name>.apk`), otherwise `null`. Symlinks
          * are skipped.
          */
-        public suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> {
-            val candidates = mutableListOf<DebloatCandidate>()
-            for ((partition, relRoot) in partitionRoots) {
-                val partRoot = workTreeRoot.resolve(relRoot).normalize()
-                if (Files.exists(partRoot)) {
-                    collectPartitionCandidates(partRoot, partition, candidates)
+        public suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> =
+            withContext(Dispatchers.IO) {
+                val candidates = mutableListOf<DebloatCandidate>()
+                for ((partition, relRoot) in partitionRoots) {
+                    val partRoot = workTreeRoot.resolve(relRoot).normalize()
+                    if (Files.exists(partRoot)) {
+                        collectPartitionCandidates(partRoot, partition, candidates)
+                    }
                 }
+                candidates.sortedWith(compareBy({ it.partition }, { it.relativePath }))
             }
-            return candidates.sortedWith(compareBy({ it.partition }, { it.relativePath }))
-        }
 
         private fun collectPartitionCandidates(partRoot: Path, partition: String, out: MutableList<DebloatCandidate>) {
             Files.walk(partRoot).use { stream ->
@@ -95,7 +98,7 @@ public class DebloatInventoryAdapter {
             workTreeRoot: Path,
             partition: String,
             relativePath: String,
-        ): List<String> {
+        ): List<String> = withContext(Dispatchers.IO) {
             val configsDir = workTreeRoot.resolve("configs").normalize()
             val matchingLines = mutableListOf<String>()
             val escapedPath = relativePath.replace(".", "\\.")
@@ -119,7 +122,7 @@ public class DebloatInventoryAdapter {
                 }
             }
 
-            return matchingLines
+            matchingLines
         }
     }
 }

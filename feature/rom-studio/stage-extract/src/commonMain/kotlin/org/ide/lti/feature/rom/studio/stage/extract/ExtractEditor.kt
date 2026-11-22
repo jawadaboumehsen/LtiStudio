@@ -42,6 +42,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTableRow
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -174,7 +175,7 @@ private fun ArchiveContentsCard(facts: ExtractFacts) {
             ?.let { Hint(it.joinToString(" · ")) }
         val archive = facts.archive
         when {
-            !facts.loaded -> Hint("Reading the workspace…")
+            !facts.loaded -> GlassLoadingPlaceholder("Reading the workspace…")
 
             archive == null -> Hint("No firmware archive yet. Acquire or import one first.")
 

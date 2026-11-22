@@ -9,6 +9,8 @@
  */
 package org.ide.lti.core.data.patch
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.plugin.ComponentPatchPort
 import org.ide.lti.core.domain.plugin.DecodedComponent
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
@@ -52,15 +54,17 @@ class ApktoolComponentPort(
         return DecodedComponent(componentPath = componentAbsPath, decodeRoot = out)
     }
 
-    override suspend fun readMember(decoded: DecodedComponent, relPath: String): String? =
+    override suspend fun readMember(decoded: DecodedComponent, relPath: String): String? = withContext(Dispatchers.IO) {
         member(decoded, relPath).takeIf { Files.isRegularFile(it) }?.let { Files.readString(it) }
-
-    override suspend fun writeMember(decoded: DecodedComponent, relPath: String, content: String): Boolean {
-        val file = member(decoded, relPath)
-        Files.createDirectories(file.parent)
-        Files.writeString(file, content)
-        return true
     }
+
+    override suspend fun writeMember(decoded: DecodedComponent, relPath: String, content: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val file = member(decoded, relPath)
+            Files.createDirectories(file.parent)
+            Files.writeString(file, content)
+            true
+        }
 
     /** One `find` in WSL: walking a decoded framework jar file by file over `\\wsl.localhost` is slow. */
     override suspend fun listMembers(decoded: DecodedComponent, prefix: String): List<String> {

@@ -114,6 +114,7 @@ public class DebloatViewModel(
         write = { snapshot, value -> snapshot.copy(debloat = value) },
     )
 
+    public val settingsLoading: StateFlow<Boolean> = sync.loading
     public val settings: StateFlow<DebloatSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */

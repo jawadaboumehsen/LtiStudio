@@ -55,6 +55,7 @@ public class AcquireViewModel(
         write = { snapshot, value -> snapshot.copy(acquisition = value) },
     )
 
+    public val settingsLoading: StateFlow<Boolean> = sync.loading
     public val settings: StateFlow<AcquisitionSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
@@ -80,18 +81,22 @@ public class AcquireViewModel(
         integrityJob?.cancel()
         val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
         // Another file's hash is never shown next to this one's expected hash, not even while this one is read.
-        if (_integrity.value.archivePath != relPath) _integrity.value = IntegrityFacts()
-        _integrity.value = _integrity.value.copy(measuring = true)
+        _integrity.update { current ->
+            val base = if (current.archivePath != relPath) IntegrityFacts() else current
+            base.copy(measuring = true)
+        }
         integrityJob = viewModelScope.launch {
             val stat = facts.stat(workspaceId, relPath)
             val measured = stat?.let { facts.sha256(workspaceId, relPath) }
             // An archive picked meanwhile is hashed by its own request: this result is for another file.
             if (FirmwareAcquisitionStage.archiveRelPath(settings.value) != relPath) return@launch
-            _integrity.value = IntegrityFacts(
-                archivePath = relPath.takeIf { stat != null },
-                archiveSizeBytes = stat?.sizeBytes,
-                measuredSha256 = measured,
-            )
+            _integrity.update {
+                IntegrityFacts(
+                    archivePath = relPath.takeIf { stat != null },
+                    archiveSizeBytes = stat?.sizeBytes,
+                    measuredSha256 = measured,
+                )
+            }
         }
     }
 

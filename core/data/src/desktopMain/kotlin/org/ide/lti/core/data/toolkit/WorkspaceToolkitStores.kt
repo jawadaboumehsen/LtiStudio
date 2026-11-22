@@ -10,8 +10,11 @@
 package org.ide.lti.core.data.toolkit
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.Acknowledgements
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
@@ -33,8 +36,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * using the build service [PipelineExecutionPort] when available, or falling back
  * directly to the host filesystem for local execution and real-host testing.
  */
-public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort? = null) :
-    RestorePointStore,
+public class WorkspaceToolkitStores(
+    private val execution: PipelineExecutionPort? = null,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+) : RestorePointStore,
     AckStore,
     JobLock {
 
@@ -161,8 +166,10 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
         if (execution != null) {
             return execution.readFile(workspace, relPath)
         }
-        val local = resolveLocal(workspace, relPath)
-        return if (Files.isRegularFile(local)) Files.readString(local) else null
+        return withContext(ioDispatcher) {
+            val local = resolveLocal(workspace, relPath)
+            if (Files.isRegularFile(local)) Files.readString(local) else null
+        }
     }
 
     private suspend fun writeFile(workspace: Workspace, relPath: String, content: String) {
@@ -172,11 +179,13 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
             }
             return
         }
-        val local = resolveLocal(workspace, relPath)
-        if (local.parent != null) {
-            Files.createDirectories(local.parent)
+        withContext(ioDispatcher) {
+            val local = resolveLocal(workspace, relPath)
+            if (local.parent != null) {
+                Files.createDirectories(local.parent)
+            }
+            Files.writeString(local, content)
         }
-        Files.writeString(local, content)
     }
 
     private suspend fun deleteFile(workspace: Workspace, relPath: String): Boolean {
@@ -185,8 +194,10 @@ public class WorkspaceToolkitStores(private val execution: PipelineExecutionPort
             val result = execution.execute(workspace, StepCommand("rm", listOf("-f", "$root/$relPath"), root))
             return result.exitCode == 0
         }
-        val local = resolveLocal(workspace, relPath)
-        return Files.deleteIfExists(local)
+        return withContext(ioDispatcher) {
+            val local = resolveLocal(workspace, relPath)
+            Files.deleteIfExists(local)
+        }
     }
 
     private fun resolveLocal(workspace: Workspace, relPath: String): Path = Path.of(workspace.path, relPath)

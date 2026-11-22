@@ -50,6 +50,7 @@ import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldConfig
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -509,7 +510,9 @@ private fun AuthorTaskRowItem(
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
+                if (isRunning) {
+                    GlassLoadingStatus(statusLabel)
+                } else Text(
                     text = statusLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = statusColor,

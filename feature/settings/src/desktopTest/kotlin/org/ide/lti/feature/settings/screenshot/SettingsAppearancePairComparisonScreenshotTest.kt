@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.settings.screenshot
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
@@ -203,6 +204,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
             initialEffectsEnabled = effectsOn,
         )
 
+        val scrollState = ScrollState(0)
         setContent {
             CompositionLocalProvider(
                 LocalDensity provides Density(density = 1.0f, fontScale = 1.0f),
@@ -214,6 +216,7 @@ class SettingsAppearancePairComparisonScreenshotTest {
                         SettingsScreenContent(
                             onBackClick = {},
                             appSettingsState = settingsState,
+                            appearanceScrollState = scrollState,
                             initialCategory = SettingsCategory.Appearance,
                         )
                     }
@@ -221,8 +224,9 @@ class SettingsAppearancePairComparisonScreenshotTest {
             }
         }
 
+        mainClock.advanceTimeByFrame()
         waitForIdle()
-        val cardNode = scrollToSettingsNode("GlassCard_glass_and_motion").assertIsDisplayed()
+        val cardNode = scrollToSettingsNode("GlassCard_glass_and_motion", scrollState).assertIsDisplayed()
         waitForIdle()
 
         val outputDir = File("build/reports/screenshots")

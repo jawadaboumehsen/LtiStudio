@@ -31,6 +31,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -90,7 +91,7 @@ internal fun PreflightCard(
             }
             GlassButton(
                 onClick = vm::check,
-                enabled = !state.checking && !state.readingNext,
+                loading = state.checking || state.readingNext,
                 variant = GlassButtonVariant.Primary,
                 modifier = Modifier.testTag("PreflightCheck"),
             ) {
@@ -119,6 +120,11 @@ internal fun BuildReadinessResults(
     onApply: (PreflightFix.Setting) -> Unit,
     resolveLink: (PreflightFix.Open) -> ReadinessStageLink = { ReadinessStageLink(it) },
 ) {
+    if (state.checking) {
+        NextBuildSection(state)
+        GlassLoadingPlaceholder("Checking build readiness and VINTF…", Modifier.testTag("PreflightChecksLoading"))
+        return
+    }
     val stageLink: @Composable (PreflightFix.Open) -> Unit = { requested ->
         val link = resolveLink(requested)
         Column {
@@ -167,7 +173,7 @@ private fun VintfResult(
     val status = result?.status ?: VintfStatus.NOT_RUN
     val colors = GlassTheme.diagnosticColors
     Text(
-        text = if (state.checking) "VINTF · Checking…" else "VINTF · ${status.label}",
+        text = "VINTF · ${status.label}",
         color = when (status) {
             VintfStatus.COMPATIBLE -> colors.success
             VintfStatus.INCOMPATIBLE -> colors.error
@@ -255,12 +261,9 @@ private fun ReadinessText(text: String) {
 @Composable
 private fun NextBuildSection(state: PreflightUiState) {
     state.nextError?.let { Text(it, color = GlassTheme.diagnosticColors.error, fontSize = FontSize.BodySmall) }
-    if (state.readingNext) {
-        Text(
-            "Reading what the next build would do…",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-        )
+    if (state.readingNext || state.checking && state.next == null && state.nextError == null) {
+        GlassLoadingPlaceholder("Reading the build plan…", Modifier.testTag("PreflightPlanLoading"))
+        return
     }
     val next = state.next ?: return
     Column(
@@ -345,6 +348,7 @@ private fun SamePhone(state: PreflightUiState, vm: PreflightViewModel) {
             GlassButton(
                 onClick = { vm.compareWith(other) },
                 enabled = !state.comparing,
+                loading = state.comparing && state.comparedWith?.id == other.id,
                 variant = GlassButtonVariant.Text,
                 modifier = Modifier.testTag("CompareWith_${other.id}"),
             ) {
