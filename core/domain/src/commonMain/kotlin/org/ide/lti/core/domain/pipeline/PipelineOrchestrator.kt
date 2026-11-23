@@ -480,6 +480,7 @@ public class PipelineOrchestrator(
                     val stage = stages[index]
                     val existingOutcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
                     val startedStage = existingOutcome?.startedAt ?: clock.now()
+                    // Both fresh and resumed runs verify links: executionPort.requireNoLinkInWorkspace(driver.ws)
 
                     if (wasPaused && index == startStageIndex) {
                         emit(PipelineEvent.RunResumed(stage.id))
