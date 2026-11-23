@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import org.ide.lti.core.designsystem.component.display.GlassVerticalDivider
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuDivider
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeader
@@ -116,6 +117,7 @@ fun TargetRunConfigurationBar(
     Row(
         modifier = modifier
             .height(ComponentSize.SegmentedToggleHeight)
+            .glassContainer()
             .clip(capsuleShape)
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Subtle))
             .glassOutlineBorder(
