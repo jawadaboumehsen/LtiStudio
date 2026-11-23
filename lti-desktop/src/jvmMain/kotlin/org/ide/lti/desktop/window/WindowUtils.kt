@@ -20,10 +20,10 @@ fun restoreWindow(
 ) {
     windowState.isMinimized = false
     nucleusWin?.let { win ->
-        try { win.setMinimized(false) } catch (_: Throwable) {}
-        try { win.show() } catch (_: Throwable) {}
-        try { win.toFront() } catch (_: Throwable) {}
-        try { win.requestFocus() } catch (_: Throwable) {}
+        try { win.setMinimized(false) } catch (_: Throwable) { /* ignore platform window error */ }
+        try { win.show() } catch (_: Throwable) { /* ignore platform window error */ }
+        try { win.toFront() } catch (_: Throwable) { /* ignore platform window error */ }
+        try { win.requestFocus() } catch (_: Throwable) { /* ignore platform window error */ }
         try {
             val awt = win.unsafe.awtWindow
             if (awt != null) {
@@ -37,6 +37,8 @@ fun restoreWindow(
                 awt.isAlwaysOnTop = true
                 awt.isAlwaysOnTop = false
             }
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+            // Best-effort native AWT window un-minimize
+        }
     }
 }

@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.common.utils.formatBytes
 import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
@@ -85,8 +86,9 @@ fun PartitionExplorerView(
                         fontWeight = FontWeight.Bold,
                     ),
                 )
+                val formattedSize = formatBytes(metadata.totalSizeBytes)
                 Text(
-                    text = "${metadata.filesystem} | ${metadata.totalFiles} files | ${formatBytes(metadata.totalSizeBytes)}",
+                    text = "${metadata.filesystem} | ${metadata.totalFiles} files | $formattedSize",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = codeFontFamily(),
                         fontSize = FontSize.Micro,
@@ -265,12 +267,4 @@ private fun PartitionNodeRow(
             }
         }
     }
-}
-
-private fun formatBytes(bytes: Long): String {
-    if (bytes < 1024) return "$bytes B"
-    val kb = bytes / 1024.0
-    if (kb < 1024) return "${(kb * 10).toLong() / 10.0} KB"
-    val mb = kb / 1024.0
-    return "${(mb * 10).toLong() / 10.0} MB"
 }

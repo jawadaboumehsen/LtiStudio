@@ -7,24 +7,16 @@
  */
 package org.ide.lti.core.ui.command
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -42,12 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
@@ -57,7 +49,6 @@ import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.icon.AppIcon
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -82,9 +73,7 @@ fun CommandPaletteModal(
     val focusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
 
-    val filteredCommands = remember(query, registry) {
-        registry.search(query)
-    }
+    val filteredCommands = remember(query, registry) { registry.search(query) }
 
     LaunchedEffect(filteredCommands.size) {
         if (selectedIndex >= filteredCommands.size) {
@@ -100,37 +89,13 @@ fun CommandPaletteModal(
         modifier = modifier
             .fillMaxSize()
             .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown) {
-                    when (event.key) {
-                        Key.Escape -> {
-                            onDismiss()
-                            true
-                        }
-                        Key.DirectionDown -> {
-                            if (filteredCommands.isNotEmpty()) {
-                                selectedIndex = (selectedIndex + 1) % filteredCommands.size
-                            }
-                            true
-                        }
-                        Key.DirectionUp -> {
-                            if (filteredCommands.isNotEmpty()) {
-                                selectedIndex = if (selectedIndex <= 0) filteredCommands.size - 1 else selectedIndex - 1
-                            }
-                            true
-                        }
-                        Key.Enter -> {
-                            if (filteredCommands.isNotEmpty() && selectedIndex in filteredCommands.indices) {
-                                val cmd = filteredCommands[selectedIndex]
-                                onDismiss()
-                                cmd.action()
-                            }
-                            true
-                        }
-                        else -> false
-                    }
-                } else {
-                    false
-                }
+                handleCommandPaletteKeyEvent(
+                    event = event,
+                    commands = filteredCommands,
+                    selectedIndex = selectedIndex,
+                    onDismiss = onDismiss,
+                    onUpdateIndex = { selectedIndex = it },
+                )
             },
         contentAlignment = Alignment.TopCenter,
     ) {
@@ -146,15 +111,11 @@ fun CommandPaletteModal(
         Column(
             modifier = Modifier
                 .padding(top = Spacing.ExtraExtraLarge * 2)
-                .fillMaxWidth(AlphaTokens.Elevated * 1.5f) // ~75% max width
-                .glassSurface(
-                    role = GlassRole.TextCard,
-                    shape = GlassShapes.HazeLarge,
-                )
+                .fillMaxWidth(AlphaTokens.Elevated * 1.5f)
+                .glassSurface(role = GlassRole.TextCard, shape = GlassShapes.HazeLarge)
                 .padding(Spacing.Medium),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            // Search Input Field
             GlassTextField(
                 value = query,
                 onValueChange = {
@@ -164,9 +125,7 @@ fun CommandPaletteModal(
                 placeholder = "Type a command or intent (e.g. 'Flash', 'Extract', 'Copilot', 'Settings')...",
                 modifier = Modifier.fillMaxWidth(),
                 focusRequester = focusRequester,
-                leading = TextFieldLeadingSlot.Icon(
-                    icon = AppIcon.Painted(AppIcons.SearchPainterResource),
-                ),
+                leading = TextFieldLeadingSlot.Icon(icon = AppIcon.Painted(AppIcons.SearchPainterResource)),
                 trailing = if (query.isNotEmpty()) {
                     TextFieldTrailingSlot.Clear {
                         query = ""
@@ -177,7 +136,6 @@ fun CommandPaletteModal(
                 },
             )
 
-            // Results List
             if (filteredCommands.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -201,10 +159,9 @@ fun CommandPaletteModal(
                     verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
                 ) {
                     itemsIndexed(filteredCommands, key = { _, item -> item.id }) { index, command ->
-                        val isSelected = index == selectedIndex
                         CommandItem(
                             command = command,
-                            isSelected = isSelected,
+                            isSelected = index == selectedIndex,
                             onClick = {
                                 onDismiss()
                                 command.action()
@@ -214,35 +171,13 @@ fun CommandPaletteModal(
                 }
             }
 
-            // Footer keyboard hints
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.ExtraSmall, start = Spacing.Small, end = Spacing.Small),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "${filteredCommands.size} available commands",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "↑↓ to navigate • ↵ to select • esc to close",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            CommandPaletteFooter(commandCount = filteredCommands.size)
         }
     }
 }
 
 @Composable
-private fun CommandItem(
-    command: StudioCommand,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun CommandItem(command: StudioCommand, isSelected: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (isSelected) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = AlphaTokens.Hover)
     } else {
@@ -274,7 +209,6 @@ private fun CommandItem(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
-                // Category pill
                 Box(
                     modifier = Modifier
                         .clip(GlassShapes.Pill)
@@ -296,7 +230,6 @@ private fun CommandItem(
             )
         }
 
-        // Keyboard Shortcut Badge
         val shortcut = command.shortcut
         if (shortcut != null) {
             Box(
@@ -314,5 +247,64 @@ private fun CommandItem(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CommandPaletteFooter(commandCount: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = Spacing.ExtraSmall, start = Spacing.Small, end = Spacing.Small),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "$commandCount available commands",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "↑↓ to navigate • ↵ to select • esc to close",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun handleCommandPaletteKeyEvent(
+    event: KeyEvent,
+    commands: List<StudioCommand>,
+    selectedIndex: Int,
+    onDismiss: () -> Unit,
+    onUpdateIndex: (Int) -> Unit,
+): Boolean {
+    if (event.type != KeyEventType.KeyDown) return false
+    return when (event.key) {
+        Key.Escape -> {
+            onDismiss()
+            true
+        }
+        Key.DirectionDown -> {
+            if (commands.isNotEmpty()) {
+                onUpdateIndex((selectedIndex + 1) % commands.size)
+            }
+            true
+        }
+        Key.DirectionUp -> {
+            if (commands.isNotEmpty()) {
+                onUpdateIndex(if (selectedIndex <= 0) commands.size - 1 else selectedIndex - 1)
+            }
+            true
+        }
+        Key.Enter -> {
+            if (commands.isNotEmpty() && selectedIndex in commands.indices) {
+                val cmd = commands[selectedIndex]
+                onDismiss()
+                cmd.action()
+            }
+            true
+        }
+        else -> false
     }
 }

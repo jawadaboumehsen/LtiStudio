@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass.material3
 
 import androidx.compose.material3.MaterialTheme
@@ -25,11 +31,11 @@ import dev.chrisbanes.haze.glass.GlassStyle
  */
 @Composable
 public fun GlassStyle.material3(
-  containerColor: Color = MaterialTheme.colorScheme.surface,
-  tint: Color? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    tint: Color? = null,
 ): GlassStyle = remember(this, containerColor, tint) {
-  GlassStyle {
-    backgroundColor(containerColor)
-    if (tint != null) tint(tint)
-  }.then(this)
+    GlassStyle {
+        backgroundColor(containerColor)
+        if (tint != null) tint(tint)
+    }.then(this)
 }

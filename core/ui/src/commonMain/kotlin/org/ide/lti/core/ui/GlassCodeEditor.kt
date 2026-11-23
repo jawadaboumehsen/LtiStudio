@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -40,6 +41,7 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.LineHeight
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.designsystem.theme.SyntaxColorScheme
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.ui.syntax.SyntaxHighlightingTransformation
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
@@ -47,15 +49,6 @@ import org.ide.lti.core.ui.syntax.SyntaxLanguage
 /**
  * Lti code editor component with line numbers, opaque canvas surface, theme-aware syntax highlighting,
  * and cursor position tracking.
- *
- * @param content The code content to display and edit
- * @param onContentChange Callback when the content changes
- * @param modifier Modifier to be applied to the editor
- * @param readOnly Whether the editor is read-only
- * @param showLineNumbers Whether to show line numbers
- * @param language The syntax language used to tokenize and highlight the code
- * @param onCursorPositionChange Optional callback invoked when the cursor/caret position changes
- * (1-based line, 1-based column)
  */
 @Composable
 fun GlassCodeEditor(
@@ -87,30 +80,12 @@ fun GlassCodeEditor(
 
     LaunchedEffect(content) {
         if (onCursorPositionChange != null) {
-            val cursorOffset = textFieldValue.selection.start.coerceIn(0, content.length)
-            val textBeforeCursor = content.substring(0, cursorOffset)
-            val line = textBeforeCursor.count { it == '\n' } + 1
-            val lastNewline = textBeforeCursor.lastIndexOf('\n')
-            val col = if (lastNewline >= 0) cursorOffset - lastNewline else cursorOffset + 1
+            val (line, col) = calculateCursorPosition(content, textFieldValue.selection.start)
             onCursorPositionChange(line, col)
         }
     }
 
-    val syntaxColors = GlassTheme.syntaxColors
-    var highlighting by remember(content, language, syntaxColors) { mutableStateOf<VisualTransformation?>(null) }
-    LaunchedEffect(content, language, syntaxColors, readOnly) {
-        if (language == SyntaxLanguage.PLAIN_TEXT) return@LaunchedEffect
-        if (!readOnly) delay(100)
-        highlighting = withContext(Dispatchers.Default) {
-            val source = AnnotatedString(content)
-            val tokens = language.tokenizer.tokenize(content)
-            val styled = SyntaxHighlightingTransformation(syntaxColors, tokens).filter(source)
-            VisualTransformation { incoming ->
-                if (incoming.text == source.text) styled else VisualTransformation.None.filter(incoming)
-            }
-        }
-    }
-    val visualTransformation = highlighting ?: VisualTransformation.None
+    val visualTransformation = rememberSyntaxHighlighting(content, language, GlassTheme.syntaxColors, readOnly)
 
     Box(
         modifier = modifier
@@ -118,40 +93,10 @@ fun GlassCodeEditor(
             .padding(Spacing.Medium),
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            // Line numbers
             if (showLineNumbers) {
-                val lineCount = remember(content) { content.count { it == '\n' } + 1 }
-                val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
-                val lineStyle = remember(codeFont, lineNumberColor) {
-                    TextStyle(
-                        fontFamily = codeFont,
-                        fontSize = FontSize.Code,
-                        color = lineNumberColor,
-                        lineHeight = LineHeight.Code,
-                    )
-                }
-                val lineNumbersText = remember(lineCount) {
-                    buildString(lineCount * 6) {
-                        for (lineNumber in 1..lineCount) {
-                            append(lineNumber.toString().padStart(4))
-                            if (lineNumber < lineCount) append('\n')
-                        }
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .padding(end = Spacing.SmallMedium)
-                        .verticalScroll(verticalScrollState)
-                        .padding(vertical = Spacing.ExtraExtraSmall),
-                ) {
-                    Text(
-                        text = lineNumbersText,
-                        style = lineStyle,
-                    )
-                }
+                LineNumbersGutter(content = content, scrollState = verticalScrollState)
             }
 
-            // Editor text field
             BasicTextField(
                 value = textFieldValue,
                 onValueChange = { newValue ->
@@ -163,11 +108,7 @@ fun GlassCodeEditor(
                     }
                     val cursorMoved = newValue.selection != oldSelection || newValue.text != oldText
                     if (onCursorPositionChange != null && cursorMoved) {
-                        val cursorOffset = newValue.selection.start.coerceIn(0, newValue.text.length)
-                        val textBeforeCursor = newValue.text.substring(0, cursorOffset)
-                        val line = textBeforeCursor.count { it == '\n' } + 1
-                        val lastNewline = textBeforeCursor.lastIndexOf('\n')
-                        val col = if (lastNewline >= 0) cursorOffset - lastNewline else cursorOffset + 1
+                        val (line, col) = calculateCursorPosition(newValue.text, newValue.selection.start)
                         onCursorPositionChange(line, col)
                     }
                 },
@@ -188,4 +129,67 @@ fun GlassCodeEditor(
             )
         }
     }
+}
+
+@Composable
+private fun LineNumbersGutter(content: String, scrollState: ScrollState) {
+    val codeFont = codeFontFamily()
+    val lineCount = remember(content) { content.count { it == '\n' } + 1 }
+    val lineNumberColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val lineStyle = remember(codeFont, lineNumberColor) {
+        TextStyle(
+            fontFamily = codeFont,
+            fontSize = FontSize.Code,
+            color = lineNumberColor,
+            lineHeight = LineHeight.Code,
+        )
+    }
+    val lineNumbersText = remember(lineCount) {
+        buildString(lineCount * 6) {
+            for (lineNumber in 1..lineCount) {
+                append(lineNumber.toString().padStart(4))
+                if (lineNumber < lineCount) append('\n')
+            }
+        }
+    }
+    Box(
+        modifier = Modifier
+            .padding(end = Spacing.SmallMedium)
+            .verticalScroll(scrollState)
+            .padding(vertical = Spacing.ExtraExtraSmall),
+    ) {
+        Text(text = lineNumbersText, style = lineStyle)
+    }
+}
+
+@Composable
+private fun rememberSyntaxHighlighting(
+    content: String,
+    language: SyntaxLanguage,
+    syntaxColors: SyntaxColorScheme,
+    readOnly: Boolean,
+): VisualTransformation {
+    var highlighting by remember(content, language, syntaxColors) { mutableStateOf<VisualTransformation?>(null) }
+    LaunchedEffect(content, language, syntaxColors, readOnly) {
+        if (language == SyntaxLanguage.PLAIN_TEXT) return@LaunchedEffect
+        if (!readOnly) delay(100)
+        highlighting = withContext(Dispatchers.Default) {
+            val source = AnnotatedString(content)
+            val tokens = language.tokenizer.tokenize(content)
+            val styled = SyntaxHighlightingTransformation(syntaxColors, tokens).filter(source)
+            VisualTransformation { incoming ->
+                if (incoming.text == source.text) styled else VisualTransformation.None.filter(incoming)
+            }
+        }
+    }
+    return highlighting ?: VisualTransformation.None
+}
+
+private fun calculateCursorPosition(text: String, rawOffset: Int): Pair<Int, Int> {
+    val cursorOffset = rawOffset.coerceIn(0, text.length)
+    val textBeforeCursor = text.substring(0, cursorOffset)
+    val line = textBeforeCursor.count { it == '\n' } + 1
+    val lastNewline = textBeforeCursor.lastIndexOf('\n')
+    val col = if (lastNewline >= 0) cursorOffset - lastNewline else cursorOffset + 1
+    return Pair(line, col)
 }

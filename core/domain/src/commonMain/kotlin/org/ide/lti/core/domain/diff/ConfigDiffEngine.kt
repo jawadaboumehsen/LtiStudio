@@ -102,33 +102,36 @@ object ConfigDiffEngine {
 
     private fun assessRisk(key: String, oldVal: String?, newVal: String?): Pair<PropertyRiskLevel, String?> {
         val lowerKey = key.lowercase()
-        if (CRITICAL_SECURITY_KEYS.contains(lowerKey)) {
-            if (lowerKey == "ro.crypto.state" && newVal != "encrypted") {
-                return PropertyRiskLevel.CRITICAL to "Disabling force-encryption may cause /data mount failure or bootloop on stock recovery"
+        return when {
+            lowerKey == "ro.crypto.state" && newVal != "encrypted" -> {
+                PropertyRiskLevel.CRITICAL to
+                    "Disabling force-encryption may cause /data mount failure or bootloop on stock recovery"
             }
-            if (lowerKey == "ro.secure" && newVal == "0") {
-                return PropertyRiskLevel.WARNING to "Setting ro.secure=0 compromises root protection and fails SafetyNet/Play Integrity"
+            lowerKey == "ro.secure" && newVal == "0" -> {
+                PropertyRiskLevel.WARNING to
+                    "Setting ro.secure=0 compromises root protection and fails SafetyNet/Play Integrity"
             }
-            if (lowerKey == "ro.debuggable" && newVal == "1") {
-                return PropertyRiskLevel.INFO to "ro.debuggable=1 enables ADB root access and ART debug features"
+            lowerKey == "ro.debuggable" && newVal == "1" -> {
+                PropertyRiskLevel.INFO to "ro.debuggable=1 enables ADB root access and ART debug features"
             }
-            return PropertyRiskLevel.WARNING to "Security configuration property modified"
+            CRITICAL_SECURITY_KEYS.contains(lowerKey) -> {
+                PropertyRiskLevel.WARNING to "Security configuration property modified"
+            }
+            BUILD_TYPE_KEYS.contains(lowerKey) -> {
+                PropertyRiskLevel.INFO to "Build variant modified: $oldVal -> $newVal"
+            }
+            else -> PropertyRiskLevel.SAFE to null
         }
-        if (BUILD_TYPE_KEYS.contains(lowerKey)) {
-            return PropertyRiskLevel.INFO to "Build variant modified: $oldVal -> $newVal"
-        }
-        return PropertyRiskLevel.SAFE to null
     }
 
-    fun createSnapshot(id: String, name: String, content: String, timestamp: Long = 0L): ConfigSnapshot {
-        return ConfigSnapshot(
+    fun createSnapshot(id: String, name: String, content: String, timestamp: Long = 0L): ConfigSnapshot =
+        ConfigSnapshot(
             id = id,
             name = name,
             timestampMillis = timestamp,
             rawContent = content,
             properties = parseProperties(content),
         )
-    }
 
     fun rollbackTo(snapshot: ConfigSnapshot): String = snapshot.rawContent
 }

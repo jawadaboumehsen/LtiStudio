@@ -23,18 +23,16 @@ data class MacroStep(
     val description: String,
     val action: suspend () -> Result<Unit>,
     val status: MacroStepStatus = MacroStepStatus.PENDING,
-    val durationMillis: Long = 0L,
+    val durationMs: Long = 0L,
     val errorMessage: String? = null,
 )
 
-data class MacroRecipe(
-    val id: String,
-    val name: String,
-    val description: String,
-    val steps: List<MacroStep>,
-) {
+data class MacroRecipe(val id: String, val name: String, val description: String, val steps: List<MacroStep>) {
     val totalSteps: Int get() = steps.size
     val passedSteps: Int get() = steps.count { it.status == MacroStepStatus.PASSED }
-    val isComplete: Boolean get() = steps.all { it.status == MacroStepStatus.PASSED || it.status == MacroStepStatus.SKIPPED }
+    val isComplete: Boolean
+        get() = steps.all {
+            it.status == MacroStepStatus.PASSED || it.status == MacroStepStatus.SKIPPED
+        }
     val hasFailed: Boolean get() = steps.any { it.status == MacroStepStatus.FAILED }
 }

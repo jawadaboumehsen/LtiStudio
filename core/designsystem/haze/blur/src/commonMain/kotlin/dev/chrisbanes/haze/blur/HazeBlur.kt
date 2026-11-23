@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.runtime.Stable
@@ -32,23 +38,23 @@ import dev.chrisbanes.haze.hazeEffect
  */
 @Stable
 public fun Modifier.hazeBlur(
-  input: HazeInput,
-  style: HazeBlurStyle = HazeBlurStyle,
-  performanceMode: HazePerformanceMode? = null,
-  expandLayerBounds: Boolean = true,
+    input: HazeInput,
+    style: HazeBlurStyle = HazeBlurStyle,
+    performanceMode: HazePerformanceMode? = null,
+    expandLayerBounds: Boolean = true,
 ): Modifier = hazeEffect(
-  factory = HazeBlurFactory,
-  input = input,
-  style = BlurConfiguration(style, performanceMode),
-  expandLayerBounds = expandLayerBounds,
+    factory = HazeBlurFactory,
+    input = input,
+    style = BlurConfiguration(style, performanceMode),
+    expandLayerBounds = expandLayerBounds,
 )
 
 @Poko
 internal class BlurConfiguration(
-  val style: HazeBlurStyle,
-  val performanceMode: HazePerformanceMode?,
+    val style: HazeBlurStyle,
+    val performanceMode: HazePerformanceMode?,
 )
 
 internal object HazeBlurFactory : HazeEffectFactory<BlurConfiguration> {
-  override fun createRenderer(): HazeEffectRenderer<BlurConfiguration> = BlurVisualEffect()
+    override fun createRenderer(): HazeEffectRenderer<BlurConfiguration> = BlurVisualEffect()
 }

@@ -94,7 +94,11 @@ public fun IntegrityPane(
                 )
                 Detail("Expected SHA-256", expected ?: "not set")
                 Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
-                GlassButton(onClick = onRefresh, variant = GlassButtonVariant.Standard, shape = GlassShapes.ShellControl) {
+                GlassButton(
+                    onClick = onRefresh,
+                    variant = GlassButtonVariant.Standard,
+                    shape = GlassShapes.ShellControl,
+                ) {
                     Text("Refresh", color = MaterialTheme.colorScheme.onSurface, fontSize = FontSize.BodySmall)
                 }
             }

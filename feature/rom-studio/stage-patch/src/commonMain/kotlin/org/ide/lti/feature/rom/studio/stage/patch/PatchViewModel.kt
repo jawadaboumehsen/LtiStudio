@@ -194,7 +194,8 @@ public class PatchViewModel(
                 if (key != (latest.enabledPackages to latest.lockfile)) return@collectLatest
                 plans.onSuccess { loaded -> _facts.update { it.copy(plans = loaded, plansLoading = false) } }
                     .onFailure { failure ->
-                        _facts.update { it.copy(plansLoading = false, lockError = failure.message ?: "Could not read mod plans") }
+                        val errorMsg = failure.message ?: "Could not read mod plans"
+                        _facts.update { it.copy(plansLoading = false, lockError = errorMsg) }
                     }
             }
         }
@@ -230,7 +231,8 @@ public class PatchViewModel(
                 val selected = settings.value
                 val plans = plansOf(selected)
                 val latest = settings.value
-                val sameSelection = selected.enabledPackages == latest.enabledPackages && selected.lockfile == latest.lockfile
+                val samePackages = selected.enabledPackages == latest.enabledPackages
+                val sameSelection = samePackages && selected.lockfile == latest.lockfile
                 if (sameSelection && _facts.value.plans != plans) resetLab()
                 _facts.update {
                     it.copy(
@@ -264,45 +266,50 @@ public class PatchViewModel(
         val current = settings.value
         val enabled = current.enabledPackages.map { id -> current.lockedEntry(id)?.packageKey ?: id }
         val packageKey = current.lockedEntry(key)?.packageKey ?: key
-        _facts.value.incompatible[packageKey]?.takeIf { packageKey !in enabled }?.let { why ->
+        val why = _facts.value.incompatible[packageKey]?.takeIf { packageKey !in enabled }
+        if (why != null) {
             _facts.update { it.copy(lockError = "${nameOf(packageKey, it.installed)} $why") }
-            return
-        }
-        val wanted = if (packageKey in enabled) enabled - packageKey else enabled + packageKey
-        val installed = candidatesFor(current)
-        val locked = withContext(computeDispatcher) {
-            val packages = installed.map { it.toInstalledPackage() }
-            // Keep the chosen order whenever the dependency graph allows it.
-            PluginDependencyResolver.lock(wanted, packages, requestedOrder = wanted)
-                .takeIf { it is LockResult.Locked } ?: PluginDependencyResolver.lock(wanted, packages, emptyList())
-        }
-        val latest = settings.value
-        if (latest.enabledPackages != current.enabledPackages || latest.lockfile != current.lockfile ||
-            !_facts.value.canChangePlugins || candidatesFor(latest) != installed
-        ) {
-            _facts.update { it.copy(lockError = "The mod selection changed while checking dependencies. Try again.") }
-            return
-        }
-        when (val result = locked) {
-            is LockResult.Rejected -> _facts.update {
-                it.copy(
-                    lockError = result.report.errors.joinToString("; ") { err -> err.message },
-                )
+        } else {
+            val wanted = if (packageKey in enabled) enabled - packageKey else enabled + packageKey
+            val installed = candidatesFor(current)
+            val locked = withContext(computeDispatcher) {
+                val packages = installed.map { it.toInstalledPackage() }
+                // Keep the chosen order whenever the dependency graph allows it.
+                PluginDependencyResolver.lock(wanted, packages, requestedOrder = wanted)
+                    .takeIf { it is LockResult.Locked } ?: PluginDependencyResolver.lock(wanted, packages, emptyList())
             }
-
-            is LockResult.Locked -> {
-                val ordered = result.lockfile.entries.map { "${it.publisher}:${it.id}" }
-                val updated = latest.copy(enabledPackages = ordered, lockfile = result.lockfile)
-                updateSettings(updated)
+            val latest = settings.value
+            val isModified = latest.enabledPackages != current.enabledPackages ||
+                latest.lockfile != current.lockfile ||
+                !_facts.value.canChangePlugins ||
+                candidatesFor(latest) != installed
+            if (isModified) {
                 _facts.update {
-                    it.copy(
-                        // Disabling a dependency of an enabled plugin does nothing: the lock adds it back.
-                        lockError = if (packageKey !in wanted && packageKey in ordered) {
-                            neededBy(packageKey, installed, ordered)
-                        } else {
-                            null
-                        },
-                    )
+                    it.copy(lockError = "The mod selection changed while checking dependencies. Try again.")
+                }
+            } else {
+                when (val result = locked) {
+                    is LockResult.Rejected -> _facts.update {
+                        it.copy(
+                            lockError = result.report.errors.joinToString("; ") { err -> err.message },
+                        )
+                    }
+
+                    is LockResult.Locked -> {
+                        val ordered = result.lockfile.entries.map { "${it.publisher}:${it.id}" }
+                        val updated = latest.copy(enabledPackages = ordered, lockfile = result.lockfile)
+                        updateSettings(updated)
+                        _facts.update {
+                            it.copy(
+                                // Disabling a dependency of an enabled plugin does nothing: the lock adds it back.
+                                lockError = if (packageKey !in wanted && packageKey in ordered) {
+                                    neededBy(packageKey, installed, ordered)
+                                } else {
+                                    null
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -352,18 +359,19 @@ public class PatchViewModel(
         return unpinned + pinned
     }
 
-    private suspend fun plansOf(settings: CustomizationSettings): Map<String, PluginPlanTemplate> = withContext(ioDispatcher) {
-        val source = catalog ?: return@withContext emptyMap()
-        settings.enabledPackages.mapNotNull { key ->
-            ensureActive()
-            val entry = settings.lockedEntry(key) ?: return@mapNotNull null
-            val digest = source.contentDigestFor(entry.publisher, entry.id, entry.version).orEmpty()
-            if (entry.contentDigest.isNotEmpty() && digest.isNotEmpty() && digest != entry.contentDigest) {
-                return@mapNotNull null
-            }
-            source.templateFor(entry.publisher, entry.id, entry.version)?.let { key to it }
-        }.toMap()
-    }
+    private suspend fun plansOf(settings: CustomizationSettings): Map<String, PluginPlanTemplate> =
+        withContext(ioDispatcher) {
+            val source = catalog ?: return@withContext emptyMap()
+            settings.enabledPackages.mapNotNull { key ->
+                ensureActive()
+                val entry = settings.lockedEntry(key) ?: return@mapNotNull null
+                val digest = source.contentDigestFor(entry.publisher, entry.id, entry.version).orEmpty()
+                if (entry.contentDigest.isNotEmpty() && digest.isNotEmpty() && digest != entry.contentDigest) {
+                    return@mapNotNull null
+                }
+                source.templateFor(entry.publisher, entry.id, entry.version)?.let { key to it }
+            }.toMap()
+        }
 
     private fun resetLab() {
         labJob?.cancel()

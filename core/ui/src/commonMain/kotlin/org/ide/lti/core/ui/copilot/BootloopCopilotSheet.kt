@@ -4,6 +4,8 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.ui.copilot
 
@@ -30,7 +32,6 @@ import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -123,10 +124,7 @@ fun BootloopCopilotSheet(
 }
 
 @Composable
-private fun DiagnosisItem(
-    diagnosis: BootloopDiagnosis,
-    onCopyRule: (String) -> Unit,
-) {
+private fun DiagnosisItem(diagnosis: BootloopDiagnosis, onCopyRule: (String) -> Unit) {
     val severityColor = when (diagnosis.severity) {
         CrashSeverity.CRITICAL -> MaterialTheme.colorScheme.error
         CrashSeverity.WARNING -> MaterialTheme.colorScheme.tertiary

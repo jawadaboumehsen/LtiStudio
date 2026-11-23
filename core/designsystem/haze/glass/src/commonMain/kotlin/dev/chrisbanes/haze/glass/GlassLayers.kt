@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.ui.graphics.GraphicsContext
@@ -9,24 +15,24 @@ import androidx.compose.ui.unit.IntSize
 import dev.chrisbanes.haze.TrimMemoryLevel
 
 internal fun shouldReleaseRetainedGlass(level: TrimMemoryLevel): Boolean =
-  level == TrimMemoryLevel.UI_HIDDEN ||
-    level.severity >= TrimMemoryLevel.MODERATE.severity
+    level == TrimMemoryLevel.UI_HIDDEN ||
+        level.severity >= TrimMemoryLevel.MODERATE.severity
 
 private val RetainedGlassReleaseOrder = arrayOf(
-  GlassRetainedLayerKind.Source,
-  GlassRetainedLayerKind.BlurHorizontal,
-  GlassRetainedLayerKind.Blurred,
-  GlassRetainedLayerKind.DepthMixed,
-  GlassRetainedLayerKind.Optical,
-  GlassRetainedLayerKind.RefractionDetail,
-  GlassRetainedLayerKind.RefractionDetailCoverage,
-  GlassRetainedLayerKind.RefractionComposite,
-  GlassRetainedLayerKind.InteractionOptical,
-  GlassRetainedLayerKind.InteractionDetail,
-  GlassRetainedLayerKind.InteractionDetailCoverage,
-  GlassRetainedLayerKind.InteractionComposite,
-  GlassRetainedLayerKind.InteractionLighting,
-  GlassRetainedLayerKind.Rim,
+    GlassRetainedLayerKind.Source,
+    GlassRetainedLayerKind.BlurHorizontal,
+    GlassRetainedLayerKind.Blurred,
+    GlassRetainedLayerKind.DepthMixed,
+    GlassRetainedLayerKind.Optical,
+    GlassRetainedLayerKind.RefractionDetail,
+    GlassRetainedLayerKind.RefractionDetailCoverage,
+    GlassRetainedLayerKind.RefractionComposite,
+    GlassRetainedLayerKind.InteractionOptical,
+    GlassRetainedLayerKind.InteractionDetail,
+    GlassRetainedLayerKind.InteractionDetailCoverage,
+    GlassRetainedLayerKind.InteractionComposite,
+    GlassRetainedLayerKind.InteractionLighting,
+    GlassRetainedLayerKind.Rim,
 )
 
 /**
@@ -36,261 +42,261 @@ private val RetainedGlassReleaseOrder = arrayOf(
  * falls back to the context it is given.
  */
 internal class GlassLayers {
-  private val retained = arrayOfNulls<GraphicsLayer>(GlassRetainedLayerKind.entries.size)
-  private val owners = arrayOfNulls<GraphicsContext>(GlassRetainedLayerKind.entries.size)
+    private val retained = arrayOfNulls<GraphicsLayer>(GlassRetainedLayerKind.entries.size)
+    private val owners = arrayOfNulls<GraphicsContext>(GlassRetainedLayerKind.entries.size)
 
-  val groupAlpha = RetainedGlassGroupAlphaLayer()
+    val groupAlpha = RetainedGlassGroupAlphaLayer()
 
-  var source: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.Source)
-    set(value) = set(GlassRetainedLayerKind.Source, value)
+    var source: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.Source)
+        set(value) = set(GlassRetainedLayerKind.Source, value)
 
-  var blurHorizontal: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.BlurHorizontal)
-    set(value) = set(GlassRetainedLayerKind.BlurHorizontal, value)
+    var blurHorizontal: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.BlurHorizontal)
+        set(value) = set(GlassRetainedLayerKind.BlurHorizontal, value)
 
-  var blurred: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.Blurred)
-    set(value) = set(GlassRetainedLayerKind.Blurred, value)
+    var blurred: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.Blurred)
+        set(value) = set(GlassRetainedLayerKind.Blurred, value)
 
-  var depthMixed: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.DepthMixed)
-    set(value) = set(GlassRetainedLayerKind.DepthMixed, value)
+    var depthMixed: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.DepthMixed)
+        set(value) = set(GlassRetainedLayerKind.DepthMixed, value)
 
-  var optical: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.Optical)
-    set(value) = set(GlassRetainedLayerKind.Optical, value)
+    var optical: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.Optical)
+        set(value) = set(GlassRetainedLayerKind.Optical, value)
 
-  var refractionDetail: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.RefractionDetail)
-    set(value) = set(GlassRetainedLayerKind.RefractionDetail, value)
+    var refractionDetail: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.RefractionDetail)
+        set(value) = set(GlassRetainedLayerKind.RefractionDetail, value)
 
-  var refractionDetailCoverage: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.RefractionDetailCoverage)
-    set(value) = set(GlassRetainedLayerKind.RefractionDetailCoverage, value)
+    var refractionDetailCoverage: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.RefractionDetailCoverage)
+        set(value) = set(GlassRetainedLayerKind.RefractionDetailCoverage, value)
 
-  var refractionComposite: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.RefractionComposite)
-    set(value) = set(GlassRetainedLayerKind.RefractionComposite, value)
+    var refractionComposite: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.RefractionComposite)
+        set(value) = set(GlassRetainedLayerKind.RefractionComposite, value)
 
-  var interactionOptical: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.InteractionOptical)
-    set(value) = set(GlassRetainedLayerKind.InteractionOptical, value)
+    var interactionOptical: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.InteractionOptical)
+        set(value) = set(GlassRetainedLayerKind.InteractionOptical, value)
 
-  var interactionRefractionDetail: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.InteractionDetail)
-    set(value) = set(GlassRetainedLayerKind.InteractionDetail, value)
+    var interactionRefractionDetail: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.InteractionDetail)
+        set(value) = set(GlassRetainedLayerKind.InteractionDetail, value)
 
-  var interactionRefractionDetailCoverage: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.InteractionDetailCoverage)
-    set(value) = set(GlassRetainedLayerKind.InteractionDetailCoverage, value)
+    var interactionRefractionDetailCoverage: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.InteractionDetailCoverage)
+        set(value) = set(GlassRetainedLayerKind.InteractionDetailCoverage, value)
 
-  var interactionRefractionComposite: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.InteractionComposite)
-    set(value) = set(GlassRetainedLayerKind.InteractionComposite, value)
+    var interactionRefractionComposite: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.InteractionComposite)
+        set(value) = set(GlassRetainedLayerKind.InteractionComposite, value)
 
-  var interactionLighting: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.InteractionLighting)
-    set(value) = set(GlassRetainedLayerKind.InteractionLighting, value)
+    var interactionLighting: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.InteractionLighting)
+        set(value) = set(GlassRetainedLayerKind.InteractionLighting, value)
 
-  var rim: GraphicsLayer?
-    get() = get(GlassRetainedLayerKind.Rim)
-    set(value) = set(GlassRetainedLayerKind.Rim, value)
+    var rim: GraphicsLayer?
+        get() = get(GlassRetainedLayerKind.Rim)
+        set(value) = set(GlassRetainedLayerKind.Rim, value)
 
-  var scaledSize: IntSize? = null
+    var scaledSize: IntSize? = null
 
-  val hasSource: Boolean get() = has(GlassRetainedLayerKind.Source)
-  val hasBlurHorizontal: Boolean get() = has(GlassRetainedLayerKind.BlurHorizontal)
-  val hasBlurred: Boolean get() = has(GlassRetainedLayerKind.Blurred)
-  val hasDepthMixed: Boolean get() = has(GlassRetainedLayerKind.DepthMixed)
-  val hasOptical: Boolean get() = has(GlassRetainedLayerKind.Optical)
-  val hasRefractionDetail: Boolean get() = has(GlassRetainedLayerKind.RefractionDetail)
-  val hasRefractionDetailCoverage: Boolean
-    get() = has(GlassRetainedLayerKind.RefractionDetailCoverage)
-  val hasRefractionComposite: Boolean get() = has(GlassRetainedLayerKind.RefractionComposite)
-  val hasInteractionOptical: Boolean get() = has(GlassRetainedLayerKind.InteractionOptical)
-  val hasInteractionRefractionDetail: Boolean
-    get() = has(GlassRetainedLayerKind.InteractionDetail)
-  val hasInteractionRefractionDetailCoverage: Boolean
-    get() = has(GlassRetainedLayerKind.InteractionDetailCoverage)
-  val hasInteractionRefractionComposite: Boolean
-    get() = has(GlassRetainedLayerKind.InteractionComposite)
-  val hasInteractionLighting: Boolean get() = has(GlassRetainedLayerKind.InteractionLighting)
-  val hasRim: Boolean get() = has(GlassRetainedLayerKind.Rim)
+    val hasSource: Boolean get() = has(GlassRetainedLayerKind.Source)
+    val hasBlurHorizontal: Boolean get() = has(GlassRetainedLayerKind.BlurHorizontal)
+    val hasBlurred: Boolean get() = has(GlassRetainedLayerKind.Blurred)
+    val hasDepthMixed: Boolean get() = has(GlassRetainedLayerKind.DepthMixed)
+    val hasOptical: Boolean get() = has(GlassRetainedLayerKind.Optical)
+    val hasRefractionDetail: Boolean get() = has(GlassRetainedLayerKind.RefractionDetail)
+    val hasRefractionDetailCoverage: Boolean
+        get() = has(GlassRetainedLayerKind.RefractionDetailCoverage)
+    val hasRefractionComposite: Boolean get() = has(GlassRetainedLayerKind.RefractionComposite)
+    val hasInteractionOptical: Boolean get() = has(GlassRetainedLayerKind.InteractionOptical)
+    val hasInteractionRefractionDetail: Boolean
+        get() = has(GlassRetainedLayerKind.InteractionDetail)
+    val hasInteractionRefractionDetailCoverage: Boolean
+        get() = has(GlassRetainedLayerKind.InteractionDetailCoverage)
+    val hasInteractionRefractionComposite: Boolean
+        get() = has(GlassRetainedLayerKind.InteractionComposite)
+    val hasInteractionLighting: Boolean get() = has(GlassRetainedLayerKind.InteractionLighting)
+    val hasRim: Boolean get() = has(GlassRetainedLayerKind.Rim)
 
-  val isEmpty: Boolean get() = groupAlpha.layer == null && retained.all { it == null }
+    val isEmpty: Boolean get() = groupAlpha.layer == null && retained.all { it == null }
 
-  fun ensureSource(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.Source, graphicsContext)
+    fun ensureSource(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.Source, graphicsContext)
 
-  fun ensureBlurred(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.Blurred, graphicsContext)
+    fun ensureBlurred(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.Blurred, graphicsContext)
 
-  fun ensureBlurHorizontal(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.BlurHorizontal, graphicsContext)
+    fun ensureBlurHorizontal(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.BlurHorizontal, graphicsContext)
 
-  fun releaseBlurIntermediates(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.BlurHorizontal, graphicsContext)
-  }
-
-  fun ensureDepthMixed(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.DepthMixed, graphicsContext)
-
-  fun ensureOptical(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.Optical, graphicsContext)
-
-  fun ensureRefractionDetail(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.RefractionDetail, graphicsContext)
-
-  fun ensureRefractionDetailCoverage(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.RefractionDetailCoverage, graphicsContext)
-
-  fun ensureRefractionComposite(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.RefractionComposite, graphicsContext)
-
-  fun prepareRefractionDetail(
-    required: Boolean,
-    graphicsContext: GraphicsContext,
-  ) {
-    if (required) ensureRefractionDetail(graphicsContext) else releaseRefractionDetail(graphicsContext)
-  }
-
-  fun ensureRim(graphicsContext: GraphicsContext): GraphicsLayer =
-    ensure(GlassRetainedLayerKind.Rim, graphicsContext)
-
-  fun prepareInteraction(
-    optics: Boolean,
-    detail: Boolean,
-    lighting: Boolean,
-    graphicsContext: GraphicsContext,
-  ) {
-    if (optics) {
-      ensure(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
-    } else {
-      release(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
+    fun releaseBlurIntermediates(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.BlurHorizontal, graphicsContext)
     }
-    if (detail) {
-      ensure(GlassRetainedLayerKind.InteractionDetail, graphicsContext)
-      ensure(GlassRetainedLayerKind.InteractionDetailCoverage, graphicsContext)
-      ensure(GlassRetainedLayerKind.InteractionComposite, graphicsContext)
-    } else {
-      releaseInteractionRefractionDetail(graphicsContext)
+
+    fun ensureDepthMixed(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.DepthMixed, graphicsContext)
+
+    fun ensureOptical(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.Optical, graphicsContext)
+
+    fun ensureRefractionDetail(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.RefractionDetail, graphicsContext)
+
+    fun ensureRefractionDetailCoverage(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.RefractionDetailCoverage, graphicsContext)
+
+    fun ensureRefractionComposite(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.RefractionComposite, graphicsContext)
+
+    fun prepareRefractionDetail(
+        required: Boolean,
+        graphicsContext: GraphicsContext,
+    ) {
+        if (required) ensureRefractionDetail(graphicsContext) else releaseRefractionDetail(graphicsContext)
     }
-    if (lighting) {
-      ensure(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
-    } else {
-      release(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
+
+    fun ensureRim(graphicsContext: GraphicsContext): GraphicsLayer =
+        ensure(GlassRetainedLayerKind.Rim, graphicsContext)
+
+    fun prepareInteraction(
+        optics: Boolean,
+        detail: Boolean,
+        lighting: Boolean,
+        graphicsContext: GraphicsContext,
+    ) {
+        if (optics) {
+            ensure(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
+        } else {
+            release(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
+        }
+        if (detail) {
+            ensure(GlassRetainedLayerKind.InteractionDetail, graphicsContext)
+            ensure(GlassRetainedLayerKind.InteractionDetailCoverage, graphicsContext)
+            ensure(GlassRetainedLayerKind.InteractionComposite, graphicsContext)
+        } else {
+            releaseInteractionRefractionDetail(graphicsContext)
+        }
+        if (lighting) {
+            ensure(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
+        } else {
+            release(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
+        }
     }
-  }
 
-  fun releaseBlurred(graphicsContext: GraphicsContext?) {
-    releaseBlurIntermediates(graphicsContext)
-    release(GlassRetainedLayerKind.Blurred, graphicsContext)
-  }
-
-  fun releaseDepthMixed(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.DepthMixed, graphicsContext)
-  }
-
-  fun releaseRim(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.Rim, graphicsContext)
-  }
-
-  fun releaseInteractionOptical(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
-  }
-
-  fun releaseInteractionLighting(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
-  }
-
-  fun releaseRefractionDetail(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.RefractionDetail, graphicsContext)
-    release(GlassRetainedLayerKind.RefractionDetailCoverage, graphicsContext)
-    release(GlassRetainedLayerKind.RefractionComposite, graphicsContext)
-  }
-
-  fun releaseInteractionRefractionDetail(graphicsContext: GraphicsContext?) {
-    release(GlassRetainedLayerKind.InteractionDetail, graphicsContext)
-    release(GlassRetainedLayerKind.InteractionDetailCoverage, graphicsContext)
-    release(GlassRetainedLayerKind.InteractionComposite, graphicsContext)
-  }
-
-  fun prepareBackdrop(
-    rim: Boolean,
-    interactionLighting: Boolean,
-    graphicsContext: GraphicsContext,
-  ) {
-    groupAlpha.release(graphicsContext)
-    release(GlassRetainedLayerKind.Source, graphicsContext)
-    releaseBlurred(graphicsContext)
-    releaseDepthMixed(graphicsContext)
-    release(GlassRetainedLayerKind.Optical, graphicsContext)
-    releaseRefractionDetail(graphicsContext)
-    prepareInteraction(
-      optics = false,
-      detail = false,
-      lighting = interactionLighting,
-      graphicsContext = graphicsContext,
-    )
-    if (rim) ensureRim(graphicsContext) else releaseRim(graphicsContext)
-  }
-
-  fun release(graphicsContext: GraphicsContext?) {
-    groupAlpha.release(graphicsContext)
-    RetainedGlassReleaseOrder.forEach { kind ->
-      releaseLayer(get(kind), owners[kind.ordinal] ?: graphicsContext)
+    fun releaseBlurred(graphicsContext: GraphicsContext?) {
+        releaseBlurIntermediates(graphicsContext)
+        release(GlassRetainedLayerKind.Blurred, graphicsContext)
     }
-    retained.fill(null)
-    owners.fill(null)
-    scaledSize = null
-  }
 
-  private operator fun get(kind: GlassRetainedLayerKind): GraphicsLayer? = retained[kind.ordinal]
-
-  /**
-   * Assigns a layer. Putting back the instance already held keeps its recorded creator, as when a
-   * recording reuses a live layer. Any other layer has none until [ensure] or [adoptSource] records one.
-   */
-  private operator fun set(kind: GlassRetainedLayerKind, layer: GraphicsLayer?) {
-    if (retained[kind.ordinal] !== layer) owners[kind.ordinal] = null
-    retained[kind.ordinal] = layer
-  }
-
-  /**
-   * Holds a source layer that a recording returned. The recording reuses the held layer, or makes
-   * a new one in [creator], whose context alone can release it.
-   */
-  fun adoptSource(layer: GraphicsLayer, creator: GraphicsContext) {
-    if (source === layer) return
-    source = layer
-    owners[GlassRetainedLayerKind.Source.ordinal] = creator
-  }
-
-  private fun has(kind: GlassRetainedLayerKind): Boolean = get(kind)?.isReleased == false
-
-  private fun ensure(
-    kind: GlassRetainedLayerKind,
-    graphicsContext: GraphicsContext,
-  ): GraphicsLayer {
-    get(kind)?.takeUnless { it.isReleased }?.let { return it }
-    return graphicsContext.createGraphicsLayer().also {
-      set(kind, it)
-      owners[kind.ordinal] = graphicsContext
+    fun releaseDepthMixed(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.DepthMixed, graphicsContext)
     }
-  }
 
-  private fun release(
-    kind: GlassRetainedLayerKind,
-    graphicsContext: GraphicsContext?,
-  ) {
-    releaseLayer(get(kind), owners[kind.ordinal] ?: graphicsContext)
-    set(kind, null)
-  }
+    fun releaseRim(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.Rim, graphicsContext)
+    }
+
+    fun releaseInteractionOptical(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.InteractionOptical, graphicsContext)
+    }
+
+    fun releaseInteractionLighting(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.InteractionLighting, graphicsContext)
+    }
+
+    fun releaseRefractionDetail(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.RefractionDetail, graphicsContext)
+        release(GlassRetainedLayerKind.RefractionDetailCoverage, graphicsContext)
+        release(GlassRetainedLayerKind.RefractionComposite, graphicsContext)
+    }
+
+    fun releaseInteractionRefractionDetail(graphicsContext: GraphicsContext?) {
+        release(GlassRetainedLayerKind.InteractionDetail, graphicsContext)
+        release(GlassRetainedLayerKind.InteractionDetailCoverage, graphicsContext)
+        release(GlassRetainedLayerKind.InteractionComposite, graphicsContext)
+    }
+
+    fun prepareBackdrop(
+        rim: Boolean,
+        interactionLighting: Boolean,
+        graphicsContext: GraphicsContext,
+    ) {
+        groupAlpha.release(graphicsContext)
+        release(GlassRetainedLayerKind.Source, graphicsContext)
+        releaseBlurred(graphicsContext)
+        releaseDepthMixed(graphicsContext)
+        release(GlassRetainedLayerKind.Optical, graphicsContext)
+        releaseRefractionDetail(graphicsContext)
+        prepareInteraction(
+            optics = false,
+            detail = false,
+            lighting = interactionLighting,
+            graphicsContext = graphicsContext,
+        )
+        if (rim) ensureRim(graphicsContext) else releaseRim(graphicsContext)
+    }
+
+    fun release(graphicsContext: GraphicsContext?) {
+        groupAlpha.release(graphicsContext)
+        RetainedGlassReleaseOrder.forEach { kind ->
+            releaseLayer(get(kind), owners[kind.ordinal] ?: graphicsContext)
+        }
+        retained.fill(null)
+        owners.fill(null)
+        scaledSize = null
+    }
+
+    private operator fun get(kind: GlassRetainedLayerKind): GraphicsLayer? = retained[kind.ordinal]
+
+    /**
+     * Assigns a layer. Putting back the instance already held keeps its recorded creator, as when a
+     * recording reuses a live layer. Any other layer has none until [ensure] or [adoptSource] records one.
+     */
+    private operator fun set(kind: GlassRetainedLayerKind, layer: GraphicsLayer?) {
+        if (retained[kind.ordinal] !== layer) owners[kind.ordinal] = null
+        retained[kind.ordinal] = layer
+    }
+
+    /**
+     * Holds a source layer that a recording returned. The recording reuses the held layer, or makes
+     * a new one in [creator], whose context alone can release it.
+     */
+    fun adoptSource(layer: GraphicsLayer, creator: GraphicsContext) {
+        if (source === layer) return
+        source = layer
+        owners[GlassRetainedLayerKind.Source.ordinal] = creator
+    }
+
+    private fun has(kind: GlassRetainedLayerKind): Boolean = get(kind)?.isReleased == false
+
+    private fun ensure(
+        kind: GlassRetainedLayerKind,
+        graphicsContext: GraphicsContext,
+    ): GraphicsLayer {
+        get(kind)?.takeUnless { it.isReleased }?.let { return it }
+        return graphicsContext.createGraphicsLayer().also {
+            set(kind, it)
+            owners[kind.ordinal] = graphicsContext
+        }
+    }
+
+    private fun release(
+        kind: GlassRetainedLayerKind,
+        graphicsContext: GraphicsContext?,
+    ) {
+        releaseLayer(get(kind), owners[kind.ordinal] ?: graphicsContext)
+        set(kind, null)
+    }
 }
 
 internal fun releaseLayer(layer: GraphicsLayer?, graphicsContext: GraphicsContext?) {
-  if (layer?.isReleased == false) {
-    graphicsContext?.releaseGraphicsLayer(layer)
-  }
+    if (layer?.isReleased == false) {
+        graphicsContext?.releaseGraphicsLayer(layer)
+    }
 }

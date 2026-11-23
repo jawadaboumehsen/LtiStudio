@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(InternalHazeApi::class)
 
 package dev.chrisbanes.haze.glass
@@ -21,100 +27,100 @@ import dev.chrisbanes.haze.asComposeRenderEffect
  * [releaseShader] drops the shader itself. They are separate because callers need each alone.
  */
 internal class InteractionEffectSlot<K : Any>(
-  private val createShader: () -> MutableRuntimeShaderRenderEffect,
+    private val createShader: () -> MutableRuntimeShaderRenderEffect,
 ) {
-  var shader: MutableRuntimeShaderRenderEffect? = null
-    private set
-  var key: K? = null
-    private set
-  var uniforms: GlassInteractionUniforms? = null
-    private set
-  var platformEffect: PlatformRenderEffect? = null
-    private set
-  var composeEffect: RenderEffect? = null
-    private set
-  var layer: GraphicsLayer? = null
-    private set
+    var shader: MutableRuntimeShaderRenderEffect? = null
+        private set
+    var key: K? = null
+        private set
+    var uniforms: GlassInteractionUniforms? = null
+        private set
+    var platformEffect: PlatformRenderEffect? = null
+        private set
+    var composeEffect: RenderEffect? = null
+        private set
+    var layer: GraphicsLayer? = null
+        private set
 
-  /** How many times [bind] rebuilt the effect, so tests can count builds per frame. */
-  var buildCount: Int = 0
-    private set
+    /** How many times [bind] rebuilt the effect, so tests can count builds per frame. */
+    var buildCount: Int = 0
+        private set
 
-  /**
-   * Rebuilds the effect when [key] or [uniforms] changed and attaches it to [layer] when it
-   * changed or [layer] is new. This is inline so a cache hit allocates no uniform lambda.
-   *
-   * With [attach] false the effect is built but left off [layer], which another effect replaces.
-   */
-  inline fun bind(
-    layer: GraphicsLayer,
-    key: K,
-    uniforms: GlassInteractionUniforms,
-    attach: Boolean = true,
-    crossinline setUniforms: RuntimeShaderUniformProvider.() -> Unit,
-  ) {
-    val currentShader = shader ?: createShader().also { shader = it }
-    val needsUpdate = key != this.key || uniforms != this.uniforms || composeEffect == null
-    if (needsUpdate) {
-      val effect = currentShader.updateUniforms { setUniforms() }
-      platformEffect = effect
-      composeEffect = effect.asComposeRenderEffect()
-      this.key = key
-      this.uniforms = uniforms
-      buildCount++
+    /**
+     * Rebuilds the effect when [key] or [uniforms] changed and attaches it to [layer] when it
+     * changed or [layer] is new. This is inline so a cache hit allocates no uniform lambda.
+     *
+     * With [attach] false the effect is built but left off [layer], which another effect replaces.
+     */
+    inline fun bind(
+        layer: GraphicsLayer,
+        key: K,
+        uniforms: GlassInteractionUniforms,
+        attach: Boolean = true,
+        crossinline setUniforms: RuntimeShaderUniformProvider.() -> Unit,
+    ) {
+        val currentShader = shader ?: createShader().also { shader = it }
+        val needsUpdate = key != this.key || uniforms != this.uniforms || composeEffect == null
+        if (needsUpdate) {
+            val effect = currentShader.updateUniforms { setUniforms() }
+            platformEffect = effect
+            composeEffect = effect.asComposeRenderEffect()
+            this.key = key
+            this.uniforms = uniforms
+            buildCount++
+        }
+        if (!attach) {
+            this.layer = null
+        } else if (needsUpdate || layer !== this.layer) {
+            layer.renderEffect = checkNotNull(composeEffect)
+            this.layer = layer
+        }
     }
-    if (!attach) {
-      this.layer = null
-    } else if (needsUpdate || layer !== this.layer) {
-      layer.renderEffect = checkNotNull(composeEffect)
-      this.layer = layer
+
+    fun clear() {
+        key = null
+        uniforms = null
+        platformEffect = null
+        composeEffect = null
     }
-  }
 
-  fun clear() {
-    key = null
-    uniforms = null
-    platformEffect = null
-    composeEffect = null
-  }
+    fun clearLayer() {
+        layer = null
+    }
 
-  fun clearLayer() {
-    layer = null
-  }
-
-  fun releaseShader() {
-    shader = null
-  }
+    fun releaseShader() {
+        shader = null
+    }
 }
 
 /** The layer, input and key an interaction stage last recorded, so unchanged input is not re-recorded. */
 internal class RecordedInteractionLayer<K : Any> {
-  var layer: GraphicsLayer? = null
-    private set
-  var input: GraphicsLayer? = null
-    private set
-  var key: K? = null
-    private set
+    var layer: GraphicsLayer? = null
+        private set
+    var input: GraphicsLayer? = null
+        private set
+    var key: K? = null
+        private set
 
-  fun needsRecord(
-    layer: GraphicsLayer,
-    input: GraphicsLayer,
-    key: K,
-    inputContentChanged: Boolean,
-  ): Boolean = layer !== this.layer ||
-    input !== this.input ||
-    key != this.key ||
-    inputContentChanged
+    fun needsRecord(
+        layer: GraphicsLayer,
+        input: GraphicsLayer,
+        key: K,
+        inputContentChanged: Boolean,
+    ): Boolean = layer !== this.layer ||
+        input !== this.input ||
+        key != this.key ||
+        inputContentChanged
 
-  fun update(layer: GraphicsLayer, input: GraphicsLayer, key: K) {
-    this.layer = layer
-    this.input = input
-    this.key = key
-  }
+    fun update(layer: GraphicsLayer, input: GraphicsLayer, key: K) {
+        this.layer = layer
+        this.input = input
+        this.key = key
+    }
 
-  fun clear() {
-    layer = null
-    input = null
-    key = null
-  }
+    fun clear() {
+        layer = null
+        input = null
+        key = null
+    }
 }

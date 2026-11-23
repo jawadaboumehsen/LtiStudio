@@ -167,10 +167,7 @@ fun MacroPipelineStudioSheet(
 }
 
 @Composable
-private fun MacroStepRow(
-    step: MacroStep,
-    onRetry: () -> Unit,
-) {
+private fun MacroStepRow(step: MacroStep, onRetry: () -> Unit) {
     val (statusColor, statusText) = when (step.status) {
         MacroStepStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant to "PENDING"
         MacroStepStatus.RUNNING -> AccentPresetColors.Cyan to "RUNNING"
@@ -217,9 +214,9 @@ private fun MacroStepRow(
                 )
             }
 
-            if (step.durationMillis > 0) {
+            if (step.durationMs > 0) {
                 Text(
-                    text = "${step.durationMillis}ms",
+                    text = "${step.durationMs}ms",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = codeFontFamily(),
                         fontSize = FontSize.Micro,

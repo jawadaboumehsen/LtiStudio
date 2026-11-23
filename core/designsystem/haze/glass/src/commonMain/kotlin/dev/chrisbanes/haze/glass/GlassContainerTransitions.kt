@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.animation.core.Animatable
@@ -15,8 +21,8 @@ import kotlinx.coroutines.Job
 
 /** Reduced motion keeps the morph but removes its elasticity (ADR-0013, Transitions). */
 internal fun glassTransitionSpec(spec: FiniteAnimationSpec<Float>, reduced: Boolean): FiniteAnimationSpec<Float> {
-  if (!reduced) return spec
-  return spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = (spec as? SpringSpec<Float>)?.stiffness ?: Spring.StiffnessMedium)
+    if (!reduced) return spec
+    return spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = (spec as? SpringSpec<Float>)?.stiffness ?: Spring.StiffnessMedium)
 }
 
 /**
@@ -24,39 +30,39 @@ internal fun glassTransitionSpec(spec: FiniteAnimationSpec<Float>, reduced: Bool
  * least 1px so the field stays valid; colours clamp to their endpoints.
  */
 internal fun lerpGlassMergedMember(from: GlassMergedMember, to: GlassMergedMember, fraction: Float): GlassMergedMember {
-  fun lerp(start: Float, stop: Float) = start + (stop - start) * fraction
-  fun lerp(start: Rect, stop: Rect): Rect {
-    val left = lerp(start.left, stop.left)
-    val top = lerp(start.top, stop.top)
-    return Rect(left, top, maxOf(lerp(start.right, stop.right), left + 1f), maxOf(lerp(start.bottom, stop.bottom), top + 1f))
-  }
-  val colour = fraction.coerceIn(0f, 1f)
-  return GlassMergedMember(
-    rect = lerp(from.rect, to.rect),
-    cornerRadii = CornerRadii(
-      lerp(from.cornerRadii.topLeft, to.cornerRadii.topLeft).coerceAtLeast(0f),
-      lerp(from.cornerRadii.topRight, to.cornerRadii.topRight).coerceAtLeast(0f),
-      lerp(from.cornerRadii.bottomRight, to.cornerRadii.bottomRight).coerceAtLeast(0f),
-      lerp(from.cornerRadii.bottomLeft, to.cornerRadii.bottomLeft).coerceAtLeast(0f),
-    ),
-    tint = lerp(from.tint, to.tint, colour),
-    backgroundColor = lerp(from.backgroundColor, to.backgroundColor, colour),
-    fallbackBaseColor = to.fallbackBaseColor,
-    layoutRect = lerp(from.layoutRect, to.layoutRect),
-  )
+    fun lerp(start: Float, stop: Float) = start + (stop - start) * fraction
+    fun lerp(start: Rect, stop: Rect): Rect {
+        val left = lerp(start.left, stop.left)
+        val top = lerp(start.top, stop.top)
+        return Rect(left, top, maxOf(lerp(start.right, stop.right), left + 1f), maxOf(lerp(start.bottom, stop.bottom), top + 1f))
+    }
+    val colour = fraction.coerceIn(0f, 1f)
+    return GlassMergedMember(
+        rect = lerp(from.rect, to.rect),
+        cornerRadii = CornerRadii(
+            lerp(from.cornerRadii.topLeft, to.cornerRadii.topLeft).coerceAtLeast(0f),
+            lerp(from.cornerRadii.topRight, to.cornerRadii.topRight).coerceAtLeast(0f),
+            lerp(from.cornerRadii.bottomRight, to.cornerRadii.bottomRight).coerceAtLeast(0f),
+            lerp(from.cornerRadii.bottomLeft, to.cornerRadii.bottomLeft).coerceAtLeast(0f),
+        ),
+        tint = lerp(from.tint, to.tint, colour),
+        backgroundColor = lerp(from.backgroundColor, to.backgroundColor, colour),
+        fallbackBaseColor = to.fallbackBaseColor,
+        layoutRect = lerp(from.layoutRect, to.layoutRect),
+    )
 }
 
 /** This member's layout shape and colours, without interaction. */
 internal fun GlassMemberSnapshot.shape(): GlassMergedMember =
-  GlassMergedMember(layoutRect, material.cornerRadii, material.tint, material.backgroundColor, fallbackBaseColor = material.fallbackBaseColor)
+    GlassMergedMember(layoutRect, material.cornerRadii, material.tint, material.backgroundColor, fallbackBaseColor = material.fallbackBaseColor)
 
 /**
  * What this member draws: its interaction-transformed rect, with its corners scaled as the
  * renderer scales them, sampling through its [sampleLayoutRect][GlassMemberSnapshot.sampleLayoutRect].
  */
 internal fun GlassMemberSnapshot.drawnShape(): GlassMergedMember {
-  val scale = minOf(rect.width / layoutRect.width, rect.height / layoutRect.height)
-  return GlassMergedMember(rect, material.cornerRadii * scale, material.tint, material.backgroundColor, fallbackBaseColor = material.fallbackBaseColor, layoutRect = sampleLayoutRect)
+    val scale = minOf(rect.width / layoutRect.width, rect.height / layoutRect.height)
+    return GlassMergedMember(rect, material.cornerRadii * scale, material.tint, material.backgroundColor, fallbackBaseColor = material.fallbackBaseColor, layoutRect = sampleLayoutRect)
 }
 
 /**
@@ -64,8 +70,8 @@ internal fun GlassMemberSnapshot.drawnShape(): GlassMergedMember {
  * starts or ends where a pressed neighbour draws rather than at its layout rect.
  */
 internal fun GlassMemberSnapshot.morphedFrom(from: GlassMemberSnapshot, fraction: Float): Pair<Rect, ResolvedGlassStyle> {
-  val shape = lerpGlassMergedMember(from.drawnShape(), shape(), fraction)
-  return shape.rect to material.copy(cornerRadii = shape.cornerRadii, tint = shape.tint, backgroundColor = shape.backgroundColor, fallbackBaseColor = shape.fallbackBaseColor)
+    val shape = lerpGlassMergedMember(from.drawnShape(), shape(), fraction)
+    return shape.rect to material.copy(cornerRadii = shape.cornerRadii, tint = shape.tint, backgroundColor = shape.backgroundColor, fallbackBaseColor = shape.fallbackBaseColor)
 }
 
 /**
@@ -78,56 +84,56 @@ internal fun GlassMemberSnapshot.morphedFrom(from: GlassMemberSnapshot, fraction
  * still hold. Every live member of that cluster must also resolve [member]'s sources.
  */
 internal fun resolveGlassNeighbour(
-  member: GlassMemberSnapshot,
-  ordered: List<GlassMemberSnapshot>,
-  mergeDistancePx: Float,
-  excluded: Set<Any> = emptySet(),
+    member: GlassMemberSnapshot,
+    ordered: List<GlassMemberSnapshot>,
+    mergeDistancePx: Float,
+    excluded: Set<Any> = emptySet(),
 ): GlassMemberSnapshot? {
-  // A group counts as one member, so a candidate is as near as its unit's bounds.
-  val unitBounds = glassUnitLayoutBounds(ordered, excluded)
-  fun GlassMemberSnapshot.gap() = glassMemberGap(member.layoutRect, unitBounds[identity] ?: layoutRect)
-  return ordered
-    .filter { candidate ->
-      candidate.identity is GlassMemberNode && candidate.identity !== member.identity && candidate.identity !in excluded &&
-        member.canTransitionWith(candidate) &&
-        // Members of one group draw as one shape at any distance.
-        (candidate.isGroupedWith(member) || candidate.gap() < mergeDistancePx)
-    }
-    // Same group first, then nearest; the first candidate that can cluster with the member wins.
-    .sortedWith(compareBy({ !it.isGroupedWith(member) }, { it.gap() }))
-    .firstOrNull { candidate ->
-      val probe = ordered.map {
-        if (it.identity === member.identity) it.copy(rect = candidate.rect, layoutRect = candidate.layoutRect, key = candidate.key, link = candidate.identity) else it
-      }
-      clusterGlassMembers(probe, mergeDistancePx).surfaces.any { cluster ->
-        cluster.members.any { it.identity === member.identity } && cluster.members.any { it.identity === candidate.identity } &&
-          // A cluster mixing resolved sources draws its members separately, so the morph would not show.
-          // Ghosts draw through their anchor, so only live members count.
-          cluster.members.filter { it.identity is GlassMemberNode }.all { it.drawsSourcesOf(member) }
-      }
-    }
+    // A group counts as one member, so a candidate is as near as its unit's bounds.
+    val unitBounds = glassUnitLayoutBounds(ordered, excluded)
+    fun GlassMemberSnapshot.gap() = glassMemberGap(member.layoutRect, unitBounds[identity] ?: layoutRect)
+    return ordered
+        .filter { candidate ->
+            candidate.identity is GlassMemberNode && candidate.identity !== member.identity && candidate.identity !in excluded &&
+                member.canTransitionWith(candidate) &&
+                // Members of one group draw as one shape at any distance.
+                (candidate.isGroupedWith(member) || candidate.gap() < mergeDistancePx)
+        }
+        // Same group first, then nearest; the first candidate that can cluster with the member wins.
+        .sortedWith(compareBy({ !it.isGroupedWith(member) }, { it.gap() }))
+        .firstOrNull { candidate ->
+            val probe = ordered.map {
+                if (it.identity === member.identity) it.copy(rect = candidate.rect, layoutRect = candidate.layoutRect, key = candidate.key, link = candidate.identity) else it
+            }
+            clusterGlassMembers(probe, mergeDistancePx).surfaces.any { cluster ->
+                cluster.members.any { it.identity === member.identity } && cluster.members.any { it.identity === candidate.identity } &&
+                    // A cluster mixing resolved sources draws its members separately, so the morph would not show.
+                    // Ghosts draw through their anchor, so only live members count.
+                    cluster.members.filter { it.identity is GlassMemberNode }.all { it.drawsSourcesOf(member) }
+            }
+        }
 }
 
 /** The nearest live member whose input can draw a [Materialize][GlassMemberTransition.Materialize] ghost. */
 internal fun resolveGlassBorrowedAnchor(member: GlassMemberSnapshot, ordered: List<GlassMemberSnapshot>): GlassMemberSnapshot? = ordered
-  .filter {
-    it.identity is GlassMemberNode && it.identity !== member.identity &&
-      it.key.input == member.key.input && it.key.expandLayerBounds == member.key.expandLayerBounds
-  }
-  .minByOrNull { glassMemberGap(member.layoutRect, it.layoutRect) }
+    .filter {
+        it.identity is GlassMemberNode && it.identity !== member.identity &&
+            it.key.input == member.key.input && it.key.expandLayerBounds == member.key.expandLayerBounds
+    }
+    .minByOrNull { glassMemberGap(member.layoutRect, it.layoutRect) }
 
 /**
  * Whether this member can grow out of or retract into [neighbour] as one merged surface. The
  * container checks it when a transition starts and on every pass while it runs.
  */
 internal fun GlassMemberSnapshot.canTransitionWith(neighbour: GlassMemberSnapshot): Boolean =
-  // Morphs interpolate both layout rects, so a collapsed member cannot take part.
-  layoutRect.isValidGlassMember() && neighbour.layoutRect.isValidGlassMember() &&
-    translationOnly && neighbour.translationOnly &&
-    // A leaving member's key was resolved at the optical size it set, so ignore that value.
-    neighbour.key == key.copy(resolvedOptics = neighbour.key.resolvedOptics) &&
-    // A surface resolving other sources would draw both members separately.
-    neighbour.drawsSourcesOf(this)
+    // Morphs interpolate both layout rects, so a collapsed member cannot take part.
+    layoutRect.isValidGlassMember() && neighbour.layoutRect.isValidGlassMember() &&
+        translationOnly && neighbour.translationOnly &&
+        // A leaving member's key was resolved at the optical size it set, so ignore that value.
+        neighbour.key == key.copy(resolvedOptics = neighbour.key.resolvedOptics) &&
+        // A surface resolving other sources would draw both members separately.
+        neighbour.drawsSourcesOf(this)
 
 /**
  * Whether this member's input draws [other]'s sources, so one surface can draw both. Content
@@ -135,12 +141,12 @@ internal fun GlassMemberSnapshot.canTransitionWith(neighbour: GlassMemberSnapsho
  * must match.
  */
 internal fun GlassMemberSnapshot.drawsSourcesOf(other: GlassMemberSnapshot): Boolean =
-  other.key.input is HazeInput.Content || sourceSelection == other.sourceSelection
+    other.key.input is HazeInput.Content || sourceSelection == other.sourceSelection
 
 /** A member's glass appearing: grows out of [neighbour], or fades in when it is null. */
 internal class GlassMemberAttach(val neighbour: GlassMemberNode?) {
-  val progress = Animatable(0f)
-  var job: Job? = null
+    val progress = Animatable(0f)
+    var job: Job? = null
 }
 
 /**
@@ -149,18 +155,18 @@ internal class GlassMemberAttach(val neighbour: GlassMemberNode?) {
  * draws it; the ghost ends when [anchor] leaves.
  */
 internal class GlassMemberGhost(val last: GlassMemberSnapshot, val neighbour: GlassMemberNode?, val anchor: GlassMemberNode) {
-  val progress = Animatable(1f)
-  var job: Job? = null
+    val progress = Animatable(1f)
+    var job: Job? = null
 
-  fun snapshot(neighbourSnapshot: GlassMemberSnapshot?): GlassMemberSnapshot {
-    val drawn = last.drawnShape()
-    if (neighbourSnapshot != null) {
-      // The neighbour's live key and material keep the link as the optical size changes.
-      val shape = lerpGlassMergedMember(neighbourSnapshot.drawnShape(), drawn, progress.value)
-      val merged = neighbourSnapshot.material.copy(cornerRadii = shape.cornerRadii, tint = shape.tint, backgroundColor = shape.backgroundColor, fallbackBaseColor = shape.fallbackBaseColor)
-      return GlassMemberSnapshot(this, shape.rect, neighbourSnapshot.key, merged, true, shape.rect, link = neighbour, sampleLayoutRect = shape.layoutRect, groupKey = last.groupKey, shape = last.shape)
+    fun snapshot(neighbourSnapshot: GlassMemberSnapshot?): GlassMemberSnapshot {
+        val drawn = last.drawnShape()
+        if (neighbourSnapshot != null) {
+            // The neighbour's live key and material keep the link as the optical size changes.
+            val shape = lerpGlassMergedMember(neighbourSnapshot.drawnShape(), drawn, progress.value)
+            val merged = neighbourSnapshot.material.copy(cornerRadii = shape.cornerRadii, tint = shape.tint, backgroundColor = shape.backgroundColor, fallbackBaseColor = shape.fallbackBaseColor)
+            return GlassMemberSnapshot(this, shape.rect, neighbourSnapshot.key, merged, true, shape.rect, link = neighbour, sampleLayoutRect = shape.layoutRect, groupKey = last.groupKey, shape = last.shape)
+        }
+        val alpha = last.material.alpha * progress.value.coerceIn(0f, 1f)
+        return GlassMemberSnapshot(this, drawn.rect, last.key, last.material.copy(cornerRadii = drawn.cornerRadii, alpha = alpha), true, drawn.rect, fading = true, sampleLayoutRect = drawn.layoutRect, groupKey = last.groupKey, shape = last.shape)
     }
-    val alpha = last.material.alpha * progress.value.coerceIn(0f, 1f)
-    return GlassMemberSnapshot(this, drawn.rect, last.key, last.material.copy(cornerRadii = drawn.cornerRadii, alpha = alpha), true, drawn.rect, fading = true, sampleLayoutRect = drawn.layoutRect, groupKey = last.groupKey, shape = last.shape)
-  }
 }

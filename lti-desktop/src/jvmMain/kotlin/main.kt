@@ -440,7 +440,7 @@ fun main(args: Array<String>) {
                                 )
                             }
                             val diagnoses = remember(sampleLogs) {
-                                org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer().analyze(
+                                org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer.analyze(
                                     org.ide.lti.core.domain.copilot.CrashSource.LOGCAT,
                                     sampleLogs,
                                 )

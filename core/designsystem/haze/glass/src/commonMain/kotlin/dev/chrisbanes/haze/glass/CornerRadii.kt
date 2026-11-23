@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,159 +18,159 @@ import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.min
 
 internal data class CornerRadii(
-  val topLeft: Float,
-  val topRight: Float,
-  val bottomRight: Float,
-  val bottomLeft: Float,
+    val topLeft: Float,
+    val topRight: Float,
+    val bottomRight: Float,
+    val bottomLeft: Float,
 ) {
-  fun isZero(): Boolean = this == zero
+    fun isZero(): Boolean = this == zero
 
-  companion object {
-    val zero: CornerRadii = CornerRadii(0f, 0f, 0f, 0f)
-  }
+    companion object {
+        val zero: CornerRadii = CornerRadii(0f, 0f, 0f, 0f)
+    }
 }
 
 internal operator fun CornerRadii.times(scale: Float): CornerRadii = CornerRadii(
-  topLeft = topLeft * scale,
-  topRight = topRight * scale,
-  bottomRight = bottomRight * scale,
-  bottomLeft = bottomLeft * scale,
+    topLeft = topLeft * scale,
+    topRight = topRight * scale,
+    bottomRight = bottomRight * scale,
+    bottomLeft = bottomLeft * scale,
 )
 
 internal fun RoundedCornerShape.toCornerRadiiPx(
-  layerSize: Size,
-  density: Density,
-  layoutDirection: LayoutDirection,
+    layerSize: Size,
+    density: Density,
+    layoutDirection: LayoutDirection,
 ): CornerRadii {
-  val topStartPx = topStart.toPx(layerSize, density)
-  val topEndPx = topEnd.toPx(layerSize, density)
-  val bottomEndPx = bottomEnd.toPx(layerSize, density)
-  val bottomStartPx = bottomStart.toPx(layerSize, density)
-  require(topStartPx >= 0f && topEndPx >= 0f && bottomEndPx >= 0f && bottomStartPx >= 0f) {
-    "Corner size in Px can't be negative(topStart = $topStartPx, topEnd = $topEndPx, " +
-      "bottomEnd = $bottomEndPx, bottomStart = $bottomStartPx)!"
-  }
-  return toPhysicalCornerRadiiPx(
-    topStartPx,
-    topEndPx,
-    bottomEndPx,
-    bottomStartPx,
-    layerSize,
-    layoutDirection,
-  )
+    val topStartPx = topStart.toPx(layerSize, density)
+    val topEndPx = topEnd.toPx(layerSize, density)
+    val bottomEndPx = bottomEnd.toPx(layerSize, density)
+    val bottomStartPx = bottomStart.toPx(layerSize, density)
+    require(topStartPx >= 0f && topEndPx >= 0f && bottomEndPx >= 0f && bottomStartPx >= 0f) {
+        "Corner size in Px can't be negative(topStart = $topStartPx, topEnd = $topEndPx, " +
+            "bottomEnd = $bottomEndPx, bottomStart = $bottomStartPx)!"
+    }
+    return toPhysicalCornerRadiiPx(
+        topStartPx,
+        topEndPx,
+        bottomEndPx,
+        bottomStartPx,
+        layerSize,
+        layoutDirection,
+    )
 }
 
 internal fun RoundedCornerShape.toValidCornerRadiiPxOrNull(
-  layerSize: Size,
-  density: Density,
-  layoutDirection: LayoutDirection,
+    layerSize: Size,
+    density: Density,
+    layoutDirection: LayoutDirection,
 ): CornerRadii? {
-  val topStartPx = topStart.toPx(layerSize, density)
-  val topEndPx = topEnd.toPx(layerSize, density)
-  val bottomEndPx = bottomEnd.toPx(layerSize, density)
-  val bottomStartPx = bottomStart.toPx(layerSize, density)
-  if (
-    !topStartPx.isFinite() || !topEndPx.isFinite() ||
-    !bottomEndPx.isFinite() || !bottomStartPx.isFinite()
-  ) {
-    return null
-  }
-  // Negative radii, such as animation overshoot, are treated as square corners.
-  return toPhysicalCornerRadiiPx(
-    topStartPx.coerceAtLeast(0f),
-    topEndPx.coerceAtLeast(0f),
-    bottomEndPx.coerceAtLeast(0f),
-    bottomStartPx.coerceAtLeast(0f),
-    layerSize,
-    layoutDirection,
-  )
+    val topStartPx = topStart.toPx(layerSize, density)
+    val topEndPx = topEnd.toPx(layerSize, density)
+    val bottomEndPx = bottomEnd.toPx(layerSize, density)
+    val bottomStartPx = bottomStart.toPx(layerSize, density)
+    if (
+        !topStartPx.isFinite() || !topEndPx.isFinite() ||
+        !bottomEndPx.isFinite() || !bottomStartPx.isFinite()
+    ) {
+        return null
+    }
+    // Negative radii, such as animation overshoot, are treated as square corners.
+    return toPhysicalCornerRadiiPx(
+        topStartPx.coerceAtLeast(0f),
+        topEndPx.coerceAtLeast(0f),
+        bottomEndPx.coerceAtLeast(0f),
+        bottomStartPx.coerceAtLeast(0f),
+        layerSize,
+        layoutDirection,
+    )
 }
 
 /** Falls back from an invalid or missing shape to [GlassDefaults.shape], then to square corners. */
 internal fun RoundedCornerShape?.resolveCornerRadiiPx(
-  layerSize: Size,
-  density: Density,
-  layoutDirection: LayoutDirection,
+    layerSize: Size,
+    density: Density,
+    layoutDirection: LayoutDirection,
 ): CornerRadii = this?.toValidCornerRadiiPxOrNull(layerSize, density, layoutDirection)
-  ?.takeIf { it.isFiniteAndNonNegative() }
-  ?: GlassDefaults.shape.toCornerRadiiPx(layerSize, density, layoutDirection)
-    .takeIf { it.isFiniteAndNonNegative() }
-  ?: CornerRadii.zero
+    ?.takeIf { it.isFiniteAndNonNegative() }
+    ?: GlassDefaults.shape.toCornerRadiiPx(layerSize, density, layoutDirection)
+        .takeIf { it.isFiniteAndNonNegative() }
+    ?: CornerRadii.zero
 
 private fun toPhysicalCornerRadiiPx(
-  initialTopStartPx: Float,
-  initialTopEndPx: Float,
-  initialBottomEndPx: Float,
-  initialBottomStartPx: Float,
-  layerSize: Size,
-  layoutDirection: LayoutDirection,
+    initialTopStartPx: Float,
+    initialTopEndPx: Float,
+    initialBottomEndPx: Float,
+    initialBottomStartPx: Float,
+    layerSize: Size,
+    layoutDirection: LayoutDirection,
 ): CornerRadii {
-  var topStartPx = initialTopStartPx
-  var topEndPx = initialTopEndPx
-  var bottomEndPx = initialBottomEndPx
-  var bottomStartPx = initialBottomStartPx
-  val minDimension = min(layerSize.width, layerSize.height)
+    var topStartPx = initialTopStartPx
+    var topEndPx = initialTopEndPx
+    var bottomEndPx = initialBottomEndPx
+    var bottomStartPx = initialBottomStartPx
+    val minDimension = min(layerSize.width, layerSize.height)
 
-  if (topStartPx + bottomStartPx > minDimension) {
-    val scale = minDimension / (topStartPx + bottomStartPx)
-    topStartPx *= scale
-    bottomStartPx *= scale
-  }
-  if (topEndPx + bottomEndPx > minDimension) {
-    val scale = minDimension / (topEndPx + bottomEndPx)
-    topEndPx *= scale
-    bottomEndPx *= scale
-  }
-  val physicalRadii = if (layoutDirection == LayoutDirection.Ltr) {
-    CornerRadii(
-      topLeft = topStartPx,
-      topRight = topEndPx,
-      bottomRight = bottomEndPx,
-      bottomLeft = bottomStartPx,
+    if (topStartPx + bottomStartPx > minDimension) {
+        val scale = minDimension / (topStartPx + bottomStartPx)
+        topStartPx *= scale
+        bottomStartPx *= scale
+    }
+    if (topEndPx + bottomEndPx > minDimension) {
+        val scale = minDimension / (topEndPx + bottomEndPx)
+        topEndPx *= scale
+        bottomEndPx *= scale
+    }
+    val physicalRadii = if (layoutDirection == LayoutDirection.Ltr) {
+        CornerRadii(
+            topLeft = topStartPx,
+            topRight = topEndPx,
+            bottomRight = bottomEndPx,
+            bottomLeft = bottomStartPx,
+        )
+    } else {
+        CornerRadii(
+            topLeft = topEndPx,
+            topRight = topStartPx,
+            bottomRight = bottomStartPx,
+            bottomLeft = bottomEndPx,
+        )
+    }
+
+    var scale = edgeScale(layerSize.width, physicalRadii.topLeft, physicalRadii.topRight)
+    scale = min(scale, edgeScale(layerSize.height, physicalRadii.topRight, physicalRadii.bottomRight))
+    scale = min(scale, edgeScale(layerSize.width, physicalRadii.bottomRight, physicalRadii.bottomLeft))
+    scale = min(scale, edgeScale(layerSize.height, physicalRadii.bottomLeft, physicalRadii.topLeft))
+
+    if (scale == 1.0) return physicalRadii
+
+    return CornerRadii(
+        topLeft = (physicalRadii.topLeft.toDouble() * scale).toFloat(),
+        topRight = (physicalRadii.topRight.toDouble() * scale).toFloat(),
+        bottomRight = (physicalRadii.bottomRight.toDouble() * scale).toFloat(),
+        bottomLeft = (physicalRadii.bottomLeft.toDouble() * scale).toFloat(),
     )
-  } else {
-    CornerRadii(
-      topLeft = topEndPx,
-      topRight = topStartPx,
-      bottomRight = bottomStartPx,
-      bottomLeft = bottomEndPx,
-    )
-  }
-
-  var scale = edgeScale(layerSize.width, physicalRadii.topLeft, physicalRadii.topRight)
-  scale = min(scale, edgeScale(layerSize.height, physicalRadii.topRight, physicalRadii.bottomRight))
-  scale = min(scale, edgeScale(layerSize.width, physicalRadii.bottomRight, physicalRadii.bottomLeft))
-  scale = min(scale, edgeScale(layerSize.height, physicalRadii.bottomLeft, physicalRadii.topLeft))
-
-  if (scale == 1.0) return physicalRadii
-
-  return CornerRadii(
-    topLeft = (physicalRadii.topLeft.toDouble() * scale).toFloat(),
-    topRight = (physicalRadii.topRight.toDouble() * scale).toFloat(),
-    bottomRight = (physicalRadii.bottomRight.toDouble() * scale).toFloat(),
-    bottomLeft = (physicalRadii.bottomLeft.toDouble() * scale).toFloat(),
-  )
 }
 
 internal fun CornerRadii.isFiniteAndNonNegative(): Boolean =
-  topLeft.isFinite() && topLeft >= 0f &&
-    topRight.isFinite() && topRight >= 0f &&
-    bottomRight.isFinite() && bottomRight >= 0f &&
-    bottomLeft.isFinite() && bottomLeft >= 0f
+    topLeft.isFinite() && topLeft >= 0f &&
+        topRight.isFinite() && topRight >= 0f &&
+        bottomRight.isFinite() && bottomRight >= 0f &&
+        bottomLeft.isFinite() && bottomLeft >= 0f
 
 private fun edgeScale(limit: Float, first: Float, second: Float): Double {
-  val doubleLimit = limit.toDouble()
-  val sum = first.toDouble() + second.toDouble()
-  return if (sum > doubleLimit) doubleLimit / sum else 1.0
+    val doubleLimit = limit.toDouble()
+    val sum = first.toDouble() + second.toDouble()
+    return if (sum > doubleLimit) doubleLimit / sum else 1.0
 }
 
 internal fun CornerRadii.toRoundRect(size: Size): RoundRect = RoundRect(
-  left = 0f,
-  top = 0f,
-  right = size.width,
-  bottom = size.height,
-  topLeftCornerRadius = CornerRadius(topLeft),
-  topRightCornerRadius = CornerRadius(topRight),
-  bottomRightCornerRadius = CornerRadius(bottomRight),
-  bottomLeftCornerRadius = CornerRadius(bottomLeft),
+    left = 0f,
+    top = 0f,
+    right = size.width,
+    bottom = size.height,
+    topLeftCornerRadius = CornerRadius(topLeft),
+    topRightCornerRadius = CornerRadius(topRight),
+    bottomRightCornerRadius = CornerRadius(bottomRight),
+    bottomLeftCornerRadius = CornerRadius(bottomLeft),
 )

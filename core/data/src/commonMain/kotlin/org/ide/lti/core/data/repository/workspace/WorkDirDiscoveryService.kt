@@ -93,7 +93,9 @@ public class WorkDirDiscoveryService(
             try {
                 val candidate = basePathOverride.toPath()
                 if (safeExists(candidate)) return candidate
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                // Ignore invalid or non-existent path overrides
+            }
         }
 
         val env = environmentIdOverride ?: environmentId

@@ -21,54 +21,9 @@ object PartitionTreeParser {
      * or standard `fs_config` format:
      * `path uid gid mode capabilities`
      */
-    fun parseManifest(
-        partitionName: String,
-        filesystem: String,
-        manifestLines: List<String>,
-    ): PartitionImageMetadata {
-        val rootChildren = mutableListOf<PartitionNode>()
-        var totalSize = 0L
-        var totalCount = 0
-
-        for (rawLine in manifestLines) {
-            val line = rawLine.trim()
-            if (line.isEmpty() || line.startsWith("#")) continue
-
-            val tokens = line.split(Regex("""\s+"""))
-            if (tokens.isEmpty()) continue
-
-            val fullPath = tokens[0].removePrefix("/")
-            if (fullPath.isEmpty()) continue
-
-            val segments = fullPath.split("/")
-            val fileName = segments.last()
-            val isDir = fullPath.endsWith("/") || (tokens.size > 1 && tokens[1].startsWith("040"))
-
-            val mode = if (tokens.size > 1) tokens[1] else "0644"
-            val selinux = if (tokens.size > 2 && tokens[2].contains(":")) tokens[2] else "u:object_r:system_file:s0"
-            val size = if (tokens.size > 3) tokens[3].toLongOrNull() ?: 0L else 0L
-            val linkTarget = if (tokens.size > 4) tokens[4] else null
-
-            val nodeType = when {
-                linkTarget != null -> PartitionNodeType.SYMLINK
-                isDir -> PartitionNodeType.DIRECTORY
-                else -> PartitionNodeType.REGULAR_FILE
-            }
-
-            totalSize += size
-            totalCount++
-
-            val node = PartitionNode(
-                path = fullPath,
-                name = fileName,
-                type = nodeType,
-                sizeBytes = size,
-                permissions = mode,
-                selinuxContext = selinux,
-                targetLink = linkTarget,
-            )
-            rootChildren.add(node)
-        }
+    fun parseManifest(partitionName: String, filesystem: String, manifestLines: List<String>): PartitionImageMetadata {
+        val rootChildren = manifestLines.mapNotNull { parseLine(it) }
+        val totalSize = rootChildren.sumOf { it.sizeBytes }
 
         val rootNode = PartitionNode(
             path = partitionName,
@@ -82,8 +37,42 @@ object PartitionTreeParser {
             partitionName = partitionName,
             filesystem = filesystem,
             totalSizeBytes = totalSize,
-            totalFiles = totalCount,
+            totalFiles = rootChildren.size,
             rootNode = rootNode,
+        )
+    }
+
+    private fun parseLine(rawLine: String): PartitionNode? {
+        val line = rawLine.trim()
+        val tokens = if (line.isEmpty() || line.startsWith("#")) {
+            emptyList()
+        } else {
+            line.split(Regex("""\s+""")).filter { it.isNotEmpty() }
+        }
+        val fullPath = tokens.firstOrNull()?.removePrefix("/") ?: ""
+        if (fullPath.isEmpty()) return null
+
+        val fileName = fullPath.split("/").last()
+        val isDir = fullPath.endsWith("/") || (tokens.size > 1 && tokens[1].startsWith("040"))
+        val mode = tokens.getOrNull(1) ?: "0644"
+        val selinux = tokens.getOrNull(2)?.takeIf { it.contains(":") } ?: "u:object_r:system_file:s0"
+        val size = tokens.getOrNull(3)?.toLongOrNull() ?: 0L
+        val linkTarget = tokens.getOrNull(4)
+
+        val nodeType = when {
+            linkTarget != null -> PartitionNodeType.SYMLINK
+            isDir -> PartitionNodeType.DIRECTORY
+            else -> PartitionNodeType.REGULAR_FILE
+        }
+
+        return PartitionNode(
+            path = fullPath,
+            name = fileName,
+            type = nodeType,
+            sizeBytes = size,
+            permissions = mode,
+            selinuxContext = selinux,
+            targetLink = linkTarget,
         )
     }
 }

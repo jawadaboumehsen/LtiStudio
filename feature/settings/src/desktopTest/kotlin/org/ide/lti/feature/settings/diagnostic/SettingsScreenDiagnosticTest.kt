@@ -47,7 +47,11 @@ class SettingsScreenDiagnosticTest {
         val scrollState = ScrollState(0)
         setContent {
             LtiTheme(appTheme = AppTheme.Dark, appearance = Appearance(textScale = 1.25f)) {
-                SettingsScreenContent(onBackClick = {}, appSettingsState = settingsState, appearanceScrollState = scrollState)
+                SettingsScreenContent(
+                    onBackClick = {},
+                    appSettingsState = settingsState,
+                    appearanceScrollState = scrollState,
+                )
             }
         }
 

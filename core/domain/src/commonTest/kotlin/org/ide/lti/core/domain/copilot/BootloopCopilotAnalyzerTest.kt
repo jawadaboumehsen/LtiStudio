@@ -9,19 +9,22 @@ package org.ide.lti.core.domain.copilot
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BootloopCopilotAnalyzerTest {
 
-    private val analyzer = BootloopCopilotAnalyzer()
+    private val analyzer = BootloopCopilotAnalyzer
 
     @Test
     fun parseSepolicyDenialsGeneratesCleanAospRules() {
         val lines = listOf(
-            """type=1400 audit(1710000000.123:45): avc:  denied  { read } for  pid=1234 comm="cameraserver" path="/dev/v4l-subdev0" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 tclass=chr_file permissive=0""",
-            """type=1400 audit(1710000000.124:46): avc:  denied  { open ioctl } for  pid=1234 comm="cameraserver" path="/dev/v4l-subdev0" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 tclass=chr_file permissive=0""",
+            "type=1400 audit(1710000000.123:45): avc:  denied  { read } for  pid=1234 comm=\"cameraserver\" " +
+                "path=\"/dev/v4l-subdev0\" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 " +
+                "tclass=chr_file permissive=0",
+            "type=1400 audit(1710000000.124:46): avc:  denied  { open ioctl } for  pid=1234 comm=\"cameraserver\" " +
+                "path=\"/dev/v4l-subdev0\" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 " +
+                "tclass=chr_file permissive=0",
         )
 
         val rules = analyzer.parseSepolicyDenials(lines)
@@ -41,9 +44,12 @@ class BootloopCopilotAnalyzerTest {
     fun analyzeDetectsFatalSignal11InSystemServer() {
         val lines = listOf(
             "03-25 12:00:01.100  1000  1000 I SystemServer: Init starting",
-            "03-25 12:00:02.345  1000  1000 F libc    : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0 in tid 1000 (system_server)",
-            "03-25 12:00:02.350   500   500 I DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***",
-            "03-25 12:00:02.351   500   500 I DEBUG   : pid: 1000, tid: 1000, name: system_server  >>> system_server <<<",
+            "03-25 12:00:02.345  1000  1000 F libc    : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), " +
+                "fault addr 0x0 in tid 1000 (system_server)",
+            "03-25 12:00:02.350   500   500 I DEBUG   : " +
+                "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***",
+            "03-25 12:00:02.351   500   500 I DEBUG   : " +
+                "pid: 1000, tid: 1000, name: system_server  >>> system_server <<<",
         )
 
         val diagnoses = analyzer.analyze(CrashSource.LOGCAT, lines)
@@ -58,8 +64,10 @@ class BootloopCopilotAnalyzerTest {
     @Test
     fun analyzeDetectsWatchdogKillingSystemProcess() {
         val lines = listOf(
-            "03-25 12:05:00.000  1000  1050 W Watchdog: *** WATCHDOG KILLING SYSTEM PROCESS: Blocked in handler on ActivityManager (ActivityManager)",
-            "03-25 12:05:00.001  1000  1050 W Watchdog: ActivityManager resolving binder call to android.hardware.camera",
+            "03-25 12:05:00.000  1000  1050 W Watchdog: *** WATCHDOG KILLING SYSTEM PROCESS: " +
+                "Blocked in handler on ActivityManager (ActivityManager)",
+            "03-25 12:05:00.001  1000  1050 W Watchdog: " +
+                "ActivityManager resolving binder call to android.hardware.camera",
         )
 
         val diagnoses = analyzer.analyze(CrashSource.LOGCAT, lines)
@@ -74,7 +82,8 @@ class BootloopCopilotAnalyzerTest {
     @Test
     fun analyzeDetectsMissingHalService() {
         val lines = listOf(
-            "03-25 12:01:10.123  1000  1000 E ServiceManager: Service android.hardware.biometrics.face.IFace/default does not exist",
+            "03-25 12:01:10.123  1000  1000 E ServiceManager: " +
+                "Service android.hardware.biometrics.face.IFace/default does not exist",
             "03-25 12:01:10.124  1000  1000 E BiometricsFace: Failed to get face HAL interface",
         )
 

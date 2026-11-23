@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(ExperimentalHazeApi::class)
 
 package dev.chrisbanes.haze
@@ -13,72 +19,72 @@ import androidx.compose.ui.modifier.modifierLocalProvider
 import androidx.compose.ui.node.invalidateDraw
 
 internal enum class HazeInvalidationReason {
-  Content,
-  DirtyFields,
-  PreDraw,
-  VisualEffect,
+    Content,
+    DirtyFields,
+    PreDraw,
+    VisualEffect,
 }
 
 internal data class HazeInvalidationEvent(
-  val tag: String?,
-  val reason: HazeInvalidationReason,
+    val tag: String?,
+    val reason: HazeInvalidationReason,
 )
 
 @PublishedApi
 internal class HazeInvalidationRecorder {
-  val events = mutableListOf<HazeInvalidationEvent>()
+    val events = mutableListOf<HazeInvalidationEvent>()
 }
 
 @PublishedApi
 internal var activeHazeInvalidationRecorder: HazeInvalidationRecorder? = null
 
 internal val isHazeInvalidationTrackingActive: Boolean
-  get() = activeHazeInvalidationRecorder != null
+    get() = activeHazeInvalidationRecorder != null
 
 internal inline fun recordHazeInvalidation(event: () -> HazeInvalidationEvent) {
-  activeHazeInvalidationRecorder?.events?.add(event())
+    activeHazeInvalidationRecorder?.events?.add(event())
 }
 
 private val ModifierLocalHazeInvalidationTag: ProvidableModifierLocal<String?> =
-  modifierLocalOf { null }
+    modifierLocalOf { null }
 
 internal fun Modifier.hazeInvalidationTag(tag: String): Modifier {
-  return modifierLocalProvider(ModifierLocalHazeInvalidationTag) { tag }
+    return modifierLocalProvider(ModifierLocalHazeInvalidationTag) { tag }
 }
 
 private fun ModifierLocalModifierNode.currentHazeInvalidationTag(): String? {
-  return if (isHazeInvalidationTrackingActive) {
-    ModifierLocalHazeInvalidationTag.current
-  } else {
-    null
-  }
+    return if (isHazeInvalidationTrackingActive) {
+        ModifierLocalHazeInvalidationTag.current
+    } else {
+        null
+    }
 }
 
 internal fun HazeEffectNode.invalidateHazeDraw(reason: HazeInvalidationReason) {
-  recordHazeInvalidation {
-    HazeInvalidationEvent(
-      tag = currentHazeInvalidationTag(),
-      reason = reason,
-    )
-  }
-  invalidateDraw()
+    recordHazeInvalidation {
+        HazeInvalidationEvent(
+            tag = currentHazeInvalidationTag(),
+            reason = reason,
+        )
+    }
+    invalidateDraw()
 }
 
 internal fun withHazeInvalidationTracking(block: () -> Unit) {
-  val previousRecorder = activeHazeInvalidationRecorder
-  val recorder = HazeInvalidationRecorder()
-  activeHazeInvalidationRecorder = recorder
-  try {
-    block()
-  } finally {
-    activeHazeInvalidationRecorder = previousRecorder
-  }
+    val previousRecorder = activeHazeInvalidationRecorder
+    val recorder = HazeInvalidationRecorder()
+    activeHazeInvalidationRecorder = recorder
+    try {
+        block()
+    } finally {
+        activeHazeInvalidationRecorder = previousRecorder
+    }
 }
 
 internal fun clearHazeInvalidations() {
-  activeHazeInvalidationRecorder?.events?.clear()
+    activeHazeInvalidationRecorder?.events?.clear()
 }
 
 internal fun hazeInvalidationEvents(): List<HazeInvalidationEvent> {
-  return activeHazeInvalidationRecorder?.events.orEmpty()
+    return activeHazeInvalidationRecorder?.events.orEmpty()
 }

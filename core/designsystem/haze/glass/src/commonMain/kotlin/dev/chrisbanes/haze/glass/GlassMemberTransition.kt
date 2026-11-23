@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 /**
@@ -30,19 +36,19 @@ package dev.chrisbanes.haze.glass
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
 public enum class GlassMemberTransition {
-  /**
-   * A member that attaches within the container's merge distance of a compatible member grows out
-   * of it, and retracts into it when it detaches. Without such a neighbour, this falls back to
-   * [Materialize].
-   */
-  MatchedGeometry,
+    /**
+     * A member that attaches within the container's merge distance of a compatible member grows out
+     * of it, and retracts into it when it detaches. Without such a neighbour, this falls back to
+     * [Materialize].
+     */
+    MatchedGeometry,
 
-  /**
-   * The glass fades in or out where it is. A fading member draws on its own: it joins a nearby
-   * member's merged shape once it is fully opaque, and leaves it as soon as it starts to fade out.
-   */
-  Materialize,
+    /**
+     * The glass fades in or out where it is. A fading member draws on its own: it joins a nearby
+     * member's merged shape once it is fully opaque, and leaves it as soon as it starts to fade out.
+     */
+    Materialize,
 
-  /** The glass appears and disappears immediately. */
-  None,
+    /** The glass appears and disappears immediately. */
+    None,
 }

@@ -431,9 +431,14 @@ exit 0"""
     /** Build refusals. Missing selected partitions and SELinux mappings cannot be acknowledged. */
     public fun refusals(text: String, acknowledgements: Set<String> = emptySet(), scope: String = ""): List<String> {
         val s = sections(text)
-        val missingPartitions = s.missing.filter { it.kind == VintfEvidenceKind.PARTITION }
-        return listOfNotNull(sepolicy(s)) + missingPartitions.map { "VINTF_PARTITION_MISSING: ${it.message}" } +
-            mismatches(s, scope).filterNot { it.id in acknowledgements }.map { "VINTF_INCOMPATIBLE: [${it.id}] ${it.message}" }
+        val sepolicyEvidence = listOfNotNull(sepolicy(s))
+        val missingPartitions = s.missing
+            .filter { it.kind == VintfEvidenceKind.PARTITION }
+            .map { "VINTF_PARTITION_MISSING: ${it.message}" }
+        val incompatible = mismatches(s, scope)
+            .filterNot { it.id in acknowledgements }
+            .map { "VINTF_INCOMPATIBLE: [${it.id}] ${it.message}" }
+        return sepolicyEvidence + missingPartitions + incompatible
     }
 
     internal fun acknowledgedMismatches(text: String, acknowledgements: Set<String>, scope: String): List<String> =
@@ -496,51 +501,62 @@ exit 0"""
 
     private fun missingEvidence(s: Sections): List<VintfEvidence> = buildList {
         addAll(s.missing)
-        if (s.skuInferred || !s.hasMissingPartition && s.results.any { it.provisional }) {
-            add(VintfEvidence(
-                "Some SKU combinations could not be verified from the firmware's META/misc_info.txt. " +
-                    "Results for those combinations are provisional.",
-                VintfEvidenceKind.FIRMWARE_METADATA,
-            ))
-        }
-        s.results.filter { it.exit == INCOMPATIBLE_EXIT && !s.confirmsMismatch(it) }.forEach {
-            add(VintfEvidence(
-                "Provisional SKU mismatch${it.skuLabel()}: ${it.reason()}",
-                if (s.hasMissingPartition) VintfEvidenceKind.PARTITION else VintfEvidenceKind.FIRMWARE_METADATA,
-            ))
-        }
+        addAll(skuEvidence(s))
         if (s.notRun == null && s.vendorSepolicy == null) {
-            add(VintfEvidence(
-                "vendor/etc/selinux/plat_sepolicy_vers.txt is missing or unreadable",
-                VintfEvidenceKind.FIRMWARE_METADATA,
-            ))
+            add(
+                VintfEvidence(
+                    "vendor/etc/selinux/plat_sepolicy_vers.txt is missing or unreadable",
+                    VintfEvidenceKind.FIRMWARE_METADATA,
+                ),
+            )
         }
         if (s.toolMissing) {
             add(VintfEvidence("checkvintf is not installed (Setup > Tools > vintf-tools)", VintfEvidenceKind.TOOL))
         }
         s.notRun?.let { add(VintfEvidence(it, VintfEvidenceKind.ASSEMBLY)) }
         if (!s.toolMissing && s.notRun == null) {
-            val kernel = s.kernel
-            if (kernel == null) {
-                add(VintfEvidence("No kernel check evidence was recorded.", VintfEvidenceKind.KERNEL))
-            } else if (!kernel.startsWith("ok ")) {
-                add(VintfEvidence("the kernel requirements were not checked: $kernel", VintfEvidenceKind.KERNEL))
-            }
-            if (s.results.isEmpty()) {
-                add(VintfEvidence("checkvintf returned no SKU results.", VintfEvidenceKind.SCAN))
-            }
-            if (s.completed != s.results.size) {
-                add(VintfEvidence("The VINTF check did not record a complete set of results.", VintfEvidenceKind.SCAN))
-            }
-            s.results.filter { it.exit != 0 && it.exit != INCOMPATIBLE_EXIT }.forEach {
-                val reason = it.reason()
-                val kind = if (reason.contains("manifest", ignoreCase = true) || reason.contains("matrix", ignoreCase = true)) {
-                    VintfEvidenceKind.FIRMWARE_METADATA
-                } else {
-                    VintfEvidenceKind.SCAN
-                }
-                add(VintfEvidence("checkvintf could not finish${it.skuLabel()} (exit ${it.exit}): $reason", kind))
-            }
+            addAll(kernelAndScanEvidence(s))
+        }
+    }
+
+    private fun skuEvidence(s: Sections): List<VintfEvidence> = buildList {
+        if (s.skuInferred || (!s.hasMissingPartition && s.results.any { it.provisional })) {
+            add(
+                VintfEvidence(
+                    "Some SKU combinations could not be verified from the firmware's META/misc_info.txt. " +
+                        "Results for those combinations are provisional.",
+                    VintfEvidenceKind.FIRMWARE_METADATA,
+                ),
+            )
+        }
+        s.results.filter { it.exit == INCOMPATIBLE_EXIT && !s.confirmsMismatch(it) }.forEach {
+            add(
+                VintfEvidence(
+                    "Provisional SKU mismatch${it.skuLabel()}: ${it.reason()}",
+                    if (s.hasMissingPartition) VintfEvidenceKind.PARTITION else VintfEvidenceKind.FIRMWARE_METADATA,
+                ),
+            )
+        }
+    }
+
+    private fun kernelAndScanEvidence(s: Sections): List<VintfEvidence> = buildList {
+        val kernel = s.kernel
+        if (kernel == null) {
+            add(VintfEvidence("No kernel check evidence was recorded.", VintfEvidenceKind.KERNEL))
+        } else if (!kernel.startsWith("ok ")) {
+            add(VintfEvidence("the kernel requirements were not checked: $kernel", VintfEvidenceKind.KERNEL))
+        }
+        if (s.results.isEmpty()) {
+            add(VintfEvidence("checkvintf returned no SKU results.", VintfEvidenceKind.SCAN))
+        }
+        if (s.completed != s.results.size) {
+            add(VintfEvidence("The VINTF check did not record a complete set of results.", VintfEvidenceKind.SCAN))
+        }
+        s.results.filter { it.exit != 0 && it.exit != INCOMPATIBLE_EXIT }.forEach {
+            val reason = it.reason()
+            val isMeta = reason.contains("manifest", ignoreCase = true) || reason.contains("matrix", ignoreCase = true)
+            val kind = if (isMeta) VintfEvidenceKind.FIRMWARE_METADATA else VintfEvidenceKind.SCAN
+            add(VintfEvidence("checkvintf could not finish${it.skuLabel()} (exit ${it.exit}): $reason", kind))
         }
     }
 

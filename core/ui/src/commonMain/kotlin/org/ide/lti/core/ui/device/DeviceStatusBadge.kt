@@ -44,36 +44,9 @@ import org.ide.lti.core.domain.device.DeviceSlot
  * with ambient state-reactive glint.
  */
 @Composable
-fun DeviceStatusBadge(
-    profile: DeviceProfile,
-    modifier: Modifier = Modifier,
-) {
-    val glintState = when {
-        !profile.mode.isConnected -> GlassGlintState.Idle
-        profile.mode == DeviceMode.ADB_UNAUTHORIZED -> GlassGlintState.Warning("Unauthorized ADB key")
-        profile.mode == DeviceMode.FASTBOOTD -> GlassGlintState.ActiveBuild()
-        else -> GlassGlintState.DeviceConnected(profile.codename)
-    }
-
-    val modeColor = when (profile.mode) {
-        DeviceMode.DISCONNECTED -> MaterialTheme.colorScheme.onSurfaceVariant
-        DeviceMode.ADB_UNAUTHORIZED -> AccentPresetColors.Amber
-        DeviceMode.ADB_ONLINE -> AccentPresetColors.Emerald
-        DeviceMode.FASTBOOT -> AccentPresetColors.Cyan
-        DeviceMode.FASTBOOTD -> AccentPresetColors.Purple
-        DeviceMode.RECOVERY -> AccentPresetColors.Cobalt
-        DeviceMode.EDL_9008 -> AccentPresetColors.Crimson
-    }
-
-    val modeLabel = when (profile.mode) {
-        DeviceMode.DISCONNECTED -> "No Device"
-        DeviceMode.ADB_UNAUTHORIZED -> "ADB (Unauthorized)"
-        DeviceMode.ADB_ONLINE -> "ADB Online"
-        DeviceMode.FASTBOOT -> "Fastboot"
-        DeviceMode.FASTBOOTD -> "Fastbootd"
-        DeviceMode.RECOVERY -> "Recovery"
-        DeviceMode.EDL_9008 -> "EDL 9008"
-    }
+fun DeviceStatusBadge(profile: DeviceProfile, modifier: Modifier = Modifier) {
+    val glintState = resolveGlintState(profile)
+    val modeColor = resolveModeColor(profile.mode, MaterialTheme.colorScheme.onSurfaceVariant)
 
     Row(
         modifier = modifier
@@ -84,26 +57,9 @@ fun DeviceStatusBadge(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
-        // Mode indicator pill
-        Box(
-            modifier = Modifier
-                .clip(GlassShapes.Pill)
-                .background(modeColor.copy(alpha = AlphaTokens.Hover))
-                .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = modeLabel,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = codeFontFamily(),
-                    fontSize = FontSize.Micro,
-                    fontWeight = FontWeight.Bold,
-                    color = modeColor,
-                ),
-            )
-        }
+        DeviceModePill(mode = profile.mode, color = modeColor)
 
         if (profile.mode.isConnected) {
-            // Codename / Serial
             Text(
                 text = profile.displayTitle,
                 style = MaterialTheme.typography.bodySmall.copy(
@@ -113,38 +69,93 @@ fun DeviceStatusBadge(
                 ),
             )
 
-            // Slot Tag if dual slot
-            if (profile.isDualSlot) {
-                val slotText = when (profile.activeSlot) {
-                    DeviceSlot.A -> "Slot A"
-                    DeviceSlot.B -> "Slot B"
-                    DeviceSlot.NONE -> ""
-                }
-                Text(
-                    text = slotText,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = codeFontFamily(),
-                        fontSize = FontSize.Micro,
-                        color = MaterialTheme.colorScheme.primary,
-                    ),
-                    modifier = Modifier
-                        .clip(GlassShapes.ExtraSmall)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
-                        .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.ExtraExtraSmall),
-                )
+            if (profile.isDualSlot && profile.activeSlot != DeviceSlot.NONE) {
+                DeviceSlotTag(slot = profile.activeSlot)
             }
 
-            // Lock indicator
-            val lockText = if (profile.isUnlocked) "UNLOCKED" else "LOCKED"
-            val lockColor = if (profile.isUnlocked) AccentPresetColors.Amber else AccentPresetColors.Emerald
-            Text(
-                text = lockText,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = codeFontFamily(),
-                    fontSize = FontSize.Micro,
-                    color = lockColor,
-                ),
-            )
+            DeviceLockIndicator(isUnlocked = profile.isUnlocked)
         }
     }
+}
+
+@Composable
+private fun DeviceModePill(mode: DeviceMode, color: Color) {
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.Pill)
+            .background(color.copy(alpha = AlphaTokens.Hover))
+            .padding(horizontal = Spacing.Compact, vertical = Spacing.ExtraExtraSmall),
+    ) {
+        Text(
+            text = resolveModeLabel(mode),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = codeFontFamily(),
+                fontSize = FontSize.Micro,
+                fontWeight = FontWeight.Bold,
+                color = color,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun DeviceSlotTag(slot: DeviceSlot) {
+    val slotText = when (slot) {
+        DeviceSlot.A -> "Slot A"
+        DeviceSlot.B -> "Slot B"
+        DeviceSlot.NONE -> ""
+    }
+    Text(
+        text = slotText,
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontFamily = codeFontFamily(),
+            fontSize = FontSize.Micro,
+            color = MaterialTheme.colorScheme.primary,
+        ),
+        modifier = Modifier
+            .clip(GlassShapes.ExtraSmall)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = AlphaTokens.Subtle))
+            .padding(horizontal = Spacing.ExtraSmall, vertical = Spacing.ExtraExtraSmall),
+    )
+}
+
+@Composable
+private fun DeviceLockIndicator(isUnlocked: Boolean) {
+    val lockText = if (isUnlocked) "UNLOCKED" else "LOCKED"
+    val lockColor = if (isUnlocked) AccentPresetColors.Amber else AccentPresetColors.Emerald
+    Text(
+        text = lockText,
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontFamily = codeFontFamily(),
+            fontSize = FontSize.Micro,
+            color = lockColor,
+        ),
+    )
+}
+
+private fun resolveGlintState(profile: DeviceProfile): GlassGlintState = when {
+    !profile.mode.isConnected -> GlassGlintState.Idle
+    profile.mode == DeviceMode.ADB_UNAUTHORIZED -> GlassGlintState.Warning("Unauthorized ADB key")
+    profile.mode == DeviceMode.FASTBOOTD -> GlassGlintState.ActiveBuild()
+    else -> GlassGlintState.DeviceConnected(profile.codename)
+}
+
+private fun resolveModeColor(mode: DeviceMode, fallback: Color): Color = when (mode) {
+    DeviceMode.DISCONNECTED -> fallback
+    DeviceMode.ADB_UNAUTHORIZED -> AccentPresetColors.Amber
+    DeviceMode.ADB_ONLINE -> AccentPresetColors.Emerald
+    DeviceMode.FASTBOOT -> AccentPresetColors.Cyan
+    DeviceMode.FASTBOOTD -> AccentPresetColors.Purple
+    DeviceMode.RECOVERY -> AccentPresetColors.Cobalt
+    DeviceMode.EDL_9008 -> AccentPresetColors.Crimson
+}
+
+private fun resolveModeLabel(mode: DeviceMode): String = when (mode) {
+    DeviceMode.DISCONNECTED -> "No Device"
+    DeviceMode.ADB_UNAUTHORIZED -> "ADB (Unauthorized)"
+    DeviceMode.ADB_ONLINE -> "ADB Online"
+    DeviceMode.FASTBOOT -> "Fastboot"
+    DeviceMode.FASTBOOTD -> "Fastbootd"
+    DeviceMode.RECOVERY -> "Recovery"
+    DeviceMode.EDL_9008 -> "EDL 9008"
 }

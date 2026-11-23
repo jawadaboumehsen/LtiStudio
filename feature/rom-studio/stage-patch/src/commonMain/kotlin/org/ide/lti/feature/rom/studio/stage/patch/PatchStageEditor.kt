@@ -33,42 +33,41 @@ public class PatchStageEditor : StageEditor {
             val tools: ContentToolsViewModel = koinViewModel { parametersOf(context.workspaceId) }
             val state by tools.state.collectAsState()
             ContentToolsPane(toolId = selected, state = state, viewModel = tools, modifier = modifier)
-            return
+        } else {
+            val viewModel: PatchViewModel = koinViewModel { parametersOf(context.workspaceId) }
+            val loading by viewModel.settingsLoading.collectAsState()
+            if (loading) {
+                GlassLoadingPlaceholder("Loading patch settings…", modifier)
+            } else {
+                val settings by viewModel.settings.collectAsState()
+                val facts by viewModel.facts.collectAsState()
+                val saveError by viewModel.saveError.collectAsState()
+                if (selected == SCRIPTS) {
+                    val checks by viewModel.scriptCheck.collectAsState()
+                    ScriptsPane(
+                        settings = settings,
+                        onChange = viewModel::updateSettings,
+                        checks = checks,
+                        saveError = saveError,
+                        onCheck = viewModel::checkScript,
+                        modifier = modifier,
+                    )
+                } else {
+                    val lab by viewModel.lab.collectAsState()
+                    PatchEditor(
+                        settings = settings,
+                        facts = facts,
+                        lab = lab,
+                        onCheckTogether = viewModel::checkTogether,
+                        onToggle = viewModel::toggle,
+                        onRefresh = viewModel::refresh,
+                        onOpenPlugins = context.onOpenPlugins,
+                        selectedObjectId = selected,
+                        saveError = saveError,
+                        modifier = modifier,
+                    )
+                }
+            }
         }
-        val viewModel: PatchViewModel = koinViewModel { parametersOf(context.workspaceId) }
-        val loading by viewModel.settingsLoading.collectAsState()
-        if (loading) {
-            GlassLoadingPlaceholder("Loading patch settings…", modifier)
-            return
-        }
-        val settings by viewModel.settings.collectAsState()
-        val facts by viewModel.facts.collectAsState()
-        val saveError by viewModel.saveError.collectAsState()
-        if (selected == SCRIPTS) {
-            val checks by viewModel.scriptCheck.collectAsState()
-            ScriptsPane(
-                settings = settings,
-                onChange = viewModel::updateSettings,
-                checks = checks,
-                saveError = saveError,
-                onCheck = viewModel::checkScript,
-                modifier = modifier,
-            )
-            return
-        }
-
-        val lab by viewModel.lab.collectAsState()
-        PatchEditor(
-            settings = settings,
-            facts = facts,
-            lab = lab,
-            onCheckTogether = viewModel::checkTogether,
-            onToggle = viewModel::toggle,
-            onRefresh = viewModel::refresh,
-            onOpenPlugins = context.onOpenPlugins,
-            selectedObjectId = selected,
-            saveError = saveError,
-            modifier = modifier,
-        )
     }
 }

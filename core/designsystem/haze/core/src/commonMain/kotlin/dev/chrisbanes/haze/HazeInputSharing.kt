@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze
 
 /**
@@ -35,39 +41,39 @@ package dev.chrisbanes.haze
  */
 @ExperimentalHazeApi
 public enum class HazeInputSharing {
-  /**
-   * Shares input on Android when two or more effects sample the source. On other platforms this
-   * behaves like [Never].
-   *
-   * The source re-decides this on every draw. As effects come and go, crossing between one and two
-   * consumers allocates or frees the source-sized layer and turns the source's overflow clipping on
-   * or off. Use [Always] for a source that draws outside its bounds.
-   *
-   * Each member of a Glass container counts as its own consumer, even when its cluster samples the
-   * source once. Two members over one source are therefore enough to share it.
-   */
-  Auto,
+    /**
+     * Shares input on Android when two or more effects sample the source. On other platforms this
+     * behaves like [Never].
+     *
+     * The source re-decides this on every draw. As effects come and go, crossing between one and two
+     * consumers allocates or frees the source-sized layer and turns the source's overflow clipping on
+     * or off. Use [Always] for a source that draws outside its bounds.
+     *
+     * Each member of a Glass container counts as its own consumer, even when its cluster samples the
+     * source once. Two members over one source are therefore enough to share it.
+     */
+    Auto,
 
-  /**
-   * Shares input whenever at least one effect samples the source. Only Android reuses a render. On
-   * Desktop, iOS and Web this clips the source and adds an offscreen pass without reuse, and can
-   * cost more than [Never].
-   */
-  Always,
+    /**
+     * Shares input whenever at least one effect samples the source. Only Android reuses a render. On
+     * Desktop, iOS and Web this clips the source and adds an offscreen pass without reuse, and can
+     * cost more than [Never].
+     */
+    Always,
 
-  /** Never shares input. Each effect replays the source's content. This is the default. */
-  Never,
+    /** Never shares input. Each effect replays the source's content. This is the default. */
+    Never,
 }
 
 /** Whether a source with [consumerCount] capturing effects should share its input. */
 @OptIn(ExperimentalHazeApi::class)
 internal fun HazeInputSharing.isActive(
-  consumerCount: Int,
-  autoSupported: Boolean = isAutoInputSharingSupported(),
+    consumerCount: Int,
+    autoSupported: Boolean = isAutoInputSharingSupported(),
 ): Boolean = when (this) {
-  HazeInputSharing.Auto -> autoSupported && consumerCount >= 2
-  HazeInputSharing.Always -> consumerCount >= 1
-  HazeInputSharing.Never -> false
+    HazeInputSharing.Auto -> autoSupported && consumerCount >= 2
+    HazeInputSharing.Always -> consumerCount >= 1
+    HazeInputSharing.Never -> false
 }
 
 /** Whether [HazeInputSharing.Auto] shares input on this platform. */

@@ -33,7 +33,10 @@ internal fun runSettingsUiTest(width: Int, height: Int, block: suspend DesktopCo
  * animates over many glass frames, which is unnecessary when testing layout or capturing a still.
  */
 @OptIn(ExperimentalTestApi::class)
-internal fun DesktopComposeUiTest.scrollToSettingsNode(tag: String, scrollState: ScrollState): SemanticsNodeInteraction {
+internal fun DesktopComposeUiTest.scrollToSettingsNode(
+    tag: String,
+    scrollState: ScrollState,
+): SemanticsNodeInteraction {
     val interaction = onNodeWithTag(tag)
     val node = interaction.fetchSemanticsNode()
     val scrollParent = checkNotNull(

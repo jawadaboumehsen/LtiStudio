@@ -88,7 +88,7 @@ import org.jetbrains.skia.Image as SkiaImage
  * Debloat: pick apps of the assembled work tree to remove. The inventory is the real tree (run the build
  * through Assemble first); protected apps cannot be picked; the stage refuses picks that no longer exist.
  */
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "CyclomaticComplexMethod")
 @Composable
 public fun DebloatEditor(
     settings: DebloatSettings,
@@ -111,8 +111,10 @@ public fun DebloatEditor(
         filtered = withContext(Dispatchers.Default) {
             facts.inventory.filter { candidate ->
                 ensureActive()
-                candidate.relativePath.contains(query, ignoreCase = true) ||
-                    facts.apps[DebloatViewModel.selectorOf(candidate)]?.label?.contains(query, ignoreCase = true) == true
+                val label = facts.apps[DebloatViewModel.selectorOf(candidate)]?.label
+                val matchPath = candidate.relativePath.contains(query, ignoreCase = true)
+                val matchLabel = label?.contains(query, ignoreCase = true) == true
+                matchPath || matchLabel
             }
         }
     }
@@ -161,7 +163,12 @@ public fun DebloatEditor(
                             ) {
                                 GlassLoadingStatus(if (shown == null) "Searching apps…" else "Reading apps inventory…")
                                 GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
-                                GlassSkeletonList(count = 5, hasIcon = true, hasSubtitle = true, hasTrailingBadge = true)
+                                GlassSkeletonList(
+                                    count = 5,
+                                    hasIcon = true,
+                                    hasSubtitle = true,
+                                    hasTrailingBadge = true,
+                                )
                             }
                         }
                     } else if (facts.loading) {

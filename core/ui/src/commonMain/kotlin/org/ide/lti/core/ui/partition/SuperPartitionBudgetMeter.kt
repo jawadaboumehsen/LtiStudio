@@ -4,6 +4,8 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
  */
 package org.ide.lti.core.ui.partition
 
@@ -12,12 +14,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,10 +25,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.common.utils.formatBytes
 import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
-import org.ide.lti.core.designsystem.theme.CornerRadius
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.partition.PartitionBudgetForecast
@@ -38,10 +38,7 @@ import org.ide.lti.core.domain.partition.PartitionBudgetForecast
  * Displays partition allocations, free storage headroom, and predictive optimization tips.
  */
 @Composable
-fun SuperPartitionBudgetMeter(
-    forecast: PartitionBudgetForecast,
-    modifier: Modifier = Modifier,
-) {
+fun SuperPartitionBudgetMeter(forecast: PartitionBudgetForecast, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -203,16 +200,5 @@ private fun MetricItem(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
         )
-    }
-}
-
-private fun formatBytes(bytes: Long): String {
-    val mb = bytes.toDouble() / (1024.0 * 1024.0)
-    return if (mb >= 1024.0) {
-        val gb = mb / 1024.0
-        // Round to 2 decimals
-        "${((gb * 100).toLong() / 100.0)} GB"
-    } else {
-        "${((mb * 100).toLong() / 100.0)} MB"
     }
 }

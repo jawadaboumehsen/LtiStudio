@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(dev.chrisbanes.haze.InternalHazeApi::class)
 
 package dev.chrisbanes.haze.glass
@@ -60,78 +66,78 @@ import dev.chrisbanes.haze.hazeEffect
  */
 @Stable
 public fun Modifier.hazeGlass(
-  input: HazeInput,
-  style: GlassStyle = GlassStyle,
-  performanceMode: HazePerformanceMode? = null,
-  expandLayerBounds: Boolean = true,
-  interactionSource: InteractionSource? = null,
-  interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
-  memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
-  groupKey: Any? = null,
+    input: HazeInput,
+    style: GlassStyle = GlassStyle,
+    performanceMode: HazePerformanceMode? = null,
+    expandLayerBounds: Boolean = true,
+    interactionSource: InteractionSource? = null,
+    interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+    memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
+    groupKey: Any? = null,
 ): Modifier = hazeGlass(
-  factory = GlassHazeEffectFactory,
-  input = input,
-  style = style,
-  performanceMode = performanceMode,
-  expandLayerBounds = expandLayerBounds,
-  interactionSource = interactionSource,
-  interactionTransformTarget = interactionTransformTarget,
-  interactionTransformPivot = interactionTransformPivot,
-  interactionReducedMotionPolicy = interactionReducedMotionPolicy,
-  memberTransition = memberTransition,
-  groupKey = groupKey,
-)
-
-internal fun Modifier.hazeGlass(
-  factory: HazeEffectFactory<GlassNodeConfiguration>,
-  input: HazeInput,
-  style: GlassStyle,
-  performanceMode: HazePerformanceMode?,
-  expandLayerBounds: Boolean,
-  interactionSource: InteractionSource?,
-  interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
-  memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
-  groupKey: Any? = null,
-): Modifier {
-  val member = GlassMemberBinding(input, expandLayerBounds)
-  val configuration = GlassNodeConfiguration(
+    factory = GlassHazeEffectFactory,
+    input = input,
     style = style,
     performanceMode = performanceMode,
+    expandLayerBounds = expandLayerBounds,
     interactionSource = interactionSource,
     interactionTransformTarget = interactionTransformTarget,
     interactionTransformPivot = interactionTransformPivot,
     interactionReducedMotionPolicy = interactionReducedMotionPolicy,
-    member = member,
     memberTransition = memberTransition,
     groupKey = groupKey,
-  )
-  return then(GlassMemberElement(member, configuration, factory)).hazeEffect(
-    factory = factory,
-    input = input,
-    style = configuration,
-    expandLayerBounds = expandLayerBounds,
-  )
+)
+
+internal fun Modifier.hazeGlass(
+    factory: HazeEffectFactory<GlassNodeConfiguration>,
+    input: HazeInput,
+    style: GlassStyle,
+    performanceMode: HazePerformanceMode?,
+    expandLayerBounds: Boolean,
+    interactionSource: InteractionSource?,
+    interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+    memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
+    groupKey: Any? = null,
+): Modifier {
+    val member = GlassMemberBinding(input, expandLayerBounds)
+    val configuration = GlassNodeConfiguration(
+        style = style,
+        performanceMode = performanceMode,
+        interactionSource = interactionSource,
+        interactionTransformTarget = interactionTransformTarget,
+        interactionTransformPivot = interactionTransformPivot,
+        interactionReducedMotionPolicy = interactionReducedMotionPolicy,
+        member = member,
+        memberTransition = memberTransition,
+        groupKey = groupKey,
+    )
+    return then(GlassMemberElement(member, configuration, factory)).hazeEffect(
+        factory = factory,
+        input = input,
+        style = configuration,
+        expandLayerBounds = expandLayerBounds,
+    )
 }
 
 @Poko
 internal class GlassNodeConfiguration(
-  val style: GlassStyle,
-  val performanceMode: HazePerformanceMode? = null,
-  val interactionSource: InteractionSource?,
-  val interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
-  val interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
-  val interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
-  val member: GlassMemberBinding? = null,
-  val surfaceSnapshot: GlassSurfaceSnapshot? = null,
-  // Read by the member node; here so both nodes always update together with one binding.
-  val memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
-  val groupKey: Any? = null,
+    val style: GlassStyle,
+    val performanceMode: HazePerformanceMode? = null,
+    val interactionSource: InteractionSource?,
+    val interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly,
+    val interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer,
+    val interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System,
+    val member: GlassMemberBinding? = null,
+    val surfaceSnapshot: GlassSurfaceSnapshot? = null,
+    // Read by the member node; here so both nodes always update together with one binding.
+    val memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
+    val groupKey: Any? = null,
 )
 
 internal object GlassHazeEffectFactory : HazeEffectFactory<GlassNodeConfiguration> {
-  override fun createRenderer(): HazeEffectRenderer<GlassNodeConfiguration> = GlassRuntimeEffect()
+    override fun createRenderer(): HazeEffectRenderer<GlassNodeConfiguration> = GlassRuntimeEffect()
 }

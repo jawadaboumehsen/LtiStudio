@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.glass
 
 import androidx.compose.ui.unit.Dp
@@ -15,35 +21,35 @@ internal const val NON_NEGATIVE_DP_DOMAIN: String = "specified, finite, and non-
 internal const val POSITIVE_AT_MOST_ONE_DOMAIN: String = "finite and in 0f < value <= 1f"
 
 internal fun requireFinite(property: String, value: Float): Float {
-  require(value.isFinite()) { "$property must be finite" }
-  return value
+    require(value.isFinite()) { "$property must be finite" }
+    return value
 }
 
 internal fun requireFiniteInRange(
-  property: String,
-  value: Float,
-  range: ClosedFloatingPointRange<Float>,
-  domain: String,
+    property: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    domain: String,
 ): Float {
-  require(value.isFinite() && value in range) { "$property must be $domain" }
-  return value
+    require(value.isFinite() && value in range) { "$property must be $domain" }
+    return value
 }
 
 internal fun requireFiniteNonNegative(property: String, value: Float): Float {
-  require(value.isFinite() && value >= 0f) { "$property must be $NON_NEGATIVE_DOMAIN" }
-  return value
+    require(value.isFinite() && value >= 0f) { "$property must be $NON_NEGATIVE_DOMAIN" }
+    return value
 }
 
 internal fun requireSpecifiedFiniteNonNegative(property: String, value: Dp): Dp {
-  require(value.isSpecified && value.value.isFinite() && value >= 0.dp) {
-    "$property must be $NON_NEGATIVE_DP_DOMAIN"
-  }
-  return value
+    require(value.isSpecified && value.value.isFinite() && value >= 0.dp) {
+        "$property must be $NON_NEGATIVE_DP_DOMAIN"
+    }
+    return value
 }
 
 internal fun requirePositiveAtMostOne(property: String, value: Float): Float {
-  require(value.isFinite() && value > 0f && value <= 1f) {
-    "$property must be $POSITIVE_AT_MOST_ONE_DOMAIN"
-  }
-  return value
+    require(value.isFinite() && value > 0f && value <= 1f) {
+        "$property must be $POSITIVE_AT_MOST_ONE_DOMAIN"
+    }
+    return value
 }

@@ -234,8 +234,12 @@ public class Preflight(
             },
             "BROKEN_LINKS" to { _ -> accept(BuildWarningKind.BrokenLinks, "Accept the broken links") },
             "UNSIGNED_APK" to { _ -> accept(BuildWarningKind.UnsignedApks, "Accept the unsigned APKs") },
-            "VINTF_INCOMPATIBLE" to { _ -> open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline") },
-            "VINTF_PARTITION_MISSING" to { _ -> open("Open Assemble work trees", StageId.WORK_TREE_ASSEMBLY, "work-trees") },
+            "VINTF_INCOMPATIBLE" to { _ ->
+                open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline")
+            },
+            "VINTF_PARTITION_MISSING" to { _ ->
+                open("Open Assemble work trees", StageId.WORK_TREE_ASSEMBLY, "work-trees")
+            },
             "VINTF_SEPOLICY" to { _ ->
                 open("Review firmware baseline", StageId.FIRMWARE_ACQUISITION, "firmware-baseline")
             },

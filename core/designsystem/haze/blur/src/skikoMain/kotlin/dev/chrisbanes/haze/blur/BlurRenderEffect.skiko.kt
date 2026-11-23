@@ -1,6 +1,12 @@
-// Copyright 2023, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2023 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(InternalHazeApi::class)
 
 package dev.chrisbanes.haze.blur
@@ -24,67 +30,67 @@ import org.jetbrains.skia.ColorMatrix
 import org.jetbrains.skia.Matrix33
 
 internal actual fun ShaderBrush.createScaledShader(size: Size, scale: Float): Shader {
-  val shader = createShader(size)
-  return if (scale == 1f) {
-    shader
-  } else {
-    shader.skiaShader
-      .makeWithLocalMatrix(Matrix33.makeScale(scale, scale))
-      .asComposeShader()
-  }
+    val shader = createShader(size)
+    return if (scale == 1f) {
+        shader
+    } else {
+        shader.skiaShader
+            .makeWithLocalMatrix(Matrix33.makeScale(scale, scale))
+            .asComposeShader()
+    }
 }
 
 internal actual fun BlurVisualEffect.constrainInputScaleForBrushes(scale: Float): Float = scale
 
 private val NOISE_SHADER by lazy(LazyThreadSafetyMode.NONE) {
-  createFractalNoiseShader(
-    baseFrequencyX = 0.45f,
-    baseFrequencyY = 0.45f,
-    numOctaves = 4,
-    seed = 2.0f,
-  )
+    createFractalNoiseShader(
+        baseFrequencyX = 0.45f,
+        baseFrequencyY = 0.45f,
+        numOctaves = 4,
+        seed = 2.0f,
+    )
 }
 
 internal actual fun createCombinedNoiseTintRenderEffectOrNull(
-  context: PlatformContext,
-  input: PlatformRenderEffect,
-  noiseFactor: Float,
-  tintColor: Color,
-  scale: Float,
+    context: PlatformContext,
+    input: PlatformRenderEffect,
+    noiseFactor: Float,
+    tintColor: Color,
+    scale: Float,
 ): PlatformRenderEffect? = null
 
 internal actual fun createNoiseEffect(
-  context: PlatformContext,
-  noiseFactor: Float,
-  mask: Shader?,
-  scale: Float,
+    context: PlatformContext,
+    noiseFactor: Float,
+    mask: Shader?,
+    scale: Float,
 ): PlatformRenderEffect {
-  val source = createShaderRenderEffect(NOISE_SHADER)
+    val source = createShaderRenderEffect(NOISE_SHADER)
 
-  val noiseEffect = if (noiseFactor < 1f) {
-    val matrix = ColorMatrix(
-      1f, 0f, 0f, 0f, 0f,
-      0f, 1f, 0f, 0f, 0f,
-      0f, 0f, 1f, 0f, 0f,
-      0f, 0f, 0f, noiseFactor, 0f,
-    )
+    val noiseEffect = if (noiseFactor < 1f) {
+        val matrix = ColorMatrix(
+            1f, 0f, 0f, 0f, 0f,
+            0f, 1f, 0f, 0f, 0f,
+            0f, 0f, 1f, 0f, 0f,
+            0f, 0f, 0f, noiseFactor, 0f,
+        )
 
-    createColorFilterRenderEffect(ColorFilter.makeMatrix(matrix), source)
-  } else {
-    source
-  }
-
-  return when {
-    mask != null -> {
-      createBlendRenderEffect(
-        blendMode = BlendMode.SrcIn,
-        background = createShaderRenderEffect(mask),
-        foreground = noiseEffect,
-      )
+        createColorFilterRenderEffect(ColorFilter.makeMatrix(matrix), source)
+    } else {
+        source
     }
 
-    else -> {
-      noiseEffect
+    return when {
+        mask != null -> {
+            createBlendRenderEffect(
+                blendMode = BlendMode.SrcIn,
+                background = createShaderRenderEffect(mask),
+                foreground = noiseEffect,
+            )
+        }
+
+        else -> {
+            noiseEffect
+        }
     }
-  }
 }

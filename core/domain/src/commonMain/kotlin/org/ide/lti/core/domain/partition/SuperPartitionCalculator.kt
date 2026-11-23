@@ -80,10 +80,13 @@ class SuperPartitionCalculator {
 
         if (isOverflown) {
             val overflowMb = overflowBytes / (1024 * 1024)
-            warnings.add("Super partition capacity exceeded by $overflowMb MB ($overflowBytes bytes). lpmake will fail.")
+            warnings.add(
+                "Super partition capacity exceeded by $overflowMb MB ($overflowBytes bytes). lpmake will fail.",
+            )
         } else if (headroomPercent < 0.05f) {
             val freeMb = freeHeadroom / (1024 * 1024)
-            warnings.add("Low storage headroom: only $freeMb MB (${(headroomPercent * 100).toInt()}%) remaining in super partition.")
+            val pct = (headroomPercent * 100).toInt()
+            warnings.add("Low storage headroom: only $freeMb MB ($pct%) remaining in super partition.")
         }
 
         // Identify conversion opportunities to EROFS for EXT4 partitions
@@ -92,7 +95,9 @@ class SuperPartitionCalculator {
                 val estimatedSavings = estimateErofsSavings(part.sizeBytes, CompressionAlgorithm.LZ4HC)
                 val savingsMb = estimatedSavings / (1024 * 1024)
                 if (savingsMb > 20L) {
-                    recommendations.add("Converting '${part.name}' from EXT4 to EROFS (LZ4HC) could recover approximately $savingsMb MB of space.")
+                    recommendations.add(
+                        "Converting '${part.name}' from EXT4 to EROFS (LZ4HC) could recover ~${savingsMb}MB space.",
+                    )
                 }
             }
         }

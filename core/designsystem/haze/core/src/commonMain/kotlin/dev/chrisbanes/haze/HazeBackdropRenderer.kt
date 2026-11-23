@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze
 
 import androidx.compose.ui.geometry.Rect
@@ -14,18 +20,18 @@ import androidx.compose.ui.graphics.Canvas
  */
 @InternalHazeApi
 internal interface HazeBackdropRenderer {
-  fun isSupported(canvas: Canvas): Boolean
+    fun isSupported(canvas: Canvas): Boolean
 
-  fun configure(
-    bounds: Rect,
-    clip: Rect?,
-    effect: PlatformRenderEffect,
-    alpha: Float = 1f,
-  ): Boolean
+    fun configure(
+        bounds: Rect,
+        clip: Rect?,
+        effect: PlatformRenderEffect,
+        alpha: Float = 1f,
+    ): Boolean
 
-  fun draw(canvas: Canvas): Boolean
+    fun draw(canvas: Canvas): Boolean
 
-  fun release()
+    fun release()
 }
 
 @InternalHazeApi
@@ -45,10 +51,10 @@ internal const val HAZE_BACKDROP_37_2_BETA_3_PREVIEW_SDK = 3_723
 
 @InternalHazeApi
 internal fun isHazeBackdropSdkSupported(
-  fullSdkInt: Int,
-  previewSdkInt: Int,
+    fullSdkInt: Int,
+    previewSdkInt: Int,
 ): Boolean = fullSdkInt >= HAZE_BACKDROP_MIN_FULL_SDK ||
-  (
-    fullSdkInt == HAZE_BACKDROP_PREVIEW_BASE_FULL_SDK &&
-      previewSdkInt == HAZE_BACKDROP_37_2_BETA_3_PREVIEW_SDK
-    )
+    (
+        fullSdkInt == HAZE_BACKDROP_PREVIEW_BASE_FULL_SDK &&
+            previewSdkInt == HAZE_BACKDROP_37_2_BETA_3_PREVIEW_SDK
+        )

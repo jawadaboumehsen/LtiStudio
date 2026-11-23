@@ -1,6 +1,12 @@
-// Copyright 2025, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 @file:OptIn(InternalHazeApi::class)
 
 package dev.chrisbanes.haze.blur
@@ -27,163 +33,163 @@ import dev.chrisbanes.haze.trace
  * Calculates the blur tile mode for a blur visual effect.
  */
 internal fun BlurVisualEffect.calculateBlurTileMode(): TileMode = when (blurredEdgeTreatment) {
-  androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded -> TileMode.Decal
-  else -> TileMode.Clamp
+    androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded -> TileMode.Decal
+    else -> TileMode.Clamp
 }
 
 @OptIn(ExperimentalHazeApi::class)
 internal fun BlurVisualEffect.getOrCreateRenderEffect(
-  context: HazeEffectRuntimeDrawScope,
-  inputScale: Float = resolveInputScaleFactor(),
-  blurRadius: Dp = this.blurRadius.takeOrElse { 0.dp },
-  noiseFactor: Float = this.noiseFactor,
-  colorEffects: List<HazeColorEffect> = this.colorEffects.orEmpty(),
-  colorEffectsAlphaModulate: Float = 1f,
-  backgroundColor: Color = Color.Transparent,
-  contentSize: Size = context.size,
-  contentOffset: Offset = context.layerOffset,
-  mask: Brush? = this.mask,
-  progressiveMask: Brush? = null,
-  retainInputWhenMasked: Boolean = false,
-  progressive: HazeProgressive? = null,
-  blurTileMode: TileMode = calculateBlurTileMode(),
-  slot: BlurRenderEffectSlot? = null,
+    context: HazeEffectRuntimeDrawScope,
+    inputScale: Float = resolveInputScaleFactor(),
+    blurRadius: Dp = this.blurRadius.takeOrElse { 0.dp },
+    noiseFactor: Float = this.noiseFactor,
+    colorEffects: List<HazeColorEffect> = this.colorEffects.orEmpty(),
+    colorEffectsAlphaModulate: Float = 1f,
+    backgroundColor: Color = Color.Transparent,
+    contentSize: Size = context.size,
+    contentOffset: Offset = context.layerOffset,
+    mask: Brush? = this.mask,
+    progressiveMask: Brush? = null,
+    retainInputWhenMasked: Boolean = false,
+    progressive: HazeProgressive? = null,
+    blurTileMode: TileMode = calculateBlurTileMode(),
+    slot: BlurRenderEffectSlot? = null,
 ): PlatformRenderEffect {
-  val densityScale = context.requireDensity().density
-  slot?.lookup(
-    generation = renderEffectGeneration,
-    densityScale = densityScale,
-    blurRadius = blurRadius,
-    noiseFactor = noiseFactor,
-    scale = inputScale,
-    colorEffects = colorEffects,
-    colorEffectsAlphaModulate = colorEffectsAlphaModulate,
-    backgroundColor = backgroundColor,
-    contentSize = contentSize,
-    contentOffset = contentOffset,
-    mask = mask,
-    progressiveMask = progressiveMask,
-    retainInputWhenMasked = retainInputWhenMasked,
-    progressive = progressive,
-    blurTileMode = blurTileMode,
-  )?.let { return it }
+    val densityScale = context.requireDensity().density
+    slot?.lookup(
+        generation = renderEffectGeneration,
+        densityScale = densityScale,
+        blurRadius = blurRadius,
+        noiseFactor = noiseFactor,
+        scale = inputScale,
+        colorEffects = colorEffects,
+        colorEffectsAlphaModulate = colorEffectsAlphaModulate,
+        backgroundColor = backgroundColor,
+        contentSize = contentSize,
+        contentOffset = contentOffset,
+        mask = mask,
+        progressiveMask = progressiveMask,
+        retainInputWhenMasked = retainInputWhenMasked,
+        progressive = progressive,
+        blurTileMode = blurTileMode,
+    )?.let { return it }
 
-  return trace("HazeEffectNode-getOrCreateRenderEffect") {
-    val params = RenderEffectParams(
-      blurRadius = blurRadius,
-      noiseFactor = noiseFactor,
-      scale = inputScale,
-      colorEffects = colorEffects,
-      colorEffectsAlphaModulate = colorEffectsAlphaModulate,
-      backgroundColor = backgroundColor,
-      contentSize = contentSize,
-      contentOffset = contentOffset,
-      mask = mask,
-      progressiveMask = progressiveMask,
-      retainInputWhenMasked = retainInputWhenMasked,
-      progressive = progressive,
-      blurTileMode = blurTileMode,
-    )
-    getOrCreateRenderEffect(context = context, params = params).also {
-      slot?.store(renderEffectGeneration, densityScale, params, it)
+    return trace("HazeEffectNode-getOrCreateRenderEffect") {
+        val params = RenderEffectParams(
+            blurRadius = blurRadius,
+            noiseFactor = noiseFactor,
+            scale = inputScale,
+            colorEffects = colorEffects,
+            colorEffectsAlphaModulate = colorEffectsAlphaModulate,
+            backgroundColor = backgroundColor,
+            contentSize = contentSize,
+            contentOffset = contentOffset,
+            mask = mask,
+            progressiveMask = progressiveMask,
+            retainInputWhenMasked = retainInputWhenMasked,
+            progressive = progressive,
+            blurTileMode = blurTileMode,
+        )
+        getOrCreateRenderEffect(context = context, params = params).also {
+            slot?.store(renderEffectGeneration, densityScale, params, it)
+        }
     }
-  }
 }
 
 internal fun BlurVisualEffect.clearRenderEffectCache() {
-  renderEffectCache.evictAll()
-  // Slots compare the generation, so none can return an effect the cache no longer holds.
-  renderEffectGeneration++
-  backdropSlot.reset()
+    renderEffectCache.evictAll()
+    // Slots compare the generation, so none can return an effect the cache no longer holds.
+    renderEffectGeneration++
+    backdropSlot.reset()
 }
 
 @Poko
 internal class RenderEffectParams(
-  val blurRadius: Dp,
-  val noiseFactor: Float,
-  val scale: Float,
-  val contentSize: Size,
-  val contentOffset: Offset,
-  val colorEffects: List<HazeColorEffect> = emptyList(),
-  val colorEffectsAlphaModulate: Float = 1f,
-  val backgroundColor: Color = Color.Transparent,
-  val mask: Brush? = null,
-  /** Alpha-mask approximation of [progressive], applied before [mask]. */
-  val progressiveMask: Brush? = null,
-  /** Composites the [progressiveMask]ed output over its input. */
-  val retainInputWhenMasked: Boolean = false,
-  val progressive: HazeProgressive? = null,
-  val blurTileMode: TileMode,
+    val blurRadius: Dp,
+    val noiseFactor: Float,
+    val scale: Float,
+    val contentSize: Size,
+    val contentOffset: Offset,
+    val colorEffects: List<HazeColorEffect> = emptyList(),
+    val colorEffectsAlphaModulate: Float = 1f,
+    val backgroundColor: Color = Color.Transparent,
+    val mask: Brush? = null,
+    /** Alpha-mask approximation of [progressive], applied before [mask]. */
+    val progressiveMask: Brush? = null,
+    /** Composites the [progressiveMask]ed output over its input. */
+    val retainInputWhenMasked: Boolean = false,
+    val progressive: HazeProgressive? = null,
+    val blurTileMode: TileMode,
 )
 
 @Poko
 internal class RenderEffectCacheKey(
-  val blurRadiusPx: Float,
-  val noiseFactor: Float,
-  val scale: Float,
-  val contentSize: Size,
-  val contentOffset: Offset,
-  val colorEffects: List<HazeColorEffect>,
-  val colorEffectsAlphaModulate: Float,
-  val backgroundColor: Color,
-  val mask: Brush?,
-  val progressiveMask: Brush?,
-  val retainInputWhenMasked: Boolean,
-  val progressive: HazeProgressive?,
-  val blurTileMode: TileMode,
+    val blurRadiusPx: Float,
+    val noiseFactor: Float,
+    val scale: Float,
+    val contentSize: Size,
+    val contentOffset: Offset,
+    val colorEffects: List<HazeColorEffect>,
+    val colorEffectsAlphaModulate: Float,
+    val backgroundColor: Color,
+    val mask: Brush?,
+    val progressiveMask: Brush?,
+    val retainInputWhenMasked: Boolean,
+    val progressive: HazeProgressive?,
+    val blurTileMode: TileMode,
 )
 
 internal fun RenderEffectParams.resolveBlurRadiusPx(density: Density): Float =
-  with(density) { (blurRadius * scale).toPx() }
+    with(density) { (blurRadius * scale).toPx() }
 
 internal fun RenderEffectParams.renderEffectCacheKey(density: Density): RenderEffectCacheKey {
-  val hasBrushTint = colorEffects.any { it is TintBrushHazeColorEffect }
-  val hasOffsetColorEffect = colorEffects.any {
-    it is TintBrushHazeColorEffect || it is ColorFilterHazeColorEffect
-  }
-  val hasMask = progressive != null || mask != null || progressiveMask != null
-  val usesContentSize = hasMask || hasBrushTint
-  val usesContentOffset = hasMask || hasOffsetColorEffect
+    val hasBrushTint = colorEffects.any { it is TintBrushHazeColorEffect }
+    val hasOffsetColorEffect = colorEffects.any {
+        it is TintBrushHazeColorEffect || it is ColorFilterHazeColorEffect
+    }
+    val hasMask = progressive != null || mask != null || progressiveMask != null
+    val usesContentSize = hasMask || hasBrushTint
+    val usesContentOffset = hasMask || hasOffsetColorEffect
 
-  return RenderEffectCacheKey(
-    blurRadiusPx = resolveBlurRadiusPx(density),
-    noiseFactor = if (noiseFactor.hasVisibleNoise()) noiseFactor else 0f,
-    scale = scale,
-    contentSize = if (usesContentSize) contentSize else Size.Zero,
-    contentOffset = if (usesContentOffset) contentOffset else Offset.Zero,
-    colorEffects = colorEffects,
-    colorEffectsAlphaModulate = colorEffectsAlphaModulate,
-    backgroundColor = backgroundColor,
-    mask = mask,
-    progressiveMask = progressiveMask,
-    retainInputWhenMasked = retainInputWhenMasked,
-    progressive = progressive,
-    blurTileMode = blurTileMode,
-  )
+    return RenderEffectCacheKey(
+        blurRadiusPx = resolveBlurRadiusPx(density),
+        noiseFactor = if (noiseFactor.hasVisibleNoise()) noiseFactor else 0f,
+        scale = scale,
+        contentSize = if (usesContentSize) contentSize else Size.Zero,
+        contentOffset = if (usesContentOffset) contentOffset else Offset.Zero,
+        colorEffects = colorEffects,
+        colorEffectsAlphaModulate = colorEffectsAlphaModulate,
+        backgroundColor = backgroundColor,
+        mask = mask,
+        progressiveMask = progressiveMask,
+        retainInputWhenMasked = retainInputWhenMasked,
+        progressive = progressive,
+        blurTileMode = blurTileMode,
+    )
 }
 
 @OptIn(ExperimentalHazeApi::class)
 private fun BlurVisualEffect.getOrCreateRenderEffect(
-  context: HazeEffectRuntimeDrawScope,
-  params: RenderEffectParams,
+    context: HazeEffectRuntimeDrawScope,
+    params: RenderEffectParams,
 ): PlatformRenderEffect {
-  HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect: $params" }
-  val density = context.requireDensity()
-  val cacheKey = params.renderEffectCacheKey(density)
-  val cached = renderEffectCache[cacheKey]
-  if (cached != null) {
-    HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect. Returning cached: $params" }
-    return cached
-  }
+    HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect: $params" }
+    val density = context.requireDensity()
+    val cacheKey = params.renderEffectCacheKey(density)
+    val cached = renderEffectCache[cacheKey]
+    if (cached != null) {
+        HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect. Returning cached: $params" }
+        return cached
+    }
 
-  HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect. Creating: $params" }
-  return trace("HazeBlur-createRenderEffect") {
-    createRenderEffect(
-      context = context.requirePlatformContext(),
-      density = density,
-      params = params,
-    )
-  }.also { effect ->
-    renderEffectCache.put(cacheKey, effect)
-  }
+    HazeLogger.d(BlurVisualEffect.TAG) { "getOrCreateRenderEffect. Creating: $params" }
+    return trace("HazeBlur-createRenderEffect") {
+        createRenderEffect(
+            context = context.requirePlatformContext(),
+            density = density,
+            params = params,
+        )
+    }.also { effect ->
+        renderEffectCache.put(cacheKey, effect)
+    }
 }

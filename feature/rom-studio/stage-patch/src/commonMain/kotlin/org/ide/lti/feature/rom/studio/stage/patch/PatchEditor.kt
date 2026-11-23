@@ -92,34 +92,60 @@ public fun PatchEditor(
             item {
                 if (selected in PLAN_PREVIEWS && (facts.loading || facts.plansLoading)) {
                     GlassLoadingStatus("Reading mod plans…")
-                    return@item
-                }
-                when (selected) {
-                    "enabled-ordered-modules" -> Column(
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                    ) {
-                        // Above the list: with many mods enabled the list is long, the check is what is asked for.
-                        if (settings.enabledPackages.isNotEmpty()) ModLabCard(lab, facts, onCheckTogether)
-                        EnabledCard(settings, facts, onToggle)
-                    }
-
-                    "file-changes" -> ChangesCard(
-                        "File changes",
-                        changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch },
+                } else {
+                    PatchSelectedView(
+                        selected = selected,
+                        settings = settings,
+                        facts = facts,
+                        lab = lab,
+                        changes = changes,
+                        onToggle = onToggle,
+                        onCheckTogether = onCheckTogether,
+                        onOpenPlugins = onOpenPlugins,
+                        onRefresh = onRefresh,
                     )
-
-                    "text-patches" ->
-                        ChangesCard("Text patches", changes.filter { (_, op) -> op is Operation.TextPatch })
-
-                    "property-patches" ->
-                        ChangesCard("Property patches", changes.filter { (_, op) -> op is Operation.PropertyPatch })
-
-                    "conflicts" -> ConflictsCard(changes)
-
-                    else -> PatchCatalog(settings, facts, onToggle, onOpenPlugins, onRefresh)
                 }
             }
         }
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun PatchSelectedView(
+    selected: String,
+    settings: CustomizationSettings,
+    facts: PatchFacts,
+    lab: LabState,
+    changes: List<Pair<String, Operation>>,
+    onToggle: (String) -> Unit,
+    onCheckTogether: (Boolean) -> Unit,
+    onOpenPlugins: () -> Unit,
+    onRefresh: () -> Unit,
+) {
+    when (selected) {
+        "enabled-ordered-modules" -> Column(
+            verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+        ) {
+            // Above the list: with many mods enabled the list is long, the check is what is asked for.
+            if (settings.enabledPackages.isNotEmpty()) ModLabCard(lab, facts, onCheckTogether)
+            EnabledCard(settings, facts, onToggle)
+        }
+
+        "file-changes" -> ChangesCard(
+            "File changes",
+            changes.filter { (_, op) -> op !is Operation.TextPatch && op !is Operation.PropertyPatch },
+        )
+
+        "text-patches" ->
+            ChangesCard("Text patches", changes.filter { (_, op) -> op is Operation.TextPatch })
+
+        "property-patches" ->
+            ChangesCard("Property patches", changes.filter { (_, op) -> op is Operation.PropertyPatch })
+
+        "conflicts" -> ConflictsCard(changes)
+
+        else -> PatchCatalog(settings, facts, onToggle, onOpenPlugins, onRefresh)
     }
 }
 

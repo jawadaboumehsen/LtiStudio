@@ -19,7 +19,8 @@ enum class DeviceMode {
     FASTBOOT,
     FASTBOOTD,
     RECOVERY,
-    EDL_9008;
+    EDL_9008,
+    ;
 
     val isConnected: Boolean get() = this != DISCONNECTED
 
@@ -37,19 +38,23 @@ enum class CpuPlatform(val displayName: String) {
     MEDIATEK("MediaTek Dimensity"),
     TENSOR("Google Tensor"),
     EXYNOS("Samsung Exynos"),
-    GENERIC("Generic ARM64");
+    GENERIC("Generic ARM64"),
+    ;
 
     companion object {
+        private val SNAPDRAGON_KEYS = listOf("qcom", "qualcomm", "sm", "sdm", "msm")
+        private val MEDIATEK_KEYS = listOf("mt", "mediatek", "dimensity")
+        private val TENSOR_KEYS = listOf("tensor", "gs101", "gs201", "zuma")
+        private val EXYNOS_KEYS = listOf("exynos", "s5e")
+
         fun fromHardwareString(hardware: String?): CpuPlatform {
-            if (hardware == null) return GENERIC
+            if (hardware.isNullOrBlank()) return GENERIC
             val lower = hardware.lowercase()
             return when {
-                lower.contains("qcom") || lower.contains("qualcomm") || lower.contains("sm") ||
-                    lower.contains("sdm") || lower.contains("msm") -> SNAPDRAGON
-                lower.contains("mt") || lower.contains("mediatek") || lower.contains("dimensity") -> MEDIATEK
-                lower.contains("tensor") || lower.contains("gs101") || lower.contains("gs201") ||
-                    lower.contains("zuma") -> TENSOR
-                lower.contains("exynos") || lower.contains("s5e") -> EXYNOS
+                SNAPDRAGON_KEYS.any { lower.contains(it) } -> SNAPDRAGON
+                MEDIATEK_KEYS.any { lower.contains(it) } -> MEDIATEK
+                TENSOR_KEYS.any { lower.contains(it) } -> TENSOR
+                EXYNOS_KEYS.any { lower.contains(it) } -> EXYNOS
                 else -> GENERIC
             }
         }
@@ -59,7 +64,8 @@ enum class CpuPlatform(val displayName: String) {
 enum class DeviceSlot {
     A,
     B,
-    NONE;
+    NONE,
+    ;
 
     val suffix: String get() = when (this) {
         A -> "_a"

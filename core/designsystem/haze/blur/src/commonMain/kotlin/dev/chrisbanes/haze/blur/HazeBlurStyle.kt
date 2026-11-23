@@ -1,6 +1,12 @@
-// Copyright 2024, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2024 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.runtime.Immutable
@@ -27,7 +33,7 @@ import dev.chrisbanes.haze.Poko
  * order. Later writes replace earlier writes.
  */
 public val LocalHazeBlurStyle: ProvidableCompositionLocal<HazeBlurStyle> =
-  compositionLocalOf { HazeBlurStyle }
+    compositionLocalOf { HazeBlurStyle }
 
 /**
  * An opaque, shareable sequence of Blur Style writes.
@@ -46,15 +52,15 @@ public val LocalHazeBlurStyle: ProvidableCompositionLocal<HazeBlurStyle> =
  */
 @Immutable
 public sealed interface HazeBlurStyle {
-  /** Returns a Style that applies [other] after this Style. */
-  public fun then(other: HazeBlurStyle): HazeBlurStyle = combineHazeBlurStyles(this, other)
+    /** Returns a Style that applies [other] after this Style. */
+    public fun then(other: HazeBlurStyle): HazeBlurStyle = combineHazeBlurStyles(this, other)
 
-  /** Returns a Style that runs [block] after this Style. */
-  public fun then(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
-    then(HazeBlurStyle(block))
+    /** Returns a Style that runs [block] after this Style. */
+    public fun then(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
+        then(HazeBlurStyle(block))
 
-  /** The empty Blur Style, which performs no writes. */
-  public companion object : HazeBlurStyle
+    /** The empty Blur Style, which performs no writes. */
+    public companion object : HazeBlurStyle
 }
 
 /**
@@ -63,33 +69,33 @@ public sealed interface HazeBlurStyle {
  */
 @Immutable
 private class LeafHazeBlurStyle(
-  private val inputs: List<Any?>?,
-  private val block: HazeBlurStyleScope.() -> Unit,
+    private val inputs: List<Any?>?,
+    private val block: HazeBlurStyleScope.() -> Unit,
 ) : HazeBlurStyle {
-  fun replay(scope: HazeBlurStyleScope) {
-    scope.block()
-  }
+    fun replay(scope: HazeBlurStyleScope) {
+        scope.block()
+    }
 
-  override fun equals(other: Any?): Boolean =
-    this === other || (inputs != null && other is LeafHazeBlurStyle && inputs == other.inputs)
+    override fun equals(other: Any?): Boolean =
+        this === other || (inputs != null && other is LeafHazeBlurStyle && inputs == other.inputs)
 
-  override fun hashCode(): Int = inputs?.hashCode() ?: super.hashCode()
+    override fun hashCode(): Int = inputs?.hashCode() ?: super.hashCode()
 }
 
 @Immutable
 private class CombinedHazeBlurStyle(
-  val styles: List<HazeBlurStyle>,
+    val styles: List<HazeBlurStyle>,
 ) : HazeBlurStyle {
-  override fun equals(other: Any?): Boolean =
-    this === other || (other is CombinedHazeBlurStyle && styles == other.styles)
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is CombinedHazeBlurStyle && styles == other.styles)
 
-  override fun hashCode(): Int = styles.hashCode()
+    override fun hashCode(): Int = styles.hashCode()
 
-  fun replay(scope: HazeBlurStyleScope) {
-    for (style in styles) {
-      style.replay(scope)
+    fun replay(scope: HazeBlurStyleScope) {
+        for (style in styles) {
+            style.replay(scope)
+        }
     }
-  }
 }
 
 /**
@@ -102,7 +108,7 @@ private class CombinedHazeBlurStyle(
  * [IllegalArgumentException] when [block] runs.
  */
 public fun HazeBlurStyle(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
-  LeafHazeBlurStyle(inputs = null, block = block)
+    LeafHazeBlurStyle(inputs = null, block = block)
 
 /**
  * Creates a [HazeBlurStyle] which compares by value: two Styles are equal when their [inputs] are
@@ -111,27 +117,27 @@ public fun HazeBlurStyle(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
  */
 @InternalHazeApi
 public fun valueBackedHazeBlurStyle(
-  vararg inputs: Any?,
-  block: HazeBlurStyleScope.() -> Unit,
+    vararg inputs: Any?,
+    block: HazeBlurStyleScope.() -> Unit,
 ): HazeBlurStyle = LeafHazeBlurStyle(inputs.toList(), block)
 
 private fun combineHazeBlurStyles(
-  first: HazeBlurStyle,
-  second: HazeBlurStyle,
+    first: HazeBlurStyle,
+    second: HazeBlurStyle,
 ): HazeBlurStyle {
-  if (first === HazeBlurStyle) return second
-  if (second === HazeBlurStyle) return first
-  val firstStyles = if (first is CombinedHazeBlurStyle) first.styles else listOf(first)
-  val secondStyles = if (second is CombinedHazeBlurStyle) second.styles else listOf(second)
-  return CombinedHazeBlurStyle(firstStyles + secondStyles)
+    if (first === HazeBlurStyle) return second
+    if (second === HazeBlurStyle) return first
+    val firstStyles = if (first is CombinedHazeBlurStyle) first.styles else listOf(first)
+    val secondStyles = if (second is CombinedHazeBlurStyle) second.styles else listOf(second)
+    return CombinedHazeBlurStyle(firstStyles + secondStyles)
 }
 
 internal fun HazeBlurStyle.replay(scope: HazeBlurStyleScope) {
-  when (this) {
-    HazeBlurStyle -> Unit
-    is LeafHazeBlurStyle -> replay(scope)
-    is CombinedHazeBlurStyle -> replay(scope)
-  }
+    when (this) {
+        HazeBlurStyle -> Unit
+        is LeafHazeBlurStyle -> replay(scope)
+        is CombinedHazeBlurStyle -> replay(scope)
+    }
 }
 
 /**
@@ -142,137 +148,137 @@ internal fun HazeBlurStyle.replay(scope: HazeBlurStyleScope) {
  * their valid ranges, so animation overshoot never throws.
  */
 public sealed interface HazeBlurStyleScope {
-  /** Enables or disables the blur pass. */
-  public fun blurEnabled(enabled: Boolean)
+    /** Enables or disables the blur pass. */
+    public fun blurEnabled(enabled: Boolean)
 
-  /** Sets the blur [radius]. A negative radius, such as animation overshoot, is treated as zero. */
-  public fun blurRadius(radius: Dp)
+    /** Sets the blur [radius]. A negative radius, such as animation overshoot, is treated as zero. */
+    public fun blurRadius(radius: Dp)
 
-  /** Sets the noise opacity, coerced to the range `0f..1f`. */
-  public fun noiseFactor(factor: Float)
+    /** Sets the noise opacity, coerced to the range `0f..1f`. */
+    public fun noiseFactor(factor: Float)
 
-  /** Sets the background color composited behind the blurred input. */
-  public fun backgroundColor(color: Color)
+    /** Sets the background color composited behind the blurred input. */
+    public fun backgroundColor(color: Color)
 
-  /** Replaces the ordered color effects applied to the blurred input. */
-  public fun colorEffects(effects: List<HazeColorEffect>)
+    /** Replaces the ordered color effects applied to the blurred input. */
+    public fun colorEffects(effects: List<HazeColorEffect>)
 
-  /** Sets the effect used when blur rendering is unavailable. */
-  public fun fallbackColorEffect(effect: HazeColorEffect?)
+    /** Sets the effect used when blur rendering is unavailable. */
+    public fun fallbackColorEffect(effect: HazeColorEffect?)
 
-  /** Sets the overall effect opacity, coerced to the range `0f..1f`. */
-  public fun alpha(alpha: Float)
+    /** Sets the overall effect opacity, coerced to the range `0f..1f`. */
+    public fun alpha(alpha: Float)
 
-  /**
-   * Sets the optional alpha [mask] applied to the complete effect.
-   *
-   * When [progressive] is also set, the mask is applied after the progressive intensity, and the
-   * two compose: fully transparent mask regions show no effect.
-   */
-  public fun mask(mask: Brush?)
+    /**
+     * Sets the optional alpha [mask] applied to the complete effect.
+     *
+     * When [progressive] is also set, the mask is applied after the progressive intensity, and the
+     * two compose: fully transparent mask regions show no effect.
+     */
+    public fun mask(mask: Brush?)
 
-  /**
-   * Sets the optional progressive effect intensity.
-   *
-   * It can be combined with [mask], which then fades the whole progressive result.
-   */
-  public fun progressive(progressive: HazeProgressive?)
+    /**
+     * Sets the optional progressive effect intensity.
+     *
+     * It can be combined with [mask], which then fades the whole progressive result.
+     */
+    public fun progressive(progressive: HazeProgressive?)
 
-  /** Sets how content outside the input bounds contributes to the blur. */
-  public fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment)
+    /** Sets how content outside the input bounds contributes to the blur. */
+    public fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment)
 }
 
 @Poko
 internal class ResolvedHazeBlurStyle(
-  val blurEnabled: Boolean,
-  val blurRadius: Dp,
-  val noiseFactor: Float,
-  val backgroundColor: Color,
-  val colorEffects: List<HazeColorEffect>,
-  val fallbackColorEffect: HazeColorEffect?,
-  val alpha: Float,
-  val mask: Brush?,
-  val progressive: HazeProgressive?,
-  val blurredEdgeTreatment: BlurredEdgeTreatment,
+    val blurEnabled: Boolean,
+    val blurRadius: Dp,
+    val noiseFactor: Float,
+    val backgroundColor: Color,
+    val colorEffects: List<HazeColorEffect>,
+    val fallbackColorEffect: HazeColorEffect?,
+    val alpha: Float,
+    val mask: Brush?,
+    val progressive: HazeProgressive?,
+    val blurredEdgeTreatment: BlurredEdgeTreatment,
 )
 
 private class HazeBlurStyleAccumulator : HazeBlurStyleScope {
-  private var blurEnabled: Boolean = HazeBlurDefaults.isBlurEnabledByDefault()
-  private var blurRadius: Dp = HazeBlurDefaults.blurRadius
-  private var noiseFactor: Float = HazeBlurDefaults.noiseFactor
-  private var backgroundColor: Color = Color.Transparent
-  private var colorEffects: List<HazeColorEffect> = emptyList()
-  private var fallbackColorEffect: HazeColorEffect? = null
-  private var alpha: Float = 1f
-  private var mask: Brush? = null
-  private var progressive: HazeProgressive? = null
-  private var blurredEdgeTreatment: BlurredEdgeTreatment = HazeBlurDefaults.blurredEdgeTreatment
+    private var blurEnabled: Boolean = HazeBlurDefaults.isBlurEnabledByDefault()
+    private var blurRadius: Dp = HazeBlurDefaults.blurRadius
+    private var noiseFactor: Float = HazeBlurDefaults.noiseFactor
+    private var backgroundColor: Color = Color.Transparent
+    private var colorEffects: List<HazeColorEffect> = emptyList()
+    private var fallbackColorEffect: HazeColorEffect? = null
+    private var alpha: Float = 1f
+    private var mask: Brush? = null
+    private var progressive: HazeProgressive? = null
+    private var blurredEdgeTreatment: BlurredEdgeTreatment = HazeBlurDefaults.blurredEdgeTreatment
 
-  override fun blurEnabled(enabled: Boolean) {
-    blurEnabled = enabled
-  }
+    override fun blurEnabled(enabled: Boolean) {
+        blurEnabled = enabled
+    }
 
-  override fun blurRadius(radius: Dp) {
-    require(radius.isSpecified) { "blurRadius must be specified" }
-    blurRadius = if (radius < 0.dp) 0.dp else radius
-  }
+    override fun blurRadius(radius: Dp) {
+        require(radius.isSpecified) { "blurRadius must be specified" }
+        blurRadius = if (radius < 0.dp) 0.dp else radius
+    }
 
-  override fun noiseFactor(factor: Float) {
-    require(!factor.isNaN()) { "noiseFactor must not be NaN" }
-    noiseFactor = factor.coerceIn(0f, 1f)
-  }
+    override fun noiseFactor(factor: Float) {
+        require(!factor.isNaN()) { "noiseFactor must not be NaN" }
+        noiseFactor = factor.coerceIn(0f, 1f)
+    }
 
-  override fun backgroundColor(color: Color) {
-    require(color.isSpecified) { "backgroundColor must be specified" }
-    backgroundColor = color
-  }
+    override fun backgroundColor(color: Color) {
+        require(color.isSpecified) { "backgroundColor must be specified" }
+        backgroundColor = color
+    }
 
-  override fun colorEffects(effects: List<HazeColorEffect>) {
-    colorEffects = effects.toList()
-  }
+    override fun colorEffects(effects: List<HazeColorEffect>) {
+        colorEffects = effects.toList()
+    }
 
-  override fun fallbackColorEffect(effect: HazeColorEffect?) {
-    fallbackColorEffect = effect
-  }
+    override fun fallbackColorEffect(effect: HazeColorEffect?) {
+        fallbackColorEffect = effect
+    }
 
-  override fun alpha(alpha: Float) {
-    require(!alpha.isNaN()) { "alpha must not be NaN" }
-    this.alpha = alpha.coerceIn(0f, 1f)
-  }
+    override fun alpha(alpha: Float) {
+        require(!alpha.isNaN()) { "alpha must not be NaN" }
+        this.alpha = alpha.coerceIn(0f, 1f)
+    }
 
-  override fun mask(mask: Brush?) {
-    this.mask = mask
-  }
+    override fun mask(mask: Brush?) {
+        this.mask = mask
+    }
 
-  override fun progressive(progressive: HazeProgressive?) {
-    this.progressive = progressive
-  }
+    override fun progressive(progressive: HazeProgressive?) {
+        this.progressive = progressive
+    }
 
-  override fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment) {
-    blurredEdgeTreatment = treatment
-  }
+    override fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment) {
+        blurredEdgeTreatment = treatment
+    }
 
-  fun snapshot(): ResolvedHazeBlurStyle = ResolvedHazeBlurStyle(
-    blurEnabled = blurEnabled,
-    blurRadius = blurRadius,
-    noiseFactor = noiseFactor,
-    backgroundColor = backgroundColor,
-    colorEffects = colorEffects.toList(),
-    fallbackColorEffect = fallbackColorEffect,
-    alpha = alpha,
-    mask = mask,
-    progressive = progressive,
-    blurredEdgeTreatment = blurredEdgeTreatment,
-  )
+    fun snapshot(): ResolvedHazeBlurStyle = ResolvedHazeBlurStyle(
+        blurEnabled = blurEnabled,
+        blurRadius = blurRadius,
+        noiseFactor = noiseFactor,
+        backgroundColor = backgroundColor,
+        colorEffects = colorEffects.toList(),
+        fallbackColorEffect = fallbackColorEffect,
+        alpha = alpha,
+        mask = mask,
+        progressive = progressive,
+        blurredEdgeTreatment = blurredEdgeTreatment,
+    )
 }
 
 internal fun resolveHazeBlurStyle(
-  localStyle: HazeBlurStyle,
-  explicitStyle: HazeBlurStyle,
+    localStyle: HazeBlurStyle,
+    explicitStyle: HazeBlurStyle,
 ): ResolvedHazeBlurStyle = HazeBlurStyleAccumulator().also { accumulator ->
-  HazeBlurDefaults.style.replay(accumulator)
-  localStyle.replay(accumulator)
-  explicitStyle.replay(accumulator)
+    HazeBlurDefaults.style.replay(accumulator)
+    localStyle.replay(accumulator)
+    explicitStyle.replay(accumulator)
 }.snapshot()
 
 /**
@@ -282,54 +288,54 @@ internal fun resolveHazeBlurStyle(
  */
 @Stable
 public sealed interface HazeColorEffect {
-  /** Factories for [HazeColorEffect] values. */
-  public companion object {
-    /**
-     * Creates a color filter effect.
-     */
-    public fun colorFilter(
-      colorFilter: androidx.compose.ui.graphics.ColorFilter,
-      blendMode: BlendMode = BlendMode.SrcOver,
-    ): HazeColorEffect = ColorFilterHazeColorEffect(colorFilter, blendMode)
+    /** Factories for [HazeColorEffect] values. */
+    public companion object {
+        /**
+         * Creates a color filter effect.
+         */
+        public fun colorFilter(
+            colorFilter: androidx.compose.ui.graphics.ColorFilter,
+            blendMode: BlendMode = BlendMode.SrcOver,
+        ): HazeColorEffect = ColorFilterHazeColorEffect(colorFilter, blendMode)
 
-    /**
-     * Creates a color-based tint effect.
-     */
-    public fun tint(
-      color: Color,
-      blendMode: BlendMode = BlendMode.SrcOver,
-    ): HazeColorEffect {
-      require(color.isSpecified) { "color must be specified" }
-      return TintColorHazeColorEffect(color, blendMode)
+        /**
+         * Creates a color-based tint effect.
+         */
+        public fun tint(
+            color: Color,
+            blendMode: BlendMode = BlendMode.SrcOver,
+        ): HazeColorEffect {
+            require(color.isSpecified) { "color must be specified" }
+            return TintColorHazeColorEffect(color, blendMode)
+        }
+
+        /**
+         * Creates a brush-based tint effect.
+         */
+        public fun tint(
+            brush: Brush,
+            blendMode: BlendMode = BlendMode.SrcOver,
+        ): HazeColorEffect = TintBrushHazeColorEffect(brush, blendMode)
     }
-
-    /**
-     * Creates a brush-based tint effect.
-     */
-    public fun tint(
-      brush: Brush,
-      blendMode: BlendMode = BlendMode.SrcOver,
-    ): HazeColorEffect = TintBrushHazeColorEffect(brush, blendMode)
-  }
 }
 
 @Immutable
 @Poko
 internal class ColorFilterHazeColorEffect(
-  val colorFilter: androidx.compose.ui.graphics.ColorFilter,
-  val blendMode: BlendMode,
+    val colorFilter: androidx.compose.ui.graphics.ColorFilter,
+    val blendMode: BlendMode,
 ) : HazeColorEffect
 
 @Immutable
 @Poko
 internal class TintColorHazeColorEffect(
-  val color: Color,
-  val blendMode: BlendMode,
+    val color: Color,
+    val blendMode: BlendMode,
 ) : HazeColorEffect
 
 @Immutable
 @Poko
 internal class TintBrushHazeColorEffect(
-  val brush: Brush,
-  val blendMode: BlendMode,
+    val brush: Brush,
+    val blendMode: BlendMode,
 ) : HazeColorEffect

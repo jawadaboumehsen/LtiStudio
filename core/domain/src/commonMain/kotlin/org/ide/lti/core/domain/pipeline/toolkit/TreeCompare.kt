@@ -210,7 +210,7 @@ public object LineDiff {
         return out
     }
 
-    /** `lcs[i][j]`: the length of the longest common subsequence of `old[i..]` and `new[j..]`. */
+    /** `lcs[i][j]`: length of longest common subsequence of old (from i) and new (from j). */
     private fun lcs(old: List<String>, new: List<String>): Array<IntArray> {
         val lcs = Array(old.size + 1) { IntArray(new.size + 1) }
         for (i in old.indices.reversed()) {

@@ -1,6 +1,12 @@
-// Copyright 2026, Christopher Banes and the Haze project contributors
-// SPDX-License-Identifier: Apache-2.0
-
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package dev.chrisbanes.haze.blur
 
 import androidx.compose.ui.graphics.GraphicsContext
@@ -15,32 +21,32 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
  * retained-output clears. Confined to the draw thread, like the delegate fields beside it.
  */
 internal class RetainedGraphicsLayer {
-  private var owner: GraphicsContext? = null
-  private var key: Long = 0L
+    private var owner: GraphicsContext? = null
+    private var key: Long = 0L
 
-  /** The retained layer, or null when there is none. */
-  var layer: GraphicsLayer? = null
-    private set
+    /** The retained layer, or null when there is none. */
+    var layer: GraphicsLayer? = null
+        private set
 
-  /**
-   * Returns the retained layer, creating one from [graphicsContext] when there is none, when it was
-   * released elsewhere, or when [key] changed (the old layer is released first).
-   */
-  fun acquire(graphicsContext: GraphicsContext, key: Long = 0L): GraphicsLayer {
-    layer?.takeIf { !it.isReleased && this.key == key }?.let { return it }
-    release()
-    return graphicsContext.createGraphicsLayer().also {
-      layer = it
-      owner = graphicsContext
-      this.key = key
+    /**
+     * Returns the retained layer, creating one from [graphicsContext] when there is none, when it was
+     * released elsewhere, or when [key] changed (the old layer is released first).
+     */
+    fun acquire(graphicsContext: GraphicsContext, key: Long = 0L): GraphicsLayer {
+        layer?.takeIf { !it.isReleased && this.key == key }?.let { return it }
+        release()
+        return graphicsContext.createGraphicsLayer().also {
+            layer = it
+            owner = graphicsContext
+            this.key = key
+        }
     }
-  }
 
-  /** Releases the retained layer, if any. Safe to call repeatedly. */
-  fun release() {
-    layer?.takeUnless { it.isReleased }?.let { owner?.releaseGraphicsLayer(it) }
-    layer = null
-    owner = null
-    key = 0L
-  }
+    /** Releases the retained layer, if any. Safe to call repeatedly. */
+    fun release() {
+        layer?.takeUnless { it.isReleased }?.let { owner?.releaseGraphicsLayer(it) }
+        layer = null
+        owner = null
+        key = 0L
+    }
 }

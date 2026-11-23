@@ -57,8 +57,9 @@ class SuperPartitionCalculatorTest {
     @Test
     fun calculateBudgetAlignsToBlockBoundaries() {
         val superCapacity = 10_000_000L
+        // should align to 8192 on 4096 block
         val partitions = listOf(
-            PartitionSpec("vendor", 4097L, FilesystemType.EROFS), // should align to 8192 on 4096 block
+            PartitionSpec("vendor", 4097L, FilesystemType.EROFS),
         )
 
         val forecast = calculator.calculateBudget(superCapacity, partitions, blockSizeBytes = 4096L)

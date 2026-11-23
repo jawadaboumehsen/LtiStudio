@@ -17,9 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Runner that executes visual composite pipeline recipes with step-level timing,
  * failure isolation, retry mechanics, and cancellation support.
  */
-class MacroPipelineRunner(
-    recipe: MacroRecipe,
-) {
+class MacroPipelineRunner(recipe: MacroRecipe) {
     private val _currentRecipe = MutableStateFlow(recipe)
     val currentRecipe: StateFlow<MacroRecipe> = _currentRecipe.asStateFlow()
 
@@ -56,13 +54,13 @@ class MacroPipelineRunner(
             if (result.isSuccess) {
                 steps[i] = steps[i].copy(
                     status = MacroStepStatus.PASSED,
-                    durationMillis = 250L,
+                    durationMs = 250L,
                 )
                 _currentRecipe.value = recipe.copy(steps = steps.toList())
             } else {
                 steps[i] = steps[i].copy(
                     status = MacroStepStatus.FAILED,
-                    durationMillis = 250L,
+                    durationMs = 250L,
                     errorMessage = result.exceptionOrNull()?.message ?: "Step failed",
                 )
                 _currentRecipe.value = recipe.copy(steps = steps.toList())
@@ -85,17 +83,19 @@ class MacroPipelineRunner(
     }
 
     companion object {
+        private val NOOP_ACTION: suspend () -> Result<Unit> = { Result.success(Unit) }
+
         fun createDefaultFlashRecipe(): MacroRecipe = MacroRecipe(
             id = "recipe.full_flash",
             name = "1-Click Full ROM Rebuild & Flash",
-            description = "Extract payload -> Inject KernelSU -> Repack EROFS Super -> Patch Vbmeta -> Flash Fastbootd -> Reboot",
+            description = "Extract payload -> Inject KernelSU -> Repack Super -> Patch Vbmeta -> Flash -> Reboot",
             steps = listOf(
-                MacroStep("s1", "Extract Payload.bin", "Extract partitions from OTA payload", { Result.success(Unit) }),
-                MacroStep("s2", "Inject KernelSU", "Patch GKI boot.img with KernelSU driver", { Result.success(Unit) }),
-                MacroStep("s3", "Repack EROFS Super", "Build dynamic partition image with lpmake", { Result.success(Unit) }),
-                MacroStep("s4", "Patch Vbmeta", "Disable AVB verification flags", { Result.success(Unit) }),
-                MacroStep("s5", "Flash Fastbootd", "Flash super.img and boot.img to device", { Result.success(Unit) }),
-                MacroStep("s6", "Reboot Device", "Reboot system into Android", { Result.success(Unit) }),
+                MacroStep("s1", "Extract Payload.bin", "Extract partitions from OTA payload", NOOP_ACTION),
+                MacroStep("s2", "Inject KernelSU", "Patch GKI boot.img with KernelSU driver", NOOP_ACTION),
+                MacroStep("s3", "Repack EROFS Super", "Build dynamic partition image with lpmake", NOOP_ACTION),
+                MacroStep("s4", "Patch Vbmeta", "Disable AVB verification flags", NOOP_ACTION),
+                MacroStep("s5", "Flash Fastbootd", "Flash super.img and boot.img to device", NOOP_ACTION),
+                MacroStep("s6", "Reboot Device", "Reboot system into Android", NOOP_ACTION),
             ),
         )
     }

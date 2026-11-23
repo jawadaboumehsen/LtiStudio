@@ -94,7 +94,10 @@ class VintfCheckTest {
             ),
             report.skuResults,
         )
-        assertEquals(listOf(VintfEvidenceKind.APEX, VintfEvidenceKind.FIRMWARE_METADATA), report.evidence.map { it.kind })
+        assertEquals(
+            listOf(VintfEvidenceKind.APEX, VintfEvidenceKind.FIRMWARE_METADATA),
+            report.evidence.map { it.kind },
+        )
         val missing = report.missingEvidence[1]
         val manifest = "/odm/etc/vintf/manifest_cellular.xml"
         assertTrue(missing.contains(manifest))
@@ -184,7 +187,10 @@ class VintfCheckTest {
         val assessment = VintfCheck.assess(text)
 
         assertEquals(VintfStatus.INCOMPLETE, assessment.status)
-        assertEquals(listOf(VintfSkuResult("sun", null, VintfStatus.INCOMPATIBLE, provisional = true)), assessment.skuResults)
+        assertEquals(
+            listOf(VintfSkuResult("sun", null, VintfStatus.INCOMPATIBLE, provisional = true)),
+            assessment.skuResults,
+        )
         assertTrue(assessment.missingEvidence.any { "META/misc_info.txt" in it })
         assertTrue(assessment.missingEvidence.any { "vendor SKU sun" in it && "CONFIG_ADVISE_SYSCALLS" in it })
         assertEquals(emptyList(), VintfCheck.refusals(text))
@@ -226,7 +232,8 @@ class VintfCheckTest {
         assertEquals(1, VintfCheck.acknowledgedMismatches(text, accepted, scope = "original").size)
         assertEquals(1, VintfCheck.refusals(text, accepted, scope = "different").size)
         assertEquals(1, VintfCheck.refusals(text.replace("sun|-", "other|-"), accepted, scope = "original").size)
-        assertEquals(1, VintfCheck.refusals(text.replace("CONFIG_ADVISE_SYSCALLS", "CONFIG_OTHER"), accepted, "original").size)
+        val modifiedConfig = text.replace("CONFIG_ADVISE_SYSCALLS", "CONFIG_OTHER")
+        assertEquals(1, VintfCheck.refusals(modifiedConfig, accepted, "original").size)
     }
 
     @Test
@@ -236,9 +243,9 @@ class VintfCheckTest {
             build = base.snapshot.build.copy(acknowledgedWarnings = setOf(BuildWarningKind.VintfIncompatible.name)),
         )
         val original = output(result = incompatible)
-        fun refusals(snapshot: ConfigurationSnapshot, report: String) =
-            BuildChecks.vintfSteps(base.copy(snapshot = snapshot, runtimeValues = mapOf(BuildChecks.VINTF_KEY to report)))
-                .filterIsInstance<PipelineStep.Check>().mapNotNull { it.verify(emptyMap()) }
+        fun refusals(snapshot: ConfigurationSnapshot, report: String) = BuildChecks.vintfSteps(
+            base.copy(snapshot = snapshot, runtimeValues = mapOf(BuildChecks.VINTF_KEY to report)),
+        ).filterIsInstance<PipelineStep.Check>().mapNotNull { it.verify(emptyMap()) }
 
         val blocked = refusals(legacy, original).single()
         val id = requireNotNull(VintfCheck.splitMismatchMessage(blocked.substringAfter(": ")).first)

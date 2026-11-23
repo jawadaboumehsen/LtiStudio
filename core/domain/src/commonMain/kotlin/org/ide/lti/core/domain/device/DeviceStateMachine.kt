@@ -35,9 +35,7 @@ sealed interface DeviceEvent {
  * Pure domain state machine tracking Android device connectivity, mode transitions
  * (ADB -> Fastboot -> Fastbootd -> EDL -> Recovery), and hardware profile attributes.
  */
-class DeviceStateMachine(
-    initialProfile: DeviceProfile = DeviceProfile.Disconnected,
-) {
+class DeviceStateMachine(initialProfile: DeviceProfile = DeviceProfile.Disconnected) {
     private val _currentProfile = MutableStateFlow(initialProfile)
     val currentProfile: StateFlow<DeviceProfile> = _currentProfile.asStateFlow()
 

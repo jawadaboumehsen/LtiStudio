@@ -167,7 +167,9 @@ public class RunRecordDataSource(
         val quarantineKey = "$key.quarantine.$timestamp"
         try {
             settings[quarantineKey] = raw
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            // Best-effort quarantine persistence
+        }
         val warning = DecodeWarning(
             key = key,
             quarantineKey = quarantineKey,
