@@ -75,6 +75,7 @@ object WindowKeyShortcutHandler {
             isShift && !isAlt -> when {
                 matchesKey(event.key, Key.S) || nativeCode == Key.S.nativeKeyCode -> StudioAction.SAVE_ALL
                 matchesKey(event.key, Key.A) || nativeCode == Key.A.nativeKeyCode -> StudioAction.TOGGLE_AI_ASSISTANT
+                matchesKey(event.key, Key.P) || nativeCode == Key.P.nativeKeyCode -> StudioAction.TOGGLE_COMMAND_PALETTE
                 matchesKey(event.key, Key.Z) || nativeCode == Key.Z.nativeKeyCode -> StudioAction.REDO
                 matchesKey(event.key, Key.F) || nativeCode == Key.F.nativeKeyCode -> StudioAction.FIND
                 matchesKey(event.key, Key.G) || nativeCode == Key.G.nativeKeyCode -> StudioAction.CLONE_GIT
@@ -83,6 +84,7 @@ object WindowKeyShortcutHandler {
             }
             // Primary shortcuts (no Shift, no Alt)
             !isShift && !isAlt -> when {
+                matchesKey(event.key, Key.K) || nativeCode == Key.K.nativeKeyCode -> StudioAction.TOGGLE_COMMAND_PALETTE
                 matchesKey(event.key, Key.Comma) || nativeCode == Key.Comma.nativeKeyCode -> StudioAction.OPEN_SETTINGS
                 matchesKey(event.key, Key.B) || nativeCode == Key.B.nativeKeyCode -> StudioAction.TOGGLE_EXPLORER
                 isBacktick -> StudioAction.TOGGLE_TERMINAL

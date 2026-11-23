@@ -33,6 +33,7 @@ kotlin {
             implementation(projects.core.common)
             implementation(projects.core.domain)
             implementation(projects.core.designsystem)
+            implementation(projects.core.ui)
 
             implementation(projects.ltiShared)
             implementation(projects.feature.setup)

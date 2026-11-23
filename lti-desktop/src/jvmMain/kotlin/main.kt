@@ -205,6 +205,20 @@ fun main(args: Array<String>) {
         }
 
         var buildsAtExit by remember { mutableStateOf(emptyList<String>()) }
+        var isCommandPaletteOpen by remember { mutableStateOf(false) }
+        var isCopilotOpen by remember { mutableStateOf(false) }
+        var isSuperBudgeterOpen by remember { mutableStateOf(false) }
+
+        val commandRegistry = remember<org.ide.lti.core.domain.command.CommandPaletteRegistry> {
+            org.ide.lti.core.ui.command.DefaultStudioCommands.createDefaultRegistry(
+                onNavigateSettings = openSettingsInMainWindow,
+                onToggleTerminal = { actionDispatcher.dispatch(StudioAction.TOGGLE_TERMINAL) },
+                onToggleExplorer = { actionDispatcher.dispatch(StudioAction.TOGGLE_EXPLORER) },
+                onToggleAiAssistant = { actionDispatcher.dispatch(StudioAction.TOGGLE_AI_ASSISTANT) },
+                onOpenCopilot = { isCopilotOpen = true },
+                onOpenSuperBudgeter = { isSuperBudgeterOpen = true },
+            )
+        }
 
         val requestExit: () -> Unit = {
             if (!isShuttingDown) {
@@ -241,7 +255,26 @@ fun main(args: Array<String>) {
             title = "LtiRom Studio",
             icon = painterResource("icons/ic_launcher.png"),
             minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
-            onPreviewKeyEvent = { event -> WindowKeyShortcutHandler.handleKeyEvent(event, actionDispatcher) },
+            onPreviewKeyEvent = { event ->
+                WindowKeyShortcutHandler.handleKeyEvent(
+                    event = event,
+                    dispatcher = actionDispatcher,
+                    onDismissOverlay = {
+                        if (isCommandPaletteOpen) {
+                            isCommandPaletteOpen = false
+                            true
+                        } else if (isCopilotOpen) {
+                            isCopilotOpen = false
+                            true
+                        } else if (isSuperBudgeterOpen) {
+                            isSuperBudgeterOpen = false
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                )
+            },
         ) {
             remember {
                 StartupTiming.log("DecoratedWindow composition entered")
@@ -269,12 +302,16 @@ fun main(args: Array<String>) {
                 actionDispatcher.register(StudioAction.BRING_ALL_TO_FRONT) {
                     restoreWindow(windowState, nucleusWin)
                 }
+                actionDispatcher.register(StudioAction.TOGGLE_COMMAND_PALETTE) {
+                    isCommandPaletteOpen = !isCommandPaletteOpen
+                }
                 onDispose {
                     actionDispatcher.unregister(StudioAction.OPEN_SETTINGS)
                     actionDispatcher.unregister(StudioAction.EXIT)
                     actionDispatcher.unregister(StudioAction.MINIMIZE_WINDOW)
                     actionDispatcher.unregister(StudioAction.ZOOM_WINDOW)
                     actionDispatcher.unregister(StudioAction.BRING_ALL_TO_FRONT)
+                    actionDispatcher.unregister(StudioAction.TOGGLE_COMMAND_PALETTE)
                 }
             }
 
@@ -376,6 +413,103 @@ fun main(args: Array<String>) {
                                         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
+                            }
+                        }
+
+                        if (isCommandPaletteOpen) {
+                            org.ide.lti.core.ui.command.CommandPaletteModal(
+                                isOpen = isCommandPaletteOpen,
+                                registry = commandRegistry,
+                                onDismiss = { isCommandPaletteOpen = false },
+                            )
+                        }
+
+                        if (isCopilotOpen) {
+                            val sampleLogs = remember {
+                                listOf(
+                                    "03-25 12:00:02.345 1000 1000 F libc : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0 in tid 1000 (system_server)",
+                                    "03-25 12:00:02.350 500 500 I DEBUG : pid: 1000, tid: 1000, name: system_server >>> system_server <<<",
+                                    "type=1400 audit(1710000000.123:45): avc: denied { read open } for pid=1234 comm=\"cameraserver\" path=\"/dev/v4l-subdev0\" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 tclass=chr_file permissive=0",
+                                    "03-25 12:05:00.000 1000 1050 W Watchdog: *** WATCHDOG KILLING SYSTEM PROCESS: Blocked in handler on ActivityManager (ActivityManager)",
+                                )
+                            }
+                            val diagnoses = remember(sampleLogs) {
+                                org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer().analyze(
+                                    org.ide.lti.core.domain.copilot.CrashSource.LOGCAT,
+                                    sampleLogs,
+                                )
+                            }
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = { isCopilotOpen = false },
+                                title = "Bootloop & Crash Copilot",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = { isCopilotOpen = false },
+                                    ) {
+                                        androidx.compose.material3.Text("Close")
+                                    }
+                                },
+                            ) {
+                                org.ide.lti.core.ui.copilot.BootloopCopilotSheet(
+                                    diagnoses = diagnoses,
+                                )
+                            }
+                        }
+
+                        if (isSuperBudgeterOpen) {
+                            val samplePartitions = remember {
+                                listOf(
+                                    org.ide.lti.core.domain.partition.PartitionSpec(
+                                        name = "system",
+                                        sizeBytes = 3_200_000_000L,
+                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
+                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
+                                    ),
+                                    org.ide.lti.core.domain.partition.PartitionSpec(
+                                        name = "vendor",
+                                        sizeBytes = 1_100_000_000L,
+                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
+                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
+                                    ),
+                                    org.ide.lti.core.domain.partition.PartitionSpec(
+                                        name = "product",
+                                        sizeBytes = 2_400_000_000L,
+                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
+                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
+                                    ),
+                                    org.ide.lti.core.domain.partition.PartitionSpec(
+                                        name = "system_ext",
+                                        sizeBytes = 650_000_000L,
+                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
+                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
+                                    ),
+                                    org.ide.lti.core.domain.partition.PartitionSpec(
+                                        name = "odm",
+                                        sizeBytes = 250_000_000L,
+                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EXT4,
+                                    ),
+                                )
+                            }
+                            val forecast = remember(samplePartitions) {
+                                org.ide.lti.core.domain.partition.SuperPartitionCalculator().calculateBudget(
+                                    superCapacityBytes = 9_126_805_504L,
+                                    partitions = samplePartitions,
+                                )
+                            }
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = { isSuperBudgeterOpen = false },
+                                title = "Dynamic Partitions (super.img) Capacity Forecast",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = { isSuperBudgeterOpen = false },
+                                    ) {
+                                        androidx.compose.material3.Text("Close")
+                                    }
+                                },
+                            ) {
+                                org.ide.lti.core.ui.partition.SuperPartitionBudgetMeter(
+                                    forecast = forecast,
+                                )
                             }
                         }
                     },

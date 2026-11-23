@@ -182,6 +182,48 @@ class WindowKeyShortcutHandlerTest {
     }
 
     @Test
+    fun handleKeyEvent_ctrlShiftP_triggersToggleCommandPaletteAction() {
+        var dispatchedAction: StudioAction? = null
+        val dispatcher = DefaultStudioActionDispatcher().apply {
+            register(StudioAction.TOGGLE_COMMAND_PALETTE) { dispatchedAction = StudioAction.TOGGLE_COMMAND_PALETTE }
+        }
+
+        val event = createKeyEvent(
+            keyCode = AwtKeyEvent.VK_P,
+            modifiers = InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK,
+        )
+        val handled = WindowKeyShortcutHandler.handleKeyEvent(
+            event = event,
+            dispatcher = dispatcher,
+            isMacOs = false,
+        )
+
+        assertTrue(handled, "Expected Ctrl+Shift+P to trigger toggle command palette")
+        assertEquals(StudioAction.TOGGLE_COMMAND_PALETTE, dispatchedAction)
+    }
+
+    @Test
+    fun handleKeyEvent_ctrlK_triggersToggleCommandPaletteAction() {
+        var dispatchedAction: StudioAction? = null
+        val dispatcher = DefaultStudioActionDispatcher().apply {
+            register(StudioAction.TOGGLE_COMMAND_PALETTE) { dispatchedAction = StudioAction.TOGGLE_COMMAND_PALETTE }
+        }
+
+        val event = createKeyEvent(
+            keyCode = AwtKeyEvent.VK_K,
+            modifiers = InputEvent.CTRL_DOWN_MASK,
+        )
+        val handled = WindowKeyShortcutHandler.handleKeyEvent(
+            event = event,
+            dispatcher = dispatcher,
+            isMacOs = false,
+        )
+
+        assertTrue(handled, "Expected Ctrl+K to trigger toggle command palette")
+        assertEquals(StudioAction.TOGGLE_COMMAND_PALETTE, dispatchedAction)
+    }
+
+    @Test
     fun handleKeyEvent_ctrlShiftG_triggersCloneGitAction() {
         var dispatchedAction: StudioAction? = null
         val dispatcher = DefaultStudioActionDispatcher().apply {

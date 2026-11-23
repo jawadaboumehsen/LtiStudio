@@ -35,6 +35,7 @@ enum class StudioAction {
     TOGGLE_EXPLORER,
     TOGGLE_TERMINAL,
     TOGGLE_AI_ASSISTANT,
+    TOGGLE_COMMAND_PALETTE,
     RESET_LAYOUT,
 
     // Window

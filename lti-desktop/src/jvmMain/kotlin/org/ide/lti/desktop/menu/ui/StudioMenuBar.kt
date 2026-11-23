@@ -150,6 +150,13 @@ private fun MenuBarScope.ViewMenu(
     dispatcher: StudioActionDispatcher,
 ) {
     Menu("View", mnemonic = 'V') {
+        Item(
+            text = "Command Palette...",
+            mnemonic = 'C',
+            shortcut = DesktopKeyShortcut.primary(Key.P, shift = true),
+            onClick = { dispatcher.dispatch(StudioAction.TOGGLE_COMMAND_PALETTE) },
+        )
+        Separator()
         CheckboxItem(
             text = "Project Explorer",
             mnemonic = 'P',
