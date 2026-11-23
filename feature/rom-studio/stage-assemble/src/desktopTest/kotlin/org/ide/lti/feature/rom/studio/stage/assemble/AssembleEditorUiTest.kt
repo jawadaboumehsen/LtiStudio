@@ -16,6 +16,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTree
 import org.ide.lti.core.domain.pipeline.toolkit.ImageTreeEntry
@@ -70,7 +71,8 @@ class AssembleEditorUiTest {
         composeTestRule.onNodeWithTag("ImageTreeRow_system/bin/sh").assertIsDisplayed()
 
         composeTestRule.onNodeWithTag("ImageItemDetails").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("CopyOutButton").performClick()
+        composeTestRule.onNodeWithTag("CopyOutButton").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
         assertEquals("system/bin/sh", extractedPath)
 
         selectedSubobject = "image-conversion"

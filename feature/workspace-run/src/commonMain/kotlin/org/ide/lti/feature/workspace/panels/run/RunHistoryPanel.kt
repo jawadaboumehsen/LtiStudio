@@ -95,20 +95,7 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
         if (uiState.isLoading && uiState.runs.isEmpty()) {
             GlassLoadingPlaceholder("Loading run history…")
         } else if (uiState.runs.isEmpty()) {
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Spacing.Large),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "No recorded build runs for this workspace yet.",
-                        style = typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            RunHistoryEmptyState()
         } else {
             if (uiState.isLoading) {
                 GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.Small))
@@ -119,106 +106,151 @@ public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = 
                     .weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                // Left: List of runs
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(0.45f)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    items(uiState.runs, key = { it.id }) { run ->
-                        val isSelected = run.id == uiState.selectedRun?.id
-                        RunListItemCard(
-                            run = run,
-                            deviceCheck = uiState.deviceChecks[run.id],
-                            isSelected = isSelected,
-                            onSelect = { viewModel.selectRun(run) },
-                            onDelete = { pendingDelete = run },
-                        )
-                    }
-                }
+                RunMasterList(
+                    uiState = uiState,
+                    onSelectRun = viewModel::selectRun,
+                    onDeleteRun = { pendingDelete = it },
+                    modifier = Modifier.weight(0.45f).fillMaxHeight(),
+                )
 
-                // Right: Details for selected run
-                val selected = uiState.selectedRun
-                if (selected != null) {
-                    val rightScrollState = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .weight(0.55f)
-                            .fillMaxHeight()
-                            .verticalScroll(rightScrollState)
-                            .padding(end = Spacing.Small, bottom = Spacing.ExtraLarge),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "Run ${selected.id}",
-                                style = typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            GlassButton(
-                                onClick = viewModel::inspect,
-                                enabled = !uiState.isComparing,
-                                variant = GlassButtonVariant.Standard,
-                            ) { Text("Inspect") }
-                        }
-                        CompareWithRow(
-                            others = uiState.runs.filter { it.id != selected.id }.take(COMPARE_CHOICES),
-                            busy = uiState.isComparing,
-                            onCompare = viewModel::compareWith,
-                        )
-
-                        StagePipelineView(
-                            latestRun = selected,
-                            isBusy = false,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-
-                        GlassHorizontalDivider()
-
-                        Text(
-                            text = "Artifacts (${selected.artifacts.size})",
-                            style = typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-
-                        if (selected.artifacts.isEmpty()) {
-                            Text(
-                                text = "No artifacts recorded for this run.",
-                                style = typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            ) {
-                                selected.artifacts.forEach { artifact ->
-                                    HistoryArtifactItem(artifact = artifact)
-                                }
-                            }
-                        }
-
-                        val logsToDisplay = if (uiState.selectedRunLogs.isNotEmpty()) {
-                            uiState.selectedRunLogs
-                        } else {
-                            listOf("[Log not cached for run ${selected.id}]")
-                        }
-
-                        GlassConsoleDrawer(
-                            logs = logsToDisplay,
-                            isRunning = false,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-
-                        Spacer(modifier = Modifier.height(Spacing.Large))
-                    }
+                uiState.selectedRun?.let { selected ->
+                    RunDetailsPane(
+                        selected = selected,
+                        uiState = uiState,
+                        onInspect = viewModel::inspect,
+                        onCompareWith = viewModel::compareWith,
+                        modifier = Modifier.weight(0.55f).fillMaxHeight(),
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RunHistoryEmptyState(modifier: Modifier = Modifier) {
+    val typography = GlassTheme.typography
+    GlassCard(modifier = modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.Large),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "No recorded build runs for this workspace yet.",
+                style = typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RunMasterList(
+    uiState: RunHistoryUiState,
+    onSelectRun: (BuildRun) -> Unit,
+    onDeleteRun: (BuildRun) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        items(uiState.runs, key = { it.id }) { run ->
+            val isSelected = run.id == uiState.selectedRun?.id
+            RunListItemCard(
+                run = run,
+                deviceCheck = uiState.deviceChecks[run.id],
+                isSelected = isSelected,
+                onSelect = { onSelectRun(run) },
+                onDelete = { onDeleteRun(run) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RunDetailsPane(
+    selected: BuildRun,
+    uiState: RunHistoryUiState,
+    onInspect: () -> Unit,
+    onCompareWith: (BuildRun) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val typography = GlassTheme.typography
+    val rightScrollState = rememberScrollState()
+    Column(
+        modifier = modifier
+            .verticalScroll(rightScrollState)
+            .padding(end = Spacing.Small, bottom = Spacing.ExtraLarge),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Run ${selected.id}",
+                style = typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            GlassButton(
+                onClick = onInspect,
+                enabled = !uiState.isComparing,
+                variant = GlassButtonVariant.Standard,
+            ) { Text("Inspect") }
+        }
+        CompareWithRow(
+            others = uiState.runs.filter { it.id != selected.id }.take(COMPARE_CHOICES),
+            busy = uiState.isComparing,
+            onCompare = onCompareWith,
+        )
+
+        StagePipelineView(
+            latestRun = selected,
+            isBusy = false,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        GlassHorizontalDivider()
+
+        Text(
+            text = "Artifacts (${selected.artifacts.size})",
+            style = typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        if (selected.artifacts.isEmpty()) {
+            Text(
+                text = "No artifacts recorded for this run.",
+                style = typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                selected.artifacts.forEach { artifact ->
+                    HistoryArtifactItem(artifact = artifact)
+                }
+            }
+        }
+
+        val logsToDisplay = if (uiState.selectedRunLogs.isNotEmpty()) {
+            uiState.selectedRunLogs
+        } else {
+            listOf("[Log not cached for run ${selected.id}]")
+        }
+
+        GlassConsoleDrawer(
+            logs = logsToDisplay,
+            isRunning = false,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.Large))
     }
 }
 

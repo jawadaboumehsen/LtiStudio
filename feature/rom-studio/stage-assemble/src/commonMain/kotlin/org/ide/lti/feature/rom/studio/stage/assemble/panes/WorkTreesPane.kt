@@ -72,141 +72,156 @@ public fun WorkTreesPane(
             .testTag("WorkTreesPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(GlassShapes.ShellCard)
-                .ideCardSurface(shape = GlassShapes.ShellCard)
-                .padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        IncludedPartitionsTableCard(
+            partitions = partitions,
+            includedPartitions = settings.includedPartitions,
+            onTogglePartition = { name ->
+                val updated = toggledSelection(partitions, settings.includedPartitions, name)
+                onChange(settings.copy(includedPartitions = updated))
+            },
+        )
+
+        StagedWorkTreeStatusCard()
+    }
+}
+
+@Composable
+private fun IncludedPartitionsTableCard(
+    partitions: List<String>,
+    includedPartitions: List<String>,
+    onTogglePartition: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Text(
+            text = "Included partitions",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = FontSize.TitleSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        Text(
+            text = "Select dynamic partitions to unpack and assemble into the staging work tree.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontFamily = ideFontFamily(),
+        )
+
+        IdeTable(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            IdeTableHeader {
+                IdeTableHeaderCell(
+                    text = "",
+                    modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
+                )
+                IdeTableHeaderCell(
+                    text = "Partition",
+                    modifier = Modifier.weight(2f),
+                )
+                IdeTableHeaderCell(
+                    text = "Status",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            partitions.forEach { name ->
+                val isIncluded = name in includedPartitions || includedPartitions.isEmpty()
+                IdeTableRow(
+                    isSelected = isIncluded,
+                    onClick = { onTogglePartition(name) },
+                ) {
+                    Checkbox(
+                        checked = isIncluded,
+                        onCheckedChange = { onTogglePartition(name) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                        modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
+                    )
+                    Row(
+                        modifier = Modifier.weight(2f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = if (isIncluded) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                        Text(
+                            text = name,
+                            color = if (isIncluded) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            fontSize = FontSize.BodySmall,
+                            fontFamily = codeFontFamily(),
+                        )
+                    }
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        IdeStatusBadge(
+                            label = if (isIncluded) "Included" else "Excluded",
+                            severity = if (isIncluded) IdeStatusSeverity.Ready else IdeStatusSeverity.Neutral,
+                            useDot = true,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StagedWorkTreeStatusCard(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ShellCard)
+            .ideCardSurface(shape = GlassShapes.ShellCard)
+            .padding(Spacing.Medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
         ) {
             Text(
-                text = "Included partitions",
+                text = "Staged work tree status",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = FontSize.TitleSmall,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = ideFontFamily(),
             )
-            Text(
-                text = "Select dynamic partitions to unpack and assemble into the staging work tree.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = ideFontFamily(),
-            )
-
-            IdeTable(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                IdeTableHeader {
-                    IdeTableHeaderCell(
-                        text = "",
-                        modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
-                    )
-                    IdeTableHeaderCell(
-                        text = "Partition",
-                        modifier = Modifier.weight(2f),
-                    )
-                    IdeTableHeaderCell(
-                        text = "Status",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                partitions.forEach { name ->
-                    val isIncluded = name in settings.includedPartitions || settings.includedPartitions.isEmpty()
-                    IdeTableRow(
-                        isSelected = isIncluded,
-                        onClick = {
-                            val updated = toggledSelection(partitions, settings.includedPartitions, name)
-                            onChange(settings.copy(includedPartitions = updated))
-                        },
-                    ) {
-                        Checkbox(
-                            checked = isIncluded,
-                            onCheckedChange = {
-                                val updated = toggledSelection(partitions, settings.includedPartitions, name)
-                                onChange(settings.copy(includedPartitions = updated))
-                            },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.primary,
-                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                            modifier = Modifier.width(GlassDimens.AcquireTableIconColWidth),
-                        )
-                        Row(
-                            modifier = Modifier.weight(2f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = if (isIncluded) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text(
-                                text = name,
-                                color = if (isIncluded) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                fontSize = FontSize.BodySmall,
-                                fontFamily = codeFontFamily(),
-                            )
-                        }
-
-                        Box(modifier = Modifier.weight(1f)) {
-                            IdeStatusBadge(
-                                label = if (isIncluded) "Included" else "Excluded",
-                                severity = if (isIncluded) IdeStatusSeverity.Ready else IdeStatusSeverity.Neutral,
-                                useDot = true,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Staged Partitions Footprint Card
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(GlassShapes.ShellCard)
-                .ideCardSurface(shape = GlassShapes.ShellCard)
-                .padding(Spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Text(
-                    text = "Staged work tree status",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = FontSize.TitleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = ideFontFamily(),
-                )
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(IconSize.ExtraSmall),
-                )
-            }
-
-            Text(
-                text = "Each included partition is copied to work/<partition>/ in the workspace folder, with " +
-                    "its fs_config and file_contexts in work/configs/.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = FontSize.Micro,
-                fontFamily = codeFontFamily(),
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(IconSize.ExtraSmall),
             )
         }
+
+        Text(
+            text = "Each included partition is copied to work/<partition>/ in the workspace folder, with " +
+                "its fs_config and file_contexts in work/configs/.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = FontSize.Micro,
+            fontFamily = codeFontFamily(),
+        )
     }
 }

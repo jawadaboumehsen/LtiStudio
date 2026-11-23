@@ -53,121 +53,131 @@ fun PartitionsConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> 
             onPartitionsChange = { onTargetChange(target.copy(bootPartitions = it)) },
         )
 
-        GlassCard(
+        BootChainPartitionSizesCard(target = target, onTargetChange = onTargetChange)
+
+        PackagingPolicyCard(target = target, onTargetChange = onTargetChange)
+    }
+}
+
+@Composable
+private fun BootChainPartitionSizesCard(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(
+            Text(
+                text = "Boot Chain Partition Sizes",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Fixed-size boot chain images, in bytes.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Text(
-                    text = "Boot Chain Partition Sizes",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                GlassTextField(
+                    value = target.bootPartitionBytes.toString(),
+                    onValueChange = { raw ->
+                        raw.toLongOrNull()?.let { onTargetChange(target.copy(bootPartitionBytes = it)) }
+                    },
+                    label = "boot",
+                    modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = "Fixed-size boot chain images, in bytes.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                GlassTextField(
+                    value = target.vendorBootPartitionBytes.toString(),
+                    onValueChange = { raw ->
+                        raw.toLongOrNull()?.let { onTargetChange(target.copy(vendorBootPartitionBytes = it)) }
+                    },
+                    label = "vendor_boot",
+                    modifier = Modifier.weight(1f),
                 )
+            }
 
-                Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    GlassTextField(
-                        value = target.bootPartitionBytes.toString(),
-                        onValueChange = { raw ->
-                            raw.toLongOrNull()?.let { onTargetChange(target.copy(bootPartitionBytes = it)) }
-                        },
-                        label = "boot",
-                        modifier = Modifier.weight(1f),
-                    )
-                    GlassTextField(
-                        value = target.vendorBootPartitionBytes.toString(),
-                        onValueChange = { raw ->
-                            raw.toLongOrNull()?.let { onTargetChange(target.copy(vendorBootPartitionBytes = it)) }
-                        },
-                        label = "vendor_boot",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    GlassTextField(
-                        value = target.initBootPartitionBytes.toString(),
-                        onValueChange = { raw ->
-                            raw.toLongOrNull()?.let { onTargetChange(target.copy(initBootPartitionBytes = it)) }
-                        },
-                        label = "init_boot",
-                        modifier = Modifier.weight(1f),
-                    )
-                    GlassTextField(
-                        value = target.dtboPartitionBytes.toString(),
-                        onValueChange = { raw ->
-                            raw.toLongOrNull()?.let { onTargetChange(target.copy(dtboPartitionBytes = it)) }
-                        },
-                        label = "dtbo",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                GlassTextField(
+                    value = target.initBootPartitionBytes.toString(),
+                    onValueChange = { raw ->
+                        raw.toLongOrNull()?.let { onTargetChange(target.copy(initBootPartitionBytes = it)) }
+                    },
+                    label = "init_boot",
+                    modifier = Modifier.weight(1f),
+                )
+                GlassTextField(
+                    value = target.dtboPartitionBytes.toString(),
+                    onValueChange = { raw ->
+                        raw.toLongOrNull()?.let { onTargetChange(target.copy(dtboPartitionBytes = it)) }
+                    },
+                    label = "dtbo",
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
+    }
+}
 
-        GlassCard(
+@Composable
+private fun PackagingPolicyCard(target: TargetDevice, onTargetChange: (TargetDevice) -> Unit) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(
+            Text(
+                text = "Packaging Policy",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Flashable ZIP assembly rules for this target's packagePolicy.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            GlassTextField(
+                value = target.packagePolicy.recoverySystemMountPoint,
+                onValueChange = {
+                    onTargetChange(
+                        target.copy(packagePolicy = target.packagePolicy.copy(recoverySystemMountPoint = it)),
+                    )
+                },
+                label = "Recovery System Mount Point",
+                placeholder = "/system_root",
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 Text(
-                    text = "Packaging Policy",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = "Exclude vbmeta from package",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = "Flashable ZIP assembly rules for this target's packagePolicy.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                GlassTextField(
-                    value = target.packagePolicy.recoverySystemMountPoint,
-                    onValueChange = {
-                        onTargetChange(
-                            target.copy(packagePolicy = target.packagePolicy.copy(recoverySystemMountPoint = it)),
-                        )
+                GlassToggle(
+                    checked = target.packagePolicy.excludeVbmeta,
+                    onCheckedChange = {
+                        onTargetChange(target.copy(packagePolicy = target.packagePolicy.copy(excludeVbmeta = it)))
                     },
-                    label = "Recovery System Mount Point",
-                    placeholder = "/system_root",
-                    modifier = Modifier.fillMaxWidth(),
                 )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    Text(
-                        text = "Exclude vbmeta from package",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    GlassToggle(
-                        checked = target.packagePolicy.excludeVbmeta,
-                        onCheckedChange = {
-                            onTargetChange(target.copy(packagePolicy = target.packagePolicy.copy(excludeVbmeta = it)))
-                        },
-                    )
-                }
             }
         }
     }

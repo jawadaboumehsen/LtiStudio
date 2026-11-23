@@ -57,136 +57,166 @@ fun OsStreamsConfigTab(target: TargetDevice, onTargetChange: (TargetDevice) -> U
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        GlassCard(
+        DeploymentRegionCard(
+            target = target,
+            activeRegion = activeRegion,
+            onSelectRegion = { activeRegion = it },
+        )
+
+        BaselineFirmwareStreamCard(
+            activeRegion = activeRegion,
+            firmware = currentFirmware,
+            onUpdateFirmware = ::updateFirmware,
+        )
+
+        FirmwareAcquisitionPolicyCard()
+    }
+}
+
+@Composable
+private fun DeploymentRegionCard(
+    target: TargetDevice,
+    activeRegion: TargetRegion,
+    onSelectRegion: (TargetRegion) -> Unit,
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(
+            Text(
+                text = "Deployment Region",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Baseline OS market/region driving OTA endpoints and locale streams.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Text(
-                    text = "Deployment Region",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Baseline OS market/region driving OTA endpoints and locale streams.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    target.availableRegions.forEach { region ->
-                        val isSelected = activeRegion == region
-                        GlassButton(
-                            onClick = { activeRegion = region },
-                            modifier = Modifier.weight(1f),
-                            variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
-                        ) {
-                            Text(
-                                text = "${region.displayName} (${region.shortName})",
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
+                target.availableRegions.forEach { region ->
+                    val isSelected = activeRegion == region
+                    GlassButton(
+                        onClick = { onSelectRegion(region) },
+                        modifier = Modifier.weight(1f),
+                        variant = if (isSelected) GlassButtonVariant.Primary else GlassButtonVariant.Standard,
+                    ) {
+                        Text(
+                            text = "${region.displayName} (${region.shortName})",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                     }
                 }
             }
         }
+    }
+}
 
-        GlassCard(
+@Composable
+private fun BaselineFirmwareStreamCard(
+    activeRegion: TargetRegion,
+    firmware: TargetFirmware,
+    onUpdateFirmware: (TargetFirmware) -> Unit,
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(
+            Text(
+                text = "Baseline Firmware Stream (${activeRegion.displayName})",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Firmware identity used to acquire and verify the baseline OTA/image dump for this region.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
+
+            GlassTextField(
+                value = firmware.version,
+                onValueChange = { onUpdateFirmware(firmware.copy(version = it)) },
+                label = "Firmware Version",
+                placeholder = "e.g. REDMAGICOS10.5.15_NP05J_GB",
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            )
+
+            GlassTextField(
+                value = firmware.buildId,
+                onValueChange = { onUpdateFirmware(firmware.copy(buildId = it)) },
+                label = "Build Fingerprint",
+                placeholder = "e.g. PQ84P01:15/AQ3A.240812.002/20260311.222527",
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
-                Text(
-                    text = "Baseline Firmware Stream (${activeRegion.displayName})",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Firmware identity used to acquire and verify the baseline OTA/image dump for this region.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Spacer(modifier = Modifier.height(Spacing.ExtraSmall))
-
                 GlassTextField(
-                    value = currentFirmware.version,
-                    onValueChange = { updateFirmware(currentFirmware.copy(version = it)) },
-                    label = "Firmware Version",
-                    placeholder = "e.g. REDMAGICOS10.5.15_NP05J_GB",
-                    modifier = Modifier.fillMaxWidth(),
+                    value = firmware.androidVersion,
+                    onValueChange = { onUpdateFirmware(firmware.copy(androidVersion = it)) },
+                    label = "Android Version",
+                    placeholder = "15",
+                    modifier = Modifier.weight(1f),
                 )
-
                 GlassTextField(
-                    value = currentFirmware.buildId,
-                    onValueChange = { updateFirmware(currentFirmware.copy(buildId = it)) },
-                    label = "Build Fingerprint",
-                    placeholder = "e.g. PQ84P01:15/AQ3A.240812.002/20260311.222527",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                ) {
-                    GlassTextField(
-                        value = currentFirmware.androidVersion,
-                        onValueChange = { updateFirmware(currentFirmware.copy(androidVersion = it)) },
-                        label = "Android Version",
-                        placeholder = "15",
-                        modifier = Modifier.weight(1f),
-                    )
-                    GlassTextField(
-                        value = currentFirmware.securityPatch,
-                        onValueChange = { updateFirmware(currentFirmware.copy(securityPatch = it)) },
-                        label = "Security Patch",
-                        placeholder = "2026-02-01",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                GlassTextField(
-                    value = currentFirmware.otaUrl.orEmpty(),
-                    onValueChange = { updateFirmware(currentFirmware.copy(otaUrl = it.ifBlank { null })) },
-                    label = "OTA / Acquisition URL",
-                    placeholder = "https://rom.download.nubia.com/...",
-                    modifier = Modifier.fillMaxWidth(),
+                    value = firmware.securityPatch,
+                    onValueChange = { onUpdateFirmware(firmware.copy(securityPatch = it)) },
+                    label = "Security Patch",
+                    placeholder = "2026-02-01",
+                    modifier = Modifier.weight(1f),
                 )
             }
+
+            GlassTextField(
+                value = firmware.otaUrl.orEmpty(),
+                onValueChange = { onUpdateFirmware(firmware.copy(otaUrl = it.ifBlank { null })) },
+                label = "OTA / Acquisition URL",
+                placeholder = "https://rom.download.nubia.com/...",
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+    }
+}
 
-        GlassCard(
+@Composable
+private fun FirmwareAcquisitionPolicyCard() {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-            ) {
-                Text(
-                    text = "Firmware Acquisition Policy",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text =
-                    "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound " +
-                        "per-workspace inside Configuration Snapshots.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                text = "Firmware Acquisition Policy",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Baseline firmware acquisition mode (official OTA download or raw archive import) is bound " +
+                    "per-workspace inside Configuration Snapshots.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
