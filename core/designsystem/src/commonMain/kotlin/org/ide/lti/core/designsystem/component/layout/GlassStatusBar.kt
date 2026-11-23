@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -41,7 +40,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * @param trailingContent Optional content slot on the end/right edge.
  * @param drawOwnChrome Whether to render internal glass background and borders (false when embedded).
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassStatusBar(
     modifier: Modifier = Modifier,

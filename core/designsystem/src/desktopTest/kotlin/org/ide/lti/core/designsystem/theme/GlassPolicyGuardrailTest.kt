@@ -25,7 +25,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.GlassAccessibilitySettings
 import dev.chrisbanes.haze.glass.LocalGlassAccessibilitySettings
 import org.ide.lti.core.designsystem.component.actions.GlassButton
@@ -88,7 +87,7 @@ class GlassPolicyGuardrailTest {
         )
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun monotonicAccessibilityPreservesParentReduceTransparencyWhenEffectsAreEnabled() = runDesktopComposeUiTest {
         var observedReduceTransparency = false

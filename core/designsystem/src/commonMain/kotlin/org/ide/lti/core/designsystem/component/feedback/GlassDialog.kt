@@ -37,7 +37,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.progress.GlassSpinner
@@ -69,7 +68,6 @@ sealed interface DialogActions {
  * Glass dialog component with scrim and glass surface - built on Haze's real
  * `Modifier.hazeGlass`, overlay tier ([MaterialTheme.colorScheme.surfaceContainerHighest]).
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassDialog(
     onDismissRequest: () -> Unit,
@@ -169,7 +167,6 @@ sealed class LoadingDialogState {
 /**
  * Glass loading dialog with circular progress indicator.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassLoadingDialog(visibilityState: LoadingDialogState, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme

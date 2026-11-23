@@ -66,6 +66,9 @@ import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldLeadingSlot
 import org.ide.lti.core.designsystem.component.inputs.TextFieldTrailingSlot
+import org.ide.lti.core.designsystem.component.layout.GlassRole
+import org.ide.lti.core.designsystem.component.layout.glassContainer
+import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
@@ -244,7 +247,8 @@ fun ProjectsStepContent(
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false),
+                    .weight(1f, fill = false)
+                    .glassContainer(scrollState = lazyListState),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 items(
@@ -313,21 +317,17 @@ private fun WorkspaceRowItem(
         MaterialTheme.colorScheme.outline
     }
 
-    val backgroundColor = if (isSelected) {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer
-    }
+    val glassRole = if (isSelected) GlassRole.FloatingControl else GlassRole.Shell
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.Card)
-            .background(backgroundColor)
-            .border(
-                width = if (isSelected) StrokeWidth.Focused else StrokeWidth.Standard,
-                color = borderColor,
-                shape = GlassShapes.Card,
+            .glassSurface(
+                role = glassRole,
+                shape = GlassShapes.HazeCard,
+                drawBorder = true,
+                borderColor = borderColor,
+                borderWidth = if (isSelected) StrokeWidth.Focused else StrokeWidth.Standard,
             )
             .clickable(onClick = {
                 onSelect()

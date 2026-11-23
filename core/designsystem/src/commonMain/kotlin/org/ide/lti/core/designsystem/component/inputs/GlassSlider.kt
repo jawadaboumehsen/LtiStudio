@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
@@ -82,7 +81,6 @@ data class SliderVisuals(
  * circular glass thumb whose hover/press response comes from Haze's own interaction system
  * (`interactionSource` + `interactionTransformTarget`), not hand-rolled drag-damping.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassSlider(
     value: () -> Float,

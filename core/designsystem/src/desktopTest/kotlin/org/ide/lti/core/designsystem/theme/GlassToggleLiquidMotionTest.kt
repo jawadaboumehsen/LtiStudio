@@ -53,7 +53,6 @@ import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.hazeGlass
@@ -94,7 +93,7 @@ import kotlin.time.TestTimeSource
  * 6. **Directional & Motion Integrity**: Proper RTL layout-aware translation and instantaneous snap
  *    under reduced motion.
  */
-@OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalTestApi::class)
 // Comprehensive liquid motion verification suite with 24 optical and interaction tests.
 @Suppress("LargeClass", "TooManyFunctions")
 class GlassToggleLiquidMotionTest {

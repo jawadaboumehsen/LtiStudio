@@ -29,7 +29,6 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.RefractionProfile
@@ -267,7 +266,6 @@ class GlassPrimitiveDiagnosticTest {
     // 4. Boundary Rim Refraction Displacement
     // =============================================================================================
 
-    @OptIn(ExperimentalHazeApi::class)
     @Test
     fun testBoundaryRimRefractionDisplacement() = runDesktopComposeUiTest(
         width = 240,

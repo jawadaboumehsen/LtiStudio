@@ -63,7 +63,6 @@ import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -89,7 +88,7 @@ import kotlin.test.assertTrue
  */
 // One prototype suite: every test drives the same PrototypeGlassToggle and pixel helpers below.
 @Suppress("LargeClass")
-@OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalTestApi::class)
 class GlassTogglePrototypeTest {
 
     enum class ToggleGeometryPair(

@@ -57,7 +57,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
@@ -482,7 +481,6 @@ fun GlassPasswordField(
 /**
  * OTP / PIN input field with glass styling.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassOtpTextField(
     onOtpTextCorrectlyEntered: () -> Unit,

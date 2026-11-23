@@ -56,7 +56,6 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.lerp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
 import dev.chrisbanes.haze.glass.hazeGlass
@@ -128,7 +127,6 @@ internal val LocalToggleTimeSource = staticCompositionLocalOf<TimeSource> { Time
 // One gesture/animation state machine plus its drawing; splitting it would scatter the shared drag,
 // debounce and optimistic-toggle state across helpers.
 @Suppress("LongMethod", "CyclomaticComplexMethod")
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 internal fun GlassToggleImpl(
     checked: Boolean,

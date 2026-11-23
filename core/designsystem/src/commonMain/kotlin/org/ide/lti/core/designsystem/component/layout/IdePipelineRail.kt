@@ -57,7 +57,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipPlacement
@@ -96,7 +95,6 @@ enum class RailStageStatus(val label: String?) {
  *
  * Uses labels in wide windows and hover tooltips in compact windows or when [iconsOnly] is set.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdePipelineRail(
     stages: List<IdePipelineStageItem>,
@@ -127,6 +125,7 @@ fun IdePipelineRail(
             .width(railWidth)
             .fillMaxHeight()
             .then(surfaceModifier)
+            .glassContainer()
             .padding(top = Spacing.Small),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -27,7 +26,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Top application bar matching the approved Stitch Studio design.
  * Height is strictly 44 dp.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdeTopAppBar(
     modifier: Modifier = Modifier,

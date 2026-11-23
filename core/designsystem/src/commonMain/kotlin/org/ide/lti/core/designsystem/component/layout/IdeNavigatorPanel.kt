@@ -75,7 +75,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipPlacement
@@ -105,7 +104,6 @@ data class IdeNavigatorItem(
  *
  * Supports standard 215 dp layout and compact 44 dp [iconsOnly] rail with hover tooltips.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdeNavigatorPanel(
     headerTitle: String,

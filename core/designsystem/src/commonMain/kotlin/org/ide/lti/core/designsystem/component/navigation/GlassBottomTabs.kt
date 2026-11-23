@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -95,7 +94,7 @@ fun RowScope.GlassBottomTab(
  * `Modifier.hazeGlass` for the frosted bar background. The bar can be dragged horizontally to
  * switch tabs; on release it springs to the nearest tab.
  */
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassBottomTabs(
     selectedTabIndex: () -> Int,
@@ -195,7 +194,6 @@ fun GlassBottomTabs(
     }
 }
 
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 private fun GlassBottomTabBarBackground(containerColor: Color, interactiveHighlight: InteractiveHighlight) {
     val theme = GlassTheme.appTheme

@@ -115,6 +115,7 @@ fun GlobalAppTopBar(
                 modifier = Modifier
                     .testTag("GlobalTopBarDestinations")
                     .background(MaterialTheme.colorScheme.surfaceContainerLow, GlassShapes.Small)
+                    .glassContainer()
                     .padding(Spacing.Compact),
             ) {
                 GlobalAppDestination.entries.forEach { destination ->

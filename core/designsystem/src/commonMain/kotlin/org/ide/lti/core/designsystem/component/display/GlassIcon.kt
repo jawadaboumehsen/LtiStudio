@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -36,7 +35,6 @@ import org.ide.lti.core.designsystem.theme.sceneHazeInput
  * Circular glass icon button - built on Haze's real `Modifier.hazeGlass`, same
  * `hovered { } / pressed { }` pattern as [org.ide.lti.core.designsystem.component.actions.GlassButton].
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun GlassIcon(
     onClick: () -> Unit,

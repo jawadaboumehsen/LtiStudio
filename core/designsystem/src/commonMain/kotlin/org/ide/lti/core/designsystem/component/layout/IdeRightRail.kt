@@ -45,7 +45,6 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipPlacement
@@ -72,7 +71,6 @@ data class IdeRightRailItem(
  * Compact 44 dp right rail matching the left rail geometry and glass styling.
  * Used across Settings, Setup, and Workspace for unified layout symmetry.
  */
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun IdeRightRail(
     items: List<IdeRightRailItem> = emptyList(),

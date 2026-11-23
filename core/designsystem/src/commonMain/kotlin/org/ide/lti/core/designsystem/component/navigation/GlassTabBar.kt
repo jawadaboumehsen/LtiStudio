@@ -39,7 +39,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
@@ -56,7 +55,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.sceneHazeInput
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassTab(
     text: String,
@@ -140,7 +139,7 @@ fun GlassTab(
  * Tab item for panel tab bars.
  * Displays a single tab with optional close action and real glass backdrop.
  */
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassTabItem(
     title: String,
@@ -411,7 +410,6 @@ fun GlassTabBar(
     }
 }
 
-@OptIn(ExperimentalHazeApi::class)
 @Composable
 private fun Modifier.tabGlassSurface(shape: HazeShape, surfaceColor: Color, tintColor: Color): Modifier {
     val theme = GlassTheme.appTheme

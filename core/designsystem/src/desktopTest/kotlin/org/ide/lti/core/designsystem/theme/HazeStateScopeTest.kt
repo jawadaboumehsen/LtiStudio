@@ -18,7 +18,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -164,7 +163,7 @@ class HazeStateScopeTest {
         assertNotNull(state, "HazeState must be initialized")
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun ltiThemeProvidesAccessibilitySettingsAndReducedMotionPolicy() = runDesktopComposeUiTest {
         var reduceTransparencyDefault = false
@@ -206,7 +205,7 @@ class HazeStateScopeTest {
         )
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalHazeApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun nestedLtiThemeWithOmittedParametersInheritsParentAccessibilitySettings() = runDesktopComposeUiTest {
         var rootTransparency = false

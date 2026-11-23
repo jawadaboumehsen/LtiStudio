@@ -62,12 +62,6 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=dev.chrisbanes.haze.ExperimentalHazeApi")
-    }
-}
-
 tasks.register("test") {
     dependsOn("desktopTest")
 }

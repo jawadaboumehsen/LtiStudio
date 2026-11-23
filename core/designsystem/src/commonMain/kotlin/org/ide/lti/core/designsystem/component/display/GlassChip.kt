@@ -34,7 +34,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.glass.hazeGlass
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -59,7 +58,7 @@ import org.ide.lti.core.designsystem.theme.sceneHazeInput
  * @param trailingIcon Optional trailing icon slot.
  * @param enabled Whether interaction is enabled.
  */
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalHazeApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun GlassChip(
     label: String,

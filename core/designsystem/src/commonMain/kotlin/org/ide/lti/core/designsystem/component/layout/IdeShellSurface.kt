@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.unit.Dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.GlassDefaults
+import dev.chrisbanes.haze.glass.GlassMemberTransition
 import dev.chrisbanes.haze.glass.GlassStyleScope
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.glass.hazeGlassContainer
@@ -60,6 +61,8 @@ fun Modifier.glassSurface(
     drawBorder: Boolean = false,
     borderColor: Color = MaterialTheme.colorScheme.outline,
     borderWidth: Dp = GlassDimens.HairlineBorder,
+    groupKey: Any? = null,
+    memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
     styleOverride: (GlassStyleScope.() -> Unit)? = null,
 ): Modifier {
     val theme = GlassTheme.appTheme
@@ -97,6 +100,8 @@ fun Modifier.glassSurface(
                     styleOverride?.invoke(this)
                 }
             },
+            groupKey = groupKey,
+            memberTransition = memberTransition,
         )
     } else {
         Modifier.background(resolvedSurface, shape = shape)
@@ -130,6 +135,8 @@ fun Modifier.ideShellSurface(
     borderColor: Color = MaterialTheme.colorScheme.outline,
     borderWidth: Dp = GlassDimens.HairlineBorder,
     hazeState: HazeState? = null,
+    groupKey: Any? = null,
+    memberTransition: GlassMemberTransition = GlassMemberTransition.MatchedGeometry,
     styleOverride: (GlassStyleScope.() -> Unit)? = null,
 ): Modifier = glassSurface(
     role = GlassRole.Shell,
@@ -141,6 +148,8 @@ fun Modifier.ideShellSurface(
     drawBorder = drawBorder,
     borderColor = borderColor,
     borderWidth = borderWidth,
+    groupKey = groupKey,
+    memberTransition = memberTransition,
     styleOverride = styleOverride,
 )
 
