@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.setup.ToolGroupId
@@ -57,11 +59,14 @@ fun ToolsTable(
     onOpenInspector: () -> Unit = {},
     onCloseInspector: () -> Unit = {},
 ) {
+    val lazyListState = rememberLazyListState()
     LazyColumn(
+        state = lazyListState,
         modifier =
         modifier
             .fillMaxWidth()
-            .heightIn(max = ComponentSize.MaxPanelHeight),
+            .heightIn(max = ComponentSize.MaxPanelHeight)
+            .glassContainer(scrollState = lazyListState),
         contentPadding = PaddingValues(bottom = Spacing.Small),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {

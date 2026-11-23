@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import dev.chrisbanes.haze.HazeInputSharing
 import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -45,7 +46,7 @@ fun GlassBackdrop(modifier: Modifier = Modifier) {
 
     Canvas(
         modifier = modifier
-            .hazeSource(GlassTheme.hazeState)
+            .hazeSource(GlassTheme.hazeState, inputSharing = HazeInputSharing.Auto)
             .fillMaxSize(),
     ) {
         when (appTheme) {

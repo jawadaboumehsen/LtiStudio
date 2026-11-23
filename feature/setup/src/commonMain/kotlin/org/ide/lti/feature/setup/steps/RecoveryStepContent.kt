@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusErrorOutline
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -257,7 +258,7 @@ private fun RecoveryCardsSection(
 
     if (operation != null && service != null) {
         Row(
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier.fillMaxWidth().glassContainer(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         ) {
             RecoveryOperationCard(

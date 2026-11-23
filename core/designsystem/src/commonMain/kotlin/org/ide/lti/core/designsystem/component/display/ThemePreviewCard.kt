@@ -42,6 +42,8 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import org.ide.lti.core.designsystem.component.layout.GlassRole
+import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
@@ -107,12 +109,13 @@ fun ThemePreviewCard(
     Column(
         modifier = modifier
             .widthIn(min = ComponentSize.ThemeCardMinWidth)
-            .clip(GlassShapes.Medium)
-            .background(surfaceColor)
-            .glassOutlineBorder(
-                width = if (isSelected) StrokeWidth.Focused else StrokeWidth.Hairline,
-                color = borderColor,
-                shape = GlassShapes.Medium,
+            .glassSurface(
+                role = GlassRole.TextCard,
+                shape = GlassShapes.HazeMedium,
+                surfaceColor = surfaceColor,
+                drawBorder = true,
+                borderColor = borderColor,
+                borderWidth = if (isSelected) StrokeWidth.Focused else StrokeWidth.Hairline,
             )
             .onPointerEvent(PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(PointerEventType.Exit) { isHovered = false }

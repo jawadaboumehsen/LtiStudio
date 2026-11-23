@@ -39,6 +39,7 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
 import org.ide.lti.core.designsystem.component.display.ThemePreviewCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AccentColor
 import org.ide.lti.core.designsystem.theme.AppTheme
@@ -122,7 +123,7 @@ fun AppearanceSettingsPane(
 
                         // Theme Preview Cards Row (Light, Dark, Blue Glass)
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().glassContainer(),
                             horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
                         ) {
                             AppTheme.allThemes.forEach { theme ->

@@ -49,6 +49,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import dev.chrisbanes.haze.glass.hazeGlass
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -187,6 +188,7 @@ fun GlassBottomTabs(
             modifier = Modifier
                 .height(ComponentSize.BottomTabsHeight)
                 .fillMaxWidth()
+                .glassContainer()
                 .padding(Spacing.ExtraSmall),
             verticalAlignment = Alignment.CenterVertically,
             content = tabs,

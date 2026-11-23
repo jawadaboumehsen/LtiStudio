@@ -50,6 +50,9 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.layout.GlassRole
+import org.ide.lti.core.designsystem.component.layout.glassContainer
+import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.component.progress.GlassSpinner
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.icon.ideStatusError
@@ -170,7 +173,7 @@ fun ToolchainPipelineTracker(
 
             // Vertical Stages
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().glassContainer(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Small),
             ) {
                 val systemPackagesStep = stepMap[SetupStepStage.SYSTEM_PACKAGES]
@@ -643,12 +646,13 @@ private fun VerticalStageRow(
             modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(GlassShapes.Small)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .border(
-                    width = StrokeWidth.Hairline,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = GlassShapes.Small,
+                .glassSurface(
+                    role = GlassRole.TextCard,
+                    shape = GlassShapes.HazeSmall,
+                    surfaceColor = MaterialTheme.colorScheme.surfaceContainer,
+                    drawBorder = true,
+                    borderColor = MaterialTheme.colorScheme.outline,
+                    borderWidth = StrokeWidth.Hairline,
                 ).semantics {
                     liveRegion = LiveRegionMode.Polite
                 }.padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),

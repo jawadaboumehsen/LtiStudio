@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -102,7 +103,7 @@ public fun WorkspaceOverview(
             preflight?.invoke()
 
             FlowRow(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().glassContainer(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
                 maxItemsInEachRow = if (sideBySide) 2 else 1,
