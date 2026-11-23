@@ -88,7 +88,7 @@ private fun SuperBudgetHeader(forecast: PartitionBudgetForecast) {
         }
 
         val statusText = if (forecast.isOverflown) {
-            "OVERFLOW (+${forecast.overflowBytes / (1024 * 1024)} MB)"
+            "OVERFLOW (+${formatBytes(forecast.overflowBytes)})"
         } else {
             "${(forecast.headroomPercent * 100).toInt()}% HEADROOM"
         }

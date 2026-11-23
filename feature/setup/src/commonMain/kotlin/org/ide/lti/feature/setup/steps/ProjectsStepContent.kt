@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
@@ -103,7 +104,6 @@ import org.ide.lti.feature.setup.WorkspaceAction
  * - Strict design-system token discipline using SetupTokens (zero raw dp/Color/alpha literals).
  * - No global target switch, fake clone, or staging actions (FR-001, FR-002, FR-003, FR-011).
  */
-@Suppress("CyclomaticComplexMethod")
 @Composable
 fun ProjectsStepContent(
     state: SetupUiState,
@@ -136,30 +136,7 @@ fun ProjectsStepContent(
             .fillMaxHeight()
             .focusRequester(rootFocusRequester)
             .focusable()
-            .onKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
-                    when (event.key) {
-                        Key.N -> {
-                            actions.onCreateWorkspace()
-                            true
-                        }
-
-                        Key.O -> {
-                            actions.onOpenFolder()
-                            true
-                        }
-
-                        Key.F -> {
-                            searchFocusRequester.requestFocus()
-                            true
-                        }
-
-                        else -> false
-                    }
-                } else {
-                    false
-                }
-            }
+            .onKeyEvent { event -> handleWorkspaceKeyEvent(event, actions, searchFocusRequester) }
             .padding(
                 start = Spacing.ScreenHorizontal,
                 end = Spacing.ScreenHorizontal,
@@ -196,22 +173,10 @@ fun ProjectsStepContent(
             )
         }
 
-        // Pending folder open banner while verification is in progress
-        val pendingPath = (state.pendingWorkspaceRequest as? PendingWorkspaceRequest.OpenPath)?.path
-        if (pendingPath != null) {
-            GlassLoadingStatus("Opening directory after checks…")
-            GlassBanner(
-                severity = GlassBannerSeverity.INFO,
-                title = "Opening Directory",
-                description = "Opening $pendingPath once environment verification completes.",
-                primaryAction = GlassBannerAction(
-                    label = "Cancel",
-                    onClick = actions.onCancelPendingWorkspaceRequest,
-                ),
-                onDismiss = actions.onCancelPendingWorkspaceRequest,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        WorkspacePendingRequestBanner(
+            pendingRequest = state.pendingWorkspaceRequest,
+            onCancel = actions.onCancelPendingWorkspaceRequest,
+        )
 
         if (state.openingWorkspace) {
             GlassLoadingStatus("Opening workspace…")
@@ -270,6 +235,51 @@ fun ProjectsStepContent(
             }
         }
     }
+}
+
+private fun handleWorkspaceKeyEvent(
+    event: KeyEvent,
+    actions: SetupUiActions,
+    searchFocusRequester: FocusRequester,
+): Boolean {
+    if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
+        return when (event.key) {
+            Key.N -> {
+                actions.onCreateWorkspace()
+                true
+            }
+
+            Key.O -> {
+                actions.onOpenFolder()
+                true
+            }
+
+            Key.F -> {
+                searchFocusRequester.requestFocus()
+                true
+            }
+
+            else -> false
+        }
+    }
+    return false
+}
+
+@Composable
+private fun WorkspacePendingRequestBanner(pendingRequest: PendingWorkspaceRequest?, onCancel: () -> Unit) {
+    val pendingPath = (pendingRequest as? PendingWorkspaceRequest.OpenPath)?.path ?: return
+    GlassLoadingStatus("Opening directory after checks…")
+    GlassBanner(
+        severity = GlassBannerSeverity.INFO,
+        title = "Opening Directory",
+        description = "Opening $pendingPath once environment verification completes.",
+        primaryAction = GlassBannerAction(
+            label = "Cancel",
+            onClick = onCancel,
+        ),
+        onDismiss = onCancel,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

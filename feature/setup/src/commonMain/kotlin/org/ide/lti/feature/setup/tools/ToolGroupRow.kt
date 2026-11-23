@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -42,7 +43,6 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 
-@Suppress("CyclomaticComplexMethod")
 @Composable
 fun ToolGroupRow(
     row: ToolRowPresentation,
@@ -86,33 +86,7 @@ fun ToolGroupRow(
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown) {
-                    when (event.key) {
-                        Key.DirectionUp -> {
-                            onMoveUp()
-                            true
-                        }
-
-                        Key.DirectionDown -> {
-                            onMoveDown()
-                            true
-                        }
-
-                        Key.Enter, Key.NumPadEnter -> {
-                            onOpenInspector()
-                            true
-                        }
-
-                        Key.Escape -> {
-                            onCloseInspector()
-                            true
-                        }
-
-                        else -> false
-                    }
-                } else {
-                    false
-                }
+                handleToolRowKeyEvent(event, onMoveUp, onMoveDown, onOpenInspector, onCloseInspector)
             }
             .clickable(onClick = {
                 runCatchingCancellable { focusRequester.requestFocus() }
@@ -170,25 +144,62 @@ fun ToolGroupRow(
             Text(
                 text = statusText,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                color =
-                when (row.statusKind) {
-                    ToolRowStatusKind.Ready -> MaterialTheme.colorScheme.primary
-
-                    ToolRowStatusKind.Failed -> MaterialTheme.colorScheme.error
-
-                    ToolRowStatusKind.NeedsRepair -> MaterialTheme.colorScheme.error
-
-                    ToolRowStatusKind.Installing -> MaterialTheme.colorScheme.primary
-
-                    ToolRowStatusKind.NotInstalled,
-                    ToolRowStatusKind.Unknown,
-                    ToolRowStatusKind.Interrupted,
-                    -> MaterialTheme.colorScheme.outline
-                },
+                color = toolRowStatusColor(row.statusKind),
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
     }
+}
+
+private fun handleToolRowKeyEvent(
+    event: KeyEvent,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onOpenInspector: () -> Unit,
+    onCloseInspector: () -> Unit,
+): Boolean {
+    if (event.type == KeyEventType.KeyDown) {
+        return when (event.key) {
+            Key.DirectionUp -> {
+                onMoveUp()
+                true
+            }
+
+            Key.DirectionDown -> {
+                onMoveDown()
+                true
+            }
+
+            Key.Enter, Key.NumPadEnter -> {
+                onOpenInspector()
+                true
+            }
+
+            Key.Escape -> {
+                onCloseInspector()
+                true
+            }
+
+            else -> false
+        }
+    }
+    return false
+}
+
+@Composable
+private fun toolRowStatusColor(statusKind: ToolRowStatusKind) = when (statusKind) {
+    ToolRowStatusKind.Ready,
+    ToolRowStatusKind.Installing,
+    -> MaterialTheme.colorScheme.primary
+
+    ToolRowStatusKind.Failed,
+    ToolRowStatusKind.NeedsRepair,
+    -> MaterialTheme.colorScheme.error
+
+    ToolRowStatusKind.NotInstalled,
+    ToolRowStatusKind.Unknown,
+    ToolRowStatusKind.Interrupted,
+    -> MaterialTheme.colorScheme.outline
 }

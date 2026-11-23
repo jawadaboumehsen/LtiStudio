@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.ide.lti.core.common.utils.ByteFormatter
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -407,7 +408,7 @@ private fun HistoryArtifactItem(artifact: Artifact) {
                     style = typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val sizeStr = artifact.sizeBytes?.let { "${it / (1024 * 1024)} MB" } ?: "Unknown size"
+                val sizeStr = artifact.sizeBytes?.let { ByteFormatter.format(it) } ?: "Unknown size"
                 Text(
                     text = sizeStr,
                     style = typography.bodySmall,

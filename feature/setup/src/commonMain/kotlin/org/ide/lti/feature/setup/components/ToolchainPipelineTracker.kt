@@ -76,6 +76,7 @@ import org.ide.lti.feature.setup.SetupOperation
 import org.ide.lti.feature.setup.SetupOperationState
 import org.ide.lti.feature.setup.SetupRowAction
 import org.ide.lti.feature.setup.TerminalHandoffState
+import org.ide.lti.feature.setup.ToolchainLayoutRecoveryPresentation
 import org.ide.lti.feature.setup.WslRowPresentation
 
 /**
@@ -302,7 +303,221 @@ private fun extractToolName(description: String): String? {
     return match?.groupValues?.get(1)
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod", "DEPRECATION")
+private data class StageRowDisplayState(
+    val isRunning: Boolean,
+    val isSuccess: Boolean,
+    val isRestored: Boolean,
+    val isActionRequired: Boolean,
+    val isFailed: Boolean,
+    val displayDescription: String,
+    val primaryAction: SetupRowAction?,
+    val primaryLabel: String,
+    val secondaryAction: SetupRowAction?,
+    val secondaryActionLabel: String?,
+    val layoutRecovery: ToolchainLayoutRecoveryPresentation?,
+    val errorText: String?,
+)
+
+private fun isStepActionRequired(
+    status: StepStatus,
+    hasAction: Boolean,
+    isSuccess: Boolean,
+    isRunning: Boolean,
+): Boolean {
+    if (isSuccess || isRunning) return false
+    return status == StepStatus.FAILED || status == StepStatus.WARNING || hasAction
+}
+
+private fun resolveBuildServiceDisplayState(
+    step: SetupStepDetail,
+    isBusy: Boolean,
+    daemonPingMs: Long?,
+    systemPackagesStep: SetupStepDetail?,
+): StageRowDisplayState {
+    val pres = MachineRowMapper.mapBuildService(
+        step = step,
+        daemonPingMs = daemonPingMs,
+        isChecking = isBusy || step.status == StepStatus.RUNNING,
+        systemPackagesStep = systemPackagesStep,
+    )
+    val isRunning = step.status == StepStatus.RUNNING || pres.isRunning
+    val isSuccess = (step.status == StepStatus.SUCCESS || pres.isReady) && !isRunning
+    val isActionRequired = isStepActionRequired(
+        status = step.status,
+        hasAction = pres.primaryAction != null,
+        isSuccess = isSuccess,
+        isRunning = isRunning,
+    )
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED || pres.severity == IdeStatusSeverity.Failed,
+        displayDescription = pres.detailText.ifBlank { step.description },
+        primaryAction = pres.primaryAction,
+        primaryLabel = pres.primaryActionLabel ?: "Retry Stage",
+        secondaryAction = pres.secondaryAction,
+        secondaryActionLabel = pres.secondaryActionLabel,
+        layoutRecovery = pres.layoutRecovery,
+        errorText = null,
+    )
+}
+
+private fun resolveSystemPackagesDisplayState(
+    step: SetupStepDetail,
+    isBusy: Boolean,
+    activeOperation: SetupOperation?,
+    handoffSheetState: TerminalHandoffState,
+): StageRowDisplayState {
+    val pres = MachineRowMapper.mapSystemPackages(
+        step = step,
+        isChecking = isBusy || step.status == StepStatus.RUNNING,
+        activeOperation = activeOperation,
+        handoffSheetState = handoffSheetState,
+    )
+    val isRunning = step.status == StepStatus.RUNNING || pres.isChecking
+    val isSuccess = (step.status == StepStatus.SUCCESS || pres.isReady) && !isRunning
+    val isActionRequired = isStepActionRequired(
+        status = step.status,
+        hasAction = pres.primaryAction != null,
+        isSuccess = isSuccess,
+        isRunning = isRunning,
+    )
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED || pres.severity == IdeStatusSeverity.Failed,
+        displayDescription = pres.detailText.ifBlank { step.description },
+        primaryAction = pres.primaryAction,
+        primaryLabel = pres.primaryActionLabel ?: "Retry Stage",
+        secondaryAction = null,
+        secondaryActionLabel = null,
+        layoutRecovery = null,
+        errorText = null,
+    )
+}
+
+private fun resolveToolchainDisplayState(
+    step: SetupStepDetail,
+    activeOperation: SetupOperation?,
+    currentEpochMs: Long?,
+): StageRowDisplayState {
+    val pres = MachineRowMapper.mapToolchainRow(
+        step = step,
+        nowEpochMs = currentEpochMs,
+        canCancel = activeOperation?.executionState == SetupOperationState.RUNNING,
+    )
+    val isRunning = step.status == StepStatus.RUNNING || pres?.isRunning == true
+    val isSuccess = (step.status == StepStatus.SUCCESS || pres?.isReady == true) && !isRunning
+    val hasAction = pres?.primaryAction != null && pres.primaryAction != SetupRowAction.CANCEL
+    val isActionRequired = isStepActionRequired(
+        status = step.status,
+        hasAction = hasAction,
+        isSuccess = isSuccess,
+        isRunning = isRunning,
+    )
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED || pres?.severity == IdeStatusSeverity.Failed,
+        displayDescription = pres?.detailText?.ifBlank { step.description } ?: step.description,
+        primaryAction = pres?.primaryAction,
+        primaryLabel = pres?.primaryActionLabel ?: "Retry Stage",
+        secondaryAction = pres?.secondaryAction,
+        secondaryActionLabel = pres?.secondaryActionLabel,
+        layoutRecovery = null,
+        errorText = pres?.errorText,
+    )
+}
+
+private fun resolveWslDisplayState(step: SetupStepDetail, wslPres: WslRowPresentation?): StageRowDisplayState {
+    val isRunning = step.status == StepStatus.RUNNING
+    val isSuccess = step.status == StepStatus.SUCCESS && !isRunning
+    val isActionRequired = isStepActionRequired(
+        status = step.status,
+        hasAction = wslPres?.primaryAction != null,
+        isSuccess = isSuccess,
+        isRunning = isRunning,
+    )
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED || wslPres?.severity == IdeStatusSeverity.Failed,
+        displayDescription = wslPres?.detailText ?: step.description,
+        primaryAction = wslPres?.primaryAction ?: SetupRowAction.RETRY,
+        primaryLabel = wslPres?.primaryActionLabel ?: "Retry Stage",
+        secondaryAction = wslPres?.secondaryAction,
+        secondaryActionLabel = wslPres?.secondaryActionLabel,
+        layoutRecovery = null,
+        errorText = step.error,
+    )
+}
+
+private fun resolveGenericDisplayState(step: SetupStepDetail): StageRowDisplayState {
+    val isRunning = step.status == StepStatus.RUNNING
+    val isSuccess = step.status == StepStatus.SUCCESS && !isRunning
+    val isActionRequired = isStepActionRequired(
+        status = step.status,
+        hasAction = false,
+        isSuccess = isSuccess,
+        isRunning = isRunning,
+    )
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED,
+        displayDescription = step.description,
+        primaryAction = SetupRowAction.RETRY,
+        primaryLabel = "Retry Stage",
+        secondaryAction = null,
+        secondaryActionLabel = null,
+        layoutRecovery = null,
+        errorText = step.error,
+    )
+}
+
+private fun resolveStageRowDisplayState(
+    step: SetupStepDetail,
+    stage: SetupStepStage,
+    isBusy: Boolean,
+    activeOperation: SetupOperation?,
+    handoffSheetState: TerminalHandoffState,
+    wslPres: WslRowPresentation?,
+    daemonPingMs: Long?,
+    systemPackagesStep: SetupStepDetail?,
+    currentEpochMs: Long?,
+): StageRowDisplayState = when (stage) {
+    SetupStepStage.SERVER_CONNECTIVITY -> resolveBuildServiceDisplayState(
+        step = step,
+        isBusy = isBusy,
+        daemonPingMs = daemonPingMs,
+        systemPackagesStep = systemPackagesStep,
+    )
+    SetupStepStage.SYSTEM_PACKAGES -> resolveSystemPackagesDisplayState(
+        step = step,
+        isBusy = isBusy,
+        activeOperation = activeOperation,
+        handoffSheetState = handoffSheetState,
+    )
+    SetupStepStage.TOOLCHAIN_COMPILATION -> resolveToolchainDisplayState(
+        step = step,
+        activeOperation = activeOperation,
+        currentEpochMs = currentEpochMs,
+    )
+    SetupStepStage.WSL_DETECTION -> resolveWslDisplayState(step = step, wslPres = wslPres)
+    else -> resolveGenericDisplayState(step = step)
+}
+
+@Suppress("DEPRECATION")
 @Composable
 private fun VerticalStageRow(
     step: SetupStepDetail,
@@ -317,11 +532,7 @@ private fun VerticalStageRow(
     activeDistro: String? = null,
     onSelectDistro: (String) -> Unit = {},
 ) {
-    val diagnostics = GlassTheme.diagnosticColors
-    val clipboardManager = LocalClipboardManager.current
-
     val stageDisplayName = step.title.ifBlank { stage.displayName }
-
     val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
     val currentEpochMs by produceState<Long?>(
         initialValue = if (isReducedMotion) null else System.currentTimeMillis(),
@@ -338,324 +549,215 @@ private fun VerticalStageRow(
         }
     }
 
-    val buildServicePres =
-        if (stage == SetupStepStage.SERVER_CONNECTIVITY) {
-            MachineRowMapper.mapBuildService(
-                step = step,
-                daemonPingMs = daemonPingMs,
-                isChecking = isBusy || step.status == StepStatus.RUNNING,
-                systemPackagesStep = systemPackagesStep,
-            )
-        } else {
-            null
-        }
+    val state = resolveStageRowDisplayState(
+        step = step,
+        stage = stage,
+        isBusy = isBusy,
+        activeOperation = activeOperation,
+        handoffSheetState = handoffSheetState,
+        wslPres = wslPres,
+        daemonPingMs = daemonPingMs,
+        systemPackagesStep = systemPackagesStep,
+        currentEpochMs = currentEpochMs,
+    )
 
-    val layoutRecovery = buildServicePres?.layoutRecovery
-    var recoveryCommandCopied by remember(layoutRecovery?.command) { mutableStateOf(false) }
-    LaunchedEffect(layoutRecovery?.command, recoveryCommandCopied) {
+    if (state.isActionRequired) {
+        ExpandedActionRequiredStageRow(
+            stageDisplayName = stageDisplayName,
+            displayDescription = state.displayDescription,
+            isFailed = state.isFailed,
+            primaryAction = state.primaryAction,
+            primaryLabel = state.primaryLabel,
+            secondaryAction = state.secondaryAction,
+            secondaryActionLabel = state.secondaryActionLabel,
+            actionTarget = wslPres?.distro ?: activeDistro,
+            isBusy = isBusy,
+            onAction = onAction,
+            layoutRecovery = state.layoutRecovery,
+            errorText = state.errorText,
+            wslPres = wslPres,
+            onSelectDistro = onSelectDistro,
+        )
+    } else {
+        StandardStageRowView(
+            stageDisplayName = stageDisplayName,
+            displayDescription = state.displayDescription,
+            isRunning = state.isRunning,
+            isSuccess = state.isSuccess,
+            isRestored = state.isRestored,
+            primaryAction = state.primaryAction,
+            onAction = onAction,
+        )
+    }
+}
+
+@Composable
+private fun StageRowLayoutRecoveryBox(recovery: ToolchainLayoutRecoveryPresentation) {
+    val clipboardManager = LocalClipboardManager.current
+    var recoveryCommandCopied by remember(recovery.command) { mutableStateOf(false) }
+    LaunchedEffect(recovery.command, recoveryCommandCopied) {
         if (recoveryCommandCopied) {
             delay(COPIED_FEEDBACK_MS)
             recoveryCommandCopied = false
         }
     }
 
-    val systemPackagesPres =
-        if (stage == SetupStepStage.SYSTEM_PACKAGES) {
-            MachineRowMapper.mapSystemPackages(
-                step = step,
-                isChecking = isBusy || step.status == StepStatus.RUNNING,
-                activeOperation = activeOperation,
-                handoffSheetState = handoffSheetState,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.ExtraSmall)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(
+                width = StrokeWidth.Hairline,
+                color = MaterialTheme.colorScheme.outline,
+                shape = GlassShapes.ExtraSmall,
             )
-        } else {
-            null
-        }
-
-    val toolchainPres =
-        if (stage == SetupStepStage.TOOLCHAIN_COMPILATION) {
-            MachineRowMapper.mapToolchainRow(
-                step,
-                currentEpochMs,
-                canCancel = activeOperation?.executionState == SetupOperationState.RUNNING,
+            .padding(Spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Text(
+            text = recovery.explanation,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        SelectionContainer {
+            Text(
+                text = recovery.command,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else {
-            null
         }
-
-    val rowSeverity =
-        systemPackagesPres?.severity
-            ?: toolchainPres?.severity
-            ?: buildServicePres?.severity
-            ?: wslPres?.severity
-    val isBuildServiceRunning = buildServicePres?.isRunning == true
-    val isToolchainRunning = toolchainPres?.isRunning == true
-    val isPackagesChecking = systemPackagesPres?.isChecking == true
-    val isRunning =
-        step.status == StepStatus.RUNNING ||
-            isPackagesChecking ||
-            isToolchainRunning ||
-            isBuildServiceRunning
-
-    val isBuildServiceReady = buildServicePres?.isReady == true
-    val isToolchainReady = toolchainPres?.isReady == true
-    val isPackagesReady = systemPackagesPres?.isReady == true
-    val isAnyReady = isPackagesReady || isToolchainReady || isBuildServiceReady
-    val isSuccess = (step.status == StepStatus.SUCCESS || isAnyReady) && !isRunning
-    val isRestored = step.provenance == StepProvenance.RESTORED
-    val isActionRequired =
-        (
-            step.status == StepStatus.FAILED ||
-                step.status == StepStatus.WARNING ||
-                systemPackagesPres?.primaryAction != null ||
-                (toolchainPres?.primaryAction != null && toolchainPres.primaryAction != SetupRowAction.CANCEL) ||
-                buildServicePres?.primaryAction != null
-            ) &&
-            !isSuccess &&
-            !isRunning
-
-    val isFailed = step.status == StepStatus.FAILED || rowSeverity == IdeStatusSeverity.Failed
-
-    val displayDescription =
-        systemPackagesPres?.detailText
-            ?: toolchainPres?.detailText
-            ?: buildServicePres?.detailText
-            ?: wslPres?.detailText
-            ?: step.description
-    // A plain step row always offers a stage retry; a mapped row offers exactly what its state allows.
-    val hasMappedRow =
-        systemPackagesPres != null ||
-            toolchainPres != null ||
-            buildServicePres != null ||
-            wslPres != null
-    val primaryAction =
-        systemPackagesPres?.primaryAction
-            ?: toolchainPres?.primaryAction
-            ?: buildServicePres?.primaryAction
-            ?: wslPres?.primaryAction
-            ?: SetupRowAction.RETRY.takeIf { !hasMappedRow }
-    val primaryLabel =
-        systemPackagesPres?.primaryActionLabel
-            ?: toolchainPres?.primaryActionLabel
-            ?: buildServicePres?.primaryActionLabel
-            ?: wslPres?.primaryActionLabel
-            ?: "Retry Stage"
-    val secondaryAction =
-        wslPres?.secondaryAction
-            ?: buildServicePres?.secondaryAction
-            ?: toolchainPres?.secondaryAction
-    val secondaryActionLabel =
-        wslPres?.secondaryActionLabel
-            ?: buildServicePres?.secondaryActionLabel
-            ?: toolchainPres?.secondaryActionLabel
-
-    if (isActionRequired) {
-        // Expanded Failed / Warning Stage Row
-        Box(
-            modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(GlassShapes.Small)
-                .background(
-                    if (isFailed) {
-                        diagnostics.error.copy(alpha = AlphaTokens.UltraFaint)
-                    } else {
-                        diagnostics.warning.copy(alpha = AlphaTokens.UltraFaint)
-                    },
-                ).border(
-                    width = StrokeWidth.Hairline,
-                    color =
-                    if (isFailed) {
-                        diagnostics.error.copy(alpha = AlphaTokens.Border)
-                    } else {
-                        diagnostics.warning.copy(alpha = AlphaTokens.Border)
-                    },
-                    shape = GlassShapes.Small,
-                ).semantics {
-                    liveRegion = if (isFailed) LiveRegionMode.Assertive else LiveRegionMode.Polite
-                }.padding(Spacing.MediumSmall),
+        GlassSecondaryButton(
+            onClick = {
+                clipboardManager.setText(AnnotatedString(recovery.command))
+                recoveryCommandCopied = true
+            },
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+            ) {
+                Icon(
+                    painter = if (recoveryCommandCopied) {
+                        AppIcons.ideStatusSuccess()
+                    } else {
+                        AppIcons.CopyPainterResource()
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text(if (recoveryCommandCopied) "Copied" else "Copy recovery command")
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageRowActionButtons(
+    primaryAction: SetupRowAction?,
+    primaryLabel: String,
+    secondaryAction: SetupRowAction?,
+    secondaryActionLabel: String?,
+    actionTarget: String?,
+    isBusy: Boolean,
+    onAction: (SetupRowAction, String?) -> Unit,
+) {
+    if (primaryAction == null && secondaryAction == null) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
+    ) {
+        if (secondaryAction != null) {
+            GlassSecondaryButton(
+                onClick = { onAction(secondaryAction, actionTarget) },
+                enabled = !isBusy,
+            ) {
+                Text(
+                    text = secondaryActionLabel.orEmpty(),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (primaryAction != null) {
+            GlassPrimaryButton(
+                onClick = { onAction(primaryAction, actionTarget) },
+                enabled = !isBusy,
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        modifier = Modifier.weight(1f, fill = false),
-                    ) {
+                    if (primaryAction == SetupRowAction.RETRY) {
                         Icon(
-                            painter = if (isFailed) AppIcons.ideStatusError() else AppIcons.ideStatusWarning(),
-                            contentDescription = if (isFailed) "Failed" else "Warning",
-                            tint = if (isFailed) diagnostics.error else diagnostics.warning,
+                            painter = AppIcons.RefreshPainterResource(),
+                            contentDescription = null,
                             modifier = Modifier.size(IconSize.Small),
                         )
-                        Text(
-                            text = stageDisplayName,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
-
-                    GlassChip(
-                        label = if (isFailed) "Failed" else "Notice",
-                        selected = false,
-                    )
-                }
-
-                Text(
-                    text = displayDescription,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isFailed) diagnostics.error else diagnostics.warning,
-                )
-
-                layoutRecovery?.let { recovery ->
-                    Column(
-                        modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(GlassShapes.ExtraSmall)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .border(
-                                width = StrokeWidth.Hairline,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = GlassShapes.ExtraSmall,
-                            )
-                            .padding(Spacing.Small),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        Text(
-                            text = recovery.explanation,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        SelectionContainer {
-                            Text(
-                                text = recovery.command,
-                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        GlassSecondaryButton(
-                            onClick = {
-                                clipboardManager.setText(AnnotatedString(recovery.command))
-                                recoveryCommandCopied = true
-                            },
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                            ) {
-                                Icon(
-                                    painter =
-                                    if (recoveryCommandCopied) {
-                                        AppIcons.ideStatusSuccess()
-                                    } else {
-                                        AppIcons.CopyPainterResource()
-                                    },
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                                Text(if (recoveryCommandCopied) "Copied" else "Copy recovery command")
-                            }
-                        }
-                    }
-                }
-
-                val errorText = toolchainPres?.errorText ?: if (!hasMappedRow) step.error else null
-                if (!errorText.isNullOrBlank()) {
-                    CopyableErrorText(errorText)
-                }
-
-                wslPres?.instruction?.let { instruction ->
-                    Text(
-                        text = instruction,
-                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (wslPres != null && wslPres.choices.isNotEmpty()) {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                    ) {
-                        wslPres.choices.forEach { distro ->
-                            GlassChip(
-                                label = distro,
-                                selected = false,
-                                onClick = { if (!isBusy) onSelectDistro(distro) },
-                            )
-                        }
-                    }
-                }
-
-                if (primaryAction != null || secondaryAction != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
-                    ) {
-                        if (secondaryAction != null) {
-                            GlassSecondaryButton(
-                                onClick = { onAction(secondaryAction, wslPres?.distro ?: activeDistro) },
-                                enabled = !isBusy,
-                            ) {
-                                Text(
-                                    secondaryActionLabel.orEmpty(),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                        if (primaryAction != null) {
-                            GlassPrimaryButton(
-                                onClick = { onAction(primaryAction, wslPres?.distro ?: activeDistro) },
-                                enabled = !isBusy,
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                ) {
-                                    if (primaryAction == SetupRowAction.RETRY) {
-                                        Icon(
-                                            painter = AppIcons.RefreshPainterResource(),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(IconSize.Small),
-                                        )
-                                    }
-                                    Text(primaryLabel, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                                }
-                            }
-                        }
-                    }
+                    Text(text = primaryLabel, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
-    } else {
-        // Compact Healthy / Running / Pending Stage Row
-        Box(
-            modifier =
-            Modifier
-                .fillMaxWidth()
-                .glassSurface(
-                    role = GlassRole.TextCard,
-                    shape = GlassShapes.HazeSmall,
-                    surfaceColor = MaterialTheme.colorScheme.surfaceContainer,
-                    drawBorder = true,
-                    borderColor = MaterialTheme.colorScheme.outline,
-                    borderWidth = StrokeWidth.Hairline,
-                ).semantics {
-                    liveRegion = LiveRegionMode.Polite
-                }.padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
+    }
+}
+
+@Composable
+private fun StageRowDistroChoices(choices: List<String>, isBusy: Boolean, onSelectDistro: (String) -> Unit) {
+    if (choices.isEmpty()) return
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        choices.forEach { distro ->
+            GlassChip(
+                label = distro,
+                selected = false,
+                onClick = { if (!isBusy) onSelectDistro(distro) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandedActionRequiredStageRow(
+    stageDisplayName: String,
+    displayDescription: String,
+    isFailed: Boolean,
+    primaryAction: SetupRowAction?,
+    primaryLabel: String,
+    secondaryAction: SetupRowAction?,
+    secondaryActionLabel: String?,
+    actionTarget: String?,
+    isBusy: Boolean,
+    onAction: (SetupRowAction, String?) -> Unit,
+    layoutRecovery: ToolchainLayoutRecoveryPresentation?,
+    errorText: String?,
+    wslPres: WslRowPresentation?,
+    onSelectDistro: (String) -> Unit,
+) {
+    val diagnostics = GlassTheme.diagnosticColors
+    val severityColor = if (isFailed) diagnostics.error else diagnostics.warning
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GlassShapes.Small)
+            .background(severityColor.copy(alpha = AlphaTokens.UltraFaint))
+            .border(
+                width = StrokeWidth.Hairline,
+                color = severityColor.copy(alpha = AlphaTokens.Border),
+                shape = GlassShapes.Small,
+            ).semantics {
+                liveRegion = if (isFailed) LiveRegionMode.Assertive else LiveRegionMode.Polite
+            }.padding(Spacing.MediumSmall),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -667,97 +769,189 @@ private fun VerticalStageRow(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                     modifier = Modifier.weight(1f, fill = false),
                 ) {
-                    when {
-                        isRunning -> {
-                            val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
-                            if (isReducedMotion) {
-                                Text(
-                                    text = "Checking…",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            } else {
-                                GlassSpinner(
-                                    modifier = Modifier.size(IconSize.Small),
-                                    strokeWidth = StrokeWidth.Focused,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-
-                        isSuccess -> {
-                            Icon(
-                                painter = AppIcons.ideStatusSuccess(),
-                                contentDescription = "Ready",
-                                tint = diagnostics.success,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                        }
-
-                        else -> {
-                            // Pending is neutral, not a warning: a muted dot.
-                            Box(
-                                modifier =
-                                Modifier
-                                    .size(IconSize.Small),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Box(
-                                    modifier =
-                                    Modifier
-                                        .size(IconSize.Indicator)
-                                        .clip(GlassShapes.Capsule)
-                                        .background(MaterialTheme.colorScheme.outline),
-                                )
-                            }
-                        }
-                    }
-
+                    Icon(
+                        painter = if (isFailed) AppIcons.ideStatusError() else AppIcons.ideStatusWarning(),
+                        contentDescription = if (isFailed) "Failed" else "Warning",
+                        tint = severityColor,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
                     Text(
                         text = stageDisplayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
 
-                    Spacer(Modifier.size(Spacing.ExtraSmall))
+                GlassChip(
+                    label = if (isFailed) "Failed" else "Notice",
+                    selected = false,
+                )
+            }
 
+            Text(
+                text = displayDescription,
+                style = MaterialTheme.typography.bodySmall,
+                color = severityColor,
+            )
+
+            layoutRecovery?.let { recovery ->
+                StageRowLayoutRecoveryBox(recovery = recovery)
+            }
+
+            if (!errorText.isNullOrBlank()) {
+                CopyableErrorText(errorText)
+            }
+
+            wslPres?.instruction?.let { instruction ->
+                Text(
+                    text = instruction,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            wslPres?.choices?.let { choices ->
+                StageRowDistroChoices(choices = choices, isBusy = isBusy, onSelectDistro = onSelectDistro)
+            }
+
+            StageRowActionButtons(
+                primaryAction = primaryAction,
+                primaryLabel = primaryLabel,
+                secondaryAction = secondaryAction,
+                secondaryActionLabel = secondaryActionLabel,
+                actionTarget = actionTarget,
+                isBusy = isBusy,
+                onAction = onAction,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StandardStageRowView(
+    stageDisplayName: String,
+    displayDescription: String,
+    isRunning: Boolean,
+    isSuccess: Boolean,
+    isRestored: Boolean,
+    primaryAction: SetupRowAction?,
+    onAction: (SetupRowAction, String?) -> Unit,
+) {
+    val diagnostics = GlassTheme.diagnosticColors
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .glassSurface(
+                role = GlassRole.TextCard,
+                shape = GlassShapes.HazeSmall,
+                surfaceColor = MaterialTheme.colorScheme.surfaceContainer,
+                drawBorder = true,
+                borderColor = MaterialTheme.colorScheme.outline,
+                borderWidth = StrokeWidth.Hairline,
+            ).semantics {
+                liveRegion = LiveRegionMode.Polite
+            }.padding(horizontal = Spacing.MediumSmall, vertical = Spacing.Small),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                modifier = Modifier.weight(1f, fill = false),
+            ) {
+                when {
+                    isRunning -> {
+                        val isReducedMotion = GlassTheme.reducedMotionPolicy == GlassReducedMotionPolicy.Reduced
+                        if (isReducedMotion) {
+                            Text(
+                                text = "Checking…",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            GlassSpinner(
+                                modifier = Modifier.size(IconSize.Small),
+                                strokeWidth = StrokeWidth.Focused,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    isSuccess -> {
+                        Icon(
+                            painter = AppIcons.ideStatusSuccess(),
+                            contentDescription = "Ready",
+                            tint = diagnostics.success,
+                            modifier = Modifier.size(IconSize.Small),
+                        )
+                    }
+
+                    else -> {
+                        Box(
+                            modifier = Modifier.size(IconSize.Small),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(IconSize.Indicator)
+                                    .clip(GlassShapes.Capsule)
+                                    .background(MaterialTheme.colorScheme.outline),
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = stageDisplayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                Spacer(Modifier.size(Spacing.ExtraSmall))
+
+                Text(
+                    text = displayDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (isRunning && primaryAction == SetupRowAction.CANCEL) {
+                GlassSecondaryButton(
+                    onClick = { onAction(SetupRowAction.CANCEL, null) },
+                ) {
                     Text(
-                        text = displayDescription,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = "Cancel",
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-
-                if (isRunning && primaryAction == SetupRowAction.CANCEL) {
-                    GlassSecondaryButton(
-                        onClick = { onAction(SetupRowAction.CANCEL, null) },
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                } else {
-                    GlassChip(
-                        label =
-                        when {
-                            isRestored -> "Historical"
-                            isSuccess -> "Ready"
-                            isRunning -> "Checking…"
-                            else -> "Pending"
-                        },
-                        selected = isSuccess && !isRestored,
-                    )
-                }
+            } else {
+                GlassChip(
+                    label = when {
+                        isRestored -> "Historical"
+                        isSuccess -> "Ready"
+                        isRunning -> "Checking…"
+                        else -> "Pending"
+                    },
+                    selected = isSuccess && !isRestored,
+                )
             }
         }
     }

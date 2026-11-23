@@ -10,6 +10,7 @@
 package org.ide.lti.core.model.target
 
 import kotlinx.serialization.Serializable
+import org.ide.lti.core.common.utils.ByteFormatter
 
 /**
  * Qualification certification status for a target device profile.
@@ -157,22 +158,22 @@ data class TargetDevice(
     }
 
     val formattedSuperSize: String
-        get() = "${superPartitionBytes / (1024L * 1024L * 1024L)}.0 GB"
+        get() = ByteFormatter.format(superPartitionBytes)
 
     val formattedSuperGroupSize: String
-        get() = "${(superGroupBytes * 10 / (1024L * 1024L * 1024L)) / 10.0} GB"
+        get() = ByteFormatter.format(superGroupBytes)
 
     val formattedBootSize: String
-        get() = "${bootPartitionBytes / (1024L * 1024L)} MB"
+        get() = ByteFormatter.format(bootPartitionBytes)
 
     val formattedVendorBootSize: String
-        get() = "${vendorBootPartitionBytes / (1024L * 1024L)} MB"
+        get() = ByteFormatter.format(vendorBootPartitionBytes)
 
     val formattedInitBootSize: String
-        get() = "${initBootPartitionBytes / (1024L * 1024L)} MB"
+        get() = ByteFormatter.format(initBootPartitionBytes)
 
     val formattedDtboSize: String
-        get() = "${dtboPartitionBytes / (1024L * 1024L)} MB"
+        get() = ByteFormatter.format(dtboPartitionBytes)
 
     val targetKey: String
         get() = codename.uppercase()

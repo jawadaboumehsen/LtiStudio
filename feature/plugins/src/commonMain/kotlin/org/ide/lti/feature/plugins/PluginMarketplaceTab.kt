@@ -707,7 +707,6 @@ private fun MarketplaceUnverifiedWarningCard() {
     }
 }
 
-@Suppress("CyclomaticComplexMethod")
 @Composable
 private fun MarketplaceInspectorPanel(
     entry: IndexEntry?,
@@ -734,90 +733,112 @@ private fun MarketplaceInspectorPanel(
             ),
     ) {
         if (entry == null) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(Spacing.Large),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = if (filteredEmpty && searchQuery.isNotBlank()) {
-                        "No packages match '$searchQuery'."
-                    } else {
-                        "Select a package to inspect details."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            MarketplaceEmptyInspectorPlaceholder(filteredEmpty = filteredEmpty, searchQuery = searchQuery)
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(Spacing.Large),
-                verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+            MarketplaceInspectorDetails(
+                entry = entry,
+                status = status,
+                sourceVerified = sourceVerified,
+                isInstalling = isInstalling,
+                onInstallClick = onInstallClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarketplaceEmptyInspectorPlaceholder(filteredEmpty: Boolean, searchQuery: String) {
+    Box(
+        modifier = Modifier.fillMaxSize().padding(Spacing.Large),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (filteredEmpty && searchQuery.isNotBlank()) {
+                "No packages match '$searchQuery'."
+            } else {
+                "Select a package to inspect details."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun MarketplaceInspectorDetails(
+    entry: IndexEntry,
+    status: MarketplaceStatus?,
+    sourceVerified: Boolean,
+    isInstalling: Boolean,
+    onInstallClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Spacing.Large),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        MarketplaceInspectorHeader(entry = entry)
+
+        Text(
+            text = entry.targetSummary,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        GlassHorizontalDivider(specular = true)
+
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+            MarketplacePropertyRow(
+                label = "Version",
+                value = entry.version + status?.let { " · ${it.label}" }.orEmpty(),
+            )
+            GlassHorizontalDivider(specular = true)
+            MarketplacePropertyRow(
+                label = "SDK compatibility",
+                value = entry.sdkApiRange.ifBlank { "Not declared" },
+            )
+            GlassHorizontalDivider(specular = true)
+            MarketplacePropertyRow(
+                label = if (entry.fileSha256 != null) "File SHA-256" else "Content digest",
+                value = (entry.fileSha256 ?: entry.contentDigest).ifBlank { "Not declared" },
+            )
+            GlassHorizontalDivider(specular = true)
+            MarketplacePropertyRow(
+                label = "Signature identity",
+                value = entry.signatureIdentity ?: "Unsigned",
+            )
+            GlassHorizontalDivider(specular = true)
+            MarketplacePropertyRow(
+                label = "Revocation status",
+                value = if (entry.revoked) "Revoked" else "Not marked revoked",
+            )
+        }
+
+        if (!sourceVerified) {
+            MarketplaceUnverifiedWarningCard()
+        }
+
+        if (sourceVerified) {
+            Spacer(modifier = Modifier.weight(1f))
+
+            GlassButton(
+                onClick = onInstallClick,
+                enabled = status?.installedThis != true,
+                loading = isInstalling,
+                variant = GlassButtonVariant.Primary,
+                shape = GlassShapes.HazeMediumSmall,
+                minHeight = ComponentSize.PluginActionBtnHeight,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                MarketplaceInspectorHeader(entry = entry)
-
                 Text(
-                    text = entry.targetSummary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    when {
+                        isInstalling -> "Installing..."
+                        status?.installedThis == true -> status.label
+                        status?.update == true -> "Update to ${entry.version}"
+                        else -> "Install package"
+                    },
                 )
-
-                GlassHorizontalDivider(specular = true)
-
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-                    MarketplacePropertyRow(
-                        label = "Version",
-                        value = entry.version + status?.let { " · ${it.label}" }.orEmpty(),
-                    )
-                    GlassHorizontalDivider(specular = true)
-                    MarketplacePropertyRow(
-                        label = "SDK compatibility",
-                        value = entry.sdkApiRange.ifBlank { "Not declared" },
-                    )
-                    GlassHorizontalDivider(specular = true)
-                    MarketplacePropertyRow(
-                        label = if (entry.fileSha256 != null) "File SHA-256" else "Content digest",
-                        value = (entry.fileSha256 ?: entry.contentDigest).ifBlank { "Not declared" },
-                    )
-                    GlassHorizontalDivider(specular = true)
-                    MarketplacePropertyRow(
-                        label = "Signature identity",
-                        value = entry.signatureIdentity ?: "Unsigned",
-                    )
-                    GlassHorizontalDivider(specular = true)
-                    MarketplacePropertyRow(
-                        label = "Revocation status",
-                        value = if (entry.revoked) "Revoked" else "Not marked revoked",
-                    )
-                }
-
-                if (!sourceVerified) {
-                    MarketplaceUnverifiedWarningCard()
-                }
-
-                if (sourceVerified) {
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    GlassButton(
-                        onClick = onInstallClick,
-                        enabled = status?.installedThis != true,
-                        loading = isInstalling,
-                        variant = GlassButtonVariant.Primary,
-                        shape = GlassShapes.HazeMediumSmall,
-                        minHeight = ComponentSize.PluginActionBtnHeight,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            when {
-                                isInstalling -> "Installing..."
-                                status?.installedThis == true -> status.label
-                                status?.update == true -> "Update to ${entry.version}"
-                                else -> "Install package"
-                            },
-                        )
-                    }
-                }
             }
         }
     }

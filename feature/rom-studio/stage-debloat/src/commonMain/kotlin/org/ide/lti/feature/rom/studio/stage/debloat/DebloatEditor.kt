@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.testTag
@@ -63,7 +62,6 @@ import org.ide.lti.core.designsystem.icon.GlassIcon
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
-import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -77,7 +75,6 @@ import org.ide.lti.core.domain.debloat.DebloatRisk
 import org.ide.lti.core.domain.debloat.PackageMentions
 import org.ide.lti.core.domain.pipeline.toolkit.CommunityOpinion
 import org.ide.lti.core.domain.pipeline.toolkit.RestorePoint
-import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
 import org.ide.lti.core.model.workspace.DebloatSettings
 import org.ide.lti.core.ui.toolkit.RefusalView
 import org.ide.lti.feature.rom.studio.api.formatBytes
@@ -88,7 +85,7 @@ import org.jetbrains.skia.Image as SkiaImage
  * Debloat: pick apps of the assembled work tree to remove. The inventory is the real tree (run the build
  * through Assemble first); protected apps cannot be picked; the stage refuses picks that no longer exist.
  */
-@Suppress("LongParameterList", "CyclomaticComplexMethod")
+@Suppress("LongParameterList")
 @Composable
 public fun DebloatEditor(
     settings: DebloatSettings,
@@ -146,55 +143,73 @@ public fun DebloatEditor(
 
                 "app-map", "app_map" -> appMap(facts)
 
-                else -> {
-                    item {
-                        GlassTextField(
-                            value = query,
-                            onValueChange = { query = it },
-                            placeholder = "Search apps",
-                            modifier = Modifier.fillMaxWidth().testTag("DebloatSearch"),
-                        )
-                    }
-                    if (shown == null || (facts.loading && facts.inventory.isEmpty())) {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Small),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                GlassLoadingStatus(if (shown == null) "Searching apps…" else "Reading apps inventory…")
-                                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
-                                GlassSkeletonList(
-                                    count = 5,
-                                    hasIcon = true,
-                                    hasSubtitle = true,
-                                    hasTrailingBadge = true,
-                                )
-                            }
-                        }
-                    } else if (facts.loading) {
-                        item {
-                            GlassProgressBar(
-                                progress = null,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
-                            )
-                        }
-                    }
-                    items(shown.orEmpty(), key = { DebloatViewModel.selectorOf(it) }) { candidate ->
-                        val selector = DebloatViewModel.selectorOf(candidate)
-                        val details = remember(facts.apps, selector) { details(facts.apps[selector], selector, facts) }
-                        InventoryRow(
-                            candidate,
-                            selector in picked,
-                            risks[selector],
-                            facts.app(selector),
-                            details,
-                            onToggle,
-                            facts.opinions(facts.apps[selector]?.packageId),
-                        )
-                    }
-                }
+                else -> inventorySection(
+                    query = query,
+                    onQueryChange = { query = it },
+                    shown = shown,
+                    facts = facts,
+                    picked = picked,
+                    risks = risks,
+                    onToggle = onToggle,
+                )
             }
         }
+    }
+}
+
+private fun LazyListScope.inventorySection(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    shown: List<DebloatCandidate>?,
+    facts: DebloatFacts,
+    picked: Set<String>,
+    risks: Map<String, AppRisk>,
+    onToggle: (DebloatCandidate) -> Unit,
+) {
+    item {
+        GlassTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            placeholder = "Search apps",
+            modifier = Modifier.fillMaxWidth().testTag("DebloatSearch"),
+        )
+    }
+    if (shown == null || (facts.loading && facts.inventory.isEmpty())) {
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                GlassLoadingStatus(if (shown == null) "Searching apps…" else "Reading apps inventory…")
+                GlassProgressBar(progress = null, modifier = Modifier.fillMaxWidth())
+                GlassSkeletonList(
+                    count = 5,
+                    hasIcon = true,
+                    hasSubtitle = true,
+                    hasTrailingBadge = true,
+                )
+            }
+        }
+    } else if (facts.loading) {
+        item {
+            GlassProgressBar(
+                progress = null,
+                modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.ExtraSmall),
+            )
+        }
+    }
+    items(shown.orEmpty(), key = { DebloatViewModel.selectorOf(it) }) { candidate ->
+        val selector = DebloatViewModel.selectorOf(candidate)
+        val details = remember(facts.apps, selector) { details(facts.apps[selector], selector, facts) }
+        InventoryRow(
+            candidate,
+            selector in picked,
+            risks[selector],
+            facts.app(selector),
+            details,
+            onToggle,
+            facts.opinions(facts.apps[selector]?.packageId),
+        )
     }
 }
 
@@ -464,206 +479,5 @@ private fun AppIcon(file: String?) = key(file) {
         Image(bitmap = shown, contentDescription = null, modifier = Modifier.size(IconSize.Large))
     } else {
         GlassIcon(icon = AppIcons.File, modifier = Modifier.size(IconSize.Large))
-    }
-}
-
-/** Why an app is needed (red), risky (amber) or what else its manifest says (muted). */
-@Composable
-private fun Reasons(risk: AppRisk) {
-    risk.blockers.forEach { Reason(it, GlassTheme.diagnosticColors.error) }
-    risk.warnings.forEach { Reason(it, GlassTheme.diagnosticColors.warning) }
-    risk.notes.forEach { Reason(it, MaterialTheme.colorScheme.onSurfaceVariant) }
-}
-
-@Composable
-private fun Reason(text: String, color: Color) {
-    Text(
-        text = text,
-        color = color,
-        fontSize = FontSize.Micro,
-        fontFamily = ideFontFamily(),
-        modifier = Modifier.padding(start = Spacing.ExtraExtraLarge),
-    )
-}
-
-/** Apps that can never be picked: the built-in list, and those the other apps' manifests show the device needs. */
-private fun LazyListScope.keepRules(facts: DebloatFacts, risks: Map<String, AppRisk>) {
-    item { Hint("These apps are needed to boot, set up, call or install apps; they cannot be picked.") }
-    items(facts.inventory.filter(DebloatInventory::isProtected)) { Line(label(it)) }
-    val needed = facts.inventory.filter { !risks[DebloatViewModel.selectorOf(it)]?.blockers.isNullOrEmpty() }
-    if (needed.isNotEmpty()) {
-        item { Hint("Needed by the device, from what the apps' manifests say:") }
-        items(needed) { candidate ->
-            Column {
-                Line(label(candidate))
-                risks[DebloatViewModel.selectorOf(candidate)]?.blockers?.forEach {
-                    Reason(it, GlassTheme.diagnosticColors.error)
-                }
-            }
-        }
-    }
-}
-
-/** Picks the build will refuse (not in this firmware) and picks that remove a part of the system. */
-private fun LazyListScope.riskReview(
-    settings: DebloatSettings,
-    facts: DebloatFacts,
-    risks: Map<String, AppRisk>,
-    onUnpick: (String) -> Unit,
-) {
-    val known = facts.inventory.map(DebloatViewModel::selectorOf).toSet()
-    val missing = settings.removeSelectors.filter { facts.loaded && it !in known }
-    val risky = settings.removeSelectors.filter { !risks[it]?.warnings.isNullOrEmpty() }
-    item {
-        Hint(
-            if (missing.isEmpty() && risky.isEmpty()) {
-                "No problems: every pick exists in the assembled tree and none is a part of the system."
-            } else {
-                "Review these picks before building."
-            },
-        )
-    }
-    if (missing.isNotEmpty()) {
-        item { Hint("Not apps of this firmware; the build stops until you remove them:") }
-        items(missing) { selector -> PickRow(selector, onUnpick, isProblem = true) }
-    }
-    if (risky.isNotEmpty()) {
-        item { Hint("Parts of the system: remove them only on purpose.") }
-        items(risky) { selector ->
-            Column {
-                PickRow(selector, onUnpick)
-                risks[selector]?.warnings?.forEach { Reason(it, GlassTheme.diagnosticColors.warning) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PickRow(selector: String, onUnpick: (String) -> Unit, isProblem: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = selector,
-            color = if (isProblem) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-            modifier = Modifier.weight(1f),
-        )
-        GlassButton(onClick = { onUnpick(selector) }, variant = GlassButtonVariant.Standard) {
-            Text("Remove pick", fontSize = FontSize.Micro)
-        }
-    }
-}
-
-@Composable
-internal fun Line(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}
-
-@Composable
-internal fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-private fun label(candidate: DebloatCandidate) = "${candidate.partition}/${candidate.relativePath}"
-
-private fun LazyListScope.removeSelections(
-    settings: DebloatSettings,
-    facts: DebloatFacts,
-    picked: Set<String>,
-    actions: DebloatActions,
-    onUnpick: (String) -> Unit,
-) {
-    item { Hint(if (picked.isEmpty()) "Nothing picked." else "${picked.size} app(s) will be removed.") }
-    item {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            GlassButton(onClick = actions.importList, variant = GlassButtonVariant.Standard) {
-                Text("Import a removal list", fontSize = FontSize.BodySmall)
-            }
-            GlassButton(
-                onClick = actions.exportList,
-                enabled = picked.isNotEmpty(),
-                variant = GlassButtonVariant.Standard,
-            ) {
-                Text("Save the picks as a list", fontSize = FontSize.BodySmall)
-            }
-        }
-    }
-    item { DebloatPresets(facts, picked.isNotEmpty(), actions) }
-    facts.listResult?.let { match ->
-        item { Hint("The list matched ${match.effectiveRemovals.size} app(s).") }
-        if (match.blockedProtected.isNotEmpty()) {
-            item { Hint("Protected or needed by the device, not picked:") }
-            items(match.blockedProtected) { Line(it.id) }
-        }
-        if (match.unknown.isNotEmpty()) {
-            item { Hint("Not an app of this firmware, skipped:") }
-            items(match.unknown) { Line(it) }
-        }
-    }
-    items(settings.removeSelectors) { selector -> PickRow(selector, onUnpick) }
-}
-
-private fun LazyListScope.results(facts: DebloatFacts, actions: DebloatActions) {
-    val result = facts.lastResult
-    item {
-        Hint(
-            result?.let {
-                "The last run removed ${it.removals.size} app(s), " +
-                    "freeing ${formatBytes(it.logicalBytesFreed)}."
-            } ?: "Debloat has not removed anything yet.",
-        )
-    }
-    items(result?.removals.orEmpty()) { Line("${it.partition}:${it.relativePath}") }
-    item {
-        Hint(
-            if (facts.restorePoints.isEmpty()) {
-                "No backups: the last run removed nothing."
-            } else {
-                "Backups taken before removal. Restoring puts the app back and un-picks it."
-            },
-        )
-    }
-    if (facts.restorePoints.isNotEmpty()) {
-        item {
-            GlassButton(onClick = actions.restoreAll, variant = GlassButtonVariant.Standard) {
-                Text("Restore all", fontSize = FontSize.BodySmall)
-            }
-        }
-    }
-    items(facts.restorePoints, key = { it.id }) { point ->
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "${point.itemPath}  (${point.state})",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = FontSize.BodySmall,
-                fontFamily = codeFontFamily(),
-                modifier = Modifier.weight(1f),
-            )
-            GlassButton(
-                onClick = { actions.restore(point) },
-                enabled = point.state == RestorePointState.Available,
-                variant = GlassButtonVariant.Standard,
-            ) {
-                Text("Restore", fontSize = FontSize.Micro)
-            }
-        }
     }
 }

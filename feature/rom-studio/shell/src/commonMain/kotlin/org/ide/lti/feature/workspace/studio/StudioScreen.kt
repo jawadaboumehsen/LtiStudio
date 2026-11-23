@@ -39,11 +39,9 @@ import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.layout.ContentHeader
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
-import org.ide.lti.core.designsystem.component.layout.IdePipelineStageItem
 import org.ide.lti.core.designsystem.component.layout.IdeRightRail
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
-import org.ide.lti.core.designsystem.component.layout.RailStageStatus
 import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.icon.AppIconsRomStages
@@ -307,7 +305,7 @@ private fun dispatchOverviewAction(
     }
 }
 
-@Suppress("LongParameterList", "CyclomaticComplexMethod", "LongMethod")
+@Suppress("LongParameterList")
 @Composable
 public fun StudioShellContent(
     uiState: WorkspaceShellUiState,
@@ -338,45 +336,11 @@ public fun StudioShellContent(
         selectedObjectId,
         stageEditorRegistry,
     ) {
-        val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
-        if (selectedStage != null && uiState.selectedWorkspaceSection == null) {
-            val currentStage = stageEditorRegistry?.descriptorFor(selectedStage.stageId)
-                ?: CanonicalStageDescriptors.descriptorFor(selectedStage.stageId)
-            val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
-            val currentSubobject = currentStage?.subobjects?.firstOrNull { it.id.value == activeObjectId }
-            if (currentSubobject != null) {
-                listOf("ROM Setup", currentStage.title, currentSubobject.title)
-            } else {
-                listOf("ROM Setup", selectedStage.label)
-            }
-        } else {
-            val sectionName = when (uiState.selectedWorkspaceSection) {
-                WorkspaceSection.Overview -> "Overview"
-                WorkspaceSection.RomConfig -> "ROM Configuration"
-                WorkspaceSection.RunHistory -> "Run History"
-                WorkspaceSection.Artifacts -> "Artifacts"
-                WorkspaceSection.TargetProfile -> "Target Profile"
-                WorkspaceSection.RestorePoints -> "Restore Points"
-                WorkspaceSection.Storage -> "Disk Usage"
-                null -> "Overview"
-            }
-            listOf("Workspace", sectionName)
-        }
+        resolveStudioBreadcrumbs(uiState, selectedObjectId, stageEditorRegistry)
     }
 
     val stages = remember(uiState.pipelineItems, uiState.deviceHasError) {
-        // The device configuration comes first: every stage needs it, and the build cannot start without it.
-        val device = DEVICE_RAIL_ITEM.copy(status = railStatus(open = true, hasError = uiState.deviceHasError))
-        listOf(device) + uiState.pipelineItems.map { item ->
-            IdePipelineStageItem(
-                id = item.stageId.name,
-                label = item.label,
-                icon = item.iconKey,
-                enabled = item.isEnabled,
-                disabledReason = item.disabledReason,
-                status = railStatus(open = item.isEnabled, hasError = uiState.deviceHasError?.let { item.hasError }),
-            )
-        }
+        resolveStudioPipelineStages(uiState)
     }
 
     val selectedStageItem = remember(uiState.pipelineItems) {
@@ -447,80 +411,22 @@ public fun StudioShellContent(
             WorkspaceRightRail()
         },
         content = {
-            Column(modifier = Modifier.fillMaxSize()) {
-                if (isStageEditor) {
-                    ContentHeader(
-                        title = headerTitle,
-                        breadcrumbs = breadcrumbItems,
-                        subtitle = headerSubtitle,
-                        context = uiState.targetContext?.let { target -> { TopBarTargetSpecifier(target) } },
-                        actions = {
-                            val isValidating = uiState.validateOperation is OperationUiState.Running
-                            TopBarActionButton(
-                                label = "Validate",
-                                isLoading = isValidating,
-                                isEnabled = !isValidating,
-                                onClick = onValidate,
-                                testTag = "TopBar_Validate",
-                            )
-                        },
-                    )
-
-                    val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
-                    val descriptor = selectedStage?.let { stage ->
-                        stageEditorRegistry?.descriptorFor(stage.stageId)
-                            ?: CanonicalStageDescriptors.descriptorFor(stage.stageId)
-                    }
-                    if (descriptor != null && descriptor.subobjects.isNotEmpty()) {
-                        StageSubMenuTabBar(
-                            stage = descriptor,
-                            selectedObjectId = selectedObjectId,
-                            onSelectStageObject = onSelectStageObject,
-                            simple = simpleView,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                        )
-                    }
-                } else {
-                    WorkspaceSubMenuTabBar(
-                        selectedSection = uiState.selectedWorkspaceSection,
-                        onSelectSection = onSelectWorkspaceSection,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                    )
-                }
-                if (uiState.saveOperation is OperationUiState.Running) {
-                    GlassLoadingStatus("Saving workspace…", Modifier.padding(horizontal = Spacing.ExtraLarge))
-                }
-                // The result of Validate / Check readiness, until the next one.
-                (uiState.validateOperation as? OperationUiState.Succeeded)?.message?.let { message ->
-                    Text(
-                        text = message,
-                        color = if (message.startsWith(READY)) {
-                            GlassTheme.diagnosticColors.success
-                        } else {
-                            GlassTheme.diagnosticColors.warning
-                        },
-                        fontSize = FontSize.BodySmall,
-                        modifier = Modifier
-                            .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.ExtraSmall)
-                            .testTag("ValidationResult"),
-                    )
-                }
-
-                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    content()
-                }
-                if (isStageEditor) {
-                    val items = uiState.pipelineItems
-                    items.getOrNull(items.indexOfFirst { it.isSelected } + 1)?.let { next ->
-                        StageContinueBar(next = next, onContinue = { onSelectStage(next.stageId) })
-                    }
-                }
-                output?.invoke()
-            }
+            StudioMainContent(
+                uiState = uiState,
+                isStageEditor = isStageEditor,
+                headerTitle = headerTitle,
+                headerSubtitle = headerSubtitle,
+                breadcrumbItems = breadcrumbItems,
+                stageEditorRegistry = stageEditorRegistry,
+                selectedObjectId = selectedObjectId,
+                onSelectStageObject = onSelectStageObject,
+                onSelectWorkspaceSection = onSelectWorkspaceSection,
+                simpleView = simpleView,
+                onValidate = onValidate,
+                onSelectStage = onSelectStage,
+                output = output,
+                content = content,
+            )
         },
         statusBar = {
             StudioStatusBar(
@@ -530,6 +436,99 @@ public fun StudioShellContent(
             )
         },
     )
+}
+
+@Composable
+private fun StudioMainContent(
+    uiState: WorkspaceShellUiState,
+    isStageEditor: Boolean,
+    headerTitle: String,
+    headerSubtitle: String?,
+    breadcrumbItems: List<String>,
+    stageEditorRegistry: StageEditorRegistry?,
+    selectedObjectId: String?,
+    onSelectStageObject: ((StageId, String) -> Unit)?,
+    onSelectWorkspaceSection: (WorkspaceSection) -> Unit,
+    simpleView: Boolean,
+    onValidate: () -> Unit,
+    onSelectStage: (StageId) -> Unit,
+    output: @Composable (() -> Unit)?,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (isStageEditor) {
+            ContentHeader(
+                title = headerTitle,
+                breadcrumbs = breadcrumbItems,
+                subtitle = headerSubtitle,
+                context = uiState.targetContext?.let { target -> { TopBarTargetSpecifier(target) } },
+                actions = {
+                    val isValidating = uiState.validateOperation is OperationUiState.Running
+                    TopBarActionButton(
+                        label = "Validate",
+                        isLoading = isValidating,
+                        isEnabled = !isValidating,
+                        onClick = onValidate,
+                        testTag = "TopBar_Validate",
+                    )
+                },
+            )
+
+            val selectedStage = uiState.pipelineItems.firstOrNull { it.isSelected }
+            val descriptor = selectedStage?.let { stage ->
+                stageEditorRegistry?.descriptorFor(stage.stageId)
+                    ?: CanonicalStageDescriptors.descriptorFor(stage.stageId)
+            }
+            if (descriptor != null && descriptor.subobjects.isNotEmpty()) {
+                StageSubMenuTabBar(
+                    stage = descriptor,
+                    selectedObjectId = selectedObjectId,
+                    onSelectStageObject = onSelectStageObject,
+                    simple = simpleView,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+                )
+            }
+        } else {
+            WorkspaceSubMenuTabBar(
+                selectedSection = uiState.selectedWorkspaceSection,
+                onSelectSection = onSelectWorkspaceSection,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+            )
+        }
+        if (uiState.saveOperation is OperationUiState.Running) {
+            GlassLoadingStatus("Saving workspace…", Modifier.padding(horizontal = Spacing.ExtraLarge))
+        }
+        // The result of Validate / Check readiness, until the next one.
+        (uiState.validateOperation as? OperationUiState.Succeeded)?.message?.let { message ->
+            Text(
+                text = message,
+                color = if (message.startsWith(READY)) {
+                    GlassTheme.diagnosticColors.success
+                } else {
+                    GlassTheme.diagnosticColors.warning
+                },
+                fontSize = FontSize.BodySmall,
+                modifier = Modifier
+                    .padding(horizontal = Spacing.ExtraLarge, vertical = Spacing.ExtraSmall)
+                    .testTag("ValidationResult"),
+            )
+        }
+
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            content()
+        }
+        if (isStageEditor) {
+            val items = uiState.pipelineItems
+            items.getOrNull(items.indexOfFirst { it.isSelected } + 1)?.let { next ->
+                StageContinueBar(next = next, onContinue = { onSelectStage(next.stageId) })
+            }
+        }
+        output?.invoke()
+    }
 }
 
 /** The way forward through the pipeline: the next stage, or what to finish before it opens. */
@@ -771,123 +770,3 @@ private fun StageObjectEditor(
         }
     }
 }
-
-private fun resolveHeaderTitle(
-    selectedSection: WorkspaceSection?,
-    stageItem: PipelineRailItemUi?,
-    selectedObjectId: String?,
-    registry: StageEditorRegistry?,
-): String {
-    if (stageItem != null && selectedSection == null) {
-        val currentStage = registry?.descriptorFor(stageItem.stageId)
-            ?: CanonicalStageDescriptors.descriptorFor(stageItem.stageId)
-        val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
-        val currentSubobject = currentStage?.subobjects?.firstOrNull { it.id.value == activeObjectId }
-        return currentSubobject?.title ?: currentStage?.title ?: stageItem.label
-    }
-    return when (selectedSection) {
-        WorkspaceSection.Overview -> "Workspace Overview"
-        WorkspaceSection.RomConfig -> "ROM Configuration"
-        WorkspaceSection.RunHistory -> "Run History"
-        WorkspaceSection.Artifacts -> "Generated Artifacts"
-        WorkspaceSection.TargetProfile -> "Target Device Profile"
-        WorkspaceSection.RestorePoints -> "Restore Points"
-        WorkspaceSection.Storage -> "Disk Usage"
-        null -> "Workspace Overview"
-    }
-}
-
-private fun resolveHeaderSubtitle(
-    selectedSection: WorkspaceSection?,
-    stageItem: PipelineRailItemUi?,
-    selectedObjectId: String?,
-    registry: StageEditorRegistry?,
-): String? {
-    if (stageItem != null && selectedSection == null) {
-        val currentStage = registry?.descriptorFor(stageItem.stageId)
-            ?: CanonicalStageDescriptors.descriptorFor(stageItem.stageId)
-        val activeObjectId = selectedObjectId ?: currentStage?.subobjects?.firstOrNull()?.id?.value
-        return resolveStageSubtitle(stageItem.stageId, activeObjectId)
-    }
-    return when (selectedSection) {
-        WorkspaceSection.RestorePoints -> "Manage backups and restore modified or removed components."
-        WorkspaceSection.Storage -> "What the workspace takes in WSL, and freeing what the next build makes again."
-        else -> null
-    }
-}
-
-private fun resolveStageSubtitle(stageId: StageId, subobjectId: String?): String = when (stageId) {
-    StageId.FIRMWARE_ACQUISITION -> resolveAcquireSubtitle(subobjectId)
-    StageId.FIRMWARE_EXTRACTION -> resolveExtractSubtitle(subobjectId)
-    StageId.WORK_TREE_ASSEMBLY -> resolveAssembleSubtitle(subobjectId)
-    StageId.DEBLOAT -> "Configure apps and components to remove."
-    StageId.MODULE_APPLICATION -> "Enable and configure patch modules."
-    StageId.BUILD_FLASHABLE_ZIP -> "Configure output images and package signing."
-    StageId.GENERATE_OTA_MANIFEST -> "Edit release information and review derived details."
-    StageId.PUBLISH_RELEASE -> "Configure release export, split archives, and distribution."
-}
-
-private fun resolveAcquireSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
-    "source" -> "Configure acquisition mode and target firmware source."
-
-    "firmware-baseline", "firmware_baseline", "baseline" ->
-        "Select the official firmware build to use as the foundation for this workspace build."
-
-    "existing-archives", "existing_archives", "archives" ->
-        "Manage and verify previously downloaded or cached firmware archives."
-
-    "download-policy", "download_policy", "download" ->
-        "Configure how source files are downloaded, with retry and resume behavior."
-
-    "integrity" -> "Verify downloaded source against expected hash."
-
-    else -> "Acquire and verify official source firmware for this target."
-}
-
-private fun resolveExtractSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
-    "archive-layout", "archive_layout" ->
-        "Inspect the archive layout and choose target-supported extraction inputs."
-
-    "dynamic-partitions", "dynamic_partitions" ->
-        "Choose what to extract from the verified source."
-
-    "boot-partitions", "boot_partitions" ->
-        "Choose which boot images to unpack (boot, init_boot, vendor_boot, dtbo)."
-
-    "slot" -> "Choose which A/B slot's images to unpack."
-
-    "filesystem-handling", "filesystem_handling" -> "How unpacked images are kept between builds."
-
-    else -> "Extract and unpack partition images from verified firmware."
-}
-
-private fun resolveAssembleSubtitle(subobjectId: String?): String = when (subobjectId?.lowercase()) {
-    "work-trees", "work_trees" ->
-        "Configure source work trees and assembly options."
-
-    "system-ext-handling", "system_ext_handling" ->
-        "Configure how system_ext is handled during assembly."
-
-    "boot-preparation", "boot_preparation" ->
-        "Configure boot image handling for the assembled build."
-
-    "aot-cleanup", "aot_cleanup" ->
-        "Configure ahead-of-time compilation cleanup and odex stripping."
-
-    "build-properties", "build_properties" ->
-        "Configure build properties and fingerprint overrides."
-
-    else -> "Assemble work trees and staging structures for customization."
-}
-
-/** A locked stage shows no dot (it is greyed); an open one is green when configured, red with errors. */
-private fun railStatus(open: Boolean, hasError: Boolean?): RailStageStatus = when {
-    !open || hasError == null -> RailStageStatus.NONE
-    hasError -> RailStageStatus.ERROR
-    else -> RailStageStatus.DONE
-}
-
-/** Rail entry for the device configuration of the workspace (opens the ROM configuration panel). */
-private val DEVICE_RAIL_ITEM = IdePipelineStageItem(id = "device", label = "Device configuration", icon = "device")
-
-internal const val READY = "Ready to build"

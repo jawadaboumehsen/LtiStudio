@@ -57,8 +57,6 @@ import kotlin.math.roundToInt
  * Every control changes the app at once and is saved: app style (theme), glass effects and fluid animations.
  * The preview reacts to them; Restore defaults puts them back.
  */
-// LongMethod suppressed on @Composable screen pane for appearance settings.
-@Suppress("LongMethod")
 @Composable
 fun AppearanceSettingsPane(
     appSettingsState: AppSettingsState,
@@ -67,27 +65,13 @@ fun AppearanceSettingsPane(
     stackSections: Boolean = false,
 ) {
     val reduceTransparency = !appSettingsState.effectsEnabled
-
     val currentTheme = AppTheme.fromId(appSettingsState.theme)
 
     Column(
         modifier = modifier.fillMaxWidth().testTag("AppearanceSettingsPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
-        // Page Title & Subtitle Header
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-            Text(
-                text = "Appearance",
-                fontSize = FontSize.HeadlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Make the studio comfortable for long sessions.",
-                fontSize = FontSize.BodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        AppearanceHeader()
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -95,177 +79,217 @@ fun AppearanceSettingsPane(
             verticalArrangement = Arrangement.spacedBy(Spacing.Large),
             maxItemsInEachRow = if (stackSections) 1 else 2,
         ) {
-            // Left Controls Column
             Column(
                 modifier = if (stackSections) Modifier.fillMaxWidth() else Modifier.weight(1.15f),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                // Card 1: App style
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentPadding = Spacing.CardPadding,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                            Text(
-                                text = "App style",
-                                fontSize = FontSize.TitleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "Choose how LtiRom Studio looks on your screen.",
-                                fontSize = FontSize.BodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        // Theme Preview Cards Row (Light, Dark, Blue Glass)
-                        Row(
-                            modifier = Modifier.fillMaxWidth().glassContainer(),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-                        ) {
-                            AppTheme.allThemes.forEach { theme ->
-                                val isSelected = appSettingsState.theme == theme.id
-                                ThemePreviewCard(
-                                    theme = theme,
-                                    isSelected = isSelected,
-                                    onClick = { appSettingsState.theme = theme.id },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        }
-
-                        GlassHorizontalDivider()
-                        AppearanceChoices(appSettingsState)
-                    }
-                }
-
-                // Card 2: Glass & motion
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth().testTag("GlassCard_glass_and_motion"),
-                    surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentPadding = Spacing.CardPadding,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                            Text(
-                                text = "Glass & motion",
-                                fontSize = FontSize.TitleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "Navigation stays expressive. Editors stay readable.",
-                                fontSize = FontSize.BodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        // Glass Effects Switch
-                        SettingsSwitchRow(
-                            title = "Glass effects",
-                            description = "Use translucent glass and optical refraction.",
-                            checked = appSettingsState.effectsEnabled,
-                            onCheckedChange = { appSettingsState.effectsEnabled = it },
-                            toggleTestTag = "ReduceTransparencySwitch",
-                        )
-
-                        GlassHorizontalDivider()
-
-                        // Fluid Animations Switch
-                        SettingsSwitchRow(
-                            title = "Fluid animations",
-                            description = "Enable spring physics, fluid stretching, and motion.",
-                            checked = appSettingsState.fluidAnimations,
-                            onCheckedChange = { appSettingsState.fluidAnimations = it },
-                            toggleTestTag = "FluidAnimationsSwitch",
-                        )
-                    }
-                }
+                AppStyleCard(appSettingsState = appSettingsState)
+                GlassMotionCard(appSettingsState = appSettingsState)
             }
 
-            Column(
+            AppearancePreviewColumn(
+                currentTheme = currentTheme,
+                reduceTransparency = reduceTransparency,
+                isComfortable = !appSettingsState.appearance.compact,
                 modifier = if (stackSections) {
                     Modifier.widthIn(max = GlassDimens.AppearancePreviewMaxWidth).fillMaxWidth()
                 } else {
                     Modifier.weight(0.85f)
                 },
-                verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
-                    Text(
-                        text = "Preview",
-                        fontSize = FontSize.TitleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = "A sample of the current look and feel.",
-                        fontSize = FontSize.BodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                LiveStudioPreviewCard(
-                    theme = currentTheme,
-                    reduceTransparency = reduceTransparency,
-                    isComfortable = !appSettingsState.appearance.compact,
-                )
-            }
+            )
         }
 
         Spacer(modifier = Modifier.height(Spacing.Large))
 
-        // Bottom Action Footer Bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = Spacing.Small)
-                .testTag("AppearanceActionFooter"),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Restore Defaults Button
-            Box(
-                modifier = Modifier
-                    .clip(GlassShapes.Small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(
-                        width = GlassDimens.HairlineBorder,
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = GlassShapes.Small,
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onRestoreDefaults,
-                    )
-                    .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
-                contentAlignment = Alignment.Center,
-            ) {
+        AppearanceActionFooter(
+            appSettingsState = appSettingsState,
+            onRestoreDefaults = onRestoreDefaults,
+        )
+
+        Spacer(modifier = Modifier.height(Spacing.Large))
+    }
+}
+
+@Composable
+private fun AppearanceHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+        Text(
+            text = "Appearance",
+            fontSize = FontSize.HeadlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "Make the studio comfortable for long sessions.",
+            fontSize = FontSize.BodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun AppStyleCard(appSettingsState: AppSettingsState) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentPadding = Spacing.CardPadding,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
                 Text(
-                    text = "Restore defaults",
-                    fontSize = FontSize.BodySmall,
-                    fontWeight = FontWeight.Medium,
+                    text = "App style",
+                    fontSize = FontSize.TitleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-            }
-
-            // Changes are live and saved; there is nothing to apply or cancel.
-            if (appSettingsState.isSaving) {
-                GlassLoadingStatus(appSettingsState.saveStatus)
-            } else {
                 Text(
-                    text = appSettingsState.saveStatus,
-                    fontSize = FontSize.LabelSmall,
+                    text = "Choose how LtiRom Studio looks on your screen.",
+                    fontSize = FontSize.BodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().glassContainer(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+            ) {
+                AppTheme.allThemes.forEach { theme ->
+                    val isSelected = appSettingsState.theme == theme.id
+                    ThemePreviewCard(
+                        theme = theme,
+                        isSelected = isSelected,
+                        onClick = { appSettingsState.theme = theme.id },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            GlassHorizontalDivider()
+            AppearanceChoices(appSettingsState)
+        }
+    }
+}
+
+@Composable
+private fun GlassMotionCard(appSettingsState: AppSettingsState) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("GlassCard_glass_and_motion"),
+        surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentPadding = Spacing.CardPadding,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+                Text(
+                    text = "Glass & motion",
+                    fontSize = FontSize.TitleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Navigation stays expressive. Editors stay readable.",
+                    fontSize = FontSize.BodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            SettingsSwitchRow(
+                title = "Glass effects",
+                description = "Use translucent glass and optical refraction.",
+                checked = appSettingsState.effectsEnabled,
+                onCheckedChange = { appSettingsState.effectsEnabled = it },
+                toggleTestTag = "ReduceTransparencySwitch",
+            )
+
+            GlassHorizontalDivider()
+
+            SettingsSwitchRow(
+                title = "Fluid animations",
+                description = "Enable spring physics, fluid stretching, and motion.",
+                checked = appSettingsState.fluidAnimations,
+                onCheckedChange = { appSettingsState.fluidAnimations = it },
+                toggleTestTag = "FluidAnimationsSwitch",
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppearancePreviewColumn(
+    currentTheme: AppTheme,
+    reduceTransparency: Boolean,
+    isComfortable: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall)) {
+            Text(
+                text = "Preview",
+                fontSize = FontSize.TitleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "A sample of the current look and feel.",
+                fontSize = FontSize.BodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
-        Spacer(modifier = Modifier.height(Spacing.Large))
+        LiveStudioPreviewCard(
+            theme = currentTheme,
+            reduceTransparency = reduceTransparency,
+            isComfortable = isComfortable,
+        )
+    }
+}
+
+@Composable
+private fun AppearanceActionFooter(appSettingsState: AppSettingsState, onRestoreDefaults: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = Spacing.Small)
+            .testTag("AppearanceActionFooter"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(GlassShapes.Small)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .border(
+                    width = GlassDimens.HairlineBorder,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = GlassShapes.Small,
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onRestoreDefaults,
+                )
+                .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Restore defaults",
+                fontSize = FontSize.BodySmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        if (appSettingsState.isSaving) {
+            GlassLoadingStatus(appSettingsState.saveStatus)
+        } else {
+            Text(
+                text = appSettingsState.saveStatus,
+                fontSize = FontSize.LabelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

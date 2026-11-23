@@ -74,8 +74,6 @@ import org.ide.lti.feature.setup.PlannedSetupChanges
  * Dismisses on Escape key or outside scrim click; traps Tab/Shift-Tab and confirmation until explicitly approved.
  * Bounded and virtualized via LazyColumn; supports reduced motion and reduced transparency (SC-005).
  */
-@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProvisioningPreviewSheet(
     plannedChanges: PlannedSetupChanges,
@@ -93,8 +91,7 @@ fun ProvisioningPreviewSheet(
     }
 
     Box(
-        modifier =
-        modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = AlphaTokens.Scrim))
             .clickable(
@@ -123,8 +120,7 @@ fun ProvisioningPreviewSheet(
         contentAlignment = Alignment.Center,
     ) {
         GlassCard(
-            modifier =
-            Modifier
+            modifier = Modifier
                 .widthIn(max = ComponentSize.MaxPanelWidth)
                 .fillMaxWidth()
                 .padding(Spacing.Medium)
@@ -147,320 +143,325 @@ fun ProvisioningPreviewSheet(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                    ) {
-                        Text(
-                            text = "Provisioning Preview",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = previewSubtitle(plan),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    GlassIconButton(
-                        onClick = onDismiss,
-                        size = ComponentSize.PanelHeaderActionTouchTarget,
-                    ) {
-                        Icon(
-                            painter = AppIcons.ClosePainterResource(),
-                            contentDescription = "Dismiss preview",
-                            modifier = Modifier.size(IconSize.Medium),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                ProvisioningPreviewHeader(plan = plan, onDismiss = onDismiss)
 
                 GlassHorizontalDivider()
 
-                // Bounded and Virtualized Action Lists
-                LazyColumn(
-                    modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = ComponentSize.MaxPanelHeight),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
-                ) {
-                    if (contextualError != null) {
-                        item(key = "contextual_error") {
-                            GlassBanner(
-                                severity = GlassBannerSeverity.ERROR,
-                                title = "Operation Warning / Error",
-                                description = contextualError,
-                            )
-                        }
-                    }
-
-                    // Target Environment Badge
-                    item(key = "target_subsystem") {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Text(
-                                text = "Target Subsystem:",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Box(
-                                modifier =
-                                Modifier
-                                    .clip(GlassShapes.Small)
-                                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                                    .border(
-                                        width = StrokeWidth.Standard,
-                                        color = MaterialTheme.colorScheme.outline,
-                                        shape = GlassShapes.Small,
-                                    )
-                                    .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                            ) {
-                                Text(
-                                    text = plannedChanges.targetDistro,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            if (plan != null) {
-                                Spacer(Modifier.weight(1f))
-                                Text(
-                                    text = "Plan: ${plan.planId.take(8)}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-
-                    // Elevation Banner if required
-                    if (plannedChanges.requiresElevation) {
-                        item(key = "elevation_banner") {
-                            val reason =
-                                plannedChanges.elevationReason
-                                    ?: "sudo apt-get install / system configuration"
-                            GlassBanner(
-                                severity = GlassBannerSeverity.WARNING,
-                                title = "Root / Sudo Elevation Required",
-                                description =
-                                "System packages or toolchain binaries require administrative permissions: " +
-                                    reason,
-                            )
-                        }
-                    }
-
-                    // System Packages to install
-                    if (plannedChanges.packagesToInstall.isNotEmpty()) {
-                        item(key = "packages_section") {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                Text(
-                                    text = "System Packages (${plannedChanges.packagesToInstall.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                ) {
-                                    for (pkg in plannedChanges.packagesToInstall) {
-                                        Box(
-                                            modifier =
-                                            Modifier
-                                                .clip(GlassShapes.Small)
-                                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                                .border(
-                                                    width = StrokeWidth.Hairline,
-                                                    color = MaterialTheme.colorScheme.outline,
-                                                    shape = GlassShapes.Small,
-                                                )
-                                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                                        ) {
-                                            Text(
-                                                text = pkg,
-                                                style =
-                                                MaterialTheme.typography.bodySmall.copy(
-                                                    fontFamily = codeFontFamily(),
-                                                ),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Submodules to sync
-                    if (plannedChanges.submodulesToSync.isNotEmpty()) {
-                        item(key = "submodules_section") {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                Text(
-                                    text = "Git Submodules (${plannedChanges.submodulesToSync.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Column(
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clip(GlassShapes.Small)
-                                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                                        .border(
-                                            width = StrokeWidth.Hairline,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            shape = GlassShapes.Small,
-                                        )
-                                        .padding(Spacing.Small),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-                                ) {
-                                    for (sub in plannedChanges.submodulesToSync) {
-                                        Text(
-                                            text = sub,
-                                            style =
-                                            MaterialTheme.typography.bodySmall.copy(
-                                                fontFamily = codeFontFamily(),
-                                            ),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Tools to compile
-                    if (plannedChanges.toolsToCompile.isNotEmpty()) {
-                        item(key = "tools_to_compile_section") {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                Text(
-                                    text = "Tools to Compile (${plannedChanges.toolsToCompile.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                                ) {
-                                    for (tool in plannedChanges.toolsToCompile) {
-                                        Box(
-                                            modifier =
-                                            Modifier
-                                                .clip(GlassShapes.Small)
-                                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                                .border(
-                                                    width = StrokeWidth.Hairline,
-                                                    color = MaterialTheme.colorScheme.outline,
-                                                    shape = GlassShapes.Small,
-                                                )
-                                                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
-                                        ) {
-                                            Text(
-                                                text = tool,
-                                                style =
-                                                MaterialTheme.typography.bodySmall.copy(
-                                                    fontFamily = codeFontFamily(),
-                                                ),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Tools to publish to the daemon registry
-                    if (plannedChanges.toolsToPublish.isNotEmpty()) {
-                        item(key = "tools_to_publish_section") {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-                            ) {
-                                Text(
-                                    text = "Tools to Publish (${plannedChanges.toolsToPublish.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = plannedChanges.toolsToPublish.joinToString(", "),
-                                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-
-                    if (plannedChanges.isEmpty) {
-                        item(key = "empty_changes_notice") {
-                            Text(
-                                text =
-                                if (plan?.kind == SetupPlanKind.CACHE_RESET) {
-                                    "Persisted setup evidence for this environment will be cleared and the " +
-                                        "environment re-checked. No packages, sources or binaries change."
-                                } else {
-                                    "No system packages or toolchain compilations required for this operation."
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
+                ProvisioningPreviewContent(
+                    plannedChanges = plannedChanges,
+                    plan = plan,
+                    contextualError = contextualError,
+                )
 
                 GlassHorizontalDivider()
 
-                // Actions
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
-                ) {
-                    GlassSecondaryButton(
-                        onClick = onDismiss,
-                    ) {
-                        Text("Cancel")
-                    }
-
-                    GlassPrimaryButton(
-                        onClick = onConfirm,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
-                        ) {
-                            Icon(
-                                painter = AppIcons.SparklesPainterResource(),
-                                contentDescription = null,
-                                modifier = Modifier.size(IconSize.Small),
-                            )
-                            Text("Confirm & Set Up")
-                        }
-                    }
-                }
+                ProvisioningPreviewActions(onConfirm = onConfirm, onDismiss = onDismiss)
             }
         }
     }
+}
+
+@Composable
+private fun ProvisioningPreviewHeader(plan: SetupPlan?, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            Text(
+                text = "Provisioning Preview",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = previewSubtitle(plan),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        GlassIconButton(
+            onClick = onDismiss,
+            size = ComponentSize.PanelHeaderActionTouchTarget,
+        ) {
+            Icon(
+                painter = AppIcons.ClosePainterResource(),
+                contentDescription = "Dismiss preview",
+                modifier = Modifier.size(IconSize.Medium),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewActions(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small, Alignment.End),
+    ) {
+        GlassSecondaryButton(onClick = onDismiss) {
+            Text("Cancel")
+        }
+
+        GlassPrimaryButton(onClick = onConfirm) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            ) {
+                Icon(
+                    painter = AppIcons.SparklesPainterResource(),
+                    contentDescription = null,
+                    modifier = Modifier.size(IconSize.Small),
+                )
+                Text("Confirm & Set Up")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewContent(
+    plannedChanges: PlannedSetupChanges,
+    plan: SetupPlan?,
+    contextualError: String?,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = ComponentSize.MaxPanelHeight),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        if (contextualError != null) {
+            item(key = "contextual_error") {
+                GlassBanner(
+                    severity = GlassBannerSeverity.ERROR,
+                    title = "Operation Warning / Error",
+                    description = contextualError,
+                )
+            }
+        }
+
+        item(key = "target_subsystem") {
+            ProvisioningPreviewTargetBadge(targetDistro = plannedChanges.targetDistro, plan = plan)
+        }
+
+        if (plannedChanges.requiresElevation) {
+            item(key = "elevation_banner") {
+                val reason = plannedChanges.elevationReason
+                    ?: "sudo apt-get install / system configuration"
+                GlassBanner(
+                    severity = GlassBannerSeverity.WARNING,
+                    title = "Root / Sudo Elevation Required",
+                    description = "System packages or toolchain binaries require administrative permissions: $reason",
+                )
+            }
+        }
+
+        if (plannedChanges.packagesToInstall.isNotEmpty()) {
+            item(key = "packages_section") {
+                ProvisioningPreviewPackages(packages = plannedChanges.packagesToInstall)
+            }
+        }
+
+        if (plannedChanges.submodulesToSync.isNotEmpty()) {
+            item(key = "submodules_section") {
+                ProvisioningPreviewSubmodules(submodules = plannedChanges.submodulesToSync)
+            }
+        }
+
+        if (plannedChanges.toolsToCompile.isNotEmpty()) {
+            item(key = "tools_to_compile_section") {
+                ProvisioningPreviewTools(tools = plannedChanges.toolsToCompile)
+            }
+        }
+
+        if (plannedChanges.toolsToPublish.isNotEmpty()) {
+            item(key = "tools_to_publish_section") {
+                ProvisioningPreviewToolsToPublish(tools = plannedChanges.toolsToPublish)
+            }
+        }
+
+        if (plannedChanges.isEmpty) {
+            item(key = "empty_changes_notice") {
+                ProvisioningPreviewEmptyNotice(plan = plan)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewTargetBadge(targetDistro: String, plan: SetupPlan?) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+    ) {
+        Text(
+            text = "Target Subsystem:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(
+            modifier = Modifier
+                .clip(GlassShapes.Small)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(
+                    width = StrokeWidth.Standard,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = GlassShapes.Small,
+                )
+                .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+        ) {
+            Text(
+                text = targetDistro,
+                style = MaterialTheme.typography.labelMedium.copy(fontFamily = codeFontFamily()),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        if (plan != null) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "Plan: ${plan.planId.take(8)}",
+                style = MaterialTheme.typography.labelSmall.copy(fontFamily = codeFontFamily()),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningTagChip(label: String) {
+    Box(
+        modifier = Modifier
+            .clip(GlassShapes.Small)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(
+                width = StrokeWidth.Hairline,
+                color = MaterialTheme.colorScheme.outline,
+                shape = GlassShapes.Small,
+            )
+            .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraSmall),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProvisioningPreviewPackages(packages: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = "System Packages (${packages.size})",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            for (pkg in packages) {
+                ProvisioningTagChip(label = pkg)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewSubmodules(submodules: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = "Git Submodules (${submodules.size})",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(GlassShapes.Small)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(
+                    width = StrokeWidth.Hairline,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = GlassShapes.Small,
+                )
+                .padding(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
+        ) {
+            for (sub in submodules) {
+                Text(
+                    text = sub,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProvisioningPreviewTools(tools: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = "Tools to Compile (${tools.size})",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            for (tool in tools) {
+                ProvisioningTagChip(label = tool)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewToolsToPublish(tools: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small)) {
+        Text(
+            text = "Tools to Publish (${tools.size})",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = tools.joinToString(", "),
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = codeFontFamily()),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ProvisioningPreviewEmptyNotice(plan: SetupPlan?) {
+    Text(
+        text = if (plan?.kind == SetupPlanKind.CACHE_RESET) {
+            "Persisted setup evidence for this environment will be cleared and the " +
+                "environment re-checked. No packages, sources or binaries change."
+        } else {
+            "No system packages or toolchain compilations required for this operation."
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** One-line description of what confirming [plan] does; the plan kind is the only source. */
