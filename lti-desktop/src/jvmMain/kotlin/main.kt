@@ -33,6 +33,7 @@ import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.domain.tools.AppShutdownPort
+import org.ide.lti.desktop.dialog.StudioSmartToolsDialogs
 import org.ide.lti.desktop.key.WindowKeyShortcutHandler
 import org.ide.lti.desktop.menu.dispatcher.DefaultStudioActionDispatcher
 import org.ide.lti.desktop.menu.model.StudioAction
@@ -422,208 +423,21 @@ fun main(args: Array<String>) {
                             }
                         }
 
-                        if (isCommandPaletteOpen) {
-                            org.ide.lti.core.ui.command.CommandPaletteModal(
-                                isOpen = isCommandPaletteOpen,
-                                registry = commandRegistry,
-                                onDismiss = { isCommandPaletteOpen = false },
-                            )
-                        }
-
-                        if (isCopilotOpen) {
-                            val sampleLogs = remember {
-                                listOf(
-                                    "03-25 12:00:02.345 1000 1000 F libc : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0 in tid 1000 (system_server)",
-                                    "03-25 12:00:02.350 500 500 I DEBUG : pid: 1000, tid: 1000, name: system_server >>> system_server <<<",
-                                    "type=1400 audit(1710000000.123:45): avc: denied { read open } for pid=1234 comm=\"cameraserver\" path=\"/dev/v4l-subdev0\" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 tclass=chr_file permissive=0",
-                                    "03-25 12:05:00.000 1000 1050 W Watchdog: *** WATCHDOG KILLING SYSTEM PROCESS: Blocked in handler on ActivityManager (ActivityManager)",
-                                )
-                            }
-                            val diagnoses = remember(sampleLogs) {
-                                org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer.analyze(
-                                    org.ide.lti.core.domain.copilot.CrashSource.LOGCAT,
-                                    sampleLogs,
-                                )
-                            }
-                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                                onDismissRequest = { isCopilotOpen = false },
-                                title = "Bootloop & Crash Copilot",
-                                confirmButton = {
-                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                        onClick = { isCopilotOpen = false },
-                                    ) {
-                                        androidx.compose.material3.Text("Close")
-                                    }
-                                },
-                            ) {
-                                org.ide.lti.core.ui.copilot.BootloopCopilotSheet(
-                                    diagnoses = diagnoses,
-                                )
-                            }
-                        }
-
-                        if (isSuperBudgeterOpen) {
-                            val samplePartitions = remember {
-                                listOf(
-                                    org.ide.lti.core.domain.partition.PartitionSpec(
-                                        name = "system",
-                                        sizeBytes = 3_200_000_000L,
-                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
-                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
-                                    ),
-                                    org.ide.lti.core.domain.partition.PartitionSpec(
-                                        name = "vendor",
-                                        sizeBytes = 1_100_000_000L,
-                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
-                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
-                                    ),
-                                    org.ide.lti.core.domain.partition.PartitionSpec(
-                                        name = "product",
-                                        sizeBytes = 2_400_000_000L,
-                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
-                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
-                                    ),
-                                    org.ide.lti.core.domain.partition.PartitionSpec(
-                                        name = "system_ext",
-                                        sizeBytes = 650_000_000L,
-                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EROFS,
-                                        compression = org.ide.lti.core.domain.partition.CompressionAlgorithm.LZ4HC,
-                                    ),
-                                    org.ide.lti.core.domain.partition.PartitionSpec(
-                                        name = "odm",
-                                        sizeBytes = 250_000_000L,
-                                        filesystem = org.ide.lti.core.domain.partition.FilesystemType.EXT4,
-                                    ),
-                                )
-                            }
-                            val forecast = remember(samplePartitions) {
-                                org.ide.lti.core.domain.partition.SuperPartitionCalculator().calculateBudget(
-                                    superCapacityBytes = 9_126_805_504L,
-                                    partitions = samplePartitions,
-                                )
-                            }
-                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                                onDismissRequest = { isSuperBudgeterOpen = false },
-                                title = "Dynamic Partitions (super.img) Capacity Forecast",
-                                confirmButton = {
-                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                        onClick = { isSuperBudgeterOpen = false },
-                                    ) {
-                                        androidx.compose.material3.Text("Close")
-                                    }
-                                },
-                            ) {
-                                org.ide.lti.core.ui.partition.SuperPartitionBudgetMeter(
-                                    forecast = forecast,
-                                )
-                            }
-                        }
-
-                        if (isDiffViewerOpen) {
-                            val originalProp = remember {
-                                "ro.product.model=Pixel 8\nro.build.type=user\nro.secure=1\nro.crypto.state=encrypted\n"
-                            }
-                            val modifiedProp = remember {
-                                "ro.product.model=Pixel 8 Pro\nro.build.type=userdebug\nro.secure=0\nro.crypto.state=unencrypted\npersist.sys.phh.root=1\n"
-                            }
-                            val diffResult = remember(originalProp, modifiedProp) {
-                                org.ide.lti.core.domain.diff.ConfigDiffEngine.computeDiff(originalProp, modifiedProp)
-                            }
-                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                                onDismissRequest = { isDiffViewerOpen = false },
-                                title = "Property & Config Diff Inspector",
-                                confirmButton = {
-                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                        onClick = { isDiffViewerOpen = false },
-                                    ) {
-                                        androidx.compose.material3.Text("Close")
-                                    }
-                                },
-                            ) {
-                                org.ide.lti.core.ui.diff.PropertyDiffViewer(
-                                    diffResult = diffResult,
-                                    snapshotName = "Pre-flash Snapshot (Slot B)",
-                                    onRollback = { isDiffViewerOpen = false },
-                                )
-                            }
-                        }
-
-                        if (isPartitionExplorerOpen) {
-                            val sampleTreeLines = remember {
-                                listOf(
-                                    "system/bin/sh 0755 u:object_r:shell_exec:s0 250000",
-                                    "system/bin/app_process64 0755 u:object_r:zygote_exec:s0 148000",
-                                    "system/etc/hosts 0644 u:object_r:system_file:s0 120",
-                                    "system/framework/framework.jar 0644 u:object_r:system_file:s0 34000000",
-                                    "system/bin/su 0755 u:object_r:su_exec:s0 50000 /system/xbin/su",
-                                )
-                            }
-                            val metadata = remember(sampleTreeLines) {
-                                org.ide.lti.core.domain.partition.explorer.PartitionTreeParser.parseManifest(
-                                    "system",
-                                    "EROFS",
-                                    sampleTreeLines,
-                                )
-                            }
-                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                                onDismissRequest = { isPartitionExplorerOpen = false },
-                                title = "Firmware Partition Explorer",
-                                confirmButton = {
-                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                        onClick = { isPartitionExplorerOpen = false },
-                                    ) {
-                                        androidx.compose.material3.Text("Close")
-                                    }
-                                },
-                            ) {
-                                org.ide.lti.core.ui.partition.PartitionExplorerView(
-                                    metadata = metadata,
-                                    onExtractNode = {},
-                                )
-                            }
-                        }
-
-                        if (isMacroStudioOpen) {
-                            val defaultRecipe = remember {
-                                org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner.createDefaultFlashRecipe()
-                            }
-                            var recipeState by remember { mutableStateOf(defaultRecipe) }
-                            var isRunningMacro by remember { mutableStateOf(false) }
-
-                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
-                                onDismissRequest = { isMacroStudioOpen = false },
-                                title = "Macro Pipeline Studio",
-                                confirmButton = {
-                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
-                                        onClick = { isMacroStudioOpen = false },
-                                    ) {
-                                        androidx.compose.material3.Text("Close")
-                                    }
-                                },
-                            ) {
-                                org.ide.lti.core.ui.pipeline.MacroPipelineStudioSheet(
-                                    recipe = recipeState,
-                                    isRunning = isRunningMacro,
-                                    onRunRecipe = {
-                                        coroutineScope.launch {
-                                            isRunningMacro = true
-                                            val runner = org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner(recipeState)
-                                            runner.run()
-                                            recipeState = runner.currentRecipe.value
-                                            isRunningMacro = false
-                                        }
-                                    },
-                                    onCancelRecipe = { isRunningMacro = false },
-                                    onRetryStep = { stepId ->
-                                        recipeState = recipeState.copy(
-                                            steps = recipeState.steps.map {
-                                                if (it.id == stepId) it.copy(status = org.ide.lti.core.domain.pipeline.macro.MacroStepStatus.PENDING) else it
-                                            },
-                                        )
-                                    },
-                                )
-                            }
-                        }
+                        StudioSmartToolsDialogs(
+                            isCommandPaletteOpen = isCommandPaletteOpen,
+                            onDismissCommandPalette = { isCommandPaletteOpen = false },
+                            commandRegistry = commandRegistry,
+                            isCopilotOpen = isCopilotOpen,
+                            onDismissCopilot = { isCopilotOpen = false },
+                            isSuperBudgeterOpen = isSuperBudgeterOpen,
+                            onDismissSuperBudgeter = { isSuperBudgeterOpen = false },
+                            isDiffViewerOpen = isDiffViewerOpen,
+                            onDismissDiffViewer = { isDiffViewerOpen = false },
+                            isPartitionExplorerOpen = isPartitionExplorerOpen,
+                            onDismissPartitionExplorer = { isPartitionExplorerOpen = false },
+                            isMacroStudioOpen = isMacroStudioOpen,
+                            onDismissMacroStudio = { isMacroStudioOpen = false },
+                        )
                     },
                 )
             }
