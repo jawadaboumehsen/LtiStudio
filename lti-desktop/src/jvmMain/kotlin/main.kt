@@ -208,6 +208,9 @@ fun main(args: Array<String>) {
         var isCommandPaletteOpen by remember { mutableStateOf(false) }
         var isCopilotOpen by remember { mutableStateOf(false) }
         var isSuperBudgeterOpen by remember { mutableStateOf(false) }
+        var isDiffViewerOpen by remember { mutableStateOf(false) }
+        var isPartitionExplorerOpen by remember { mutableStateOf(false) }
+        var isMacroStudioOpen by remember { mutableStateOf(false) }
 
         val commandRegistry = remember<org.ide.lti.core.domain.command.CommandPaletteRegistry> {
             org.ide.lti.core.ui.command.DefaultStudioCommands.createDefaultRegistry(
@@ -217,6 +220,9 @@ fun main(args: Array<String>) {
                 onToggleAiAssistant = { actionDispatcher.dispatch(StudioAction.TOGGLE_AI_ASSISTANT) },
                 onOpenCopilot = { isCopilotOpen = true },
                 onOpenSuperBudgeter = { isSuperBudgeterOpen = true },
+                onOpenDiffViewer = { isDiffViewerOpen = true },
+                onOpenPartitionExplorer = { isPartitionExplorerOpen = true },
+                onOpenMacroStudio = { isMacroStudioOpen = true },
             )
         }
 
@@ -509,6 +515,112 @@ fun main(args: Array<String>) {
                             ) {
                                 org.ide.lti.core.ui.partition.SuperPartitionBudgetMeter(
                                     forecast = forecast,
+                                )
+                            }
+                        }
+
+                        if (isDiffViewerOpen) {
+                            val originalProp = remember {
+                                "ro.product.model=Pixel 8\nro.build.type=user\nro.secure=1\nro.crypto.state=encrypted\n"
+                            }
+                            val modifiedProp = remember {
+                                "ro.product.model=Pixel 8 Pro\nro.build.type=userdebug\nro.secure=0\nro.crypto.state=unencrypted\npersist.sys.phh.root=1\n"
+                            }
+                            val diffResult = remember(originalProp, modifiedProp) {
+                                org.ide.lti.core.domain.diff.ConfigDiffEngine.computeDiff(originalProp, modifiedProp)
+                            }
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = { isDiffViewerOpen = false },
+                                title = "Property & Config Diff Inspector",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = { isDiffViewerOpen = false },
+                                    ) {
+                                        androidx.compose.material3.Text("Close")
+                                    }
+                                },
+                            ) {
+                                org.ide.lti.core.ui.diff.PropertyDiffViewer(
+                                    diffResult = diffResult,
+                                    snapshotName = "Pre-flash Snapshot (Slot B)",
+                                    onRollback = { isDiffViewerOpen = false },
+                                )
+                            }
+                        }
+
+                        if (isPartitionExplorerOpen) {
+                            val sampleTreeLines = remember {
+                                listOf(
+                                    "system/bin/sh 0755 u:object_r:shell_exec:s0 250000",
+                                    "system/bin/app_process64 0755 u:object_r:zygote_exec:s0 148000",
+                                    "system/etc/hosts 0644 u:object_r:system_file:s0 120",
+                                    "system/framework/framework.jar 0644 u:object_r:system_file:s0 34000000",
+                                    "system/bin/su 0755 u:object_r:su_exec:s0 50000 /system/xbin/su",
+                                )
+                            }
+                            val metadata = remember(sampleTreeLines) {
+                                org.ide.lti.core.domain.partition.explorer.PartitionTreeParser.parseManifest(
+                                    "system",
+                                    "EROFS",
+                                    sampleTreeLines,
+                                )
+                            }
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = { isPartitionExplorerOpen = false },
+                                title = "Firmware Partition Explorer",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = { isPartitionExplorerOpen = false },
+                                    ) {
+                                        androidx.compose.material3.Text("Close")
+                                    }
+                                },
+                            ) {
+                                org.ide.lti.core.ui.partition.PartitionExplorerView(
+                                    metadata = metadata,
+                                    onExtractNode = {},
+                                )
+                            }
+                        }
+
+                        if (isMacroStudioOpen) {
+                            val defaultRecipe = remember {
+                                org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner.createDefaultFlashRecipe()
+                            }
+                            var recipeState by remember { mutableStateOf(defaultRecipe) }
+                            var isRunningMacro by remember { mutableStateOf(false) }
+
+                            org.ide.lti.core.designsystem.component.feedback.GlassDialog(
+                                onDismissRequest = { isMacroStudioOpen = false },
+                                title = "Macro Pipeline Studio",
+                                confirmButton = {
+                                    org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton(
+                                        onClick = { isMacroStudioOpen = false },
+                                    ) {
+                                        androidx.compose.material3.Text("Close")
+                                    }
+                                },
+                            ) {
+                                org.ide.lti.core.ui.pipeline.MacroPipelineStudioSheet(
+                                    recipe = recipeState,
+                                    isRunning = isRunningMacro,
+                                    onRunRecipe = {
+                                        coroutineScope.launch {
+                                            isRunningMacro = true
+                                            val runner = org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner(recipeState)
+                                            runner.run()
+                                            recipeState = runner.currentRecipe.value
+                                            isRunningMacro = false
+                                        }
+                                    },
+                                    onCancelRecipe = { isRunningMacro = false },
+                                    onRetryStep = { stepId ->
+                                        recipeState = recipeState.copy(
+                                            steps = recipeState.steps.map {
+                                                if (it.id == stepId) it.copy(status = org.ide.lti.core.domain.pipeline.macro.MacroStepStatus.PENDING) else it
+                                            },
+                                        )
+                                    },
                                 )
                             }
                         }

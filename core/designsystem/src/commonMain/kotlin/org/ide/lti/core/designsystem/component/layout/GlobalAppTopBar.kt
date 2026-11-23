@@ -84,6 +84,7 @@ fun GlobalAppTopBar(
     tagPrefix: String = "GlobalTopBar",
     centerContent: @Composable RowScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+    glintState: GlassGlintState = GlassGlintState.Idle,
     windowControlActions: WindowControlActions? = null,
     windowControls: @Composable (() -> Unit)? = null,
     onDragWindow: (() -> Unit)? = null,
@@ -98,6 +99,7 @@ fun GlobalAppTopBar(
     IdeTopAppBar(
         modifier = modifier
             .testTag("GlobalAppTopBar")
+            .glassAmbientGlint(glintState)
             .windowDragGesture(
                 onDrag = effectiveDrag,
                 onDragDelta = effectiveDragDelta,

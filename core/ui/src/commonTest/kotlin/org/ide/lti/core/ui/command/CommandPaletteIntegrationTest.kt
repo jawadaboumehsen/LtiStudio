@@ -73,5 +73,15 @@ class CommandPaletteIntegrationTest {
         val fastbootResults = registry.search("fastboot")
         assertTrue(fastbootResults.isNotEmpty())
         assertTrue(fastbootResults.any { it.category == CommandCategory.DEVICE_OPERATIONS })
+
+        // Search by keyword "erofs" -> should return partition explorer
+        val erofsResults = registry.search("erofs")
+        assertTrue(erofsResults.isNotEmpty())
+        assertTrue(erofsResults.any { it.id == "diag.partition.explorer" })
+
+        // Search by keyword "build.prop" -> should return config diff
+        val diffResults = registry.search("build.prop")
+        assertTrue(diffResults.isNotEmpty())
+        assertTrue(diffResults.any { it.id == "diag.config.diff" })
     }
 }

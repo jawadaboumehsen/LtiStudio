@@ -24,6 +24,9 @@ object DefaultStudioCommands {
         onToggleAiAssistant: () -> Unit = {},
         onOpenCopilot: () -> Unit = {},
         onOpenSuperBudgeter: () -> Unit = {},
+        onOpenDiffViewer: () -> Unit = {},
+        onOpenPartitionExplorer: () -> Unit = {},
+        onOpenMacroStudio: () -> Unit = {},
     ): CommandPaletteRegistry {
         val registry = CommandPaletteRegistry()
         registry.registerAll(
@@ -82,6 +85,30 @@ object DefaultStudioCommands {
                     category = CommandCategory.DIAGNOSTICS,
                     keywords = listOf("super", "partitions", "dynamic", "erofs", "ext4", "lpmake", "budget"),
                     action = onOpenSuperBudgeter,
+                ),
+                StudioCommand(
+                    id = "diag.partition.explorer",
+                    title = "Browse Partition Image Filesystem (EROFS / EXT4)",
+                    description = "Explore directory trees, permissions, and SELinux contexts without loop-mounting",
+                    category = CommandCategory.DIAGNOSTICS,
+                    keywords = listOf("partition", "explorer", "erofs", "ext4", "fs_config", "files", "selinux"),
+                    action = onOpenPartitionExplorer,
+                ),
+                StudioCommand(
+                    id = "diag.config.diff",
+                    title = "Inspect Property & Config Diff (build.prop)",
+                    description = "Compare properties, detect security anomalies, and manage pre-flash snapshots",
+                    category = CommandCategory.DIAGNOSTICS,
+                    keywords = listOf("diff", "properties", "build.prop", "system.prop", "rollback", "snapshot"),
+                    action = onOpenDiffViewer,
+                ),
+                StudioCommand(
+                    id = "stage.macro.studio",
+                    title = "Open 1-Click Macro Pipeline Studio",
+                    description = "Run multi-stage automated build & flash recipes with retry mechanics",
+                    category = CommandCategory.STAGE_ACTIONS,
+                    keywords = listOf("macro", "pipeline", "studio", "recipe", "fastbootd", "flash", "rebuild"),
+                    action = onOpenMacroStudio,
                 ),
 
                 // Stage Actions
