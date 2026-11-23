@@ -164,4 +164,68 @@ class RootNavGraphAdmissionGateTest {
                 "${navController.currentDestination?.route}",
         )
     }
+
+    @Test
+    fun testRootNavGraphPreservesStudioOnSettingsNavigation() = runDesktopComposeUiTest(
+        width = 1120,
+        height = 700,
+    ) {
+        val workspaceManager = GlobalContext.get().get<WorkspaceManager>()
+        val toolchainService = TestToolchainService(initialReady = true)
+        lateinit var navController: NavHostController
+
+        val sampleWorkspace = Workspace(
+            id = "ws-preserve-test",
+            name = "Test Project",
+            path = "/tmp/test",
+            type = WorkspaceType.LOCAL,
+            lastOpened = Clock.System.now(),
+        )
+        workspaceManager.setCurrentWorkspace(sampleWorkspace)
+
+        setContent {
+            navController = rememberNavController()
+            org.ide.lti.core.designsystem.theme.LtiTheme(effectsEnabled = false) {
+                RootNavGraph(
+                    navHostController = navController,
+                    startDestination = SETUP_ROUTE,
+                    workspaceManager = workspaceManager,
+                    toolchainService = toolchainService,
+                )
+            }
+        }
+
+        waitForIdle()
+        assertTrue(
+            navController.currentDestination?.route?.startsWith("studio/") == true,
+            "Must start in Studio",
+        )
+
+        runOnUiThread {
+            navController.navigate(org.ide.lti.feature.settings.SETTINGS_ROUTE) {
+                launchSingleTop = true
+            }
+        }
+        waitForIdle()
+        assertEquals(
+            expected = org.ide.lti.feature.settings.SETTINGS_ROUTE,
+            actual = navController.currentDestination?.route,
+        )
+
+        val backStackEntries = navController.currentBackStack.value
+        val hasStudio = backStackEntries.any { it.destination.route?.startsWith("studio/") == true }
+        assertTrue(hasStudio, "Studio entry must remain on back stack when navigating to settings")
+
+        var popped = false
+        runOnUiThread {
+            popped = navController.popBackStack(StudioRoutes.STUDIO_PATTERN, inclusive = false)
+        }
+        assertTrue(popped, "Must pop back to existing Studio route successfully")
+        waitForIdle()
+
+        assertTrue(
+            navController.currentDestination?.route?.startsWith("studio/") == true,
+            "Must return to Studio without recreating back stack",
+        )
+    }
 }

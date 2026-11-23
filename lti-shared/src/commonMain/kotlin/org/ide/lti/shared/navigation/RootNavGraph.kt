@@ -91,7 +91,6 @@ internal fun RootNavGraph(
     val navigateToSettings: () -> Unit = {
         coroutineScope.launch(Dispatchers.Main.immediate) {
             navHostController.navigate(SETTINGS_ROUTE) {
-                popUpTo(SETUP_ROUTE) { inclusive = false }
                 launchSingleTop = true
             }
         }
@@ -205,9 +204,12 @@ private fun NavHostController.openStudioOrSetup(workspaceId: String?, canLaunchW
             launchSingleTop = true
         }
     } else if (currentDestination?.route != StudioRoutes.STUDIO_PATTERN) {
-        navigate(buildStudioRoute(workspaceId = workspaceId)) {
-            popUpTo(SETUP_ROUTE) { inclusive = false }
-            launchSingleTop = true
+        val popped = popBackStack(StudioRoutes.STUDIO_PATTERN, inclusive = false)
+        if (!popped) {
+            navigate(buildStudioRoute(workspaceId = workspaceId)) {
+                popUpTo(SETUP_ROUTE) { inclusive = false }
+                launchSingleTop = true
+            }
         }
     }
 }

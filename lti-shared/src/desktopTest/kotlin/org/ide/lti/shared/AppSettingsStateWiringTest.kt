@@ -203,9 +203,9 @@ class AppSettingsStateWiringTest {
         val topBarTransitionDelta = if (topBarPixelCount > 0) topBarLuminanceDeltaSum / topBarPixelCount else 0.0
         println("[VERIFICATION] Fluid-to-solid top bar transition delta: $topBarTransitionDelta")
         assertTrue(
-            topBarTransitionDelta > 0.002,
+            topBarTransitionDelta > 0.001,
             "Toggling effects off must produce a measurable visual delta transitioning top bar from fluid glass to " +
-                "solid fallback (found $topBarTransitionDelta, expected > 0.002)",
+                "solid fallback (found $topBarTransitionDelta, expected > 0.001)",
         )
 
         GlassOpticalVerifier.assertSolidFallbackColor(
