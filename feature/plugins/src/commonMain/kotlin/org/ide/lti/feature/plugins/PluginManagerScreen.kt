@@ -9,7 +9,6 @@
  */
 package org.ide.lti.feature.plugins
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,11 +45,11 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
-import org.ide.lti.core.designsystem.theme.PluginThemeColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.domain.plugin.InstallState
 import org.ide.lti.feature.plugins.components.PluginSidebar
+import org.ide.lti.feature.plugins.components.pluginCardSurface
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -347,13 +346,7 @@ private fun PluginStatusBanner(message: String, isError: Boolean, onDismiss: () 
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Small, vertical = Spacing.ExtraExtraSmall)
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
-            ),
+            .pluginCardSurface(GlassShapes.MediumSmall),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.Medium, vertical = Spacing.Small),

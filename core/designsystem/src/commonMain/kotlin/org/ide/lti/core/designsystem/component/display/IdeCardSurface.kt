@@ -9,14 +9,17 @@
  */
 package org.ide.lti.core.designsystem.component.display
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.HazeShape
+import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
  * Surface styling modifier for cards hosted within the IDE workspace shell - built on Haze's
@@ -43,3 +46,18 @@ fun Modifier.ideCardSurface(
         borderWidth = borderWidth,
     )
 }
+
+/**
+ * Surface styling modifier for shell cards, applying clipping to [shape], glass card surface,
+ * and standard internal [padding].
+ */
+@Composable
+fun Modifier.ideShellCardSurface(
+    shape: HazeShape = GlassShapes.ShellCard,
+    borderWidth: Dp = GlassDimens.HairlineBorder,
+    isMuted: Boolean = false,
+    padding: Dp = Spacing.Medium,
+): Modifier = this
+    .clip(shape)
+    .ideCardSurface(shape = shape, borderWidth = borderWidth, isMuted = isMuted)
+    .padding(padding)

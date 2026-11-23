@@ -26,12 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -52,13 +50,7 @@ public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier:
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.MediumSmall,
-            ),
+            .pluginCardSurface(GlassShapes.MediumSmall),
     ) {
         DiagnosticTableHeader()
 

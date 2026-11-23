@@ -67,6 +67,7 @@ import org.ide.lti.core.domain.plugin.TrustCheck
 import org.ide.lti.feature.plugins.components.PluginDiagnosticsTable
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.ide.lti.feature.plugins.components.PluginPipelineFlow
+import org.ide.lti.feature.plugins.components.pluginCardSurface
 
 private data class SdkAuthorTask(val id: String, val title: String, val icon: @Composable () -> Painter)
 
@@ -163,13 +164,7 @@ private fun AuthorProjectHeaderCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         Column(
             modifier = Modifier.padding(Spacing.Medium),
@@ -327,13 +322,7 @@ private fun AuthorTasksSidebar(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         Column(
             modifier = Modifier
@@ -550,13 +539,7 @@ private fun AuthorExecutionPanel(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(GlassShapes.Medium)
-                .background(PluginThemeColors.CardBackground)
-                .glassOutlineBorder(
-                    width = StrokeWidth.Hairline,
-                    color = PluginThemeColors.CardBorder,
-                    shape = GlassShapes.Medium,
-                ),
+                .pluginCardSurface(),
         ) {
             Row(
                 modifier = Modifier
@@ -645,13 +628,7 @@ private fun AuthorExecutionPanel(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(GlassShapes.MediumSmall)
-                .background(PluginThemeColors.CardBackground)
-                .glassOutlineBorder(
-                    width = StrokeWidth.Hairline,
-                    color = PluginThemeColors.CardBorder,
-                    shape = GlassShapes.HazeMediumSmall,
-                )
+                .pluginCardSurface(GlassShapes.HazeMediumSmall)
                 .padding(horizontal = Spacing.Medium, vertical = Spacing.Small),
         ) {
             Row(
@@ -685,13 +662,7 @@ private fun AuthorPackageOutputCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            ),
+            .pluginCardSurface(GlassShapes.HazeMediumSmall),
     ) {
         Row(
             modifier = Modifier

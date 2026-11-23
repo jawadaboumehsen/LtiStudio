@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.common.utils.runCatchingCancellable
+import org.ide.lti.core.common.utils.sha256
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.plugin.AuthorDiagnostic
 import org.ide.lti.core.domain.plugin.AuthorProject
@@ -357,12 +358,6 @@ class AuthorTaskProcessAdapter(
         val normalized = Path.of(projectPath).toAbsolutePath().normalize().toString()
         val hash = sha256(normalized)
         return trustStoreDir.resolve("$hash.json")
-    }
-
-    private fun sha256(input: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(input.toByteArray(Charsets.UTF_8))
-        return digest.joinToString("") { "%02x".format(it) }
     }
 
     companion object {

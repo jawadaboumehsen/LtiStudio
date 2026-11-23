@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.sha256
 import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.IndexFailure
@@ -30,7 +31,6 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 
 /**
  * Adapter that fetches and caches marketplace index documents over HTTPS. A GitHub repository URL
@@ -362,12 +362,6 @@ class PluginIndexAdapter(
     }
 
     private fun cacheFileFor(sourceUrl: String): Path = cacheDir.resolve("${sha256(sourceUrl)}.json")
-
-    private fun sha256(input: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(input.toByteArray(Charsets.UTF_8))
-        return digest.joinToString("") { "%02x".format(it) }
-    }
 
     private sealed interface RemoteFetchResult {
         data class Success(val doc: MarketplaceIndexDocument) : RemoteFetchResult

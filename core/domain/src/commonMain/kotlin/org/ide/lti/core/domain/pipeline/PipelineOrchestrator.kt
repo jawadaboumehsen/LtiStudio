@@ -374,77 +374,29 @@ public class PipelineOrchestrator(
                             index,
                         ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
                     }
-                    runRepository.heartbeatDriver(runId, driverInstanceId, startedStage.toEpochMilliseconds())
 
-                    val cacheKey = computeStageCacheKey(driver, stage, previousKey)
-                    if (!upstreamExecuted && isCached(driver, stages, index, cacheKey, previousKey)) {
-                        val ended = clock.now()
-                        driver.persist {
-                            it.withStage(index) { s ->
-                                s.copy(
-                                    state = StageState.SKIPPED,
-                                    endedAt = ended,
-                                    durationMs = ended.millisSince(startedStage),
-                                    cacheKey = cacheKey,
-                                )
-                            }
+                    when (
+                        val stepResult = executeStageStep(
+                            driver = driver,
+                            stages = stages,
+                            index = index,
+                            stage = stage,
+                            startedStage = startedStage,
+                            previousKey = previousKey,
+                            upstreamExecuted = upstreamExecuted,
+                            isResumeStage = false,
+                            driverInstanceId = driverInstanceId,
+                        )
+                    ) {
+                        is StageStepResult.Skipped -> {
+                            previousKey = stepResult.cacheKey
                         }
-                        emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
-                        previousKey = cacheKey
-                        continue
+                        is StageStepResult.Executed -> {
+                            previousKey = stepResult.cacheKey
+                            upstreamExecuted = true
+                        }
+                        StageStepResult.Aborted -> return@flow
                     }
-
-                    // Read before the stage clears its record: what changed since it last ran.
-                    val inputs = cacheInputs(driver, stage, previousKey)
-                    val whyRan = driver.takeWorkGroupReason() ?: whyRan(driver, stage, inputs, upstreamExecuted)
-                    driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
-                    val failure =
-                        runCatching {
-                            // Before anything is cleared: a stage writes these folders from its first step.
-                            executionPort.requireNoLinkInWorkspace(driver.ws)
-                            invalidateLaterStages(driver, stage)
-                            executeStage(driver, stage, isResumeStage = false)
-                        }.exceptionOrNull()
-                            ?.also { if (it is CancellationException) throw it }
-                            ?: outputDigestOrFailure(driver, stage)
-                    if (failure != null) {
-                        if (closedByApp(driver)) {
-                            handleInterruption(driver, index, stage, "The app was closed during this stage")
-                            return@flow
-                        }
-                        if (failure is StageInterruptedFailure) {
-                            handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
-                            return@flow
-                        }
-                        if (failure is StageCancelledFailure) {
-                            handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
-                            return@flow
-                        }
-                        failStage(driver, index, stage, startedStage, failure)
-                        return@flow
-                    }
-                    val ended = clock.now()
-                    val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
-                    executionPort.uploadFile(
-                        driver.ws,
-                        cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
-                            .encodeToByteArray(),
-                    )
-                    recordWorkTree(driver, stages, index)
-                    driver.persist {
-                        it.withStage(index) { s ->
-                            s.copy(
-                                state = StageState.EXECUTED,
-                                endedAt = ended,
-                                durationMs = ended.millisSince(startedStage),
-                                cacheKey = cacheKey,
-                            )
-                        }
-                    }
-                    emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
-                    previousKey = cacheKey
-                    upstreamExecuted = true
                 }
 
                 succeed(driver)
@@ -542,79 +494,30 @@ public class PipelineOrchestrator(
                             ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
                         }
                     }
-                    runRepository.heartbeatDriver(driver.runId, driverInstanceId, clock.now().toEpochMilliseconds())
 
-                    val cacheKey = computeStageCacheKey(driver, stage, previousKey)
-                    if (!upstreamExecuted && isCached(driver, stages, index, cacheKey, previousKey)) {
-                        val ended = clock.now()
-                        driver.persist {
-                            it.withStage(index) { s ->
-                                s.copy(
-                                    state = StageState.SKIPPED,
-                                    endedAt = ended,
-                                    durationMs = ended.millisSince(startedStage),
-                                    cacheKey = cacheKey,
-                                )
-                            }
+                    val isResumeStage = (index == startStageIndex)
+                    when (
+                        val stepResult = executeStageStep(
+                            driver = driver,
+                            stages = stages,
+                            index = index,
+                            stage = stage,
+                            startedStage = startedStage,
+                            previousKey = previousKey,
+                            upstreamExecuted = upstreamExecuted,
+                            isResumeStage = isResumeStage,
+                            driverInstanceId = driverInstanceId,
+                        )
+                    ) {
+                        is StageStepResult.Skipped -> {
+                            previousKey = stepResult.cacheKey
                         }
-                        emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
-                        previousKey = cacheKey
-                        continue
+                        is StageStepResult.Executed -> {
+                            previousKey = stepResult.cacheKey
+                            upstreamExecuted = true
+                        }
+                        StageStepResult.Aborted -> return@flow
                     }
-
-                    // Read before the stage clears its record: what changed since it last ran.
-                    val inputs = cacheInputs(driver, stage, previousKey)
-                    val whyRan = driver.takeWorkGroupReason() ?: whyRan(driver, stage, inputs, upstreamExecuted)
-                    driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
-                    val failure =
-                        runCatching {
-                            // Before anything is cleared: a stage writes these folders from its first step.
-                            executionPort.requireNoLinkInWorkspace(driver.ws)
-                            invalidateLaterStages(driver, stage)
-                            executeStage(driver, stage, isResumeStage = (index == startStageIndex))
-                        }.exceptionOrNull()
-                            ?.also { if (it is CancellationException) throw it }
-                            ?: outputDigestOrFailure(driver, stage)
-
-                    if (failure != null) {
-                        if (closedByApp(driver)) {
-                            handleInterruption(driver, index, stage, "The app was closed during this stage")
-                            return@flow
-                        }
-                        if (failure is StageInterruptedFailure) {
-                            handleInterruption(driver, index, stage, failure.message ?: "Stage interrupted")
-                            return@flow
-                        }
-                        if (failure is StageCancelledFailure) {
-                            handleCancellation(driver, index, stage, failure.message ?: "Stage cancelled")
-                            return@flow
-                        }
-                        failStage(driver, index, stage, startedStage, failure)
-                        return@flow
-                    }
-
-                    val ended = clock.now()
-                    val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
-                    executionPort.uploadFile(
-                        driver.ws,
-                        cacheFile(stage),
-                        cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
-                            .encodeToByteArray(),
-                    )
-                    recordWorkTree(driver, stages, index)
-                    driver.persist {
-                        it.withStage(index) { s ->
-                            s.copy(
-                                state = StageState.EXECUTED,
-                                endedAt = ended,
-                                durationMs = ended.millisSince(startedStage),
-                                cacheKey = cacheKey,
-                            )
-                        }
-                    }
-                    emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
-                    previousKey = cacheKey
-                    upstreamExecuted = true
                 }
 
                 succeed(driver)
@@ -627,6 +530,97 @@ public class PipelineOrchestrator(
             }
         } finally {
             toolUsageCoordinator?.finishJob(run.id)
+        }
+    }
+
+    private sealed interface StageStepResult {
+        data class Skipped(val cacheKey: String) : StageStepResult
+        data class Executed(val cacheKey: String) : StageStepResult
+        data object Aborted : StageStepResult
+    }
+
+    private suspend fun FlowCollector<PipelineEvent>.executeStageStep(
+        driver: Driver,
+        stages: List<StageDefinition>,
+        index: Int,
+        stage: StageDefinition,
+        startedStage: Instant,
+        previousKey: String,
+        upstreamExecuted: Boolean,
+        isResumeStage: Boolean,
+        driverInstanceId: String,
+    ): StageStepResult {
+        runRepository.heartbeatDriver(driver.runId, driverInstanceId, clock.now().toEpochMilliseconds())
+
+        val cacheKey = computeStageCacheKey(driver, stage, previousKey)
+        if (!upstreamExecuted && isCached(driver, stages, index, cacheKey, previousKey)) {
+            val ended = clock.now()
+            driver.persist {
+                it.withStage(index) { s ->
+                    s.copy(
+                        state = StageState.SKIPPED,
+                        endedAt = ended,
+                        durationMs = ended.millisSince(startedStage),
+                        cacheKey = cacheKey,
+                    )
+                }
+            }
+            emit(PipelineEvent.StageSkipped(stage.id, cacheKey))
+            return StageStepResult.Skipped(cacheKey)
+        }
+
+        // Read before the stage clears its record: what changed since it last ran.
+        val inputs = cacheInputs(driver, stage, previousKey)
+        val whyRan = driver.takeWorkGroupReason() ?: whyRan(driver, stage, inputs, upstreamExecuted)
+        driver.persist { it.withStage(index) { s -> s.copy(whyRan = whyRan) } }
+        val failure =
+            runCatching {
+                // Before anything is cleared: a stage writes these folders from its first step.
+                executionPort.requireNoLinkInWorkspace(driver.ws)
+                invalidateLaterStages(driver, stage)
+                executeStage(driver, stage, isResumeStage = isResumeStage)
+            }.exceptionOrNull()
+                ?.also { if (it is CancellationException) throw it }
+                ?: outputDigestOrFailure(driver, stage)
+
+        return if (failure != null) {
+            when {
+                closedByApp(driver) -> {
+                    handleInterruption(driver, index, stage, "The app was closed during this stage")
+                }
+                failure is StageInterruptedFailure -> {
+                    val message = failure.message ?: "Stage interrupted"
+                    handleInterruption(driver, index, stage, message)
+                }
+                failure is StageCancelledFailure -> {
+                    val message = failure.message ?: "Stage cancelled"
+                    handleCancellation(driver, index, stage, message)
+                }
+                else -> failStage(driver, index, stage, startedStage, failure)
+            }
+            StageStepResult.Aborted
+        } else {
+            val ended = clock.now()
+            val outputDigest = requireNotNull(driver.runtimeValues.remove(OUTPUT_DIGEST_SCRATCH))
+            executionPort.uploadFile(
+                driver.ws,
+                cacheFile(stage),
+                cacheRecord(cacheKey, outputDigest, driver, inputs, driver.outputFiles[stage.id].orEmpty())
+                    .encodeToByteArray(),
+            )
+            recordWorkTree(driver, stages, index)
+            driver.persist {
+                it.withStage(index) { s ->
+                    s.copy(
+                        state = StageState.EXECUTED,
+                        endedAt = ended,
+                        durationMs = ended.millisSince(startedStage),
+                        cacheKey = cacheKey,
+                    )
+                }
+            }
+            emit(PipelineEvent.StageCompleted(stage.id, ended.millisSince(startedStage)))
+            StageStepResult.Executed(cacheKey)
         }
     }
 

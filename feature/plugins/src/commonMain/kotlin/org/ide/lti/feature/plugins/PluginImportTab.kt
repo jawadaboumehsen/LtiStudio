@@ -64,6 +64,7 @@ import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.feature.plugins.components.ImportStep
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.ide.lti.feature.plugins.components.PluginStepper
+import org.ide.lti.feature.plugins.components.pluginCardSurface
 
 @Composable
 internal fun PluginImportTab(
@@ -277,13 +278,7 @@ private fun ImportInspectFirstEmptyState(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         Column(
             modifier = Modifier
@@ -340,13 +335,7 @@ private fun ImportPackageIdentityCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
+            .pluginCardSurface(GlassShapes.HazeMediumSmall)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
         Column(
@@ -381,13 +370,7 @@ private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
+            .pluginCardSurface(GlassShapes.HazeMediumSmall)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
         Column(
@@ -446,13 +429,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
+            .pluginCardSurface(GlassShapes.HazeMediumSmall)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
         Column(
@@ -515,13 +492,7 @@ private fun ImportSignatureCard(isSigned: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
+            .pluginCardSurface(GlassShapes.HazeMediumSmall)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
         Column(
@@ -727,13 +698,7 @@ private fun DependencyResolutionCard(inspection: PackageInspection, modifier: Mo
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.MediumSmall)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.HazeMediumSmall,
-            )
+            .pluginCardSurface(GlassShapes.HazeMediumSmall)
             .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
     ) {
         Column(
@@ -879,13 +844,7 @@ private fun UnsupportedLegacyFormatPanel(formatName: String, onDismiss: () -> Un
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         Column(
             modifier = Modifier.padding(Spacing.Medium),

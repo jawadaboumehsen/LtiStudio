@@ -9,11 +9,11 @@
  */
 package org.ide.lti.core.domain.pipeline
 
+import org.ide.lti.core.common.utils.sha256
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PackageType
-import java.security.MessageDigest
 
 public object CacheKeys {
     /**
@@ -28,11 +28,7 @@ public object CacheKeys {
     private fun Map<String, Any>.keyField(): String =
         toSortedMap().entries.joinToString("") { (k, v) -> "${k.length}:$k${v.toString().length}:$v" }
 
-    public fun sha256(text: String): String {
-        val md = MessageDigest.getInstance("SHA-256")
-        val hash = md.digest(text.toByteArray(Charsets.UTF_8))
-        return hash.joinToString("") { "%02x".format(it) }
-    }
+    public fun sha256(text: String): String = org.ide.lti.core.common.utils.sha256(text)
 
     public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String =
         stage2ExtractionKey(stage1Key, target, ExtractionSettings())

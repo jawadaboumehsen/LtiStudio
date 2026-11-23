@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.ide.lti.core.common.utils.formatBytes
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
@@ -159,7 +160,7 @@ private fun factLines(phone: PhoneFacts): List<Pair<String, String>> = listOfNot
     phone.unlocked?.let { "Bootloader" to if (it) "unlocked" else "locked" },
     phone.snapshotStatus?.let { "Virtual A/B" to it },
     phone.superName?.let { "Super" to it },
-    phone.maxDownloadBytes?.let { "One transfer" to formatSize(it) },
+    phone.maxDownloadBytes?.let { "One transfer" to formatBytes(it) },
 )
 
 @Composable
@@ -167,7 +168,7 @@ private fun Partitions(phone: PhoneFacts) {
     if (phone.partitions.isEmpty()) return
     Title("Partitions (${phone.partitions.size})")
     phone.partitions.forEach { p ->
-        Code("${p.name}  ${p.sizeBytes?.let(::formatSize) ?: "?"}${if (p.logical) "  logical" else ""}")
+        Code("${p.name}  ${p.sizeBytes?.let(::formatBytes) ?: "?"}${if (p.logical) "  logical" else ""}")
     }
 }
 
@@ -219,8 +220,8 @@ private fun ImageRow(image: ProjectImage, picked: Boolean, vm: PhoneViewModel) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("PhoneImage_${image.path}")) {
         Checkbox(checked = picked, onCheckedChange = { vm.toggle(image.path) })
         Code(
-            "${image.path}  ${formatSize(image.bytes)}" +
-                if (image.sparse) " sparse, ${formatSize(image.fullBytes)} written out" else "",
+            "${image.path}  ${formatBytes(image.bytes)}" +
+                if (image.sparse) " sparse, ${formatBytes(image.fullBytes)} written out" else "",
         )
     }
 }
@@ -248,7 +249,7 @@ private fun PlanLine(row: PlanRow) {
     }
     val where = row.destination?.let {
         "$it (${if (row.measured) "measured" else "assumed"}" +
-            (row.limitBytes?.let { l -> ", holds ${formatSize(l)}" } ?: "") + ")"
+            (row.limitBytes?.let { l -> ", holds ${formatBytes(l)}" } ?: "") + ")"
     } ?: "nowhere"
     Text(
         "${row.image.path} → $where" + row.reasons.joinToString("") { "; $it" },
@@ -303,15 +304,3 @@ private fun Code(text: String) {
 private fun Note(text: String, color: Color) {
     Text(text = text, style = MaterialTheme.typography.bodySmall, color = color)
 }
-
-/** Binary units with one decimal (`1.5 GiB`), in plain arithmetic: common code has no `String.format`. */
-private fun formatSize(bytes: Long): String {
-    val (unit, name) = listOf(GIB to "GiB", MIB to "MiB", KIB to "KiB").firstOrNull { bytes >= it.first } ?: (1L to "B")
-    val tenths = bytes * TEN / unit
-    return "${tenths / TEN}.${tenths % TEN} $name"
-}
-
-private const val KIB = 1024L
-private const val MIB = KIB * KIB
-private const val GIB = MIB * KIB
-private const val TEN = 10L

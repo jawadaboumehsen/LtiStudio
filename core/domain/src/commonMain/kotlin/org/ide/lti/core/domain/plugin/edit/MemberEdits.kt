@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.domain.plugin.edit
 
+import org.ide.lti.core.common.utils.sha256
 import org.ide.lti.core.domain.plugin.ComponentPatchCodes
 import org.ide.lti.core.model.plugin.SmaliEdit
-import java.security.MessageDigest
 
 /** What applying one edit to a member's text gave: its new text, or why it does not apply. */
 sealed interface EditResult {
@@ -73,8 +73,4 @@ object MemberEdits {
 
     /** sha256 of nothing: the preimage of a member an edit creates. */
     private const val EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-
-    private fun sha256(text: String): String =
-        MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
 }

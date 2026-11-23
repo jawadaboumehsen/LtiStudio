@@ -78,6 +78,7 @@ import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.newestPerPlugin
 import org.ide.lti.feature.plugins.components.PluginFooterBar
+import org.ide.lti.feature.plugins.components.pluginCardSurface
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -361,13 +362,7 @@ private fun MarketplaceMasterTable(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         if (isLoading && filtered.isEmpty()) {
             Column(
@@ -724,13 +719,7 @@ private fun MarketplaceInspectorPanel(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.Medium)
-            .background(PluginThemeColors.CardBackground)
-            .glassOutlineBorder(
-                width = StrokeWidth.Hairline,
-                color = PluginThemeColors.CardBorder,
-                shape = GlassShapes.Medium,
-            ),
+            .pluginCardSurface(),
     ) {
         if (entry == null) {
             MarketplaceEmptyInspectorPlaceholder(filteredEmpty = filteredEmpty, searchQuery = searchQuery)
