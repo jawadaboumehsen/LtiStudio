@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -28,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
@@ -37,10 +35,9 @@ import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -95,9 +92,7 @@ private fun IncludedPartitionsTableCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Text(
@@ -192,9 +187,7 @@ private fun StagedWorkTreeStatusCard(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Row(

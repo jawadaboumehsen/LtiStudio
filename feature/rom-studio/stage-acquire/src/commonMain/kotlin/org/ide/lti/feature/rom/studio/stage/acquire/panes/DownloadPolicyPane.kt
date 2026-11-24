@@ -34,7 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -85,9 +85,7 @@ private fun PolicySettingsCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Large),
     ) {
         Text(

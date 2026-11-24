@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +40,7 @@ import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
@@ -50,7 +48,6 @@ import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeade
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -416,9 +413,7 @@ internal fun CompareCard(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Text(

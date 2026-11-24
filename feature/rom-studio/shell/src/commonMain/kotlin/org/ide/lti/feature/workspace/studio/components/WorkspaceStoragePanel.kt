@@ -28,7 +28,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.ViewModel
@@ -41,14 +40,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.component.progress.GlassSkeletonList
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -162,9 +160,7 @@ private fun Summary(state: StorageState, onRefresh: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

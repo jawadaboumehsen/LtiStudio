@@ -29,13 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
@@ -43,7 +42,6 @@ import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuHeade
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -165,9 +163,7 @@ internal fun ItemDetails(
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium)
+            .ideShellCardSurface()
             .verticalScroll(rememberScrollState())
             .testTag("ImageItemDetails"),
         verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),

@@ -28,6 +28,7 @@ kotlin {
         commonMain.dependencies {
 
             api(projects.feature.setupApi)
+            implementation(projects.core.common)
             implementation(projects.core.domain)
             implementation(compose.ui)
             implementation(compose.foundation)

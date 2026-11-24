@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import org.ide.lti.core.common.utils.formatBytes
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -517,14 +518,5 @@ internal fun ArtifactItem(artifact: Artifact) {
     }
 }
 
-/** `6.7 GB`, `512 MB`, `840 KB`: the artifact's size at a glance. */
-internal fun sizeLabel(bytes: Long): String = when {
-    bytes >= GIB -> "${(bytes * TENTHS / GIB) / TENTHS.toDouble()} GB"
-    bytes >= MIB -> "${bytes / MIB} MB"
-    else -> "${(bytes + KIB - 1) / KIB} KB"
-}
-
-private const val KIB = 1024L
-private const val MIB = KIB * KIB
-private const val GIB = MIB * KIB
-private const val TENTHS = 10L
+/** The artifact's size at a glance. */
+internal fun sizeLabel(bytes: Long): String = formatBytes(bytes)

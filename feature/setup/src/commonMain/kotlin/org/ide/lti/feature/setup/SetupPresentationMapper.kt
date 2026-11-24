@@ -11,6 +11,7 @@ package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.Immutable
 import kotlinx.datetime.Instant
+import org.ide.lti.core.common.utils.formatBytes
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -621,9 +622,7 @@ object SetupPresentationMapper {
 
     private fun mapStorageHeadroomItem(toolchain: ToolchainSetupState): EnvironmentSummaryItem {
         val storageHeadroom =
-            toolchain.storageAvailableBytes?.let { bytes ->
-                "${bytes / (1024L * 1024L * 1024L)} GB"
-            } ?: if (toolchain.isChecking) "Checking…" else "—"
+            toolchain.storageAvailableBytes?.let(::formatBytes) ?: if (toolchain.isChecking) "Checking…" else "—"
         return EnvironmentSummaryItem("Storage headroom", storageHeadroom, IdeStatusSeverity.Neutral)
     }
 

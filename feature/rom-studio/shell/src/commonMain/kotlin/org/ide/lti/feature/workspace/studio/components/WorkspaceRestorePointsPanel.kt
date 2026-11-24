@@ -24,13 +24,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideCardSurface
+import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
@@ -38,7 +37,6 @@ import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
-import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
@@ -119,9 +117,7 @@ private fun HeaderCard(totalCount: Int, availableCount: Int, onRefresh: () -> Un
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
     ) {
         Row(
@@ -164,9 +160,7 @@ private fun RestorePointCard(point: RestorePoint, onRestore: () -> Unit, busy: B
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Medium),
+            .ideShellCardSurface(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -207,9 +201,7 @@ private fun EmptyCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(GlassShapes.ShellCard)
-            .ideCardSurface(shape = GlassShapes.ShellCard)
-            .padding(Spacing.Large),
+            .ideShellCardSurface(padding = Spacing.Large),
         verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
