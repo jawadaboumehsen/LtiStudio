@@ -11,9 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.acquire.panes
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,16 +26,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeDetailRow
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
 import org.ide.lti.core.model.workspace.AcquisitionMode
@@ -63,7 +60,7 @@ public fun IntegrityPane(
         modifier = modifier.fillMaxWidth().testTag("IntegrityPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Card {
+        IdeSectionCard {
             Text(
                 text = title,
                 color = color,
@@ -82,16 +79,20 @@ public fun IntegrityPane(
         if (facts.measuring) {
             GlassLoadingPlaceholder("Reading archive details…")
         } else {
-            Card {
-                Detail("Archive", facts.archivePath ?: "not in the workspace yet")
-                Detail("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
-                Detail(
+            IdeSectionCard {
+                IdeDetailRow("Archive", facts.archivePath ?: "not in the workspace yet")
+                IdeDetailRow("Size", facts.archiveSizeBytes?.let { "$it bytes" } ?: "—")
+                IdeDetailRow(
                     "Source URL",
                     settings.firmware.acquisitionUrl.takeIf { settings.mode == AcquisitionMode.DOWNLOAD }
                         ?: "not used (an archive of the workspace)",
                 )
-                Detail("Expected SHA-256", expected ?: "not set")
-                Detail("Measured SHA-256", measured ?: "—", if (measured != null && expected != null) color else null)
+                IdeDetailRow("Expected SHA-256", expected ?: "not set")
+                IdeDetailRow(
+                    "Measured SHA-256",
+                    measured ?: "—",
+                    valueColor = if (measured != null && expected != null) color else null,
+                )
                 GlassButton(
                     onClick = onRefresh,
                     variant = GlassButtonVariant.Standard,
@@ -147,48 +148,12 @@ private fun integrityStatus(
     }
 }
 
-@Composable
-private fun Card(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) { content() }
-}
-
-@Composable
-private fun Detail(label: String, value: String, valueColor: Color? = null) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-            modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
-        )
-        Text(
-            text = value,
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-        )
-    }
-}
-
 /** The SHA-256 the archive must have: typed, or the measured one adopted; the build stops on a mismatch. */
 @Composable
 private fun ExpectedCard(current: String, measured: String?, onExpectedChange: (String?) -> Unit) {
     var text by remember(current) { mutableStateOf(current) }
     val valid = text.isEmpty() || SHA256.matches(text.trim())
-    Card {
-        Text(
-            text = "Expected SHA-256",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
+    IdeSectionCard(title = "Expected SHA-256", titleFontSize = FontSize.BodySmall) {
         GlassTextField(
             value = text,
             onValueChange = { value ->

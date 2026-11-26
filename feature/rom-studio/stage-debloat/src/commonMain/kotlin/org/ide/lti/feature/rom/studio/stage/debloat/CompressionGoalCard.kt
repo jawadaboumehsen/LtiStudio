@@ -30,6 +30,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -156,19 +157,19 @@ internal fun CompressionGoalCard(vm: CompressionGoalViewModel, shortBytes: Long)
                 fontSize = FontSize.BodySmall,
             )
         }
-        Hint(
+        IdeHintText(
             "Builds the largest partitions first, a few ways each, and stops once the rest is covered. A trial is a " +
                 "full build of that partition: system with deduplication takes ten minutes or more.",
         )
-        state.error?.let { Hint(it) }
+        state.error?.let { IdeHintText(it) }
         val steps = state.steps ?: return@Column
         if (steps.isEmpty()) {
-            Hint("No partition builds smaller another way the boot kernel reads.")
+            IdeHintText("No partition builds smaller another way the boot kernel reads.")
             return@Column
         }
         val chosen = CompressionGoal.pick(steps, shortBytes)
         val saved = chosen.sumOf { it.savingBytes }
-        Hint(
+        IdeHintText(
             "Measured: ${formatBytes(saved)} saved by ${chosen.size} partition(s)" +
                 (if (saved < shortBytes) ", still ${formatBytes(shortBytes - saved)} short" else "") +
                 ". Sizes are trial builds of today's work tree, without the AVB hashtree.",
@@ -179,7 +180,7 @@ internal fun CompressionGoalCard(vm: CompressionGoalViewModel, shortBytes: Long)
             val time = if (was != null && now != null) ", build ${was.toInt()} s -> ${now.toInt()} s" else ""
             Line("- ${s.partition}: ${s.option.label}, ${formatBytes(s.nowBytes)} -> ${formatBytes(s.bytes)}$time")
         }
-        Hint("Undo puts each partition's own compression settings back.")
+        IdeHintText("Undo puts each partition's own compression settings back.")
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(
                 onClick = { vm.use(chosen) },

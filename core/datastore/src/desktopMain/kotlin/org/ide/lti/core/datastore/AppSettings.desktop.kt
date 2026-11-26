@@ -11,9 +11,8 @@ package org.ide.lti.core.datastore
 
 import com.russhwolf.settings.PropertiesSettings
 import com.russhwolf.settings.Settings
+import org.ide.lti.core.common.utils.atomicWrite
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.Properties
 
 /**
@@ -47,9 +46,6 @@ private const val MIGRATED = "lti_settings_legacy_migrated_v1"
 
 private fun persist(file: File, properties: Properties) {
     synchronized(properties) {
-        file.parentFile?.mkdirs()
-        val tmp = File(file.parentFile, "${file.name}.tmp")
-        tmp.outputStream().use { properties.store(it, null) }
-        Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        atomicWrite(file.toPath(), allowNonAtomicFallback = false) { out -> properties.store(out, null) }
     }
 }

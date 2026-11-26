@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -70,7 +72,10 @@ internal fun PublishProgress(journal: PublishJournal, transfer: PublishTransfer?
     val index = journal.steps.indexOfFirst { it.id == transfer?.stepId }
     val step = journal.steps.getOrNull(index)
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
-        Mono(if (step == null) "Starting…" else "Step ${index + 1} of ${journal.steps.size} · ${step.label}")
+        IdeMonoText(
+            if (step == null) "Starting…" else "Step ${index + 1} of ${journal.steps.size} · ${step.label}",
+            fontSize = FontSize.Micro,
+        )
         val done = transfer?.done
         val total = transfer?.total?.takeIf { it > 0 }
         val fraction = if (done != null && total != null) (done.toDouble() / total).toFloat().coerceIn(0f, 1f) else null
@@ -79,7 +84,9 @@ internal fun PublishProgress(journal: PublishJournal, transfer: PublishTransfer?
             modifier = Modifier.testTag("PublishProgress"),
             contentDescription = "Publish progress",
         )
-        if (done != null && total != null) Hint(transferLine(done, total, bytesPerSecond))
+        if (done != null && total != null) {
+            IdeHintText(transferLine(done, total, bytesPerSecond), fontSize = FontSize.Micro)
+        }
     }
 }
 

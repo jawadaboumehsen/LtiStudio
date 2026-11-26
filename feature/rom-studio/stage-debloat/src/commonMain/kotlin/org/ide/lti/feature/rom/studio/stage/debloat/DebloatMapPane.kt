@@ -11,7 +11,6 @@ package org.ide.lti.feature.rom.studio.stage.debloat
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -35,12 +34,12 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
@@ -66,9 +65,11 @@ internal fun LazyListScope.appMap(facts: DebloatFacts) {
 private fun AppMapCard(facts: DebloatFacts) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<String?>(null) }
-    MapCard {
-        MapTitle("What breaks if this goes")
-        Hint(
+    IdeSectionCard(
+        modifier = Modifier.testTag("AppMapCard"),
+        title = "What breaks if this goes",
+    ) {
+        IdeHintText(
             "Pick an app. Every arrow is something a manifest of this ROM declares: a library an app needs, a " +
                 "permission it asks for that only this app declares, an overlay that dresses it.",
         )
@@ -96,13 +97,15 @@ private fun AppMapCard(facts: DebloatFacts) {
                 )
             }
         }
-        if (facts.apps.isEmpty()) Hint("The manifests are not read yet: refresh on Inventory.")
+        if (facts.apps.isEmpty()) IdeHintText("The manifests are not read yet: refresh on Inventory.")
     }
     val map = selected?.let { remember(facts.apps, it) { facts.map(it) } }
     if (map != null) {
-        MapCard {
-            MapTitle(facts.apps[selected]?.label?.let { "$it (${map.packageId})" } ?: map.packageId)
-            Hint(
+        IdeSectionCard(
+            modifier = Modifier.testTag("AppMapCard"),
+            title = facts.apps[selected]?.label?.let { "$it (${map.packageId})" } ?: map.packageId,
+        ) {
+            IdeHintText(
                 when (val worst = map.worst) {
                     null -> "Nothing in this ROM declares that it relies on it."
                     else -> "${map.reliedOnBy.size} app(s) rely on it; the worst: one ${worst.words}."
@@ -111,7 +114,7 @@ private fun AppMapCard(facts: DebloatFacts) {
             RelianceMap(map)
             Legend()
             Reasons(map)
-            Hint(
+            IdeHintText(
                 "The map shows what the ROM declares. Apps also reach each other while the device runs (intents, " +
                     "bound services, content providers); no file in the firmware records that.",
             )
@@ -162,7 +165,7 @@ private fun RelianceMap(map: AppMap) {
         label(map.packageId, center, text)
     }
     val more = (map.reliedOnBy.size - left.size) + (map.reliesOn.size - right.size)
-    if (more > 0) Hint("$more more not drawn; all are listed below.")
+    if (more > 0) IdeHintText("$more more not drawn; all are listed below.")
 }
 
 /** A line from [from] to [to] with a head at [to]. */
@@ -220,7 +223,7 @@ private fun Reasons(map: AppMap) {
     fun line(r: Reliance, other: String) = "$other ${r.loss.words}: ${r.reasons.joinToString("; ")}"
     map.reliedOnBy.forEach { r -> Reason(line(r, r.from), colors.getValue(r.loss)) }
     if (map.reliesOn.isNotEmpty()) {
-        Hint("It relies on:")
+        IdeHintText("It relies on:")
         map.reliesOn.forEach { r ->
             Reason(
                 "${r.to}: without it, this app ${r.loss.words} (${r.reasons.joinToString("; ")})",
@@ -233,28 +236,6 @@ private fun Reasons(map: AppMap) {
 @Composable
 private fun Reason(text: String, color: Color) {
     Text(text, color = color, fontSize = FontSize.BodySmall, fontFamily = codeFontFamily())
-}
-
-@Composable
-private fun MapCard(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface()
-            .testTag("AppMapCard"),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) { content() }
-}
-
-@Composable
-private fun MapTitle(text: String) {
-    Text(
-        text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.TitleSmall,
-        fontWeight = FontWeight.SemiBold,
-        fontFamily = ideFontFamily(),
-    )
 }
 
 private const val MATCHES = 12

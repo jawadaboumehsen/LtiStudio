@@ -14,14 +14,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.data.common.resolveAppDataDir
 import org.ide.lti.core.domain.workspace.BuildProfile
 import org.ide.lti.core.domain.workspace.BuildProfileStore
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.util.UUID
 
 /** Each workspace's profiles as one JSON file in the app's data folder (`profiles/<workspace id>.json`). */
 internal class FileBuildProfileStore(private val folder: File = resolveAppDataDir("profiles").toFile()) :
@@ -41,11 +39,11 @@ internal class FileBuildProfileStore(private val folder: File = resolveAppDataDi
 
     /** Written to a temporary file of its own and renamed, so a crash never leaves half a file. */
     private suspend fun write(workspaceId: String, profiles: List<BuildProfile>): Unit = withContext(Dispatchers.IO) {
-        val file = fileOf(workspaceId)
-        file.parentFile.mkdirs()
-        val partial = File(file.parentFile, "${file.name}.${UUID.randomUUID()}.partial")
-        partial.writeText(ConfigurationSnapshot.canonicalJson.encodeToString(serializer, profiles))
-        Files.move(partial.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        atomicWrite(
+            fileOf(workspaceId).toPath(),
+            ConfigurationSnapshot.canonicalJson.encodeToString(serializer, profiles),
+            allowNonAtomicFallback = false,
+        )
     }
 
     /** A workspace id is a file name here: anything but letters, digits, `-` and `_` is refused. */

@@ -7,6 +7,7 @@ import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.websocket.*
@@ -78,6 +79,45 @@ public class KtorRemoteTransportAdapter(
     private fun ToolExecutionRequest.normalize(): ToolExecutionRequest =
         if (workingDirectory.isNullOrBlank()) copy(workingDirectory = "/tmp") else this
 
+    private fun HttpRequestBuilder.withAuth(
+        conn: ServerConnectionDescriptor,
+        trace: TraceContext? = null,
+        includeProtocol: Boolean = false,
+        includeSpan: Boolean = false,
+    ) {
+        header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+        if (trace != null) {
+            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+            if (includeSpan) header(TraceContext.HEADER_SPAN_ID, trace.spanId)
+        }
+        if (includeProtocol) header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+    }
+
+    private suspend fun postWithHeartbeatRetry(
+        conn: ServerConnectionDescriptor,
+        send: suspend () -> HttpResponse,
+    ): HttpResponse {
+        var response = send()
+        if (response.status != HttpStatusCode.ServiceUnavailable) return response
+        when (response.headers["X-LtiRom-Error-Code"]) {
+            "CLIENT_HEARTBEAT_REQUIRED" -> {
+                val currentConn = supervisor.getConnectionInfo()
+                if (currentConn != conn || !sendHeartbeat(conn)) {
+                    throw CommandAdmissionException("Command admission is closed; client heartbeat required")
+                }
+                response = send()
+                if (response.status == HttpStatusCode.ServiceUnavailable &&
+                    response.headers["X-LtiRom-Error-Code"] == "CLIENT_HEARTBEAT_REQUIRED"
+                ) {
+                    throw CommandAdmissionException("Command admission is closed; client heartbeat required")
+                }
+            }
+            "SERVER_STOPPING", "CANCELLATION_IN_PROGRESS" ->
+                throw ToolingException("Build service is stopping or cancelling executions")
+        }
+        return response
+    }
+
     override suspend fun execute(request: ToolExecutionRequest): ToolExecutionResponse {
         // The connection is resolved first: the breaker belongs to it, so a dead server's failures never gate
         // its replacement.
@@ -86,32 +126,7 @@ public class KtorRemoteTransportAdapter(
             val req = request.normalize()
             val trace = TraceContext.create()
             try {
-                val response = postExecute(conn, req, trace)
-                if (response.status == HttpStatusCode.ServiceUnavailable) {
-                    val errorCode = response.headers["X-LtiRom-Error-Code"]
-                    if (errorCode == "CLIENT_HEARTBEAT_REQUIRED") {
-                        val currentConn = supervisor.getConnectionInfo()
-                        if (currentConn == conn && sendHeartbeat(conn)) {
-                            val retryResponse = postExecute(conn, req, trace)
-                            if (retryResponse.status.isSuccess()) {
-                                return@execute retryResponse.body()
-                            }
-                            if (retryResponse.status == HttpStatusCode.ServiceUnavailable &&
-                                retryResponse.headers["X-LtiRom-Error-Code"] == "CLIENT_HEARTBEAT_REQUIRED"
-                            ) {
-                                throw CommandAdmissionException(
-                                    "Command admission is closed; client heartbeat required",
-                                )
-                            }
-                            throw serverError(retryResponse.status, retryResponse.bodyAsText())
-                        } else {
-                            throw CommandAdmissionException("Command admission is closed; client heartbeat required")
-                        }
-                    }
-                    if (errorCode == "SERVER_STOPPING" || errorCode == "CANCELLATION_IN_PROGRESS") {
-                        throw ToolingException("Build service is stopping or cancelling executions")
-                    }
-                }
+                val response = postWithHeartbeatRetry(conn) { postExecute(conn, req, trace) }
                 if (!response.status.isSuccess()) {
                     throw serverError(response.status, response.bodyAsText())
                 }
@@ -125,7 +140,8 @@ public class KtorRemoteTransportAdapter(
                 throw te
             } catch (e: Exception) {
                 throw ToolingException(
-                    "Failed to execute command on remote daemon at ${conn.httpBaseUrl} [trace=${trace.traceId}]: ${e.message}",
+                    "Failed to execute command on remote daemon at ${conn.httpBaseUrl} " +
+                        "[trace=${trace.traceId}]: ${e.message}",
                     e,
                 )
             }
@@ -154,96 +170,79 @@ public class KtorRemoteTransportAdapter(
         if (httpClient.pluginOrNull(HttpTimeout) != null) {
             timeout { requestTimeoutMillis = request.timeoutMs + EXECUTE_RESPONSE_MARGIN_MS }
         }
-        header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-        header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+        withAuth(conn, trace, includeProtocol = true, includeSpan = true)
         header("X-Trace-Id", trace.traceId)
-        header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-        header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
         contentType(ContentType.Application.Json)
         setBody(request)
     }
 
-    override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> = channelFlow {
+    override fun stream(request: ToolExecutionRequest): Flow<StreamEvent> =
+        streamSocket(
+            request = request,
+            sequenced = false,
+            decode = { text -> runCatching { json.decodeFromString<StreamEvent>(text) }.getOrNull() },
+            isFinished = { it is StreamEvent.ExecutionFinished },
+        )
+
+    override fun streamSequenced(request: ToolExecutionRequest): Flow<SequencedStreamEvent> =
+        streamSocket(
+            request = request,
+            sequenced = true,
+            decode = { text -> runCatching { json.decodeFromString<SequencedStreamEvent>(text) }.getOrNull() },
+            isFinished = { it.event is StreamEvent.ExecutionFinished },
+        )
+
+    private fun <T> streamSocket(
+        request: ToolExecutionRequest,
+        sequenced: Boolean,
+        decode: (String) -> T?,
+        isFinished: (T) -> Boolean,
+    ): Flow<T> = channelFlow {
         val req = request.normalize()
         val conn = supervisor.ensureStarted()
         val trace = TraceContext.create()
         val traceId = req.environment["LTI_TRACE_ID"] ?: trace.traceId
         val requestJson = json.encodeToString(req)
+        val seqParam = if (sequenced) "&sequenced=true" else ""
+        val wsUrl = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=$traceId$seqParam"
         var finished = false
-        var emittedAny = false
 
         try {
-            httpClient.webSocket(
-                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=$traceId",
-            ) {
-                send(Frame.Text(requestJson))
-                for (frame in incoming) {
-                    if (frame is Frame.Text) {
-                        val text = frame.readText()
-                        val event =
-                            runCatching {
-                                json.decodeFromString<StreamEvent>(text)
-                            }.getOrNull()
-
-                        if (event != null) {
-                            emittedAny = true
-                            send(event)
-                            if (event is StreamEvent.ExecutionFinished) {
-                                finished = true
-                                break
-                            }
-                        }
-                    }
+            var emittedAny = false
+            var firstCloseReason: CloseReason? = null
+            httpClient.webSocket(urlString = wsUrl) {
+                finished = consumeStreamFrames(requestJson, decode, isFinished) { event ->
+                    emittedAny = true
+                    send(event)
                 }
-                if (!finished) {
-                    val reason = closeReason.await()
-                    if (!emittedAny && reason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
-                        val currentConn = supervisor.getConnectionInfo()
-                        if (currentConn == conn && sendHeartbeat(conn)) {
-                            httpClient.webSocket(
-                                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=$traceId",
-                            ) {
-                                send(Frame.Text(requestJson))
-                                for (frame in incoming) {
-                                    if (frame is Frame.Text) {
-                                        val text = frame.readText()
-                                        val event =
-                                            runCatching {
-                                                json.decodeFromString<StreamEvent>(
-                                                    text,
-                                                )
-                                            }.getOrNull()
-                                        if (event != null) {
-                                            send(event)
-                                            if (event is StreamEvent.ExecutionFinished) {
-                                                finished = true
-                                                break
-                                            }
-                                        }
-                                    }
-                                }
-                                if (!finished) {
-                                    val retryReason = closeReason.await()
-                                    if (retryReason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
-                                        throw CommandAdmissionException(
-                                            "Command admission is closed; client heartbeat required",
-                                        )
-                                    }
-                                    throw ToolingException(
-                                        "Stream closed without ExecutionFinished after retry: ${retryReason?.message ?: "unknown"}",
-                                    )
-                                }
-                            }
-                        } else {
-                            throw CommandAdmissionException(
-                                "Command admission is closed; client heartbeat required",
-                            )
+                if (!finished) firstCloseReason = closeReason.await()
+            }
+            if (!finished) {
+                if (!emittedAny && firstCloseReason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
+                    val currentConn = supervisor.getConnectionInfo()
+                    if (currentConn != conn || !sendHeartbeat(conn)) {
+                        throw CommandAdmissionException("Command admission is closed; client heartbeat required")
+                    }
+                    var retryReason: CloseReason? = null
+                    httpClient.webSocket(urlString = wsUrl) {
+                        finished = consumeStreamFrames(requestJson, decode, isFinished) { event ->
+                            send(event)
                         }
-                    } else {
+                        if (!finished) retryReason = closeReason.await()
+                    }
+                    if (!finished) {
+                        if (retryReason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
+                            throw CommandAdmissionException("Command admission is closed; client heartbeat required")
+                        }
                         throw ToolingException(
-                            "Stream closed without ExecutionFinished: ${reason?.message ?: "socket closed"}",
+                            "Stream closed without ExecutionFinished after retry: " +
+                                (retryReason?.message ?: "unknown"),
                         )
                     }
+                } else {
+                    throw ToolingException(
+                        "Stream closed without ExecutionFinished: ${firstCloseReason?.message ?: "socket closed"}",
+                    )
                 }
             }
         } catch (ce: CancellationException) {
@@ -265,105 +264,20 @@ public class KtorRemoteTransportAdapter(
         }
     }
 
-    override fun streamSequenced(request: ToolExecutionRequest): Flow<SequencedStreamEvent> = channelFlow {
-        val req = request.normalize()
-        val conn = supervisor.ensureStarted()
-        val trace = TraceContext.create()
-        val traceId = req.environment["LTI_TRACE_ID"] ?: trace.traceId
-        val requestJson = json.encodeToString(req)
-        var finished = false
-        var emittedAny = false
-
-        try {
-            httpClient.webSocket(
-                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=$traceId&sequenced=true",
-            ) {
-                send(Frame.Text(requestJson))
-                for (frame in incoming) {
-                    if (frame is Frame.Text) {
-                        val text = frame.readText()
-                        val event =
-                            runCatching {
-                                json.decodeFromString<SequencedStreamEvent>(text)
-                            }.getOrNull()
-
-                        if (event != null) {
-                            emittedAny = true
-                            send(event)
-                            if (event.event is StreamEvent.ExecutionFinished) {
-                                finished = true
-                                break
-                            }
-                        }
-                    }
-                }
-                if (!finished) {
-                    val reason = closeReason.await()
-                    if (!emittedAny && reason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
-                        val currentConn = supervisor.getConnectionInfo()
-                        if (currentConn == conn && sendHeartbeat(conn)) {
-                            httpClient.webSocket(
-                                urlString = "${conn.wsBaseUrl}/api/v1/tools/stream?token=${conn.token}&traceId=$traceId&sequenced=true",
-                            ) {
-                                send(Frame.Text(requestJson))
-                                for (frame in incoming) {
-                                    if (frame is Frame.Text) {
-                                        val text = frame.readText()
-                                        val event =
-                                            runCatching {
-                                                json.decodeFromString<SequencedStreamEvent>(text)
-                                            }.getOrNull()
-
-                                        if (event != null) {
-                                            send(event)
-                                            if (event.event is StreamEvent.ExecutionFinished) {
-                                                finished = true
-                                                break
-                                            }
-                                        }
-                                    }
-                                }
-                                if (!finished) {
-                                    val retryReason = closeReason.await()
-                                    if (retryReason?.message == "CLIENT_HEARTBEAT_REQUIRED") {
-                                        throw CommandAdmissionException(
-                                            "Command admission is closed; client heartbeat required",
-                                        )
-                                    }
-                                    throw ToolingException(
-                                        "Stream closed without ExecutionFinished after retry: ${retryReason?.message ?: "unknown"}",
-                                    )
-                                }
-                            }
-                        } else {
-                            throw CommandAdmissionException(
-                                "Command admission is closed; client heartbeat required",
-                            )
-                        }
-                    } else {
-                        throw ToolingException(
-                            "Stream closed without ExecutionFinished: ${reason?.message ?: "socket closed"}",
-                        )
-                    }
-                }
-            }
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (cae: CommandAdmissionException) {
-            throw cae
-        } catch (te: ToolingException) {
-            throw te
-        } catch (e: Exception) {
-            throw ToolingException("Stream error on remote daemon at ${conn.httpBaseUrl}: ${e.message}", e)
-        } finally {
-            if (!finished) {
-                withContext(NonCancellable) {
-                    withTimeoutOrNull(5_000L) {
-                        cancelExecutionDirect(conn, traceId, "SIGTERM")
-                    }
-                }
-            }
+    private suspend fun <T> DefaultClientWebSocketSession.consumeStreamFrames(
+        requestJson: String,
+        decode: (String) -> T?,
+        isFinished: (T) -> Boolean,
+        onEvent: suspend (T) -> Unit,
+    ): Boolean {
+        send(Frame.Text(requestJson))
+        for (frame in incoming) {
+            if (frame !is Frame.Text) continue
+            val event = decode(frame.readText()) ?: continue
+            onEvent(event)
+            if (isFinished(event)) return true
         }
+        return false
     }
 
     override suspend fun checkHealth(): WslServerInfo? {
@@ -386,38 +300,29 @@ public class KtorRemoteTransportAdapter(
         }
     }
 
-    override suspend fun listTools(): ToolListResult {
-        val conn = supervisor.ensureStarted()
-        val trace = TraceContext.create()
-        return try {
-            val response =
-                httpClient.get("${conn.httpBaseUrl}/api/v1/tools") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                }
-            if (response.status.isSuccess()) {
-                ToolListResult.Tools(response.body<List<ToolStatusInfo>>())
-            } else {
-                ToolListResult.ServiceError("Server responded with HTTP ${response.status.value}")
-            }
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (e: java.io.IOException) {
-            ToolListResult.Unreachable(e.message ?: "No answer while listing tools")
-        } catch (e: Exception) {
-            ToolListResult.ServiceError(e.message ?: "Failed to list tools")
-        }
+    override suspend fun listTools(): ToolListResult = fetchTools(
+        ioMessage = "No answer while listing tools",
+        fallbackMessage = "Failed to list tools",
+    ) { conn, trace ->
+        httpClient.get("${conn.httpBaseUrl}/api/v1/tools") { withAuth(conn, trace) }
     }
 
-    override suspend fun refreshTools(): ToolListResult {
+    override suspend fun refreshTools(): ToolListResult = fetchTools(
+        ioMessage = "No answer while reloading tools",
+        fallbackMessage = "Failed to refresh tools",
+    ) { conn, trace ->
+        httpClient.post("${conn.httpBaseUrl}/api/v1/tools/refresh") { withAuth(conn, trace) }
+    }
+
+    private suspend fun fetchTools(
+        ioMessage: String,
+        fallbackMessage: String,
+        request: suspend (ServerConnectionDescriptor, TraceContext) -> HttpResponse,
+    ): ToolListResult {
         val conn = supervisor.ensureStarted()
         val trace = TraceContext.create()
         return try {
-            val response =
-                httpClient.post("${conn.httpBaseUrl}/api/v1/tools/refresh") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                }
+            val response = request(conn, trace)
             if (response.status.isSuccess()) {
                 ToolListResult.Tools(response.body<List<ToolStatusInfo>>())
             } else {
@@ -426,9 +331,9 @@ public class KtorRemoteTransportAdapter(
         } catch (ce: CancellationException) {
             throw ce
         } catch (e: java.io.IOException) {
-            ToolListResult.Unreachable(e.message ?: "No answer while reloading tools")
+            ToolListResult.Unreachable(e.message ?: ioMessage)
         } catch (e: Exception) {
-            ToolListResult.ServiceError(e.message ?: "Failed to refresh tools")
+            ToolListResult.ServiceError(e.message ?: fallbackMessage)
         }
     }
 
@@ -438,8 +343,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.post("${conn.httpBaseUrl}/api/v1/binary/upload") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                    withAuth(conn, trace)
                     parameter("path", remotePath)
                     setBody(content)
                 }
@@ -457,8 +361,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.get("${conn.httpBaseUrl}/api/v1/binary/download") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                    withAuth(conn, trace)
                     parameter("path", remotePath)
                 }
             if (response.status.isSuccess()) {
@@ -485,8 +388,7 @@ public class KtorRemoteTransportAdapter(
             withTimeoutOrNull(10_000L) {
                 val response =
                     httpClient.post("${descriptor.httpBaseUrl}/api/v1/client/heartbeat") {
-                        header(HttpHeaders.Authorization, "Bearer ${descriptor.token}")
-                        header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                        withAuth(descriptor, includeProtocol = true)
                     }
                 response.status == HttpStatusCode.NoContent
             } ?: false
@@ -501,8 +403,7 @@ public class KtorRemoteTransportAdapter(
         val conn = supervisor.getConnectionInfo() ?: return StopClientResult(stopped = false)
         val response =
             httpClient.post("${conn.httpBaseUrl}/api/v1/client/stop") {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                withAuth(conn, includeProtocol = true)
             }
         if (response.status == HttpStatusCode.OK) {
             response.body<StopClientResult>()
@@ -532,7 +433,7 @@ public class KtorRemoteTransportAdapter(
         val response =
             httpClient.post("${conn.httpBaseUrl}/api/v1/tools/execute/$executionId/cancel") {
                 parameter("signal", signal)
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
+                withAuth(conn)
             }
         response.status.isSuccess() &&
             response.body<ProcessCancellationResponse>().let {
@@ -568,8 +469,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.get("${conn.httpBaseUrl}/api/v1/sessions") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                    withAuth(conn, trace)
                 }
             if (response.status.isSuccess()) {
                 response.body<List<SessionSummary>>()
@@ -589,8 +489,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.get("${conn.httpBaseUrl}/api/v1/sessions/$sessionId") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                    withAuth(conn, trace)
                 }
             if (response.status.isSuccess()) {
                 response.body<SessionSummary>()
@@ -610,8 +509,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.get("${conn.httpBaseUrl}/api/v1/sessions/$sessionId/replay?fromSeq=$fromSeq") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
+                    withAuth(conn, trace)
                 }
             if (response.status.isSuccess()) {
                 response.body<List<SequencedStreamEvent>>()
@@ -630,27 +528,7 @@ public class KtorRemoteTransportAdapter(
         return circuitBreaker.execute(conn) {
             val trace = TraceContext.create()
             try {
-                var response = postStartRun(conn, request, trace)
-                if (response.status == HttpStatusCode.ServiceUnavailable) {
-                    val errorCode = response.headers["X-LtiRom-Error-Code"]
-                    if (errorCode == "CLIENT_HEARTBEAT_REQUIRED") {
-                        val currentConn = supervisor.getConnectionInfo()
-                        if (currentConn == conn && sendHeartbeat(conn)) {
-                            response = postStartRun(conn, request, trace)
-                            if (response.status == HttpStatusCode.ServiceUnavailable &&
-                                response.headers["X-LtiRom-Error-Code"] == "CLIENT_HEARTBEAT_REQUIRED"
-                            ) {
-                                throw CommandAdmissionException(
-                                    "Command admission is closed; client heartbeat required",
-                                )
-                            }
-                        } else {
-                            throw CommandAdmissionException("Command admission is closed; client heartbeat required")
-                        }
-                    } else if (errorCode == "SERVER_STOPPING" || errorCode == "CANCELLATION_IN_PROGRESS") {
-                        throw ToolingException("Build service is stopping or cancelling executions")
-                    }
-                }
+                val response = postWithHeartbeatRetry(conn) { postStartRun(conn, request, trace) }
                 when (response.status) {
                     HttpStatusCode.Created, HttpStatusCode.OK ->
                         response.body<RunHandle>().also {
@@ -669,9 +547,6 @@ public class KtorRemoteTransportAdapter(
                         )
                     }
                     HttpStatusCode.ServiceUnavailable -> {
-                        if (response.headers["X-LtiRom-Error-Code"] == "CLIENT_HEARTBEAT_REQUIRED") {
-                            throw CommandAdmissionException("Command admission is closed; client heartbeat required")
-                        }
                         throw ToolingException("The build service is unavailable: ${response.bodyAsText()}")
                     }
                     else -> throw ToolingException("Failed to start run: status=${response.status}")
@@ -693,10 +568,7 @@ public class KtorRemoteTransportAdapter(
 
     private suspend fun postStartRun(conn: ServerConnectionDescriptor, request: StartRunRequest, trace: TraceContext) =
         httpClient.post("${conn.httpBaseUrl}/api/v1/runs") {
-            header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-            header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-            header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-            header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+            withAuth(conn, trace, includeProtocol = true, includeSpan = true)
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -710,10 +582,7 @@ public class KtorRemoteTransportAdapter(
         val trace = TraceContext.create()
         val response =
             httpClient.get("${conn.httpBaseUrl}/api/v1/runs/$runId") {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                withAuth(conn, trace, includeProtocol = true, includeSpan = true)
             }
         return if (response.status == HttpStatusCode.NotFound) {
             null
@@ -735,10 +604,7 @@ public class KtorRemoteTransportAdapter(
                     }
                 }
             httpClient.get(url) {
-                header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                withAuth(conn, trace, includeProtocol = true, includeSpan = true)
             }.body()
         }
     }
@@ -749,10 +615,7 @@ public class KtorRemoteTransportAdapter(
         return try {
             val response =
                 httpClient.post("${conn.httpBaseUrl}/api/v1/runs/$runId/cancel?signal=$signal") {
-                    header(HttpHeaders.Authorization, "Bearer ${conn.token}")
-                    header(TraceContext.HEADER_TRACE_ID, trace.traceId)
-                    header(TraceContext.HEADER_SPAN_ID, trace.spanId)
-                    header(HEADER_PROTOCOL_VERSION, PROTOCOL_VERSION)
+                    withAuth(conn, trace, includeProtocol = true, includeSpan = true)
                 }
             if (response.status == HttpStatusCode.NotFound) {
                 null

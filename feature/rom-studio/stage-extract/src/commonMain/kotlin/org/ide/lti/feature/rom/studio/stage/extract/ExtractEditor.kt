@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -167,17 +169,17 @@ private fun ArchiveContentsCard(facts: ExtractFacts) {
             if (c.ok) "checksum OK" else "checksum mismatch: expected ${c.expected ?: "none"}, actual ${c.actual}"
         }
         listOfNotNull(facts.detectedFormat?.let { "Format ${it.name}" }, checksum).takeIf { it.isNotEmpty() }
-            ?.let { Hint(it.joinToString(" · ")) }
+            ?.let { IdeHintText(it.joinToString(" · ")) }
         val archive = facts.archive
         when {
             !facts.loaded -> GlassLoadingPlaceholder("Reading the workspace…")
 
-            archive == null -> Hint("No firmware archive yet. Acquire or import one first.")
+            archive == null -> IdeHintText("No firmware archive yet. Acquire or import one first.")
 
-            facts.members.isEmpty() -> Hint("$archive could not be read.")
+            facts.members.isEmpty() -> IdeHintText("$archive could not be read.")
 
             // The members themselves are in the archive browser below.
-            else -> Hint("$archive · ${facts.members.size} members")
+            else -> IdeHintText("$archive · ${facts.members.size} members")
         }
         ExtractedImages(facts)
     }
@@ -194,7 +196,7 @@ private fun ExtractedImages(facts: ExtractFacts) {
         fontFamily = ideFontFamily(),
     )
     if (facts.partitionImages.isEmpty() && facts.extracted.isEmpty()) {
-        Hint(if (facts.loaded) "None yet. Run the build through Extract to unpack the archive." else "")
+        IdeHintText(if (facts.loaded) "None yet. Run the build through Extract to unpack the archive." else "")
     } else if (facts.partitionImages.isNotEmpty()) {
         facts.partitionImages.forEach { image ->
             Row(
@@ -207,8 +209,8 @@ private fun ExtractedImages(facts: ExtractFacts) {
                     image.fsType.name.lowercase().takeIf { it != "unknown" },
                 ).joinToString()
                 val label = if (flags.isNotBlank()) "${image.name} ($flags)" else image.name
-                Mono(label)
-                Mono(formatBytes(image.sizeBytes))
+                IdeMonoText(label, fontSize = FontSize.Micro)
+                IdeMonoText(formatBytes(image.sizeBytes), fontSize = FontSize.Micro)
             }
         }
     } else {
@@ -218,8 +220,8 @@ private fun ExtractedImages(facts: ExtractFacts) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Mono(image.path)
-                Mono(formatBytes(image.sizeBytes))
+                IdeMonoText(image.path, fontSize = FontSize.Micro)
+                IdeMonoText(formatBytes(image.sizeBytes), fontSize = FontSize.Micro)
             }
         }
     }
@@ -251,7 +253,7 @@ private fun ReplacementsCard(
                 GlassButton(onClick = { confirm = null }) { Text("Cancel", fontSize = FontSize.BodySmall) }
             },
         ) {
-            Hint(
+            IdeHintText(
                 "firmware/extracted/$p and its permission lists are made again from $p.img" +
                     (if (settings.replacementImages[p] != null) " (your own image)" else "") +
                     ". Anything changed there by hand is lost; work/ is assembled from it at the next build.",
@@ -259,7 +261,7 @@ private fun ReplacementsCard(
         }
     }
     ExtractCard("Your own partition images") {
-        Hint(
+        IdeHintText(
             "Extract uses an image you pick instead of the firmware's: EROFS, ext4 or F2FS (a sparse one is " +
                 "expanded; Build & Sign rebuilds it as the filesystem you choose there). The build stops if the " +
                 "file changes outside the Studio. Re-extract unpacks one partition again without a whole Extract run.",
@@ -271,7 +273,7 @@ private fun ReplacementsCard(
             )
         }
         facts.replaceRefusal?.let { RefusalView(refusal = it) }
-        facts.reextractMessage?.let { Hint(it) }
+        facts.reextractMessage?.let { IdeHintText(it) }
         val partitions = settings.dynamicPartitions.ifEmpty { target.dynamicPartitions }
         val idle = facts.replacing == null && facts.reextracting == null
         partitions.forEach { p ->
@@ -281,9 +283,9 @@ private fun ReplacementsCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Mono(p)
+                IdeMonoText(p, fontSize = FontSize.Micro)
                 Box(Modifier.weight(1f)) {
-                    Hint(replaced?.let { "Your image (sha256 ${it.take(SHA_SHOWN)}…)" } ?: "Stock image")
+                    IdeHintText(replaced?.let { "Your image (sha256 ${it.take(SHA_SHOWN)}…)" } ?: "Stock image")
                 }
                 GlassButton(onClick = { onReplace(p) }, enabled = idle) {
                     Text(if (facts.replacing == p) "Importing…" else "Use my image…", fontSize = FontSize.BodySmall)
@@ -306,26 +308,6 @@ private fun ReplacementsCard(
 }
 
 private const val SHA_SHOWN = 12
-
-@Composable
-private fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.Micro,
-        fontFamily = codeFontFamily(),
-    )
-}
 
 @Composable
 private fun DynamicPartitionsCard(
@@ -418,7 +400,9 @@ private fun SlotCard(
 ) {
     ExtractCard("Slot") {
         val bootSlots = target.packagePolicy.bootSlots.joinToString()
-        Hint("Which A/B slot's images to unpack. Device slots: $bootSlots · active ${target.activeSlotSuffix}.")
+        IdeHintText(
+            "Which A/B slot's images to unpack. Device slots: $bootSlots · active ${target.activeSlotSuffix}.",
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             listOf(null, *target.packagePolicy.bootSlots.toTypedArray()).forEach { slot ->
                 GlassChip(
@@ -428,7 +412,10 @@ private fun SlotCard(
                 )
             }
         }
-        Mono("Unpacks slot " + (settings.slot ?: "${target.activeSlotSuffix.removePrefix("_")} (the active one)"))
+        IdeMonoText(
+            "Unpacks slot " + (settings.slot ?: "${target.activeSlotSuffix.removePrefix("_")} (the active one)"),
+            fontSize = FontSize.Micro,
+        )
         Meta(
             path = "slot",
             dirty = dirtyPaths,
@@ -446,7 +433,7 @@ private fun FilesystemCard(
     onChange: (ExtractionSettings) -> Unit,
 ) {
     ExtractCard("Filesystem handling") {
-        Hint(
+        IdeHintText(
             "Images are unpacked to firmware/extracted/ as raw ${target.filesystemType} images; " +
                 "Assemble copies their files into work/ with their owners, modes and SELinux labels.",
         )

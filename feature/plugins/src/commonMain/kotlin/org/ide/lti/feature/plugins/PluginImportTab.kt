@@ -34,10 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.DialogUtils
 import org.ide.lti.core.designsystem.component.actions.GlassButton
@@ -62,6 +63,7 @@ import org.ide.lti.core.domain.plugin.PackageInspection
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.feature.plugins.components.ImportStep
+import org.ide.lti.feature.plugins.components.PluginDetailRow
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.ide.lti.feature.plugins.components.PluginStepper
 import org.ide.lti.feature.plugins.components.pluginCardSurface
@@ -349,11 +351,11 @@ private fun ImportPackageIdentityCard(
             )
             GlassHorizontalDivider(specular = true)
 
-            ImportDetailRow("Name", name.ifBlank { identityId ?: "Identity unavailable" })
-            ImportDetailRow("Package", identityId ?: "Unavailable")
-            ImportDetailRow("Version", identityVersion ?: "Unavailable")
-            ImportDetailRow("File", displayFileName)
-            ImportDetailRow("Made for", madeFor)
+            PluginDetailRow("Name", name.ifBlank { identityId ?: "Identity unavailable" })
+            PluginDetailRow("Package", identityId ?: "Unavailable")
+            PluginDetailRow("Version", identityVersion ?: "Unavailable")
+            PluginDetailRow("File", displayFileName)
+            PluginDetailRow("Made for", madeFor)
             if (summary.isNotBlank()) {
                 Text(
                     text = summary,
@@ -366,66 +368,37 @@ private fun ImportPackageIdentityCard(
 }
 
 @Composable
-private fun ImportSdkCompatibilityCard(hasBlockingErrors: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pluginCardSurface(GlassShapes.HazeMediumSmall)
-            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = "SDK compatibility",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Icon(
-                    painter = if (hasBlockingErrors) {
-                        AppIcons.ClearPainterResource()
-                    } else {
-                        AppIcons.CheckPainterResource()
-                    },
-                    contentDescription = if (hasBlockingErrors) "Blocked" else "Inspection passed",
-                    tint = if (hasBlockingErrors) {
-                        GlassTheme.diagnosticColors.error
-                    } else {
-                        GlassTheme.diagnosticColors.success
-                    },
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = if (hasBlockingErrors) "Blocked" else "Inspection passed",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) {
-                        GlassTheme.diagnosticColors.error
-                    } else {
-                        GlassTheme.diagnosticColors.success
-                    },
-                )
-            }
-            Text(
-                text = if (hasBlockingErrors) {
-                    "The inspection report contains blocking compatibility or validation errors."
-                } else {
-                    "No blocking compatibility errors were reported."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+private fun ImportInspectionCard(
+    title: String,
+    hasBlockingErrors: Boolean,
+    failedLabel: String,
+    failedDescription: String,
+    passedDescription: String,
+) {
+    ImportStatusCard(
+        title = title,
+        painter = if (hasBlockingErrors) AppIcons.ClearPainterResource() else AppIcons.CheckPainterResource(),
+        contentDescription = if (hasBlockingErrors) failedLabel else "Inspection passed",
+        statusLabel = if (hasBlockingErrors) failedLabel else "Inspection passed",
+        statusColor = if (hasBlockingErrors) {
+            GlassTheme.diagnosticColors.error
+        } else {
+            GlassTheme.diagnosticColors.success
+        },
+        description = if (hasBlockingErrors) failedDescription else passedDescription,
+    )
 }
 
 @Composable
-private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
+private fun ImportStatusCard(
+    title: String,
+    painter: Painter,
+    contentDescription: String,
+    statusLabel: String,
+    statusColor: Color,
+    description: String,
+    statusFontWeight: FontWeight = FontWeight.Bold,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -436,7 +409,7 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
             verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
         ) {
             Text(
-                text = "Content integrity",
+                text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -446,87 +419,20 @@ private fun ImportContentIntegrityCard(hasBlockingErrors: Boolean) {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
             ) {
                 Icon(
-                    painter = if (hasBlockingErrors) {
-                        AppIcons.ClearPainterResource()
-                    } else {
-                        AppIcons.CheckPainterResource()
-                    },
-                    contentDescription = if (hasBlockingErrors) "Failed" else "Inspection passed",
-                    tint = if (hasBlockingErrors) {
-                        GlassTheme.diagnosticColors.error
-                    } else {
-                        GlassTheme.diagnosticColors.success
-                    },
+                    painter = painter,
+                    contentDescription = contentDescription,
+                    tint = statusColor,
                     modifier = Modifier.size(IconSize.Small),
                 )
                 Text(
-                    text = if (hasBlockingErrors) "Failed" else "Inspection passed",
+                    text = statusLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (hasBlockingErrors) {
-                        GlassTheme.diagnosticColors.error
-                    } else {
-                        GlassTheme.diagnosticColors.success
-                    },
+                    fontWeight = statusFontWeight,
+                    color = statusColor,
                 )
             }
             Text(
-                text = if (hasBlockingErrors) {
-                    "Review the reported validation errors before installation."
-                } else {
-                    "No blocking structure or integrity errors were reported."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ImportSignatureCard(isSigned: Boolean) {
-    // Signatures are not verified yet (no trusted publisher keys), so a signature file proves nothing.
-    val sigColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val sigPainter = AppIcons.InfoPainterResource()
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pluginCardSurface(GlassShapes.HazeMediumSmall)
-            .padding(horizontal = Spacing.Medium, vertical = Spacing.SmallMedium),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-        ) {
-            Text(
-                text = "Signature",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall),
-            ) {
-                Icon(
-                    painter = sigPainter,
-                    contentDescription = "Signature status",
-                    tint = sigColor,
-                    modifier = Modifier.size(IconSize.Small),
-                )
-                Text(
-                    text = if (isSigned) "Signature not verified" else "Unsigned · Unverified publisher",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = sigColor,
-                )
-            }
-            Text(
-                text = if (isSigned) {
-                    "It carries a signature file, but this app cannot verify signatures yet."
-                } else {
-                    "This package is not digitally signed."
-                },
+                text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -555,9 +461,39 @@ private fun ImportLeftReviewColumn(
             }.ifEmpty { "Any device" },
         )
         val hasBlockingErrors = inspection.report.hasBlockingErrors()
-        ImportSdkCompatibilityCard(hasBlockingErrors = hasBlockingErrors)
-        ImportContentIntegrityCard(hasBlockingErrors = hasBlockingErrors)
-        ImportSignatureCard(isSigned = inspection.hasSignature)
+        ImportInspectionCard(
+            title = "SDK compatibility",
+            hasBlockingErrors = hasBlockingErrors,
+            failedLabel = "Blocked",
+            failedDescription = "The inspection report contains blocking compatibility or validation errors.",
+            passedDescription = "No blocking compatibility errors were reported.",
+        )
+        ImportInspectionCard(
+            title = "Content integrity",
+            hasBlockingErrors = hasBlockingErrors,
+            failedLabel = "Failed",
+            failedDescription = "Review the reported validation errors before installation.",
+            passedDescription = "No blocking structure or integrity errors were reported.",
+        )
+        // Signatures are not verified yet (no trusted publisher keys), so a signature file proves nothing.
+        val sigStatusLabel = if (inspection.hasSignature) {
+            "Signature not verified"
+        } else {
+            "Unsigned · Unverified publisher"
+        }
+        ImportStatusCard(
+            title = "Signature",
+            painter = AppIcons.InfoPainterResource(),
+            contentDescription = "Signature status",
+            statusLabel = sigStatusLabel,
+            statusColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            description = if (inspection.hasSignature) {
+                "It carries a signature file, but this app cannot verify signatures yet."
+            } else {
+                "This package is not digitally signed."
+            },
+            statusFontWeight = FontWeight.SemiBold,
+        )
     }
 }
 
@@ -812,30 +748,6 @@ private fun UnsignedAcknowledgementRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun ImportDetailRow(label: String, value: String, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

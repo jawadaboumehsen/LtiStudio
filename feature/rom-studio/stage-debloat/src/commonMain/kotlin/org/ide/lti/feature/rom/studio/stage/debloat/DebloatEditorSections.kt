@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -62,11 +63,11 @@ private fun Reason(text: String, color: Color) {
 
 /** Apps that can never be picked: the built-in list, and those the other apps' manifests show the device needs. */
 internal fun LazyListScope.keepRules(facts: DebloatFacts, risks: Map<String, AppRisk>) {
-    item { Hint("These apps are needed to boot, set up, call or install apps; they cannot be picked.") }
+    item { IdeHintText("These apps are needed to boot, set up, call or install apps; they cannot be picked.") }
     items(facts.inventory.filter(DebloatInventory::isProtected)) { Line(label(it)) }
     val needed = facts.inventory.filter { !risks[DebloatViewModel.selectorOf(it)]?.blockers.isNullOrEmpty() }
     if (needed.isNotEmpty()) {
-        item { Hint("Needed by the device, from what the apps' manifests say:") }
+        item { IdeHintText("Needed by the device, from what the apps' manifests say:") }
         items(needed) { candidate ->
             Column {
                 Line(label(candidate))
@@ -90,7 +91,7 @@ internal fun LazyListScope.riskReview(
     val missing = settings.removeSelectors.filter { facts.loaded && it !in known }
     val risky = settings.removeSelectors.filter { !risks[it]?.warnings.isNullOrEmpty() }
     item {
-        Hint(
+        IdeHintText(
             if (missing.isEmpty() && risky.isEmpty()) {
                 "No problems: every pick exists in the assembled tree and none is a part of the system."
             } else {
@@ -99,11 +100,11 @@ internal fun LazyListScope.riskReview(
         )
     }
     if (missing.isNotEmpty()) {
-        item { Hint("Not apps of this firmware; the build stops until you remove them:") }
+        item { IdeHintText("Not apps of this firmware; the build stops until you remove them:") }
         items(missing) { selector -> PickRow(selector, onUnpick, isProblem = true) }
     }
     if (risky.isNotEmpty()) {
-        item { Hint("Parts of the system: remove them only on purpose.") }
+        item { IdeHintText("Parts of the system: remove them only on purpose.") }
         items(risky) { selector ->
             Column {
                 PickRow(selector, onUnpick)
@@ -146,16 +147,6 @@ internal fun Line(text: String) {
     )
 }
 
-@Composable
-internal fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
 internal fun label(candidate: DebloatCandidate) = "${candidate.partition}/${candidate.relativePath}"
 
 internal fun LazyListScope.removeSelections(
@@ -165,7 +156,7 @@ internal fun LazyListScope.removeSelections(
     actions: DebloatActions,
     onUnpick: (String) -> Unit,
 ) {
-    item { Hint(if (picked.isEmpty()) "Nothing picked." else "${picked.size} app(s) will be removed.") }
+    item { IdeHintText(if (picked.isEmpty()) "Nothing picked." else "${picked.size} app(s) will be removed.") }
     item {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(onClick = actions.importList, variant = GlassButtonVariant.Standard) {
@@ -182,13 +173,13 @@ internal fun LazyListScope.removeSelections(
     }
     item { DebloatPresets(facts, picked.isNotEmpty(), actions) }
     facts.listResult?.let { match ->
-        item { Hint("The list matched ${match.effectiveRemovals.size} app(s).") }
+        item { IdeHintText("The list matched ${match.effectiveRemovals.size} app(s).") }
         if (match.blockedProtected.isNotEmpty()) {
-            item { Hint("Protected or needed by the device, not picked:") }
+            item { IdeHintText("Protected or needed by the device, not picked:") }
             items(match.blockedProtected) { Line(it.id) }
         }
         if (match.unknown.isNotEmpty()) {
-            item { Hint("Not an app of this firmware, skipped:") }
+            item { IdeHintText("Not an app of this firmware, skipped:") }
             items(match.unknown) { Line(it) }
         }
     }
@@ -198,7 +189,7 @@ internal fun LazyListScope.removeSelections(
 internal fun LazyListScope.results(facts: DebloatFacts, actions: DebloatActions) {
     val result = facts.lastResult
     item {
-        Hint(
+        IdeHintText(
             result?.let {
                 "The last run removed ${it.removals.size} app(s), " +
                     "freeing ${formatBytes(it.logicalBytesFreed)}."
@@ -207,7 +198,7 @@ internal fun LazyListScope.results(facts: DebloatFacts, actions: DebloatActions)
     }
     items(result?.removals.orEmpty()) { Line("${it.partition}:${it.relativePath}") }
     item {
-        Hint(
+        IdeHintText(
             if (facts.restorePoints.isEmpty()) {
                 "No backups: the last run removed nothing."
             } else {

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeDetailRow
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -181,34 +182,15 @@ private fun FirmwareDetails(fw: TargetFirmware) {
             fontWeight = FontWeight.SemiBold,
             fontFamily = ideFontFamily(),
         )
-        Detail("Version", fw.version)
-        Detail("Build", fw.buildId)
-        Detail("Download URL", fw.acquisitionUrl ?: "none — import the archive instead")
-        Detail(
+        IdeDetailRow("Version", fw.version)
+        IdeDetailRow("Build", fw.buildId)
+        IdeDetailRow("Download URL", fw.acquisitionUrl ?: "none — import the archive instead")
+        IdeDetailRow(
             "Expected SHA-256",
             fw.sha256?.takeIf { it.isNotBlank() }
                 ?: if (fw.checksumUnavailable) "not published by the vendor" else "not set",
         )
-        Detail("Fingerprint", fw.fingerprintTriple ?: "not set")
-        fw.archiveSizeBytes?.let { Detail("Archive size", "$it bytes") }
-    }
-}
-
-@Composable
-private fun Detail(label: String, value: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-            modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
-        )
-        Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-        )
+        IdeDetailRow("Fingerprint", fw.fingerprintTriple ?: "not set")
+        fw.archiveSizeBytes?.let { IdeDetailRow("Archive size", "$it bytes") }
     }
 }

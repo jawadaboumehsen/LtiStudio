@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
@@ -86,14 +87,22 @@ internal fun ArchiveBrowserCard(browse: ArchiveBrowse, actions: ArchiveActions) 
         }
         val archive = browse.archive
         if (archive == null) {
-            Note("No archive yet: import one in Acquire, or look inside a file on this PC.")
+            IdeHintText(
+                text = "No archive yet: import one in Acquire, or look inside a file on this PC.",
+                fontSize = FontSize.BodySmall,
+            )
             return@Column
         }
         // Where we are: the archive, then each member opened inside it.
-        Note((listOf(archive.substringAfterLast('/').substringAfterLast('\\')) + browse.chain).joinToString("  ›  "))
+        val breadcrumb = (listOf(archive.substringAfterLast('/').substringAfterLast('\\')) + browse.chain)
+            .joinToString("  ›  ")
+        IdeHintText(text = breadcrumb, fontSize = FontSize.BodySmall)
         val listing = browse.listing
         listing?.let { l ->
-            Note("${l.format.name} · ${l.members.count { !it.folder }} files. Tick members to copy them out.")
+            IdeHintText(
+                text = "${l.format.name} · ${l.members.count { !it.folder }} files. Tick members to copy them out.",
+                fontSize = FontSize.BodySmall,
+            )
         }
         if (browse.selected.isNotEmpty()) {
             GlassButton(
@@ -166,7 +175,9 @@ private fun MemberTable(members: List<ArchiveMember>, browse: ArchiveBrowse, act
             }
         }
     }
-    if (members.size > MAX_ROWS) Note("and ${members.size - MAX_ROWS} more")
+    if (members.size > MAX_ROWS) {
+        IdeHintText(text = "and ${members.size - MAX_ROWS} more", fontSize = FontSize.BodySmall)
+    }
 }
 
 @Composable
@@ -178,16 +189,6 @@ private fun Cell(text: String, modifier: Modifier = Modifier) {
         fontFamily = codeFontFamily(),
         maxLines = 1,
         modifier = modifier,
-    )
-}
-
-@Composable
-private fun Note(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
     )
 }
 

@@ -47,6 +47,7 @@ import kotlinx.coroutines.withContext
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
@@ -274,7 +275,7 @@ private fun Header(
             }
         }
         if (facts.loaded && facts.inventory.isEmpty()) {
-            Hint("No assembled work tree yet. In Run history, run through Assemble, then refresh.")
+            IdeHintText("No assembled work tree yet. In Run history, run through Assemble, then refresh.")
         } else if (facts.loaded) {
             val picked = settings.removeSelectors.toSet()
             val freed = facts.inventory.filter { DebloatViewModel.selectorOf(it) in picked }.sumOf { it.sizeBytes }
@@ -282,7 +283,7 @@ private fun Header(
                 facts.mentions,
                 picked.mapNotNull { facts.apps[it]?.packageId }.toSet(),
             )
-            Hint(
+            IdeHintText(
                 "${facts.inventory.size} apps in the assembled tree." +
                     (if (picked.isNotEmpty()) " The ${picked.size} picked would free ${formatBytes(freed)}." else "") +
                     (
@@ -360,7 +361,8 @@ private fun InventoryRow(
             )
         }
         risk?.let { Reasons(it) }
-        opinions.mapNotNull { (list, opinion) -> opinion.note?.let { "$list says: $it" } }.forEach { Hint(it) }
+        opinions.mapNotNull { (list, opinion) -> opinion.note?.let { "$list says: $it" } }
+            .forEach { IdeHintText(it) }
         details?.let { Facts(it) }
     }
 }

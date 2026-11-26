@@ -11,6 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.build
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +29,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeDetailRow
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -107,8 +111,11 @@ internal fun SizeAdvisorCard(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val budget = superBudget(target, settings, facts)
-    Card("Size advisor", tag = "SizeAdvisorCard") {
-        Hint(
+    IdeSectionCard(
+        modifier = Modifier.testTag("SizeAdvisorCard").padding(bottom = Spacing.Medium),
+        title = "Size advisor",
+    ) {
+        IdeHintText(
             "Builds one partition a few ways in workbench/trial (and deletes it), then says which to use: the " +
                 "fastest that fits the room left in the super group, else the smallest. Dedupe takes minutes.",
         )
@@ -121,7 +128,7 @@ internal fun SizeAdvisorCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Detail(row.partition, "room ${mb(room)}")
+                IdeDetailRow(row.partition, "room ${mb(room)}")
                 GlassButton(
                     onClick = { vm.trial(row.partition, settings, room, facts.erofsCompressions.orEmpty()) },
                     enabled = !state.busy,
@@ -146,21 +153,23 @@ internal fun SizeAdvisorCard(
 private fun TrialResults(p: String, state: SizeAdvisorState, onUse: (String, TrialOption) -> Unit) {
     val best = SizeAdvisor.recommend(state.results, state.room)
     val room = state.room ?: Long.MAX_VALUE
-    Hint("$p, room ${state.room?.let(::mb) ?: "unknown"}:")
+    IdeHintText("$p, room ${state.room?.let(::mb) ?: "unknown"}:")
     state.results.forEach { r ->
         val bytes = r.bytes
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Detail(
+            IdeDetailRow(
                 r.option.label + if (r == best) " (advised)" else "",
                 bytes?.let {
                     "${mb(
                         SizeAdvisor.signedBytes(it),
                     )} signed, in ${r.seconds?.let(::seconds) ?: "?"}"
                 } ?: "failed: ${r.error}",
-                GlassTheme.diagnosticColors.error.takeIf { bytes == null || SizeAdvisor.signedBytes(bytes) > room },
+                valueColor = GlassTheme.diagnosticColors.error.takeIf {
+                    bytes == null || SizeAdvisor.signedBytes(bytes) > room
+                },
             )
             if (bytes != null) {
                 GlassButton(onClick = { onUse(p, r.option) }, variant = GlassButtonVariant.Text) {

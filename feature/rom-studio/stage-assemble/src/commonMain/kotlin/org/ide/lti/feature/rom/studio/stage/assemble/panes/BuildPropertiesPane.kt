@@ -23,10 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
@@ -55,16 +55,16 @@ public fun BuildPropertiesPane(
         modifier = modifier.fillMaxWidth().testTag("BuildPropertiesPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        Card("Always stamped") {
-            Hint("Set by the Assemble stage from your settings; change them in their own fields.")
+        IdeSectionCard(title = "Always stamped") {
+            IdeHintText("Set by the Assemble stage from your settings; change them in their own fields.")
             Prop("ro.build.type", "${settings.buildType}  (ROM configuration → Build type)")
             Prop("org.lti.build.version", "${settings.romVersion}  (ROM configuration → ROM version)")
             Prop("org.lti.build.device", target.id)
             Prop("org.lti.build.date", "the run date")
             Prop("org.lti.build.variant", settings.buildType)
         }
-        Card("Overrides") {
-            Hint("Each line replaces that key in build.prop, or adds it when missing.")
+        IdeSectionCard(title = "Overrides") {
+            IdeHintText("Each line replaces that key in build.prop, or adds it when missing.")
             settings.propertyOverrides.forEach { (key, value) ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -87,7 +87,7 @@ public fun BuildPropertiesPane(
                     }
                 }
             }
-            if (settings.propertyOverrides.isEmpty()) Hint("No overrides.")
+            if (settings.propertyOverrides.isEmpty()) IdeHintText("No overrides.")
             AddOverride { key, value ->
                 onChange(settings.copy(propertyOverrides = settings.propertyOverrides + (key to value)))
             }
@@ -146,40 +146,11 @@ internal fun overrideError(key: String, value: String): String? = when {
 private val RESERVED_KEYS = setOf("ro.build.version.release", "ro.build.version.security_patch")
 
 @Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
 private fun Prop(key: String, value: String) {
     Text(
         text = "$key = $value",
         color = MaterialTheme.colorScheme.onSurface,
         fontSize = FontSize.BodySmall,
         fontFamily = codeFontFamily(),
-    )
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
     )
 }

@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.data.common.resolveAppDataDir
 import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.pipeline.toolkit.RemovalList
@@ -37,15 +38,7 @@ internal class FileDebloatPresetStore(
 
     /** Written to a temporary file of its own and renamed, so a crash never leaves half a file. */
     private suspend fun write(presets: List<RemovalList>): Unit = withContext(Dispatchers.IO) {
-        file.parentFile.mkdirs()
-        val partial = File(file.parentFile, "${file.name}.${java.util.UUID.randomUUID()}.partial")
-        partial.writeText(json.encodeToString(serializer, presets))
-        java.nio.file.Files.move(
-            partial.toPath(),
-            file.toPath(),
-            java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-        )
+        atomicWrite(file.toPath(), json.encodeToString(serializer, presets), allowNonAtomicFallback = false)
     }
 
     private companion object {

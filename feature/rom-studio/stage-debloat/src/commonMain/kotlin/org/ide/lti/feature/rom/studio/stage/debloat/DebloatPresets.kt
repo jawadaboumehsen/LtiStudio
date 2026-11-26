@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -37,7 +38,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
 internal fun DebloatPresets(facts: DebloatFacts, canSave: Boolean, actions: DebloatActions) {
     var name by remember { mutableStateOf("") }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small), modifier = Modifier.testTag("DebloatPresets")) {
-        Hint("Presets: saved in this app, for any workspace. Applying one adds its apps to the picks.")
+        IdeHintText("Presets: saved in this app, for any workspace. Applying one adds its apps to the picks.")
         facts.presets.forEach { preset ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),

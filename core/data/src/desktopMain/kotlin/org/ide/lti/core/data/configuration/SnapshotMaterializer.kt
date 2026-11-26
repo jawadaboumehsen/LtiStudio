@@ -16,8 +16,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.ide.lti.core.data.admission.atomicWrite
-import org.ide.lti.core.data.admission.readIfPresent
+import org.ide.lti.core.common.utils.atomicWrite
+import org.ide.lti.core.common.utils.readIfPresent
 import org.ide.lti.core.domain.ports.SnapshotMaterializationIntent
 import org.ide.lti.core.domain.ports.SnapshotMaterializerPort
 import java.nio.file.Files

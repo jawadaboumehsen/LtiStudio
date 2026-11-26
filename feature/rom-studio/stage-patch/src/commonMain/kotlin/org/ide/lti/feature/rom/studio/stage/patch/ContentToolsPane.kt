@@ -36,11 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
@@ -51,7 +52,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.ConfigKind
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexAppResult
 import org.ide.lti.core.domain.pipeline.toolkit.DeodexScope
@@ -118,8 +118,8 @@ public fun ContentToolsPane(
 private fun DeodexCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     LaunchedEffect(Unit) { viewModel.refreshDeodexBackups() }
     val idle = state.busy == null
-    Card("Deodexer") {
-        Hint(
+    IdeSectionCard(title = "Deodexer") {
+        IdeHintText(
             "A package whose dex is inside it is already deodexed: its precompiled files (oat/, odex, vdex, art) are " +
                 "stale and would stop changed code from loading, so they are removed, each with a backup. Code that " +
                 "is only in a VDEX cannot be converted here (vdexExtractor is not available).",
@@ -175,7 +175,7 @@ private fun DeodexCard(state: ContentToolsState, viewModel: ContentToolsViewMode
 @Composable
 private fun DeodexResults(results: List<DeodexAppResult>, dryRun: Boolean) {
     val counts = results.groupingBy { it.status }.eachCount()
-    Mono(
+    IdeMonoText(
         "${results.size} checked: ${counts[DeodexStatus.AlreadyDone] ?: 0} already deodexed, " +
             "${counts[DeodexStatus.Failed] ?: 0} only in a VDEX, " +
             "${counts[DeodexStatus.NoCompanion] ?: 0} with no code" +
@@ -184,20 +184,20 @@ private fun DeodexResults(results: List<DeodexAppResult>, dryRun: Boolean) {
     // Packages with nothing to say are counted, not listed; every line is also in the Output panel.
     val shown = results.filter { it.status != DeodexStatus.AlreadyDone || it.reason != "dex is in the package" }
     LazyColumn(Modifier.fillMaxWidth().heightIn(max = ComponentSize.MaxPanelHeight)) {
-        items(shown) { r -> Mono("${r.status}  ${r.app}  ${r.reason.orEmpty()}") }
+        items(shown) { r -> IdeMonoText("${r.status}  ${r.app}  ${r.reason.orEmpty()}") }
     }
 }
 
 @Composable
 private fun DeodexBackups(state: ContentToolsState, viewModel: ContentToolsViewModel) {
-    Hint("Backups (${state.deodexBackups.size})")
-    if (state.deodexBackups.isEmpty()) Hint("No backups yet.")
+    IdeHintText("Backups (${state.deodexBackups.size})")
+    if (state.deodexBackups.isEmpty()) IdeHintText("No backups yet.")
     state.deodexBackups.forEach { point ->
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.weight(1f)) { Mono("${point.itemPath}  ${point.createdAt.take(DATE_TIME)}") }
+            Box(Modifier.weight(1f)) { IdeMonoText("${point.itemPath}  ${point.createdAt.take(DATE_TIME)}") }
             GlassButton(
                 onClick = { viewModel.restoreDeodexBackup(point) },
                 enabled = state.busy == null,
@@ -213,8 +213,8 @@ private const val DATE_TIME = 16
 private fun PackageCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     var path by remember { mutableStateOf("work/system/system/framework/services.jar") }
     val idle = state.busy == null
-    Card("APK and JAR (FR-029)") {
-        Hint(
+    IdeSectionCard(title = "APK and JAR (FR-029)") {
+        IdeHintText(
             "Decode a package of the work tree with apktool, edit its smali or resources in the folder that opens, " +
                 "then rebuild: an APK is aligned and signed with the workspace platform key, the archive is tested, " +
                 "and the original is kept as a restore point. This changes the assembled tree only: a build that " +
@@ -231,8 +231,8 @@ private fun PackageCard(state: ContentToolsState, viewModel: ContentToolsViewMod
                 enabled = idle,
             ) { Text("Rebuild into the tree", fontSize = FontSize.BodySmall) }
         }
-        state.decodedFolder?.let { Mono("Decoded: $it") }
-        state.rebuilt?.let { Mono("${it.status}: ${it.file}") }
+        state.decodedFolder?.let { IdeMonoText("Decoded: $it") }
+        state.rebuilt?.let { IdeMonoText("${it.status}: ${it.file}") }
     }
 }
 
@@ -243,8 +243,8 @@ private fun LibraryCard(state: ContentToolsState, viewModel: ContentToolsViewMod
     var find by remember { mutableStateOf("") }
     var replace by remember { mutableStateOf("") }
     var dest by remember { mutableStateOf("work/system/system/lib64/libbluetooth_jni.so") }
-    Card("Library patch in an APEX (FR-030)") {
-        Hint(
+    IdeSectionCard(title = "Library patch in an APEX (FR-030)") {
+        IdeHintText(
             "Takes a library out of an APEX payload, replaces the find bytes with the replace bytes (hex; \".\" in " +
                 "find matches any digit) and puts the patched copy in the tree, as a module overlay does. A library " +
                 "without the find bytes is refused, also one patched before. The patterns depend on the device and " +
@@ -262,14 +262,14 @@ private fun LibraryCard(state: ContentToolsState, viewModel: ContentToolsViewMod
         ) {
             Text("Patch", fontSize = FontSize.BodySmall)
         }
-        state.library?.let { Mono(it.message) }
+        state.library?.let { IdeMonoText(it.message) }
     }
 }
 
 @Composable
 private fun ConfigCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     var path by remember { mutableStateOf(state.configPath) }
-    Card("Configuration files (FR-031)") {
+    IdeSectionCard(title = "Configuration files (FR-031)") {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             CONFIG_DEFAULTS.forEach { (kind, default) ->
                 GlassChip(
@@ -306,7 +306,7 @@ private fun ConfigCard(state: ContentToolsState, viewModel: ContentToolsViewMode
                 Text("Save", fontSize = FontSize.BodySmall)
             }
         }
-        state.configSaved?.differences?.take(MAX_LINES)?.forEach { Mono(it) }
+        state.configSaved?.differences?.take(MAX_LINES)?.forEach { IdeMonoText(it) }
     }
 }
 
@@ -315,8 +315,8 @@ private fun PathCompareCard(state: ContentToolsState, viewModel: ContentToolsVie
     var kind by remember { mutableStateOf(CompareKind.FILES) }
     var a by remember { mutableStateOf("") }
     var b by remember { mutableStateOf("") }
-    Card("Compare two files by path") {
-        Hint(
+    IdeSectionCard(title = "Compare two files by path") {
+        IdeHintText(
             "Any two paths in this workspace: files line by line, archives by entry, folders by content, code as two " +
                 "decoded folders (or two JARs/APKs) class by class and method by method.",
         )
@@ -335,11 +335,11 @@ private fun PathCompareCard(state: ContentToolsState, viewModel: ContentToolsVie
         }
         val code = state.codeDiff
         if (kind == CompareKind.CODE && code != null) {
-            if (code.identical) Mono("Identical") else CodeDiff(code, entries = null)
+            if (code.identical) IdeMonoText("Identical") else CodeDiff(code, entries = null)
         } else {
             val lines = compareLines(kind, state)
-            lines?.take(MAX_LINES)?.forEach { Mono(it) }
-            if ((lines?.size ?: 0) > MAX_LINES) Hint("…and ${lines!!.size - MAX_LINES} more")
+            lines?.take(MAX_LINES)?.forEach { IdeMonoText(it) }
+            if ((lines?.size ?: 0) > MAX_LINES) IdeHintText("…and ${lines!!.size - MAX_LINES} more")
         }
     }
 }
@@ -358,8 +358,8 @@ private fun compareLines(kind: CompareKind, state: ContentToolsState): List<Stri
 
 @Composable
 private fun CscCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
-    Card("Samsung region and carrier (FR-032)") {
-        Hint(
+    IdeSectionCard(title = "Samsung region and carrier (FR-032)") {
+        IdeHintText(
             "Reads sales_code.dat, customer.xml and cscfeature.xml from the work tree. " +
                 "Encrypted CSC files are refused.",
         )
@@ -368,9 +368,9 @@ private fun CscCard(state: ContentToolsState, viewModel: ContentToolsViewModel) 
             enabled = state.busy == null,
         ) { Text("Read", fontSize = FontSize.BodySmall) }
         state.csc?.let { csc ->
-            Mono("Sales code ${csc.salesCode}" + (csc.country?.let { ", $it" } ?: ""))
-            csc.networks.forEach { n -> Mono("${n.mcc}-${n.mnc} ${n.networkName}") }
-            csc.features.entries.take(MAX_LINES).forEach { (k, v) -> Mono("$k = $v") }
+            IdeMonoText("Sales code ${csc.salesCode}" + (csc.country?.let { ", $it" } ?: ""))
+            csc.networks.forEach { n -> IdeMonoText("${n.mcc}-${n.mnc} ${n.networkName}") }
+            csc.features.entries.take(MAX_LINES).forEach { (k, v) -> IdeMonoText("$k = $v") }
         }
     }
 }
@@ -413,45 +413,6 @@ private val ACK_TEXT = mapOf(
     RiskyFeature.LIBRARY_PATCH to "A patched system library is loaded by the device; a wrong pattern can break the " +
         "feature that uses it.",
 )
-
-@Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}
 
 @Composable
 private fun Problem(text: String) {

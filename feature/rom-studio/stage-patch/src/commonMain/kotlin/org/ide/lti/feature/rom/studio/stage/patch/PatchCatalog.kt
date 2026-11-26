@@ -19,9 +19,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
@@ -42,7 +45,11 @@ internal fun PatchCatalog(
     onRefresh: () -> Unit,
 ) {
     val activePins = settings.enabledPackages.mapNotNull(settings::lockedEntry).associateBy { it.packageKey }
-    PatchCard("Installed plugins", "PatchCatalog") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("PatchCatalog"),
+        title = "Installed plugins",
+        titleFontSize = FontSize.BodySmall,
+    ) {
         GlassButton(onClick = onOpenPlugins, variant = GlassButtonVariant.Standard) {
             Text("Install plugins…", fontSize = FontSize.BodySmall)
         }
@@ -63,7 +70,10 @@ internal fun PatchCatalog(
             }
         }
         if (facts.loaded && !facts.loading && facts.loadError == null && facts.installed.isEmpty()) {
-            PatchHint("No plugins installed. Install .lti-mod.zip packages on the Plugins page.")
+            IdeHintText(
+                "No plugins installed. Install .lti-mod.zip packages on the Plugins page.",
+                fontSize = FontSize.Micro,
+            )
         }
         facts.installed.forEach { newest ->
             CatalogPluginRow(newest, activePins[newest.key], settings, facts, onToggle)
@@ -96,12 +106,13 @@ private fun CatalogPluginRow(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (record != null) {
-                record.summary.takeIf { it.isNotBlank() }?.let { PatchHint(it) }
+                record.summary.takeIf { it.isNotBlank() }?.let { IdeHintText(it, fontSize = FontSize.Micro) }
                 incompatibility?.let { PatchProblem("This plugin $it") }
-                PatchHint(
+                IdeHintText(
                     "v${record.identity.version} by ${record.identity.publisher}" +
                         record.dependencies.takeIf { it.isNotEmpty() }
                             ?.joinToString(prefix = " · needs ") { it.id }.orEmpty(),
+                    fontSize = FontSize.Micro,
                 )
             } else if (pin != null) {
                 PatchProblem("Locked version ${pin.version} is unavailable.")

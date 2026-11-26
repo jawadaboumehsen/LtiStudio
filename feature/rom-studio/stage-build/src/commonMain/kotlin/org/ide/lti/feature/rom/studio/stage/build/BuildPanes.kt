@@ -11,12 +11,10 @@ package org.ide.lti.feature.rom.studio.stage.build
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,15 +22,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeDetailRow
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
@@ -41,10 +41,8 @@ import org.ide.lti.core.designsystem.component.inputs.TextFieldState
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
-import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
@@ -58,9 +56,12 @@ import org.ide.lti.feature.rom.studio.api.formatBytes
 /** How each dynamic partition image is built (mkfs.erofs). */
 @Composable
 internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
-    Card("Image compression", tag = "CompressionPane") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("CompressionPane").padding(bottom = Spacing.Medium),
+        title = "Image compression",
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            Hint("Filesystem")
+            IdeHintText("Filesystem")
             BuildFilesystems.SUPPORTED.forEach { fs ->
                 GlassChip(
                     label = fs,
@@ -69,7 +70,7 @@ internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) 
                 )
             }
         }
-        Hint("Compression and level apply to EROFS images; ext4 images are not compressed.")
+        IdeHintText("Compression and level apply to EROFS images; ext4 images are not compressed.")
         // The level is one value: older settings kept it in the compression string ("lz4hc,9"), which the build
         // still reads; shown and edited here as the Level, it is saved in `level` and the string keeps the algorithm.
         val algorithm = settings.compression.substringBefore(',')
@@ -87,7 +88,7 @@ internal fun CompressionPane(settings: BuildSettings, onChange: (BuildSettings) 
             onChange(settings.copy(compression = algorithm, level = it))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-            Hint("Block size")
+            IdeHintText("Block size")
             BLOCK_SIZES.forEach { size ->
                 GlassChip(
                     label = size.toString(),
@@ -110,8 +111,11 @@ private const val PERCENT = 100L
 /** The images the last build produced, per dynamic partition of the device. */
 @Composable
 internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: BuildFacts) {
-    Card("Partition images", tag = "ImagesPane") {
-        Hint(
+    IdeSectionCard(
+        modifier = Modifier.testTag("ImagesPane").padding(bottom = Spacing.Medium),
+        title = "Partition images",
+    ) {
+        IdeHintText(
             "Built from work/<partition>/ into out/images/, then given an AVB hashtree footer. Files is what the " +
                 "partition holds; Saved compares the image (before its footer) with it.",
         )
@@ -121,17 +125,17 @@ internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: Bu
                 val built = facts.images.firstOrNull { it.path == "$p.img" }
                 val pair = facts.contentAndImage[p]
                 IdeTableRow(modifier = Modifier.testTag("ImageRow_$p")) {
-                    Cell(0) { Mono(p) }
+                    Cell(0) { IdeMonoText(p) }
                     // What the built image is, as its superblock says; the setting until it is built.
                     val fs = facts.superblocks[p]?.built?.fs?.name?.lowercase()
-                    Cell(1) { Hint(fs ?: BuildFilesystems.of(settings, p)) }
-                    Cell(2) { Mono(pair?.first?.let(::mb) ?: "—") }
-                    Cell(3) { Mono(built?.let { mb(it.sizeBytes) } ?: "—") }
+                    Cell(1) { IdeHintText(fs ?: BuildFilesystems.of(settings, p)) }
+                    Cell(2) { IdeMonoText(pair?.first?.let(::mb) ?: "—") }
+                    Cell(3) { IdeMonoText(built?.let { mb(it.sizeBytes) } ?: "—") }
                     Cell(4) {
                         val saved = pair?.let { (content, image) ->
                             if (content > 0) "${(content - image) * PERCENT / content}%" else null
                         }
-                        Mono(saved ?: "—")
+                        IdeMonoText(saved ?: "—")
                     }
                     Cell(5) {
                         if (built != null) {
@@ -153,11 +157,11 @@ internal fun ImagesPane(target: TargetDevice, settings: BuildSettings, facts: Bu
 private fun ReadBack(target: TargetDevice, facts: BuildFacts) {
     val readBack = target.dynamicPartitions.mapNotNull { p -> facts.superblocks[p]?.built?.let { p to it } }
     if (readBack.isNotEmpty()) {
-        Hint(
+        IdeHintText(
             "Read back from each built image's superblock. The build also mounted every image and compared its " +
                 "files, owners, modes and labels with work/ before packaging it.",
         )
-        readBack.forEach { (p, sb) -> Mono(readBackLine(p, sb)) }
+        readBack.forEach { (p, sb) -> IdeMonoText(readBackLine(p, sb)) }
     }
 }
 
@@ -169,7 +173,10 @@ private fun SuperFill(target: TargetDevice, facts: BuildFacts) {
             ?: 0L
     }
     if (total > 0 && target.superGroupBytes > 0) {
-        Detail("Images in total", "${mb(total)} of ${mb(target.superGroupBytes)} (${target.superGroupName})")
+        IdeDetailRow(
+            "Images in total",
+            "${mb(total)} of ${mb(target.superGroupBytes)} (${target.superGroupName})",
+        )
         GlassProgressBar(
             progress = (total.toFloat() / target.superGroupBytes).coerceIn(0f, 1f),
             modifier = Modifier.fillMaxWidth(),
@@ -216,13 +223,19 @@ private val IMAGE_COLUMNS = listOf(
 internal fun PartitionLayoutPane(target: TargetDevice, settings: BuildSettings, facts: BuildFacts) {
     val budget = superBudget(target, settings, facts)
     val error = GlassTheme.diagnosticColors.error
-    Card("Super partition", tag = "PartitionLayoutPane") {
-        Detail("Super size", mb(target.superPartitionBytes))
-        Detail("Group", "${target.superGroupName}, ${mb(target.superGroupBytes)}")
-        Detail("Metadata slots", target.superMetadataSlots.toString())
-        Detail("Virtual A/B", if (target.virtualAb) "yes" else "no")
+    IdeSectionCard(
+        modifier = Modifier.testTag("PartitionLayoutPane").padding(bottom = Spacing.Medium),
+        title = "Super partition",
+    ) {
+        IdeDetailRow("Super size", mb(target.superPartitionBytes))
+        IdeDetailRow("Group", "${target.superGroupName}, ${mb(target.superGroupBytes)}")
+        IdeDetailRow("Metadata slots", target.superMetadataSlots.toString())
+        IdeDetailRow("Virtual A/B", if (target.virtualAb) "yes" else "no")
     }
-    Card("Space in the super group", tag = "SuperBudgetPane") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("SuperBudgetPane").padding(bottom = Spacing.Medium),
+        title = "Space in the super group",
+    ) {
         budget.rows.forEach { row ->
             val bytes = row.bytes
             val size = when {
@@ -230,35 +243,45 @@ internal fun PartitionLayoutPane(target: TargetDevice, settings: BuildSettings, 
                 row.estimated -> "${mb(bytes)} (stock)"
                 else -> mb(bytes)
             }
-            Detail("${row.partition} (${row.filesystem})", size)
+            IdeDetailRow("${row.partition} (${row.filesystem})", size)
         }
-        Detail("Used", "${mb(budget.usedBytes)} of ${mb(budget.groupBytes)}", error.takeUnless { budget.fits })
-        Detail(
+        IdeDetailRow(
+            "Used",
+            "${mb(budget.usedBytes)} of ${mb(budget.groupBytes)}",
+            valueColor = error.takeUnless { budget.fits },
+        )
+        IdeDetailRow(
             if (budget.fits) "Free" else "Over by",
             mb(if (budget.fits) budget.freeBytes else -budget.freeBytes),
-            error.takeUnless { budget.fits },
+            valueColor = error.takeUnless { budget.fits },
         )
         if (budget.estimated) {
-            Hint(
+            IdeHintText(
                 "A (stock) size is the firmware's image: the build's can differ, more so when the partition is " +
                     "built as another filesystem or with other compression. Build & Sign stops if the images do " +
                     "not fit.",
             )
         }
     }
-    Card("Boot chain (flashed directly)") {
+    IdeSectionCard(
+        modifier = Modifier.padding(bottom = Spacing.Medium),
+        title = "Boot chain (flashed directly)",
+    ) {
         target.packagePolicy.flashableBootPartitions.forEach { b ->
-            Detail("$b.img", mb(BuildFlashableZipStage.bootPartitionBytes(target, b)))
+            IdeDetailRow("$b.img", mb(BuildFlashableZipStage.bootPartitionBytes(target, b)))
         }
-        Hint("vbmeta is never packaged: flash the stock vbmeta once with verification disabled.")
+        IdeHintText("vbmeta is never packaged: flash the stock vbmeta once with verification disabled.")
     }
 }
 
 /** Which install package the build writes, and what each one is for. */
 @Composable
 private fun PackageTypeCard(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
-    Card("Install package", tag = "PackageTypeCard") {
-        Hint("What the build writes to out/package/. Both are signed with the platform key.")
+    IdeSectionCard(
+        modifier = Modifier.testTag("PackageTypeCard").padding(bottom = Spacing.Medium),
+        title = "Install package",
+    ) {
+        IdeHintText("What the build writes to out/package/. Both are signed with the platform key.")
         SelectField(
             selected = settings.packageType,
             options = listOf(
@@ -279,7 +302,7 @@ private fun PackageTypeCard(settings: BuildSettings, target: TargetDevice, onCha
             modifier = Modifier.widthIn(max = ComponentSize.CommandPaletteMaxWidth),
         )
         if (settings.packageType.abOta) {
-            Hint(
+            IdeHintText(
                 "The A/B OTA is a partial update of the ROM's partitions (${target.dynamicPartitions.size} dynamic, " +
                     "${target.packagePolicy.flashableBootPartitions.joinToString()}): the phone keeps its own " +
                     "firmware, copied from the running slot. The ROM's otacerts.zip must hold the platform " +
@@ -299,7 +322,10 @@ internal fun FlashableMembersPane(
 ) {
     PackageTypeCard(settings, target, onChange)
     val title = if (facts.zipMembers.isEmpty()) "Planned members" else "Members of the last package"
-    Card(title, tag = "FlashableMembersPane") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("FlashableMembersPane").padding(bottom = Spacing.Medium),
+        title = title,
+    ) {
         val members = facts.zipMembers.ifEmpty {
             val flashable = target.dynamicPartitions.flatMap {
                 listOf("$it.new.dat.br", "$it.transfer.list", "$it.patch.dat")
@@ -313,7 +339,7 @@ internal fun FlashableMembersPane(
             (if (settings.packageType.flashable) flashable else emptyList()) +
                 if (settings.packageType.abOta) ota.map { "A/B OTA: $it" } else emptyList()
         }
-        members.forEach { Mono(it) }
+        members.forEach { IdeMonoText(it) }
         if ((facts.currentPackage?.sizeBytes ?: 0L) > ZIP32_LIMIT) {
             GlassBanner(
                 severity = GlassBannerSeverity.INFO,
@@ -330,14 +356,17 @@ private const val ZIP32_LIMIT = 0xFFFFFFFFL
 /** The AVB key that signs the images and the boot chain. */
 @Composable
 internal fun AvbKeysPane(settings: BuildSettings, facts: BuildFacts, onChange: (BuildSettings) -> Unit) {
-    Card("AVB signing", tag = "AvbKeysPane") {
-        Detail("Private key", settings.signing.avbKeyRef)
-        Detail("Public key SHA-1", facts.avbPublicKeySha1 ?: "measured when Build & Sign runs")
+    IdeSectionCard(
+        modifier = Modifier.testTag("AvbKeysPane").padding(bottom = Spacing.Medium),
+        title = "AVB signing",
+    ) {
+        IdeDetailRow("Private key", settings.signing.avbKeyRef)
+        IdeDetailRow("Public key SHA-1", facts.avbPublicKeySha1 ?: "measured when Build & Sign runs")
         ToggleRow(
             "Re-sign the boot chain with this key",
             settings.signing.signImages,
         ) { onChange(settings.copy(signing = settings.signing.copy(signImages = it))) }
-        Hint(
+        IdeHintText(
             "Partition images always get a hashtree footer signed with this key. With re-signing off, the boot " +
                 "images go in with the footer Assemble left them.",
         )
@@ -347,14 +376,17 @@ internal fun AvbKeysPane(settings: BuildSettings, facts: BuildFacts, onChange: (
 /** The certificate that signs the zip (signapk). */
 @Composable
 internal fun PackageSigningPane(settings: BuildSettings, facts: BuildFacts, onChange: (BuildSettings) -> Unit) {
-    Card("Package signing", tag = "PackageSigningPane") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("PackageSigningPane").padding(bottom = Spacing.Medium),
+        title = "Package signing",
+    ) {
         ToggleRow("Sign the flashable zip", settings.signing.signPackage) {
             onChange(settings.copy(signing = settings.signing.copy(signPackage = it)))
         }
-        Detail("Platform key", settings.signing.platformKeyRef)
-        Detail("Certificate SHA-1", facts.platformCertSha1 ?: "measured when Build & Sign runs")
+        IdeDetailRow("Platform key", settings.signing.platformKeyRef)
+        IdeDetailRow("Certificate SHA-1", facts.platformCertSha1 ?: "measured when Build & Sign runs")
         if (!settings.signing.signPackage) {
-            Hint("An unsigned package is marked UNSIGNED and cannot be published.")
+            IdeHintText("An unsigned package is marked UNSIGNED and cannot be published.")
         }
     }
 }
@@ -367,7 +399,10 @@ internal fun OutputNamingPane(
     facts: BuildFacts,
     onChange: (BuildSettings) -> Unit,
 ) {
-    Card("Package name", tag = "OutputNamingPane") {
+    IdeSectionCard(
+        modifier = Modifier.testTag("OutputNamingPane").padding(bottom = Spacing.Medium),
+        title = "Package name",
+    ) {
         GlassTextField(
             value = settings.filenameTemplate,
             onValueChange = { onChange(settings.copy(filenameTemplate = it)) },
@@ -376,74 +411,14 @@ internal fun OutputNamingPane(
                 ?.let { TextFieldState.Error(it.message) } ?: TextFieldState.Default,
             modifier = Modifier.fillMaxWidth(),
         )
-        Hint("Placeholders: {version} (ROM version), {date} (the run's date, YYYYMMDD), {device}.")
-        Detail(
+        IdeHintText("Placeholders: {version} (ROM version), {date} (the run's date, YYYYMMDD), {device}.")
+        IdeDetailRow(
             "Next build",
             BuildFlashableZipStage.renderName(settings.filenameTemplate, facts.romVersion, "YYYYMMDD", target.id),
         )
-        facts.packages.forEach { Detail("Built", "${it.path}  (${mb(it.sizeBytes)})") }
-        facts.zipSha256?.let { Detail("Last SHA-256", it) }
+        facts.packages.forEach { IdeDetailRow("Built", "${it.path}  (${mb(it.sizeBytes)})") }
+        facts.zipSha256?.let { IdeDetailRow("Last SHA-256", it) }
     }
-}
-
-@Composable
-internal fun Card(title: String, tag: String? = null, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (tag != null) Modifier.testTag(tag) else Modifier)
-            .padding(bottom = Spacing.Medium)
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-internal fun Detail(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = FontSize.BodySmall,
-            fontFamily = ideFontFamily(),
-            modifier = Modifier.width(GlassDimens.AcquirePolicyLabelWidth),
-        )
-        Text(
-            text = value,
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.BodySmall,
-            fontFamily = codeFontFamily(),
-        )
-    }
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}
-
-@Composable
-internal fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
 }
 
 @Composable
@@ -461,7 +436,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 
 @Composable
 internal fun NumberField(label: String, value: Int?, onChange: (Int?) -> Unit) {
-    Hint(label)
+    IdeHintText(label)
     GlassTextField(
         value = value?.toString().orEmpty(),
         onValueChange = { text -> if (text.isEmpty()) onChange(null) else text.toIntOrNull()?.let(onChange) },

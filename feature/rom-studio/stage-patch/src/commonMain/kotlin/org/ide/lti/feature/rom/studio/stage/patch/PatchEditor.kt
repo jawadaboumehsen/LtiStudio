@@ -29,11 +29,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
@@ -151,8 +152,12 @@ private val PLAN_PREVIEWS = setOf("file-changes", "text-patches", "property-patc
 
 @Composable
 private fun EnabledCard(settings: CustomizationSettings, facts: PatchFacts, onToggle: (String) -> Unit) {
-    PatchCard("Enabled plugins, in the order they apply", "PatchEnabled") {
-        if (settings.enabledPackages.isEmpty()) PatchHint("No plugins enabled.")
+    IdeSectionCard(
+        modifier = Modifier.testTag("PatchEnabled"),
+        title = "Enabled plugins, in the order they apply",
+        titleFontSize = FontSize.BodySmall,
+    ) {
+        if (settings.enabledPackages.isEmpty()) IdeHintText("No plugins enabled.", fontSize = FontSize.Micro)
         settings.enabledPackages.forEachIndexed { index, pkg ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -166,7 +171,7 @@ private fun EnabledCard(settings: CustomizationSettings, facts: PatchFacts, onTo
                     facts.installed.firstOrNull { it.key == pkg }
                 }
                 val name = record?.displayName?.takeIf { it.isNotBlank() }
-                Mono("${index + 1}. ${name ?: pkg}")
+                IdeMonoText("${index + 1}. ${name ?: pkg}")
                 GlassButton(
                     onClick = { onToggle(pkg) },
                     variant = GlassButtonVariant.Standard,
@@ -176,17 +181,19 @@ private fun EnabledCard(settings: CustomizationSettings, facts: PatchFacts, onTo
                 }
             }
         }
-        PatchHint("A plugin's dependencies always apply before it.")
+        IdeHintText("A plugin's dependencies always apply before it.", fontSize = FontSize.Micro)
     }
 }
 
 @Composable
 private fun ChangesCard(title: String, changes: List<Pair<String, Operation>>) {
-    PatchCard(title, "PatchChanges") {
-        if (changes.isEmpty()) PatchHint("The enabled plugins make no changes of this kind.")
+    IdeSectionCard(modifier = Modifier.testTag("PatchChanges"), title = title, titleFontSize = FontSize.BodySmall) {
+        if (changes.isEmpty()) {
+            IdeHintText("The enabled plugins make no changes of this kind.", fontSize = FontSize.Micro)
+        }
         changes.forEach { (mod, op) ->
-            Mono(describe(op) + if (op.condition == Condition.Always) "" else "  (when its condition holds)")
-            PatchHint(mod.substringAfter(':') + " · " + op.id)
+            IdeMonoText(describe(op) + if (op.condition == Condition.Always) "" else "  (when its condition holds)")
+            IdeHintText(mod.substringAfter(':') + " · " + op.id, fontSize = FontSize.Micro)
         }
     }
 }
@@ -203,8 +210,14 @@ internal fun conflictsOf(changes: List<Pair<String, Operation>>): Map<String, Li
 @Composable
 private fun ConflictsCard(changes: List<Pair<String, Operation>>) {
     val conflicts = conflictsOf(changes)
-    PatchCard("Conflicts", "PatchConflicts") {
-        if (conflicts.isEmpty()) PatchHint("No two enabled plugins replace the same file.")
+    IdeSectionCard(
+        modifier = Modifier.testTag("PatchConflicts"),
+        title = "Conflicts",
+        titleFontSize = FontSize.BodySmall,
+    ) {
+        if (conflicts.isEmpty()) {
+            IdeHintText("No two enabled plugins replace the same file.", fontSize = FontSize.Micro)
+        }
         conflicts.forEach { (path, ops) -> PatchProblem("$path: ${ops.joinToString { it.first.substringAfter(':') }}") }
     }
 }
@@ -242,46 +255,6 @@ private fun valueOf(value: ValueRef): String = when (value) {
 }
 
 @Composable
-internal fun PatchCard(title: String, tag: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag(tag)
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        content()
-    }
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-        color = MaterialTheme.colorScheme.onSurface,
-    )
-}
-
-@Composable
-internal fun PatchHint(text: String) {
-    Text(
-        text = text,
-        fontSize = FontSize.Micro,
-        fontFamily = ideFontFamily(),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
 internal fun PatchProblem(text: String) {
     Text(
         text = text,
@@ -296,10 +269,15 @@ private const val CONTEXT_PREVIEW = 48
 /** The mod lab: every operation of the enabled mods, in the order they apply, as the build would meet it. */
 @Composable
 private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> Unit) {
-    PatchCard("Check them together", "PatchModLab") {
-        PatchHint(
+    IdeSectionCard(
+        modifier = Modifier.testTag("PatchModLab"),
+        title = "Check them together",
+        titleFontSize = FontSize.BodySmall,
+    ) {
+        IdeHintText(
             "Checks each operation against the assembled work tree, after the ones before it, as the build applies " +
                 "them. Nothing is written.",
+            fontSize = FontSize.Micro,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(
@@ -317,13 +295,14 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
             ) { Text("Also check APK/JAR edits (decodes each package)", fontSize = FontSize.Micro) }
         }
         lab.error?.let { PatchProblem(it) }
-        val result = lab.result ?: return@PatchCard
+        val result = lab.result ?: return@IdeSectionCard
         result.problems.forEach { PatchProblem(it) }
         val counts = result.rows.groupingBy { it.status }.eachCount()
         if (result.rows.isNotEmpty()) {
-            PatchHint(
+            IdeHintText(
                 LabStatus.entries.mapNotNull { s -> counts[s]?.let { "$it ${LAB_WORDS.getValue(s)}" } }
                     .joinToString(" · "),
+                fontSize = FontSize.Micro,
             )
         }
         var byPackage by remember { mutableStateOf(false) }
@@ -345,7 +324,7 @@ private fun ModLabCard(lab: LabState, facts: PatchFacts, onCheck: (Boolean) -> U
 @Composable
 private fun LabMods(rows: List<LabRow>, facts: PatchFacts) {
     rows.groupBy { it.mod }.forEach { (mod, group) ->
-        Mono(modName(mod, facts))
+        IdeMonoText(modName(mod, facts))
         group.forEach { row ->
             LabLine(row, labOperation(row, facts)?.let(::describe) ?: row.operationId)
             if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
@@ -361,7 +340,7 @@ private fun LabMods(rows: List<LabRow>, facts: PatchFacts) {
 private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
     labByPackage(rows) { row -> labOperation(row, facts)?.let(::targetOf) }.forEach { pkg ->
         val mods = pkg.rows.map { it.mod }.distinct()
-        Mono(pkg.target + if (mods.size > 1) "  (${mods.size} mods)" else "")
+        IdeMonoText(pkg.target + if (mods.size > 1) "  (${mods.size} mods)" else "")
         pkg.rows.forEach { row ->
             // The package's methods are listed once below, not after each of its edits.
             val shown = row.copy(reason = row.reason.substringBefore("; the package's edits change"))
@@ -372,10 +351,12 @@ private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
             if (row.detail.isNotEmpty()) BeforeAfter(row.detail)
         }
         if (pkg.methods.isNotEmpty()) {
-            PatchHint("Methods it changes (${pkg.methods.size}):")
-            pkg.methods.forEach { PatchHint("    ${shortMember(it)}   $it") }
+            IdeHintText("Methods it changes (${pkg.methods.size}):", fontSize = FontSize.Micro)
+            pkg.methods.forEach { IdeHintText("    ${shortMember(it)}   $it", fontSize = FontSize.Micro) }
         }
-        if (pkg.files.isNotEmpty()) PatchHint("Files inside it: ${pkg.files.joinToString()}")
+        if (pkg.files.isNotEmpty()) {
+            IdeHintText("Files inside it: ${pkg.files.joinToString()}", fontSize = FontSize.Micro)
+        }
     }
 }
 
@@ -383,7 +364,7 @@ private fun LabPackages(rows: List<LabRow>, facts: PatchFacts) {
 private fun LabLine(row: LabRow, what: String) {
     val reason = row.reason.takeIf { it.isNotEmpty() }?.let { " — $it" }.orEmpty()
     val text = "${LAB_MARKS.getValue(row.status)} $what$reason"
-    if (row.status == LabStatus.REFUSED) PatchProblem(text) else PatchHint(text)
+    if (row.status == LabStatus.REFUSED) PatchProblem(text) else IdeHintText(text, fontSize = FontSize.Micro)
 }
 
 private fun labOperation(row: LabRow, facts: PatchFacts): Operation? =

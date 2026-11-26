@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.display.IdeTable
@@ -39,7 +40,6 @@ import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.MountTable
 import org.ide.lti.core.model.workspace.AssemblySettings
@@ -199,7 +199,9 @@ private fun DeviceTreeMounts(tree: MountTable.DeviceTree?, unread: String?, onRe
                 mounts.forEach { m ->
                     IdeTableRow(modifier = Modifier.alpha(if (m.disabled) AlphaTokens.Disabled else 1f)) {
                         listOf(m.mountPoint, m.type, m.device, "${m.mountFlags} ${m.fsMgrFlags}".trim(), m.source)
-                            .forEachIndexed { i, v -> Mono(v, Modifier.weight(DT_COLUMNS[i].second)) }
+                            .forEachIndexed { i, v ->
+                                IdeMonoText(v, Modifier.weight(DT_COLUMNS[i].second), maxLines = 1)
+                            }
                     }
                 }
             }
@@ -267,18 +269,6 @@ private fun Muted(text: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = FontSize.BodySmall,
         fontFamily = ideFontFamily(),
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun Mono(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-        maxLines = 1,
         modifier = modifier,
     )
 }

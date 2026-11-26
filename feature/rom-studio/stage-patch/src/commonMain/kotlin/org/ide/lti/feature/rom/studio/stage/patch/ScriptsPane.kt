@@ -28,11 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -40,7 +40,6 @@ import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassDimens
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
 import org.ide.lti.core.model.workspace.CustomizationSettings
 import org.ide.lti.core.model.workspace.ProjectScript
@@ -79,9 +78,9 @@ public fun ScriptsPane(
             .testTag("ScriptsPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
     ) {
-        saveError?.let { Hint("Changes could not be saved. $it", isError = true) }
-        Card("Scripts") {
-            Hint(
+        saveError?.let { IdeHintText("Changes could not be saved. $it", color = GlassTheme.diagnosticColors.error) }
+        IdeSectionCard(title = "Scripts") {
+            IdeHintText(
                 "Shell scripts run on the work tree after the modules, top to bottom: \$1 is work/, \$2 the " +
                     "workspace. Files a script adds are labelled as Android's build would: the ROM's own SELinux " +
                     "rules and fs_config tables (else Android's defaults), then their folder. A script that exits " +
@@ -119,10 +118,10 @@ public fun ScriptsPane(
                     variant = GlassButtonVariant.Standard,
                 ) { Text("Add", fontSize = FontSize.BodySmall) }
             }
-            errors.forEach { Hint(it.message, isError = true) }
+            errors.forEach { IdeHintText(it.message, color = GlassTheme.diagnosticColors.error) }
         }
         scripts.firstOrNull { it.name == selected }?.let { script ->
-            Card(script.name) {
+            IdeSectionCard(title = script.name) {
                 GlassCodeEditor(
                     content = script.content,
                     onContentChange = { text ->
@@ -142,7 +141,11 @@ public fun ScriptsPane(
                         modifier = Modifier.testTag("CheckScriptButton"),
                     ) { Text("Check", fontSize = FontSize.BodySmall) }
                     checks[script.name]?.let { result ->
-                        if (result == "ok") Hint("sh -n: no syntax error.") else Hint(result, isError = true)
+                        if (result == "ok") {
+                            IdeHintText("sh -n: no syntax error.")
+                        } else {
+                            IdeHintText(result, color = GlassTheme.diagnosticColors.error)
+                        }
                     }
                 }
             }
@@ -183,33 +186,4 @@ private fun ScriptRow(
             variant = GlassButtonVariant.Standard,
         ) { Text("Delete", fontSize = FontSize.Micro) }
     }
-}
-
-@Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-private fun Hint(text: String, isError: Boolean = false) {
-    Text(
-        text = text,
-        color = if (isError) GlassTheme.diagnosticColors.error else MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
 }

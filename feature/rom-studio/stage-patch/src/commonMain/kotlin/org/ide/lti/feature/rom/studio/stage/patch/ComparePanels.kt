@@ -36,11 +36,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
@@ -70,8 +72,8 @@ import org.ide.lti.core.domain.workbench.partition
 internal fun TreeCompareCard(state: ContentToolsState, viewModel: ContentToolsViewModel) {
     val t = state.trees
     LaunchedEffect(Unit) { viewModel.trees.loadCompare() }
-    CompareCard("Compare two trees") {
-        CompareHint(
+    IdeSectionCard(title = "Compare two trees") {
+        IdeHintText(
             "Each side is a partition tree (stock firmware or the build) or an image read straight from its file, " +
                 "from any workspace. Every path is marked identical, added, removed, content, metadata (owner, mode, " +
                 "capabilities, SELinux label, link target) or kind. Click a changed file for its line diff, its " +
@@ -86,7 +88,7 @@ internal fun TreeCompareCard(state: ContentToolsState, viewModel: ContentToolsVi
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GlassToggle(checked = t.trustTimes, onCheckedChange = viewModel.trees::trustTimes)
-            CompareHint("Trust the same size and time (faster; otherwise every file of the same size is hashed)")
+            IdeHintText("Trust the same size and time (faster; otherwise every file of the same size is hashed)")
             Box(Modifier.weight(1f))
             GlassButton(
                 onClick = viewModel.trees::compareTrees,
@@ -96,7 +98,7 @@ internal fun TreeCompareCard(state: ContentToolsState, viewModel: ContentToolsVi
             ) { Text("Compare", fontSize = FontSize.BodySmall) }
         }
         if (t.sources[state.trees.a?.workspaceId ?: ""]?.trees?.isEmpty() == true) {
-            CompareHint("This workspace has no trees yet: run the build through Extract, or pick an image.")
+            IdeHintText("This workspace has no trees yet: run the build through Extract, or pick an image.")
         }
     }
     t.result?.let { result -> ResultCard(result, state, viewModel) }
@@ -282,7 +284,7 @@ private fun ResultCard(result: SideComparison, state: ContentToolsState, viewMod
     var shown by remember(result) { mutableStateOf<TreeChangeKind?>(null) }
     var query by remember(result) { mutableStateOf("") }
     val diff = result.diff
-    CompareCard("${describe(result.a)}  →  ${describe(result.b)}") {
+    IdeSectionCard(title = "${describe(result.a)}  →  ${describe(result.b)}") {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -298,7 +300,7 @@ private fun ResultCard(result: SideComparison, state: ContentToolsState, viewMod
             }
         }
         GlassTextField(value = query, onValueChange = { query = it }, placeholder = "Filter paths…")
-        CompareHint("${result.hashedFiles} file(s) of the same size hashed on both sides.")
+        IdeHintText("${result.hashedFiles} file(s) of the same size hashed on both sides.")
         val rows = diff.changes.filter { (shown == null || it.kind == shown) && query.trim() in it.path }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
             ChangeTable(rows, diff.changes.isEmpty(), state.trees.opened, viewModel, Modifier.weight(LIST_WEIGHT))
@@ -323,7 +325,7 @@ private fun ChangeTable(
         }
         if (rows.isEmpty()) {
             IdeTableRow {
-                CompareHint(if (same) "No differences: every path is identical on both sides." else "No path matches.")
+                IdeHintText(if (same) "No differences: every path is identical on both sides." else "No path matches.")
             }
         }
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = ComponentSize.MaxPanelHeight)) {
@@ -342,8 +344,8 @@ private fun ChangeTable(
                         modifier = Modifier.weight(KIND_WEIGHT),
                     )
                     Column(Modifier.weight(1f)) {
-                        CompareMono(change.path)
-                        if (change.details.isNotEmpty()) CompareHint(change.details.joinToString(" · "))
+                        IdeMonoText(change.path)
+                        if (change.details.isNotEmpty()) IdeHintText(change.details.joinToString(" · "))
                     }
                 }
             }
@@ -360,7 +362,7 @@ private fun Superblocks(rows: List<SuperblockRow>, modifier: Modifier = Modifier
             IdeTableHeaderCell("A", Modifier.weight(1f))
             IdeTableHeaderCell("B", Modifier.weight(1f))
         }
-        if (rows.isEmpty()) CompareHint("Neither side has an image to read one from (Build makes the build's).")
+        if (rows.isEmpty()) IdeHintText("Neither side has an image to read one from (Build makes the build's).")
         rows.forEach { row ->
             val valueColor = if (row.differs) {
                 GlassTheme.diagnosticColors.warning
@@ -368,7 +370,7 @@ private fun Superblocks(rows: List<SuperblockRow>, modifier: Modifier = Modifier
                 MaterialTheme.colorScheme.onSurface
             }
             IdeTableRow(modifier = Modifier.testTag("Superblock_${row.field}")) {
-                Box(Modifier.weight(FIELD_WEIGHT)) { CompareHint(row.field) }
+                Box(Modifier.weight(FIELD_WEIGHT)) { IdeHintText(row.field) }
                 listOf(row.a, row.b).forEach { value ->
                     Text(
                         value ?: "—",
@@ -407,42 +409,3 @@ private val KIND_LABEL = mapOf(
 private const val LIST_WEIGHT = 1.6f
 private const val KIND_WEIGHT = 0.18f
 private const val FIELD_WEIGHT = 0.8f
-
-@Composable
-internal fun CompareCard(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-internal fun CompareHint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-@Composable
-internal fun CompareMono(text: String, color: Color = Color.Unspecified) {
-    Text(
-        text = text,
-        color = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else color,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}

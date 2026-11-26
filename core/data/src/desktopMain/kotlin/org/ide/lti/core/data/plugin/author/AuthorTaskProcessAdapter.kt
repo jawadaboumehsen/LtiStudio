@@ -18,9 +18,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.common.utils.sha256
-import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.plugin.AuthorDiagnostic
 import org.ide.lti.core.domain.plugin.AuthorProject
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustPort

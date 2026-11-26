@@ -11,25 +11,24 @@ package org.ide.lti.feature.rom.studio.stage.build
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.display.IdeTable
 import org.ide.lti.core.designsystem.component.display.IdeTableHeader
 import org.ide.lti.core.designsystem.component.display.IdeTableHeaderCell
 import org.ide.lti.core.designsystem.component.display.IdeTableRow
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
@@ -38,8 +37,6 @@ import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.BuildWarningKind
 import org.ide.lti.core.domain.pipeline.toolkit.CoverageRule
 import org.ide.lti.core.domain.pipeline.toolkit.PackageKind
@@ -69,8 +66,8 @@ internal val KERNEL_COMPRESSION = listOf(
  */
 @Composable
 internal fun ExtraPackagesPane(settings: BuildSettings, target: TargetDevice, onChange: (BuildSettings) -> Unit) {
-    ToolCard("Extra packages", tag = "ExtraPackagesPane") {
-        Note("Built next to the install package (Flashable members) in out/package/.")
+    IdeSectionCard(modifier = Modifier.testTag("ExtraPackagesPane"), title = "Extra packages") {
+        IdeHintText("Built next to the install package (Flashable members) in out/package/.")
         EXTRA_PACKAGES.forEach { (kind, text) ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -83,12 +80,12 @@ internal fun ExtraPackagesPane(settings: BuildSettings, target: TargetDevice, on
                         onChange(settings.copy(extraPackages = next))
                     },
                 )
-                Mono(text)
+                IdeMonoText(text)
             }
         }
-        Note("An A/B OTA (full payload) is chosen in Flashable members, as the install package.")
+        IdeHintText("An A/B OTA (full payload) is chosen in Flashable members, as the install package.")
         if (PackageKind.FullPackage.name in settings.extraPackages) {
-            Note(
+            IdeHintText(
                 "super.img and the boot images are always in the fastboot zip. A partition can also go in as its " +
                     "own image, and that image can be written as an Android sparse image (smaller; fastboot " +
                     "flashes it as it is).",
@@ -133,7 +130,7 @@ private fun StandaloneTable(settings: BuildSettings, target: TargetDevice, onCha
         target.dynamicPartitions.forEach { p ->
             val standalone = p in settings.standaloneImages
             IdeTableRow {
-                Box(Modifier.weight(1f)) { Mono(p) }
+                Box(Modifier.weight(1f)) { IdeMonoText(p) }
                 Box(Modifier.weight(1f)) {
                     GlassToggle(
                         checked = standalone,
@@ -156,7 +153,7 @@ private fun StandaloneTable(settings: BuildSettings, target: TargetDevice, onCha
                             modifier = Modifier.testTag("SparseImage_$p"),
                         )
                     } else {
-                        Note("—")
+                        IdeHintText("—")
                     }
                 }
             }
@@ -167,8 +164,8 @@ private fun StandaloneTable(settings: BuildSettings, target: TargetDevice, onCha
 /** The build's link check (`BuildChecks.linkSteps`) and accepting what it finds. */
 @Composable
 internal fun LinkCheckPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
-    ToolCard("Symbolic links", tag = "LinkCheckPane") {
-        Note(
+    IdeSectionCard(modifier = Modifier.testTag("LinkCheckPane"), title = "Symbolic links") {
+        IdeHintText(
             "Every build resolves the links of the assembled tree as the phone would. A link that points at " +
                 "nothing although it works in the stock firmware (an app or library removed, a file moved) stops " +
                 "the build, and the build log lists them. Links into /apex, /data and other run-time folders " +
@@ -190,8 +187,8 @@ internal fun LinkCheckPane(settings: BuildSettings, onChange: (BuildSettings) ->
 /** The build's APK signature check (`BuildChecks.apkSignatureSteps`) and accepting what it finds. */
 @Composable
 internal fun ApkSignaturePane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
-    ToolCard("APK signatures", tag = "ApkSignaturePane") {
-        Note(
+    IdeSectionCard(modifier = Modifier.testTag("ApkSignaturePane"), title = "APK signatures") {
+        IdeHintText(
             "Every build checks that each APK of the assembled tree is signed (a v2/v3 signing block or a v1 " +
                 "signature). Android does not install an unsigned app, so one dropped in by a mod or a script " +
                 "stops the build, and the build log names it.",
@@ -212,8 +209,8 @@ internal fun ApkSignaturePane(settings: BuildSettings, onChange: (BuildSettings)
 /** The build's vendor compatibility check (`BuildChecks.vintfSteps`, AOSP's checkvintf) and accepting it. */
 @Composable
 internal fun VintfPane(settings: BuildSettings, onChange: (BuildSettings) -> Unit) {
-    ToolCard("Vendor compatibility (VINTF)", tag = "VintfPane") {
-        Note(
+    IdeSectionCard(modifier = Modifier.testTag("VintfPane"), title = "Vendor compatibility (VINTF)") {
+        IdeHintText(
             "Run Build Readiness in Overview to review compatibility. You can acknowledge an individual confirmed " +
                 "mismatch there. Missing selected partitions and SELinux mappings must be fixed.",
         )
@@ -228,8 +225,8 @@ internal fun VintfPane(settings: BuildSettings, onChange: (BuildSettings) -> Uni
 /** Files of the work tree without an fs_config or file_contexts entry, and adding them (FR-015, FR-016). */
 @Composable
 internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -> Unit) {
-    ToolCard("Permission and label coverage", tag = "CoveragePane") {
-        Note(
+    IdeSectionCard(modifier = Modifier.testTag("CoveragePane"), title = "Permission and label coverage") {
+        IdeHintText(
             "Every file of the assembled tree needs an fs_config line and a file_contexts line, or the image does " +
                 "not boot; the build refuses a tree with gaps. Adding entries labels a file as Android's build " +
                 "would: your coverage rules, then the ROM's own SELinux rules and fs_config tables (else Android's " +
@@ -263,7 +260,7 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
                         nextStep = "Rename or delete them in Assemble > Image browser (kept for every build).",
                     ),
                 )
-                result.unbuildableNames.take(MAX_SHOWN).forEach { Mono(it) }
+                result.unbuildableNames.take(MAX_SHOWN).forEach { IdeMonoText(it) }
             }
             if (missing.isEmpty() && result.unbuildableNames.isEmpty()) {
                 GlassBanner(severity = GlassBannerSeverity.INFO, title = "Every file is covered.")
@@ -281,8 +278,8 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
                     actionLabel = if (state.fillInEveryBuild) null else "Add entries in every build",
                     onAction = onFix.takeUnless { state.fillInEveryBuild },
                 )
-                missing.take(MAX_SHOWN).forEach { Mono(it) }
-                if (missing.size > MAX_SHOWN) Note("…and ${missing.size - MAX_SHOWN} more")
+                missing.take(MAX_SHOWN).forEach { IdeMonoText(it) }
+                if (missing.size > MAX_SHOWN) IdeHintText("…and ${missing.size - MAX_SHOWN} more")
             }
         }
     }
@@ -291,8 +288,8 @@ internal fun CoveragePane(state: CoverageState, onCheck: () -> Unit, onFix: () -
 /** The user's coverage rules: owner, mode and label by path, before "like its folder". */
 @Composable
 internal fun CoverageRulesPane(rules: String, onChange: (String) -> Unit) {
-    ToolCard("Coverage rules", tag = "CoverageRulesPane") {
-        Note(
+    IdeSectionCard(modifier = Modifier.testTag("CoverageRulesPane"), title = "Coverage rules") {
+        IdeHintText(
             "One rule per line: <regex> <uid> <gid> <mode> <label>, the regex matched against the whole device " +
                 "path. A file without sidecar lines gets the first rule that matches, else its folder's lines. " +
                 "Example: /system/app/MyApp(/.*)? 0 0 0644 u:object_r:system_file:s0",
@@ -317,43 +314,3 @@ private val EXTRA_PACKAGES = listOf(
     PackageKind.Payload to "payload.bin alone (signed, with payload_properties.txt; needs the A/B OTA)",
 )
 private const val MAX_SHOWN = 200
-
-@Composable
-private fun ToolCard(title: String, tag: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface()
-            .testTag(tag),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-private fun Note(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}

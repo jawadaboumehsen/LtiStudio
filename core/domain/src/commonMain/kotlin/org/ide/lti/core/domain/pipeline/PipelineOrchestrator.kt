@@ -27,9 +27,6 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.common.utils.runCatchingCancellable
-import org.ide.lti.core.domain.pipeline.stages.AbOtaSteps
-import org.ide.lti.core.domain.pipeline.stages.BuildChecks
-import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
 import org.ide.lti.core.domain.pipeline.text.AvbSizeCalculator
 import org.ide.lti.core.domain.ports.PipelineExecutionPort
 import org.ide.lti.core.domain.ports.StepEvent
@@ -40,11 +37,7 @@ import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.tools.ToolStorePort
 import org.ide.lti.core.domain.tools.ToolUsageCoordinator
-import org.ide.lti.core.domain.workspace.RunRecord
-import org.ide.lti.core.model.run.Artifact
-import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
-import org.ide.lti.core.model.run.Presence
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.StageOutcome
@@ -52,9 +45,7 @@ import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.run.StageStep
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.run.StepState
-import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.target.TargetDevice
-import org.ide.lti.core.model.workspace.PackageType
 import org.ide.lti.core.model.workspace.Workspace
 
 public sealed interface PipelineEvent {
@@ -189,6 +180,8 @@ public class PipelineOrchestrator(
         }
     }
 
+    private val artifactCollector = PipelineArtifactCollector(executionPort)
+
     /** Runs this app is driving now; a second drive/resume of one of them emits nothing (see [exclusive]). */
     private val driving: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
@@ -270,13 +263,8 @@ public class PipelineOrchestrator(
         // A refused admission (a tool being changed) fails a queued run too, as a pin failure does.
         val pins = try {
             if (notStarted && toolStore != null) {
-                toolUsageCoordinator?.admitJob(runId) {
-                    toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
-                        failQueued(runId, IllegalStateException("Cannot capture tool paths for this ROM run", cause))
-                    }
-                } ?: toolStore.paths(ToolGroupCatalog).getOrElse { cause ->
-                    failQueued(runId, IllegalStateException("Cannot capture tool paths for this ROM run", cause))
-                }
+                toolUsageCoordinator?.admitJob(runId) { loadPinsOrFail(runId, toolStore) }
+                    ?: loadPinsOrFail(runId, toolStore)
             } else {
                 toolUsageCoordinator?.admitJob(runId) { null }
                 null
@@ -316,13 +304,8 @@ public class PipelineOrchestrator(
                 "Cannot drive run $runId: lease held by another active driver"
             }
             val stages = stagesOf(existing)
-            val outcomes =
-                stages.map { stage ->
-                    existing?.stages?.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
-                }
-            val runtimeValues = (existing?.runtimeValues.orEmpty() + ctx.runtimeValues).toMutableMap()
-            runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
-            runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
+            val outcomes = buildStageOutcomes(stages, existing?.stages.orEmpty())
+            val runtimeValues = initRuntimeValues(existing?.runtimeValues.orEmpty(), ctx.runtimeValues, startedAt)
             if (RuntimeKeys.DISK_FREE_BEFORE !in runtimeValues) {
                 executionPort.checkAvailableDiskSpace(ctx.workspace)
                     ?.let { runtimeValues[RuntimeKeys.DISK_FREE_BEFORE] = it.toString() }
@@ -361,58 +344,12 @@ public class PipelineOrchestrator(
                 )
             }
 
-            try {
-                var previousKey = ""
-                // Stages share one work tree: once a stage really ran, later stages must run too, even when
-                // their own inputs match (Assemble re-syncs the tree, so a cached Debloat would be lost).
-                var upstreamExecuted = false
-                for ((index, stage) in stages.withIndex()) {
-                    val startedStage = clock.now()
-                    emit(PipelineEvent.StageStarted(stage.id))
-                    driver.persist {
-                        it.withStage(
-                            index,
-                        ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
-                    }
-
-                    when (
-                        val stepResult = executeStageStep(
-                            driver = driver,
-                            stages = stages,
-                            index = index,
-                            stage = stage,
-                            startedStage = startedStage,
-                            previousKey = previousKey,
-                            upstreamExecuted = upstreamExecuted,
-                            isResumeStage = false,
-                            driverInstanceId = driverInstanceId,
-                        )
-                    ) {
-                        is StageStepResult.Skipped -> {
-                            previousKey = stepResult.cacheKey
-                        }
-                        is StageStepResult.Executed -> {
-                            previousKey = stepResult.cacheKey
-                            upstreamExecuted = true
-                        }
-                        StageStepResult.Aborted -> return@flow
-                    }
-                }
-
-                succeed(driver)
-                emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
-            } catch (e: CancellationException) {
-                if (driver.run.state == RunState.RUNNING) {
-                    driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
-                }
-                throw e
-            }
+            executeStageRange(driver, stages, startStageIndex = 0, wasPaused = false, isResume = false)
         } finally {
             toolUsageCoordinator?.finishJob(runId)
         }
     }
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun resumeRun(run: BuildRun, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> = flow {
         val now = clock.now()
         if (run.state.isTerminal) {
@@ -433,16 +370,10 @@ public class PipelineOrchestrator(
             }
             val latestRun = runRepository.getRun(run.id) ?: run
             val wasPaused = latestRun.state == RunState.PAUSED_WAITING_FOR_APP
-            val startedAt = latestRun.startedAt
-            val runtimeValues = (latestRun.runtimeValues + ctx.runtimeValues).toMutableMap()
-            runtimeValues.putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
-            runtimeValues.putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
+            val runtimeValues = initRuntimeValues(latestRun.runtimeValues, ctx.runtimeValues, latestRun.startedAt)
 
             val stages = stagesOf(latestRun)
-            val outcomes =
-                stages.map { stage ->
-                    latestRun.stages.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id)
-                }
+            val outcomes = buildStageOutcomes(stages, latestRun.stages)
 
             val driver =
                 Driver(
@@ -466,72 +397,116 @@ public class PipelineOrchestrator(
                 return@flow
             }
 
-            var previousKey =
-                if (startStageIndex > 0) {
-                    driver.run.stages.getOrNull(startStageIndex - 1)?.cacheKey.orEmpty()
-                } else {
-                    ""
-                }
-
-            var upstreamExecuted =
-                driver.run.stages.take(startStageIndex).any { it.state == StageState.EXECUTED }
-            try {
-                for (index in startStageIndex until stages.size) {
-                    val stage = stages[index]
-                    val existingOutcome = driver.run.stages.firstOrNull { it.stageId == stage.id }
-                    val startedStage = existingOutcome?.startedAt ?: clock.now()
-                    // Both fresh and resumed runs verify links: executionPort.requireNoLinkInWorkspace(driver.ws)
-
-                    if (wasPaused && index == startStageIndex) {
-                        emit(PipelineEvent.RunResumed(stage.id))
-                        driver.persist { it.copy(state = RunState.RUNNING) }
-                    }
-
-                    if (existingOutcome?.state != StageState.RUNNING) {
-                        emit(PipelineEvent.StageStarted(stage.id))
-                        driver.persist {
-                            it.withStage(
-                                index,
-                            ) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
-                        }
-                    }
-
-                    val isResumeStage = (index == startStageIndex)
-                    when (
-                        val stepResult = executeStageStep(
-                            driver = driver,
-                            stages = stages,
-                            index = index,
-                            stage = stage,
-                            startedStage = startedStage,
-                            previousKey = previousKey,
-                            upstreamExecuted = upstreamExecuted,
-                            isResumeStage = isResumeStage,
-                            driverInstanceId = driverInstanceId,
-                        )
-                    ) {
-                        is StageStepResult.Skipped -> {
-                            previousKey = stepResult.cacheKey
-                        }
-                        is StageStepResult.Executed -> {
-                            previousKey = stepResult.cacheKey
-                            upstreamExecuted = true
-                        }
-                        StageStepResult.Aborted -> return@flow
-                    }
-                }
-
-                succeed(driver)
-                emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
-            } catch (e: CancellationException) {
-                if (driver.run.state == RunState.RUNNING) {
-                    driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
-                }
-                throw e
-            }
+            executeStageRange(
+                driver = driver,
+                stages = stages,
+                startStageIndex = startStageIndex,
+                wasPaused = wasPaused,
+                isResume = true,
+            )
         } finally {
             toolUsageCoordinator?.finishJob(run.id)
         }
+    }
+
+    private suspend fun FlowCollector<PipelineEvent>.executeStageRange(
+        driver: Driver,
+        stages: List<StageDefinition>,
+        startStageIndex: Int,
+        wasPaused: Boolean,
+        isResume: Boolean,
+    ) {
+        var previousKey =
+            if (startStageIndex > 0) {
+                driver.run.stages.getOrNull(startStageIndex - 1)?.cacheKey.orEmpty()
+            } else {
+                ""
+            }
+        // Stages share one work tree: once a stage really ran, later stages must run too, even when
+        // their own inputs match (Assemble re-syncs the tree, so a cached Debloat would be lost).
+        var upstreamExecuted =
+            startStageIndex > 0 && driver.run.stages.take(startStageIndex).any { it.state == StageState.EXECUTED }
+        try {
+            for (index in startStageIndex until stages.size) {
+                val stage = stages[index]
+                val existingOutcome = if (isResume) driver.run.stages.firstOrNull { it.stageId == stage.id } else null
+                // Both fresh and resumed runs verify links: executionPort.requireNoLinkInWorkspace(driver.ws)
+                val startedStage = announceStageStart(
+                    driver = driver,
+                    index = index,
+                    stage = stage,
+                    existingOutcome = existingOutcome,
+                    wasResumedFirstStage = wasPaused && index == startStageIndex,
+                )
+
+                when (
+                    val stepResult = executeStageStep(
+                        driver = driver,
+                        stages = stages,
+                        index = index,
+                        stage = stage,
+                        startedStage = startedStage,
+                        previousKey = previousKey,
+                        upstreamExecuted = upstreamExecuted,
+                        isResumeStage = isResume && index == startStageIndex,
+                        driverInstanceId = driver.driverInstanceId,
+                    )
+                ) {
+                    is StageStepResult.Skipped -> previousKey = stepResult.cacheKey
+                    is StageStepResult.Executed -> {
+                        previousKey = stepResult.cacheKey
+                        upstreamExecuted = true
+                    }
+                    StageStepResult.Aborted -> return
+                }
+            }
+
+            succeed(driver)
+            emit(PipelineEvent.RunFinished(RunState.SUCCEEDED))
+        } catch (e: CancellationException) {
+            if (driver.run.state == RunState.RUNNING) {
+                driver.persist { it.copy(state = RunState.PAUSED_WAITING_FOR_APP) }
+            }
+            throw e
+        }
+    }
+
+    private suspend fun FlowCollector<PipelineEvent>.announceStageStart(
+        driver: Driver,
+        index: Int,
+        stage: StageDefinition,
+        existingOutcome: StageOutcome?,
+        wasResumedFirstStage: Boolean,
+    ): Instant {
+        val startedStage = existingOutcome?.startedAt ?: clock.now()
+        if (wasResumedFirstStage) {
+            emit(PipelineEvent.RunResumed(stage.id))
+            driver.persist { it.copy(state = RunState.RUNNING) }
+        }
+        if (existingOutcome?.state != StageState.RUNNING) {
+            emit(PipelineEvent.StageStarted(stage.id))
+            driver.persist {
+                it.withStage(index) { s -> s.copy(state = StageState.RUNNING, startedAt = startedStage) }
+            }
+        }
+        return startedStage
+    }
+
+    private suspend fun loadPinsOrFail(runId: String, store: ToolStorePort) =
+        store.paths(ToolGroupCatalog).getOrElse { cause ->
+            failQueued(runId, IllegalStateException("Cannot capture tool paths for this ROM run", cause))
+        }
+
+    private fun buildStageOutcomes(stages: List<StageDefinition>, existing: List<StageOutcome>): List<StageOutcome> =
+        stages.map { stage -> existing.firstOrNull { it.stageId == stage.id } ?: StageOutcome(stageId = stage.id) }
+
+    private fun initRuntimeValues(
+        base: Map<String, String>,
+        overrides: Map<String, String>,
+        startedAt: Instant,
+    ): MutableMap<String, String> = (base + overrides).toMutableMap().apply {
+        putIfAbsent(RuntimeKeys.RUN_DATE, startedAt.yyyymmdd())
+        putIfAbsent(RuntimeKeys.RUN_TIMESTAMP, startedAt.epochSeconds.toString())
     }
 
     private sealed interface StageStepResult {
@@ -587,15 +562,15 @@ public class PipelineOrchestrator(
         return if (failure != null) {
             when {
                 closedByApp(driver) -> {
-                    handleInterruption(driver, index, stage, "The app was closed during this stage")
+                    abortStageRun(driver, index, stage, cancelled = false, "The app was closed during this stage")
                 }
                 failure is StageInterruptedFailure -> {
                     val message = failure.message ?: "Stage interrupted"
-                    handleInterruption(driver, index, stage, message)
+                    abortStageRun(driver, index, stage, cancelled = false, message)
                 }
                 failure is StageCancelledFailure -> {
                     val message = failure.message ?: "Stage cancelled"
-                    handleCancellation(driver, index, stage, message)
+                    abortStageRun(driver, index, stage, cancelled = true, message)
                 }
                 else -> failStage(driver, index, stage, startedStage, failure)
             }
@@ -636,48 +611,29 @@ public class PipelineOrchestrator(
     private suspend fun closedByApp(driver: Driver): Boolean =
         appClosing() && runRepository.getRun(driver.runId)?.state != RunState.CANCELLING
 
-    private suspend fun FlowCollector<PipelineEvent>.handleInterruption(
+    private suspend fun FlowCollector<PipelineEvent>.abortStageRun(
         driver: Driver,
         index: Int,
         stage: StageDefinition,
+        cancelled: Boolean,
         message: String,
     ) {
+        val runState = if (cancelled) RunState.CANCELLED else RunState.INTERRUPTED
+        val stageState = if (cancelled) StageState.CANCELLED else StageState.INTERRUPTED
         val ended = clock.now()
         driver.persist { r ->
-            r.copy(state = RunState.INTERRUPTED, endedAt = ended)
+            r.copy(state = runState, endedAt = ended)
                 .withStage(index) { s ->
                     s.copy(
-                        state = StageState.INTERRUPTED,
+                        state = stageState,
                         endedAt = ended,
                         message = message,
                     )
                 }
                 .markRemainingNotRun(index + 1)
         }
-        emit(PipelineEvent.StageInterrupted(stage.id))
-        emit(PipelineEvent.RunFinished(RunState.INTERRUPTED))
-    }
-
-    private suspend fun FlowCollector<PipelineEvent>.handleCancellation(
-        driver: Driver,
-        index: Int,
-        stage: StageDefinition,
-        message: String,
-    ) {
-        val ended = clock.now()
-        driver.persist { r ->
-            r.copy(state = RunState.CANCELLED, endedAt = ended)
-                .withStage(index) { s ->
-                    s.copy(
-                        state = StageState.CANCELLED,
-                        endedAt = ended,
-                        message = message,
-                    )
-                }
-                .markRemainingNotRun(index + 1)
-        }
-        emit(PipelineEvent.StageCancelled(stage.id))
-        emit(PipelineEvent.RunFinished(RunState.CANCELLED))
+        emit(if (cancelled) PipelineEvent.StageCancelled(stage.id) else PipelineEvent.StageInterrupted(stage.id))
+        emit(PipelineEvent.RunFinished(runState))
     }
 
     /** Digests the stage outputs into a scratch value, or returns the failure to report. */
@@ -703,7 +659,7 @@ public class PipelineOrchestrator(
         // Cancel kills the running step, which then fails (mkfs exits 130): that is the cancel, not a failure.
         val state = runRepository.getRun(driver.runId)?.state
         if (state == RunState.CANCELLING || state == RunState.CANCELLED) {
-            handleCancellation(driver, index, stage, "Run cancelled by user")
+            abortStageRun(driver, index, stage, cancelled = true, "Run cancelled by user")
             return
         }
         val ended = clock.now()
@@ -796,23 +752,12 @@ public class PipelineOrchestrator(
             val (exitCode, currentSeq) = streamToEnd(driver, serverRunId, stdout, outputBuffer, fromSeq = lastSeq)
             outputBuffer.flush()
 
-            driver.persist { r ->
-                val updatedSteps =
-                    r.steps.map {
-                        if (it.stageId == stage.id && it.index == index) {
-                            it.copy(
-                                state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
-                                exitCode = exitCode,
-                                lastSeq = currentSeq,
-                                endedAt = clock.now(),
-                            )
-                        } else {
-                            it
-                        }
-                    }
-                val updatedSeqMap = r.lastSeqByStep + (serverRunId to currentSeq)
-                r.copy(steps = updatedSteps, lastSeqByStep = updatedSeqMap)
-            }
+            updateStepOutcome(
+                driver,
+                stage.id,
+                index,
+                StepOutcomeUpdate(exitCode, currentSeq, clock.now(), serverRunId),
+            )
 
             return finishTool(driver, index, step, stdout?.toString().orEmpty().trim(), exitCode)
         }
@@ -826,22 +771,12 @@ public class PipelineOrchestrator(
         }
         // Finished while no driver watched: recorded, then judged exactly as a step that ran now.
         val code = status.exitCode ?: if (succeeded) 0 else -1
-        driver.persist { r ->
-            r.copy(
-                steps = r.steps.map {
-                    if (it.stageId == stage.id && it.index == index) {
-                        it.copy(
-                            state = if (code == 0) StepState.COMPLETED else StepState.FAILED,
-                            exitCode = code,
-                            lastSeq = status.lastSeq,
-                            endedAt = status.endedAtEpochMs?.let(Instant::fromEpochMilliseconds),
-                        )
-                    } else {
-                        it
-                    }
-                },
-            )
-        }
+        updateStepOutcome(
+            driver,
+            stage.id,
+            index,
+            StepOutcomeUpdate(code, status.lastSeq, status.endedAtEpochMs?.let(Instant::fromEpochMilliseconds)),
+        )
         // Its recorded result when the run kept it; else this step's own output, replayed by the service (not the
         // whole run's log), when it is used.
         val recordedOutput = step.resultKey?.let { driver.runtimeValues[it] }
@@ -939,25 +874,39 @@ public class PipelineOrchestrator(
         }
         outputBuffer.flush()
 
-        driver.persist { r ->
-            val updated =
-                r.steps.map {
-                    if (it.stageId == stage.id && it.index == index) {
-                        it.copy(
-                            state = if (exitCode == 0) StepState.COMPLETED else StepState.FAILED,
-                            exitCode = exitCode,
-                            lastSeq = lastSeq,
-                            endedAt = clock.now(),
-                        )
-                    } else {
-                        it
-                    }
-                }
-            val updatedSeqMap = r.lastSeqByStep + (handle.runId to lastSeq)
-            r.copy(steps = updated, lastSeqByStep = updatedSeqMap)
-        }
+        updateStepOutcome(
+            driver,
+            stage.id,
+            index,
+            StepOutcomeUpdate(exitCode, lastSeq, clock.now(), handle.runId),
+        )
 
         return finishTool(driver, index, step, stdout?.toString().orEmpty().trim(), exitCode)
+    }
+
+    private class StepOutcomeUpdate(val code: Int, val seq: Long, val endedAt: Instant?, val seqKey: String? = null)
+
+    private suspend fun updateStepOutcome(driver: Driver, stageId: StageId, index: Int, update: StepOutcomeUpdate) {
+        driver.persist { r ->
+            val updatedSteps = r.steps.map {
+                if (it.stageId == stageId && it.index == index) {
+                    it.copy(
+                        state = if (update.code == 0) StepState.COMPLETED else StepState.FAILED,
+                        exitCode = update.code,
+                        lastSeq = update.seq,
+                        endedAt = update.endedAt,
+                    )
+                } else {
+                    it
+                }
+            }
+            val updatedSeqMap = if (update.seqKey != null) {
+                r.lastSeqByStep + (update.seqKey to update.seq)
+            } else {
+                r.lastSeqByStep
+            }
+            r.copy(steps = updatedSteps, lastSeqByStep = updatedSeqMap)
+        }
     }
 
     /**
@@ -1251,9 +1200,7 @@ public class PipelineOrchestrator(
         compareOutputs: Boolean = true,
     ): Boolean {
         val recorded = executionPort.readFile(driver.ws, cacheFile(stage)) ?: return false
-        val fields =
-            recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
-                .associate { it[0].trim() to it[1].trim() }
+        val fields = parseCacheFields(recorded)
         // The values the stage ran with (its run date names the package): today's date would name a file that
         // does not exist, so a cached Build would always miss and the artifacts would point at nothing.
         val recordedValues = fields["values"]?.let {
@@ -1283,34 +1230,14 @@ public class PipelineOrchestrator(
      * for later estimates).
      */
     private suspend fun succeed(driver: Driver) {
-        writeRecord(driver)
-        val artifacts = collectArtifacts(driver)
+        val ctx = driver.context()
+        val executedStages = driver.run.stages.map { it.stageId }.toSet()
+        artifactCollector.writeRecord(ctx, driver.run.id, executedStages)
+        val plannedStages = stagesOf(driver.run).map { it.id }
+        val artifacts = artifactCollector.collectArtifacts(ctx, plannedStages)
         executionPort.checkAvailableDiskSpace(driver.ws)
             ?.let { driver.runtimeValues[RuntimeKeys.DISK_FREE_AFTER] = it.toString() }
         driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
-    }
-
-    /**
-     * Keeps what this run did in `records/<runId>/`: the receipts of the stages that were part of it (a cached stage
-     * counts: work/ is the tree it left) and the signing keys' fingerprints when Build was. A record that cannot be
-     * written does not fail a finished build; the report then says the run has none.
-     */
-    private suspend fun writeRecord(driver: Driver) {
-        val ran = driver.run.stages.map { it.stageId }.toSet()
-        val signing = driver.context().snapshot.build.signing.takeIf { StageId.BUILD_FLASHABLE_ZIP in ran }
-        val ctx = driver.baseContext
-        val args = listOf(
-            "-c",
-            RunRecord.WRITE_SCRIPT,
-            "sh",
-            ctx.abs("."),
-            RunRecord.dir(driver.run.id),
-            if (StageId.MODULE_APPLICATION in ran) "1" else "0",
-            if (StageId.DEBLOAT in ran) "1" else "0",
-            signing?.let { ctx.abs("${it.platformKeyRef}.x509.pem") }.orEmpty(),
-            signing?.let { ctx.abs(it.avbKeyRef) }.orEmpty(),
-        )
-        runCatchingCancellable { executionPort.execute(driver.ws, StepCommand("sh", args, driver.ws.linuxPath)) }
     }
 
     /** A stage's cache file: its input key, its outputs' digest, and the run's values when it ran. */
@@ -1352,8 +1279,7 @@ public class PipelineOrchestrator(
         upstreamExecuted: Boolean,
     ): String {
         val recorded = if (upstreamExecuted) "" else executionPort.readFile(driver.ws, cacheFile(stage)).orEmpty()
-        val fields = recorded.lineSequence().mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
-            .associate { it[0].trim() to it[1].trim() }
+        val fields = parseCacheFields(recorded)
         fun decoded(key: String) =
             fields[key]?.let { runCatching { json.decodeFromString(valuesSerializer, it) }.getOrNull() }
         val before = decoded("inputs")
@@ -1369,6 +1295,10 @@ public class PipelineOrchestrator(
                 .joinToString("; ")
         }
     }
+
+    private fun parseCacheFields(recorded: String): Map<String, String> = recorded.lineSequence()
+        .mapNotNull { line -> line.split('=', limit = 2).takeIf { it.size == 2 } }
+        .associate { it[0].trim() to it[1].trim() }
 
     /** sha256 over the sorted `sha256sum` lines of every declared output; empty outputs digest to a constant. */
     private suspend fun outputDigest(driver: Driver, outputs: List<String>, stage: StageId): String? {
@@ -1390,58 +1320,6 @@ public class PipelineOrchestrator(
             }
         }
         return if (pinned != null) cmd.copy(toolId = pinned) else cmd
-    }
-
-    private suspend fun collectArtifacts(driver: Driver): List<Artifact> {
-        val ctx = driver.context()
-        val zipRel = BuildFlashableZipStage.zipRelPath(ctx)
-        val sha = ctx.value(RuntimeKeys.ZIP_SHA256)?.digestToken()
-        // Only what this run built: a run stopped before Build & Sign has no package and no manifest.
-        val ran = stagesOf(driver.run).map { it.id }
-        if (StageId.BUILD_FLASHABLE_ZIP !in ran) return emptyList()
-        val type = ctx.snapshot.build.packageType
-        // With both packages the flashable zip is the main one and the OTA comes with it.
-        val ota = listOfNotNull(
-            Artifact(
-                ArtifactKind.AB_OTA_ZIP,
-                ctx.abs(BuildFlashableZipStage.otaRelPath(ctx)),
-                ctx.longValue(AbOtaSteps.SIZE),
-                ctx.value(AbOtaSteps.SHA256)?.digestToken(),
-                VerificationState.VERIFIED,
-                Presence.PRESENT,
-            ).takeIf { type == PackageType.BOTH },
-        )
-        val built = ota + listOf(
-            Artifact(
-                if (type == PackageType.AB_OTA) ArtifactKind.AB_OTA_ZIP else ArtifactKind.FLASHABLE_ZIP,
-                ctx.abs(zipRel),
-                ctx.longValue(RuntimeKeys.ZIP_SIZE),
-                sha,
-                VerificationState.VERIFIED,
-                Presence.PRESENT,
-            ),
-            Artifact(
-                ArtifactKind.CHECKSUM,
-                ctx.abs("$zipRel.sha256"),
-                null,
-                sha,
-                VerificationState.VERIFIED,
-                Presence.PRESENT,
-            ),
-        )
-        val manifest = Artifact(
-            ArtifactKind.OTA_MANIFEST,
-            ctx.abs("out/manifest.json"),
-            null,
-            null,
-            VerificationState.VERIFIED,
-            Presence.PRESENT,
-        )
-        // Fastboot images zip and Odin AP: listed (and found missing) like the main package.
-        val extras = BuildChecks.extraPackageFiles(ctx).map {
-            Artifact(ArtifactKind.EXTRA_PACKAGE, ctx.abs(it), null, null, VerificationState.VERIFIED, Presence.PRESENT)
-        }
-        return (if (StageId.GENERATE_OTA_MANIFEST in ran) built + manifest else built) + extras
     }
 
     private fun cacheFile(stage: StageDefinition) = stageCacheFile(stage.id)

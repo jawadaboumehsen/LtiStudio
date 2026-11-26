@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import org.ide.lti.core.common.utils.atomicMove
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
@@ -30,10 +31,8 @@ import org.ide.lti.core.domain.plugin.edit.EditResult
 import org.ide.lti.core.domain.plugin.edit.FileEdits
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.AccessDeniedException
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 /**
@@ -631,11 +630,7 @@ internal fun moveReplacing(source: Path, destination: Path, attempts: Int = MOVE
 }
 
 private fun moveOnce(source: Path, destination: Path) {
-    try {
-        Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    } catch (_: AtomicMoveNotSupportedException) {
-        Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING)
-    }
+    atomicMove(source, destination)
 }
 
 private const val MOVE_ATTEMPTS = 5

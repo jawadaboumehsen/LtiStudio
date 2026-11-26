@@ -20,34 +20,24 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 import org.ide.lti.core.common.utils.runCatchingCancellable
-import org.ide.lti.core.data.tools.KotlinStoreLayout.matches
 import org.ide.lti.core.data.tools.KotlinStoreLayout.shellQuote
-import org.ide.lti.core.data.tools.KotlinStoreLayout.toData
 import org.ide.lti.core.data.tools.KotlinStoreLayout.toDomain
-import org.ide.lti.core.data.tools.KotlinStoreLayout.typeName
 import org.ide.lti.core.data.tools.KotlinStoreLayout.validateGroupId
 import org.ide.lti.core.data.tools.KotlinStoreLayout.validateOpId
-import org.ide.lti.core.data.tools.KotlinStoreLayout.validateRelativePath
 import org.ide.lti.core.data.tools.KotlinStoreLayout.validateVersionId
 import org.ide.lti.core.domain.setup.RecipeConfig
 import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolGroupId
-import org.ide.lti.core.domain.setup.ToolOutputKind
 import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.domain.tools.BranchRefInfo
 import org.ide.lti.core.domain.tools.ChoiceUpdate
@@ -58,8 +48,6 @@ import org.ide.lti.core.domain.tools.InitInfo
 import org.ide.lti.core.domain.tools.InstallEvent
 import org.ide.lti.core.domain.tools.InstallRequest
 import org.ide.lti.core.domain.tools.InterruptedOp
-import org.ide.lti.core.domain.tools.OperationPhase
-import org.ide.lti.core.domain.tools.OperationResult
 import org.ide.lti.core.domain.tools.PinnedTools
 import org.ide.lti.core.domain.tools.RefListing
 import org.ide.lti.core.domain.tools.ResolvedSource
@@ -102,6 +90,53 @@ public class KotlinToolStoreAdapter(
      * and the changes that follow must not interleave, or a removal could delete the version just switched to.
      */
     private val groupLock = GroupLocks()
+
+    private val installer = KotlinToolInstaller(
+        object : ToolInstallHost {
+            override val catalog get() = this@KotlinToolStoreAdapter.catalog
+            override val json get() = this@KotlinToolStoreAdapter.json
+            override val commandRunner get() = this@KotlinToolStoreAdapter.commandRunner
+            override val recipeRunner get() = this@KotlinToolStoreAdapter.recipeRunner
+            override val unconfirmedCancellations get() = this@KotlinToolStoreAdapter.unconfirmedCancellations
+            override val activeOperations get() = this@KotlinToolStoreAdapter.activeOperations
+            override val activeJobs get() = this@KotlinToolStoreAdapter.activeJobs
+            override val cancelledGroups get() = this@KotlinToolStoreAdapter.cancelledGroups
+
+            override fun ensureNotCancelled(group: ToolGroupId) {
+                this@KotlinToolStoreAdapter.ensureNotCancelled(group)
+            }
+
+            override suspend fun homeDir(): String = this@KotlinToolStoreAdapter.homeDir()
+
+            override suspend fun toolsBaseDir(): String = this@KotlinToolStoreAdapter.toolsBaseDir()
+
+            override suspend fun requiredFreeSpaceKb(group: ToolGroupId): Long = freeSpaceThresholdKbProvider(group)
+
+            override suspend fun exec(cmd: List<String>, workDir: String?, timeoutSeconds: Long): Result<String> =
+                this@KotlinToolStoreAdapter.exec(cmd, workDir, timeoutSeconds)
+
+            override suspend fun withGroupLock(group: ToolGroupId, block: suspend () -> Unit) {
+                groupLock(group).withLock { block() }
+            }
+
+            override suspend fun switchVersion(
+                group: ToolGroupId,
+                versionId: String,
+                choice: ChoiceUpdate,
+            ): Result<Unit> = useInternal(group, versionId, choice).map { }
+
+            override suspend fun writeResultFile(
+                opId: String,
+                group: String,
+                versionId: String?,
+                reused: Boolean,
+                ok: Boolean,
+                error: String?,
+            ) {
+                this@KotlinToolStoreAdapter.writeResultFile(opId, group, versionId, reused, ok, error)
+            }
+        },
+    )
 
     /** Cancel can arrive between two commands; every phase boundary asks before it goes on. */
     private fun ensureNotCancelled(group: ToolGroupId) {
@@ -352,25 +387,6 @@ public class KotlinToolStoreAdapter(
         }
     }
 
-    private fun validateRepoUrl(url: String) {
-        if (url.isBlank()) {
-            throw IllegalArgumentException("Repository URL must not be blank")
-        }
-        val hasCredentials =
-            try {
-                val uri = java.net.URI(url)
-                uri.userInfo != null
-            } catch (_: Exception) {
-                false
-            } || Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*://[^/\s@]+:[^/\s@]+@""").containsMatchIn(url) ||
-                Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*://[^/\s@]+@""").containsMatchIn(url)
-
-        if (hasCredentials) {
-            val err = ToolError.UnsupportedLayout(listOf("Repository URL must not contain credentials"))
-            throw ToolErrorException(err)
-        }
-    }
-
     @Suppress("NestedBlockDepth")
     override suspend fun refs(group: ToolGroupId, repoUrl: String): Result<RefListing> = try {
         validateGroupId(group)
@@ -449,32 +465,13 @@ public class KotlinToolStoreAdapter(
                 ?: throw ToolErrorException(ToolError.RefNotFound("Could not resolve ref $ref in $repoUrl"))
 
         // Layout check
-        val groupDef = catalog.group(group)
-        val layoutPaths = groupDef?.layout ?: emptyList()
-        val sourceSubdir =
-            when (val r = groupDef?.recipe) {
-                is RecipeConfig.CMake -> r.sourceSubdir?.trim('/')?.ifBlank { null }
-                else -> null
+        val missingPaths =
+            findMissingLayoutPaths(catalog, group) { cp ->
+                val checkScript =
+                    "test -n \"\$(git --git-dir=$qMirror ls-tree " +
+                        shellQuote(commit) + " -- " + shellQuote(cp) + ")\""
+                exec(listOf("sh", "-c", checkScript)).isSuccess
             }
-        val missingPaths = mutableListOf<String>()
-        for (path in layoutPaths) {
-            val candidatePaths =
-                if (sourceSubdir != null && !path.startsWith(sourceSubdir)) {
-                    listOf(path, "$sourceSubdir/$path")
-                } else {
-                    listOf(path)
-                }
-            val found =
-                candidatePaths.any { cp ->
-                    val checkScript =
-                        "test -n \"\$(git --git-dir=$qMirror ls-tree " + shellQuote(commit) + " -- " +
-                            shellQuote(cp) + ")\""
-                    exec(listOf("sh", "-c", checkScript)).isSuccess
-                }
-            if (!found) {
-                missingPaths.add(path)
-            }
-        }
         if (missingPaths.isNotEmpty()) {
             throw ToolErrorException(ToolError.UnsupportedLayout(missingPaths))
         }
@@ -510,441 +507,7 @@ public class KotlinToolStoreAdapter(
         Result.failure(e)
     }
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
-    override fun install(request: InstallRequest): Flow<InstallEvent> = flow {
-        validateGroupId(request.group)
-        validateOpId(request.opId)
-        for (out in request.outputs) {
-            validateRelativePath(out.file)
-        }
-        for (supp in request.supportFiles) {
-            validateRelativePath(supp)
-        }
-
-        val base = toolsBaseDir()
-        var versionId = KotlinStoreLayout.computeVersionId(request.source, request.label)
-        var targetVerDir = "$base/bin/${request.group.value}/$versionId"
-        val opId = request.opId
-        var isRebuild = false
-
-        when (val blocked = unconfirmedCancellations.recheck(request.group)) {
-            is Recheck.Blocked -> throw RemoteCancellationUnconfirmedException(blocked.executionId)
-
-            // The block came from an operation that was left registered; its process is confirmed gone now.
-            Recheck.Lifted -> {
-                activeOperations.remove(request.group)
-                activeJobs.remove(request.group)
-            }
-
-            Recheck.Clear -> Unit
-        }
-        check(activeOperations.putIfAbsent(request.group, opId) == null) {
-            "An operation is already active for ${request.group.value}"
-        }
-        currentCoroutineContext()[Job]?.let { activeJobs[request.group] = it }
-        try {
-            emit(InstallEvent.Started(opId))
-            emit(InstallEvent.Phase(OperationPhase.Fetching))
-            val reqSource = request.source
-            if (reqSource is ResolvedSource.Git) {
-                validateRepoUrl(reqSource.repoUrl)
-            }
-
-            // Whether the folder last looked at holds this same code (built by another recipe revision, say).
-            var sameSourceFound = false
-
-            @Suppress("ReturnCount")
-            suspend fun checkIntactAndReuse(dir: String, vid: String): Boolean {
-                sameSourceFound = false
-                val cat = exec(listOf("cat", "$dir/version.json")).getOrNull() ?: return false
-                if (cat.isBlank()) return false
-                val existing = runCatchingCancellable {
-                    json.decodeFromString<VersionData>(
-                        cat,
-                    )
-                }.getOrNull() ?: return false
-                val sameSource = existing.source.matches(request.source.toData())
-                val sameRecipe =
-                    existing.recipe.type == request.recipe.typeName() &&
-                        existing.recipe.revision == request.recipe.revision
-                if (sameSource && sameRecipe && !request.forceNew) {
-                    val check = KotlinStoreLayout.versionCheck(dir, request.outputs, request.supportFiles, probe = true)
-                    val usable = exec(listOf("sh", "-c", check)).isSuccess
-                    if (usable) {
-                        if (request.select) {
-                            groupLock(request.group).withLock {
-                                ensureNotCancelled(request.group)
-                                useInternal(request.group, vid, request.choice).getOrThrow()
-                            }
-                        }
-                        emit(InstallEvent.Finished(OperationResult.Reused(vid)))
-                        return true
-                    }
-                }
-                if (sameSource && sameRecipe) {
-                    isRebuild = true
-                }
-                sameSourceFound = sameSource
-                return false
-            }
-
-            // Check if existing and intact
-            val catJson = exec(listOf("cat", "$targetVerDir/version.json")).getOrNull()
-            if (catJson != null && catJson.isNotBlank()) {
-                val existing = runCatchingCancellable { json.decodeFromString<VersionData>(catJson) }.getOrNull()
-                if (existing != null) {
-                    if (checkIntactAndReuse(targetVerDir, versionId)) {
-                        return@flow
-                    }
-                    if (!isRebuild) {
-                        // Disambiguate if the existing folder holds other code (commit, repository or submodules)
-                        // under the same name; the whole source identity goes into the name, so two forks at one
-                        // commit get two folders.
-                        val suffix = KotlinStoreLayout.disambiguator(request.source)
-                        if (!versionId.endsWith("-$suffix")) {
-                            versionId = "$versionId-$suffix"
-                            targetVerDir = "$base/bin/${request.group.value}/$versionId"
-                            if (checkIntactAndReuse(targetVerDir, versionId)) {
-                                return@flow
-                            }
-                            // This commit's own folder from an older recipe: nothing else can be named after it, so
-                            // it is rebuilt in place (under the group lock when published) instead of colliding.
-                            if (sameSourceFound) isRebuild = true
-                        }
-                    }
-                }
-            }
-            if (request.forceNew) {
-                isRebuild = true
-            }
-
-            val requiredKb = freeSpaceThresholdKbProvider(request.group)
-            if (requiredKb > 0) {
-                val home = homeDir()
-                val dfRes = exec(listOf("df", "-Pk", home))
-                if (dfRes.isSuccess) {
-                    val lines = dfRes.getOrNull()?.lines() ?: emptyList()
-                    val availKb =
-                        lines.drop(1).firstOrNull()
-                            ?.trim()
-                            ?.split(Regex("""\s+"""))
-                            ?.getOrNull(3)
-                            ?.toLongOrNull()
-                    if (availKb != null && availKb < requiredKb) {
-                        val msg = "Required $requiredKb KB, but only $availKb KB available on $home"
-                        val err = ToolError.DiskFull(msg)
-                        emit(InstallEvent.Finished(OperationResult.Failed(err, err.message)))
-                        return@flow
-                    }
-                }
-            }
-
-            if (request.packages.isNotEmpty()) {
-                val missing = mutableListOf<String>()
-                for (pkg in request.packages) {
-                    val checkRes = exec(listOf("sh", "-c", KotlinStoreLayout.buildPackageCheck(pkg)))
-                    if (checkRes.isFailure) {
-                        missing += pkg
-                    }
-                }
-                if (missing.isNotEmpty()) {
-                    val err = ToolError.MissingPackages(missing)
-                    emit(InstallEvent.Finished(OperationResult.Failed(err, err.message)))
-                    return@flow
-                }
-            }
-
-            val workDir = "$base/work/$opId"
-            val srcDir = "$workDir/src"
-            val outDir = "$workDir/out"
-
-            emit(InstallEvent.Output("Preparing build workspace at $workDir"))
-            val opJsonPayload =
-                buildJsonObject {
-                    put("group", request.group.value)
-                    put("versionId", versionId)
-                    put("startedAt", java.time.Instant.now().toString())
-                }.toString()
-            val prepWorkspaceScript =
-                KotlinStoreLayout.buildPrepWorkspaceScript(
-                    baseDir = base,
-                    group = request.group.value,
-                    opId = opId,
-                    workDir = workDir,
-                    srcDir = srcDir,
-                    outDir = outDir,
-                    opJsonPayload = opJsonPayload,
-                )
-            exec(listOf("sh", "-c", prepWorkspaceScript)).getOrThrow()
-
-            ensureNotCancelled(request.group)
-            // Source preparation
-            when (val src = request.source) {
-                is ResolvedSource.Git -> {
-                    emit(InstallEvent.Output("Extracting source commit ${src.commit.take(7)}..."))
-                    val gitPrepScript =
-                        KotlinStoreLayout.buildGitPrepScript(
-                            base = base,
-                            group = request.group.value,
-                            repoUrl = src.repoUrl,
-                            commit = src.commit,
-                            srcDir = srcDir,
-                            submodules = src.submodules,
-                        )
-                    val streamEnv = mapOf("LTI_TOOL_GROUP" to request.group.value)
-                    // Retried: the mirror and the submodule cache keep what each attempt fetched, so a retry
-                    // continues instead of starting over. Exit 5 (submodule at the wrong commit) is final.
-                    var attempt = 1
-                    while (true) {
-                        var exitCode = 0
-                        var summary: String? = null
-                        commandRunner.stream(
-                            script = gitPrepScript,
-                            category = CommandCategory.NETWORK,
-                            // ponytail: wall-clock limit per attempt; an idle-output limit suits slow links better.
-                            timeoutSeconds = CommandCategory.BUILD.defaultTimeoutSeconds,
-                            cwd = homeDir(),
-                            env = streamEnv,
-                            onFinished = { exitCode = it },
-                            onSummary = { summary = it },
-                        ).collect { line ->
-                            emit(InstallEvent.Output(line))
-                        }
-                        if (exitCode == 0) break
-                        if (exitCode == SUBMODULE_MISMATCH_EXIT || attempt >= GIT_PREP_ATTEMPTS) {
-                            val error =
-                                if (RemoteCommandRunner.isTimeout(summary)) {
-                                    ToolError.Timeout("Git preparation: ${summary.orEmpty()}")
-                                } else {
-                                    ToolError.Network("Git preparation failed with exit code $exitCode")
-                                }
-                            throw ToolErrorException(error)
-                        }
-                        attempt++
-                        emit(
-                            InstallEvent.Output(
-                                "Git preparation failed (exit $exitCode); attempt $attempt of $GIT_PREP_ATTEMPTS...",
-                            ),
-                        )
-                        delay(GIT_RETRY_DELAY_MS)
-                    }
-                }
-
-                is ResolvedSource.Release -> {
-                    emit(InstallEvent.Output("Preparing release download..."))
-                }
-            }
-
-            // Layout validation before build
-            val groupDef = catalog.group(request.group)
-            val layoutPaths = groupDef?.layout ?: emptyList()
-            val sourceSubdir =
-                when (val r = groupDef?.recipe) {
-                    is RecipeConfig.CMake -> r.sourceSubdir?.trim('/')?.ifBlank { null }
-                    else -> null
-                }
-            val missingLayout = mutableListOf<String>()
-            for (lp in layoutPaths) {
-                val candidatePaths =
-                    if (sourceSubdir != null && !lp.startsWith(sourceSubdir)) {
-                        listOf(lp, "$sourceSubdir/$lp")
-                    } else {
-                        listOf(lp)
-                    }
-                val found =
-                    candidatePaths.any { cp ->
-                        val checkPathScript = "[ -e " + shellQuote("$srcDir/$cp") + " ]"
-                        exec(listOf("sh", "-c", checkPathScript)).isSuccess
-                    }
-                if (!found) {
-                    missingLayout.add(lp)
-                }
-            }
-            if (missingLayout.isNotEmpty()) {
-                val err = ToolError.UnsupportedLayout(missingLayout)
-                runCatchingCancellable {
-                    writeResultFile(
-                        opId,
-                        request.group.value,
-                        null,
-                        reused = false,
-                        ok = false,
-                        error = err.message,
-                    )
-                    exec(listOf("rm", "-rf", "--", workDir))
-                }
-                emit(InstallEvent.Finished(OperationResult.Failed(err, err.message)))
-                return@flow
-            }
-
-            ensureNotCancelled(request.group)
-            // Recipe execution
-            emit(InstallEvent.Phase(OperationPhase.Building))
-            emit(InstallEvent.Output("Running build recipe: ${request.recipe::class.simpleName}..."))
-            recipeRunner.executeRecipe(
-                srcDir = srcDir,
-                outDir = outDir,
-                source = request.source,
-                recipe = request.recipe,
-                outputs = request.outputs,
-                supportFiles = request.supportFiles,
-                onLog = { emit(InstallEvent.Output(it)) },
-                groupId = request.group.value,
-            ).getOrThrow()
-
-            ensureNotCancelled(request.group)
-            // Verification of outputs & probes
-            emit(InstallEvent.Phase(OperationPhase.Verifying))
-            emit(InstallEvent.Output("Verifying build outputs..."))
-            for (out in request.outputs) {
-                emit(InstallEvent.Output("Running probe for ${out.toolId}: ${out.probe.args.joinToString(" ")}"))
-                val ok =
-                    exec(
-                        listOf(
-                            "sh",
-                            "-c",
-                            KotlinStoreLayout.versionCheck(outDir, listOf(out), request.supportFiles, probe = true),
-                        ),
-                    ).isSuccess
-                if (!ok) throw ToolErrorException(ToolError.VerifyFailed(out.toolId))
-            }
-
-            // Write version.json
-            val verData =
-                VersionData(
-                    schema = 1,
-                    group = request.group.value,
-                    id = versionId,
-                    label = request.label,
-                    source = request.source.toData(),
-                    recipe = RecipeData(type = request.recipe.typeName(), revision = request.recipe.revision),
-                    outputs =
-                    request.outputs.map {
-                        val mode = if (it.kind == ToolOutputKind.JAR) "read" else "exec"
-                        OutputData(it.file, 0L, mode)
-                    },
-                    builtAt = System.currentTimeMillis().toString(),
-                    intact = true,
-                )
-            val verJson = json.encodeToString(VersionData.serializer(), verData)
-            val writeVerScript =
-                buildString {
-                    appendLine("set -e")
-                    appendLine("cat << 'EOF' > " + shellQuote("$outDir/version.json.tmp"))
-                    appendLine(verJson)
-                    appendLine("EOF")
-                    appendLine(
-                        "mv " + shellQuote("$outDir/version.json.tmp") + " " + shellQuote("$outDir/version.json"),
-                    )
-                }
-            exec(listOf("sh", "-c", writeVerScript)).getOrThrow()
-
-            // Publish out/ to bin/<group>/<versionId>
-            emit(InstallEvent.Phase(OperationPhase.Publishing))
-            emit(InstallEvent.Output("Publishing version $versionId..."))
-            val publishScript =
-                KotlinStoreLayout.buildPublishScript(
-                    groupDir = "$base/bin/${request.group.value}",
-                    targetDir = targetVerDir,
-                    outDir = outDir,
-                    workDir = if (isRebuild) workDir else null,
-                )
-            groupLock(request.group).withLock {
-                // The last point to stop: past it the version is published and (if asked) active.
-                ensureNotCancelled(request.group)
-                exec(listOf("sh", "-c", publishScript)).getOrThrow()
-                if (request.select) {
-                    ensureNotCancelled(request.group)
-                    emit(InstallEvent.Phase(OperationPhase.Switching))
-                    useInternal(request.group, versionId, request.choice).getOrThrow()
-                }
-            }
-
-            // The version is published (and active if asked): from here on nothing may turn this into a failure.
-            // Bookkeeping that doesn't succeed is a warning. A workspace left behind stays in work/ (nothing sweeps it;
-            // with a result file it is not reported as interrupted either), which costs disk, not correctness.
-            try {
-                writeResultFile(opId, request.group.value, versionId, reused = false)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                emit(InstallEvent.Output("Warning: $versionId is installed, its result file was not written"))
-            }
-            if (exec(listOf("rm", "-rf", "--", workDir)).isFailure) {
-                emit(InstallEvent.Output("Warning: $versionId is installed; workspace $workDir was not removed"))
-            }
-
-            emit(InstallEvent.Finished(OperationResult.Installed(versionId)))
-        } catch (e: Exception) {
-            val wasCancelled = cancelledGroups.remove(request.group)
-            if (e is RemoteCancellationUnconfirmedException) {
-                unconfirmedCancellations.record(request.group, e.executionId)
-                throw e
-            }
-            if (wasCancelled) {
-                runCatchingCancellable {
-                    writeResultFile(
-                        opId = opId,
-                        group = request.group.value,
-                        versionId = null,
-                        reused = false,
-                        ok = false,
-                        error = "Operation cancelled",
-                    )
-                }
-                emit(InstallEvent.Finished(OperationResult.Cancelled))
-                return@flow
-            }
-            if (e is CancellationException) throw e
-            val isAdmissionRequired = e is io.ltirom.tooling.client.resilience.CommandAdmissionException
-            val isConnLost =
-                e is io.ltirom.tooling.core.ToolingException ||
-                    e is java.net.ConnectException ||
-                    e is java.nio.channels.ClosedChannelException ||
-                    e is java.io.IOException ||
-                    e.message?.contains("Failed to execute command on remote daemon", ignoreCase = true) == true ||
-                    e.message?.contains("Stream closed without ExecutionFinished", ignoreCase = true) == true ||
-                    e.message?.contains("Stream error on remote daemon", ignoreCase = true) == true ||
-                    e.message?.contains("Connection refused", ignoreCase = true) == true ||
-                    e.message?.contains("Connection lost", ignoreCase = true) == true ||
-                    e.message?.contains("Broken pipe", ignoreCase = true) == true
-            val err =
-                when {
-                    e is ToolErrorException -> {
-                        val msg = e.toolError.message
-                        val innerConnLost =
-                            isConnLost ||
-                                msg.contains("Failed to execute command on remote daemon", ignoreCase = true) ||
-                                msg.contains("Stream closed without ExecutionFinished", ignoreCase = true) ||
-                                msg.contains("Stream error on remote daemon", ignoreCase = true) ||
-                                msg.contains("Connection refused", ignoreCase = true) ||
-                                msg.contains("Connection lost", ignoreCase = true) ||
-                                msg.contains("Broken pipe", ignoreCase = true)
-                        if (innerConnLost && e.toolError !is ToolError.ConnectionLost) {
-                            ToolError.ConnectionLost(msg)
-                        } else {
-                            e.toolError
-                        }
-                    }
-
-                    isAdmissionRequired -> ToolError.AdmissionRequired(e.message ?: "Command admission is closed")
-
-                    isConnLost -> ToolError.ConnectionLost(e.message ?: "Connection lost")
-
-                    else -> ToolError.BuildFailed(e.message ?: "Build failed")
-                }
-            runCatchingCancellable {
-                writeResultFile(opId, request.group.value, null, reused = false, ok = false, error = err.message)
-            }
-            emit(InstallEvent.Finished(OperationResult.Failed(err, err.message)))
-        } finally {
-            cancelledGroups.remove(request.group)
-            if (!unconfirmedCancellations.isBlocking(request.group)) {
-                activeOperations.remove(request.group)
-                activeJobs.remove(request.group)
-            }
-        }
-    }
+    override fun install(request: InstallRequest): Flow<InstallEvent> = installer.install(request)
 
     private suspend fun writeResultFile(
         opId: String,
@@ -1241,8 +804,5 @@ public class KotlinToolStoreAdapter(
         private const val JOIN_SHARE_PERCENT = 80L
         private const val PERCENT = 100L
         private const val RESULT_WRITE_BUDGET_MS = 2_000L
-        private const val GIT_PREP_ATTEMPTS = 3
-        private const val SUBMODULE_MISMATCH_EXIT = 5
-        private const val GIT_RETRY_DELAY_MS = 5_000L
     }
 }

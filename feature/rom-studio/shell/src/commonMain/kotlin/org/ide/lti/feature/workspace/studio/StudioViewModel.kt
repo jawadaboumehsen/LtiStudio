@@ -27,10 +27,6 @@ import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
-import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
-import org.ide.lti.core.domain.pipeline.configuration.Severity
-import org.ide.lti.core.domain.pipeline.configuration.StageSettingsValidator
-import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.pipeline.stages.DebloatStage
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
@@ -42,9 +38,7 @@ import org.ide.lti.core.domain.workbench.RestoreWorkbench
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.BuildRun
-import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
-import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -142,7 +136,7 @@ public class StudioViewModel(
         StudioUiState(
             workspaceId = initialWorkspaceId,
             presentation = StudioPresentation(workspaceId = initialWorkspaceId),
-            railItems = computeInitialRailItems(activeDescriptors()),
+            railItems = computeRailItems(descriptors = activeDescriptors()),
             validationReport = ValidationReport(errors = emptyList()),
         ),
     )
@@ -688,76 +682,11 @@ public class StudioViewModel(
      *
      * Workspace, validation report, and workspace-id are sourced from [uiState].
      */
-    private fun recomputeOverview(uiState: StudioUiState): WorkspaceOverviewUiState {
-        val workspace = uiState.availableWorkspaces.firstOrNull { it.id == uiState.workspaceId }
-        val snapshot = uiState.snapshot?.takeIf { it.workspaceId == uiState.workspaceId }
-        val acquisitionErrors = uiState.validationReport.errors.any {
-            it.severity == Severity.ERROR &&
-                (it.stageId == StageId.FIRMWARE_ACQUISITION || it.fieldPath.startsWith("acquisition"))
-        }
-        val signed = snapshot?.build?.signing?.signPackage == true
-        return WorkspaceOverviewMapper.map(
-            workspace = workspace,
-            targetDevice = device,
-            draft = snapshot?.let { WorkspacePipelineDraft.create(uiState.workspaceId, it, device) },
-            validationReport = uiState.validationReport,
-            runs = uiState.runs,
-            signingVerified = signed && signedBuildOf(uiState.runs, snapshot.id),
-            hasExplicitValidSource = snapshot != null && !acquisitionErrors,
-        )
-    }
+    private fun recomputeOverview(uiState: StudioUiState): WorkspaceOverviewUiState =
+        recomputeOverviewState(uiState, device)
 
-    /** The editor header's target: this workspace, its own device, and the device file's live revision. */
-    private fun targetContextOf(uiState: StudioUiState): TargetContextUi {
-        if (uiState.workspaceId.isBlank()) {
-            return TargetContextUi(
-                targetId = DisplayValue.Unavailable("No active ROM profile selected"),
-                profile = DisplayValue.Unavailable("Environment unconfigured"),
-                revision = DisplayValue.Unavailable("Workspace not initialized"),
-                draftBadge = null,
-            )
-        }
-        val ws = uiState.availableWorkspaces.firstOrNull { it.id == uiState.workspaceId }
-        val tb = ws?.targetBinding
-        // A binding to the workspace itself is its own device: show the device, never the workspace id.
-        val sharedProfile = tb?.profileId?.takeIf { it != ws.id }
-        val noDevice = DisplayValue.Unavailable("No device")
-        return TargetContextUi(
-            targetId = DisplayValue.Available(ws?.name ?: uiState.workspaceId),
-            profile = (sharedProfile ?: device?.name)?.let { DisplayValue.Available(it) } ?: noDevice,
-            // The device file's own edit counter is the live revision; the binding keeps the one it was made with.
-            revision = (device?.revision ?: tb?.profileRevision)?.let { DisplayValue.Available("rev $it") } ?: noDevice,
-            draftBadge = null,
-        )
-    }
-
-    private fun buildShellState(uiState: StudioUiState): WorkspaceShellUiState {
-        val currentShell = _shellState.value
-        val selectedStageId = (uiState.entry as? StudioEntry.Editor)?.stageId
-        val items = createDefaultPipelineRailItems(selectedStageId, activeDescriptors()).map { item ->
-            item.copy(hasError = uiState.validationReport.blocks(item.stageId))
-        }
-        val pipelineItems = lockStages(items, uiState.validationReport)
-        val problemCount = uiState.validationReport.errors.size
-        val targetContext = targetContextOf(uiState)
-
-        val effectiveSection = if (currentShell.globalDestination == GlobalDestination.Workspace) {
-            when (uiState.entry) {
-                is StudioEntry.Overview -> currentShell.selectedWorkspaceSection ?: WorkspaceSection.Overview
-                is StudioEntry.Editor -> null
-            }
-        } else {
-            null
-        }
-
-        return currentShell.copy(
-            targetContext = targetContext,
-            problemCount = problemCount,
-            pipelineItems = pipelineItems,
-            deviceHasError = uiState.validationReport.blocks(null),
-            selectedWorkspaceSection = effectiveSection,
-        )
-    }
+    private fun buildShellState(uiState: StudioUiState): WorkspaceShellUiState =
+        buildWorkspaceShellState(_shellState.value, uiState, device, activeDescriptors())
 
     public fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
@@ -787,74 +716,8 @@ public class StudioViewModel(
         }
     }
 
-    private fun computeRailItems(
-        entry: StudioEntry,
-        report: ValidationReport,
-        descriptors: List<StageDescriptor>,
-    ): List<StudioRailItem> {
-        val selectedStageId = (entry as? StudioEntry.Editor)?.stageId
-        return descriptors.map { stage ->
-            val isSelected = stage.stageId == selectedStageId
-            val errors = report.errors.filter { it.stageId == stage.stageId }
-            val errorCount = errors.count { it.severity == Severity.ERROR }
-            val warningCount = errors.count { it.severity == Severity.WARNING }
-            val statusLabel = when {
-                errorCount > 0 -> "$errorCount error${if (errorCount > 1) "s" else ""}"
-                warningCount > 0 -> "$warningCount warning${if (warningCount > 1) "s" else ""}"
-                else -> "Valid"
-            }
-            StudioRailItem(
-                stage = stage,
-                isSelected = isSelected,
-                errorCount = errorCount,
-                warningCount = warningCount,
-                statusLabel = statusLabel,
-            )
-        }
-    }
-
     private companion object {
         const val VALIDATION_DEBOUNCE_MS = 400L
-        fun buildInitialShellState(workspaceId: String, descriptors: List<StageDescriptor>): WorkspaceShellUiState {
-            val targetContext = if (workspaceId.isNotBlank()) {
-                TargetContextUi(
-                    targetId = DisplayValue.Available(workspaceId),
-                    profile = DisplayValue.Available("Default"),
-                    revision = DisplayValue.Available("rev-1"),
-                    draftBadge = null,
-                )
-            } else {
-                TargetContextUi(
-                    targetId = DisplayValue.Unavailable("No active ROM profile selected"),
-                    profile = DisplayValue.Unavailable("Environment unconfigured"),
-                    revision = DisplayValue.Unavailable("Workspace not initialized"),
-                    draftBadge = null,
-                )
-            }
-            return WorkspaceShellUiState(
-                globalDestination = GlobalDestination.Workspace,
-                targetContext = targetContext,
-                hasUnsavedChanges = false,
-                validateOperation = OperationUiState.Idle,
-                saveOperation = OperationUiState.Idle,
-                connection = ConnectionUiState.Connected("Local Engine"),
-                problemCount = 0,
-                activity = ActivityUiState.Idle,
-                pipelineItems = createDefaultPipelineRailItems(descriptors = descriptors),
-                selectedWorkspaceSection = WorkspaceSection.Overview,
-            )
-        }
-
-        fun computeInitialRailItems(descriptors: List<StageDescriptor>): List<StudioRailItem> =
-            descriptors.map { stage ->
-                StudioRailItem(
-                    stage = stage,
-                    isSelected = false,
-                    errorCount = 0,
-                    warningCount = 0,
-                    statusLabel = "Valid",
-                )
-            }
     }
 }
 
@@ -866,44 +729,6 @@ private fun <T> Flow<T>.retryingAfter(fallback: T): Flow<T> = retryWhen { cause,
             delay(OBSERVE_RETRY_MS)
         }
     }
-}
-
-/** The device and every stage's saved settings checked, or why they cannot be ([missing]). */
-private fun buildValidation(
-    missing: String?,
-    snapshot: ConfigurationSnapshot?,
-    device: TargetDevice?,
-): ValidationReport = if (missing != null || snapshot == null || device == null) {
-    ValidationReport(
-        errors = listOf(
-            ValidationError(
-                stageId = null,
-                objectId = null,
-                fieldPath = "workspace",
-                code = "WORKSPACE_INCOMPLETE",
-                severity = Severity.ERROR,
-                message = missing ?: "Incomplete workspace",
-            ),
-        ),
-    )
-} else {
-    // Publish is not part of a build (the build check leaves it out), but its stage still shows its errors.
-    val publish = StageSettingsValidator.validatePublish(snapshot.publish).errors.filter {
-        it.severity == Severity.ERROR
-    }
-    ValidationReport(errors = DeviceConfigReadiness.check(device, snapshot) + publish)
-}
-
-/**
- * Whether a build of these settings ([snapshotId]) signed: its Build & Sign ran (or was its cached result). A run
- * stopped earlier, or one of older settings, proves nothing about the keys.
- */
-private fun signedBuildOf(runs: List<BuildRun>, snapshotId: String?): Boolean = runs.any { run ->
-    run.state == RunState.SUCCEEDED && run.snapshotId == snapshotId &&
-        run.stages.any {
-            it.stageId == StageId.BUILD_FLASHABLE_ZIP &&
-                (it.state == StageState.EXECUTED || it.state == StageState.SKIPPED)
-        }
 }
 
 private const val OBSERVE_RETRY_MS = 5_000L

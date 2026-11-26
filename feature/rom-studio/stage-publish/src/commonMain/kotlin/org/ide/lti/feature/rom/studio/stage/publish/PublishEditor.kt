@@ -33,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
@@ -369,7 +372,7 @@ private fun RetentionCard(settings: PublishSettings, dirtyPaths: Set<String>, on
 /** The checks Publish runs before it starts: a built, signed release and a destination. */
 @Composable
 private fun VerificationCard(state: PublishUiState) {
-    Card("Before publishing") {
+    IdeSectionCard(title = "Before publishing", titleFontSize = FontSize.BodySmall) {
         val preflight = state.preflight
         state.error?.let { Problem(it) }
         when {
@@ -377,10 +380,14 @@ private fun VerificationCard(state: PublishUiState) {
             preflight == null -> Unit
 
             preflight.problems.isEmpty() -> {
-                Hint("Ready: a signed build and a destination. Publishing checks the package against its hash first.")
-                listOfNotNull(preflight.release, preflight.release?.ota)
-                    .forEach { Mono("${it.zip}  ${size(it.size)}  sha256 ${it.sha256}") }
-                preflight.destination?.let { Mono("to ${shownPath(it)}") }
+                IdeHintText(
+                    "Ready: a signed build and a destination. Publishing checks the package against its hash first.",
+                    fontSize = FontSize.Micro,
+                )
+                listOfNotNull(preflight.release, preflight.release?.ota).forEach {
+                    IdeMonoText("${it.zip}  ${size(it.size)}  sha256 ${it.sha256}", fontSize = FontSize.Micro)
+                }
+                preflight.destination?.let { IdeMonoText("to ${shownPath(it)}", fontSize = FontSize.Micro) }
             }
 
             else -> preflight.problems.forEach { Problem(it) }
@@ -400,7 +407,7 @@ private fun ReviewCard(
     var confirming by remember(review) { mutableStateOf(false) }
     val preflight = state.preflight
     val ready = review != null
-    Card("Publish") {
+    IdeSectionCard(title = "Publish", titleFontSize = FontSize.BodySmall) {
         val journal = state.journal
         val resumes = journal != null && !journal.finished && journal.sha256 == preflight?.release?.sha256
         PublishButtons(state, ready, resumes, onPublish = { confirming = true }, onCancel = onCancel)
@@ -414,7 +421,12 @@ private fun ReviewCard(
                     .padding(vertical = Spacing.ExtraSmall),
             )
         }
-        if (resumes && !state.publishing) Hint("Publishing again resumes here; finished steps are not redone.")
+        if (resumes && !state.publishing) {
+            IdeHintText(
+                "Publishing again resumes here; finished steps are not redone.",
+                fontSize = FontSize.Micro,
+            )
+        }
         // The result first: a finished publish says where it went, above the steps that got it there.
         journal?.outcome?.takeIf { !state.publishing }?.let { Success(withShownPaths(it)) }
         journal?.let { JournalSteps(it, state.transfer?.stepId.takeIf { state.publishing }) }
@@ -444,11 +456,15 @@ private fun JournalSteps(journal: PublishJournal, runningId: String?) {
             step.state == PublishStepState.FAILED -> "failed"
             else -> "to do"
         }
-        Mono("${step.label}: $mark")
+        IdeMonoText("${step.label}: $mark", fontSize = FontSize.Micro)
         // A running step's detail is its last attempt's result; the progress above says how it goes now.
         step.detail?.takeIf { step.id != runningId }?.let {
             val detail = withShownPaths(it)
-            if (step.state == PublishStepState.FAILED) Problem(detail) else Hint(detail)
+            if (step.state == PublishStepState.FAILED) {
+                Problem(detail)
+            } else {
+                IdeHintText(detail, fontSize = FontSize.Micro)
+            }
         }
     }
 }
@@ -485,45 +501,6 @@ private fun ConfirmPublish(text: String, onDismiss: () -> Unit, onConfirm: () ->
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
-}
-
-@Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            fontSize = FontSize.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        content()
-    }
-}
-
-@Composable
-internal fun Mono(text: String) {
-    Text(
-        text = text,
-        fontSize = FontSize.Micro,
-        fontFamily = codeFontFamily(),
-        color = MaterialTheme.colorScheme.onSurface,
-    )
-}
-
-@Composable
-internal fun Hint(text: String) {
-    Text(
-        text = text,
-        fontSize = FontSize.Micro,
-        fontFamily = ideFontFamily(),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 @Composable

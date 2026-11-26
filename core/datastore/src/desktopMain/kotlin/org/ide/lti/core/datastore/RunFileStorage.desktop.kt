@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import java.io.File
 import java.nio.file.Files
@@ -30,20 +31,8 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
     }
 
     override suspend fun saveRun(runId: String, json: String): Unit = withContext(Dispatchers.IO) {
-        val file = File(baseDir, "$runId.json")
-        file.parentFile?.mkdirs()
         // Written beside it and renamed over it: a crash mid-write leaves the previous record whole.
-        val partial = File(baseDir, "$runId.json.partial")
-        java.io.FileOutputStream(partial).use { out ->
-            out.write(json.toByteArray(Charsets.UTF_8))
-            out.fd.sync()
-        }
-        java.nio.file.Files.move(
-            partial.toPath(),
-            file.toPath(),
-            java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-        )
+        atomicWrite(File(baseDir, "$runId.json").toPath(), json, fsync = true, allowNonAtomicFallback = false)
     }
 
     override suspend fun getRun(runId: String): String? = withContext(Dispatchers.IO) {

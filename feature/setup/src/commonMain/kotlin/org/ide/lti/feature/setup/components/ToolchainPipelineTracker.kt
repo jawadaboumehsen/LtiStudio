@@ -318,14 +318,39 @@ private data class StageRowDisplayState(
     val errorText: String?,
 )
 
-private fun isStepActionRequired(
-    status: StepStatus,
-    hasAction: Boolean,
-    isSuccess: Boolean,
-    isRunning: Boolean,
-): Boolean {
-    if (isSuccess || isRunning) return false
-    return status == StepStatus.FAILED || status == StepStatus.WARNING || hasAction
+private fun buildStageRowDisplayState(
+    step: SetupStepDetail,
+    presRunning: Boolean = false,
+    presReady: Boolean = false,
+    severity: IdeStatusSeverity? = null,
+    displayDescription: String = step.description,
+    primaryAction: SetupRowAction? = SetupRowAction.RETRY,
+    actionCountsAsRequired: Boolean = primaryAction != null,
+    primaryActionLabel: String? = null,
+    secondaryAction: SetupRowAction? = null,
+    secondaryActionLabel: String? = null,
+    layoutRecovery: ToolchainLayoutRecoveryPresentation? = null,
+    errorText: String? = null,
+): StageRowDisplayState {
+    val isRunning = step.status == StepStatus.RUNNING || presRunning
+    val isSuccess = (step.status == StepStatus.SUCCESS || presReady) && !isRunning
+    val isActionRequired = !isSuccess &&
+        !isRunning &&
+        (step.status == StepStatus.FAILED || step.status == StepStatus.WARNING || actionCountsAsRequired)
+    return StageRowDisplayState(
+        isRunning = isRunning,
+        isSuccess = isSuccess,
+        isRestored = step.provenance == StepProvenance.RESTORED,
+        isActionRequired = isActionRequired,
+        isFailed = step.status == StepStatus.FAILED || severity == IdeStatusSeverity.Failed,
+        displayDescription = displayDescription,
+        primaryAction = primaryAction,
+        primaryLabel = primaryActionLabel ?: "Retry Stage",
+        secondaryAction = secondaryAction,
+        secondaryActionLabel = secondaryActionLabel,
+        layoutRecovery = layoutRecovery,
+        errorText = errorText,
+    )
 }
 
 private fun resolveBuildServiceDisplayState(
@@ -340,27 +365,17 @@ private fun resolveBuildServiceDisplayState(
         isChecking = isBusy || step.status == StepStatus.RUNNING,
         systemPackagesStep = systemPackagesStep,
     )
-    val isRunning = step.status == StepStatus.RUNNING || pres.isRunning
-    val isSuccess = (step.status == StepStatus.SUCCESS || pres.isReady) && !isRunning
-    val isActionRequired = isStepActionRequired(
-        status = step.status,
-        hasAction = pres.primaryAction != null,
-        isSuccess = isSuccess,
-        isRunning = isRunning,
-    )
-    return StageRowDisplayState(
-        isRunning = isRunning,
-        isSuccess = isSuccess,
-        isRestored = step.provenance == StepProvenance.RESTORED,
-        isActionRequired = isActionRequired,
-        isFailed = step.status == StepStatus.FAILED || pres.severity == IdeStatusSeverity.Failed,
+    return buildStageRowDisplayState(
+        step = step,
+        presRunning = pres.isRunning,
+        presReady = pres.isReady,
+        severity = pres.severity,
         displayDescription = pres.detailText.ifBlank { step.description },
         primaryAction = pres.primaryAction,
-        primaryLabel = pres.primaryActionLabel ?: "Retry Stage",
+        primaryActionLabel = pres.primaryActionLabel,
         secondaryAction = pres.secondaryAction,
         secondaryActionLabel = pres.secondaryActionLabel,
         layoutRecovery = pres.layoutRecovery,
-        errorText = null,
     )
 }
 
@@ -376,27 +391,14 @@ private fun resolveSystemPackagesDisplayState(
         activeOperation = activeOperation,
         handoffSheetState = handoffSheetState,
     )
-    val isRunning = step.status == StepStatus.RUNNING || pres.isChecking
-    val isSuccess = (step.status == StepStatus.SUCCESS || pres.isReady) && !isRunning
-    val isActionRequired = isStepActionRequired(
-        status = step.status,
-        hasAction = pres.primaryAction != null,
-        isSuccess = isSuccess,
-        isRunning = isRunning,
-    )
-    return StageRowDisplayState(
-        isRunning = isRunning,
-        isSuccess = isSuccess,
-        isRestored = step.provenance == StepProvenance.RESTORED,
-        isActionRequired = isActionRequired,
-        isFailed = step.status == StepStatus.FAILED || pres.severity == IdeStatusSeverity.Failed,
+    return buildStageRowDisplayState(
+        step = step,
+        presRunning = pres.isChecking,
+        presReady = pres.isReady,
+        severity = pres.severity,
         displayDescription = pres.detailText.ifBlank { step.description },
         primaryAction = pres.primaryAction,
-        primaryLabel = pres.primaryActionLabel ?: "Retry Stage",
-        secondaryAction = null,
-        secondaryActionLabel = null,
-        layoutRecovery = null,
-        errorText = null,
+        primaryActionLabel = pres.primaryActionLabel,
     )
 }
 
@@ -410,80 +412,33 @@ private fun resolveToolchainDisplayState(
         nowEpochMs = currentEpochMs,
         canCancel = activeOperation?.executionState == SetupOperationState.RUNNING,
     )
-    val isRunning = step.status == StepStatus.RUNNING || pres?.isRunning == true
-    val isSuccess = (step.status == StepStatus.SUCCESS || pres?.isReady == true) && !isRunning
-    val hasAction = pres?.primaryAction != null && pres.primaryAction != SetupRowAction.CANCEL
-    val isActionRequired = isStepActionRequired(
-        status = step.status,
-        hasAction = hasAction,
-        isSuccess = isSuccess,
-        isRunning = isRunning,
-    )
-    return StageRowDisplayState(
-        isRunning = isRunning,
-        isSuccess = isSuccess,
-        isRestored = step.provenance == StepProvenance.RESTORED,
-        isActionRequired = isActionRequired,
-        isFailed = step.status == StepStatus.FAILED || pres?.severity == IdeStatusSeverity.Failed,
+    return buildStageRowDisplayState(
+        step = step,
+        presRunning = pres?.isRunning == true,
+        presReady = pres?.isReady == true,
+        severity = pres?.severity,
         displayDescription = pres?.detailText?.ifBlank { step.description } ?: step.description,
         primaryAction = pres?.primaryAction,
-        primaryLabel = pres?.primaryActionLabel ?: "Retry Stage",
+        actionCountsAsRequired = pres?.primaryAction != null && pres.primaryAction != SetupRowAction.CANCEL,
+        primaryActionLabel = pres?.primaryActionLabel,
         secondaryAction = pres?.secondaryAction,
         secondaryActionLabel = pres?.secondaryActionLabel,
-        layoutRecovery = null,
         errorText = pres?.errorText,
     )
 }
 
-private fun resolveWslDisplayState(step: SetupStepDetail, wslPres: WslRowPresentation?): StageRowDisplayState {
-    val isRunning = step.status == StepStatus.RUNNING
-    val isSuccess = step.status == StepStatus.SUCCESS && !isRunning
-    val isActionRequired = isStepActionRequired(
-        status = step.status,
-        hasAction = wslPres?.primaryAction != null,
-        isSuccess = isSuccess,
-        isRunning = isRunning,
-    )
-    return StageRowDisplayState(
-        isRunning = isRunning,
-        isSuccess = isSuccess,
-        isRestored = step.provenance == StepProvenance.RESTORED,
-        isActionRequired = isActionRequired,
-        isFailed = step.status == StepStatus.FAILED || wslPres?.severity == IdeStatusSeverity.Failed,
+private fun resolveWslDisplayState(step: SetupStepDetail, wslPres: WslRowPresentation?): StageRowDisplayState =
+    buildStageRowDisplayState(
+        step = step,
+        severity = wslPres?.severity,
         displayDescription = wslPres?.detailText ?: step.description,
         primaryAction = wslPres?.primaryAction ?: SetupRowAction.RETRY,
-        primaryLabel = wslPres?.primaryActionLabel ?: "Retry Stage",
+        actionCountsAsRequired = wslPres?.primaryAction != null,
+        primaryActionLabel = wslPres?.primaryActionLabel,
         secondaryAction = wslPres?.secondaryAction,
         secondaryActionLabel = wslPres?.secondaryActionLabel,
-        layoutRecovery = null,
         errorText = step.error,
     )
-}
-
-private fun resolveGenericDisplayState(step: SetupStepDetail): StageRowDisplayState {
-    val isRunning = step.status == StepStatus.RUNNING
-    val isSuccess = step.status == StepStatus.SUCCESS && !isRunning
-    val isActionRequired = isStepActionRequired(
-        status = step.status,
-        hasAction = false,
-        isSuccess = isSuccess,
-        isRunning = isRunning,
-    )
-    return StageRowDisplayState(
-        isRunning = isRunning,
-        isSuccess = isSuccess,
-        isRestored = step.provenance == StepProvenance.RESTORED,
-        isActionRequired = isActionRequired,
-        isFailed = step.status == StepStatus.FAILED,
-        displayDescription = step.description,
-        primaryAction = SetupRowAction.RETRY,
-        primaryLabel = "Retry Stage",
-        secondaryAction = null,
-        secondaryActionLabel = null,
-        layoutRecovery = null,
-        errorText = step.error,
-    )
-}
 
 private fun resolveStageRowDisplayState(
     step: SetupStepDetail,
@@ -514,7 +469,11 @@ private fun resolveStageRowDisplayState(
         currentEpochMs = currentEpochMs,
     )
     SetupStepStage.WSL_DETECTION -> resolveWslDisplayState(step = step, wslPres = wslPres)
-    else -> resolveGenericDisplayState(step = step)
+    else -> buildStageRowDisplayState(
+        step = step,
+        actionCountsAsRequired = false,
+        errorText = step.error,
+    )
 }
 
 @Suppress("DEPRECATION")

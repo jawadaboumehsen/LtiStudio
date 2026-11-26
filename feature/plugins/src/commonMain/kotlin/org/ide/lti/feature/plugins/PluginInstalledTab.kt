@@ -71,6 +71,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
+import org.ide.lti.feature.plugins.components.PluginDetailRow
 import org.ide.lti.feature.plugins.components.PluginFooterBar
 import org.jetbrains.compose.resources.painterResource
 
@@ -540,17 +541,31 @@ private fun InstalledInspectorProperties(record: InstalledRecord, modifier: Modi
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        InspectorRow(label = "Package identity", value = record.identity.key)
-        InspectorRow(
+        PluginDetailRow(
+            label = "Package identity",
+            value = record.identity.key,
+            valueFontWeight = FontWeight.SemiBold,
+            rowVerticalAlignment = Alignment.CenterVertically,
+        )
+        PluginDetailRow(
             label = "Needs",
             value = record.dependencies.joinToString { "${it.publisher}:${it.id}" }.ifBlank { "Nothing else" },
+            valueFontWeight = FontWeight.SemiBold,
+            rowVerticalAlignment = Alignment.CenterVertically,
         )
-        InspectorRow(label = "Trust", value = trustLabel(record.trust))
+        PluginDetailRow(
+            label = "Trust",
+            value = trustLabel(record.trust),
+            valueFontWeight = FontWeight.SemiBold,
+            rowVerticalAlignment = Alignment.CenterVertically,
+        )
         // Installed plugins are offered to every workspace; each turns them on in its own Patches stage.
-        InspectorRow(
+        PluginDetailRow(
             label = "Use in a build",
             value = "Patches & Mods stage",
             explanation = "Turn it on in the workspace's Patches & Mods stage; that list is what the build applies.",
+            valueFontWeight = FontWeight.SemiBold,
+            rowVerticalAlignment = Alignment.CenterVertically,
         )
     }
 }
@@ -684,43 +699,6 @@ private fun InstalledInspectorActions(
                     Text("Archive")
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun InspectorRow(label: String, value: String, explanation: String? = null, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.ExtraExtraSmall),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        if (explanation != null) {
-            Text(
-                text = explanation,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

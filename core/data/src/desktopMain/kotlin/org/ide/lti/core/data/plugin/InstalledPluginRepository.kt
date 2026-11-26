@@ -16,8 +16,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicMove
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.common.utils.runCatchingCancellable
-import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PackageIdentity
@@ -32,11 +33,9 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -356,14 +355,6 @@ class InstalledPluginRepository(
 
     override suspend fun discard(quarantined: Path) {
         runCatchingCancellable { Files.deleteIfExists(quarantined) }
-    }
-
-    private fun atomicMove(source: Path, target: Path) {
-        try {
-            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-        } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
-        }
     }
 
     companion object {

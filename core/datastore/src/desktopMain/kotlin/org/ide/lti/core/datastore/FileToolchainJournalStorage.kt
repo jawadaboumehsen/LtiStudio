@@ -9,10 +9,8 @@
  */
 package org.ide.lti.core.datastore
 
+import org.ide.lti.core.common.utils.atomicWrite
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 /**
  * Desktop JVM [ToolchainJournalStorage]: writes to a sibling temp file, fsyncs it, then atomically
@@ -30,30 +28,7 @@ public class FileToolchainJournalStorage(
     }
 
     override fun write(json: String) {
-        val parent = file.absoluteFile.parentFile
-        if (parent != null && !parent.isDirectory) {
-            parent.mkdirs()
-            if (!parent.isDirectory) throw java.io.IOException("Cannot create journal directory ${parent.path}")
-        }
-        val temp = File(parent, "${file.name}.tmp")
-        FileOutputStream(temp).use { out ->
-            out.write(json.toByteArray(Charsets.UTF_8))
-            out.flush()
-            out.fd.sync()
-        }
-        try {
-            Files.move(
-                temp.toPath(),
-                file.toPath(),
-                StandardCopyOption.ATOMIC_MOVE,
-                StandardCopyOption.REPLACE_EXISTING,
-            )
-        } catch (e: java.nio.file.AtomicMoveNotSupportedException) {
-            // Same directory on every supported filesystem; keep the failure explicit rather than
-            // silently degrading to a non-atomic copy.
-            temp.delete()
-            throw java.io.IOException("Atomic journal replace is not supported at ${file.path}", e)
-        }
+        atomicWrite(file.toPath(), json, fsync = true, allowNonAtomicFallback = false)
     }
 
     public companion object {

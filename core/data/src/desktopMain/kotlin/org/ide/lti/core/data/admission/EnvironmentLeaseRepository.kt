@@ -13,6 +13,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicWrite
+import org.ide.lti.core.common.utils.readIfPresent
 import org.ide.lti.core.domain.ports.EnvironmentAdmission
 import org.ide.lti.core.domain.ports.EnvironmentLease
 import org.ide.lti.core.domain.ports.EnvironmentLeasePort

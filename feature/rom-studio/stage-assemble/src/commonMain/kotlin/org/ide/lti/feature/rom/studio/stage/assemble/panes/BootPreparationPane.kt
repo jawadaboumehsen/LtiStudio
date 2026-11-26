@@ -27,11 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassChip
-import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
+import org.ide.lti.core.designsystem.component.display.IdeHintText
+import org.ide.lti.core.designsystem.component.display.IdeMonoText
+import org.ide.lti.core.designsystem.component.display.IdeSectionCard
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.component.inputs.GlassPasswordField
@@ -41,7 +42,6 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
-import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.toolkit.BootParts
 import org.ide.lti.core.domain.pipeline.toolkit.RootStatus
@@ -123,7 +123,7 @@ private fun ImageCard(
     actions: BootPaneActions,
     idle: Boolean,
 ) {
-    Card("Boot-chain images") {
+    IdeSectionCard(title = "Boot-chain images") {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             target.bootPartitions.forEach { partition ->
                 GlassChip(
@@ -133,7 +133,7 @@ private fun ImageCard(
                 )
             }
         }
-        Hint(
+        IdeHintText(
             "Unpacks the image the next build would use " +
                 "(an earlier edit, else the extracted one).",
         )
@@ -160,17 +160,17 @@ private fun ImageCard(
 
 @Composable
 private fun ComponentsCard(parts: BootParts, actions: BootPaneActions, idle: Boolean) {
-    Card("Components (FR-020)") {
+    IdeSectionCard(title = "Components (FR-020)") {
         val h = parts.header
         fun part(path: String?, size: Long) = path?.let { "$it (${formatBytes(size)})" } ?: "none in this image"
         val os = "${h.osVersion} ${h.osPatchLevel}".trim().ifEmpty { "-" }
-        Mono("Header v${h.headerVersion}, page ${h.pageSize}, OS $os")
+        IdeMonoText("Header v${h.headerVersion}, page ${h.pageSize}, OS $os")
         // unpack_bootimg writes an empty kernel file for an image that has none, as init_boot.
-        Mono("Kernel: ${part(parts.kernelPath.takeIf { h.kernelSize > 0 }, h.kernelSize)}")
-        Mono("Ramdisk: ${part(parts.ramdiskFolderPath, h.ramdiskSize)}")
-        Mono("Command line: ${h.cmdline.ifBlank { "-" }}")
+        IdeMonoText("Kernel: ${part(parts.kernelPath.takeIf { h.kernelSize > 0 }, h.kernelSize)}")
+        IdeMonoText("Ramdisk: ${part(parts.ramdiskFolderPath, h.ramdiskSize)}")
+        IdeMonoText("Command line: ${h.cmdline.ifBlank { "-" }}")
         val footer = parts.footer?.let { "${it.partitionName} ${it.algorithmName}, ${formatBytes(it.imageSize)}" }
-        Mono("AVB footer: ${footer ?: "none"}")
+        IdeMonoText("AVB footer: ${footer ?: "none"}")
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             GlassButton(onClick = actions.openRamdisk, enabled = idle && parts.hasRamdisk) {
                 Text("Open the ramdisk folder", fontSize = FontSize.BodySmall)
@@ -184,7 +184,7 @@ private fun ComponentsCard(parts: BootParts, actions: BootPaneActions, idle: Boo
 
 @Composable
 private fun DeviceTreeCard(dts: String, state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
-    Card("Device tree (FR-022)") {
+    IdeSectionCard(title = "Device tree (FR-022)") {
         // Unpack compiles the tree back and says in the dts whether it gives the same bytes.
         dts.lineSequence().take(HEADER_LINES).firstOrNull { it.startsWith(ROUND_TRIP) }?.let { line ->
             val colors = GlassTheme.diagnosticColors
@@ -209,15 +209,19 @@ private fun DeviceTreeCard(dts: String, state: BootPaneState, actions: BootPaneA
             }
         }
         state.deviceTreeDiff?.let { diff ->
-            if (diff.hasChanges) diff.differences.take(MAX_LINES).forEach { Mono(it) } else Hint("No changes.")
+            if (diff.hasChanges) {
+                diff.differences.take(MAX_LINES).forEach { IdeMonoText(it) }
+            } else {
+                IdeHintText("No changes.")
+            }
         }
     }
 }
 
 @Composable
 private fun RepackCard(state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
-    Card("Repack into the build (FR-021, FR-024)") {
-        Hint(
+    IdeSectionCard(title = "Repack into the build (FR-021, FR-024)") {
+        IdeHintText(
             "The ramdisk folder is packed with mkbootfs and read back; any difference stops the repack. " +
                 "The result becomes this partition's override, which Assemble copies into the build.",
         )
@@ -242,27 +246,29 @@ private fun RepackCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
 /** The boot kernel's version and what it reads: an image built with anything else would not mount or boot. */
 @Composable
 private fun KernelCard(state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
-    Card("Kernel") {
+    IdeSectionCard(title = "Kernel") {
         val kernel = state.kernel
         when {
             kernel != null -> {
-                Mono("Version ${kernel.version ?: "unknown"}")
-                Mono("EROFS can use: ${kernel.erofsCompressions?.joinToString().orEmpty().ifEmpty { "nothing" }}")
-                Mono("Ramdisks can use: ${kernel.ramdiskFormats?.joinToString().orEmpty().ifEmpty { "nothing" }}")
+                val erofs = kernel.erofsCompressions?.joinToString().orEmpty().ifEmpty { "nothing" }
+                val ramdisks = kernel.ramdiskFormats?.joinToString().orEmpty().ifEmpty { "nothing" }
+                IdeMonoText("Version ${kernel.version ?: "unknown"}")
+                IdeMonoText("EROFS can use: $erofs")
+                IdeMonoText("Ramdisks can use: $ramdisks")
                 if (kernel.config != null) {
                     val dm = if (kernel.dmVerityFec == true) "yes, with error correction" else yesNo(kernel.dmVerity)
-                    Mono("dm-verity: $dm · fs-verity: ${yesNo(kernel.fsVerity)}")
+                    IdeMonoText("dm-verity: $dm · fs-verity: ${yesNo(kernel.fsVerity)}")
                     val f2fs = kernel.f2fsCompressions.orEmpty().joinToString().ifEmpty { "nothing" }
-                    Mono("F2FS: ${yesNo(kernel.mounts("f2fs"))} · F2FS compression can use: $f2fs")
-                    Mono("Page size: ${kernel.pageSizeKib?.let { "$it KiB" } ?: "not stated"}")
-                    Mono("Hardening: ${kernel.protections.orEmpty().joinToString().ifEmpty { "none stated" }}")
+                    IdeMonoText("F2FS: ${yesNo(kernel.mounts("f2fs"))} · F2FS compression can use: $f2fs")
+                    IdeMonoText("Page size: ${kernel.pageSizeKib?.let { "$it KiB" } ?: "not stated"}")
+                    IdeMonoText("Hardening: ${kernel.protections.orEmpty().joinToString().ifEmpty { "none stated" }}")
                 }
-                if (kernel.config == null) Hint("This kernel carries no config, so what it reads is not known.")
+                if (kernel.config == null) IdeHintText("This kernel carries no config, so what it reads is not known.")
             }
 
-            state.kernelRead -> Hint("boot.img carries no kernel.")
+            state.kernelRead -> IdeHintText("boot.img carries no kernel.")
 
-            else -> Hint("Reads the kernel of the boot image the next build uses, and its embedded config.")
+            else -> IdeHintText("Reads the kernel of the boot image the next build uses, and its embedded config.")
         }
         GlassButton(onClick = actions.readKernel, enabled = idle, modifier = Modifier.testTag("ReadKernelButton")) {
             Text(if (state.kernelRead) "Read again" else "Read the kernel", fontSize = FontSize.BodySmall)
@@ -272,7 +278,7 @@ private fun KernelCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
 
 @Composable
 private fun FooterCard(settings: AssemblySettings, onChange: (AssemblySettings) -> Unit) {
-    Card("Stock AVB footer") {
+    IdeSectionCard(title = "Stock AVB footer") {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small)) {
             FOOTER_POLICIES.forEach { (value, label) ->
                 GlassChip(
@@ -282,7 +288,7 @@ private fun FooterCard(settings: AssemblySettings, onChange: (AssemblySettings) 
                 )
             }
         }
-        Hint(
+        IdeHintText(
             if (settings.bootFooterPolicy.equals("erase", ignoreCase = true)) {
                 "The vendor footer is removed (avbtool erase_footer); Build & Sign adds a new one signed " +
                     "with the workspace AVB key. Recommended."
@@ -297,14 +303,14 @@ private fun FooterCard(settings: AssemblySettings, onChange: (AssemblySettings) 
 private fun RootCard(state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
     var superKey by remember { mutableStateOf("") }
     var showKey by remember { mutableStateOf(false) }
-    Card("Root (FR-026)") {
-        Mono(
+    IdeSectionCard(title = "Root (FR-026)") {
+        IdeMonoText(
             when (val root = state.rootStatus) {
                 is RootStatus.AlreadyPatched -> "Already patched with ${root.patcher} (${root.details})"
                 RootStatus.NotPatched -> if (state.parts == null) "Unpack the image to check." else "Not patched"
             },
         )
-        Hint("APatch patches the unpacked kernel with KernelPatch; repack afterwards to keep it.")
+        IdeHintText("APatch patches the unpacked kernel with KernelPatch; repack afterwards to keep it.")
         GlassPasswordField(
             label = "APatch superkey (8 characters or more)",
             value = superKey,
@@ -319,7 +325,7 @@ private fun RootCard(state: BootPaneState, actions: BootPaneActions, idle: Boole
         ) {
             Text("Patch with APatch", fontSize = FontSize.BodySmall)
         }
-        Hint(
+        IdeHintText(
             "Magisk: no Linux magiskboot is published, so patch ${state.image}.img in the Magisk app on the phone " +
                 "and import the patched file here; it becomes the override.",
         )
@@ -331,8 +337,8 @@ private fun RootCard(state: BootPaneState, actions: BootPaneActions, idle: Boole
 
 @Composable
 private fun VbmetaCard(state: BootPaneState, actions: BootPaneActions, idle: Boolean) {
-    Card("vbmeta flags (FR-023)") {
-        Hint("vbmeta is never packaged; the edited copy is written to out/toolkit/ for you to flash.")
+    IdeSectionCard(title = "vbmeta flags (FR-023)") {
+        IdeHintText("vbmeta is never packaged; the edited copy is written to out/toolkit/ for you to flash.")
         val flags = state.vbmetaEdited
         if (flags == null) {
             GlassButton(onClick = actions.loadVbmeta, enabled = idle) {
@@ -350,15 +356,15 @@ private fun VbmetaCard(state: BootPaneState, actions: BootPaneActions, idle: Boo
                     )
                 }
             }
-            Mono("Checked: ${mode.checks}")
-            Mono("No longer checked: ${mode.stops}")
-            Mono("Locked bootloader: ${mode.locked}")
+            IdeMonoText("Checked: ${mode.checks}")
+            IdeMonoText("No longer checked: ${mode.stops}")
+            IdeMonoText("Locked bootloader: ${mode.locked}")
             GlassChip(
                 label = "Do not use A/B (${VbmetaFlag.DO_NOT_USE_AB.flagName})",
                 selected = (flags and VbmetaFlag.DO_NOT_USE_AB.bitMask) != 0,
                 onClick = { actions.toggleVbmeta(VbmetaFlag.DO_NOT_USE_AB) },
             )
-            state.vbmetaDiff?.takeIf { it.hasChanges }?.describe()?.forEach { Mono(it) }
+            state.vbmetaDiff?.takeIf { it.hasChanges }?.describe()?.forEach { IdeMonoText(it) }
             GlassButton(onClick = actions.writeVbmeta, enabled = idle && state.vbmetaDiff?.hasChanges == true) {
                 Text("Write the edited vbmeta", fontSize = FontSize.BodySmall)
             }
@@ -408,45 +414,6 @@ private val ACK_TEXT = mapOf(
 )
 
 private fun yesNo(on: Boolean?): String = if (on == true) "yes" else "no"
-
-@Composable
-private fun Card(title: String, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .ideShellCardSurface(),
-        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = FontSize.TitleSmall,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = ideFontFamily(),
-        )
-        content()
-    }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = FontSize.BodySmall,
-        fontFamily = ideFontFamily(),
-    )
-}
-
-@Composable
-private fun Mono(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = FontSize.BodySmall,
-        fontFamily = codeFontFamily(),
-    )
-}
 
 /** `vendor_boot.img (3 files changed, 1 added)`: an image edited since unpacked or repacked, and how much. */
 private fun unbuiltLine(image: String, state: BootPaneState): String {

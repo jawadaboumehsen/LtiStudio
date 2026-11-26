@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -50,7 +51,7 @@ internal fun LazyListScope.suggestions(
     val suggested = DebloatSuggestions.of(facts.inventory, facts.apps, picked)
     val total = formatBytes(suggested.sumOf { it.candidate.sizeBytes })
     item {
-        Hint(
+        IdeHintText(
             if (suggested.isEmpty()) {
                 "No suggestions: every app left is relied on, warned about or starts at boot."
             } else {
@@ -68,7 +69,7 @@ internal fun LazyListScope.suggestions(
         ) {
             Column(Modifier.weight(1f)) {
                 Line("${s.label ?: s.packageId}  ${formatBytes(s.candidate.sizeBytes)}")
-                if (s.label != null) Hint(s.packageId)
+                if (s.label != null) IdeHintText(s.packageId)
             }
             GlassButton(onClick = { onToggle(s.candidate) }, variant = GlassButtonVariant.Standard) {
                 Text("Pick", fontSize = FontSize.BodySmall)
@@ -118,15 +119,15 @@ private fun GoalCard(
         val short = if (plan.shortBytes > 0) ", ${formatBytes(plan.shortBytes)} short of the goal" else ""
         val kept = plan.kept.takeIf { it.isNotEmpty() }
             ?.joinToString(prefix = "; kept as asked: ") { it.label ?: it.packageId }.orEmpty()
-        Hint("Proposal: ${plan.picks.size} apps, ${formatBytes(plan.freedBytes)} of files$short$kept.")
+        IdeHintText("Proposal: ${plan.picks.size} apps, ${formatBytes(plan.freedBytes)} of files$short$kept.")
         // The largest carry the goal; the long tail of small apps is one line.
         plan.picks.take(
             SHOWN,
         ).forEach { s -> Line("- ${s.label ?: s.packageId}  ${formatBytes(s.candidate.sizeBytes)}") }
         plan.picks.drop(SHOWN).takeIf { it.isNotEmpty() }?.let { rest ->
-            Hint("+ ${rest.size} smaller apps, ${formatBytes(rest.sumOf { it.candidate.sizeBytes })}")
+            IdeHintText("+ ${rest.size} smaller apps, ${formatBytes(rest.sumOf { it.candidate.sizeBytes })}")
         }
-        Hint(
+        IdeHintText(
             "Why: nothing in the ROM relies on or looks for these apps, none is part of the system or starts at " +
                 "boot. Unknown: what they do at run time (intents, services) is in no file. The image shrinks by " +
                 "about the files' size (APKs hardly compress)." +

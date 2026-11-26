@@ -15,8 +15,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.ide.lti.core.common.utils.atomicWrite
 import org.ide.lti.core.common.utils.sha256
-import org.ide.lti.core.data.admission.atomicWrite
 import org.ide.lti.core.domain.plugin.IndexEntry
 import org.ide.lti.core.domain.plugin.IndexFailure
 import org.ide.lti.core.domain.plugin.IndexFetchResult
