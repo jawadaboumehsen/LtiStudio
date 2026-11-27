@@ -36,12 +36,12 @@ public data class PrintPartitionDigestsCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         if (json) args.add("--json")
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

@@ -36,6 +36,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @Suppress("LargeClass", "TooManyFunctions")
@@ -286,9 +287,9 @@ class ApkJarMutationAdapterTest {
         assertEquals(1, fakePort.discardCount)
         assertEquals(2, fakePort.writeCount)
 
-        val finalMember = fakePort.members[memberPath]
-        assertTrue(finalMember != null && finalMember.contains("line 1: patched A"))
-        assertTrue(finalMember != null && finalMember.contains("line 2: patched B"))
+        val finalMember = assertNotNull(fakePort.members[memberPath])
+        assertTrue(finalMember.contains("line 1: patched A"))
+        assertTrue(finalMember.contains("line 2: patched B"))
     }
 
     @Test

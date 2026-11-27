@@ -43,6 +43,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import org.ide.lti.core.designsystem.component.actions.DesktopWindowControls
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassIconToggleButton
@@ -64,7 +65,6 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Cursor
 
 /**
@@ -507,7 +507,6 @@ private fun SegmentedPanelLayoutToggle(toggles: TopBarPanelToggles, modifier: Mo
     }
 }
 
-@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassTopBarPreview() {

@@ -9,6 +9,7 @@
  */
 package org.ide.lti.feature.setup.tools
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -45,6 +46,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ToolsPageStateTest {
     private class FakePort : ToolStorePort {
         var inventory = ToolInventory(emptyMap())

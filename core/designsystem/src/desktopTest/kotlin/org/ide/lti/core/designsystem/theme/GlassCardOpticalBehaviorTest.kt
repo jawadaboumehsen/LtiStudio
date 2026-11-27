@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.hazeSource
 import org.ide.lti.core.designsystem.component.display.GlassCard
@@ -97,23 +97,23 @@ class GlassCardOpticalBehaviorTest {
                 glassRender = onRoot().captureToImage()
             }
 
-            assertNotNull(rawPattern)
-            assertNotNull(glassRender)
+            val nonNullRawPattern = assertNotNull(rawPattern)
+            val nonNullGlassRender = assertNotNull(glassRender)
 
             // Sample center region inside card (card is 200x120 centered in 320x200 -> bounds [60, 40, 260, 160])
             val cardInterior = Rect(80f, 60f, 240f, 140f)
 
             // Verify gradient retention reduction
             GlassOpticalVerifier.assertOpticalDiffusion(
-                rawPattern = rawPattern!!,
-                glassRender = glassRender!!,
+                rawPattern = nonNullRawPattern,
+                glassRender = nonNullGlassRender,
                 roi = cardInterior,
                 maxGradientRetentionRatio = 0.40,
             )
 
             // Verify spatial edge spreading (proves true blur spread across >= 3px and energy outside peak >= 20%)
             GlassOpticalVerifier.assertOpticalBlurSpread(
-                glassRender = glassRender!!,
+                glassRender = nonNullGlassRender,
                 roi = cardInterior,
                 stripePeriodPx = 16,
                 minTransitionWidthPx = 3,
@@ -123,8 +123,8 @@ class GlassCardOpticalBehaviorTest {
             // Verify 10-90% edge transition width expansion (proves authentic spatial optical blur
             // with >= 1.8x expansion)
             GlassOpticalVerifier.assertEdgeTransitionExpansion(
-                rawPattern = rawPattern!!,
-                glassRender = glassRender!!,
+                rawPattern = nonNullRawPattern,
+                glassRender = nonNullGlassRender,
                 roi = cardInterior,
                 stripePeriodPx = 16,
                 minExpansionRatio = 1.8,
@@ -155,14 +155,14 @@ class GlassCardOpticalBehaviorTest {
             unblurredRender = onRoot().captureToImage()
         }
 
-        assertNotNull(unblurredRender)
+        val nonNullUnblurredRender = assertNotNull(unblurredRender)
         val cardInterior = Rect(80f, 60f, 240f, 140f)
 
         // An unblurred translucent overlay retains a 1-pixel sharp step transition (spreadFraction ~ 0)
         // and MUST be rejected by assertOpticalBlurSpread
         val error = assertFailsWith<AssertionError> {
             GlassOpticalVerifier.assertOpticalBlurSpread(
-                glassRender = unblurredRender!!,
+                glassRender = nonNullUnblurredRender,
                 roi = cardInterior,
                 stripePeriodPx = 16,
                 minTransitionWidthPx = 3,
@@ -170,7 +170,7 @@ class GlassCardOpticalBehaviorTest {
             )
         }
         assertTrue(
-            error.message!!.contains("Optical blur failure: edge spreading is insufficient"),
+            error.message?.contains("Optical blur failure: edge spreading is insufficient") == true,
             "Expected failure to identify insufficient edge spreading on flat translucent fill, " +
                 "but got: ${error.message}",
         )
@@ -228,14 +228,14 @@ class GlassCardOpticalBehaviorTest {
                 cardOverBlack = onRoot().captureToImage()
             }
 
-            assertNotNull(cardOverWhite)
-            assertNotNull(cardOverBlack)
+            val nonNullCardOverWhite = assertNotNull(cardOverWhite)
+            val nonNullCardOverBlack = assertNotNull(cardOverBlack)
 
             val cardBounds = Rect(60f, 40f, 260f, 160f)
 
             GlassOpticalVerifier.assertBackdropModulation(
-                cardOverBackdropA = cardOverWhite!!,
-                cardOverBackdropB = cardOverBlack!!,
+                cardOverBackdropA = nonNullCardOverWhite,
+                cardOverBackdropB = nonNullCardOverBlack,
                 cardBounds = cardBounds,
                 insetPx = 16,
                 minDeltaModulation = 0.03,
@@ -298,14 +298,14 @@ class GlassCardOpticalBehaviorTest {
                 cardOverBlack = onRoot().captureToImage()
             }
 
-            assertNotNull(cardOverWhite)
-            assertNotNull(cardOverBlack)
+            val nonNullCardOverWhite = assertNotNull(cardOverWhite)
+            val nonNullCardOverBlack = assertNotNull(cardOverBlack)
 
             val cardBounds = Rect(60f, 40f, 260f, 160f)
 
             GlassOpticalVerifier.assertBackdropModulation(
-                cardOverBackdropA = cardOverWhite!!,
-                cardOverBackdropB = cardOverBlack!!,
+                cardOverBackdropA = nonNullCardOverWhite,
+                cardOverBackdropB = nonNullCardOverBlack,
                 cardBounds = cardBounds,
                 insetPx = 16,
                 effectsEnabled = false,
@@ -340,12 +340,12 @@ class GlassCardOpticalBehaviorTest {
                 image = onRoot().captureToImage()
             }
 
-            assertNotNull(image)
+            val nonNullImage = assertNotNull(image)
             val cardInterior = Rect(80f, 60f, 240f, 140f)
 
             GlassOpticalVerifier.assertAdjacentTextContrast(
                 textToken = onSurfaceColor,
-                background = image!!,
+                background = nonNullImage,
                 adjacentBounds = cardInterior,
                 minRatio = 4.5,
             )

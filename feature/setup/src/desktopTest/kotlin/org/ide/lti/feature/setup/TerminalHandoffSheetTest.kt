@@ -20,7 +20,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.setup.UserRepairHandoff
 import org.ide.lti.feature.setup.components.TerminalHandoffSheet

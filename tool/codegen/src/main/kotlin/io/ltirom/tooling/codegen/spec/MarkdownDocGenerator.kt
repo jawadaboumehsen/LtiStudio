@@ -7,7 +7,7 @@ object MarkdownDocGenerator {
     fun generate(spec: ToolSpecification, outputDir: File) {
         outputDir.mkdirs()
         val file = File(outputDir, "${spec.tool.lowercase()}.md")
-        
+
         val content = buildString {
             appendLine("# ${spec.tool.capitalize()} Tool Reference")
             appendLine()

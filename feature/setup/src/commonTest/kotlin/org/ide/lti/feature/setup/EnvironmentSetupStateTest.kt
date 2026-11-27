@@ -81,8 +81,8 @@ class EnvironmentSetupStateTest {
                 },
             ),
     ) : ToolchainProvisioningService {
-        val _state = MutableStateFlow(initialState)
-        override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
+        val mutableState = MutableStateFlow(initialState)
+        override val state: StateFlow<ToolchainSetupState> = mutableState.asStateFlow()
 
         var verifyEnvironmentCount = 0
             private set
@@ -99,12 +99,12 @@ class EnvironmentSetupStateTest {
 
         override suspend fun verifyEnvironment(): ToolchainSetupState {
             verifyEnvironmentCount++
-            return _state.value
+            return mutableState.value
         }
 
         override suspend fun checkStatus(): ToolchainSetupState {
             verifyEnvironmentCount++
-            return _state.value
+            return mutableState.value
         }
 
         override suspend fun provisionAvbKey(): Boolean = true
@@ -136,7 +136,7 @@ class EnvironmentSetupStateTest {
             lastPreparedKind = kind
             // The first call waits here (once), like a plan that is slow to compute.
             prepareGate?.also { prepareGate = null }?.await()
-            val snapshot = _state.value
+            val snapshot = mutableState.value
             val actions =
                 buildList {
                     val pkgPending =
@@ -205,7 +205,7 @@ class EnvironmentSetupStateTest {
             }
             executedPlans += plan
             if (plan.kind == SetupPlanKind.CACHE_RESET && confirmOutcome is SetupOutcome.Succeeded) {
-                _state.value = ToolchainSetupState()
+                mutableState.value = ToolchainSetupState()
             }
             return confirmOutcome
         }
@@ -360,7 +360,7 @@ class EnvironmentSetupStateTest {
         val stateHolder = EnvironmentSetupState(scope = envScope, toolchainService = spyService)
 
         // Mark the service as busy (running an operation)
-        spyService._state.value = spyService._state.value.copy(isRunning = true)
+        spyService.mutableState.value = spyService.mutableState.value.copy(isRunning = true)
 
         // Multiple repeated clicks
         stateHolder.checkEnvironmentStatus()
@@ -459,7 +459,7 @@ class EnvironmentSetupStateTest {
         // When check executes: simulate live check completing with missing tools/repos
         // checkStatus updates checkedAt but NOT lastReadyAt
         val checkTime = 1700000000000L
-        spyService._state.value =
+        spyService.mutableState.value =
             ToolchainSetupState(
                 checkedAt = checkTime,
                 lastReadyAt = null,
@@ -743,7 +743,7 @@ class EnvironmentSetupStateTest {
         // Before the reconciliation completes the shell shows Reconnecting, never Ready / needs-setup.
         val before =
             SetupPresentationMapper.mapEnvironment(
-                state = spyService._state.value,
+                state = spyService.mutableState.value,
                 isToolchainBound = true,
                 activeOperation = stateHolder.activeOperation.value,
             )
@@ -831,7 +831,11 @@ class EnvironmentSetupStateTest {
         assertEquals(SetupOperationState.INTERRUPTED, stateHolder.activeOperation.value?.executionState)
 
         // The adapter archived the attempt: the journal is clean again.
-        spyService._state.value = spyService._state.value.copy(pendingAttemptId = null, recoveryBlockReason = null)
+        spyService.mutableState.value =
+            spyService.mutableState.value.copy(
+                pendingAttemptId = null,
+                recoveryBlockReason = null,
+            )
         testScheduler.advanceUntilIdle()
 
         // "Explicit retry allocates a new attemptId": a fresh preview is a separate, newly confirmed plan.
@@ -911,7 +915,7 @@ class EnvironmentSetupStateTest {
 
         // A resumed plan verifies the machine itself (new check evidence): no second check after it.
         spyService.onResume = {
-            spyService._state.value = spyService._state.value.copy(checkedAt = 1_700_000_000_000L)
+            spyService.mutableState.value = spyService.mutableState.value.copy(checkedAt = 1_700_000_000_000L)
             SetupOutcome.Succeeded()
         }
         stateHolder.resumeAwaitingOperation()

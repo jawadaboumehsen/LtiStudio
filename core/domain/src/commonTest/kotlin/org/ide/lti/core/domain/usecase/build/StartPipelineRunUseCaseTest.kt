@@ -1,6 +1,16 @@
+/*
+ * Copyright 2026 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *
+ * See https://github.com/openMF/kmp-project-template/blob/main/LICENSE
+ */
 package org.ide.lti.core.domain.usecase.build
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -9,7 +19,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.ToolResult
-import org.ide.lti.core.domain.ports.*
+import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.ports.FileStat
+import org.ide.lti.core.domain.ports.PipelineExecutionPort
+import org.ide.lti.core.domain.ports.RunHandle
+import org.ide.lti.core.domain.ports.StepEvent
+import org.ide.lti.core.domain.ports.StepStatus
 import org.ide.lti.core.domain.ports.VendoredFile
 import org.ide.lti.core.domain.ports.VendoredFilePort
 import org.ide.lti.core.domain.repository.run.InMemoryRunRepository
@@ -21,10 +36,36 @@ import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
-import org.ide.lti.core.model.target.*
-import org.ide.lti.core.model.workspace.*
-import kotlin.test.*
+import org.ide.lti.core.model.target.FirmwareSourceKind
+import org.ide.lti.core.model.target.PackagePolicy
+import org.ide.lti.core.model.target.TargetBinding
+import org.ide.lti.core.model.target.TargetDevice
+import org.ide.lti.core.model.target.TargetFirmware
+import org.ide.lti.core.model.target.TargetRegion
+import org.ide.lti.core.model.target.TargetStatus
+import org.ide.lti.core.model.workspace.AcquisitionMode
+import org.ide.lti.core.model.workspace.AcquisitionSettings
+import org.ide.lti.core.model.workspace.AssemblySettings
+import org.ide.lti.core.model.workspace.BuildSettings
+import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.CustomizationSettings
+import org.ide.lti.core.model.workspace.DebloatSettings
+import org.ide.lti.core.model.workspace.ExtractionSettings
+import org.ide.lti.core.model.workspace.PublishSettings
+import org.ide.lti.core.model.workspace.RecentProject
+import org.ide.lti.core.model.workspace.ReleaseSettings
+import org.ide.lti.core.model.workspace.SigningPolicy
+import org.ide.lti.core.model.workspace.Workspace
+import org.ide.lti.core.model.workspace.WorkspaceSession
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class StartPipelineRunUseCaseTest {
 
     private class FakeReadinessPort(
@@ -353,9 +394,10 @@ class StartPipelineRunUseCaseTest {
     @Test
     fun testDiskPreflightWithKnownFirmwareArchiveSize() = runTest {
         val snapshotWithKnownSize = testSnapshot.copy(
+            // 5 GB -> requires 20 GB
             acquisition = testSnapshot.acquisition.copy(
                 firmware = testSnapshot.acquisition.firmware.copy(archiveSizeBytes = 5_000_000_000L),
-            ), // 5 GB -> requires 20 GB
+            ),
         )
         val wsRepo = FakeWorkspaceRepo().apply { saveWorkspace(testWorkspace) }
         val snapRepo = InMemorySnapshotRepository().apply { saveSnapshot(snapshotWithKnownSize) }

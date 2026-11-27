@@ -1,6 +1,7 @@
 package org.ide.lti
 
 import com.diffplug.gradle.spotless.SpotlessExtension
+import com.diffplug.spotless.LineEnding
 import org.gradle.api.Project
 
 const val ktlintVersion = "1.0.1"
@@ -11,6 +12,8 @@ const val ktlintVersion = "1.0.1"
  * @see SpotlessExtension
  */
 internal fun Project.configureSpotless(extension: SpotlessExtension) = extension.apply {
+    lineEndings = LineEnding.UNIX
+
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt")

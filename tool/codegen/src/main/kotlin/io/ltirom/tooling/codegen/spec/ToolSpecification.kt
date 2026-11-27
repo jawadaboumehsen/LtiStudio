@@ -1,6 +1,5 @@
 package io.ltirom.tooling.codegen.spec
 
-import io.ltirom.tooling.core.ToolId
 import io.ltirom.tooling.core.ToolRisk
 import kotlinx.serialization.Serializable
 

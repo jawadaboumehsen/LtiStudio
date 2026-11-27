@@ -30,7 +30,7 @@ public data class ExecuteCommand(
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

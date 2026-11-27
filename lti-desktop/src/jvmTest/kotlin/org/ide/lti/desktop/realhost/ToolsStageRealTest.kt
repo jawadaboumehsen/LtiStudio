@@ -92,7 +92,7 @@ class ToolsStageRealTest {
 
             val stage = ToolsStage(toolManager = host.manager)
             val outcome = stage.run(ctx, scope)
-            assertTrue(outcome is StageOutcome, "ToolsStage returned $outcome")
+            assertTrue(outcome.description.isNotBlank(), "ToolsStage returned $outcome")
         }
     }
 }

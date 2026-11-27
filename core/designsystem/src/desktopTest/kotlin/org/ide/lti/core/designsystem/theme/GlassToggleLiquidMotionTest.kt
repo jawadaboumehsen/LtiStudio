@@ -57,6 +57,7 @@ import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.inputs.GlassToggle
 import org.ide.lti.core.designsystem.component.inputs.GlassToggleImpl
@@ -93,7 +94,7 @@ import kotlin.time.TestTimeSource
  * 6. **Directional & Motion Integrity**: Proper RTL layout-aware translation and instantaneous snap
  *    under reduced motion.
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 // Comprehensive liquid motion verification suite with 24 optical and interaction tests.
 @Suppress("LargeClass", "TooManyFunctions")
 class GlassToggleLiquidMotionTest {

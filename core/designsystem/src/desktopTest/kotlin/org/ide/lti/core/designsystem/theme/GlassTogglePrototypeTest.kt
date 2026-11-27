@@ -70,6 +70,7 @@ import dev.chrisbanes.haze.glass.GlassStyle
 import dev.chrisbanes.haze.glass.GlassTransformTarget
 import dev.chrisbanes.haze.glass.hazeGlass
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.ide.lti.core.designsystem.component.layout.GlassBackdrop
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
 import org.jetbrains.skia.EncodedImageFormat
@@ -88,7 +89,7 @@ import kotlin.test.assertTrue
  */
 // One prototype suite: every test drives the same PrototypeGlassToggle and pixel helpers below.
 @Suppress("LargeClass")
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 class GlassTogglePrototypeTest {
 
     enum class ToggleGeometryPair(

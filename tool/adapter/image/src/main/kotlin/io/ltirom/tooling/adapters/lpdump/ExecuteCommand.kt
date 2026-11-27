@@ -38,10 +38,10 @@ public data class ExecuteCommand(
         if (json) args.add("--json")
         slot?.let { val value = it
             args.add("--slot")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

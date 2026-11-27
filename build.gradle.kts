@@ -109,7 +109,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "catalog/src"),
         )
 
-        colorAlphaScanRoots.forEach { scanRoot ->
+        for (scanRoot in colorAlphaScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/")) return@forEach
@@ -139,7 +139,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "catalog/src"),
         )
 
-        dimensionScanRoots.forEach { scanRoot ->
+        for (scanRoot in dimensionScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/")) return@forEach
@@ -165,7 +165,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             File(root, "catalog/src"),
         )
 
-        motionScanRoots.forEach { scanRoot ->
+        for (scanRoot in motionScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/")) return@forEach
@@ -219,7 +219,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             "import com.kyant.capsule.lerp",
         )
 
-        shapeScanRoots.forEach { scanRoot ->
+        for (scanRoot in shapeScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/") || path.contains("/desktopTest/") || path.contains("/test/")) return@forEach
@@ -258,7 +258,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             "import androidx.compose.ui.text.font.FontFamily",
         )
 
-        fontScanRoots.forEach { scanRoot ->
+        for (scanRoot in fontScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/") || path.contains("/desktopTest/") || path.contains("/test/")) return@forEach
@@ -299,7 +299,7 @@ tasks.register("verifyDesignSystemGuardrails") {
             """\bColor\.(White|Black|Red|Green|Blue|Yellow|Cyan|Magenta|Gray|LightGray|DarkGray)\b""",
         )
 
-        namedColorScanRoots.forEach { scanRoot ->
+        for (scanRoot in namedColorScanRoots) {
             ktFiles(scanRoot).forEach { file ->
                 val path = file.absolutePath.replace('\\', '/')
                 if (path.contains("/theme/")) return@forEach

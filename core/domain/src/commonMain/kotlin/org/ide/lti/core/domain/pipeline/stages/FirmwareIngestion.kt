@@ -251,7 +251,7 @@ done"""
             emptyList()
         }
         val lpunpackArgs = listOf("--slot=0") +
-            parts.dynamic.flatMap { listOf("-p", "${it}${parts.slot}") } +
+            parts.dynamic.flatMap { listOf("-p", "$it${parts.slot}") } +
             listOf(superImg, extracted)
         val renames = parts.dynamic.map { p ->
             PipelineStep.Tool(

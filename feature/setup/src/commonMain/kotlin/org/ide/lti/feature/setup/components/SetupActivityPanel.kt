@@ -47,10 +47,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -59,6 +57,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipItem
 import org.ide.lti.core.designsystem.component.navigation.GlassFilterChipRow
 import org.ide.lti.core.designsystem.component.progress.GlassSpinner
@@ -114,8 +113,7 @@ fun SetupActivityPanel(
     destination: String? = null,
     onExport: (() -> Unit)? = null,
 ) {
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
 
     val visibleEvents by activityState.visibleEvents.collectAsState()
     val droppedCount by activityState.droppedLineCount.collectAsState()
@@ -221,13 +219,13 @@ fun SetupActivityPanel(
                 selectedCount = selectedEventIds.size,
                 isCopiedSelection = isCopiedSelection,
                 onCopySelection = {
-                    clipboardManager.setText(AnnotatedString(activityState.copySelected()))
+                    copyToClipboard(activityState.copySelected())
                     isCopiedSelection = true
                 },
                 onClearSelection = { activityState.clearSelection() },
                 isCopiedAll = isCopiedAll,
                 onCopyAll = {
-                    clipboardManager.setText(AnnotatedString(activityState.copyAll()))
+                    copyToClipboard(activityState.copyAll())
                     isCopiedAll = true
                 },
                 onExport = onExport,

@@ -28,8 +28,10 @@ class RemovalListMatcherTest {
             entries = listOf(
                 "com.facebook.katana",
                 "product/app/OneDrive/OneDrive.apk",
-                "com.samsung.android.bixby", // unknown on this ROM
-                "com.netflix.mediaclient", // unknown on this ROM
+                // unknown on this ROM
+                "com.samsung.android.bixby",
+                // unknown on this ROM
+                "com.netflix.mediaclient",
             ),
         )
 

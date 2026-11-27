@@ -42,37 +42,37 @@ public data class MakeCertificateCommand(
         args.add("make_certificate")
         authorityKey?.let { val value = it
             args.add("--authority_key")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelper?.let { val value = it
             args.add("--signing_helper")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelperWithFiles?.let { val value = it
             args.add("--signing_helper_with_files")
-            args.add(value.toString())
+            args.add(value)
         }
         subject?.let { val value = it
             args.add("--subject")
-            args.add(value.toString())
+            args.add(value)
         }
         if (subjectIsIntermediateAuthority) args.add("--subject_is_intermediate_authority")
         subjectKey?.let { val value = it
             args.add("--subject_key")
-            args.add(value.toString())
+            args.add(value)
         }
         subjectKeyVersion?.let { val value = it
             args.add("--subject_key_version")
-            args.add(value.toString())
+            args.add(value)
         }
         usage?.let { val value = it
             args.add("--usage")
-            args.add(value.toString())
+            args.add(value)
         }
         if (usageForUnlock) args.add("--usage_for_unlock")
         return args

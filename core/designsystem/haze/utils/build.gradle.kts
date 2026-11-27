@@ -39,7 +39,7 @@ kotlin {
     }
 
     compilerOptions {
-        optIn.add("dev.chrisbanes.haze.ExperimentalHazeApi")
+        freeCompilerArgs.add("-Xexpect-actual-classes")
         optIn.add("dev.chrisbanes.haze.InternalHazeApi")
     }
 }

@@ -52,7 +52,7 @@ public data class AppFacts(
     /** aapt2 could not read its manifest: every fact above is unknown, not absent. */
     val unreadable: Boolean = false,
 ) {
-    /** The signer's common name (`CN=`), else its organisation, else the whole subject. */
+    /** The signer's common name (`CN=`), else its organization, else the whole subject. */
     public val signerName: String?
         get() = signer?.let { s ->
             listOf("CN", "O").firstNotNullOfOrNull { key ->

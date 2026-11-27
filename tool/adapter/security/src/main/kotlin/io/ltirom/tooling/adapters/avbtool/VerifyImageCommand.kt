@@ -41,11 +41,11 @@ public data class VerifyImageCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         key?.let { val value = it
             args.add("--key")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

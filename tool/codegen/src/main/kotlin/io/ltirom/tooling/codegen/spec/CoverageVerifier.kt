@@ -8,14 +8,14 @@ object CoverageVerifier {
     fun verify(spec: ToolSpecification, capturedHelpDir: File) {
         val errors = mutableListOf<String>()
         val toolId = ToolId.entries.firstOrNull { it.logicalName == spec.tool } ?: return
-        
+
         // 1. Verify command coverage from the pinned root help.
         if (toolId == ToolId.GH || toolId == ToolId.ADB || toolId == ToolId.FASTBOOT) {
             val rootHelpFile = File(capturedHelpDir, "tool_${spec.tool}_help.txt")
             if (rootHelpFile.isFile) {
                 val rootHelpText = rootHelpFile.readText()
                 val rootSubcommands = discoverRootCommands(toolId, rootHelpText)
-                
+
                 for (sub in rootSubcommands) {
                     val subPath = listOf(sub)
                     verifySubcommandPathRecursively(spec, toolId, subPath, capturedHelpDir, errors)
@@ -42,7 +42,7 @@ object CoverageVerifier {
         errors: MutableList<String>
     ) {
         val pathStr = path.joinToString(" ")
-        
+
         // Check if excluded
         if (spec.explicitExclusions.any { it == pathStr || it.startsWith(pathStr + " ") }) {
             return
@@ -55,7 +55,7 @@ object CoverageVerifier {
             val suffix = "_" + path.joinToString("_")
             val helpFile = File(capturedHelpDir, "tool_${spec.tool}${suffix}_help.txt")
             val hasNested = helpFile.isFile && discoverSubcommandsFromHelp(toolId, helpFile.readText()).isNotEmpty()
-            
+
             // If it doesn't have nested subcommands, it should definitely be mapped as an executable command
             if (!hasNested) {
                 errors.add("Missing command in specification: '$pathStr'")
@@ -79,7 +79,7 @@ object CoverageVerifier {
         if (rootHelpFile.isFile) {
             val parsedGlobalOptions = parseOptionSpellings(toolId, rootHelpFile.readText())
             val specGlobalOptions = spec.globalOptions.flatMap { listOf(it.spelling) + it.aliases }.toSet()
-            
+
             for (opt in parsedGlobalOptions) {
                 if (opt !in specGlobalOptions && opt !in spec.explicitExclusions && opt != "-h" && opt != "--help" && opt != "--version") {
                     errors.add("Missing global option in specification: '$opt'")
@@ -96,7 +96,7 @@ object CoverageVerifier {
                 val cmdOptions = cmd.options.flatMap { listOf(it.spelling) + it.aliases }.toSet()
                 val globalOptions = spec.globalOptions.flatMap { listOf(it.spelling) + it.aliases }.toSet()
                 val allSpecOptions = cmdOptions + globalOptions
-                
+
                 val cmdPath = cmd.subcommandPath.joinToString(" ")
                 for (opt in parsedOptions) {
                     if (opt !in allSpecOptions && opt !in spec.explicitExclusions && opt != "-h" && opt != "--help" && opt != "--version") {

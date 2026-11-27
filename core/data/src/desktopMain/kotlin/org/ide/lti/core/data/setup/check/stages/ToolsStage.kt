@@ -15,6 +15,7 @@ import org.ide.lti.core.data.setup.check.CheckContext
 import org.ide.lti.core.data.setup.check.CheckStage
 import org.ide.lti.core.data.setup.check.StageOutcome
 import org.ide.lti.core.data.setup.state.CheckScope
+import org.ide.lti.core.data.setup.toolsFromInventory
 import org.ide.lti.core.data.tools.KotlinStoreLayout
 import org.ide.lti.core.data.tools.KotlinStoreLayout.toData
 import org.ide.lti.core.data.tools.ToolErrorException
@@ -210,29 +211,7 @@ public class ToolsStage(private val toolManager: ToolManager? = null) : CheckSta
 
     private fun updateToolsMatrix(ctx: CheckContext, scope: CheckScope, inventory: ToolInventory) {
         val home = ctx.environment.home.ifBlank { ctx.userHome }
-        val matrix =
-            ToolchainSetupState.defaultToolsMatrix().map { tool ->
-                val group = ToolGroupCatalog.allGroups.firstOrNull { g -> g.outputs.any { it.toolId == tool.id } }
-                val output = group?.outputs?.firstOrNull { it.toolId == tool.id }
-                val current = group?.id?.let { inventory.groups[it]?.current }
-                val exists = output != null && current?.outputs.orEmpty().any { it.file == output.file }
-                val status =
-                    when {
-                        !exists -> StepStatus.PENDING
-                        current?.intact != true -> StepStatus.FAILED
-                        else -> StepStatus.SUCCESS
-                    }
-                tool.copy(
-                    path =
-                    if (exists) {
-                        "$home/LtiRomTools/bin/${group!!.id.value}/current/${output!!.file}"
-                    } else {
-                        null
-                    },
-                    status = status,
-                )
-            }
-        scope.setToolsMatrix(matrix)
+        scope.setToolsMatrix(toolsFromInventory(ToolchainSetupState.defaultToolsMatrix(), inventory, home))
     }
 
     private fun resolveTarget(group: ToolGroup, state: GroupState?): Pair<String, ResolvedSource> {

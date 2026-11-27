@@ -143,7 +143,7 @@ class ToolRepairTest {
             return RunHandle(runId = "run-test-1", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
         }
 
-        override fun attachRun(runId: String, fromSequence: Long): Flow<SequencedStreamEvent> = emptyFlow()
+        override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> = emptyFlow()
 
         override suspend fun getRun(runId: String): RunStatus = RunStatus(
             runId = runId,

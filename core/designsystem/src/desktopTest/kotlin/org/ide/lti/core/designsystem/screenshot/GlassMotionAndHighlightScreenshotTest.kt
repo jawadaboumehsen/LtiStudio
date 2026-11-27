@@ -38,7 +38,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performMouseInput
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.component.display.GlassIcon
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheet
 import org.ide.lti.core.designsystem.component.feedback.GlassBottomSheetValue

@@ -24,14 +24,25 @@ import org.ide.lti.core.domain.repository.target.InMemoryWorkspaceDeviceReposito
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.build.CancelRunUseCase
 import org.ide.lti.core.domain.usecase.build.ReattachRunUseCase
-import org.ide.lti.core.model.run.*
+import org.ide.lti.core.model.run.BuildRun
+import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageOutcome
+import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.run.StageStep
 import org.ide.lti.core.model.run.StepCommand
+import org.ide.lti.core.model.run.StepState
+import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class PipelineResumeTest {
     private val fixture = PipelineFixture()

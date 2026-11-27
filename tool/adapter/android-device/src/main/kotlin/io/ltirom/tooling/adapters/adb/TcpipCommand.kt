@@ -43,15 +43,15 @@ public data class TcpipCommand(
         if (listenAll) args.add("-a")
         oneDevice?.let { val value = it
             args.add("--one-device")
-            args.add(value.toString())
+            args.add(value)
         }
         serial?.let { val value = it
             args.add("-s")
-            args.add(value.toString())
+            args.add(value)
         }
         serverHost?.let { val value = it
             args.add("-H")
-            args.add(value.toString())
+            args.add(value)
         }
         serverPort?.let { val value = it
             args.add("-P")
@@ -59,16 +59,16 @@ public data class TcpipCommand(
         }
         serverSocket?.let { val value = it
             args.add("-L")
-            args.add(value.toString())
+            args.add(value)
         }
         transportId?.let { val value = it
             args.add("-t")
-            args.add(value.toString())
+            args.add(value)
         }
         if (useTcp) args.add("-e")
         if (useUsb) args.add("-d")
         args.add("tcpip")
-        args.add(port.toString())
+        args.add(port)
         return args
     }
 }

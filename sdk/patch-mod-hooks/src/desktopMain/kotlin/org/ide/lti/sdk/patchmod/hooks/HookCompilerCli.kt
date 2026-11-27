@@ -13,6 +13,8 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.system.exitProcess
 
+private val payloadJson = Json { ignoreUnknownKeys = true }
+
 /**
  * Compiles a project's Java hooks against the firmware `payload.json` names: the `.java` files under
  * `hooks/<smali dir>` (`hooks/smali_classes2/org/example/Hook.java`) become smali under `files/<smali dir>`, which
@@ -22,7 +24,7 @@ import kotlin.system.exitProcess
 fun compileModPayload(project: File): List<String> {
     val payload = project.resolve("payload.json")
     val parsed = payload.takeIf { it.isFile }?.let {
-        runCatching { Json { ignoreUnknownKeys = true }.decodeFromString(PayloadConfig.serializer(), it.readText()) }
+        runCatching { payloadJson.decodeFromString(PayloadConfig.serializer(), it.readText()) }
     }
     val config = parsed?.getOrNull()
     return when {

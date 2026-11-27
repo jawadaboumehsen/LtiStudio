@@ -12,7 +12,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.MenuBarScope
-import androidx.compose.ui.window.MenuScope
 import org.ide.lti.desktop.menu.dispatcher.StudioActionDispatcher
 import org.ide.lti.desktop.menu.model.DesktopKeyShortcut
 import org.ide.lti.desktop.menu.model.StudioAction
@@ -34,8 +33,8 @@ fun FrameWindowScope.StudioMenuBar(
         FileMenu(state = state, dispatcher = dispatcher)
         EditMenu(state = state, dispatcher = dispatcher)
         ViewMenu(state = state, dispatcher = dispatcher)
-        WindowMenu(state = state, dispatcher = dispatcher)
-        HelpMenu(state = state, dispatcher = dispatcher)
+        WindowMenu(dispatcher = dispatcher)
+        HelpMenu(dispatcher = dispatcher)
     }
 }
 
@@ -189,7 +188,6 @@ private fun MenuBarScope.ViewMenu(
 
 @Composable
 private fun MenuBarScope.WindowMenu(
-    @Suppress("UNUSED_PARAMETER") state: StudioMenuState,
     dispatcher: StudioActionDispatcher,
 ) {
     Menu("Window", mnemonic = 'W') {
@@ -215,7 +213,6 @@ private fun MenuBarScope.WindowMenu(
 
 @Composable
 private fun MenuBarScope.HelpMenu(
-    @Suppress("UNUSED_PARAMETER") state: StudioMenuState,
     dispatcher: StudioActionDispatcher,
 ) {
     Menu("Help", mnemonic = 'H') {

@@ -11,6 +11,7 @@ package org.ide.lti.core.data.repository.target
 
 import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.take
@@ -36,6 +37,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WorkspaceFolderDeviceRepositoryTest {
     /** The workspace folders on the WSL side, keyed by full path. */
     private class FakeFolders : PipelineExecutionPort {

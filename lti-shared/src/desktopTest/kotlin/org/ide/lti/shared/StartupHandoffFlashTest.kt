@@ -17,7 +17,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.shared.di.initKoin
 import org.junit.After

@@ -137,7 +137,7 @@ class SetupExecutionPathTest {
         val executedRequests = mutableListOf<ToolExecutionRequest>()
         val startedRuns = mutableListOf<StartRunRequest>()
 
-        /** One submodule is missing until a durable run has synchronised the sources. */
+        /** One submodule is missing until a durable run has synchronized the sources. */
         private var sourcesSynced = false
 
         override suspend fun checkHealth(): WslServerInfo = WslServerInfo(

@@ -35,7 +35,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -73,6 +73,7 @@ import org.ide.lti.core.testing.screenshot.GoldenImageAssert
 import org.junit.Test
 import kotlin.math.abs
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 @Suppress("LargeClass") // Diagnostic screenshot test suite covering multiple chrome configurations
 class GlassChromeDiagnosticScreenshotTest {
@@ -80,6 +81,7 @@ class GlassChromeDiagnosticScreenshotTest {
     companion object {
         private const val TEST_WIDTH = 1200
         private const val TEST_HEIGHT = 750
+        private val DIAGNOSTIC_TEST_TIMEOUT = 3.minutes
     }
 
     // Realistic Explorer Panel
@@ -360,6 +362,7 @@ class GlassChromeDiagnosticScreenshotTest {
     fun testDiagnosticRealAppChromeAndBackdrop() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
         height = TEST_HEIGHT,
+        testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
     ) {
         setContent {
             LtiTheme(appTheme = AppTheme.Dark) {
@@ -429,6 +432,7 @@ class GlassChromeDiagnosticScreenshotTest {
     fun testDiagnosticRealAppChromeAndBackdropLight() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
         height = TEST_HEIGHT,
+        testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
     ) {
         setContent {
             LtiTheme(appTheme = AppTheme.Light) {
@@ -498,6 +502,7 @@ class GlassChromeDiagnosticScreenshotTest {
     fun testDiagnosticRealAppChromeAndBackdropBlue() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
         height = TEST_HEIGHT,
+        testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
     ) {
         setContent {
             LtiTheme(appTheme = AppTheme.Blue) {
@@ -568,6 +573,7 @@ class GlassChromeDiagnosticScreenshotTest {
     fun testDiagnosticRealAppChromeWithSidePanelTabs() = runDesktopComposeUiTest(
         width = TEST_WIDTH,
         height = TEST_HEIGHT,
+        testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
     ) {
         setContent {
             LtiTheme(appTheme = AppTheme.Dark) {
@@ -645,7 +651,11 @@ class GlassChromeDiagnosticScreenshotTest {
     fun testNavigatorPanelOnBlueInIdeAppFrameShowsGlassOptics() {
         fun captureFrame(drawBackdrop: DrawScope.() -> Unit): ImageBitmap {
             lateinit var captured: ImageBitmap
-            runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+            runDesktopComposeUiTest(
+                width = TEST_WIDTH,
+                height = TEST_HEIGHT,
+                testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
+            ) {
                 setContent {
                     GlassSceneHost(effectsEnabled = true) {
                         LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {
@@ -685,7 +695,11 @@ class GlassChromeDiagnosticScreenshotTest {
 
         fun captureBareBackdrop(drawBackdrop: DrawScope.() -> Unit): ImageBitmap {
             lateinit var captured: ImageBitmap
-            runDesktopComposeUiTest(width = TEST_WIDTH, height = TEST_HEIGHT) {
+            runDesktopComposeUiTest(
+                width = TEST_WIDTH,
+                height = TEST_HEIGHT,
+                testTimeout = DIAGNOSTIC_TEST_TIMEOUT,
+            ) {
                 setContent {
                     GlassSceneHost(effectsEnabled = true) {
                         LtiTheme(appTheme = AppTheme.Blue, effectsEnabled = true) {

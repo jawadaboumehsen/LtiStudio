@@ -34,14 +34,12 @@ import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.run.StageStep
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.run.StepState
-import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class GetRunHistoryUseCaseTest {
 
@@ -244,7 +242,8 @@ class GetRunHistoryUseCaseTest {
         val runRepo = FakeRunRepository()
         val wsRepo = FakeWorkspaceRepository(mapOf(testWorkspace.id to testWorkspace))
         val execPort = FakePipelineExecutionPort(
-            shouldThrowOnStat = true, // Simulating server offline
+            // Simulating server offline
+            shouldThrowOnStat = true,
         )
 
         val artifact = Artifact(

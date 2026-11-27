@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.glass.GlassStyle
@@ -320,16 +320,16 @@ class GlassPrimitiveDiagnosticTest {
         }
         refractedGlassImage = onRoot().captureToImage()
 
-        assertNotNull(unrefractedGlassImage)
-        assertNotNull(refractedGlassImage)
+        val nonNullUnrefracted = assertNotNull(unrefractedGlassImage)
+        val nonNullRefracted = assertNotNull(refractedGlassImage)
 
         // 1. Boundary rim verification: 1D horizontal feature displacement across vertical stripe edges
         // under the curved boundary rim.
         val rimRoi = Rect(48f, 42f, 72f, 118f)
 
         val result = GlassOpticalVerifier.measureRefractionFeatureDisplacement(
-            unrefracted = unrefractedGlassImage!!,
-            refracted = refractedGlassImage!!,
+            unrefracted = nonNullUnrefracted,
+            refracted = nonNullRefracted,
             boundaryRoi = rimRoi,
         )
         println(
@@ -340,8 +340,8 @@ class GlassPrimitiveDiagnosticTest {
         )
 
         GlassOpticalVerifier.assertRefractionDisplacement(
-            unrefracted = unrefractedGlassImage!!,
-            refracted = refractedGlassImage!!,
+            unrefracted = nonNullUnrefracted,
+            refracted = nonNullRefracted,
             boundaryRoi = rimRoi,
             minDisplacedFeatures = 1,
             minDisplacementPx = 0.5,
@@ -351,8 +351,8 @@ class GlassPrimitiveDiagnosticTest {
         // must exhibit 0px refraction displacement, confirming refraction is strictly localized to the rim boundary.
         val interiorRoi = Rect(80f, 60f, 160f, 100f)
         val interiorResult = GlassOpticalVerifier.measureRefractionFeatureDisplacement(
-            unrefracted = unrefractedGlassImage!!,
-            refracted = refractedGlassImage!!,
+            unrefracted = nonNullUnrefracted,
+            refracted = nonNullRefracted,
             boundaryRoi = interiorRoi,
         )
         println(
@@ -484,7 +484,7 @@ class GlassPrimitiveDiagnosticTest {
             // Spatial edge-spreading verification: proves true blur spread across >= 3px and energy outside peak >= 20%
             // (Rejects any unblurred translucent overlay, which has transition width 1px and 0% spread)
             GlassOpticalVerifier.assertOpticalBlurSpread(
-                glassRender = opticalGlassImage!!,
+                glassRender = opticalGlassImage,
                 roi = panelInterior,
                 stripePeriodPx = 16,
                 minTransitionWidthPx = 3,
@@ -495,8 +495,8 @@ class GlassPrimitiveDiagnosticTest {
             // with >= 1.8x expansion
             // (Rejects any unblurred translucent overlay, which maintains ~1.0x expansion)
             GlassOpticalVerifier.assertEdgeTransitionExpansion(
-                rawPattern = rawImage!!,
-                glassRender = opticalGlassImage!!,
+                rawPattern = rawImage,
+                glassRender = opticalGlassImage,
                 roi = panelInterior,
                 stripePeriodPx = 16,
                 minExpansionRatio = 1.8,

@@ -48,7 +48,7 @@ object Compiler {
                     sourceRevision = "HEAD",
                     capturedHelpDir = capturedHelpDir
                 )
-                
+
                 val draftFile = File(draftsDir, "${toolId.logicalName}.json")
                 draftFile.writeText(json.encodeToString(ToolSpecification.serializer(), draft))
                 println("Generated draft spec for ${toolId.logicalName} to ${draftFile.absolutePath}")

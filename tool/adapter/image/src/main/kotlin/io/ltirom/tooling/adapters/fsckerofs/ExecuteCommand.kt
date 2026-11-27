@@ -42,27 +42,27 @@ public data class ExecuteCommand(
         if (A) args.add("-a")
         D?.let { val value = it
             args.add("-d")
-            args.add(value.toString())
+            args.add(value)
         }
         if (P) args.add("-p")
         device?.let { val value = it
             args.add("--device")
-            args.add(value.toString())
+            args.add(value)
         }
         extract?.let { val value = it
             args.add("--extract")
-            args.add(value.toString())
+            args.add(value)
         }
         if (force) args.add("--force")
         if (help) args.add("--help")
         offset?.let { val value = it
             args.add("--offset")
-            args.add(value.toString())
+            args.add(value)
         }
         if (overwrite) args.add("--overwrite")
         if (version) args.add("--version")
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

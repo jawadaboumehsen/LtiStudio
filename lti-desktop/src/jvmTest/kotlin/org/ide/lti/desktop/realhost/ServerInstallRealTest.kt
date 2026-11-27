@@ -8,6 +8,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -78,8 +79,11 @@ class ServerInstallRealTest {
                 File(tamperedDir, "server-version.txt").writeText("9.9.9-tampered")
                 val tamperedInstaller = ServerArtifactInstaller(bundleDirProvider = { tamperedDir })
                 val tamperedResult = tamperedInstaller.ensureInstalled(env)
-                assertTrue(tamperedResult.installState is InstallState.Failed, "Tampered JRE must fail installation")
-                assertEquals("verify", (tamperedResult.installState as InstallState.Failed).step)
+                val failed = assertIs<InstallState.Failed>(
+                    tamperedResult.installState,
+                    "Tampered JRE must fail installation",
+                )
+                assertEquals("verify", failed.step)
                 assertEquals(initialResult.activeVersion, installer.getActiveVersion(env))
             }
         }

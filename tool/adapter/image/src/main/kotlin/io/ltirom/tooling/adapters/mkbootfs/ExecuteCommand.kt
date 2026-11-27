@@ -47,7 +47,7 @@ public data class ExecuteCommand(
             args.add(value.toString())
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

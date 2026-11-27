@@ -281,8 +281,8 @@ class WorkspaceConfigurationViewModelTest {
             advanceUntilIdle()
 
             val state = viewModel.uiState.value
-            assertNotNull(state.draft)
-            assertEquals(TargetRegion.GLOBAL, state.draft?.region)
+            val draft = assertNotNull(state.draft)
+            assertEquals(TargetRegion.GLOBAL, draft.region)
             assertFalse(state.isDirty)
 
             // Local edit of something this panel owns

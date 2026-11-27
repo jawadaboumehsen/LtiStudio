@@ -37,16 +37,16 @@ public data class CalculateVbmetaDigestCommand(
         if (format) args.add("--format")
         hashAlgorithm?.let { val value = it
             args.add("--hash_algorithm")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

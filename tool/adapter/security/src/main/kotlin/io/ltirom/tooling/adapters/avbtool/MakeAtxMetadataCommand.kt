@@ -37,7 +37,7 @@ public data class MakeAtxMetadataCommand(
         if (intermediateKeyCertificate) args.add("--intermediate_key_certificate")
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         if (productKeyCertificate) args.add("--product_key_certificate")
         return args

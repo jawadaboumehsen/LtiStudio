@@ -50,61 +50,61 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         B?.let { val value = it
             args.add("-b")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in C) {
             args.add("-c")
-            args.add(item.toString())
+            args.add(item)
         }
         D?.let { val value = it
             args.add("-d")
-            args.add(value.toString())
+            args.add(value)
         }
         E?.let { val value = it
             args.add("-e")
-            args.add(value.toString())
+            args.add(value)
         }
         if (F) args.add("-f")
         G?.let { val value = it
             args.add("-g")
-            args.add(value.toString())
+            args.add(value)
         }
         if (H) args.add("-H")
         if (I) args.add("-i")
         L?.let { val value = it
             args.add("-l")
-            args.add(value.toString())
+            args.add(value)
         }
         if (M) args.add("-m")
         O?.let { val value = it
             args.add("-o")
-            args.add(value.toString())
+            args.add(value)
         }
         if (Q) args.add("-q")
         if (R) args.add("-r")
         S?.let { val value = it
             args.add("-s")
-            args.add(value.toString())
+            args.add(value)
         }
         T?.let { val value = it
             args.add("-t")
-            args.add(value.toString())
+            args.add(value)
         }
         U?.let { val value = it
             args.add("-U")
-            args.add(value.toString())
+            args.add(value)
         }
         if (V) args.add("-V")
         W?.let { val value = it
             args.add("-w")
-            args.add(value.toString())
+            args.add(value)
         }
         Z?.let { val value = it
             args.add("-z")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

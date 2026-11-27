@@ -42,25 +42,25 @@ public data class ExecuteCommand(
         if (F) args.add("-f")
         for (item in O) {
             args.add("-o")
-            args.add(item.toString())
+            args.add(item)
         }
         if (S) args.add("-s")
         dbglevel?.let { val value = it
             args.add("--dbglevel")
-            args.add(value.toString())
+            args.add(value)
         }
         device?.let { val value = it
             args.add("--device")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         offset?.let { val value = it
             args.add("--offset")
-            args.add(value.toString())
+            args.add(value)
         }
         if (version) args.add("--version")
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

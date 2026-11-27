@@ -204,7 +204,7 @@ class EnvironmentVerificationTest {
         override suspend fun startRun(request: StartRunRequest): RunHandle =
             RunHandle(runId = "rec-run-123", status = RunStatusValue.RUNNING, startedAtEpochMs = 1000L)
 
-        override fun attachRun(runId: String, fromSequence: Long): Flow<SequencedStreamEvent> {
+        override fun attachRun(runId: String, fromSeq: Long): Flow<SequencedStreamEvent> {
             val events =
                 listOf(
                     SequencedStreamEvent(1L, StreamEvent.OutputChunk("running...")),

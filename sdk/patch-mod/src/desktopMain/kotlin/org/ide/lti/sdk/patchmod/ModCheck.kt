@@ -115,7 +115,7 @@ object ModCheck {
                 val owner = touched.put(resolved.key, op)
                 val overlaps = owner != null && !(inPlace(owner) && inPlace(op))
                 if (overlaps) {
-                    "${FileMutationCodes.OVERLAPPING_MUTATION}: '${op.id}' targets the path of '${owner?.id}'"
+                    "${FileMutationCodes.OVERLAPPING_MUTATION}: '${op.id}' targets the path of '${owner.id}'"
                 } else {
                     apply(mod, op, resolved.key, files, assetExists)
                 }

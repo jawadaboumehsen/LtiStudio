@@ -45,8 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -54,6 +52,7 @@ import kotlinx.coroutines.delay
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.primitives.glassOutlineBorder
 import org.ide.lti.core.designsystem.component.tooltip.GlassTooltipArea
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -85,8 +84,7 @@ fun GlassConsoleDrawer(
     modifier: Modifier = Modifier,
     logMaxHeight: Dp = ComponentSize.DialogDefaultHeight,
 ) {
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     var isExpanded by remember { mutableStateOf(false) }
     var isCopied by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -124,7 +122,7 @@ fun GlassConsoleDrawer(
                 isCopied = isCopied,
                 onToggleExpand = { isExpanded = !isExpanded },
                 onCopyLogs = {
-                    clipboardManager.setText(AnnotatedString(logs.joinToString("\n")))
+                    copyToClipboard(logs.joinToString("\n"))
                     isCopied = true
                 },
             )

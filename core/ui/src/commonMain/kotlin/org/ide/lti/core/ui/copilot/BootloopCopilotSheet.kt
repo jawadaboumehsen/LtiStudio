@@ -24,10 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassTextButton
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
@@ -48,7 +47,7 @@ fun BootloopCopilotSheet(
     modifier: Modifier = Modifier,
     onDismiss: (() -> Unit)? = null,
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
 
     Column(
         modifier = modifier
@@ -114,7 +113,7 @@ fun BootloopCopilotSheet(
                     DiagnosisItem(
                         diagnosis = item,
                         onCopyRule = { rule ->
-                            clipboardManager.setText(AnnotatedString(rule))
+                            copyToClipboard(rule)
                         },
                     )
                 }

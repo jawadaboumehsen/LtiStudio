@@ -36,7 +36,7 @@ import org.ide.lti.core.model.target.FirmwareSourceKind
  *
  * OTA_ZIP: `unzip payload.bin` → `payload-dumper-go`. RAW_IMAGE_ZIP: unzip, copy the boot chain,
  * trim AVB footer padding, `simg2img` when sparse, `lpunpack --slot=0`. Both: mount each dynamic
- * partition with `erofsfuse`, capture `stat`/`getfattr` dumps, write the normalised sidecars,
+ * partition with `erofsfuse`, capture `stat`/`getfattr` dumps, write the normalized sidecars,
  * copy the tree, unmount; then boot metadata and the stock `build.prop`.
  */
 public class FirmwareExtractionStage : StageDefinition {

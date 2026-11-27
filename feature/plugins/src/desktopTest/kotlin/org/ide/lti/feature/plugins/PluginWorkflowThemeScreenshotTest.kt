@@ -10,7 +10,7 @@
 package org.ide.lti.feature.plugins
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.junit.Test
 

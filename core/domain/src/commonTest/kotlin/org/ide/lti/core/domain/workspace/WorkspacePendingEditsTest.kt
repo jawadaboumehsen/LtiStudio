@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.workspace
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.advanceTimeBy
@@ -23,6 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WorkspacePendingEditsTest {
     private class Store : WorkspaceSettingsStore {
         var snapshot = PipelineFixture().snapshotGlobalOta

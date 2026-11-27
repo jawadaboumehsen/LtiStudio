@@ -35,11 +35,11 @@ public data class ExtractPublicKeyCommand(
         if (help) args.add("--help")
         key?.let { val value = it
             args.add("--key")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

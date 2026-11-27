@@ -77,124 +77,124 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         B?.let { val value = it
             args.add("-b")
-            args.add(value.toString())
+            args.add(value)
         }
         C?.let { val value = it
             args.add("-C")
-            args.add(value.toString())
+            args.add(value)
         }
         D?.let { val value = it
             args.add("-d")
-            args.add(value.toString())
+            args.add(value)
         }
         E?.let { val value = it
             args.add("-E")
-            args.add(value.toString())
+            args.add(value)
         }
         L?.let { val value = it
             args.add("-L")
-            args.add(value.toString())
+            args.add(value)
         }
         T?.let { val value = it
             args.add("-T")
-            args.add(value.toString())
+            args.add(value)
         }
         U?.let { val value = it
             args.add("-U")
-            args.add(value.toString())
+            args.add(value)
         }
         X?.let { val value = it
             args.add("-x")
-            args.add(value.toString())
+            args.add(value)
         }
         Z?.let { val value = it
             args.add("-z")
-            args.add(value.toString())
+            args.add(value)
         }
         if (allRoot) args.add("--all-root")
         if (allTime) args.add("--all-time")
         if (aufs) args.add("--aufs")
         blobdev?.let { val value = it
             args.add("--blobdev")
-            args.add(value.toString())
+            args.add(value)
         }
         blockListFile?.let { val value = it
             args.add("--block-list-file")
-            args.add(value.toString())
+            args.add(value)
         }
         chunksize?.let { val value = it
             args.add("--chunksize")
-            args.add(value.toString())
+            args.add(value)
         }
         clean?.let { val value = it
             args.add("--clean")
-            args.add(value.toString())
+            args.add(value)
         }
         compressHints?.let { val value = it
             args.add("--compress-hints")
-            args.add(value.toString())
+            args.add(value)
         }
         excludePath?.let { val value = it
             args.add("--exclude-path")
-            args.add(value.toString())
+            args.add(value)
         }
         excludeRegex?.let { val value = it
             args.add("--exclude-regex")
-            args.add(value.toString())
+            args.add(value)
         }
         fileContexts?.let { val value = it
             args.add("--file-contexts")
-            args.add(value.toString())
+            args.add(value)
         }
         forceGid?.let { val value = it
             args.add("--force-gid")
-            args.add(value.toString())
+            args.add(value)
         }
         forceUid?.let { val value = it
             args.add("--force-uid")
-            args.add(value.toString())
+            args.add(value)
         }
         fsConfigFile?.let { val value = it
             args.add("--fs-config-file")
-            args.add(value.toString())
+            args.add(value)
         }
         gidOffset?.let { val value = it
             args.add("--gid-offset")
-            args.add(value.toString())
+            args.add(value)
         }
         if (hardDereference) args.add("--hard-dereference")
         if (help) args.add("--help")
         if (ignoreMtime) args.add("--ignore-mtime")
         incremental?.let { val value = it
             args.add("--incremental")
-            args.add(value.toString())
+            args.add(value)
         }
         maxExtentBytes?.let { val value = it
             args.add("--max-extent-bytes")
-            args.add(value.toString())
+            args.add(value)
         }
         if (mkfsTime) args.add("--mkfs-time")
         mountPoint?.let { val value = it
             args.add("--mount-point")
-            args.add(value.toString())
+            args.add(value)
         }
         offset?.let { val value = it
             args.add("--offset")
-            args.add(value.toString())
+            args.add(value)
         }
         ovlfsStrip?.let { val value = it
             args.add("--ovlfs-strip")
-            args.add(value.toString())
+            args.add(value)
         }
         if (preserveMtime) args.add("--preserve-mtime")
         productOut?.let { val value = it
             args.add("--product-out")
-            args.add(value.toString())
+            args.add(value)
         }
         if (quiet) args.add("--quiet")
         rootXattrIsize?.let { val value = it
             args.add("--root-xattr-isize")
-            args.add(value.toString())
+            args.add(value)
         }
         sort?.let { val value = it
             args.add("--sort")
@@ -202,35 +202,35 @@ public data class ExecuteCommand(
         }
         tar?.let { val value = it
             args.add("--tar")
-            args.add(value.toString())
+            args.add(value)
         }
         uidOffset?.let { val value = it
             args.add("--uid-offset")
-            args.add(value.toString())
+            args.add(value)
         }
         ungzip?.let { val value = it
             args.add("--ungzip")
-            args.add(value.toString())
+            args.add(value)
         }
         unxz?.let { val value = it
             args.add("--unxz")
-            args.add(value.toString())
+            args.add(value)
         }
         if (version) args.add("--version")
         workers?.let { val value = it
             args.add("--workers")
-            args.add(value.toString())
+            args.add(value)
         }
         xattrPrefix?.let { val value = it
             args.add("--xattr-prefix")
-            args.add(value.toString())
+            args.add(value)
         }
         zfeatureBits?.let { val value = it
             args.add("--zfeature-bits")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

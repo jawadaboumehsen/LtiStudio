@@ -9,6 +9,7 @@
  */
 package org.ide.lti.core.domain.usecase.publish
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -39,6 +40,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PublishReleaseUseCaseTest {
     /** WSL files by absolute path, changed only through the commands the service runs. */
     private class Folder : PipelineExecutionPort {

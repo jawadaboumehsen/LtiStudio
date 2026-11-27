@@ -34,11 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import dev.chrisbanes.haze.glass.GlassReducedMotionPolicy
@@ -49,6 +47,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
@@ -469,14 +468,8 @@ private fun resolveStageRowDisplayState(
         currentEpochMs = currentEpochMs,
     )
     SetupStepStage.WSL_DETECTION -> resolveWslDisplayState(step = step, wslPres = wslPres)
-    else -> buildStageRowDisplayState(
-        step = step,
-        actionCountsAsRequired = false,
-        errorText = step.error,
-    )
 }
 
-@Suppress("DEPRECATION")
 @Composable
 private fun VerticalStageRow(
     step: SetupStepDetail,
@@ -552,7 +545,7 @@ private fun VerticalStageRow(
 
 @Composable
 private fun StageRowLayoutRecoveryBox(recovery: ToolchainLayoutRecoveryPresentation) {
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     var recoveryCommandCopied by remember(recovery.command) { mutableStateOf(false) }
     LaunchedEffect(recovery.command, recoveryCommandCopied) {
         if (recoveryCommandCopied) {
@@ -588,7 +581,7 @@ private fun StageRowLayoutRecoveryBox(recovery: ToolchainLayoutRecoveryPresentat
         }
         GlassSecondaryButton(
             onClick = {
-                clipboardManager.setText(AnnotatedString(recovery.command))
+                copyToClipboard(recovery.command)
                 recoveryCommandCopied = true
             },
         ) {
@@ -917,10 +910,9 @@ private fun StandardStageRowView(
 }
 
 /** A step's technical error: selectable, with a button that copies the whole text for a bug report. */
-@Suppress("DEPRECATION")
 @Composable
 internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier) {
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     val diagnostics = GlassTheme.diagnosticColors
     var copied by remember(errorText) { mutableStateOf(false) }
     LaunchedEffect(copied) {
@@ -952,7 +944,7 @@ internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier)
         }
         GlassIconButton(
             onClick = {
-                clipboardManager.setText(AnnotatedString(errorText))
+                copyToClipboard(errorText)
                 copied = true
             },
             size = ComponentSize.PanelHeaderAction,

@@ -13,11 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -26,14 +24,6 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
-import org.ide.lti.core.domain.setup.SetupLogEvent
-import org.ide.lti.core.domain.setup.SetupOutcome
-import org.ide.lti.core.domain.setup.SetupPlan
-import org.ide.lti.core.domain.setup.SetupPlanKind
-import org.ide.lti.core.domain.setup.StepProvenance
-import org.ide.lti.core.domain.setup.StepStatus
-import org.ide.lti.core.domain.setup.ToolchainProvisioningService
-import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.usecase.workspace.DiscoverWorkdirWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.GetRecentWorkspacesUseCase
 import org.ide.lti.core.domain.usecase.workspace.OpenWorkspaceUseCase
@@ -448,80 +438,6 @@ class SetupViewModelWorkspaceTest {
             collectJob.cancel()
         } finally {
             Dispatchers.resetMain()
-        }
-    }
-
-    private class FakeToolchainProvisioningService(initialState: ToolchainSetupState = ToolchainSetupState()) :
-        ToolchainProvisioningService {
-        val _state = MutableStateFlow(initialState)
-        override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
-
-        var checkStatusCount = 0
-        var verifyEnvironmentCount = 0
-
-        fun markAllReady() {
-            _state.value =
-                _state.value.copy(
-                    steps =
-                    ToolchainSetupState.defaultSteps().map {
-                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
-                    },
-                    lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
-                )
-        }
-
-        override suspend fun verifyEnvironment(): ToolchainSetupState {
-            verifyEnvironmentCount++
-            return _state.value
-        }
-
-        override suspend fun checkStatus(): ToolchainSetupState {
-            checkStatusCount++
-            return verifyEnvironment()
-        }
-
-        var provisionAvbKeyCount = 0
-
-        override suspend fun provisionAvbKey(): Boolean {
-            provisionAvbKeyCount++
-            _state.value = _state.value.copy(isAvbKeyProvisioned = true)
-            return true
-        }
-
-        // 003 plan contract: fakes never synthesize success for behaviour the test does not drive.
-        override suspend fun prepare(kind: SetupPlanKind, targetId: String?): SetupPlan = SetupPlan(
-            planId = "fake-plan",
-            revisionHash = "fake-rev",
-            environmentKey = "fake-env",
-            kind = kind,
-            targetStageOrToolId = targetId,
-        )
-
-        override suspend fun confirm(planId: String, revisionHash: String): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not execute plans")
-
-        override fun observe(): Flow<SetupOutcome?> = flowOf(null)
-
-        override fun observeActivity(): Flow<SetupLogEvent> = emptyFlow()
-
-        override suspend fun recover(attemptId: String?): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service has no journal")
-
-        override suspend fun cancel(): SetupOutcome = SetupOutcome.Failed(
-            stage = null,
-            reason = "fake service has nothing to cancel",
-        )
-
-        override suspend fun resume(planId: String): SetupOutcome =
-            SetupOutcome.Failed(stage = null, reason = "fake service does not resume plans")
-
-        var testToolCount = 0
-        var lastTestedToolId: String? = null
-
-        override suspend fun testTool(toolId: String): SetupOutcome {
-            testToolCount++
-            lastTestedToolId = toolId
-            return SetupOutcome.Succeeded()
         }
     }
 }

@@ -10,28 +10,31 @@
 package org.ide.lti.feature.setup
 
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.asAwtTransferable
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.runDesktopComposeUiTest
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.feature.setup.components.CopyableErrorText
 import org.junit.Test
+import java.awt.datatransfer.DataFlavor
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
 class CopyableErrorTextTest {
 
-    private class FakeClipboard : ClipboardManager {
-        var copied: AnnotatedString? = null
-        override fun getText(): AnnotatedString? = copied
-        override fun setText(annotatedString: AnnotatedString) {
-            copied = annotatedString
+    private class FakeClipboard : Clipboard {
+        var copied: ClipEntry? = null
+        override suspend fun getClipEntry(): ClipEntry? = copied
+        override suspend fun setClipEntry(clipEntry: ClipEntry?) {
+            copied = clipEntry
         }
     }
 
@@ -42,7 +45,7 @@ class CopyableErrorTextTest {
         val clipboard = FakeClipboard()
         setContent {
             LtiTheme {
-                CompositionLocalProvider(LocalClipboardManager provides clipboard) {
+                CompositionLocalProvider(LocalClipboard provides clipboard) {
                     CopyableErrorText(error)
                 }
             }
@@ -50,8 +53,10 @@ class CopyableErrorTextTest {
 
         onNodeWithText(error).assertIsDisplayed()
         onNodeWithContentDescription("Copy error").performClick()
+        waitForIdle()
 
-        assertEquals(error, clipboard.copied?.text)
+        val copiedText = clipboard.copied?.asAwtTransferable?.getTransferData(DataFlavor.stringFlavor) as? String
+        assertEquals(error, copiedText)
         onNodeWithContentDescription("Copied").assertIsDisplayed()
     }
 }

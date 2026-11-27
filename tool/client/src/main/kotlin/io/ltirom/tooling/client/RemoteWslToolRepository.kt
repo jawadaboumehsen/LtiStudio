@@ -11,7 +11,6 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import java.security.MessageDigest
 
 /**
  * Remote tool repository that executes commands via a remote server bridge.
@@ -145,21 +144,21 @@ public class RemoteWslToolRepository(
         }
     }
 
-    override fun <R> stream(rawCommand: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> {
-        val command = rawCommand.boundTo(context)
-        jail.violation(command)?.let { throw ToolSafetyException(command.toolId, "WORKSPACE_JAIL", it) }
-        safetyPolicy.checkSafety(command, context)
-        command.validateInputArtifacts()
+    override fun <R> stream(command: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> {
+        val boundCommand = command.boundTo(context)
+        jail.violation(boundCommand)?.let { throw ToolSafetyException(boundCommand.toolId, "WORKSPACE_JAIL", it) }
+        safetyPolicy.checkSafety(boundCommand, context)
+        boundCommand.validateInputArtifacts()
 
-        val translatedArgs = command.getArguments().map { translateArgument(it) }
+        val translatedArgs = boundCommand.getArguments().map { translateArgument(it) }
 
         val request = ToolExecutionRequest(
-            toolId = command.toolId.logicalName,
+            toolId = boundCommand.toolId.logicalName,
             arguments = translatedArgs,
             workingDirectory = null,
-            stdinText = if (command.stdinMode == StdinMode.PIPE_TEXT) command.stdinText else null,
-            timeoutMs = command.timeoutMs,
-            acceptedExitCodes = command.acceptedExitCodes,
+            stdinText = if (boundCommand.stdinMode == StdinMode.PIPE_TEXT) boundCommand.stdinText else null,
+            timeoutMs = boundCommand.timeoutMs,
+            acceptedExitCodes = boundCommand.acceptedExitCodes,
             streamOutput = true,
         )
 
@@ -171,10 +170,4 @@ public class RemoteWslToolRepository(
      */
     public fun <R> executeStreaming(command: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> =
         stream(command, context)
-
-    private fun sha256(text: String): String {
-        if (text.isEmpty()) return ""
-        val digest = MessageDigest.getInstance("SHA-256")
-        return digest.digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-    }
 }

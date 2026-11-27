@@ -475,8 +475,8 @@ class BuildRunViewModelTest {
 
         val state = fixture.viewModel.uiState.value
         assertFalse(state.isRunning)
-        assertNotNull(state.errorMessage)
-        assertTrue(state.errorMessage!!.contains("Environment is not ready"))
+        val err = assertNotNull(state.errorMessage)
+        assertTrue(err.contains("Environment is not ready"))
 
         // Dismiss error
         fixture.viewModel.clearError()
@@ -584,20 +584,21 @@ class BuildRunViewModelTest {
         advanceUntilIdle()
 
         val state = fixture.viewModel.uiState.value
-        assertEquals("run-artifacts", state.latestRun?.id)
-        assertEquals(3, state.latestRun!!.artifacts.size)
+        val latestRun = assertNotNull(state.latestRun)
+        assertEquals("run-artifacts", latestRun.id)
+        assertEquals(3, latestRun.artifacts.size)
 
-        val zip = state.latestRun!!.artifacts[0]
+        val zip = latestRun.artifacts[0]
         assertEquals(ArtifactKind.FLASHABLE_ZIP, zip.kind)
         assertEquals(VerificationState.VERIFIED, zip.verification)
         assertEquals(1_500_000_000L, zip.sizeBytes)
         assertEquals("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", zip.sha256)
 
-        val checksum = state.latestRun!!.artifacts[1]
+        val checksum = latestRun.artifacts[1]
         assertEquals(ArtifactKind.CHECKSUM, checksum.kind)
         assertEquals(VerificationState.VERIFIED, checksum.verification)
 
-        val manifest = state.latestRun!!.artifacts[2]
+        val manifest = latestRun.artifacts[2]
         assertEquals(ArtifactKind.OTA_MANIFEST, manifest.kind)
         assertEquals(VerificationState.VERIFIED, manifest.verification)
     }

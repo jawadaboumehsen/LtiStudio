@@ -11,6 +11,7 @@ package org.ide.lti.feature.setup.tools
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -51,6 +52,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** What an install is built from, and what happens to answers that arrive late. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ToolsPageSelectionTest {
     private val erofs = ToolGroupId("erofs-utils")
     private val android = ToolGroupId("android-tools")

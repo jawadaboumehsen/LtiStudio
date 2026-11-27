@@ -1,8 +1,6 @@
 package io.ltirom.tooling.codegen.spec
 
 import io.ltirom.tooling.core.ToolId
-import io.ltirom.tooling.core.ToolRisk
-
 import io.ltirom.tooling.core.ToolOutputParserRegistry
 
 class SpecValidationException(message: String) : Exception(message)

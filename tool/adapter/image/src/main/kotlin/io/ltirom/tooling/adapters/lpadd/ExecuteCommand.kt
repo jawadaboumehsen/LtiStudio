@@ -34,7 +34,7 @@ public data class ExecuteCommand(
         if (readonly) args.add("--readonly")
         if (replace) args.add("--replace")
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

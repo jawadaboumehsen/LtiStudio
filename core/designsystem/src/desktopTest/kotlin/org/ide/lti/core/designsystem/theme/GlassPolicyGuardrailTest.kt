@@ -23,7 +23,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.glass.GlassAccessibilitySettings
 import dev.chrisbanes.haze.glass.LocalGlassAccessibilitySettings

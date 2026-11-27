@@ -36,20 +36,20 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         dstBootimg?.let { val value = it
             args.add("--dst_bootimg")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         if (local) args.add("--local")
         for (item in ramdiskAdd) {
             args.add("--ramdisk_add")
-            args.add(item.toString())
+            args.add(item)
         }
         srcBootimg?.let { val value = it
             args.add("--src_bootimg")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

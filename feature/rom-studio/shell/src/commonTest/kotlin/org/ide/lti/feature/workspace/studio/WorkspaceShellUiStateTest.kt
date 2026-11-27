@@ -14,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -127,8 +128,8 @@ class WorkspaceShellUiStateTest {
             draftBadge = "Unsaved draft (2 files modified)",
         )
 
-        assertTrue(targetContext.targetId is DisplayValue.Available)
-        assertEquals("Pixel 8 Pro (shiba)", (targetContext.targetId as DisplayValue.Available).text)
+        val availableId = assertIs<DisplayValue.Available>(targetContext.targetId)
+        assertEquals("Pixel 8 Pro (shiba)", availableId.text)
         assertEquals("Unsaved draft (2 files modified)", targetContext.draftBadge)
 
         val unavailableTarget = TargetContextUi(
@@ -138,11 +139,8 @@ class WorkspaceShellUiStateTest {
             draftBadge = null,
         )
 
-        assertTrue(unavailableTarget.targetId is DisplayValue.Unavailable)
-        assertEquals(
-            "No active ROM profile selected",
-            (unavailableTarget.targetId as DisplayValue.Unavailable).reason,
-        )
+        val unavailableId = assertIs<DisplayValue.Unavailable>(unavailableTarget.targetId)
+        assertEquals("No active ROM profile selected", unavailableId.reason)
         assertNull(unavailableTarget.draftBadge)
     }
 
@@ -152,24 +150,24 @@ class WorkspaceShellUiStateTest {
         assertEquals(OperationUiState.Idle, idle)
 
         val running: OperationUiState = OperationUiState.Running(generation = 3L, startedFromRevision = 10L)
-        assertTrue(running is OperationUiState.Running)
-        assertEquals(3L, running.generation)
-        assertEquals(10L, running.startedFromRevision)
+        val runningState = assertIs<OperationUiState.Running>(running)
+        assertEquals(3L, runningState.generation)
+        assertEquals(10L, runningState.startedFromRevision)
 
         val succeeded: OperationUiState = OperationUiState.Succeeded(
             generation = 3L,
             completedRevision = 11L,
             message = "Validation passed without errors",
         )
-        assertTrue(succeeded is OperationUiState.Succeeded)
-        assertEquals(11L, succeeded.completedRevision)
+        val succeededState = assertIs<OperationUiState.Succeeded>(succeeded)
+        assertEquals(11L, succeededState.completedRevision)
 
         val failed: OperationUiState = OperationUiState.Failed(
             generation = 3L,
             startedFromRevision = 10L,
             userMessage = "Payload integrity checksum mismatch",
         )
-        assertTrue(failed is OperationUiState.Failed)
-        assertEquals("Payload integrity checksum mismatch", failed.userMessage)
+        val failedState = assertIs<OperationUiState.Failed>(failed)
+        assertEquals("Payload integrity checksum mismatch", failedState.userMessage)
     }
 }

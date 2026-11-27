@@ -22,13 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -174,16 +173,15 @@ internal fun BuildReportDialog(report: BuildReportText?, title: String, onClose:
 }
 
 /** A Markdown text (a report, a comparison) with Copy; [problems] are listed above it. */
-@Suppress("DEPRECATION")
 @Composable
 internal fun MarkdownDialog(title: String, markdown: String, problems: List<String>, onClose: () -> Unit) {
-    val clipboard = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     GlassDialog(
         onDismissRequest = onClose,
         title = title,
         confirmButton = {
             GlassButton(
-                onClick = { clipboard.setText(AnnotatedString(markdown)) },
+                onClick = { copyToClipboard(markdown) },
                 variant = GlassButtonVariant.Primary,
                 modifier = Modifier.testTag("BuildReportCopy"),
             ) { Text("Copy") }

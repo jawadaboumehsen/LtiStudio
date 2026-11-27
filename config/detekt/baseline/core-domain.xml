@@ -47,9 +47,6 @@
     <ID>ClassSignature:DeleteTargetUseCase.kt:DeleteTargetUseCase</ID>
     <ID>ClassSignature:DisconnectDeviceUseCase.kt:DisconnectDeviceUseCase</ID>
     <ID>ClassSignature:DiscoverWorkdirWorkspacesUseCase.kt:DiscoverWorkdirWorkspacesUseCase</ID>
-    <ID>ClassSignature:EnvironmentProbePort.kt:DaemonProbeStatus$Adopted : DaemonProbeStatus</ID>
-    <ID>ClassSignature:EnvironmentProbePort.kt:DaemonProbeStatus$Failed : DaemonProbeStatus</ID>
-    <ID>ClassSignature:EnvironmentProbePort.kt:DaemonProbeStatus$Launched : DaemonProbeStatus</ID>
     <ID>ClassSignature:GetAvailableTargetsUseCase.kt:GetAvailableTargetsUseCase</ID>
     <ID>ClassSignature:GetConnectedDevicesUseCase.kt:GetConnectedDevicesUseCase</ID>
     <ID>ClassSignature:GetRecentWorkspacesUseCase.kt:GetRecentWorkspacesUseCase</ID>
@@ -68,13 +65,11 @@
     <ID>ClassSignature:RefreshConnectedDevicesUseCase.kt:RefreshConnectedDevicesUseCase</ID>
     <ID>ClassSignature:RemoveRecentWorkspaceUseCase.kt:RemoveRecentWorkspaceUseCase</ID>
     <ID>ClassSignature:RunSystemDiagnosticsUseCase.kt:RunSystemDiagnosticsUseCase</ID>
-    <ID>ClassSignature:SelectAndOpenDirectoryUseCase.kt:SelectAndOpenDirectoryUseCase</ID>
     <ID>ClassSignature:SelectConnectedDeviceUseCase.kt:SelectConnectedDeviceUseCase</ID>
     <ID>ClassSignature:SelectTargetUseCase.kt:SelectTargetUseCase</ID>
     <ID>ClassSignature:SetupLogEvent.kt:SetupLogEvent</ID>
     <ID>ClassSignature:SidecarNormalizer.kt:SidecarNormalizer$NormalizedSidecars</ID>
     <ID>ClassSignature:TestIndividualToolUseCase.kt:TestIndividualToolUseCase</ID>
-    <ID>ClassSignature:ToolPublicationPort.kt:PublishedTools</ID>
     <ID>ClassSignature:UpdateTargetUseCase.kt:UpdateTargetUseCase</ID>
     <ID>ClassSignature:WorkspaceManager.kt:WorkspaceManager</ID>
     <ID>ComplexCondition:PipelineOrchestrator.kt:PipelineOrchestrator$status == null || status.status == "INTERRUPTED" || (status.status == "RUNNING" &amp;&amp; status.pid == null &amp;&amp; status.endedAtEpochMs != null)</ID>
@@ -168,9 +163,6 @@
     <ID>NoConsecutiveBlankLines:SetupContracts.kt: </ID>
     <ID>NoConsecutiveBlankLines:ToolchainProvisioningService.kt: </ID>
     <ID>NoConsecutiveBlankLines:ToolchainProvisioningService.kt:ToolchainSetupState$ </ID>
-    <ID>NoUnusedImports:CreateWorkspaceUseCaseTest.kt:org.ide.lti.core.domain.usecase.workspace.CreateWorkspaceUseCaseTest.kt</ID>
-    <ID>NoUnusedImports:GetRunHistoryUseCaseTest.kt:org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCaseTest.kt</ID>
-    <ID>NoUnusedImports:PipelineResumeTest.kt:org.ide.lti.core.domain.pipeline.PipelineResumeTest.kt</ID>
     <ID>NoWildcardImports:PipelineResumeTest.kt:import kotlin.test.*</ID>
     <ID>NoWildcardImports:PipelineResumeTest.kt:import org.ide.lti.core.model.run.*</ID>
     <ID>NoWildcardImports:StageDefinitionsTest.kt:import kotlin.test.*</ID>
@@ -189,7 +181,6 @@
     <ID>ReturnCount:PipelineOrchestrator.kt:PipelineOrchestrator$public suspend fun pause: Boolean</ID>
     <ID>ReturnCount:ReattachRunUseCase.kt:ReattachRunUseCase$public open suspend operator fun invoke: Flow&lt;PipelineEvent&gt;?</ID>
     <ID>ReturnCount:SaveTargetConfigurationUseCase.kt:SaveTargetConfigurationUseCase$suspend operator fun invoke: Result&lt;TargetConfigurationResult&gt;</ID>
-    <ID>SpacingBetweenDeclarationsWithComments:SimulatedExecutionPort.kt:SimulatedExecutionPort$/** Digest reported for the firmware archive so checksum verification can be exercised. */</ID>
     <ID>StatementWrapping:CreateWorkspaceUseCaseTest.kt:CreateWorkspaceUseCaseTest.FakeWorkspaceRepo${ savedRecents.clear() }</ID>
     <ID>StatementWrapping:PipelineResumeTest.kt:PipelineResumeTest.FakeWorkspaceRepo${ workspaces.remove(id) }</ID>
     <ID>StatementWrapping:PipelineResumeTest.kt:PipelineResumeTest.FakeWorkspaceRepo${ workspaces[workspace.id] = workspace }</ID>
@@ -290,24 +281,12 @@
     <ID>TrailingCommaOnDeclarationSite:SidecarNormalizer.kt:SidecarNormalizer.NormalizedSidecars$( val fsConfigContent: String, val fileContextContent: String )</ID>
     <ID>TrailingCommaOnDeclarationSite:SimulatedExecutionPort.kt:SimulatedExecutionPort$"mkdir", "rm", "rsync", "find", "unzip", "payload-dumper-go", "lpunpack", "erofsfuse", "fusermount3", "truncate", "simg2img", "lpmake", "brotli", "zip", "unpack_bootimg", "chmod" -&gt; defaultProduce(cmd)</ID>
     <ID>TrailingCommaOnDeclarationSite:StepCommand.kt:( toolId: String, args: List&lt;String&gt;, workingDir: String, timeoutMs: Long = 0L )</ID>
-    <ID>TrailingCommaOnDeclarationSite:ToolPublicationPort.kt:PublishedTools$( val published: Set&lt;String&gt; = emptySet(), val skipped: Set&lt;String&gt; = emptySet() )</ID>
     <ID>TrailingCommaOnDeclarationSite:ToolchainProvisioningService.kt:DiagnosticCheckItem$( val id: String, val title: String, val status: StepStatus = StepStatus.PENDING, val detail: String = "", val remediation: String? = null, val category: DiagnosticCategory = DiagnosticCategory.TOOLCHAIN, val copyableCommand: String? = null, val isOptionalForRuntime: Boolean = false )</ID>
     <ID>TrailingCommaOnDeclarationSite:ToolchainProvisioningService.kt:SetupStepStage</ID>
     <ID>TrailingCommaOnDeclarationSite:ToolchainProvisioningService.kt:StepProvenance</ID>
     <ID>TrailingCommaOnDeclarationSite:ToolchainProvisioningService.kt:StepStatus</ID>
     <ID>TrailingCommaOnDeclarationSite:ToolchainProvisioningService.kt:ToolScope</ID>
     <ID>TrailingCommaOnDeclarationSite:UpdaterScriptWriter.kt:UpdaterScriptWriter$( target: TargetDevice, policy: PackagePolicy, romVersion: String = "1.0.0" )</ID>
-    <ID>WildcardImport:PipelineResumeTest.kt:import kotlin.test.*</ID>
-    <ID>WildcardImport:PipelineResumeTest.kt:import org.ide.lti.core.model.run.*</ID>
-    <ID>WildcardImport:StageDefinitionsTest.kt:import kotlin.test.*</ID>
-    <ID>WildcardImport:StageDefinitionsTest.kt:import org.ide.lti.core.domain.pipeline.stages.*</ID>
-    <ID>WildcardImport:StageDefinitionsTest.kt:import org.ide.lti.core.domain.pipeline.text.*</ID>
-    <ID>WildcardImport:StageDefinitionsTest.kt:import org.ide.lti.core.model.target.*</ID>
-    <ID>WildcardImport:StageDefinitionsTest.kt:import org.ide.lti.core.model.workspace.*</ID>
-    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt:import kotlin.test.*</ID>
-    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.domain.ports.*</ID>
-    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.model.target.*</ID>
-    <ID>WildcardImport:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.model.workspace.*</ID>
     <ID>Wrapping:SimulatedExecutionPort.kt:SimulatedExecutionPort.Companion$h = (h * 1103515245 + 12345) and 0x7fffffff; append(hex[(h shr 8).toInt() and 15])</ID>
     <ID>Wrapping:SimulatedExecutionPort.kt:SimulatedExecutionPort.Companion$repeat(length) { h = (h * 1103515245 + 12345) and 0x7fffffff; append(hex[(h shr 8).toInt() and 15]) }</ID>
   </CurrentIssues>

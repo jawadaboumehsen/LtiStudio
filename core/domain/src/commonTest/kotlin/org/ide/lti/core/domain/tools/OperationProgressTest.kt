@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.tools
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -24,6 +25,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OperationProgressTest {
     private val op =
         ToolOperation("o", ToolGroupId("g"), OperationKind.Install, null, OperationPhase.Fetching, percent = 0)

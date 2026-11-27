@@ -25,7 +25,7 @@ public data class ExecuteCommand(
     override val stdinText: String? get() = null
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
     override val artifactRequirements: List<ArtifactRequirement> get() = listOf(
-        ArtifactRequirement("inputImage", File(requireNotNull(positionalArgs.getOrNull(0)).toString()), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
+        ArtifactRequirement("inputImage", File(requireNotNull(positionalArgs.getOrNull(0))), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
         ArtifactRequirement("outputDirectory", File(requireNotNull(outDir).toString()), ArtifactKind.DIRECTORY, ArtifactDirection.OUTPUT, true)
     )
 
@@ -51,7 +51,7 @@ public data class ExecuteCommand(
             args.add(value.toString())
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

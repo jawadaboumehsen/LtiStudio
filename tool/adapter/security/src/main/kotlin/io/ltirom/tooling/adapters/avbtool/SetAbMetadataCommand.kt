@@ -35,11 +35,11 @@ public data class SetAbMetadataCommand(
         if (help) args.add("--help")
         miscImage?.let { val value = it
             args.add("--misc_image")
-            args.add(value.toString())
+            args.add(value)
         }
         slotData?.let { val value = it
             args.add("--slot_data")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

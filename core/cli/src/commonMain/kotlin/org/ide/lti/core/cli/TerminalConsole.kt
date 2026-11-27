@@ -31,9 +31,9 @@ class TerminalConsole(
 
     val terminal: Terminal = Terminal(terminalInterface = this)
 
-    override fun completePrintRequest(pr: PrintRequest) {
-        recorder.completePrintRequest(pr)
-        onPrint?.invoke(pr.text, pr.stderr)
+    override fun completePrintRequest(request: PrintRequest) {
+        recorder.completePrintRequest(request)
+        onPrint?.invoke(request.text, request.stderr)
     }
 
     override fun info(

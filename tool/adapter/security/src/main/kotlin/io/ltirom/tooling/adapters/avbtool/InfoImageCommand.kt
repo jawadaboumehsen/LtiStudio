@@ -25,9 +25,9 @@ public data class InfoImageCommand(
     override val stdinText: String? get() = null
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
     override val artifactRequirements: List<ArtifactRequirement> get() = listOf(
-        ArtifactRequirement("image", File(requireNotNull(image).toString()), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
-        ArtifactRequirement("output", File(output?.toString() ?: ""), ArtifactKind.FILE, ArtifactDirection.OUTPUT, output != null),
-        ArtifactRequirement("outputPubkey", File(outputPubkey?.toString() ?: ""), ArtifactKind.FILE, ArtifactDirection.OUTPUT, outputPubkey != null)
+        ArtifactRequirement("image", File(requireNotNull(image)), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
+        ArtifactRequirement("output", File(output ?: ""), ArtifactKind.FILE, ArtifactDirection.OUTPUT, output != null),
+        ArtifactRequirement("outputPubkey", File(outputPubkey ?: ""), ArtifactKind.FILE, ArtifactDirection.OUTPUT, outputPubkey != null)
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -43,15 +43,15 @@ public data class InfoImageCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         outputPubkey?.let { val value = it
             args.add("--output_pubkey")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

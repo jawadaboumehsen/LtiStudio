@@ -18,6 +18,7 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -49,10 +50,12 @@ import org.ide.lti.core.model.setup.SetupEnvironment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class BootstrapHandoffTest {
     private class CountingTransport : RemoteTransportPort {
         var checkHealthCount = 0
@@ -225,8 +228,11 @@ class BootstrapHandoffTest {
                 "transport.checkHealth() must NOT be called for BOOTSTRAP_PACKAGES",
             )
 
-            assertTrue(outcome is SetupOutcome.AwaitingUserAction, "Outcome must be AwaitingUserAction, was $outcome")
-            val handoff = (outcome as SetupOutcome.AwaitingUserAction).handoff
+            val handoff =
+                assertIs<SetupOutcome.AwaitingUserAction>(
+                    outcome,
+                    "Outcome must be AwaitingUserAction, was $outcome",
+                ).handoff
             assertEquals("Ubuntu-24.04", handoff.distro)
             assertTrue(handoff.packages.contains("openjdk-17-jdk"))
 
@@ -330,11 +336,11 @@ class BootstrapHandoffTest {
 
         val resumeOutcome = provisioner.resume(plan.planId)
 
-        assertTrue(
-            resumeOutcome is SetupOutcome.AwaitingUserAction,
-            "Must stay AwaitingUserAction on partial result",
-        )
-        val handoff = (resumeOutcome as SetupOutcome.AwaitingUserAction).handoff
+        val handoff =
+            assertIs<SetupOutcome.AwaitingUserAction>(
+                resumeOutcome,
+                "Must stay AwaitingUserAction on partial result",
+            ).handoff
         assertTrue(handoff.packages.contains("openjdk-17-jdk"))
     }
 

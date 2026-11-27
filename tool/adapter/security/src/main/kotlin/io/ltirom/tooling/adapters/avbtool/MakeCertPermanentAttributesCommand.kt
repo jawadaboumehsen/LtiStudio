@@ -36,11 +36,11 @@ public data class MakeCertPermanentAttributesCommand(
         if (help) args.add("--help")
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         productId?.let { val value = it
             args.add("--product_id")
-            args.add(value.toString())
+            args.add(value)
         }
         if (rootAuthorityKey) args.add("--root_authority_key")
         return args

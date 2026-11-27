@@ -36,15 +36,15 @@ public data class ExtractVbmetaImageCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         paddingSize?.let { val value = it
             args.add("--padding_size")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

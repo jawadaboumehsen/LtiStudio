@@ -44,25 +44,25 @@ public data class ExecuteCommand(
         if (cat) args.add("--cat")
         device?.let { val value = it
             args.add("--device")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         if (ls) args.add("--ls")
         nid?.let { val value = it
             args.add("--nid")
-            args.add(value.toString())
+            args.add(value)
         }
         offset?.let { val value = it
             args.add("--offset")
-            args.add(value.toString())
+            args.add(value)
         }
         path?.let { val value = it
             args.add("--path")
-            args.add(value.toString())
+            args.add(value)
         }
         if (version) args.add("--version")
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

@@ -24,7 +24,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
@@ -45,7 +45,7 @@ import kotlin.test.assertTrue
  * Validates:
  * - Global keyboard shortcuts: Ctrl+N (New Workspace), Ctrl+O (Open Workspace), Ctrl+F (Search focus).
  * - Escape key dismisses non-destructive overlays (Help documentation sheet, Provisioning preview) without executing.
- * - Focus restoration when dismissable sheets close.
+ * - Focus restoration when dismissible sheets close.
  * - Adaptive layout at 900x600 (compact breakpoint) and 1440x900 (wide desktop) logical window sizes.
  * - Text enlargement without clipped actions or layout failure.
  * - Destination session state preservation across navigation switches.

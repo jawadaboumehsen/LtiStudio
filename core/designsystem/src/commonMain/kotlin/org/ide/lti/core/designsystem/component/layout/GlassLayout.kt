@@ -33,13 +33,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.PreviewSampleColors
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Professional resizable panel layout for LtiRomGui IDE with Liquid Glass theme.
@@ -246,7 +246,6 @@ fun GlassLayout(
 /**
  * Preview of [GlassLayout] with sample panels.
  */
-@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassLayoutPreview() {

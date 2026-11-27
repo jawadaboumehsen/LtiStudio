@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
@@ -40,6 +39,7 @@ import org.ide.lti.desktop.menu.model.StudioAction
 import org.ide.lti.desktop.menu.model.StudioMenuState
 import org.ide.lti.desktop.menu.ui.StudioMenuBar
 import org.ide.lti.desktop.tray.AppTray
+import org.ide.lti.desktop.tray.rememberClasspathPainter
 import org.ide.lti.desktop.window.restoreWindow
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
@@ -142,7 +142,6 @@ private fun buildWindowControlActions(
     )
 }
 
-@Suppress("DEPRECATION")
 fun main(args: Array<String>) {
     StartupTiming.log("Process started")
     val instance = SingleInstanceGuard.acquireOrExplain(SingleInstanceGuard.defaultLockFile())
@@ -260,7 +259,7 @@ fun main(args: Array<String>) {
             onCloseRequest = requestExit,
             state = windowState,
             title = "LtiRom Studio",
-            icon = painterResource("icons/ic_launcher.png"),
+            icon = rememberClasspathPainter("icons/ic_launcher.png"),
             minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
             onPreviewKeyEvent = { event ->
                 WindowKeyShortcutHandler.handleKeyEvent(

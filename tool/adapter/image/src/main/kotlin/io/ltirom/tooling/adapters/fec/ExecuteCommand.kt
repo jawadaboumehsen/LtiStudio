@@ -42,18 +42,18 @@ public data class ExecuteCommand(
         if (inplace) args.add("--inplace")
         padding?.let { val value = it
             args.add("--padding")
-            args.add(value.toString())
+            args.add(value)
         }
         roots?.let { val value = it
             args.add("--roots")
-            args.add(value.toString())
+            args.add(value)
         }
         threads?.let { val value = it
             args.add("--threads")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

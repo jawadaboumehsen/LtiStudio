@@ -36,15 +36,15 @@ public data class GenerateTestImageCommand(
         if (help) args.add("--help")
         imageSize?.let { val value = it
             args.add("--image_size")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         startByte?.let { val value = it
             args.add("--start_byte")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

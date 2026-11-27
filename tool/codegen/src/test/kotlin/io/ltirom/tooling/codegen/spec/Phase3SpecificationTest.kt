@@ -31,7 +31,7 @@ class Phase3SpecificationTest {
             val spec = json.decodeFromString(ToolSpecification.serializer(), file.readText())
             SpecValidator.validate(spec)
             assertFalse(spec.helpSha256.isNullOrBlank(), "${spec.tool} has no captured help fingerprint")
-            assertFalse(spec.commands.isEmpty(), "${spec.tool} has no invokable command")
+            assertFalse(spec.commands.isEmpty(), "${spec.tool} has no invocable command")
             assertEquals(spec.commands.size, spec.commands.map { it.subcommandPath }.toSet().size)
 
             val packageName = spec.tool.lowercase().replace("-", "").replace(".", "")

@@ -21,8 +21,8 @@ public data class ExecuteCommand(
     override val stdinText: String? get() = null
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
     override val artifactRequirements: List<ArtifactRequirement> get() = listOf(
-        ArtifactRequirement("outputImage", File(requireNotNull(positionalArgs.getOrNull(0)).toString()), ArtifactKind.FILE, ArtifactDirection.IN_PLACE, true),
-        ArtifactRequirement("inputImage", File(requireNotNull(positionalArgs.getOrNull(1)).toString()), ArtifactKind.FILE, ArtifactDirection.INPUT, true)
+        ArtifactRequirement("outputImage", File(requireNotNull(positionalArgs.getOrNull(0))), ArtifactKind.FILE, ArtifactDirection.IN_PLACE, true),
+        ArtifactRequirement("inputImage", File(requireNotNull(positionalArgs.getOrNull(1))), ArtifactKind.FILE, ArtifactDirection.INPUT, true)
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -34,7 +34,7 @@ public data class ExecuteCommand(
     override fun getArguments(): List<String> {
         val args = mutableListOf<String>()
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

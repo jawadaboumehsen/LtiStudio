@@ -35,7 +35,7 @@ public data class EraseFooterCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         if (keepHashtree) args.add("--keep_hashtree")
         return args

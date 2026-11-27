@@ -12,7 +12,7 @@ public fun main(args: Array<String>) {
 
     val command = args[0]
     val startDir = File(System.getProperty("user.dir")).absoluteFile
-    
+
     // Find project root by traversing upwards until settings.gradle.kts is found
     var current = startDir
     var rootDir = startDir
@@ -23,7 +23,7 @@ public fun main(args: Array<String>) {
         }
         current = current.parentFile
     }
-    
+
     val projectRoot = rootDir
     val toolsBinDir = File(projectRoot, "out/tools/bin").canonicalFile
     val specsDir = File(projectRoot, "tool/specs")

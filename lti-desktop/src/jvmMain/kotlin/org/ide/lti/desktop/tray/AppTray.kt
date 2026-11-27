@@ -10,11 +10,24 @@ package org.ide.lti.desktop.tray
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.decodeToImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.painterResource
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import org.ide.lti.core.common.notification.DelegatingSystemNotifier
 import org.koin.core.context.GlobalContext
+
+@Composable
+internal fun rememberClasspathPainter(resourcePath: String): Painter = remember(resourcePath) {
+    val loader = Thread.currentThread().contextClassLoader ?: AppTrayLoader::class.java.classLoader
+    val bytes =
+        loader.getResourceAsStream(resourcePath)
+            ?.use { it.readAllBytes() }
+            ?: error("Missing classpath resource: $resourcePath")
+    BitmapPainter(bytes.decodeToImageBitmap())
+}
+
+private object AppTrayLoader
 
 /**
  * System tray integration for LtiRom Studio.
@@ -22,10 +35,9 @@ import org.koin.core.context.GlobalContext
  * Uses Tao-native ComposeNativeTray to provide native Win32/Linux/macOS system tray presence,
  * quick action menu, and binds [DesktopNativeNotifier] to [DelegatingSystemNotifier] for OS notifications.
  */
-@Suppress("DEPRECATION")
 @Composable
 fun AppTray(
-    icon: Painter = painterResource("icons/ic_launcher.png"),
+    icon: Painter = rememberClasspathPainter("icons/ic_launcher.png"),
     tooltip: String = "LtiRom Studio",
     onOpenStudio: () -> Unit,
     onOpenSettings: () -> Unit,

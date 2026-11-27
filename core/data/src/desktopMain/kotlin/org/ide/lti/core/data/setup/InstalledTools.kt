@@ -41,8 +41,8 @@ internal fun toolsFromInventory(
         current?.intact != true -> StepStatus.FAILED
         else -> StepStatus.SUCCESS
     }
-    val path = if (exists) {
-        "$home/LtiRomTools/bin/${group!!.id.value}/current/${output!!.file}"
+    val path = if (group != null && output != null && exists) {
+        "$home/LtiRomTools/bin/${group.id.value}/current/${output.file}"
     } else {
         null
     }

@@ -38,21 +38,21 @@ public data class ResignImageCommand(
         args.add("resign_image")
         algorithm?.let { val value = it
             args.add("--algorithm")
-            args.add(value.toString())
+            args.add(value)
         }
         if (autoResize) args.add("--auto_resize")
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         key?.let { val value = it
             args.add("--key")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelper?.let { val value = it
             args.add("--signing_helper")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelperWithFiles?.let { val value = it
             args.add("--signing_helper_with_files")

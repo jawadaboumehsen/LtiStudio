@@ -18,6 +18,7 @@ import org.ide.lti.core.model.setup.SetupEnvironment
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -287,12 +288,12 @@ class MachineRowMapperTest {
                 description = "10 tools ready",
                 status = StepStatus.SUCCESS,
             )
-        val successRow = MachineRowMapper.mapToolchainRow(successStep)
-        assertEquals("10 tools ready", successRow?.detailText)
-        assertEquals(IdeStatusSeverity.Ready, successRow?.severity)
-        assertTrue(successRow?.isReady == true)
-        assertFalse(successRow?.isRunning == true)
-        assertNull(successRow?.primaryAction)
+        val successRow = assertNotNull(MachineRowMapper.mapToolchainRow(successStep))
+        assertEquals("10 tools ready", successRow.detailText)
+        assertEquals(IdeStatusSeverity.Ready, successRow.severity)
+        assertTrue(successRow.isReady)
+        assertFalse(successRow.isRunning)
+        assertNull(successRow.primaryAction)
 
         val runningStep =
             SetupStepDetail(
@@ -301,11 +302,11 @@ class MachineRowMapperTest {
                 description = "Building lz4 (2 of 10)",
                 status = StepStatus.RUNNING,
             )
-        val runningRow = MachineRowMapper.mapToolchainRow(runningStep)
-        assertEquals("Building lz4 (2 of 10)", runningRow?.detailText)
-        assertEquals(IdeStatusSeverity.Running, runningRow?.severity)
-        assertTrue(runningRow?.isRunning == true)
-        assertFalse(runningRow?.isReady == true)
+        val runningRow = assertNotNull(MachineRowMapper.mapToolchainRow(runningStep))
+        assertEquals("Building lz4 (2 of 10)", runningRow.detailText)
+        assertEquals(IdeStatusSeverity.Running, runningRow.severity)
+        assertTrue(runningRow.isRunning)
+        assertFalse(runningRow.isReady)
 
         val failedStep =
             SetupStepDetail(
@@ -315,14 +316,14 @@ class MachineRowMapperTest {
                 error = "erofsfuse: not executable, adb: resolved elsewhere",
                 status = StepStatus.FAILED,
             )
-        val failedRow = MachineRowMapper.mapToolchainRow(failedStep)
-        assertEquals("Tool registration failed", failedRow?.detailText)
-        assertEquals(IdeStatusSeverity.Failed, failedRow?.severity)
-        assertEquals(SetupRowAction.RETRY, failedRow?.primaryAction)
-        assertEquals("Retry failed", failedRow?.primaryActionLabel)
-        assertEquals(SetupRowAction.SHOW_LOG, failedRow?.secondaryAction)
-        assertEquals("View log", failedRow?.secondaryActionLabel)
-        assertEquals("erofsfuse: not executable, adb: resolved elsewhere", failedRow?.errorText)
+        val failedRow = assertNotNull(MachineRowMapper.mapToolchainRow(failedStep))
+        assertEquals("Tool registration failed", failedRow.detailText)
+        assertEquals(IdeStatusSeverity.Failed, failedRow.severity)
+        assertEquals(SetupRowAction.RETRY, failedRow.primaryAction)
+        assertEquals("Retry failed", failedRow.primaryActionLabel)
+        assertEquals(SetupRowAction.SHOW_LOG, failedRow.secondaryAction)
+        assertEquals("View log", failedRow.secondaryActionLabel)
+        assertEquals("erofsfuse: not executable, adb: resolved elsewhere", failedRow.errorText)
 
         val warningStep =
             SetupStepDetail(
@@ -332,13 +333,13 @@ class MachineRowMapperTest {
                 error = "optional tool missing",
                 status = StepStatus.WARNING,
             )
-        val warningRow = MachineRowMapper.mapToolchainRow(warningStep)
-        assertEquals("Some tools optional", warningRow?.detailText)
-        assertEquals(IdeStatusSeverity.Warning, warningRow?.severity)
-        assertEquals(SetupRowAction.RETRY, warningRow?.primaryAction)
-        assertEquals("Retry failed", warningRow?.primaryActionLabel)
-        assertEquals(SetupRowAction.SHOW_LOG, warningRow?.secondaryAction)
-        assertEquals("View log", warningRow?.secondaryActionLabel)
+        val warningRow = assertNotNull(MachineRowMapper.mapToolchainRow(warningStep))
+        assertEquals("Some tools optional", warningRow.detailText)
+        assertEquals(IdeStatusSeverity.Warning, warningRow.severity)
+        assertEquals(SetupRowAction.RETRY, warningRow.primaryAction)
+        assertEquals("Retry failed", warningRow.primaryActionLabel)
+        assertEquals(SetupRowAction.SHOW_LOG, warningRow.secondaryAction)
+        assertEquals("View log", warningRow.secondaryActionLabel)
 
         val pendingStep =
             SetupStepDetail(
@@ -347,8 +348,8 @@ class MachineRowMapperTest {
                 description = "",
                 status = StepStatus.PENDING,
             )
-        val pendingRow = MachineRowMapper.mapToolchainRow(pendingStep)
-        assertEquals("Waiting for prerequisites", pendingRow?.detailText)
-        assertEquals(IdeStatusSeverity.Neutral, pendingRow?.severity)
+        val pendingRow = assertNotNull(MachineRowMapper.mapToolchainRow(pendingStep))
+        assertEquals("Waiting for prerequisites", pendingRow.detailText)
+        assertEquals(IdeStatusSeverity.Neutral, pendingRow.severity)
     }
 }

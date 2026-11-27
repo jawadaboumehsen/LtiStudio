@@ -94,7 +94,7 @@ public data class PartitionConstraint(
         public fun getFor(name: PartitionName): PartitionConstraint {
             val isLogical = name.baseName in setOf("system", "system_ext", "vendor", "product", "odm")
             val isAllowlisted = name.baseName in ALLOWLISTED_PARTITIONS
-            
+
             return PartitionConstraint(
                 name = name,
                 type = if (isLogical) PartitionType.LOGICAL else PartitionType.PHYSICAL,

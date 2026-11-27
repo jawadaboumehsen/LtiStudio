@@ -21,6 +21,7 @@ import java.nio.charset.Charset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -150,11 +151,12 @@ class WslHostPrerequisiteProbeTest {
             val report = probe.probe(testEnv)
 
             val legacyStatus = report.results["legacy-pkg"]
-            assertTrue(
-                legacyStatus is RequirementStatus.Unavailable,
-                "legacy-pkg should be Unavailable, was $legacyStatus",
-            )
-            assertEquals("24.04", (legacyStatus as RequirementStatus.Unavailable).release)
+            val unavailable =
+                assertIs<RequirementStatus.Unavailable>(
+                    legacyStatus,
+                    "legacy-pkg should be Unavailable, was $legacyStatus",
+                )
+            assertEquals("24.04", unavailable.release)
             assertEquals(listOf("git"), report.missingPackages)
             assertEquals("sudo apt-get update && sudo apt-get install -y git", report.installCommand)
         }

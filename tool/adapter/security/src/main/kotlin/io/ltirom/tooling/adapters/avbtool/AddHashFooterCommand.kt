@@ -62,11 +62,11 @@ public data class AddHashFooterCommand(
         args.add("add_hash_footer")
         algorithm?.let { val value = it
             args.add("--algorithm")
-            args.add(value.toString())
+            args.add(value)
         }
         appendToReleaseString?.let { val value = it
             args.add("--append_to_release_string")
-            args.add(value.toString())
+            args.add(value)
         }
         if (calcMaxImageSize) args.add("--calc_max_image_size")
         if (chainPartition) args.add("--chain_partition")
@@ -76,70 +76,70 @@ public data class AddHashFooterCommand(
         if (dynamicPartitionSize) args.add("--dynamic_partition_size")
         flags?.let { val value = it
             args.add("--flags")
-            args.add(value.toString())
+            args.add(value)
         }
         hashAlgorithm?.let { val value = it
             args.add("--hash_algorithm")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         includeDescriptorsFromImage?.let { val value = it
             args.add("--include_descriptors_from_image")
-            args.add(value.toString())
+            args.add(value)
         }
         kernelCmdline?.let { val value = it
             args.add("--kernel_cmdline")
-            args.add(value.toString())
+            args.add(value)
         }
         key?.let { val value = it
             args.add("--key")
-            args.add(value.toString())
+            args.add(value)
         }
         outputVbmetaImage?.let { val value = it
             args.add("--output_vbmeta_image")
-            args.add(value.toString())
+            args.add(value)
         }
         partitionName?.let { val value = it
             args.add("--partition_name")
-            args.add(value.toString())
+            args.add(value)
         }
         partitionSize?.let { val value = it
             args.add("--partition_size")
-            args.add(value.toString())
+            args.add(value)
         }
         if (printRequiredLibavbVersion) args.add("--print_required_libavb_version")
         if (prop) args.add("--prop")
         if (propFromFile) args.add("--prop_from_file")
         publicKeyMetadata?.let { val value = it
             args.add("--public_key_metadata")
-            args.add(value.toString())
+            args.add(value)
         }
         rollbackIndex?.let { val value = it
             args.add("--rollback_index")
-            args.add(value.toString())
+            args.add(value)
         }
         rollbackIndexLocation?.let { val value = it
             args.add("--rollback_index_location")
-            args.add(value.toString())
+            args.add(value)
         }
         salt?.let { val value = it
             args.add("--salt")
-            args.add(value.toString())
+            args.add(value)
         }
         if (setHashtreeDisabledFlag) args.add("--set_hashtree_disabled_flag")
         if (setVerificationDisabledFlag) args.add("--set_verification_disabled_flag")
         if (setupRootfsFromKernel) args.add("--setup_rootfs_from_kernel")
         signingHelper?.let { val value = it
             args.add("--signing_helper")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelperWithFiles?.let { val value = it
             args.add("--signing_helper_with_files")
-            args.add(value.toString())
+            args.add(value)
         }
         if (usePersistentDigest) args.add("--use_persistent_digest")
         return args

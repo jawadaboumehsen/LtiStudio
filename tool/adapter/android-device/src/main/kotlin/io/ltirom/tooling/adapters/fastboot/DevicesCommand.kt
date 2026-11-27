@@ -52,25 +52,25 @@ public data class DevicesCommand(
         if (forceOperation) args.add("--force")
         fsOptions?.let { val value = it
             args.add("--fs-options")
-            args.add(value.toString())
+            args.add(value)
         }
         selectDevice?.let { val value = it
             args.add("-s")
-            args.add(value.toString())
+            args.add(value)
         }
         setActiveSlot?.let { val value = it
             args.add("--set-active")
-            args.add(value.toString())
+            args.add(value)
         }
         if (skipReboot) args.add("--skip-reboot")
         if (skipSecondarySlots) args.add("--skip-secondary")
         slotTarget?.let { val value = it
             args.add("--slot")
-            args.add(value.toString())
+            args.add(value)
         }
         sparseSize?.let { val value = it
             args.add("-S")
-            args.add(value.toString())
+            args.add(value)
         }
         if (unbufferedOutput) args.add("--unbuffered")
         if (verboseMode) args.add("--verbose")

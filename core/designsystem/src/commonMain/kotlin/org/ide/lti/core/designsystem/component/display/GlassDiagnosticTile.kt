@@ -33,8 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
@@ -109,8 +107,7 @@ object GlassDiagnosticDefaults {
 fun GlassDiagnosticTile(item: GlassDiagnosticItem, modifier: Modifier = Modifier) {
     val diagnostics = GlassTheme.diagnosticColors
 
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     var isCopied by remember(item.id) { mutableStateOf(false) }
 
     LaunchedEffect(isCopied) {
@@ -217,7 +214,7 @@ fun GlassDiagnosticTile(item: GlassDiagnosticItem, modifier: Modifier = Modifier
                         ) {
                             GlassIconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(cmd))
+                                    copyToClipboard(cmd)
                                     isCopied = true
                                 },
                                 size = ComponentSize.PanelHeaderAction,

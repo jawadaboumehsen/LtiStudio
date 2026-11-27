@@ -74,8 +74,10 @@ class RunEstimateTest {
         )
         val history = listOf(
             measured(1, 100, 40, debloat to 5L, build to 9L),
-            measured(2, 100, 90, build to 9L), // newer, but did not run Debloat
-            run(3, debloat to 5L, build to 9L), // newest, not measured
+            // newer, but did not run Debloat
+            measured(2, 100, 90, build to 9L),
+            // newest, not measured
+            run(3, debloat to 5L, build to 9L),
         )
         val preview = listOf(StagePreview(debloat, "x"), StagePreview(build, "y"))
         assertEquals(60L, RunEstimate.of(preview, history)!!.diskBytes)

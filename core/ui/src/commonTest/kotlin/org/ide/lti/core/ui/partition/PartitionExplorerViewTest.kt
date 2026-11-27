@@ -35,9 +35,9 @@ class PartitionExplorerViewTest {
         val target = metadata.rootNode.children.first { it.name == "framework.jar" }
         onExtract(target)
 
-        assertNotNull(extractedNode)
-        assertEquals("framework.jar", extractedNode?.name)
-        assertEquals("0644", extractedNode?.permissions)
+        val extracted = assertNotNull(extractedNode)
+        assertEquals("framework.jar", extracted.name)
+        assertEquals("0644", extracted.permissions)
     }
 
     @Test

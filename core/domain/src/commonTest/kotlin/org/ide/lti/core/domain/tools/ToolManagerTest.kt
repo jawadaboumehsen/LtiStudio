@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.tools
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -22,9 +23,11 @@ import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.model.setup.ToolRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ToolManagerTest {
     private class FakeToolStorePort : ToolStorePort {
         var initCalled = false
@@ -326,11 +329,12 @@ class ToolManagerTest {
         val port = FakeToolStorePort()
         val catalog = testCatalog()
         val group = ToolGroupCatalog.EROFS_UTILS
+        val gitSource = assertIs<ToolSource.Git>(group.source)
         val pinnedSource =
             ResolvedSource.Git(
-                repoUrl = (group.source as ToolSource.Git).recommendedUrl,
-                ref = (group.source as ToolSource.Git).pinnedRef,
-                commit = (group.source as ToolSource.Git).pinnedCommit,
+                repoUrl = gitSource.recommendedUrl,
+                ref = gitSource.pinnedRef,
+                commit = gitSource.pinnedCommit,
             )
         val installedPinned =
             InstalledVersion(
@@ -368,8 +372,8 @@ class ToolManagerTest {
 
         val outcome = manager.remove(ToolGroupId("erofs-utils"), "v-123")
 
-        assertTrue(outcome is OperationResult.Failed)
-        assertTrue((outcome as OperationResult.Failed).error is ToolError.InUse)
+        val failed = assertIs<OperationResult.Failed>(outcome)
+        assertTrue(failed.error is ToolError.InUse)
     }
 
     @Test
@@ -415,8 +419,8 @@ class ToolManagerTest {
 
         val blocked = manager.prepareMissing().groupResults.getValue(group.id)
 
-        assertTrue(blocked is GroupSetupResult.Failed, "was $blocked")
-        assertTrue("Trust required" in (blocked as GroupSetupResult.Failed).error.message, blocked.error.message)
+        val failedBlocked = assertIs<GroupSetupResult.Failed>(blocked, "was $blocked")
+        assertTrue("Trust required" in failedBlocked.error.message, failedBlocked.error.message)
         assertTrue(port.installedRequests.none { it.group == group.id }, "an untrusted source is never built")
 
         manager.recordTrust(fork.repoUrl)

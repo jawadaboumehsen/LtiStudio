@@ -24,8 +24,8 @@ public data class ExecuteCommand(
     override val stdinText: String? get() = null
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
     override val artifactRequirements: List<ArtifactRequirement> get() = listOf(
-        ArtifactRequirement("superImage", File(requireNotNull(positionalArgs.getOrNull(0)).toString()), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
-        ArtifactRequirement("outputDirectory", File(positionalArgs.getOrNull(1)?.toString() ?: ""), ArtifactKind.DIRECTORY, ArtifactDirection.OUTPUT, positionalArgs.getOrNull(1) != null)
+        ArtifactRequirement("superImage", File(requireNotNull(positionalArgs.getOrNull(0))), ArtifactKind.FILE, ArtifactDirection.INPUT, true),
+        ArtifactRequirement("outputDirectory", File(positionalArgs.getOrNull(1) ?: ""), ArtifactKind.DIRECTORY, ArtifactDirection.OUTPUT, positionalArgs.getOrNull(1) != null)
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -38,18 +38,18 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in partition) {
             args.add("--partition")
-            args.add(item.toString())
+            args.add(item)
         }
         slot?.let { val value = it
             args.add("--slot")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

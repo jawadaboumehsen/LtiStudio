@@ -50,29 +50,29 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         alignment?.let { val value = it
             args.add("--alignment")
-            args.add(value.toString())
+            args.add(value)
         }
         alignmentOffset?.let { val value = it
             args.add("--alignment-offset")
-            args.add(value.toString())
+            args.add(value)
         }
         if (autoSlotSuffixing) args.add("--auto-slot-suffixing")
         blockSize?.let { val value = it
             args.add("--block-size")
-            args.add(value.toString())
+            args.add(value)
         }
         device?.let { val value = it
             args.add("--device")
-            args.add(value.toString())
+            args.add(value)
         }
         deviceSize?.let { val value = it
             args.add("--device-size")
-            args.add(value.toString())
+            args.add(value)
         }
         if (forceFullImage) args.add("--force-full-image")
         group?.let { val value = it
             args.add("--group")
-            args.add(value.toString())
+            args.add(value)
         }
         image?.let { val value = it
             args.add("--image")
@@ -80,11 +80,11 @@ public data class ExecuteCommand(
         }
         metadataSize?.let { val value = it
             args.add("--metadata-size")
-            args.add(value.toString())
+            args.add(value)
         }
         metadataSlots?.let { val value = it
             args.add("--metadata-slots")
-            args.add(value.toString())
+            args.add(value)
         }
         output?.let { val value = it
             args.add("--output")
@@ -92,16 +92,16 @@ public data class ExecuteCommand(
         }
         for (item in partition) {
             args.add("--partition")
-            args.add(item.toString())
+            args.add(item)
         }
         if (sparse) args.add("--sparse")
         superName?.let { val value = it
             args.add("--super-name")
-            args.add(value.toString())
+            args.add(value)
         }
         if (virtualAb) args.add("--virtual-ab")
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

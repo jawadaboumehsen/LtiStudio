@@ -59,7 +59,8 @@ class ImageTreeTest {
         val entry1 = ImageTreeEntry(
             path = "init.rc",
             size = 1200L,
-            mode = 420, // 0644 octal
+            // 0644 octal
+            mode = 420,
             uid = 0,
             gid = 0,
             label = "u:object_r:rootfs:s0",
@@ -67,7 +68,8 @@ class ImageTreeTest {
         val entry2 = ImageTreeEntry(
             path = "system/bin/sh",
             size = 45000L,
-            mode = 493, // 0755 octal
+            // 0755 octal
+            mode = 493,
             uid = 0,
             gid = 2000,
             label = "u:object_r:shell_exec:s0",

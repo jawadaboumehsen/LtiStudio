@@ -9,7 +9,9 @@
  */
 package org.ide.lti.core.designsystem.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,12 +45,12 @@ class IdeShellTokensTest {
 
     @Test
     fun testShapesAndMotionTokens() {
-        assertEquals(androidx.compose.ui.graphics.RectangleShape, GlassShapes.ShellFrame)
-        assertTrue(GlassShapes.ShellPanel is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(GlassShapes.ShellPill is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(GlassShapes.ShellCard is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(GlassShapes.ShellControl is androidx.compose.foundation.shape.RoundedCornerShape)
-        assertTrue(GlassShapes.ShellBadge is androidx.compose.foundation.shape.RoundedCornerShape)
+        assertEquals(RectangleShape, GlassShapes.ShellFrame)
+        assertEquals(RoundedCornerShape(GlassDimens.ContentRadius), GlassShapes.ShellPanel)
+        assertEquals(RoundedCornerShape(10.dp), GlassShapes.ShellPill)
+        assertEquals(RoundedCornerShape(GlassDimens.CardCornerRadius), GlassShapes.ShellCard)
+        assertEquals(RoundedCornerShape(GlassDimens.ControlCornerRadius), GlassShapes.ShellControl)
+        assertEquals(RoundedCornerShape(GlassDimens.BadgeCornerRadius), GlassShapes.ShellBadge)
 
         assertEquals(100, IdeShellMotion.StateTransitionDuration)
         assertEquals(200, IdeShellMotion.DrawerTransitionDuration)

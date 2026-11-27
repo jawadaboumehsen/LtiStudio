@@ -10,12 +10,26 @@
 package org.ide.lti.core.domain.pipeline
 
 import kotlinx.coroutines.runBlocking
-import org.ide.lti.core.domain.pipeline.stages.*
-import org.ide.lti.core.domain.pipeline.text.*
+import org.ide.lti.core.domain.pipeline.stages.BuildChecks
+import org.ide.lti.core.domain.pipeline.stages.BuildFlashableZipStage
+import org.ide.lti.core.domain.pipeline.stages.FirmwareAcquisitionStage
+import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.stages.GenerateOtaManifestStage
+import org.ide.lti.core.domain.pipeline.stages.ModuleApplicationStage
+import org.ide.lti.core.domain.pipeline.stages.WorkTreeAssemblyStage
+import org.ide.lti.core.domain.pipeline.text.AvbSizeCalculator
+import org.ide.lti.core.domain.pipeline.text.BuildInfoWriter
+import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
+import org.ide.lti.core.domain.pipeline.text.DynamicPartitionsOpListWriter
+import org.ide.lti.core.domain.pipeline.text.OtaManifestWriter
+import org.ide.lti.core.domain.pipeline.text.OtaMetadataWriter
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
-import org.ide.lti.core.model.target.*
-import org.ide.lti.core.model.workspace.*
-import kotlin.test.*
+import org.ide.lti.core.domain.pipeline.text.UpdaterScriptWriter
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class StageDefinitionsTest {
 

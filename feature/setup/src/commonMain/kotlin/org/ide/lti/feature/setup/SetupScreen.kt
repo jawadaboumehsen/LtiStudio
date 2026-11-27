@@ -265,7 +265,6 @@ fun SetupScreen(
         SetupScreenContent(
             state = uiState,
             actions = uiActions,
-            onOpenConfigurations = onOpenConfigurations,
             modifier = Modifier,
             isHelpSheetOpen = isHelpSheetOpen,
             onDismissHelpSheet = { isHelpSheetOpen = false },
@@ -286,7 +285,6 @@ fun SetupScreenContent(
     state: SetupUiState,
     actions: SetupUiActions,
     modifier: Modifier = Modifier,
-    onOpenConfigurations: () -> Unit = {},
     windowControls: WindowControlActions? = null,
     initialTab: SetupTab? = null,
     isHelpSheetOpen: Boolean = false,

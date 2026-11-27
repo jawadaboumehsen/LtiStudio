@@ -70,7 +70,7 @@ public data class InstallFrameworkCommand(
         }
         frameTag?.let { val value = it
             args.add("--frame-tag")
-            args.add(value.toString())
+            args.add(value)
         }
         if (ignoreRawValues) args.add("--ignore-raw-values")
         jobs?.let { val value = it
@@ -80,7 +80,7 @@ public data class InstallFrameworkCommand(
         if (keepBrokenRes) args.add("--keep-broken-res")
         for (item in lib) {
             args.add("--lib")
-            args.add(item.toString())
+            args.add(item)
         }
         if (matchOriginal) args.add("--match-original")
         if (netSecConf) args.add("--net-sec-conf")
@@ -98,7 +98,7 @@ public data class InstallFrameworkCommand(
         if (quiet) args.add("--quiet")
         resResolveMode?.let { val value = it
             args.add("--res-resolve-mode")
-            args.add(value.toString())
+            args.add(value)
         }
         if (verbose) args.add("--verbose")
         args.add(apkFile.toString())

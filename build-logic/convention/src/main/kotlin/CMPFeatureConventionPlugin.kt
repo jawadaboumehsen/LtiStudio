@@ -3,7 +3,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 import org.ide.lti.libs
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Plugin that applies the CMP feature plugin and configures it for Desktop/JVM only.

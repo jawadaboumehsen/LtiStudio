@@ -10,6 +10,7 @@
 package org.ide.lti.feature.rom.studio.stage.debloat
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -26,6 +27,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CompressionGoalViewModelTest {
     @Test
     fun repeatedUseAndQueuedUndoRestoreTheOriginalOptionsWithoutLosingOtherSettings() = runTest {

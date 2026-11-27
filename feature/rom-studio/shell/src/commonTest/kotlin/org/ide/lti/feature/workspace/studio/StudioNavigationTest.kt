@@ -57,6 +57,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -377,8 +378,7 @@ class StudioNavigationTest {
         advanceUntilIdle()
 
         val stageState = viewModel.uiState.value
-        assertTrue(stageState.entry is StudioEntry.Editor)
-        val stageEditor = stageState.entry as StudioEntry.Editor
+        val stageEditor = assertIs<StudioEntry.Editor>(stageState.entry)
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, stageEditor.stageId)
         assertEquals("images", stageEditor.objectId, "selectStage falls back to the stage's first subobject")
 
@@ -395,29 +395,29 @@ class StudioNavigationTest {
         advanceUntilIdle()
 
         val objectState = viewModel.uiState.value
-        val objectEditor = objectState.entry as StudioEntry.Editor
+        val objectEditor = assertIs<StudioEntry.Editor>(objectState.entry)
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, objectEditor.stageId)
         assertEquals("avb-keys", objectEditor.objectId)
 
         // An object id the catalog does not recognize for this stage is a no-op, not silently accepted.
         viewModel.selectObject(StageId.BUILD_FLASHABLE_ZIP, "no-such-object")
         advanceUntilIdle()
-        assertEquals("avb-keys", (viewModel.uiState.value.entry as StudioEntry.Editor).objectId)
+        val unchangedEditor = assertIs<StudioEntry.Editor>(viewModel.uiState.value.entry)
+        assertEquals("avb-keys", unchangedEditor.objectId)
 
         // Select overview mode
         viewModel.openOverview()
         advanceUntilIdle()
 
         val overviewState = viewModel.uiState.value
-        assertTrue(overviewState.entry is StudioEntry.Overview)
+        assertIs<StudioEntry.Overview>(overviewState.entry)
 
         // Restore editor returns to last selected editor context
         viewModel.returnToEditor()
         advanceUntilIdle()
 
         val restoredState = viewModel.uiState.value
-        assertTrue(restoredState.entry is StudioEntry.Editor)
-        val restoredEditor = restoredState.entry as StudioEntry.Editor
+        val restoredEditor = assertIs<StudioEntry.Editor>(restoredState.entry)
         assertEquals(StageId.BUILD_FLASHABLE_ZIP, restoredEditor.stageId)
         assertEquals("avb-keys", restoredEditor.objectId)
     }

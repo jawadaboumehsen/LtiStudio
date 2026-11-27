@@ -31,12 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.primitives.GlassSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.ComponentSize
@@ -66,7 +65,7 @@ fun GlassMessageBubble(
     val isUser = role == MessageRole.USER
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
 
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     var showCopy by remember { mutableStateOf(false) }
 
     Box(
@@ -110,7 +109,7 @@ fun GlassMessageBubble(
                             ) {
                                 GlassIconButton(
                                     onClick = {
-                                        clipboardManager.setText(AnnotatedString(content))
+                                        copyToClipboard(content)
                                     },
                                     size = ComponentSize.PanelHeaderAction,
                                 ) {

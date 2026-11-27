@@ -457,8 +457,8 @@ class WorkspaceBrowserStateTest {
 
         // Queue resolved
         assertNull(state.pendingWorkspaceRequest.value)
-        assertNotNull(openedWorkspace)
-        assertEquals("ws_test", openedWorkspace?.id)
+        val nonNullOpened = assertNotNull(openedWorkspace)
+        assertEquals("ws_test", nonNullOpened.id)
     }
 
     @Test
@@ -566,8 +566,8 @@ class WorkspaceBrowserStateTest {
 
         // Queue resolved and folder opened
         assertNull(state.pendingWorkspaceRequest.value)
-        assertNotNull(openedWorkspace)
-        assertEquals("C:/my_folder", openedWorkspace?.path)
+        val nonNullOpened = assertNotNull(openedWorkspace)
+        assertEquals("C:/my_folder", nonNullOpened.path)
     }
 
     @Test

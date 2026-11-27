@@ -21,12 +21,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import org.ide.lti.core.designsystem.component.layout.ideShellSurface
 import org.ide.lti.core.designsystem.icon.AppIcons
 import org.ide.lti.core.designsystem.theme.Elevation
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.LtiTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Now in Android navigation bar item with icon and label content slots. Wraps Material 3
@@ -151,7 +151,6 @@ private fun Modifier.dockedGlassSurface(): Modifier = this.ideShellSurface(
     drawBorder = false,
 )
 
-@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassNavigationBarPreview() {
@@ -189,7 +188,6 @@ private fun GlassNavigationBarPreview() {
     }
 }
 
-@Suppress("DEPRECATION")
 @Preview
 @Composable
 private fun GlassNavigationRailPreview() {

@@ -42,47 +42,47 @@ public data class ExecuteCommand(
         val args = mutableListOf<String>()
         A?.let { val value = it
             args.add("-a")
-            args.add(value.toString())
+            args.add(value)
         }
         C?.let { val value = it
             args.add("-C")
-            args.add(value.toString())
+            args.add(value)
         }
         F?.let { val value = it
             args.add("-f")
-            args.add(value.toString())
+            args.add(value)
         }
         I?.let { val value = it
             args.add("-i")
-            args.add(value.toString())
+            args.add(value)
         }
         L?.let { val value = it
             args.add("-L")
-            args.add(value.toString())
+            args.add(value)
         }
         M?.let { val value = it
             args.add("-m")
-            args.add(value.toString())
+            args.add(value)
         }
         P?.let { val value = it
             args.add("-p")
-            args.add(value.toString())
+            args.add(value)
         }
         if (R) args.add("-r")
         S?.let { val value = it
             args.add("-s")
-            args.add(value.toString())
+            args.add(value)
         }
         T?.let { val value = it
             args.add("-t")
-            args.add(value.toString())
+            args.add(value)
         }
         X?.let { val value = it
             args.add("-x")
-            args.add(value.toString())
+            args.add(value)
         }
         for (item in positionalArgs) {
-            args.add(item.toString())
+            args.add(item)
         }
         return args
     }

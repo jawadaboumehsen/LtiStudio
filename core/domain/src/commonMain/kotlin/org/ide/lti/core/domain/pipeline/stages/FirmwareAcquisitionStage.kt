@@ -143,7 +143,7 @@ public class FirmwareAcquisitionStage : StageDefinition {
         return steps
     }
 
-    /** The package manifest from the archive's first bytes; an unrecognised format is refused. */
+    /** The package manifest from the archive's first bytes; an unrecognized format is refused. */
     private fun manifestSteps(ctx: StageContext, headerHex: String, expectedSha: String?): List<PipelineStep> {
         val format = FormatDetector.detect(FormatDetector.fromHex(headerHex))
         val manifest = if (format == PackageFormat.Unknown) {

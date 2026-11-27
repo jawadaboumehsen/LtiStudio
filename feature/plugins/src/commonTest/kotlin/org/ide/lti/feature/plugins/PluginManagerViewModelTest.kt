@@ -118,8 +118,8 @@ class PluginManagerViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertIs<IndexFetchResult.Failed>(state.marketplaceFetchResult)
-        assertEquals(IndexFailure.InsecureSource, (state.marketplaceFetchResult as IndexFetchResult.Failed).reason)
+        val failed = assertIs<IndexFetchResult.Failed>(state.marketplaceFetchResult)
+        assertEquals(IndexFailure.InsecureSource, failed.reason)
     }
 
     @Test
@@ -147,8 +147,8 @@ class PluginManagerViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertIs<IndexFetchResult.Cached>(state.marketplaceFetchResult)
-        assertEquals(observedAt, (state.marketplaceFetchResult as IndexFetchResult.Cached).observedAtEpochMs)
+        val cached = assertIs<IndexFetchResult.Cached>(state.marketplaceFetchResult)
+        assertEquals(observedAt, cached.observedAtEpochMs)
         assertEquals(1, state.marketplaceEntries.size)
     }
 

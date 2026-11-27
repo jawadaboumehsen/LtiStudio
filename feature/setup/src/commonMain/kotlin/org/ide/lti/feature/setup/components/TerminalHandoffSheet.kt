@@ -47,20 +47,19 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import org.ide.lti.core.designsystem.component.actions.GlassIconButton
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassSecondaryButton
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
 import org.ide.lti.core.designsystem.icon.AppIcons
@@ -78,7 +77,6 @@ import org.ide.lti.feature.setup.TerminalHandoffState
  * Modal sheet presenting a safe terminal handoff for privileged package installation.
  */
 @OptIn(ExperimentalLayoutApi::class)
-@Suppress("DEPRECATION")
 @Composable
 fun TerminalHandoffSheet(
     handoff: UserRepairHandoff,
@@ -93,7 +91,7 @@ fun TerminalHandoffSheet(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     val firstActionFocusRequester = remember { FocusRequester() }
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     var copiedToClipboard by remember { mutableStateOf(false) }
 
     val effectivePackages = when (sheetState) {
@@ -185,7 +183,7 @@ fun TerminalHandoffSheet(
                     onDismiss = onDismiss,
                     onAbandon = onAbandon,
                     onCopy = {
-                        clipboardManager.setText(AnnotatedString(effectiveCommand))
+                        copyToClipboard(effectiveCommand)
                         copiedToClipboard = true
                     },
                 )

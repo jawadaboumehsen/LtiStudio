@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class DaemonHeartbeatMonitorTest {
@@ -88,8 +89,8 @@ class DaemonHeartbeatMonitorTest {
 
         monitor.checkLiveness()
 
-        assertTrue(stateHolder.currentState is ConnectionState.Connected)
-        assertEquals(1234, (stateHolder.currentState as ConnectionState.Connected).descriptor.port)
+        val connected = assertIs<ConnectionState.Connected>(stateHolder.currentState)
+        assertEquals(1234, connected.descriptor.port)
     }
 
     @Test

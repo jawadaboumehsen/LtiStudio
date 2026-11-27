@@ -17,6 +17,7 @@ import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
@@ -42,7 +43,10 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class KotlinToolStoreAdapterTest {
+    private val encodeDefaultsJson = kotlinx.serialization.json.Json { encodeDefaults = true }
+
     private class FakeTransport : RemoteTransportPort {
         val requests = mutableListOf<ToolExecutionRequest>()
         var onExecute: (ToolExecutionRequest) -> ToolExecutionResponse = { req ->
@@ -345,8 +349,8 @@ class KotlinToolStoreAdapterTest {
 
         val finished = events.filterIsInstance<InstallEvent.Finished>().firstOrNull()
         assertNotNull(finished)
-        assertTrue(finished.result is OperationResult.Reused)
-        assertEquals("v1.8.1", (finished.result as OperationResult.Reused).versionId)
+        val reused = assertIs<OperationResult.Reused>(finished.result)
+        assertEquals("v1.8.1", reused.versionId)
     }
 
     @Test
@@ -370,9 +374,7 @@ class KotlinToolStoreAdapterTest {
                 builtAt = "1",
                 intact = true,
             )
-        val versionJson = kotlinx.serialization.json.Json {
-            encodeDefaults = true
-        }.encodeToString(VersionData.serializer(), versionData)
+        val versionJson = encodeDefaultsJson.encodeToString(VersionData.serializer(), versionData)
         val checked = mutableListOf<String>()
         val transport = FakeTransport()
         transport.onExecute = { req ->
@@ -442,7 +444,7 @@ class KotlinToolStoreAdapterTest {
             outputs = emptyList(),
             builtAt = "1",
             intact = true,
-        ).let { kotlinx.serialization.json.Json { encodeDefaults = true }.encodeToString(VersionData.serializer(), it) }
+        ).let { encodeDefaultsJson.encodeToString(VersionData.serializer(), it) }
 
         val ownId = "v1-" + KotlinStoreLayout.disambiguator(source)
         val transport = FakeTransport()
@@ -538,7 +540,7 @@ class KotlinToolStoreAdapterTest {
             outputs = emptyList(),
             builtAt = "1",
             intact = true,
-        ).let { kotlinx.serialization.json.Json { encodeDefaults = true }.encodeToString(VersionData.serializer(), it) }
+        ).let { encodeDefaultsJson.encodeToString(VersionData.serializer(), it) }
 
         val transport = FakeTransport()
         transport.onExecute = { req ->

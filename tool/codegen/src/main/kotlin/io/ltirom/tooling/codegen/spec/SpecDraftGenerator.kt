@@ -59,10 +59,10 @@ object SpecDraftGenerator {
             }
             val cmdName = toCamelCase(relativeName)
             val fileText = file.readText()
-            
+
             val cmdOptions = parseOptions(fileText)
             val firstLine = fileText.lines().firstOrNull { it.trim().isNotEmpty() } ?: "Subcommand $relativeName"
-            
+
             if (commands.any { it.subcommandPath == subPath }) continue
             commands.add(
                 CommandSpec(
@@ -105,7 +105,7 @@ object SpecDraftGenerator {
                 )
             )
         }
-        
+
         return ToolSpecification(
             schemaVersion = 1,
             tool = toolId.logicalName,
@@ -166,7 +166,7 @@ object SpecDraftGenerator {
     fun parseOptions(text: String): List<OptionSpec> {
         val options = mutableListOf<OptionSpec>()
         val tokenRegex = Regex("""(--[a-zA-Z0-9_-]+(?:\[?=[a-zA-Z0-9#<>|\[\]_=,-]+\]?)?|-[a-zA-Z0-9#<>-]+)""")
-        
+
         var inOptionsSection = true
         val lines = text.lines()
         var i = 0
@@ -196,7 +196,7 @@ object SpecDraftGenerator {
             if (line.take(1).any { it.isWhitespace() } && trimmed.startsWith("-")) {
                 val tokens = mutableListOf<String>()
                 var remaining = trimmed
-                
+
                 for (t in 0..1) {
                     val match = tokenRegex.find(remaining)
                     if (match != null && remaining.startsWith(match.value)) {
@@ -206,11 +206,11 @@ object SpecDraftGenerator {
                         break
                     }
                 }
-                
+
                 if (tokens.isNotEmpty()) {
                     var longToken = tokens.firstOrNull { it.startsWith("--") }
                     var shortToken = tokens.firstOrNull { it.startsWith("-") && !it.startsWith("--") }
-                    
+
                     var argType: String? = null
                     if (shortToken != null && shortToken.length > 2) {
                         argType = shortToken.substring(2)

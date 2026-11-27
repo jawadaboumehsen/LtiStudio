@@ -39,25 +39,25 @@ public data class MakeAtxUnlockCredentialCommand(
         args.add("make_atx_unlock_credential")
         challenge?.let { val value = it
             args.add("--challenge")
-            args.add(value.toString())
+            args.add(value)
         }
         if (help) args.add("--help")
         if (intermediateKeyCertificate) args.add("--intermediate_key_certificate")
         output?.let { val value = it
             args.add("--output")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelper?.let { val value = it
             args.add("--signing_helper")
-            args.add(value.toString())
+            args.add(value)
         }
         signingHelperWithFiles?.let { val value = it
             args.add("--signing_helper_with_files")
-            args.add(value.toString())
+            args.add(value)
         }
         unlockKey?.let { val value = it
             args.add("--unlock_key")
-            args.add(value.toString())
+            args.add(value)
         }
         if (unlockKeyCertificate) args.add("--unlock_key_certificate")
         return args

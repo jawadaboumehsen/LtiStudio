@@ -45,8 +45,6 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.datetime.Clock
@@ -59,6 +57,7 @@ import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassEmptyState
 import org.ide.lti.core.designsystem.component.display.GlassEmptyStateOrientation
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.rememberCopyToClipboard
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
@@ -114,8 +113,7 @@ fun ProjectsStepContent(
     focusSearchOnMount: Boolean = false,
     lazyListState: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
 ) {
-    @Suppress("DEPRECATION")
-    val clipboardManager = LocalClipboardManager.current
+    val copyToClipboard = rememberCopyToClipboard()
     val rootFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -227,7 +225,7 @@ fun ProjectsStepContent(
                         onOpen = { actions.onRecentProjectClick(project) },
                         onRemove = { actions.onRemoveRecentProject(project.workspaceId) },
                         onCopyPath = {
-                            clipboardManager.setText(AnnotatedString(project.path))
+                            copyToClipboard(project.path)
                         },
                         onCancelPendingOpen = actions.onCancelPendingWorkspaceRequest,
                     )

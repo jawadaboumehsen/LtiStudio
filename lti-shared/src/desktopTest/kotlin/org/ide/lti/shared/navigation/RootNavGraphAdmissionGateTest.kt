@@ -10,7 +10,7 @@
 package org.ide.lti.shared.navigation
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
@@ -91,7 +91,7 @@ class RootNavGraphAdmissionGateTest {
 
         override suspend fun cancel(): SetupOutcome = SetupOutcome.Cancelled
 
-        override suspend fun testTool(binaryName: String): SetupOutcome = error("Unused")
+        override suspend fun testTool(toolId: String): SetupOutcome = error("Unused")
     }
 
     @Before

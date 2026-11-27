@@ -15,6 +15,7 @@ import io.ltirom.tooling.core.remote.ToolExecutionRequest
 import io.ltirom.tooling.core.remote.ToolExecutionResponse
 import io.ltirom.tooling.core.remote.ToolListResult
 import io.ltirom.tooling.core.remote.WslServerInfo
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +47,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EnvironmentReadinessAdapterTest {
     private class FakeToolchainProvisioningService(
         var stateResult: ToolchainSetupState =

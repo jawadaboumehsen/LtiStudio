@@ -1,6 +1,5 @@
 package io.ltirom.tooling.codegen.spec
 
-import io.ltirom.tooling.core.ToolRisk
 import java.io.File
 
 object KotlinModelGenerator {
@@ -117,7 +116,7 @@ object KotlinModelGenerator {
             appendLine()
 
             val toolIdConstant = spec.tool.uppercase().replace("-", "_").replace(".", "_")
-            val cmdRisk = cmd.risk ?: spec.risk ?: io.ltirom.tooling.core.ToolRisk.READ_ONLY
+            val cmdRisk = cmd.risk ?: spec.risk
             appendLine("    override val toolId: ToolId get() = ToolId.$toolIdConstant")
             appendLine("    override val risk: ToolRisk get() = ToolRisk.$cmdRisk")
             appendLine("    override val stdinMode: StdinMode get() = StdinMode.EMPTY")
@@ -127,26 +126,45 @@ object KotlinModelGenerator {
                 "    override val acceptedExitCodes: Set<Int> get() = setOf(${acceptedExitCodes.joinToString()})",
             )
             if (cmd.artifacts.isNotEmpty()) {
+                val optionTypes = (spec.globalOptions + cmd.options).associate {
+                    it.name to (it.type to it.choices)
+                }
+                val argTypes = cmd.arguments.associate {
+                    it.name to (it.type to it.choices)
+                }
                 appendLine("    override val artifactRequirements: List<ArtifactRequirement> get() = listOf(")
                 appendLine(
                     cmd.artifacts.joinToString(",\n") { artifact ->
-                    val source = if (artifact.index != null) {
-                        "${artifact.parameter}.getOrNull(${artifact.index})"
-                    } else {
-                        artifact.parameter
+                        val source = if (artifact.index != null) {
+                            "${artifact.parameter}.getOrNull(${artifact.index})"
+                        } else {
+                            artifact.parameter
+                        }
+                        val paramSpec = optionTypes[artifact.parameter] ?: argTypes[artifact.parameter]
+                        val isStringSource = paramSpec != null && (
+                            paramSpec.first == OptionType.STRING ||
+                                (paramSpec.first == OptionType.CHOICE && paramSpec.second == null)
+                            )
+                        val path = if (isStringSource) {
+                            if (artifact.required) {
+                                "File(requireNotNull($source))"
+                            } else {
+                                "File($source ?: \"\")"
+                            }
+                        } else {
+                            if (artifact.required) {
+                                "File(requireNotNull($source).toString())"
+                            } else {
+                                "File($source?.toString() ?: \"\")"
+                            }
+                        }
+                        val required = if (!artifact.required && artifact.direction == ArtifactDirection.OUTPUT) {
+                            "$source != null"
+                        } else {
+                            artifact.required.toString()
+                        }
+                        "        ArtifactRequirement(\"${artifact.name}\", $path, ArtifactKind.${artifact.type}, ArtifactDirection.${artifact.direction}, $required)"
                     }
-                    val path = if (artifact.required) {
-                        "File(requireNotNull($source).toString())"
-                    } else {
-                        "File($source?.toString() ?: \"\")"
-                    }
-                    val required = if (!artifact.required && artifact.direction == ArtifactDirection.OUTPUT) {
-                        "$source != null"
-                    } else {
-                        artifact.required.toString()
-                    }
-                    "        ArtifactRequirement(\"${artifact.name}\", $path, ArtifactKind.${artifact.type}, ArtifactDirection.${artifact.direction}, $required)"
-                }
                 )
                 appendLine("    )")
             }
@@ -192,6 +210,7 @@ object KotlinModelGenerator {
             fun emitOptions(options: List<OptionSpec>) = options.forEach { opt ->
                 val isRepeatable = opt.repeatable
                 val isBoolean = opt.type == OptionType.BOOLEAN
+                val isString = opt.type == OptionType.STRING || (opt.type == OptionType.CHOICE && opt.choices == null)
                 val spelling = opt.spelling
 
                 if (isBoolean) {
@@ -202,7 +221,8 @@ object KotlinModelGenerator {
                         appendLine("            args.add(\"$spelling\$item\")")
                     } else {
                         appendLine("            args.add(\"$spelling\")")
-                        appendLine("            args.add(item.toString())")
+                        val itemExpr = if (isString) "item" else "item.toString()"
+                        appendLine("            args.add($itemExpr)")
                     }
                     appendLine("        }")
                 } else {
@@ -211,10 +231,11 @@ object KotlinModelGenerator {
                         appendLine("            args.add(\"$spelling\$value\")")
                     } else {
                         appendLine("            args.add(\"$spelling\")")
-                        if (opt.type == OptionType.CHOICE) {
+                        if (opt.type == OptionType.CHOICE && opt.choices != null) {
                             appendLine("            args.add(value.value)")
                         } else {
-                            appendLine("            args.add(value.toString())")
+                            val valueExpr = if (isString) "value" else "value.toString()"
+                            appendLine("            args.add($valueExpr)")
                         }
                     }
                     appendLine("        }")
@@ -231,19 +252,23 @@ object KotlinModelGenerator {
             // Append arguments
             for (arg in cmd.arguments) {
                 val isRepeatable = arg.repeatable
+                val isString = arg.type == OptionType.STRING || (arg.type == OptionType.CHOICE && arg.choices == null)
                 if (isRepeatable) {
                     appendLine("        for (item in ${arg.name}) {")
-                    appendLine("            args.add(item.toString())")
+                    val itemExpr = if (isString) "item" else "item.toString()"
+                    appendLine("            args.add($itemExpr)")
                     appendLine("        }")
                 } else {
                     if (arg.required) {
-                        if (arg.type == OptionType.CHOICE) {
+                        if (arg.type == OptionType.CHOICE && arg.choices != null) {
                             appendLine("        args.add(${arg.name}.value)")
                         } else {
-                            appendLine("        args.add(${arg.name}.toString())")
+                            val argExpr = if (isString) arg.name else "${arg.name}.toString()"
+                            appendLine("        args.add($argExpr)")
                         }
                     } else {
-                        appendLine("        ${arg.name}?.let { args.add(it.toString()) }")
+                        val itemExpr = if (isString) "it" else "it.toString()"
+                        appendLine("        ${arg.name}?.let { args.add($itemExpr) }")
                     }
                 }
             }

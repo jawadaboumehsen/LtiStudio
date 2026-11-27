@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import org.ide.lti.core.designsystem.component.layout.GlassGlintState
 import org.ide.lti.core.designsystem.component.layout.GlobalAppDestination
@@ -26,7 +26,6 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class GlassGlintStateTest {
 
@@ -41,7 +40,7 @@ class GlassGlintStateTest {
         val error = GlassGlintState.Error("Zygote SIGABRT")
         val connected = GlassGlintState.DeviceConnected("Pixel 8 Pro")
 
-        assertTrue(idle is GlassGlintState)
+        assertEquals(GlassGlintState.Idle, idle)
         assertEquals(0.5f, active.progress)
         assertEquals("SELinux denial detected", warning.message)
         assertEquals("Zygote SIGABRT", error.message)

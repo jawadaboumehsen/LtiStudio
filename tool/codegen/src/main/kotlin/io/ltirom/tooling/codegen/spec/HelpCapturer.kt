@@ -45,7 +45,7 @@ class HelpCapturer(
 
     private fun captureTool(toolId: ToolId, binary: ToolBinary, outputDir: File) {
         println("Capturing help for tool: ${toolId.logicalName}")
-        
+
         // 1. Version command (if supported)
         if (supportsVersion(toolId)) {
             val versionText = runCommand(binary, listOf("--version"))
@@ -81,7 +81,7 @@ class HelpCapturer(
         val args = subcommands + helpFlag
         val helpText = runCommand(binary, args)
         val normalizedHelp = normalizeOutput(helpText, binary.file.absolutePath, toolId.logicalName)
-        
+
         val suffix = if (subcommands.isEmpty()) "" else "_" + subcommands.joinToString("_")
         val helpFile = File(outputDir, "tool_${toolId.logicalName}${suffix}_help.txt")
         helpFile.writeText(normalizedHelp)
@@ -186,7 +186,7 @@ class HelpCapturer(
 
         val pb = ProcessBuilder(cmd)
         environment.applyTo(pb)
-        
+
         // Merge stdout and stderr for help captures as some tools output help to stderr (e.g. apktool, etc.)
         pb.redirectErrorStream(true)
 

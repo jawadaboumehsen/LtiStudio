@@ -11,10 +11,10 @@ public data class ToolFingerprint(
     public companion object {
         public fun computeFor(file: File): ToolFingerprint {
             require(file.isFile) { "Cannot compute fingerprint for non-existent file: ${file.absolutePath}" }
-            
+
             val sha256 = computeSha256(file)
             val platform = PlatformIdentity.CURRENT
-            
+
             // We can resolve helpHash by matching file properties
             return ToolFingerprint(
                 sha256 = sha256,

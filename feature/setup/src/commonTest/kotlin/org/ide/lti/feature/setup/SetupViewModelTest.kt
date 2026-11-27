@@ -130,8 +130,8 @@ class SetupViewModelTest {
                 },
             ),
     ) : ToolchainProvisioningService {
-        val _state = MutableStateFlow(initialState)
-        override val state: StateFlow<ToolchainSetupState> = _state.asStateFlow()
+        val mutableState = MutableStateFlow(initialState)
+        override val state: StateFlow<ToolchainSetupState> = mutableState.asStateFlow()
 
         var verifyEnvironmentCount = 0
             private set
@@ -156,10 +156,10 @@ class SetupViewModelTest {
             get() = executedPlans.lastOrNull { it.kind == SetupPlanKind.REPAIR_TOOL }?.targetStageOrToolId
 
         fun markAllReady() {
-            _state.value =
-                _state.value.copy(
+            mutableState.value =
+                mutableState.value.copy(
                     steps =
-                    _state.value.steps.map {
+                    mutableState.value.steps.map {
                         it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
                     },
                     lastVerifiedTimestamp = Clock.System.now().toEpochMilliseconds(),
@@ -167,8 +167,8 @@ class SetupViewModelTest {
         }
 
         fun markUnready(pendingStage: SetupStepStage = SetupStepStage.TOOLCHAIN_COMPILATION) {
-            _state.value =
-                _state.value.copy(
+            mutableState.value =
+                mutableState.value.copy(
                     steps =
                     ToolchainSetupState.defaultSteps().map {
                         if (it.stage == pendingStage) {
@@ -182,12 +182,12 @@ class SetupViewModelTest {
 
         override suspend fun verifyEnvironment(): ToolchainSetupState {
             verifyEnvironmentCount++
-            return _state.value
+            return mutableState.value
         }
 
         override suspend fun provisionAvbKey(): Boolean {
             provisionAvbKeyCount++
-            _state.value = _state.value.copy(isAvbKeyProvisioned = true)
+            mutableState.value = mutableState.value.copy(isAvbKeyProvisioned = true)
             return true
         }
 
@@ -230,7 +230,7 @@ class SetupViewModelTest {
             executedPlans += plan
             when (plan.kind) {
                 SetupPlanKind.CACHE_RESET ->
-                    _state.value =
+                    mutableState.value =
                         ToolchainSetupState(
                             steps =
                             ToolchainSetupState.defaultSteps().map {
@@ -428,7 +428,7 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.fullSetupCount)
 
             // Case 1: isChecking is true -> isBusy is true
-            toolchainService._state.value = toolchainService._state.value.copy(isChecking = true)
+            toolchainService.mutableState.value = toolchainService.mutableState.value.copy(isChecking = true)
             assertTrue(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()
@@ -449,8 +449,8 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.provisionAvbKeyCount)
 
             // Case 2: activeOperationId is set -> isBusy is true
-            toolchainService._state.value =
-                toolchainService._state.value.copy(
+            toolchainService.mutableState.value =
+                toolchainService.mutableState.value.copy(
                     isChecking = false,
                     activeOperationId = "op-busy",
                 )
@@ -468,8 +468,8 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.remediationCount)
 
             // Case 3: isRunning is true -> isBusy is true
-            toolchainService._state.value =
-                toolchainService._state.value.copy(
+            toolchainService.mutableState.value =
+                toolchainService.mutableState.value.copy(
                     activeOperationId = null,
                     isRunning = true,
                 )
@@ -487,7 +487,7 @@ class SetupViewModelTest {
             assertEquals(0, toolchainService.remediationCount)
 
             // Case 4: Idle -> actions execute normally
-            toolchainService._state.value = toolchainService._state.value.copy(isRunning = false)
+            toolchainService.mutableState.value = toolchainService.mutableState.value.copy(isRunning = false)
             kotlin.test.assertFalse(viewModel.toolchainSetupState.value.isBusy)
 
             viewModel.checkEnvironmentStatus()

@@ -36,15 +36,15 @@ public data class AppendVbmetaImageCommand(
         if (help) args.add("--help")
         image?.let { val value = it
             args.add("--image")
-            args.add(value.toString())
+            args.add(value)
         }
         partitionSize?.let { val value = it
             args.add("--partition_size")
-            args.add(value.toString())
+            args.add(value)
         }
         vbmetaImage?.let { val value = it
             args.add("--vbmeta_image")
-            args.add(value.toString())
+            args.add(value)
         }
         return args
     }

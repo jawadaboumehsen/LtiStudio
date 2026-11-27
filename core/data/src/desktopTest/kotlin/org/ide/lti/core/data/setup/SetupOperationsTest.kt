@@ -28,6 +28,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -176,8 +177,8 @@ class SetupOperationsTest {
 
             // Explicit cancel when no operation is active returns Failed
             val noOpCancel = coordinator.cancelActiveOperation("Ubuntu")
-            assertTrue(noOpCancel is SetupOutcome.Failed)
-            assertEquals("No active operation to cancel.", (noOpCancel as SetupOutcome.Failed).reason)
+            val noOpFailed = assertIs<SetupOutcome.Failed>(noOpCancel)
+            assertEquals("No active operation to cancel.", noOpFailed.reason)
 
             // With active operation, explicit cancel returns Cancelled
             val threadPool = Executors.newSingleThreadExecutor()
