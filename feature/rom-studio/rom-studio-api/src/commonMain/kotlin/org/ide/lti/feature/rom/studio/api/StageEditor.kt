@@ -16,12 +16,12 @@ import org.ide.lti.core.model.run.StageId
 /**
  * Public integration contract implemented by each independent pipeline stage module.
  */
-public interface StageEditor {
-    public val stageId: StageId
-    public val descriptor: StageDescriptor
+interface StageEditor {
+    val stageId: StageId
+    val descriptor: StageDescriptor
 
     @Composable
-    public fun Content(
+    fun Content(
         context: StageEditorContext,
         modifier: Modifier,
     )

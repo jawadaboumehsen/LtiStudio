@@ -18,9 +18,9 @@ package org.ide.lti.core.data.setup
  * - Sorts and de-duplicates package names.
  * - Never contains `NOPASSWD`, `sudoers`, piping, or shell escapes.
  */
-public object AptCommandBuilder {
+object AptCommandBuilder {
 
-    public fun install(packages: Collection<String>): String {
+    fun install(packages: Collection<String>): String {
         require(packages.isNotEmpty()) { "Package collection must not be empty" }
         for (pkg in packages) {
             require(pkg.isNotBlank()) { "Package name must not be blank" }

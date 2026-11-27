@@ -22,7 +22,7 @@ import org.ide.lti.feature.rom.studio.api.StageEditorContext
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-public class DebloatStageEditor : StageEditor {
+class DebloatStageEditor : StageEditor {
     override val stageId: StageId = StageId.DEBLOAT
     override val descriptor: StageDescriptor = CanonicalStageDescriptors.DEBLOAT
 

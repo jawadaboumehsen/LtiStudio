@@ -42,7 +42,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
 import java.util.UUID
 
-public class StartPipelineRunUseCase(
+class StartPipelineRunUseCase(
     private val workspaceRepository: WorkspaceRepository,
     private val snapshotRepository: SnapshotRepository,
     private val workspaceDeviceRepository: WorkspaceDeviceRepository,
@@ -55,7 +55,7 @@ public class StartPipelineRunUseCase(
     /** The workbench job lock: a build never starts while an interactive edit is changing the workspace. */
     private val jobLock: JobLock? = null,
 ) {
-    public suspend operator fun invoke(
+    suspend operator fun invoke(
         workspaceId: String,
         driverInstanceId: String = "driver_${UUID.randomUUID()}",
         throughStage: StageId? = null,
@@ -65,20 +65,19 @@ public class StartPipelineRunUseCase(
     }
 
     /** What a build through [throughStage] would rerun and why, from the cache records; nothing runs. */
-    public suspend fun preview(workspaceId: String, throughStage: StageId? = null): Result<List<StagePreview>> =
-        runCatching {
-            settingsStore?.flush(workspaceId)?.getOrThrow()
-            val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
-                "Workspace not found: $workspaceId"
-            }
-            val snapshot = requireNotNull(workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }) {
-                "The workspace has no configuration yet"
-            }
-            val target = requireNotNull(workspaceDeviceRepository.get(workspaceId)) {
-                "Workspace has no device configuration"
-            }
-            orchestrator.preview(StageContext(workspace, snapshot, target), throughStage)
+    suspend fun preview(workspaceId: String, throughStage: StageId? = null): Result<List<StagePreview>> = runCatching {
+        settingsStore?.flush(workspaceId)?.getOrThrow()
+        val workspace = requireNotNull(workspaceRepository.getWorkspace(workspaceId)) {
+            "Workspace not found: $workspaceId"
         }
+        val snapshot = requireNotNull(workspace.effectiveSnapshotId?.let { snapshotRepository.getSnapshot(it) }) {
+            "The workspace has no configuration yet"
+        }
+        val target = requireNotNull(workspaceDeviceRepository.get(workspaceId)) {
+            "Workspace has no device configuration"
+        }
+        orchestrator.preview(StageContext(workspace, snapshot, target), throughStage)
+    }
 
     /**
      * Holds the workspace's job lock while the run is checked and queued: a workbench edit then either holds the

@@ -50,7 +50,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Shares the Studio's shallow header and quiet selection tint.
  */
 @Composable
-public fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -64,7 +64,7 @@ public fun IdeTable(modifier: Modifier = Modifier, content: @Composable ColumnSc
  * Header row for [IdeTable] with a minimum height and muted title-case labels.
  */
 @Composable
-public fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -88,7 +88,7 @@ public fun IdeTableHeader(modifier: Modifier = Modifier, content: @Composable Ro
  * Body row for [IdeTable] with fixed 40 dp height, selection state, and optional click handling.
  */
 @Composable
-public fun IdeTableRow(
+fun IdeTableRow(
     isSelected: Boolean = false,
     isEnabled: Boolean = true,
     onClick: (() -> Unit)? = null,
@@ -145,7 +145,7 @@ public fun IdeTableRow(
  * Header cell text utility for [IdeTableHeader].
  */
 @Composable
-public fun IdeTableHeaderCell(text: String, modifier: Modifier = Modifier) {
+fun IdeTableHeaderCell(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -160,7 +160,7 @@ public fun IdeTableHeaderCell(text: String, modifier: Modifier = Modifier) {
  * Circular 18 dp outline radio selection indicator for table rows.
  */
 @Composable
-public fun IdeTableRadioIndicator(isSelected: Boolean, modifier: Modifier = Modifier) {
+fun IdeTableRadioIndicator(isSelected: Boolean, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(GlassDimens.TableSelectionIndicatorSize)

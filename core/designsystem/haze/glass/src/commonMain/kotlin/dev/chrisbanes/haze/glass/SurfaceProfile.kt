@@ -18,7 +18,7 @@ package dev.chrisbanes.haze.glass
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class SurfaceProfile {
+enum class SurfaceProfile {
     /**
      * Spherical dome profile. Light rays bend sharply near the edge, creating a pronounced
      * refraction rim that softens toward the flat interior.

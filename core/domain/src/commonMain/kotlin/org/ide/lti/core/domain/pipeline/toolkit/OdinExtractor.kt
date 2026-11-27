@@ -15,7 +15,7 @@ import org.ide.lti.core.model.run.StepCommand
 /**
  * Standard Samsung Odin firmware package slots.
  */
-public enum class OdinSlot {
+enum class OdinSlot {
     AP,
     BL,
     CP,
@@ -28,12 +28,12 @@ public enum class OdinSlot {
  *
  * Handles AP/BL/CP/CSC tarballs, `.tar.md5` trailer checksum verification, and `.lz4` decompression.
  */
-public object OdinExtractor {
+object OdinExtractor {
 
     /**
      * Identifies the [OdinSlot] corresponding to [fileName].
      */
-    public fun classifySlot(fileName: String): OdinSlot? {
+    fun classifySlot(fileName: String): OdinSlot? {
         val name = fileName.substringAfterLast('/')
         return when {
             name.startsWith("HOME_CSC_") -> OdinSlot.HOME_CSC
@@ -48,7 +48,7 @@ public object OdinExtractor {
     /**
      * Checks if [fileNameOrPath] carries a `.tar.md5` or `.md5` suffix.
      */
-    public fun isTarMd5(fileNameOrPath: String): Boolean {
+    fun isTarMd5(fileNameOrPath: String): Boolean {
         val lower = fileNameOrPath.lowercase()
         return lower.endsWith(".tar.md5") || lower.endsWith(".md5")
     }
@@ -57,7 +57,7 @@ public object OdinExtractor {
      * Generates a command that verifies the declared MD5 trailer of a `.tar.md5` file against
      * the archive data.
      */
-    public fun verifyMd5Command(tarMd5Path: String, workingDir: String): StepCommand {
+    fun verifyMd5Command(tarMd5Path: String, workingDir: String): StepCommand {
         // A .tar.md5 is the tar followed by one `md5sum` line (hash, two spaces, name, newline); the tar ends in NUL
         // padding, so the line is matched, not taken after the last newline. The path travels as $1.
         val script = "LINE=\$(tail -c 512 \"\$1\" | grep -aoE '[0-9a-f]{32}  [^[:cntrl:]]+\$' | tail -n 1) && " +
@@ -75,7 +75,7 @@ public object OdinExtractor {
     /**
      * Generates a [StepCommand] to extract [tarPath] into [destDir] using `tar`.
      */
-    public fun extractTarCommand(tarPath: String, destDir: String, workingDir: String): StepCommand = stepCommand(
+    fun extractTarCommand(tarPath: String, destDir: String, workingDir: String): StepCommand = stepCommand(
         toolId = "tar",
         args = listOf("-xf", tarPath, "-C", destDir),
         workingDir = workingDir,
@@ -84,17 +84,16 @@ public object OdinExtractor {
     /**
      * Generates a [StepCommand] to decompress an LZ4 compressed file [lz4Path] into [outImagePath].
      */
-    public fun decompressLz4Command(lz4Path: String, outImagePath: String, workingDir: String): StepCommand =
-        stepCommand(
-            toolId = "lz4",
-            args = listOf("-d", "-f", lz4Path, outImagePath),
-            workingDir = workingDir,
-        )
+    fun decompressLz4Command(lz4Path: String, outImagePath: String, workingDir: String): StepCommand = stepCommand(
+        toolId = "lz4",
+        args = listOf("-d", "-f", lz4Path, outImagePath),
+        workingDir = workingDir,
+    )
 
     /**
      * Discovers raw partition names present in [members] list of a Samsung Odin archive.
      */
-    public fun discoverPartitions(members: List<String>): List<String> = members.mapNotNull { raw ->
+    fun discoverPartitions(members: List<String>): List<String> = members.mapNotNull { raw ->
         val filename = raw.substringAfterLast('/')
         val cleaned = filename
             .removeSuffix(".lz4")
@@ -111,7 +110,7 @@ public object OdinExtractor {
     /**
      * Extracts the declared 32-character MD5 checksum trailer from [bytes].
      */
-    public fun extractDeclaredMd5(bytes: ByteArray): String? {
+    fun extractDeclaredMd5(bytes: ByteArray): String? {
         val tail = bytes.copyOfRange(maxOf(0, bytes.size - TRAILER_WINDOW), bytes.size).decodeToString()
         return TRAILER.find(tail)?.groupValues?.get(1)?.lowercase()
     }

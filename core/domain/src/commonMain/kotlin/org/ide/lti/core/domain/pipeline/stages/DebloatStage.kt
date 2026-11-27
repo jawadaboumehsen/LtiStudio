@@ -39,7 +39,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * file_context entries in one pass per partition, then records what it removed in `work/debloat/result.json`.
  * Disabled debloat still writes a no-removal result, so later stages read a verified artifact.
  */
-public class DebloatStage : StageDefinition {
+class DebloatStage : StageDefinition {
     override val id: StageId = StageId.DEBLOAT
     override val requiredToolIds: Set<String> = setOf("find", "rm", "mkdir", "cp", "touch")
 
@@ -230,21 +230,21 @@ public class DebloatStage : StageDefinition {
         return steps
     }
 
-    public companion object {
-        public const val RESULT: String = "work/debloat/result.json"
-        public const val INVENTORY_KEY: String = "debloat.inventory"
-        public const val APPS_KEY: String = "debloat.apps"
-        public const val MENTIONS_KEY: String = "debloat.mentions"
-        public const val TOOL: String = "debloat"
-        public const val BACKUP_DIR: String = "restore/debloat"
+    companion object {
+        const val RESULT: String = "work/debloat/result.json"
+        const val INVENTORY_KEY: String = "debloat.inventory"
+        const val APPS_KEY: String = "debloat.apps"
+        const val MENTIONS_KEY: String = "debloat.mentions"
+        const val TOOL: String = "debloat"
+        const val BACKUP_DIR: String = "restore/debloat"
 
         /** Copies of `work/configs/{fs_config,file_context}-<p>` taken before the last debloat pruned them. */
-        public const val SIDECAR_BACKUP_DIR: String = "$BACKUP_DIR/configs"
+        const val SIDECAR_BACKUP_DIR: String = "$BACKUP_DIR/configs"
 
-        public fun backupPath(partition: String, relativePath: String): String = "$BACKUP_DIR/$partition/$relativePath"
+        fun backupPath(partition: String, relativePath: String): String = "$BACKUP_DIR/$partition/$relativePath"
 
         /** What a run removed, from [RESULT]; null for a disabled run's result or unreadable text. */
-        public fun parseResult(text: String): DebloatDecision? =
+        fun parseResult(text: String): DebloatDecision? =
             runCatching { ConfigurationSnapshot.canonicalJson.decodeFromString<DebloatDecision>(text) }.getOrNull()
     }
 }

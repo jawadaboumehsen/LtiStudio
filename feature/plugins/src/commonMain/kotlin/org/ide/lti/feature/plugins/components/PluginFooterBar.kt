@@ -37,7 +37,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * Bottom status and truthfulness disclaimer bar matching the concept designs.
  */
 @Composable
-public fun PluginFooterBar(
+fun PluginFooterBar(
     message: String? = null,
     modifier: Modifier = Modifier,
     showConceptBadge: Boolean = false,

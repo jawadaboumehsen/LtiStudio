@@ -19,11 +19,11 @@ import java.util.Properties
  * A properties file in the app data folder. Not Java Preferences (the Windows registry): that store refuses any
  * value over 8 KB, and the workspace, snapshot and setup lists grow past that.
  */
-public actual fun appSettings(): Settings =
+actual fun appSettings(): Settings =
     fileSettings(File(DesktopRunFileStorage.resolveDefaultBaseDir().parentFile, "settings.properties"), Settings())
 
 /** Settings kept in [file]; every change rewrites it through a temporary file, so it is never half-written. */
-public fun fileSettings(file: File, legacy: Settings? = null): Settings {
+fun fileSettings(file: File, legacy: Settings? = null): Settings {
     val properties = Properties()
     if (file.isFile) {
         file.inputStream().use { properties.load(it) }

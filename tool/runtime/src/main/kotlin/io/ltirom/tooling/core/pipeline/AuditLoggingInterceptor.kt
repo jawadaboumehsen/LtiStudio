@@ -8,7 +8,7 @@ import io.ltirom.tooling.core.TraceContext
 /**
  * Single Responsibility: Observability and security audit trail recording.
  */
-public class AuditLoggingInterceptor(
+class AuditLoggingInterceptor(
     private val redactor: Redactor = Redactor(),
     private val auditLogger: (AuditRecord) -> Unit = {}
 ) : ToolExecutionInterceptor {

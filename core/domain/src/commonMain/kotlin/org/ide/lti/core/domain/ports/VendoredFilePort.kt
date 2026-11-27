@@ -15,8 +15,8 @@ package org.ide.lti.core.domain.ports
  * absent or the digest does not match; the pipeline then fails with a remediation instead of
  * packaging a substitute.
  */
-public interface VendoredFilePort {
-    public fun load(resourceId: String): VendoredFile?
+interface VendoredFilePort {
+    fun load(resourceId: String): VendoredFile?
 }
 
-public data class VendoredFile(val bytes: ByteArray, val sha256: String)
+data class VendoredFile(val bytes: ByteArray, val sha256: String)

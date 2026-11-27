@@ -10,7 +10,7 @@
 package org.ide.lti.core.data.setup.install
 
 /** Architecture used when choosing the bundled Linux tool releases. */
-public fun detectHostArch(): String = when (System.getProperty("os.arch")?.lowercase()) {
+fun detectHostArch(): String = when (System.getProperty("os.arch")?.lowercase()) {
     "aarch64", "arm64" -> "aarch64"
     else -> "x86_64"
 }

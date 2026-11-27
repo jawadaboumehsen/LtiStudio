@@ -16,7 +16,7 @@ import org.ide.lti.core.model.run.StageId
  * Public route contract for navigating to the ROM Studio screen.
  */
 @Serializable
-public data class RomStudioRoute(
+data class RomStudioRoute(
     val workspaceId: String,
     val stageId: StageId? = null,
     val subobjectId: StudioSubobjectId? = null,
@@ -25,14 +25,10 @@ public data class RomStudioRoute(
         require(workspaceId.isNotBlank()) { "RomStudioRoute workspaceId must not be blank" }
     }
 
-    public companion object {
-        public const val ROUTE_PATTERN: String = "studio/{workspaceId}?stageId={stageId}&subobjectId={subobjectId}"
+    companion object {
+        const val ROUTE_PATTERN: String = "studio/{workspaceId}?stageId={stageId}&subobjectId={subobjectId}"
 
-        public fun buildRoute(
-            workspaceId: String,
-            stageId: StageId? = null,
-            subobjectId: StudioSubobjectId? = null,
-        ): String {
+        fun buildRoute(workspaceId: String, stageId: StageId? = null, subobjectId: StudioSubobjectId? = null): String {
             require(workspaceId.isNotBlank()) { "workspaceId must not be blank" }
             val params = mutableListOf<String>()
             if (stageId != null) params.add("stageId=${stageId.name}")

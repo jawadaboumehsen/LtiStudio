@@ -9,22 +9,22 @@
  */
 package org.ide.lti.core.domain.ports
 
-public sealed interface BuildAdmissionResult {
-    public data class Admitted(val environmentLease: EnvironmentLease, val workspaceLease: WorkspaceWriteLease) :
+sealed interface BuildAdmissionResult {
+    data class Admitted(val environmentLease: EnvironmentLease, val workspaceLease: WorkspaceWriteLease) :
         BuildAdmissionResult
 
-    public data class Busy(val owner: WorkspaceWriteLease) : BuildAdmissionResult
+    data class Busy(val owner: WorkspaceWriteLease) : BuildAdmissionResult
 
-    public data class EnvironmentBusy(val owners: List<EnvironmentLease>) : BuildAdmissionResult
+    data class EnvironmentBusy(val owners: List<EnvironmentLease>) : BuildAdmissionResult
 
-    public data class RevisionMismatch(val expected: Int, val actual: Int) : BuildAdmissionResult
+    data class RevisionMismatch(val expected: Int, val actual: Int) : BuildAdmissionResult
 }
 
 /**
  * Acquires build admission in the fixed order environment -> workspace; a workspace refusal
  * releases the environment lease before returning so no lease is ever held without its pair.
  */
-public suspend fun acquireBuildAdmission(
+suspend fun acquireBuildAdmission(
     env: EnvironmentLeasePort,
     ws: WorkspaceAdmissionPort,
     environmentKey: String,

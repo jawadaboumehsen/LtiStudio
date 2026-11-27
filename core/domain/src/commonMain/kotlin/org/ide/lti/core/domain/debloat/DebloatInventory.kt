@@ -13,9 +13,9 @@ package org.ide.lti.core.domain.debloat
  * The apps in the assembled work tree (`work/<partition>/…/<App>/<App>.apk`) and the rules that keep the
  * system bootable. Shared by the Debloat stage (which lists them during the run) and its editor.
  */
-public object DebloatInventory {
+object DebloatInventory {
     /** `find work -name '*.apk' -printf '%s\t%P\n'` arguments, relative to [workDir]. */
-    public fun listingArgs(workDir: String): List<String> =
+    fun listingArgs(workDir: String): List<String> =
         listOf(workDir, "-mindepth", "3", "-maxdepth", "7", "-type", "f", "-name", "*.apk", "-printf", "%s\\t%P\\n")
 
     /**
@@ -23,7 +23,7 @@ public object DebloatInventory {
      * (work-tree `system/system/app/Foo/Foo.apk` → partition `system`, path `system/app/Foo`). An APK lying loose in
      * a folder of many (`overlay/`, `framework/`) is a candidate of its own: that folder is not one app.
      */
-    public fun parse(listing: String): List<DebloatCandidate> = listing.lineSequence()
+    fun parse(listing: String): List<DebloatCandidate> = listing.lineSequence()
         .mapNotNull { line ->
             val (size, path) = line.trim().split('\t', limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
             val folder = path.substringBeforeLast('/', "")
@@ -38,7 +38,7 @@ public object DebloatInventory {
         .sortedWith(compareBy({ it.partition }, { it.relativePath }))
 
     /** Apps whose removal breaks booting, setup, calls, installing apps or the settings screen. */
-    public fun isProtected(candidate: DebloatCandidate): Boolean {
+    fun isProtected(candidate: DebloatCandidate): Boolean {
         val name = candidate.relativePath.substringAfterLast('/')
         // Vendor builds rename them (SystemUI_MFV_tablet_abroad, Telecom_MFV, WebViewGoogle64,
         // DocumentsUIGoogle): a protected name also covers its variants with a suffix.
@@ -50,7 +50,7 @@ public object DebloatInventory {
     }
 
     /** `partition:path` selectors of the protected apps in [inventory], for [DebloatResolver]. */
-    public fun protectedSelectors(inventory: List<DebloatCandidate>): List<String> =
+    fun protectedSelectors(inventory: List<DebloatCandidate>): List<String> =
         inventory.filter(::isProtected).map { "${it.partition}:${it.relativePath}" }
 
     /** [name] is [base], or [base] followed by `_…`, `Google…`, a digit, or `Legacy`. */

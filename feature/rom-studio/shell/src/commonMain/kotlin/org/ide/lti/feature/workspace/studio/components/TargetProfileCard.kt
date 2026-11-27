@@ -56,7 +56,7 @@ import org.ide.lti.feature.workspace.studio.TargetSummaryUi
  * Matches Mockup 09 (two-column layout right card).
  */
 @Composable
-public fun TargetProfileCard(summary: TargetSummaryUi, onEditProfile: () -> Unit, modifier: Modifier = Modifier) {
+fun TargetProfileCard(summary: TargetSummaryUi, onEditProfile: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .testTag("TargetProfileCard")

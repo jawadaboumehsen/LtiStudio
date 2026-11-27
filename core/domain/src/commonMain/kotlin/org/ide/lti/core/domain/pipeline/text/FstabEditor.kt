@@ -13,7 +13,7 @@ package org.ide.lti.core.domain.pipeline.text
  * Edits an Android mount table (`fstab`): `<src> <mount point> <type> <mount flags> <fs_mgr flags>` per line. Only
  * the fs_mgr flags of the lines asked for change; every other byte stays as it was.
  */
-public object FstabEditor {
+object FstabEditor {
     private const val DATA = "/data"
     private const val MOUNT_POINT = 1
     private const val TYPE = 2
@@ -41,7 +41,7 @@ public object FstabEditor {
      * [fstab] with the AVB and verity flags of every line removed: the phone mounts the
      * partitions without dm-verity, whatever vbmeta says. Lines without such a flag stay byte for byte.
      */
-    public fun withoutIntegrity(fstab: String): String = fstab.lines().joinToString("\n") { line ->
+    fun withoutIntegrity(fstab: String): String = fstab.lines().joinToString("\n") { line ->
         val tokens = TOKEN.findAll(line).toList()
         val flags = tokens.getOrNull(FS_MGR_FLAGS)
         if (mountPoint(line) == null || flags == null) return@joinToString line
@@ -52,7 +52,7 @@ public object FstabEditor {
     }
 
     /** One line of a mount table: where from, where to, as what, how, and its fs_mgr flags. */
-    public data class Row(
+    data class Row(
         val source: String,
         val mountPoint: String,
         val type: String,
@@ -61,7 +61,7 @@ public object FstabEditor {
     )
 
     /** The lines of [fstab] that mount something (comments and short lines left out), in order. */
-    public fun rows(fstab: String): List<Row> = fstab.lines().mapNotNull { line ->
+    fun rows(fstab: String): List<Row> = fstab.lines().mapNotNull { line ->
         if (line.trimStart().startsWith("#")) return@mapNotNull null
         val t = TOKEN.findAll(line).map { it.value }.toList()
         if (t.size <= MOUNT_OPTIONS) return@mapNotNull null
@@ -69,19 +69,19 @@ public object FstabEditor {
     }
 
     /** Whether [flag] (`avb=vbmeta_system`, `verify`) makes a partition verified. */
-    public fun isIntegrity(flag: String): Boolean = flag.substringBefore('=') in INTEGRITY_FLAGS
+    fun isIntegrity(flag: String): Boolean = flag.substringBefore('=') in INTEGRITY_FLAGS
 
     /** Whether [flag] (`fileencryption=…`, `forceencrypt`) makes a partition encrypted. */
-    public fun isEncryption(flag: String): Boolean = flag.substringBefore('=') in ENCRYPTION_FLAGS
+    fun isEncryption(flag: String): Boolean = flag.substringBefore('=') in ENCRYPTION_FLAGS
 
     /** Whether [flag] can be removed on its own: a verity or an encryption flag (nothing a line needs to mount). */
-    public fun isRemovable(flag: String): Boolean = isIntegrity(flag) || isEncryption(flag)
+    fun isRemovable(flag: String): Boolean = isIntegrity(flag) || isEncryption(flag)
 
     /**
      * [fstab] without each `mount point -> flag name` of [removals] on every line of that mount point (a flag is
      * matched by its name, before any `=`). Other lines stay byte for byte.
      */
-    public fun withoutFlags(fstab: String, removals: List<Pair<String, String>>): String =
+    fun withoutFlags(fstab: String, removals: List<Pair<String, String>>): String =
         fstab.lines().joinToString("\n") { line ->
             val point = mountPoint(line)
             val names = removals.filter { it.first == point }.map { it.second.substringBefore('=') }.toSet()
@@ -94,10 +94,10 @@ public object FstabEditor {
         }
 
     /** Whether [fstab] has a line mounting `/data`. */
-    public fun mountsData(fstab: String): Boolean = fstab.lines().any { mountPoint(it) == DATA }
+    fun mountsData(fstab: String): Boolean = fstab.lines().any { mountPoint(it) == DATA }
 
     /** [fstab] with the encryption flags of its `/data` line removed: `/data` is then mounted unencrypted. */
-    public fun withoutDataEncryption(fstab: String): String = fstab.lines().joinToString("\n") { line ->
+    fun withoutDataEncryption(fstab: String): String = fstab.lines().joinToString("\n") { line ->
         val tokens = TOKEN.findAll(line).toList()
         if (mountPoint(line) != DATA || tokens.size <= FS_MGR_FLAGS) {
             line
@@ -113,7 +113,7 @@ public object FstabEditor {
      * declares only with other filesystems: a copy of that line with the type and its mount options, right after
      * the last line of the mount point. The phone tries the lines in order, so the stock filesystem still mounts.
      */
-    public fun withFilesystems(fstab: String, wanted: Map<String, String>): String {
+    fun withFilesystems(fstab: String, wanted: Map<String, String>): String {
         val lines = fstab.lines().toMutableList()
         wanted.forEach { (mountPoint, fs) ->
             val own = lines.indices.filter { mountPoint(lines[it]) == mountPoint && isLogical(lines[it]) }
@@ -128,7 +128,7 @@ public object FstabEditor {
     }
 
     /** The mount points of [fstab]'s dynamic (`logical`) partitions, in order. */
-    public fun logicalMountPoints(fstab: String): List<String> =
+    fun logicalMountPoints(fstab: String): List<String> =
         fstab.lines().filter(::isLogical).mapNotNull(::mountPoint).distinct()
 
     private fun isLogical(line: String): Boolean =

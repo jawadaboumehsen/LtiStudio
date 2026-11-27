@@ -1,6 +1,6 @@
 package io.ltirom.tooling.core
 
-public enum class ToolId(public val logicalName: String) {
+enum class ToolId(val logicalName: String) {
     ADB("adb"),
     FASTBOOT("fastboot"),
     AAPT2("aapt2"),
@@ -37,8 +37,8 @@ public enum class ToolId(public val logicalName: String) {
     E2FSDROID("e2fsdroid"),
     MKE2FS("mke2fs");
 
-    public companion object {
-        public fun fromLogicalNameOrNull(name: String): ToolId? {
+    companion object {
+        fun fromLogicalNameOrNull(name: String): ToolId? {
             return entries.firstOrNull { it.logicalName == name }
         }
     }

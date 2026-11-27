@@ -31,12 +31,12 @@ import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 import java.security.MessageDigest
-public typealias RecoveryDraftRecord = org.ide.lti.core.model.draft.RecoveryDraftRecord
-public typealias RecoveryDraftReadResult = org.ide.lti.core.model.draft.RecoveryDraftReadResult
-public typealias RecoveryDraftStorePort = org.ide.lti.core.domain.ports.RecoveryDraftStorePort
+typealias RecoveryDraftRecord = org.ide.lti.core.model.draft.RecoveryDraftRecord
+typealias RecoveryDraftReadResult = org.ide.lti.core.model.draft.RecoveryDraftReadResult
+typealias RecoveryDraftStorePort = org.ide.lti.core.domain.ports.RecoveryDraftStorePort
 
 /** Settings-backed, checksummed recovery records. Generation checks are enforced here as the final race barrier. */
-public class RecoveryDraftStore(
+class RecoveryDraftStore(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -45,7 +45,7 @@ public class RecoveryDraftStore(
     private val loaded = readRecordsSafe()
     private val _records = MutableStateFlow(loaded.records)
     private val tombstonesState = MutableStateFlow(loaded.tombstones)
-    public val records = _records.asStateFlow()
+    val records = _records.asStateFlow()
 
     override suspend fun persist(record: RecoveryDraftRecord): Result<RecoveryDraftRecord> = withContext(ioDispatcher) {
         mutex.withLock {
@@ -196,10 +196,10 @@ public class RecoveryDraftStore(
         val wasCorrupt: Boolean,
     )
 
-    public companion object {
-        public const val KEY_RECORDS: String = "lti_recovery_drafts_v1"
-        public const val KEY_BACKUP: String = "lti_recovery_drafts_v1_backup"
-        public fun defaultJson(): Json = Json {
+    companion object {
+        const val KEY_RECORDS: String = "lti_recovery_drafts_v1"
+        const val KEY_BACKUP: String = "lti_recovery_drafts_v1_backup"
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

@@ -51,10 +51,10 @@ class ShutdownRequestTimeoutTest {
         val (socket, info) = stallingBodyService()
         socket.use {
             val start = System.nanoTime()
-            val serverInfo = DaemonHealthProber(HttpClient(CIO)).getServerInfo(info)
+            val serverInfo = DaemonHealthProbe(HttpClient(CIO)).getServerInfo(info)
             val elapsedMs = (System.nanoTime() - start) / 1_000_000
             assertEquals(null, serverInfo)
-            assertEquals(true, elapsedMs <= DaemonHealthProber.TELEMETRY_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
+            assertEquals(true, elapsedMs <= DaemonHealthProbe.TELEMETRY_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
         }
     }
 
@@ -63,9 +63,9 @@ class ShutdownRequestTimeoutTest {
         val (socket, info) = service(replyAfterMs = -1)
         socket.use {
             val start = System.nanoTime()
-            assertEquals(null, DaemonHealthProber(HttpClient(CIO)).getServerInfo(info))
+            assertEquals(null, DaemonHealthProbe(HttpClient(CIO)).getServerInfo(info))
             val elapsedMs = (System.nanoTime() - start) / 1_000_000
-            assertEquals(true, elapsedMs <= DaemonHealthProber.TELEMETRY_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
+            assertEquals(true, elapsedMs <= DaemonHealthProbe.TELEMETRY_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
         }
     }
 
@@ -73,7 +73,7 @@ class ShutdownRequestTimeoutTest {
     fun `cancelling the caller is not swallowed by the telemetry bound`() = runBlocking<Unit> {
         val (socket, info) = service(replyAfterMs = -1)
         socket.use {
-            val job = async { DaemonHealthProber(HttpClient(CIO)).getServerInfo(info) }
+            val job = async { DaemonHealthProbe(HttpClient(CIO)).getServerInfo(info) }
             kotlinx.coroutines.delay(300)
             job.cancel()
             assertFailsWith<kotlinx.coroutines.CancellationException> { job.await() }
@@ -83,12 +83,12 @@ class ShutdownRequestTimeoutTest {
     @Test
     fun `a forced shutdown outlasts the service's seven second cancellation`() = runBlocking {
         val budgetMs = 7_000L // the service's SHUTDOWN_STOP_WAIT_MS
-        assertTrue(DaemonHealthProber.FORCED_SHUTDOWN_TIMEOUT_MS >= budgetMs + 1_000L, "needs margin over the service")
-        assertTrue(DaemonHealthProber.FORCED_SHUTDOWN_TIMEOUT_MS < 10_000L, "must fit the app's shutdown deadline")
+        assertTrue(DaemonHealthProbe.FORCED_SHUTDOWN_TIMEOUT_MS >= budgetMs + 1_000L, "needs margin over the service")
+        assertTrue(DaemonHealthProbe.FORCED_SHUTDOWN_TIMEOUT_MS < 10_000L, "must fit the app's shutdown deadline")
 
         val (socket, info) = service(replyAfterMs = budgetMs)
         socket.use {
-            val prober = DaemonHealthProber(HttpClient(CIO))
+            val prober = DaemonHealthProbe(HttpClient(CIO))
             assertEquals(ShutdownOutcome.ACCEPTED, prober.requestShutdown(info, force = true), "a reply at ${budgetMs}ms is still accepted")
         }
     }
@@ -98,10 +98,10 @@ class ShutdownRequestTimeoutTest {
         val (socket, info) = service(replyAfterMs = -1)
         socket.use {
             val start = System.nanoTime()
-            val accepted = DaemonHealthProber(HttpClient(CIO)).requestShutdown(info, force = false)
+            val accepted = DaemonHealthProbe(HttpClient(CIO)).requestShutdown(info, force = false)
             val elapsedMs = (System.nanoTime() - start) / 1_000_000
             assertEquals(ShutdownOutcome.NO_ANSWER, accepted)
-            assertEquals(true, elapsedMs in DaemonHealthProber.SHUTDOWN_TIMEOUT_MS..DaemonHealthProber.SHUTDOWN_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
+            assertEquals(true, elapsedMs in DaemonHealthProbe.SHUTDOWN_TIMEOUT_MS..DaemonHealthProbe.SHUTDOWN_TIMEOUT_MS + 2_000L, "took $elapsedMs ms")
         }
     }
 }

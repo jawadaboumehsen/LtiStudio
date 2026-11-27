@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 /**
@@ -168,10 +169,10 @@ class DampedDragAnimation(
         if (isReducedMotion) return
         gestureScaleJob = animationScope.launch {
             cancelAndJoinPriorJobs(cancelTransition = false, cancelDrag = false, cancelScale = true)
-            delay(16L)
+            delay(16.milliseconds)
             val threshold = (valueRange.endInclusive - valueRange.start) * 0.05f
             if (valueAnimation.isRunning || abs(value - valueAnimation.targetValue) > threshold) {
-                withTimeoutOrNull(500L) {
+                withTimeoutOrNull(500.milliseconds) {
                     snapshotFlow { valueAnimation.value }
                         .filter { abs(it - valueAnimation.targetValue) < threshold }
                         .first()

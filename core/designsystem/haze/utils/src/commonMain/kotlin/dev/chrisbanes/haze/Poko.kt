@@ -13,4 +13,4 @@ package dev.chrisbanes.haze
 @InternalHazeApi
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
-public annotation class Poko
+annotation class Poko

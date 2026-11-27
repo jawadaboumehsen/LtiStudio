@@ -39,8 +39,8 @@ internal fun nativeOutput(
  *
  * Catalog Rule: A tool id's installed file name is immutable across versions and runs.
  */
-public object ToolGroupCatalog {
-    public val ANDROID_TOOLS: ToolGroup =
+object ToolGroupCatalog {
+    val ANDROID_TOOLS: ToolGroup =
         ToolGroup(
             id = ToolGroupId("android-tools"),
             source =
@@ -174,7 +174,7 @@ public object ToolGroupCatalog {
             supportFiles = listOf("gki/"),
         )
 
-    public val EROFS_UTILS: ToolGroup =
+    val EROFS_UTILS: ToolGroup =
         ToolGroup(
             id = ToolGroupId("erofs-utils"),
             source =
@@ -202,7 +202,7 @@ public object ToolGroupCatalog {
             buildPackages = listOf("build-essential", "cmake", "make", "clang", "libfuse3-dev"),
         )
 
-    public val IMG2SDAT: ToolGroup =
+    val IMG2SDAT: ToolGroup =
         ToolGroup(
             id = ToolGroupId("img2sdat"),
             source =
@@ -240,7 +240,7 @@ public object ToolGroupCatalog {
             buildPackages = listOf("python3"),
         )
 
-    public val APKTOOL: ToolGroup =
+    val APKTOOL: ToolGroup =
         ToolGroup(
             id = ToolGroupId("apktool"),
             source =
@@ -271,7 +271,7 @@ public object ToolGroupCatalog {
             buildPackages = listOf("openjdk-17-jdk"),
         )
 
-    public val SIGNAPK: ToolGroup =
+    val SIGNAPK: ToolGroup =
         ToolGroup(
             id = ToolGroupId("signapk"),
             source =
@@ -302,7 +302,7 @@ public object ToolGroupCatalog {
             buildPackages = listOf("openjdk-17-jdk"),
         )
 
-    public val PAYLOAD_DUMPER_GO: ToolGroup =
+    val PAYLOAD_DUMPER_GO: ToolGroup =
         ToolGroup(
             id = ToolGroupId("payload-dumper-go"),
             source = ToolSource.Release,
@@ -338,7 +338,7 @@ public object ToolGroupCatalog {
             buildPackages = listOf("tar"),
         )
 
-    public val GH: ToolGroup =
+    val GH: ToolGroup =
         ToolGroup(
             id = ToolGroupId("gh"),
             source = ToolSource.Release,
@@ -371,7 +371,7 @@ public object ToolGroupCatalog {
         )
 
     /** 7-Zip: 7z and RAR archives, and the payload of APEX files (ext4 / EROFS images) (FR-001, FR-030). */
-    public val SEVEN_ZIP: ToolGroup =
+    val SEVEN_ZIP: ToolGroup =
         ToolGroup(
             id = ToolGroupId("7zip"),
             source = ToolSource.Release,
@@ -405,7 +405,7 @@ public object ToolGroupCatalog {
         )
 
     /** sdat2img: block-based OTA (`.new.dat` + `.transfer.list`) back to a raw image (FR-003). */
-    public val SDAT2IMG: ToolGroup =
+    val SDAT2IMG: ToolGroup =
         ToolGroup(
             id = ToolGroupId("sdat2img"),
             source =
@@ -435,7 +435,7 @@ public object ToolGroupCatalog {
      * KernelPatch's kptools, which patches a kernel for APatch (FR-026). Its kpimg is fetched beside it by the boot
      * workbench (same release, pinned by SHA-256).
      */
-    public val KPTOOLS: ToolGroup =
+    val KPTOOLS: ToolGroup =
         ToolGroup(
             id = ToolGroupId("kptools"),
             source = ToolSource.Release,
@@ -468,7 +468,7 @@ public object ToolGroupCatalog {
         )
 
     /** fuse2fs: mounts an ext4 image as the user (read-only), like erofsfuse for EROFS. */
-    public val E2FSPROGS: ToolGroup =
+    val E2FSPROGS: ToolGroup =
         ToolGroup(
             id = ToolGroupId("e2fsprogs"),
             source =
@@ -498,7 +498,7 @@ public object ToolGroupCatalog {
      * f2fs-tools: `dump.f2fs` reads a built F2FS image back (there is no F2FS FUSE driver) and `fsck.f2fs` checks
      * it. They are one binary that acts on its name, so `dump.f2fs` is a copy of `fsck.f2fs`.
      */
-    public val F2FS_TOOLS: ToolGroup =
+    val F2FS_TOOLS: ToolGroup =
         ToolGroup(
             id = ToolGroupId("f2fs-tools"),
             source =
@@ -536,7 +536,7 @@ public object ToolGroupCatalog {
             ),
         )
 
-    public val DEFAULT_GROUPS: List<ToolGroup> =
+    val DEFAULT_GROUPS: List<ToolGroup> =
         listOf(
             ANDROID_TOOLS,
             EROFS_UTILS,
@@ -559,35 +559,35 @@ public object ToolGroupCatalog {
     @PublishedApi
     internal var isolatedGroups: List<ToolGroup>? = null
 
-    public val allGroups: List<ToolGroup>
+    val allGroups: List<ToolGroup>
         get() = isolatedGroups ?: (DEFAULT_GROUPS + extraGroups)
 
-    public val allOutputs: List<ToolOutput>
+    val allOutputs: List<ToolOutput>
         get() = allGroups.flatMap { it.outputs }
 
-    public val allToolIds: Set<String>
+    val allToolIds: Set<String>
         get() = allOutputs.map { it.toolId }.toSet()
 
-    public fun group(id: ToolGroupId): ToolGroup? = allGroups.firstOrNull { it.id == id }
+    fun group(id: ToolGroupId): ToolGroup? = allGroups.firstOrNull { it.id == id }
 
-    public fun groupByToolId(toolId: String): ToolGroup? = allGroups.firstOrNull { g ->
+    fun groupByToolId(toolId: String): ToolGroup? = allGroups.firstOrNull { g ->
         g.outputs.any {
             it.toolId == toolId
         }
     }
 
-    public fun outputFor(toolId: String): ToolOutput? = allOutputs.firstOrNull { it.toolId == toolId }
+    fun outputFor(toolId: String): ToolOutput? = allOutputs.firstOrNull { it.toolId == toolId }
 
-    public fun registerTestGroup(group: ToolGroup) {
+    fun registerTestGroup(group: ToolGroup) {
         extraGroups += group
     }
 
-    public fun resetTestGroups() {
+    fun resetTestGroups() {
         extraGroups.clear()
         isolatedGroups = null
     }
 
-    public inline fun <T> withTestGroup(group: ToolGroup, block: () -> T): T {
+    inline fun <T> withTestGroup(group: ToolGroup, block: () -> T): T {
         registerTestGroup(group)
         return try {
             block()
@@ -596,7 +596,7 @@ public object ToolGroupCatalog {
         }
     }
 
-    public inline fun <T> withTestGroups(groups: List<ToolGroup>, block: () -> T): T {
+    inline fun <T> withTestGroups(groups: List<ToolGroup>, block: () -> T): T {
         for (g in groups) registerTestGroup(g)
         return try {
             block()
@@ -605,10 +605,10 @@ public object ToolGroupCatalog {
         }
     }
 
-    public inline fun <T> withIsolatedTestGroup(group: ToolGroup, block: () -> T): T =
+    inline fun <T> withIsolatedTestGroup(group: ToolGroup, block: () -> T): T =
         withIsolatedTestGroups(listOf(group), block)
 
-    public inline fun <T> withIsolatedTestGroups(groups: List<ToolGroup>, block: () -> T): T {
+    inline fun <T> withIsolatedTestGroups(groups: List<ToolGroup>, block: () -> T): T {
         val prev = isolatedGroups
         isolatedGroups = groups
         return try {

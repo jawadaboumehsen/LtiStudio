@@ -17,7 +17,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stageExtractModule: Module = module {
+val stageExtractModule: Module = module {
     single<StageEditor>(named("extract")) { ExtractStageEditor() }
 
     viewModel { params ->

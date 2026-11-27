@@ -23,7 +23,7 @@ private val canonicalJson = Json {
     prettyPrint = false
 }
 
-public fun computeTargetDigest(target: TargetDevice): String {
+fun computeTargetDigest(target: TargetDevice): String {
     val jsonString = canonicalJson.encodeToString(target)
     val md = MessageDigest.getInstance("SHA-256")
     val hashBytes = md.digest(jsonString.toByteArray(Charsets.UTF_8))
@@ -34,7 +34,7 @@ public fun computeTargetDigest(target: TargetDevice): String {
  * Immutable value type identifying one archived revision of a target device profile.
  */
 @Serializable
-public data class TargetRevisionRef(val profileId: String, val revision: Int, val contentDigest: String) {
+data class TargetRevisionRef(val profileId: String, val revision: Int, val contentDigest: String) {
     init {
         require(revision >= 1) { "revision must be >= 1, but was $revision" }
         require(contentDigest.startsWith("sha256:")) {
@@ -42,65 +42,65 @@ public data class TargetRevisionRef(val profileId: String, val revision: Int, va
         }
     }
 
-    public companion object {
-        public fun of(target: TargetDevice): TargetRevisionRef = TargetRevisionRef(
+    companion object {
+        fun of(target: TargetDevice): TargetRevisionRef = TargetRevisionRef(
             profileId = target.id,
             revision = target.revision,
             contentDigest = computeTargetDigest(target),
         )
 
-        public fun computeDigest(target: TargetDevice): String = computeTargetDigest(target)
+        fun computeDigest(target: TargetDevice): String = computeTargetDigest(target)
     }
 }
 
 /**
  * Outcome of a reference-safe target revision deletion request.
  */
-public sealed interface TargetRevisionDeleteOutcome {
-    public data class Deleted(val profileId: String, val revision: Int) : TargetRevisionDeleteOutcome
-    public data class Refused(val report: ValidationReport) : TargetRevisionDeleteOutcome
-    public data class NotFound(val profileId: String, val revision: Int) : TargetRevisionDeleteOutcome
+sealed interface TargetRevisionDeleteOutcome {
+    data class Deleted(val profileId: String, val revision: Int) : TargetRevisionDeleteOutcome
+    data class Refused(val report: ValidationReport) : TargetRevisionDeleteOutcome
+    data class NotFound(val profileId: String, val revision: Int) : TargetRevisionDeleteOutcome
 
-    public val isDeleted: Boolean get() = this is Deleted
+    val isDeleted: Boolean get() = this is Deleted
 }
 
 /**
  * Port for immutable, content-addressed target profile revisions.
  */
-public interface TargetRevisionRepository {
-    public suspend fun archive(target: TargetDevice): TargetRevisionRef
+interface TargetRevisionRepository {
+    suspend fun archive(target: TargetDevice): TargetRevisionRef
 
-    public suspend fun get(profileId: String, revision: Int): TargetDevice?
+    suspend fun get(profileId: String, revision: Int): TargetDevice?
 
-    public suspend fun listRevisions(profileId: String): List<TargetRevisionRef>
+    suspend fun listRevisions(profileId: String): List<TargetRevisionRef>
 
-    public suspend fun delete(
+    suspend fun delete(
         profileId: String,
         revision: Int,
         referencedBy: List<String> = emptyList(),
     ): TargetRevisionDeleteOutcome
 
-    public companion object {
-        public const val REFERENCED_TARGET_REVISION: String = "REFERENCED_TARGET_REVISION"
+    companion object {
+        const val REFERENCED_TARGET_REVISION: String = "REFERENCED_TARGET_REVISION"
     }
 }
 
 /**
  * Field-level difference between old and new target device profiles during rebind.
  */
-public data class TargetFieldChange(val fieldName: String, val oldValue: Any?, val newValue: Any?)
+data class TargetFieldChange(val fieldName: String, val oldValue: Any?, val newValue: Any?)
 
 /**
  * Explicit diff between two revisions of a target device profile.
  */
-public data class TargetRebindDiff(
+data class TargetRebindDiff(
     val profileId: String,
     val oldRevision: Int,
     val newRevision: Int,
     val changedFields: Set<String>,
     val fieldChanges: List<TargetFieldChange> = emptyList(),
 ) {
-    public val hasChanges: Boolean get() = changedFields.isNotEmpty()
+    val hasChanges: Boolean get() = changedFields.isNotEmpty()
 }
 
 private data class TargetFieldExtractor(val name: String, val extract: (TargetDevice) -> Any?)
@@ -139,7 +139,7 @@ private val TARGET_DEVICE_FIELDS: List<TargetFieldExtractor> = listOf(
 /**
  * Computes an explicit field-by-field diff between two target device configurations.
  */
-public fun diffTargets(old: TargetDevice, new: TargetDevice): TargetRebindDiff {
+fun diffTargets(old: TargetDevice, new: TargetDevice): TargetRebindDiff {
     val changes = TARGET_DEVICE_FIELDS.mapNotNull { extractor ->
         val oldVal = extractor.extract(old)
         val newVal = extractor.extract(new)

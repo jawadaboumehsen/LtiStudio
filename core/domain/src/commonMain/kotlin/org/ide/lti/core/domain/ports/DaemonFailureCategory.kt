@@ -12,7 +12,7 @@ package org.ide.lti.core.domain.ports
 /**
  * Diagnostic categorization for execution daemon health/connectivity failures.
  */
-public enum class DaemonFailureCategory {
+enum class DaemonFailureCategory {
     UNREACHABLE,
     UNHEALTHY_STATUS,
     UNRECOGNIZED_STATUS,

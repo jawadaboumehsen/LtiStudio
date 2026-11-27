@@ -18,7 +18,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stagePublishModule: Module = module {
+val stagePublishModule: Module = module {
     single<StageEditor>(named("publish")) { PublishStageEditor() }
     single { PublishSessions(publisher = getOrNull()) }
 

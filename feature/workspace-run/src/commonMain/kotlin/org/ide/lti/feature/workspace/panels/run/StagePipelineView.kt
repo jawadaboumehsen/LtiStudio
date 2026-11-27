@@ -30,7 +30,7 @@ import org.ide.lti.core.model.run.StageOutcome
 import org.ide.lti.core.model.run.StageState
 
 @Composable
-public fun StagePipelineView(
+fun StagePipelineView(
     latestRun: BuildRun?,
     isBusy: Boolean,
     modifier: Modifier = Modifier,

@@ -39,7 +39,7 @@ import org.ide.lti.core.model.target.FirmwareSourceKind
  * partition with `erofsfuse`, capture `stat`/`getfattr` dumps, write the normalized sidecars,
  * copy the tree, unmount; then boot metadata and the stock `build.prop`.
  */
-public class FirmwareExtractionStage : StageDefinition {
+class FirmwareExtractionStage : StageDefinition {
     override val id: StageId = StageId.FIRMWARE_EXTRACTION
 
     override val requiredToolIds: Set<String> = setOf(
@@ -441,17 +441,16 @@ public class FirmwareExtractionStage : StageDefinition {
         return steps
     }
 
-    public companion object {
-        public const val EXTRACTED: String = "firmware/extracted"
-        public const val RAW: String = "firmware/raw"
-        public const val REPLACEMENTS: String = "firmware/replacements"
+    companion object {
+        const val EXTRACTED: String = "firmware/extracted"
+        const val RAW: String = "firmware/raw"
+        const val REPLACEMENTS: String = "firmware/replacements"
 
         /** Where the user's own image for [partition] is kept. */
-        public fun replacementPath(partition: String): String = "$REPLACEMENTS/$partition.img"
+        fun replacementPath(partition: String): String = "$REPLACEMENTS/$partition.img"
         private val BOOT_IMAGES_WITH_HEADER = listOf("boot", "init_boot", "vendor_boot")
         private val IMAGE_SIZE = Regex("""Image size:\s+(\d+) bytes""")
 
-        public fun parseImageSize(avbInfo: String): Long? =
-            IMAGE_SIZE.find(avbInfo)?.groupValues?.get(1)?.toLongOrNull()
+        fun parseImageSize(avbInfo: String): Long? = IMAGE_SIZE.find(avbInfo)?.groupValues?.get(1)?.toLongOrNull()
     }
 }

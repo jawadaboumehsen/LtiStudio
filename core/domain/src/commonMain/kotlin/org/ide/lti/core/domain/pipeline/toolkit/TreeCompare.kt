@@ -12,14 +12,14 @@ package org.ide.lti.core.domain.pipeline.toolkit
 import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 
 /** What happened to one path of a partition between the stock firmware and the build. */
-public enum class TreeChangeKind { ADDED, REMOVED, CONTENT, META, TYPE }
+enum class TreeChangeKind { ADDED, REMOVED, CONTENT, META, TYPE }
 
 /** One changed path (relative to the partition's tree) and, for metadata, what changed (`mode 644 -> 755`). */
-public data class TreeChange(val path: String, val kind: TreeChangeKind, val details: List<String> = emptyList())
+data class TreeChange(val path: String, val kind: TreeChangeKind, val details: List<String> = emptyList())
 
 /** Two trees of a partition compared (A, the older or stock side, against B). */
-public data class TreeDiff(val partition: String, val changes: List<TreeChange>, val unchanged: Int) {
-    public fun count(kind: TreeChangeKind): Int = changes.count { it.kind == kind }
+data class TreeDiff(val partition: String, val changes: List<TreeChange>, val unchanged: Int) {
+    fun count(kind: TreeChangeKind): Int = changes.count { it.kind == kind }
 }
 
 /**
@@ -28,19 +28,19 @@ public data class TreeDiff(val partition: String, val changes: List<TreeChange>,
  * sidecars), or changed kind. A different size is a change of content; files of the same size are hashed, all of
  * them, or with [hashCandidates]' `trustTimes` only those whose modification time differs (rsync's quick check).
  */
-public object TreeCompare {
+object TreeCompare {
     /** `sh -c LISTING_SCRIPT sh <tree>`: `<type>\t<size>\t<mtime>\t<path>\t<link target>` per entry. */
-    public const val LISTING_SCRIPT: String = "find \"\$1\" -mindepth 1 -printf '%y\\t%s\\t%T@\\t%P\\t%l\\n'"
+    const val LISTING_SCRIPT: String = "find \"\$1\" -mindepth 1 -printf '%y\\t%s\\t%T@\\t%P\\t%l\\n'"
 
     /** `sh -c HASH_SCRIPT sh <tree> <path>...`: sha256sum's lines for those paths of the tree. */
-    public const val HASH_SCRIPT: String = "cd \"\$1\" && shift && sha256sum -- \"\$@\""
+    const val HASH_SCRIPT: String = "cd \"\$1\" && shift && sha256sum -- \"\$@\""
 
     private const val FIELDS = 5
     private const val CAPS = "capabilities="
 
-    public data class Entry(val type: Char, val size: Long, val mtime: String, val target: String)
+    data class Entry(val type: Char, val size: Long, val mtime: String, val target: String)
 
-    public fun parseListing(output: String): Map<String, Entry> = output.lines().mapNotNull { line ->
+    fun parseListing(output: String): Map<String, Entry> = output.lines().mapNotNull { line ->
         val f = line.split('\t', limit = FIELDS).takeIf { it.size == FIELDS && it[0].isNotEmpty() }
             ?: return@mapNotNull null
         f[3] to Entry(f[0][0], f[1].toLongOrNull() ?: 0L, f[2], f[4])
@@ -50,7 +50,7 @@ public object TreeCompare {
      * Regular files on both sides of the same size: they need hashing. With [trustTimes], only those whose
      * modification time differs (the same size and time count as the same content).
      */
-    public fun hashCandidates(
+    fun hashCandidates(
         stock: Map<String, Entry>,
         build: Map<String, Entry>,
         trustTimes: Boolean = true,
@@ -60,12 +60,12 @@ public object TreeCompare {
     }.keys.sorted()
 
     /** sha256sum output as path -> hash. */
-    public fun parseHashes(output: String): Map<String, String> = output.lines().mapNotNull { line ->
+    fun parseHashes(output: String): Map<String, String> = output.lines().mapNotNull { line ->
         line.split("  ", limit = 2).takeIf { it.size == 2 }?.let { it[1].removePrefix("./") to it[0] }
     }.toMap()
 
     /** fs_config text as key -> `uid:gid`, mode, capabilities (the key may be "" for system's root). */
-    public fun parseFsConfig(text: String): Map<String, List<String>> = text.lines().mapNotNull { line ->
+    fun parseFsConfig(text: String): Map<String, List<String>> = text.lines().mapNotNull { line ->
         val parts = line.split(' ')
         val metaCount = if (parts.lastOrNull()?.startsWith(CAPS) == true) 4 else 3
         if (parts.size <= metaCount) return@mapNotNull null
@@ -75,12 +75,12 @@ public object TreeCompare {
     }.toMap()
 
     /** file_contexts text as (escaped) path -> label. */
-    public fun parseFileContexts(text: String): Map<String, String> = text.lines().mapNotNull { line ->
+    fun parseFileContexts(text: String): Map<String, String> = text.lines().mapNotNull { line ->
         line.trim().takeIf { ' ' in it }?.let { it.substringBeforeLast(' ') to it.substringAfterLast(' ') }
     }.toMap()
 
     /** The sidecars of one side, read for [partition]. */
-    public class Sidecars(public val partition: String, fsConfig: String, fileContexts: String) {
+    class Sidecars(val partition: String, fsConfig: String, fileContexts: String) {
         private val fs = parseFsConfig(fsConfig)
         private val labels = parseFileContexts(fileContexts)
 
@@ -94,7 +94,7 @@ public object TreeCompare {
             labels[SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path))]
     }
 
-    public fun compare(
+    fun compare(
         partition: String,
         stock: Map<String, Entry>,
         build: Map<String, Entry>,
@@ -157,12 +157,11 @@ public object TreeCompare {
 }
 
 /** A line diff (longest common subsequence): `- old` and `+ new` lines, or null past [MAX_LINES] lines a side. */
-public object LineDiff {
-    public const val MAX_LINES: Int = 3000
+object LineDiff {
+    const val MAX_LINES: Int = 3000
     private const val CONTEXT = 3
 
-    public fun diff(old: List<String>, new: List<String>): List<String>? =
-        ops(old, new)?.filterNot { it.startsWith("  ") }
+    fun diff(old: List<String>, new: List<String>): List<String>? = ops(old, new)?.filterNot { it.startsWith("  ") }
 
     /**
      * What an edit changed, readably: the common start and end are cut first (an edited smali class can be 20,000
@@ -170,7 +169,7 @@ public object LineDiff {
      * twice [context] unchanged lines folds to `  …`, and [context] unchanged lines stand on each side. Empty when
      * nothing changed; null when the changed part is too long to diff.
      */
-    public fun hunk(old: List<String>, new: List<String>, context: Int = CONTEXT): List<String>? {
+    fun hunk(old: List<String>, new: List<String>, context: Int = CONTEXT): List<String>? {
         var start = 0
         while (start < old.size && start < new.size && old[start] == new[start]) start++
         var end = 0

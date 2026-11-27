@@ -7,7 +7,7 @@ import kotlinx.coroutines.CancellationException
 /**
  * Single Responsibility: Enforces tool safety constraints and validates input/output artifacts.
  */
-public class SafetyCheckInterceptor(
+class SafetyCheckInterceptor(
     private val safetyPolicy: ToolSafetyPolicy = ToolSafetyPolicy()
 ) : ToolExecutionInterceptor {
 

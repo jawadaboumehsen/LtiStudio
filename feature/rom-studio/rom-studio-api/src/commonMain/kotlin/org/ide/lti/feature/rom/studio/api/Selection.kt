@@ -13,7 +13,7 @@ package org.ide.lti.feature.rom.studio.api
  * Ticks or unticks [name] in a selection of [options] where an empty [selected] means "all of them". All ticked is
  * stored as empty again; the last one cannot be unticked.
  */
-public fun toggledSelection(options: List<String>, selected: List<String>, name: String): List<String> {
+fun toggledSelection(options: List<String>, selected: List<String>, name: String): List<String> {
     val effective = selected.ifEmpty { options }
     val next = if (name in effective) effective - name else options.filter { it in effective || it == name }
     return when {

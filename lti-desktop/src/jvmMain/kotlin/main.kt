@@ -43,6 +43,7 @@ import org.ide.lti.desktop.tray.rememberClasspathPainter
 import org.ide.lti.desktop.window.restoreWindow
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
+import kotlin.time.Duration.Companion.seconds
 
 private fun buildWindowControlActions(
     windowState: WindowState,
@@ -183,7 +184,7 @@ fun main(args: Array<String>) {
                         org.koin.core.context.GlobalContext.getOrNull()
                             ?.getOrNull<AppShutdownPort>()
                     val report =
-                        kotlinx.coroutines.withTimeoutOrNull(10_000L) {
+                        kotlinx.coroutines.withTimeoutOrNull(10.seconds) {
                             coordinator?.shutdown()
                         } ?: org.ide.lti.core.domain.tools.ShutdownReport.Unconfirmed(emptyList())
 
@@ -232,7 +233,7 @@ fun main(args: Array<String>) {
                 coroutineScope.launch {
                     // Asking must not stop the app from closing: no answer means no warning.
                     val builds = runCatchingCancellable {
-                        kotlinx.coroutines.withTimeoutOrNull(5_000L) {
+                        kotlinx.coroutines.withTimeoutOrNull(5.seconds) {
                             org.koin.core.context.GlobalContext.getOrNull()
                                 ?.getOrNull<AppShutdownPort>()
                                 ?.activeWork()

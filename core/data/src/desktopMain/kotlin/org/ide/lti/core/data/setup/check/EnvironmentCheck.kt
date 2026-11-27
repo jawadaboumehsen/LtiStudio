@@ -19,8 +19,8 @@ import org.ide.lti.core.domain.setup.SetupStepStage
  * Orchestrates environment inspection exclusively through allowlisted [ReadOnlyCommands]
  * and discrete [CheckStage]s (FR-003).
  */
-public class EnvironmentCheck(private val stages: List<CheckStage> = emptyList()) {
-    public suspend fun run(ctx: CheckContext, scope: CheckScope): Map<SetupStepStage, StageOutcome> {
+class EnvironmentCheck(private val stages: List<CheckStage> = emptyList()) {
+    suspend fun run(ctx: CheckContext, scope: CheckScope): Map<SetupStepStage, StageOutcome> {
         scope.setChecking(true)
         val outcomes = mutableMapOf<SetupStepStage, StageOutcome>()
 

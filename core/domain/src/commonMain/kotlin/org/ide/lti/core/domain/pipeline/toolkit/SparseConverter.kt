@@ -15,12 +15,12 @@ import org.ide.lti.core.model.run.StepCommand
 /**
  * Adapter for Android sparse-image conversion (sparse to raw, raw to sparse) and chunk splitting (US2, FR-010).
  */
-public object SparseConverter {
+object SparseConverter {
 
     /**
      * Generates a [StepCommand] converting an Android sparse image to a raw disk image using `simg2img`.
      */
-    public fun sparseToRawCommand(sparseImage: String, rawImage: String, workingDir: String): StepCommand = stepCommand(
+    fun sparseToRawCommand(sparseImage: String, rawImage: String, workingDir: String): StepCommand = stepCommand(
         toolId = "simg2img",
         args = listOf(sparseImage, rawImage),
         workingDir = workingDir,

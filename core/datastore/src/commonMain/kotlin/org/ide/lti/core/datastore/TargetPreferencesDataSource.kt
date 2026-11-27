@@ -26,7 +26,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.target.TargetDevice
 
 @Serializable
-public data class TargetList(val schemaVersion: Int = 2, val items: List<TargetDevice> = emptyList())
+data class TargetList(val schemaVersion: Int = 2, val items: List<TargetDevice> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for target device profiles
@@ -40,7 +40,7 @@ public data class TargetList(val schemaVersion: Int = 2, val items: List<TargetD
  * - Thread Safety: Employs coroutine [Mutex] to eliminate race conditions across I/O threads.
  * - Error Resilience: Recovers automatically from corrupted storage payloads without crashing.
  */
-public class TargetPreferencesDataSource(
+class TargetPreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -48,17 +48,17 @@ public class TargetPreferencesDataSource(
     private val mutex = Mutex()
 
     private val _targets = MutableStateFlow(readTargetsSafe())
-    public val targets: Flow<List<TargetDevice>> = _targets.asStateFlow()
-    public val currentTargets: List<TargetDevice> get() = _targets.value
+    val targets: Flow<List<TargetDevice>> = _targets.asStateFlow()
+    val currentTargets: List<TargetDevice> get() = _targets.value
 
     private val _selectedTargetId = MutableStateFlow(readSelectedTargetIdSafe())
-    public val selectedTargetId: Flow<String?> = _selectedTargetId.asStateFlow()
-    public val currentSelectedTargetId: String? get() = _selectedTargetId.value
+    val selectedTargetId: Flow<String?> = _selectedTargetId.asStateFlow()
+    val currentSelectedTargetId: String? get() = _selectedTargetId.value
 
     /**
      * Atomically saves or replaces the complete list of target device profiles.
      */
-    public suspend fun saveTargets(targets: List<TargetDevice>): Unit = withContext(ioDispatcher) {
+    suspend fun saveTargets(targets: List<TargetDevice>): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             persistTargetsInternal(targets)
             _targets.value = targets
@@ -68,7 +68,7 @@ public class TargetPreferencesDataSource(
     /**
      * Atomically saves the selected target ID.
      */
-    public suspend fun saveSelectedTargetId(id: String): Unit = withContext(ioDispatcher) {
+    suspend fun saveSelectedTargetId(id: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             persistSelectedTargetIdInternal(id)
             _selectedTargetId.value = id
@@ -78,7 +78,7 @@ public class TargetPreferencesDataSource(
     /**
      * Atomically clears all stored targets and selected target ID.
      */
-    public suspend fun clear(): Unit = withContext(ioDispatcher) {
+    suspend fun clear(): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             settings.remove(KEY_TARGETS)
             settings.remove(KEY_SELECTED_TARGET_ID)
@@ -128,14 +128,14 @@ public class TargetPreferencesDataSource(
         settings[KEY_SELECTED_TARGET_ID] = json.encodeToString(id)
     }
 
-    public companion object {
-        public const val KEY_TARGETS: String = "lti_targets_v1"
+    companion object {
+        const val KEY_TARGETS: String = "lti_targets_v1"
 
         /** The last target list that could not be read, as it was. */
-        public const val KEY_TARGETS_UNREADABLE: String = "lti_targets_v1_unreadable"
-        public const val KEY_SELECTED_TARGET_ID: String = "lti_selected_target_id_v1"
+        const val KEY_TARGETS_UNREADABLE: String = "lti_targets_v1_unreadable"
+        const val KEY_SELECTED_TARGET_ID: String = "lti_selected_target_id_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

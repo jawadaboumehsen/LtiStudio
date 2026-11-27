@@ -19,9 +19,8 @@ import org.ide.lti.core.domain.setup.ToolOutputKind
  * allowlisting (FR-003). Any command or argument pattern not explicitly permitted
  * throws [IllegalArgumentException].
  */
-public class ReadOnlyCommands(private val cli: WslCliExecutor = WslCliExecutor()) : WslCliExecutor() {
-    public companion object {
-        private const val DEFAULT_TIMEOUT_SECONDS = 10L
+class ReadOnlyCommands(private val cli: WslCliExecutor = WslCliExecutor()) : WslCliExecutor() {
+    companion object {
         private val UNRESTRICTED_READ_COMMANDS = setOf("test", "stat", "readlink", "sha256sum", "df")
 
         private val FORBIDDEN_FIND_FLAGS =
@@ -102,7 +101,7 @@ public class ReadOnlyCommands(private val cli: WslCliExecutor = WslCliExecutor()
         return cli.run(distro, command, timeoutSeconds, user, stdin)
     }
 
-    public fun validate(command: List<String>) {
+    fun validate(command: List<String>) {
         require(command.isNotEmpty()) { "Command must not be empty" }
         val rawBinary = command.first()
         val binary = rawBinary.substringAfterLast('/')

@@ -59,11 +59,12 @@ import org.ide.lti.core.domain.tools.ToolInventory
 import org.ide.lti.core.domain.tools.ToolStorePort
 import org.ide.lti.core.model.setup.ToolRef
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 
-public typealias ToolErrorException = org.ide.lti.core.domain.tools.ToolErrorException
+typealias ToolErrorException = org.ide.lti.core.domain.tools.ToolErrorException
 
 @Suppress("LargeClass")
-public class KotlinToolStoreAdapter(
+class KotlinToolStoreAdapter(
     private val transport: RemoteTransportPort,
     private val heartbeatMonitor: DaemonHeartbeatMonitor? = null,
     private val serverDirProvider: suspend () -> String,
@@ -530,7 +531,7 @@ public class KotlinToolStoreAdapter(
         if (budgetMs == null) {
             exec(listOf("sh", "-c", resScript)).getOrThrow()
         } else {
-            withTimeoutOrNull(budgetMs) { exec(listOf("sh", "-c", resScript)).getOrThrow() }
+            withTimeoutOrNull(budgetMs.milliseconds) { exec(listOf("sh", "-c", resScript)).getOrThrow() }
         }
     }
 
@@ -582,17 +583,17 @@ public class KotlinToolStoreAdapter(
 
         fun leftMs() = ((end - System.nanoTime()) / NANOS_PER_MS).coerceAtLeast(0L)
         cancelledGroups.add(group)
-        withTimeoutOrNull(leftMs()) { commandRunner.cancelActive(group.value) }
+        withTimeoutOrNull(leftMs().milliseconds) { commandRunner.cancelActive(group.value) }
         if (job != null) {
             val joined =
-                withTimeoutOrNull(leftMs() * JOIN_SHARE_PERCENT / PERCENT) {
+                withTimeoutOrNull((leftMs() * JOIN_SHARE_PERCENT / PERCENT).milliseconds) {
                     job.join()
                     true
                 } ?: false
             if (!joined) {
                 job.cancel()
                 val forceJoined =
-                    withTimeoutOrNull(leftMs()) {
+                    withTimeoutOrNull(leftMs().milliseconds) {
                         job.join()
                         true
                     } ?: false

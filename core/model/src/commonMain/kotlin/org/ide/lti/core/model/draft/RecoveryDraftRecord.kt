@@ -21,7 +21,7 @@ import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
 @Serializable
-public data class RecoveryDraftRecord(
+data class RecoveryDraftRecord(
     val schema: Int = 1,
     val workspaceId: String,
     val baseSnapshotId: String?,
@@ -42,7 +42,7 @@ public data class RecoveryDraftRecord(
     val tombstoned: Boolean = false,
 )
 
-public data class RecoveryDraftReadResult(
+data class RecoveryDraftReadResult(
     val record: RecoveryDraftRecord?,
     val baseDiverged: Boolean = false,
     val wasCorrupt: Boolean = false,

@@ -17,9 +17,9 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * the index of a synthetic lambda or anonymous class: a consistent renaming, nothing else) is reported apart as
  * [MethodDifference.renumberedOnly], so a recompiled framework does not bury the real changes.
  */
-public object SmaliCompare {
+object SmaliCompare {
     /** The lines of a class outside its methods (header, super, interfaces, annotations, fields), as one entry. */
-    public const val CLASS_LEVEL: String = "(class header and fields)"
+    const val CLASS_LEVEL: String = "(class header and fields)"
 
     // Only baksmali's own label names: a bare `:x` is also a field type (`->f:I`).
     private val LABEL = Regex(
@@ -33,17 +33,17 @@ public object SmaliCompare {
     private val SYNTHETIC = Regex("""[$][$]ExternalSynthetic[A-Za-z]+\d+|[$][$]Lambda[$]\d+|[$]\d+(?=[;$])""")
 
     /** `smali_classes2/com/a/B.smali` -> `com/a/B`; the class name a smali file holds. */
-    public fun className(file: String): String = file.substringAfter('/').removeSuffix(".smali")
+    fun className(file: String): String = file.substringAfter('/').removeSuffix(".smali")
 
     /** The dex a smali folder came from: `smali` -> `classes.dex`, `smali_classes3` -> `classes3.dex`. */
-    public fun dexOf(file: String): String = "classes${file.substringBefore('/').removePrefix("smali_classes")
+    fun dexOf(file: String): String = "classes${file.substringBefore('/').removePrefix("smali_classes")
         .removePrefix("smali")}.dex"
 
     /**
      * Method signature -> its `.method` line and body; [CLASS_LEVEL] holds every line outside the methods. The
      * header is part of the body: an access flag changed on it (private -> public) is a modified method.
      */
-    public fun methodsOf(smali: String): Map<String, String> {
+    fun methodsOf(smali: String): Map<String, String> {
         val methods = mutableMapOf<String, String>()
         val classLevel = StringBuilder()
         var signature: String? = null
@@ -72,7 +72,7 @@ public object SmaliCompare {
      * The instructions of a method body: lines that are not blank, a directive (`.`), a label (`:`) or a comment, and
      * not inside an annotation or a switch/array data block (their values are data, not code).
      */
-    public fun instructionCount(body: String): Int {
+    fun instructionCount(body: String): Int {
         var inBlock = false
         return body.lineSequence().map(String::trim).count { line ->
             when {
@@ -90,7 +90,7 @@ public object SmaliCompare {
      * class indices; `.locals`/`.registers` dropped (they follow the registers). Two bodies with the same canonical
      * form differ by a consistent renaming only.
      */
-    public fun canonical(body: String): String {
+    fun canonical(body: String): String {
         val maps = List(NAMESPACES.size) { mutableMapOf<String, String>() }
         return body.lineSequence().map(String::trim)
             .filter { it.isNotEmpty() && !it.startsWith(".locals") && !it.startsWith(".registers") }
@@ -110,18 +110,18 @@ public object SmaliCompare {
      * [left] and [right] (smali file -> text, files under their `smali*` folder) compared: classes only on one side
      * (`removed com/a/B` / `added com/a/B`) and each method added, removed or modified, with both instruction counts.
      */
-    public fun compare(left: Map<String, String>, right: Map<String, String>): CodePackageDiff =
+    fun compare(left: Map<String, String>, right: Map<String, String>): CodePackageDiff =
         CodePackageDiff(classChanges(left.keys, right.keys), methodChanges(left, right))
 
     /** Classes only on one side, by name (`removed com/a/B`, `added com/a/B`), from the smali files of each. */
-    public fun classChanges(left: Set<String>, right: Set<String>): List<String> {
+    fun classChanges(left: Set<String>, right: Set<String>): List<String> {
         val l = left.map(::className).toSet()
         val r = right.map(::className).toSet()
         return ((l - r).map { "removed $it" } + (r - l).map { "added $it" }).sorted()
     }
 
     /** The methods added, removed or modified in the classes both sides have and whose text differs. */
-    public fun methodChanges(left: Map<String, String>, right: Map<String, String>): List<MethodDifference> {
+    fun methodChanges(left: Map<String, String>, right: Map<String, String>): List<MethodDifference> {
         val l = left.mapKeys { className(it.key) }
         val r = right.mapKeys { className(it.key) }
         return l.keys.intersect(r.keys).filter { l[it] != r[it] }.sorted().flatMap { cls ->

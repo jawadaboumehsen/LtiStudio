@@ -12,7 +12,7 @@ package org.ide.lti.core.data.repository.setup
 import org.ide.lti.core.datastore.ToolchainPreferencesDataSource
 import org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository
 
-public class ToolchainSelectionRepositoryImpl(private val preferencesDataSource: ToolchainPreferencesDataSource) :
+class ToolchainSelectionRepositoryImpl(private val preferencesDataSource: ToolchainPreferencesDataSource) :
     ToolchainSelectionRepository {
     override suspend fun recordTrust(repoUrl: String): Result<Unit> = preferencesDataSource.recordTrust(repoUrl)
 

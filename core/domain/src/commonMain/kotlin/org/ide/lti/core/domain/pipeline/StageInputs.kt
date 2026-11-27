@@ -24,9 +24,9 @@ import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
 /** The named inputs a stage's cache record keeps, and what changed between two of them ("why did this run?"). */
-public object StageInputs {
+object StageInputs {
     /** [stage]'s own settings, one entry per field (`build.compression`), as JSON text. */
-    public fun settings(stage: StageId, snapshot: ConfigurationSnapshot, json: Json): Map<String, String> {
+    fun settings(stage: StageId, snapshot: ConfigurationSnapshot, json: Json): Map<String, String> {
         val (name, element) = when (stage) {
             StageId.FIRMWARE_ACQUISITION -> "acquisition" to json.encodeToJsonElement(
                 AcquisitionSettings.serializer(),
@@ -70,7 +70,7 @@ public object StageInputs {
     }
 
     /** Each input that differs, as `name: before → now` (long values shortened), in a stable order. */
-    public fun changes(before: Map<String, String>, now: Map<String, String>): List<String> =
+    fun changes(before: Map<String, String>, now: Map<String, String>): List<String> =
         (before.keys + now.keys).sorted().filter { before[it] != now[it] }.map { key ->
             "$key: ${short(before[key] ?: "(none)")} → ${short(now[key] ?: "(none)")}"
         }

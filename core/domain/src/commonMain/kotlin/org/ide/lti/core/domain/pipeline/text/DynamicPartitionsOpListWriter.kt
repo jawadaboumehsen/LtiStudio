@@ -9,16 +9,16 @@
  */
 package org.ide.lti.core.domain.pipeline.text
 
-public object DynamicPartitionsOpListWriter {
+object DynamicPartitionsOpListWriter {
 
-    public data class PartitionImageInfo(
+    data class PartitionImageInfo(
         val partitionName: String,
         val sizeBytes: Long,
         val sha256: String = "",
         val pubkeySha1: String = "",
     )
 
-    public fun generateOpList(
+    fun generateOpList(
         groupName: String,
         groupSizeBytes: Long,
         partitions: List<PartitionImageInfo>,
@@ -35,7 +35,7 @@ public object DynamicPartitionsOpListWriter {
         }
     }
 
-    public fun generateAvbImages(
+    fun generateAvbImages(
         partitions: List<PartitionImageInfo>,
     ): String {
         return buildString {

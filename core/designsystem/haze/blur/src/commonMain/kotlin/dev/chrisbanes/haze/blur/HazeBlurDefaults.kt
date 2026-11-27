@@ -18,28 +18,28 @@ import androidx.compose.ui.unit.dp
  * Default values for [hazeBlur].
  */
 @Suppress("ktlint:standard:property-naming")
-public object HazeBlurDefaults {
+object HazeBlurDefaults {
     /**
      * Default blur radius. Larger values produce a stronger blur effect.
      */
-    public val blurRadius: Dp = 20.dp
+    val blurRadius: Dp = 20.dp
 
     /**
      * Noise factor.
      */
-    public const val noiseFactor: Float = 0.15f
+    const val noiseFactor: Float = 0.15f
 
     /**
      * Default edge treatment used by [hazeBlur].
      */
-    public val blurredEdgeTreatment: BlurredEdgeTreatment = BlurredEdgeTreatment.Rectangle
+    val blurredEdgeTreatment: BlurredEdgeTreatment = BlurredEdgeTreatment.Rectangle
 
     /**
      * Complete default Blur Style.
      *
      * This Style is applied before composition-local and explicit Styles.
      */
-    public val style: HazeBlurStyle = HazeBlurStyle {
+    val style: HazeBlurStyle = HazeBlurStyle {
         blurEnabled(isBlurEnabledByDefault())
         blurRadius(blurRadius)
         noiseFactor(noiseFactor)
@@ -61,7 +61,7 @@ public object HazeBlurDefaults {
      *
      * The devices excluded by this function may change in the future.
      */
-    public fun isBlurEnabledByDefault(): Boolean = platformIsBlurEnabledByDefault()
+    fun isBlurEnabledByDefault(): Boolean = platformIsBlurEnabledByDefault()
 }
 
 internal expect fun platformIsBlurEnabledByDefault(): Boolean

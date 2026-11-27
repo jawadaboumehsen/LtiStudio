@@ -13,7 +13,7 @@ package org.ide.lti.core.domain.debloat
  * What removing one app would do: [blockers] stop the device from working and refuse the pick, [warnings] are system
  * apps to remove only on purpose, [notes] are plain facts.
  */
-public data class AppRisk(
+data class AppRisk(
     val blockers: List<String> = emptyList(),
     val warnings: List<String> = emptyList(),
     val notes: List<String> = emptyList(),
@@ -25,7 +25,7 @@ public data class AppRisk(
  * ID. What it relies on: the libraries it needs ([uses], with the app providing each when one does), the apps it
  * overlays, the apps of the ROM it looks for, and those it looks for that the ROM does not have ([looksForMissing]).
  */
-public data class AppImpact(
+data class AppImpact(
     val neededBy: List<String> = emptyList(),
     val overlaidBy: List<String> = emptyList(),
     val askedBy: List<String> = emptyList(),
@@ -37,12 +37,12 @@ public data class AppImpact(
     /** Signed with the framework's key (the platform key): it holds the system's signature permissions. */
     val platformSigned: Boolean = false,
 ) {
-    public val isEmpty: Boolean get() = neededBy.isEmpty() && overlaidBy.isEmpty() && askedBy.isEmpty() &&
+    val isEmpty: Boolean get() = neededBy.isEmpty() && overlaidBy.isEmpty() && askedBy.isEmpty() &&
         sharesUidWith.isEmpty()
 }
 
 /** The risk of removing each app, from what the manifests of all the apps say (not from a list of names). */
-public object DebloatRisk {
+object DebloatRisk {
     /** The framework's own HOME activity only says "no home screen" ([AppFacts.home] there is not a launcher). */
     private const val FRAMEWORK_PACKAGE = "android"
     private const val NAMES_SHOWN = 3
@@ -57,10 +57,10 @@ public object DebloatRisk {
     )
 
     /** `partition:path` of [candidate], as picks and [assess] name it. */
-    public fun selectorOf(candidate: DebloatCandidate): String = "${candidate.partition}:${candidate.relativePath}"
+    fun selectorOf(candidate: DebloatCandidate): String = "${candidate.partition}:${candidate.relativePath}"
 
     /** [apks] (by APK path inside `work/`) merged per app of [inventory]: an app folder can hold split APKs. */
-    public fun byApp(inventory: List<DebloatCandidate>, apks: Map<String, AppFacts>): Map<String, AppFacts> {
+    fun byApp(inventory: List<DebloatCandidate>, apks: Map<String, AppFacts>): Map<String, AppFacts> {
         val byPath = inventory.associateBy { "${it.partition}/${it.relativePath}" }
         return apks.entries
             .mapNotNull { (apk, facts) ->
@@ -72,7 +72,7 @@ public object DebloatRisk {
     }
 
     /** The risk of removing each app of [inventory] while the apps in [picked] go too. */
-    public fun assess(
+    fun assess(
         inventory: List<DebloatCandidate>,
         facts: Map<String, AppFacts>,
         picked: Set<String>,
@@ -83,7 +83,7 @@ public object DebloatRisk {
     }
 
     /** What every other app of [facts] says about the app [selector] names ([AppImpact]). */
-    public fun impact(selector: String, facts: Map<String, AppFacts>): AppImpact {
+    fun impact(selector: String, facts: Map<String, AppFacts>): AppImpact {
         val app = facts[selector] ?: return AppImpact()
         val others = facts.filterKeys { it != selector }.values
         val pkg = app.packageId

@@ -17,9 +17,9 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * anywhere counts.
  * Whether a signature is valid is not checked here, only that there is one.
  */
-public object ApkSignatures {
+object ApkSignatures {
     /** `sh -c SCRIPT sh <work dir>`: the unsigned APKs, one per line, relative to the work dir. */
-    public const val SCRIPT: String = """
+    const val SCRIPT: String = """
         set -e
         cd "$1"
         find . -name '*.apk' -type f -print0 | xargs -0 -r -P8 -n1 sh -c '
@@ -38,7 +38,7 @@ public object ApkSignatures {
         ' sh
     """
 
-    public fun parse(output: String): List<String> = output.lines().map(
+    fun parse(output: String): List<String> = output.lines().map(
         String::trim,
     ).filter(String::isNotEmpty).sorted()
 }

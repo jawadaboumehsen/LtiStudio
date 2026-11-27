@@ -15,7 +15,7 @@ import org.ide.lti.core.domain.setup.SetupPlanAction
 /**
  * Unique identifier for plan actions in journal records and execution tracking.
  */
-public fun SetupPlanAction.actionId(): String = when (this) {
+fun SetupPlanAction.actionId(): String = when (this) {
     is SetupPlanAction.InstallPackages -> "packages"
     is SetupPlanAction.SwitchToolchain -> "switch-toolchain"
 }
@@ -23,6 +23,6 @@ public fun SetupPlanAction.actionId(): String = when (this) {
 /**
  * Handler interface for executing an individual [SetupPlanAction] (T031).
  */
-public interface PlanActionHandler<A : SetupPlanAction> {
-    public suspend fun execute(action: A, context: ExecutionContext): SetupOutcome?
+interface PlanActionHandler<A : SetupPlanAction> {
+    suspend fun execute(action: A, context: ExecutionContext): SetupOutcome?
 }

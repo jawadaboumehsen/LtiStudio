@@ -38,7 +38,7 @@ import dev.chrisbanes.haze.Poko
  * Style may be shared safely by concurrent nodes. Styles compare by identity, so provide a
  * remembered or hoisted Style.
  */
-public val LocalGlassStyle: ProvidableCompositionLocal<GlassStyle> =
+val LocalGlassStyle: ProvidableCompositionLocal<GlassStyle> =
     compositionLocalOf { GlassStyle }
 
 /**
@@ -70,12 +70,12 @@ public val LocalGlassStyle: ProvidableCompositionLocal<GlassStyle> =
  * Selection is automatic; callers do not need a capability check or a second fallback Style.
  */
 @Immutable
-public sealed interface GlassStyle {
+sealed interface GlassStyle {
     /** Returns a Style which replays [other] after this Style. */
-    public infix fun then(other: GlassStyle): GlassStyle = combineGlassStyles(this, other)
+    infix fun then(other: GlassStyle): GlassStyle = combineGlassStyles(this, other)
 
     /** Returns a Style which runs [block] after this Style. */
-    public fun then(block: GlassStyleScope.() -> Unit): GlassStyle = then(GlassStyle(block))
+    fun then(block: GlassStyleScope.() -> Unit): GlassStyle = then(GlassStyle(block))
 
     /** The empty Glass Style, which performs no writes. */
     public companion object : GlassStyle {
@@ -113,7 +113,7 @@ public sealed interface GlassStyle {
          * response while preserving separately composed shape, background colour, tint, alpha, light
          * position, and interaction presentation.
          */
-        public val regular: GlassStyle = BuiltInGlassStyle.Regular
+        val regular: GlassStyle = BuiltInGlassStyle.Regular
 
         internal val clearLight: GlassStyle = GlassStyle {
             optics(GlassOptics.clear)
@@ -149,7 +149,7 @@ public sealed interface GlassStyle {
          * optical effects. It writes the complete material response while preserving separately composed
          * shape, background colour, tint, alpha, light position, and interaction presentation.
          */
-        public val clear: GlassStyle = BuiltInGlassStyle.Clear
+        val clear: GlassStyle = BuiltInGlassStyle.Clear
     }
 }
 
@@ -162,7 +162,7 @@ public sealed interface GlassStyle {
  * hoist a Style rather than constructing one in each composition. Invalid values throw
  * [IllegalArgumentException] when [block] runs.
  */
-public fun GlassStyle(block: GlassStyleScope.() -> Unit): GlassStyle = EvaluatedGlassStyle(block)
+fun GlassStyle(block: GlassStyleScope.() -> Unit): GlassStyle = EvaluatedGlassStyle(block)
 
 @Immutable
 private class EvaluatedGlassStyle(
@@ -218,7 +218,7 @@ private fun combineGlassStyles(
 
 /** Marks the nested receiver scopes used while building a [GlassStyle]. */
 @DslMarker
-public annotation class GlassStyleDsl
+annotation class GlassStyleDsl
 
 /**
  * Receiver for Glass appearance property writes.
@@ -229,7 +229,7 @@ public annotation class GlassStyleDsl
  * function again writes a later value which takes precedence.
  */
 @GlassStyleDsl
-public class GlassStyleScope internal constructor(
+class GlassStyleScope internal constructor(
     private val values: GlassStyleValues,
 ) {
     /**
@@ -238,12 +238,12 @@ public class GlassStyleScope internal constructor(
      * The last declaration for this state wins. Pointer observation is installed only when hover or
      * press has a declaration, and observes without consuming application input.
      */
-    public fun hovered(response: GlassInteractionScope.() -> Unit) {
+    fun hovered(response: GlassInteractionScope.() -> Unit) {
         values.hoveredInteraction = buildGlassInteractionResponse(response)
     }
 
     /** Declares the response evaluated by each node while it is focused. */
-    public fun focused(response: GlassInteractionScope.() -> Unit) {
+    fun focused(response: GlassInteractionScope.() -> Unit) {
         values.focusedInteraction = buildGlassInteractionResponse(response)
     }
 
@@ -260,7 +260,7 @@ public class GlassStyleScope internal constructor(
      * A gesture detector that emits no `DragInteraction` can emit `PressInteraction.Press` and
      * `Release` or `Cancel` on the shared `interactionSource` itself to stay pressed through a drag.
      */
-    public fun pressed(response: GlassInteractionScope.() -> Unit) {
+    fun pressed(response: GlassInteractionScope.() -> Unit) {
         values.pressedInteraction = buildGlassInteractionResponse(response)
     }
 
@@ -269,7 +269,7 @@ public class GlassStyleScope internal constructor(
      *
      * The value must be finite and in the inclusive range `0f..2f`.
      */
-    public fun interactionLightRadiusFraction(radiusFraction: Float) {
+    fun interactionLightRadiusFraction(radiusFraction: Float) {
         val validated = requireFiniteInRange(
             "interactionLightRadiusFraction",
             radiusFraction,
@@ -286,12 +286,12 @@ public class GlassStyleScope internal constructor(
      *
      * This presentation is replayed into fresh animation state owned by each consuming node.
      */
-    public fun interactionPositionAnimationSpec(animationSpec: FiniteAnimationSpec<Offset>) {
+    fun interactionPositionAnimationSpec(animationSpec: FiniteAnimationSpec<Offset>) {
         values.interactionPositionAnimationSpec = animationSpec
     }
 
     /** Sets the rounded boundary used for refraction and masking. */
-    public fun shape(shape: RoundedCornerShape) {
+    fun shape(shape: RoundedCornerShape) {
         values.shape = shape
     }
 
@@ -301,7 +301,7 @@ public class GlassStyleScope internal constructor(
      * Replaces the whole model. To change part of the built-in model, copy it, for example
      * `optics(GlassOptics.regular.copy(blurRadius = OpticalSizeValue.Fixed(30.dp)))`.
      */
-    public fun optics(optics: GlassOptics) {
+    fun optics(optics: GlassOptics) {
         values.optics = optics
     }
 
@@ -319,12 +319,12 @@ public class GlassStyleScope internal constructor(
      * reads are observed by each consuming node. Keep it free of side effects. Invalid values are
      * rejected by [GlassOptics] construction, including [GlassOptics.copy].
      */
-    public fun optics(transform: GlassOptics.() -> GlassOptics) {
+    fun optics(transform: GlassOptics.() -> GlassOptics) {
         values.optics = values.optics.transform()
     }
 
     /** Sets finite specular-highlight intensity in the inclusive range `0f..1f`. */
-    public fun specularIntensity(intensity: Float) {
+    fun specularIntensity(intensity: Float) {
         val validated = requireFiniteInRange("specularIntensity", intensity, 0f..1f, UNIT_INTERVAL_DOMAIN)
         values.specularIntensity = validated
     }
@@ -335,25 +335,25 @@ public class GlassStyleScope internal constructor(
      * The color alpha controls its strength. [Color.Transparent] disables the dark edge; its width
      * follows [edgeSoftness], keeping material geometry in one place.
      */
-    public fun edgeShadow(color: Color) {
+    fun edgeShadow(color: Color) {
         require(color.isSpecified) { "edgeShadow must be specified" }
         values.edgeShadow = color
     }
 
     /** Sets finite ambient-light response in the inclusive range `0f..1f`. */
-    public fun ambientResponse(response: Float) {
+    fun ambientResponse(response: Float) {
         val validated = requireFiniteInRange("ambientResponse", response, 0f..1f, UNIT_INTERVAL_DOMAIN)
         values.ambientResponse = validated
     }
 
     /** Sets any specified color, including transparent, composited behind the captured input. */
-    public fun backgroundColor(color: Color) {
+    fun backgroundColor(color: Color) {
         require(color.isSpecified) { "backgroundColor must be specified" }
         values.backgroundColor = color
     }
 
     /** Sets any specified tint, including transparent, applied to refracted content. */
-    public fun tint(color: Color) {
+    fun tint(color: Color) {
         require(color.isSpecified) { "tint must be specified" }
         values.tint = color
     }
@@ -362,7 +362,7 @@ public class GlassStyleScope internal constructor(
      * Sets a specified, finite, non-negative softening distance around the material boundary.
      * There is no authored upper limit.
      */
-    public fun edgeSoftness(softness: Dp) {
+    fun edgeSoftness(softness: Dp) {
         val validated = requireSpecifiedFiniteNonNegative("edgeSoftness", softness)
         values.edgeSoftness = validated
     }
@@ -377,7 +377,7 @@ public class GlassStyleScope internal constructor(
      * [Alignment] implementations retain their own contract and are not evaluated when the Style's
      * block runs.
      */
-    public fun lightPosition(alignment: Alignment) {
+    fun lightPosition(alignment: Alignment) {
         when (alignment) {
             is BiasAlignment -> validateLightPositionBiases(
                 horizontalBias = alignment.horizontalBias,
@@ -393,7 +393,7 @@ public class GlassStyleScope internal constructor(
     }
 
     /** Sets finite chromatic dispersion strength in the inclusive range `0f..1f`. */
-    public fun chromaticAberrationStrength(strength: Float) {
+    fun chromaticAberrationStrength(strength: Float) {
         val validated = requireFiniteInRange(
             "chromaticAberrationStrength",
             strength,
@@ -407,12 +407,12 @@ public class GlassStyleScope internal constructor(
      * Sets the surface cross-section used for lighting and [RefractionProfile.Surface] refraction.
      * [RefractionProfile.Edge] authors its sampling response independently.
      */
-    public fun surfaceProfile(profile: SurfaceProfile) {
+    fun surfaceProfile(profile: SurfaceProfile) {
         values.surfaceProfile = profile
     }
 
     /** Sets the quality mode used to render chromatic aberration. */
-    public fun chromaticAberrationMode(mode: ChromaticAberrationMode) {
+    fun chromaticAberrationMode(mode: ChromaticAberrationMode) {
         values.chromaticAberrationMode = mode
     }
 
@@ -420,18 +420,18 @@ public class GlassStyleScope internal constructor(
      * Sets finite overall material opacity. Values outside `0f..1f`, such as animation overshoot,
      * are clamped into that range.
      */
-    public fun alpha(alpha: Float) {
+    fun alpha(alpha: Float) {
         values.alpha = requireFinite("alpha", alpha).coerceIn(0f, 1f)
     }
 
     /** Sets finite contrast adjustment in the inclusive range `-1f..1f`. */
-    public fun contrast(contrast: Float) {
+    fun contrast(contrast: Float) {
         val validated = requireFiniteInRange("contrast", contrast, -1f..1f, SIGNED_UNIT_INTERVAL_DOMAIN)
         values.contrast = validated
     }
 
     /** Sets finite white-point adjustment in the inclusive range `-1f..1f`. */
-    public fun whitePoint(whitePoint: Float) {
+    fun whitePoint(whitePoint: Float) {
         val validated = requireFiniteInRange(
             "whitePoint",
             whitePoint,
@@ -446,13 +446,13 @@ public class GlassStyleScope internal constructor(
      *
      * Values above `1f` request a chroma boost, bounded to preserve colours already within sRGB gamut.
      */
-    public fun chromaMultiplier(multiplier: Float) {
+    fun chromaMultiplier(multiplier: Float) {
         val validated = requireFiniteInRange("chromaMultiplier", multiplier, 0f..2f, DOUBLE_INTERVAL_DOMAIN)
         values.chromaMultiplier = validated
     }
 
     /** Sets the finite blend between generated and captured normals in inclusive `0f..1f`. */
-    public fun contentNormalBlend(blend: Float) {
+    fun contentNormalBlend(blend: Float) {
         val validated = requireFiniteInRange("contentNormalBlend", blend, 0f..1f, UNIT_INTERVAL_DOMAIN)
         values.contentNormalBlend = validated
     }
@@ -461,7 +461,7 @@ public class GlassStyleScope internal constructor(
      * Sets a finite, non-negative exponent controlling specular highlight concentration.
      * There is no authored upper limit.
      */
-    public fun specularExponent(exponent: Float) {
+    fun specularExponent(exponent: Float) {
         val validated = requireFiniteNonNegative("specularExponent", exponent)
         values.specularExponent = validated
     }
@@ -470,7 +470,7 @@ public class GlassStyleScope internal constructor(
      * Sets a finite, non-negative exponent controlling Fresnel response falloff.
      * There is no authored upper limit.
      */
-    public fun fresnelExponent(exponent: Float) {
+    fun fresnelExponent(exponent: Float) {
         val validated = requireFiniteNonNegative("fresnelExponent", exponent)
         values.fresnelExponent = validated
     }

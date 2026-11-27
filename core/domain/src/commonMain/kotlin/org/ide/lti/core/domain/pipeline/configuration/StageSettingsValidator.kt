@@ -33,39 +33,39 @@ import org.ide.lti.core.model.workspace.SigningPolicy
  * Centralized, stage-scoped settings validator producing structured [ValidationReport]
  * diagnostics for the ROM Setup Studio UI and pipeline preflights without throwing exceptions.
  */
-public object StageSettingsValidator {
+object StageSettingsValidator {
 
-    public const val INCOMPATIBLE_REGION: String = "INCOMPATIBLE_REGION"
-    public const val INCOMPATIBLE_FIRMWARE: String = "INCOMPATIBLE_FIRMWARE"
-    public const val UNSUPPORTED_EXTRACTION_ADAPTER: String = "UNSUPPORTED_EXTRACTION_ADAPTER"
-    public const val PARTITION_NOT_ON_TARGET: String = "PARTITION_NOT_ON_TARGET"
-    public const val INVALID_FILENAME: String = "INVALID_FILENAME"
+    const val INCOMPATIBLE_REGION: String = "INCOMPATIBLE_REGION"
+    const val INCOMPATIBLE_FIRMWARE: String = "INCOMPATIBLE_FIRMWARE"
+    const val UNSUPPORTED_EXTRACTION_ADAPTER: String = "UNSUPPORTED_EXTRACTION_ADAPTER"
+    const val PARTITION_NOT_ON_TARGET: String = "PARTITION_NOT_ON_TARGET"
+    const val INVALID_FILENAME: String = "INVALID_FILENAME"
     private const val PATH_SEPARATORS = "/\\"
 
-    public const val UNSUPPORTED_SLOT: String = "UNSUPPORTED_SLOT"
-    public const val UNSUPPORTED_SYSTEM_EXT_MODE: String = "UNSUPPORTED_SYSTEM_EXT_MODE"
-    public const val UNSUPPORTED_FOOTER_POLICY: String = "UNSUPPORTED_FOOTER_POLICY"
-    public const val RESERVED_PROPERTY: String = "RESERVED_PROPERTY"
-    public const val INVALID_SCHEMA_VERSION: String = "INVALID_SCHEMA_VERSION"
-    public const val INVALID_DIGEST: String = "INVALID_DIGEST"
-    public const val INVALID_BLOCK_SIZE: String = "INVALID_BLOCK_SIZE"
-    public const val INVALID_BUILD_TYPE: String = "INVALID_BUILD_TYPE"
-    public const val INVALID_PROPERTY: String = "INVALID_PROPERTY"
+    const val UNSUPPORTED_SLOT: String = "UNSUPPORTED_SLOT"
+    const val UNSUPPORTED_SYSTEM_EXT_MODE: String = "UNSUPPORTED_SYSTEM_EXT_MODE"
+    const val UNSUPPORTED_FOOTER_POLICY: String = "UNSUPPORTED_FOOTER_POLICY"
+    const val RESERVED_PROPERTY: String = "RESERVED_PROPERTY"
+    const val INVALID_SCHEMA_VERSION: String = "INVALID_SCHEMA_VERSION"
+    const val INVALID_DIGEST: String = "INVALID_DIGEST"
+    const val INVALID_BLOCK_SIZE: String = "INVALID_BLOCK_SIZE"
+    const val INVALID_BUILD_TYPE: String = "INVALID_BUILD_TYPE"
+    const val INVALID_PROPERTY: String = "INVALID_PROPERTY"
     private val BLOCK_SIZES = 1024..65536
     private val BUILD_TYPES = listOf("user", "userdebug", "eng")
-    public const val INVALID_ALIGNMENT: String = "INVALID_ALIGNMENT"
-    public const val INCOMPATIBLE_FILESYSTEM: String = "INCOMPATIBLE_FILESYSTEM"
-    public const val UNSUPPORTED_FILESYSTEM: String = "UNSUPPORTED_FILESYSTEM"
-    public const val INVALID_PACKAGE_OPTION: String = "INVALID_PACKAGE_OPTION"
+    const val INVALID_ALIGNMENT: String = "INVALID_ALIGNMENT"
+    const val INCOMPATIBLE_FILESYSTEM: String = "INCOMPATIBLE_FILESYSTEM"
+    const val UNSUPPORTED_FILESYSTEM: String = "UNSUPPORTED_FILESYSTEM"
+    const val INVALID_PACKAGE_OPTION: String = "INVALID_PACKAGE_OPTION"
     private val BROTLI_LEVELS = 0..11
-    public const val BOOT_IMAGE_LEFT_OUT: String = "BOOT_IMAGE_LEFT_OUT"
-    public const val NO_DEVICE_CHECK: String = "NO_DEVICE_CHECK"
-    public const val INVALID_SCRIPT: String = "INVALID_SCRIPT"
-    public const val INVALID_COVERAGE_RULE: String = "INVALID_COVERAGE_RULE"
-    public const val INLINE_CREDENTIAL_NOT_ALLOWED: String = "INLINE_CREDENTIAL_NOT_ALLOWED"
-    public const val MISSING_KEY_REF: String = "MISSING_KEY_REF"
-    public const val INVALID_PART_SIZE: String = "INVALID_PART_SIZE"
-    public const val INVALID_RETENTION: String = "INVALID_RETENTION"
+    const val BOOT_IMAGE_LEFT_OUT: String = "BOOT_IMAGE_LEFT_OUT"
+    const val NO_DEVICE_CHECK: String = "NO_DEVICE_CHECK"
+    const val INVALID_SCRIPT: String = "INVALID_SCRIPT"
+    const val INVALID_COVERAGE_RULE: String = "INVALID_COVERAGE_RULE"
+    const val INLINE_CREDENTIAL_NOT_ALLOWED: String = "INLINE_CREDENTIAL_NOT_ALLOWED"
+    const val MISSING_KEY_REF: String = "MISSING_KEY_REF"
+    const val INVALID_PART_SIZE: String = "INVALID_PART_SIZE"
+    const val INVALID_RETENTION: String = "INVALID_RETENTION"
 
     private val DEBLOAT_SELECTOR = Regex("""^[A-Za-z0-9_-]+:[A-Za-z0-9._+@-]+(/[A-Za-z0-9._+@-]+)*$""")
     private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
@@ -75,7 +75,7 @@ public object StageSettingsValidator {
     // retries-in-0..5 and archiveRef-required-for-IMPORT_ARCHIVE are already enforced by
     // AcquisitionSettings' own constructor (see ConfigurationSettings.kt's init block) - an instance
     // reaching this function can never violate either, so there is nothing to re-check here.
-    public fun validateAcquisition(settings: AcquisitionSettings, target: TargetDevice? = null): ValidationReport {
+    fun validateAcquisition(settings: AcquisitionSettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         if (target != null) {
             if (settings.region !in target.availableRegions) {
@@ -107,7 +107,7 @@ public object StageSettingsValidator {
         return ValidationReport(errors = errors)
     }
 
-    public fun validateExtraction(settings: ExtractionSettings, target: TargetDevice? = null): ValidationReport {
+    fun validateExtraction(settings: ExtractionSettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         val adapter = settings.adapter
         val isAuto = adapter.equals("AUTO", ignoreCase = true)
@@ -169,7 +169,7 @@ public object StageSettingsValidator {
         return ValidationReport(errors = errors)
     }
 
-    public fun validateAssembly(settings: AssemblySettings, target: TargetDevice? = null): ValidationReport {
+    fun validateAssembly(settings: AssemblySettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         if (target != null) {
             val invalidIncluded = settings.includedPartitions.filter { it !in target.dynamicPartitions }
@@ -258,7 +258,7 @@ public object StageSettingsValidator {
     }
 
     /** Picks are `partition:path` app folders from the inventory; the stage checks they still exist. */
-    public fun validateDebloat(settings: DebloatSettings): ValidationReport {
+    fun validateDebloat(settings: DebloatSettings): ValidationReport {
         val errors = (settings.removeSelectors + settings.keepSelectors)
             .filterNot { DEBLOAT_SELECTOR.matches(it) && ".." !in it.substringAfter(':').split('/') }
             .map { selector ->
@@ -274,7 +274,7 @@ public object StageSettingsValidator {
         return ValidationReport(errors = errors)
     }
 
-    public fun validateCustomization(settings: CustomizationSettings): ValidationReport {
+    fun validateCustomization(settings: CustomizationSettings): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         if (settings.lockfile.schemaVersion < 1) {
             errors += ValidationError(
@@ -369,7 +369,7 @@ public object StageSettingsValidator {
             base.isNotBlank() && !base.all { it == '.' }
     }
 
-    public fun validateBuild(settings: BuildSettings, target: TargetDevice? = null): ValidationReport {
+    fun validateBuild(settings: BuildSettings, target: TargetDevice? = null): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         val name = settings.filenameTemplate
         // The name as it is written: the device id fills {device} ({version} is checked with Assemble).
@@ -582,7 +582,7 @@ public object StageSettingsValidator {
         }
     }
 
-    public fun validateSigning(settings: SigningPolicy): ValidationReport {
+    fun validateSigning(settings: SigningPolicy): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         if (isInlineSecret(settings.avbKeyRef)) {
             errors += ValidationError(
@@ -631,10 +631,9 @@ public object StageSettingsValidator {
     // function, returning an empty report, purely so every settings group has a uniform validate*
     // entry point for callers that dispatch across all stages.
     @Suppress("UnusedParameter")
-    public fun validateRelease(settings: ReleaseSettings, target: TargetDevice? = null): ValidationReport =
-        ValidationReport()
+    fun validateRelease(settings: ReleaseSettings, target: TargetDevice? = null): ValidationReport = ValidationReport()
 
-    public fun validatePublish(settings: PublishSettings): ValidationReport {
+    fun validatePublish(settings: PublishSettings): ValidationReport {
         val errors = mutableListOf<ValidationError>()
         val credentialRef = settings.credentialRef
         if (!credentialRef.isNullOrBlank() && isInlineSecret(credentialRef)) {

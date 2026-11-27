@@ -18,11 +18,11 @@ import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
  * Applies [edit] to every fstab of [partition]'s unpacked ramdisk (the first-stage mount table in vendor_boot).
  * Returns the fstab files changed; repack to keep the change.
  */
-public suspend fun BootWorkbench.editFstabs(workspaceId: String, partition: String, edit: FstabEdit): List<String> =
+suspend fun BootWorkbench.editFstabs(workspaceId: String, partition: String, edit: FstabEdit): List<String> =
     editFstabs(workspaceId, partition, edit.title, edit::apply)
 
 /** Edits every fstab in the unpacked [partition]'s ramdisk with [transform]; the files it changed. */
-public suspend fun BootWorkbench.editFstabs(
+suspend fun BootWorkbench.editFstabs(
     workspaceId: String,
     partition: String,
     title: String,
@@ -36,13 +36,13 @@ public suspend fun BootWorkbench.editFstabs(
 }
 
 /** The fstabs in the unpacked [partition]'s ramdisk (its first-stage mount table), path -> text. */
-public suspend fun BootWorkbench.ramdiskFstabs(workspaceId: String, partition: String): Map<String, String> =
+suspend fun BootWorkbench.ramdiskFstabs(workspaceId: String, partition: String): Map<String, String> =
     runner.read(workspaceId) {
         ramdiskFstabFiles(this, partition).mapNotNull { rel -> readText(rel)?.let { rel to it } }.toMap()
     }
 
 /** The fstabs of the assembled work tree (`work/<p>/etc/fstab*`), path -> text. */
-public suspend fun BootWorkbench.workFstabs(workspaceId: String): Map<String, String> = runner.read(workspaceId) {
+suspend fun BootWorkbench.workFstabs(workspaceId: String): Map<String, String> = runner.read(workspaceId) {
     if (!exists("work")) return@read emptyMap()
     sh("cd \"$1\" && find . -path './*/etc/fstab*' -type f | sort", abs("work")).lines()
         .filter(String::isNotBlank).mapNotNull { f ->

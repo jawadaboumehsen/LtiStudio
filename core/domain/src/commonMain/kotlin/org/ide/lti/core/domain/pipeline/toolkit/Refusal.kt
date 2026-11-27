@@ -34,77 +34,76 @@ data class Refusal(val cause: String, val item: String, val nextStep: String, va
 /**
  * Exception thrown when a pipeline or toolkit operation is refused with a structured [Refusal].
  */
-public class RefusalException(public val refusal: Refusal) :
-    Exception("${refusal.cause} (${refusal.item}): ${refusal.nextStep}")
+class RefusalException(val refusal: Refusal) : Exception("${refusal.cause} (${refusal.item}): ${refusal.nextStep}")
 
 /**
  * Standard catalog of refusals across the ROM Workbench Toolkit (contract: `contracts/messages.md`, SC-009).
  */
-public object RefusalCatalog {
-    public const val BUILD_RUNNING: String = "A build is running in this workspace."
+object RefusalCatalog {
+    const val BUILD_RUNNING: String = "A build is running in this workspace."
 
-    public fun buildRunning(runId: String): Refusal =
+    fun buildRunning(runId: String): Refusal =
         Refusal(BUILD_RUNNING, runId, "Wait for it to finish, or cancel it, then try again.")
 
-    public fun incrementalPayload(item: String = "payload.bin"): Refusal = Refusal(
+    fun incrementalPayload(item: String = "payload.bin"): Refusal = Refusal(
         cause = "The package is an incremental update.",
         item = item,
         nextStep = "Import the full update instead.",
     )
 
-    public fun encryptedPackage(item: String): Refusal = Refusal(
+    fun encryptedPackage(item: String): Refusal = Refusal(
         cause = "The package is encrypted.",
         item = item,
         nextStep = "Decrypt the package with the vendor tool before importing.",
     )
 
-    public fun unknownPackage(item: String): Refusal = Refusal(
+    fun unknownPackage(item: String): Refusal = Refusal(
         cause = "The package format was not recognized.",
         item = item,
         nextStep = "Use a supported ZIP, 7z, TAR, payload.bin, block-OTA, or Odin archive.",
     )
 
-    public fun checksumMismatch(item: String, expected: String, actual: String): Refusal = Refusal(
+    fun checksumMismatch(item: String, expected: String, actual: String): Refusal = Refusal(
         cause = "The package checksum does not match the manifest.",
         item = item,
         nextStep = "Re-download the firmware or verify the source file.",
         details = "Expected: $expected, Actual: $actual",
     )
 
-    public fun superOverlap(item: String = "super.img", details: String? = null): Refusal = Refusal(
+    fun superOverlap(item: String = "super.img", details: String? = null): Refusal = Refusal(
         cause = "The dynamic partition images exceed the super partition size.",
         item = item,
         nextStep = "Reduce partition content or adjust the super partition layout.",
         details = details,
     )
 
-    public fun vabcMissing(item: String = "Virtual-A/B"): Refusal = Refusal(
+    fun vabcMissing(item: String = "Virtual-A/B"): Refusal = Refusal(
         cause = "Virtual-A/B compression properties are absent.",
         item = item,
         nextStep = "Verify device compatibility or acknowledge proceeding without compression.",
     )
 
-    public fun toolMissing(item: String): Refusal = Refusal(
+    fun toolMissing(item: String): Refusal = Refusal(
         cause = "Required tool is not installed.",
         item = item,
         nextStep = "Install the required tool group from the Tools page.",
     )
 
-    public fun workspaceLocked(item: String = "Workspace", holder: String): Refusal = Refusal(
+    fun workspaceLocked(item: String = "Workspace", holder: String): Refusal = Refusal(
         cause = "Another operation is currently editing this workspace.",
         item = item,
         nextStep = "Wait for active operation '$holder' to complete or cancel it.",
         details = "Lock held by: $holder",
     )
 
-    public fun uncoveredFiles(item: String = "Work tree", count: Int): Refusal = Refusal(
+    fun uncoveredFiles(item: String = "Work tree", count: Int): Refusal = Refusal(
         cause = "Files in the work tree are missing from fs_config or file_contexts.",
         item = item,
         nextStep = "Click 'Add entries' to generate coverage rules for uncovered files.",
         details = "$count uncovered entry(ies)",
     )
 
-    public val ALL_SAMPLES: List<Refusal> = listOf(
+    val ALL_SAMPLES: List<Refusal> = listOf(
         incrementalPayload(),
         encryptedPackage("firmware.tar.md5"),
         unknownPackage("archive.bin"),

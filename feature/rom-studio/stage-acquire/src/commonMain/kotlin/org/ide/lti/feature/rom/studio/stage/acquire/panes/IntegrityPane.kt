@@ -43,7 +43,7 @@ import org.ide.lti.feature.rom.studio.stage.acquire.IntegrityFacts
 
 /** The archive the build uses and whether its measured SHA-256 matches the expected one. */
 @Composable
-public fun IntegrityPane(
+fun IntegrityPane(
     settings: AcquisitionSettings,
     facts: IntegrityFacts,
     onRefresh: () -> Unit,

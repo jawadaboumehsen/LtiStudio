@@ -14,11 +14,11 @@ import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlanAction
 
 /** Executes confirmed setup actions through the component tool manager. */
-public class PlanExecutor(
+class PlanExecutor(
     private val installPackagesHandler: PlanActionHandler<SetupPlanAction.InstallPackages> = InstallPackagesHandler(),
-    public val componentToolsHandler: PlanActionHandler<SetupPlanAction.SwitchToolchain>? = null,
+    val componentToolsHandler: PlanActionHandler<SetupPlanAction.SwitchToolchain>? = null,
 ) {
-    public suspend fun execute(context: ExecutionContext): SetupOutcome {
+    suspend fun execute(context: ExecutionContext): SetupOutcome {
         val plan = context.plan
 
         for (action in plan.orderedActions) {

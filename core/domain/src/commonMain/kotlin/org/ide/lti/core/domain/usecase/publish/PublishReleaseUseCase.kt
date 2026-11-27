@@ -38,15 +38,16 @@ import org.ide.lti.core.model.workspace.CollisionPolicy
 import org.ide.lti.core.model.workspace.PublishProvider
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.Workspace
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The release the last build produced: `out/manifest.json` and the zip it names; [ota] is the A/B OTA built next to
  * it (the manifest's `"ota"` when it is another file).
  */
-public data class ReleaseFiles(val zip: String, val sha256: String, val size: Long, val ota: ReleaseFiles? = null)
+data class ReleaseFiles(val zip: String, val sha256: String, val size: Long, val ota: ReleaseFiles? = null)
 
 /** What Publish would do now, or why it cannot. */
-public data class PublishPreflight(
+data class PublishPreflight(
     val release: ReleaseFiles?,
     val problems: List<String>,
     /** Where the release goes, as the service sees it (a WSL path for a local export). */
@@ -55,13 +56,13 @@ public data class PublishPreflight(
 )
 
 /** The running step, and how many of its [total] bytes are through when it moves data (null: not measurable). */
-public data class PublishTransfer(val stepId: String, val done: Long? = null, val total: Long? = null)
+data class PublishTransfer(val stepId: String, val done: Long? = null, val total: Long? = null)
 
 @Serializable
-public enum class PublishStepState { PENDING, DONE, FAILED }
+enum class PublishStepState { PENDING, DONE, FAILED }
 
 @Serializable
-public data class PublishJournalStep(
+data class PublishJournalStep(
     val id: String,
     val label: String,
     val state: PublishStepState = PublishStepState.PENDING,
@@ -75,7 +76,7 @@ public data class PublishJournalStep(
  * it: steps already done are not redone.
  */
 @Serializable
-public data class PublishJournal(
+data class PublishJournal(
     val provider: PublishProvider,
     val destination: String,
     val zip: String,
@@ -92,7 +93,7 @@ public data class PublishJournal(
      * Every verify step runs again (the destination is checked anew), and the GitHub manifest is reconciled (it is
      * only written when it lacks this release); a copy whose check fails is made again.
      */
-    public fun reverifying(): PublishJournal = copy(
+    fun reverifying(): PublishJournal = copy(
         outcome = null,
         steps = steps.map {
             if (it.id.startsWith(
@@ -111,7 +112,7 @@ public data class PublishJournal(
      * GitHub release whose assets are gone may be gone itself, so it is looked up (and made) again. The package is
      * checked against its manifest again on every resume: it may have changed since.
      */
-    public fun retryingFailedCopies(): PublishJournal {
+    fun retryingFailedCopies(): PublishJournal {
         val redo = steps.filter { it.state == PublishStepState.FAILED && it.id.startsWith("verify-") }
             .flatMap {
                 if (it.id == "verify-remote") {
@@ -153,7 +154,7 @@ class PublishReleaseUseCase(
     private val toLinuxPath: (String) -> String,
 ) {
     /** [edited] is the editor's current settings (they may not be saved yet); the saved ones otherwise. */
-    public suspend fun preflight(workspaceId: String, edited: PublishSettings? = null): PublishPreflight {
+    suspend fun preflight(workspaceId: String, edited: PublishSettings? = null): PublishPreflight {
         val ws = workspaces.getWorkspace(workspaceId)
             ?: return PublishPreflight(null, listOf("The workspace is not available."), null, null)
         val settings = edited ?: store.current(workspaceId)?.publish ?: PublishSettings()
@@ -184,7 +185,7 @@ class PublishReleaseUseCase(
      * the running step and its bytes. Never throws for a step. Cancelling it stops the running command and journals
      * the step as cancelled, so publishing again resumes there.
      */
-    public suspend fun publish(
+    suspend fun publish(
         workspaceId: String,
         edited: PublishSettings? = null,
         onProgress: (PublishJournal) -> Unit = {},
@@ -500,10 +501,10 @@ class PublishReleaseUseCase(
 
     private fun Workspace.abs(rel: String): String = "$root/$rel"
 
-    public companion object {
-        public const val JOURNAL: String = "out/publish/journal.json"
-        public const val CANCELLED: String = "Cancelled"
-        public const val PUBLISH_HOLDER: String = "Publishing"
+    companion object {
+        const val JOURNAL: String = "out/publish/journal.json"
+        const val CANCELLED: String = "Cancelled"
+        const val PUBLISH_HOLDER: String = "Publishing"
         private const val MANIFEST = GenerateOtaManifestStage.MANIFEST
         private val json = Json {
             ignoreUnknownKeys = true
@@ -546,7 +547,7 @@ internal suspend fun <T> sampling(sample: suspend () -> Long?, report: (Long) ->
     coroutineScope {
         val sampler = launch {
             while (true) {
-                delay(SAMPLE_MS)
+                delay(SAMPLE_MS.milliseconds)
                 runCatching { sample() }
                     .onFailure { if (it is CancellationException) throw it }
                     .getOrNull()?.let(report)

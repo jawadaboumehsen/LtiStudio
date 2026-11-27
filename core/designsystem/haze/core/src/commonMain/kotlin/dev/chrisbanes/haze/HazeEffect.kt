@@ -23,22 +23,22 @@ import kotlin.jvm.JvmInline
 /**
  * Input-sampling policies used by the explicit-input [hazeEffect] overload.
  */
-public sealed interface HazeSampling {
+sealed interface HazeSampling {
     /** Library-defined sampling defaults. */
     public companion object {
         /** Points to the library's current default sampling policy. */
-        public val Default: HazeSampling = Adaptive
+        val Default: HazeSampling = Adaptive
     }
 
     /**
      * Samples the effect input at full resolution.
      */
-    public data object FullResolution : HazeSampling
+    data object FullResolution : HazeSampling
 
     /**
      * Requests the configured effect's adaptive input-sampling policy.
      */
-    public data object Adaptive : HazeSampling
+    data object Adaptive : HazeSampling
 
     /**
      * Retains a fixed fraction of the full-resolution input pixels while preserving aspect ratio.
@@ -50,7 +50,7 @@ public sealed interface HazeSampling {
      * @param pixelFraction The total input-pixel fraction, in the range 0 < x <= 1.
      */
     @JvmInline
-    public value class Fixed(public val pixelFraction: Float) : HazeSampling {
+    value class Fixed(val pixelFraction: Float) : HazeSampling {
         init {
             require(pixelFraction.isFinite() && pixelFraction > 0f && pixelFraction <= 1f) {
                 "pixelFraction needs to be finite and in the range 0 < x <= 1f"
@@ -73,7 +73,7 @@ public sealed interface HazeSampling {
  * @param expandLayerBounds Whether renderer-requested layer-bound expansion is enabled.
  */
 @Stable
-public fun <Style> Modifier.hazeEffect(
+fun <Style> Modifier.hazeEffect(
     factory: HazeEffectFactory<Style>,
     input: HazeInput,
     style: Style,

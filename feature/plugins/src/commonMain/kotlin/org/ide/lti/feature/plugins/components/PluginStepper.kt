@@ -42,7 +42,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * 3-step progress stepper matching Concept 14 (Review package installation).
  */
 @Composable
-public fun PluginStepper(currentStep: ImportStep, modifier: Modifier = Modifier) {
+fun PluginStepper(currentStep: ImportStep, modifier: Modifier = Modifier) {
     val steps = ImportStep.entries
 
     Row(

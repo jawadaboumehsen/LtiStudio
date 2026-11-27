@@ -2,7 +2,7 @@ package io.ltirom.tooling.core
 
 import java.io.File
 
-public enum class BinaryType {
+enum class BinaryType {
     ELF_BINARY,
     PYTHON_SCRIPT,
     BASH_SCRIPT,
@@ -10,7 +10,7 @@ public enum class BinaryType {
     UNKNOWN
 }
 
-public data class ToolBinary(
+data class ToolBinary(
     val toolId: ToolId,
     val file: File
 ) {
@@ -49,7 +49,7 @@ public data class ToolBinary(
         }
     }
 
-    public fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return file.isFile && file.canExecute()
     }
 }

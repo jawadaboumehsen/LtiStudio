@@ -33,7 +33,7 @@ import java.util.UUID
  * Reattaches to an active, non-terminal build run for a workspace. Resolves the workspace,
  * configuration snapshot, and target device, then resumes orchestrator execution.
  */
-public open class ReattachRunUseCase(
+open class ReattachRunUseCase(
     private val workspaceRepository: WorkspaceRepository,
     private val snapshotRepository: SnapshotRepository,
     private val workspaceDeviceRepository: WorkspaceDeviceRepository,
@@ -42,7 +42,7 @@ public open class ReattachRunUseCase(
     private val scope: CoroutineScope? = null,
     private val executionPort: PipelineExecutionPort? = null,
 ) {
-    public open suspend operator fun invoke(
+    open suspend operator fun invoke(
         workspaceId: String,
         runId: String? = null,
         driverInstanceId: String = "driver_${UUID.randomUUID()}",

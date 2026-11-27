@@ -1,9 +1,9 @@
 package io.ltirom.tooling.core
 
-public class ToolSafetyPolicy(
+class ToolSafetyPolicy(
     private val interactivePrompt: (String) -> Boolean = { false }
 ) {
-    public fun checkSafety(
+    fun checkSafety(
         command: ToolCommand<*>,
         context: ExecutionContext
     ) {

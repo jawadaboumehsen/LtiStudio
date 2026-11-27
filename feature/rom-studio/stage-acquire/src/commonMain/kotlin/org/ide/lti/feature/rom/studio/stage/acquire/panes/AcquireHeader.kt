@@ -37,7 +37,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Displays title, subtitle, target device info, and primary Validate/Save action buttons.
  */
 @Composable
-public fun AcquireHeader(
+fun AcquireHeader(
     title: String,
     subtitle: String,
     targetSpec: String = "PQ84P01 / Development",

@@ -18,12 +18,12 @@ import org.ide.lti.core.domain.pipeline.text.BuildPropStamper
  * Written as the stock PQ84P01 OTA is: 2 MiB REPLACE/REPLACE_XZ operations (xz without a check, 1 MiB dictionary),
  * Virtual A/B compression with COW size estimates, a version per partition.
  */
-public object AbOtaPackage {
+object AbOtaPackage {
     /** Where the build writes the payload and the package's members, under the workspace. */
-    public const val DIR: String = "work/package/ab"
+    const val DIR: String = "work/package/ab"
 
     /** The script's name in [DIR]. */
-    public const val SCRIPT_NAME: String = "ota_payload.py"
+    const val SCRIPT_NAME: String = "ota_payload.py"
 
     /**
      * Virtual A/B as the payload declares it, `compression:cow_version:compression_factor`, for a device on
@@ -32,7 +32,7 @@ public object AbOtaPackage {
      * AOSP's OTA tools read them: `enabled`, `compression.enabled`/`compression.method`, `cow_version`,
      * `compression.factor`.
      */
-    public fun vab(virtualAb: Boolean, sdk: Int?, vendorProps: String? = null): String {
+    fun vab(virtualAb: Boolean, sdk: Int?, vendorProps: String? = null): String {
         fun prop(key: String) = BuildPropStamper.prop(vendorProps, "ro.virtual_ab.$key")
         if (!(prop("enabled")?.let { it == "true" } ?: virtualAb)) return "none"
         val cow = prop("cow_version")?.toIntOrNull() ?: if ((sdk ?: 0) >= COW_V3_SDK) COW_V3 else COW_V2
@@ -52,7 +52,7 @@ public object AbOtaPackage {
      * property-file offsets of the signed zip, and checking the signed zip as a device would. Python 3 standard
      * library and openssl only (both Setup requirements).
      */
-    public val SCRIPT: String = """
+    val SCRIPT: String = """
         # A/B OTA payload writer (update_engine format, major version 2, full operations).
         # python3 ota_payload.py payload OUT_DIR KEY.pem TIMESTAMP SPL GROUP:SIZE VAB name=path[:dynamic] ...
         #   VAB is none, or compression:cow_version:compression_factor (lz4:3:65536).

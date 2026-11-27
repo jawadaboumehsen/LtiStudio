@@ -17,7 +17,7 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
 /**
  * Stages in the environment check and toolchain provisioning pipeline.
  */
-public enum class SetupStepStage(public val displayName: String) {
+enum class SetupStepStage(val displayName: String) {
     WSL_DETECTION("Ubuntu (WSL)"),
     SERVER_CONNECTIVITY("Build service"),
     SYSTEM_PACKAGES("System packages"),
@@ -27,7 +27,7 @@ public enum class SetupStepStage(public val displayName: String) {
 /**
  * Execution status for an individual step or the overall setup pipeline.
  */
-public enum class StepStatus {
+enum class StepStatus {
     PENDING,
     RUNNING,
     SUCCESS,
@@ -38,7 +38,7 @@ public enum class StepStatus {
 /**
  * Execution environment scope of a toolchain component.
  */
-public enum class ToolScope(public val displayName: String) {
+enum class ToolScope(val displayName: String) {
     WSL2("WSL 2 Linux"),
     HOST("Windows Host"),
 }
@@ -46,7 +46,7 @@ public enum class ToolScope(public val displayName: String) {
 /**
  * Categorization of a toolchain binary by its functional role in the ROM engineering pipeline.
  */
-public enum class ToolCategory(public val displayName: String) {
+enum class ToolCategory(val displayName: String) {
     DYNAMIC_PARTITIONS("Dynamic Partitions"),
     FILESYSTEM_AND_IMAGES("Filesystem & Images"),
     BOOT_AND_KERNEL("Boot & Kernel"),
@@ -58,7 +58,7 @@ public enum class ToolCategory(public val displayName: String) {
 /**
  * Categorization of a pre-flight doctor diagnostic check by the subsystem it verifies.
  */
-public enum class DiagnosticCategory(public val displayName: String) {
+enum class DiagnosticCategory(val displayName: String) {
     COMPILERS("Compilers"),
     LIBRARIES("Libraries"),
     RUNTIMES("Runtimes"),
@@ -73,7 +73,7 @@ public enum class DiagnosticCategory(public val displayName: String) {
 /**
  * Individual tool component item modeled after Android Studio SDK Tools & JetBrains Toolchains.
  */
-public data class ToolComponentItem(
+data class ToolComponentItem(
     val id: String,
     val name: String,
     val category: ToolCategory,
@@ -91,7 +91,7 @@ public data class ToolComponentItem(
 /**
  * Individual pre-flight diagnostic item mirroring the system doctor.
  */
-public data class DiagnosticCheckItem(
+data class DiagnosticCheckItem(
     val id: String,
     val title: String,
     val status: StepStatus = StepStatus.PENDING,
@@ -105,7 +105,7 @@ public data class DiagnosticCheckItem(
 /**
  * Provenance of a setup step's result: restored from persistent history or measured live in this process.
  */
-public enum class StepProvenance {
+enum class StepProvenance {
     RESTORED,
     LIVE,
 }
@@ -113,7 +113,7 @@ public enum class StepProvenance {
 /**
  * Detail metadata for a specific setup step.
  */
-public data class SetupStepDetail(
+data class SetupStepDetail(
     val stage: SetupStepStage,
     val title: String,
     val description: String,
@@ -131,7 +131,7 @@ public data class SetupStepDetail(
 /**
  * Immutable reactive snapshot of the environment and toolchain setup status.
  */
-public data class ToolchainSetupState(
+data class ToolchainSetupState(
     val steps: List<SetupStepDetail> = defaultSteps(),
     val diagnostics: List<DiagnosticCheckItem> = defaultDiagnostics(),
     val isAvbKeyProvisioned: Boolean = false,
@@ -219,8 +219,8 @@ public data class ToolchainSetupState(
             return ((passing * 100 + warnings * 60) / total).coerceIn(0, 100)
         }
 
-    public companion object {
-        public fun defaultSteps(): List<SetupStepDetail> = listOf(
+    companion object {
+        fun defaultSteps(): List<SetupStepDetail> = listOf(
             SetupStepDetail(
                 stage = SetupStepStage.WSL_DETECTION,
                 title = "Ubuntu (WSL)",
@@ -243,7 +243,7 @@ public data class ToolchainSetupState(
             ),
         )
 
-        public fun defaultDiagnostics(): List<DiagnosticCheckItem> = listOf(
+        fun defaultDiagnostics(): List<DiagnosticCheckItem> = listOf(
             DiagnosticCheckItem(
                 id = "host_compilers",
                 title = "Host Compilers & Build Engine",
@@ -337,7 +337,7 @@ public data class ToolchainSetupState(
             ),
         )
 
-        public fun defaultToolsMatrix(): List<ToolComponentItem> = listOf(
+        fun defaultToolsMatrix(): List<ToolComponentItem> = listOf(
             // Dynamic Partitions
             ToolComponentItem(
                 id = "lpmake",
@@ -635,22 +635,22 @@ public data class ToolchainSetupState(
  * - Single Responsibility Principle: coordinates environment checks and provisioning.
  * - Dependency Inversion Principle: UI layers depend on this abstraction, not concrete WSL runners.
  */
-public interface ToolchainProvisioningService {
+interface ToolchainProvisioningService {
     /** Reactive stream of setup state updates */
-    public val state: StateFlow<ToolchainSetupState>
+    val state: StateFlow<ToolchainSetupState>
 
     /** Verifies the environment using live probes and updates [state]. */
-    public suspend fun verifyEnvironment(): ToolchainSetupState
+    suspend fun verifyEnvironment(): ToolchainSetupState
 
     /** Probes current status without mutating environment. Delegates to [verifyEnvironment]. */
-    public suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
+    suspend fun checkStatus(): ToolchainSetupState = verifyEnvironment()
 
     /**
      * Provisions or verifies the machine-local AVB 2.0 RSA-4096 signing key. This is an explicit,
      * user-initiated action only: no setup, retry, remediation or repair plan ever invokes it
      * (FR-003 "Setup never silently creates legacy machine keys").
      */
-    public suspend fun provisionAvbKey(): Boolean
+    suspend fun provisionAvbKey(): Boolean
 
     // ---- Plan-driven operation contract ----
     //
@@ -666,58 +666,58 @@ public interface ToolchainProvisioningService {
      * Prepares an immutable [SetupPlan] describing the changes a confirmed operation would make.
      * Preparing never mutates the environment.
      */
-    public suspend fun prepare(kind: SetupPlanKind, targetId: String? = null): SetupPlan
+    suspend fun prepare(kind: SetupPlanKind, targetId: String? = null): SetupPlan
 
     /**
      * Confirms and executes the operation described by [planId] and [revisionHash].
      * "Confirmation requires the displayed plan ID and unchanged revision hash."
      */
-    public suspend fun confirm(planId: String, revisionHash: String): SetupOutcome
+    suspend fun confirm(planId: String, revisionHash: String): SetupOutcome
 
     /**
      * Resumes an operation paused in [SetupOutcome.AwaitingUserAction] after external authorization.
      * Re-probes required packages and continues the remaining plan actions upon live verification.
      */
-    public suspend fun resume(planId: String): SetupOutcome
+    suspend fun resume(planId: String): SetupOutcome
 
     /** Observes the most recent typed outcome of the operation owner; null while nothing has run. */
-    public fun observe(): Flow<SetupOutcome?>
+    fun observe(): Flow<SetupOutcome?>
 
     /**
      * Observes the stream of log events from environment checks, mutations, and tool tests.
      * Bounded to at most 10,000 lines and 8 MiB payload (FR-011, FR-012).
      */
-    public fun observeActivity(): Flow<SetupLogEvent>
+    fun observeActivity(): Flow<SetupLogEvent>
 
     /**
      * Attempts to reconcile an in-flight or interrupted attempt against durable/server truth.
      * Never resubmits an ambiguous receipt.
      */
-    public suspend fun recover(attemptId: String? = null): SetupOutcome
+    suspend fun recover(attemptId: String? = null): SetupOutcome
 
     /** Explicitly cancels the active operation via the run cancel API; detach is not cancel. */
-    public suspend fun cancel(): SetupOutcome
+    suspend fun cancel(): SetupOutcome
 
     /**
      * Tests an individual tool binary; success only from an executed probe with an accepted exit code.
      * A test acquires the environment operation owner (Busy when another operation is active) but
      * needs no mutation preview.
      */
-    public suspend fun testTool(toolId: String): SetupOutcome
+    suspend fun testTool(toolId: String): SetupOutcome
 
     /**
      * Makes [distro] the environment for this session (the WSL row picker) and re-runs the check
      * against it. Only a distro classified usable by the last detection is accepted.
      */
-    public suspend fun selectDistro(distro: String): ToolchainSetupState =
+    suspend fun selectDistro(distro: String): ToolchainSetupState =
         throw UnsupportedOperationException("Distro selection is not supported by this implementation")
 
     /** Sets progress for a long-running step (T063, contracts/ui-states.md § 2-3). */
-    public fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {}
+    fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {}
 
     /** Writes [line] to the setup activity log, so decisions made outside a check are visible there. */
-    public fun log(line: String) {}
+    fun log(line: String) {}
 
     /** Retrieves the persisted attempt log text (T067, T068). Returns null if not found. */
-    public suspend fun getAttemptLog(attemptId: String? = null): String? = null
+    suspend fun getAttemptLog(attemptId: String? = null): String? = null
 }

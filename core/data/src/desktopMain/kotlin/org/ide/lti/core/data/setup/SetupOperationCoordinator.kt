@@ -12,9 +12,6 @@ package org.ide.lti.core.data.setup
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import org.ide.lti.core.domain.repository.setup.ToolchainSetupRepository
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.model.setup.AttemptStatus
@@ -32,18 +29,18 @@ import java.util.concurrent.ConcurrentHashMap
  * - "Fresh retry requires persisted authoritative terminal proof for every possibly submitted child;
  *    cancellation acknowledgement alone never unlocks mutation." (US3)
  */
-public class SetupOperationCoordinator(
+class SetupOperationCoordinator(
     private val repository: ToolchainSetupRepository? = null,
 ) {
-    public companion object {
+    companion object {
         /** Operation kinds admitted while the journal still holds an unreconciled attempt or a recovery block. */
-        public const val KIND_CHECK: String = "CHECK"
-        public const val KIND_RECOVERY: String = "RECOVERY"
-        public const val KIND_CACHE_RESET: String = "CACHE_RESET"
-        public const val KIND_RESUME: String = "RESUME"
+        const val KIND_CHECK: String = "CHECK"
+        const val KIND_RECOVERY: String = "RECOVERY"
+        const val KIND_CACHE_RESET: String = "CACHE_RESET"
+        const val KIND_RESUME: String = "RESUME"
     }
 
-    public data class OperationOwner(
+    data class OperationOwner(
         val operationId: String,
         val kind: String,
         val environmentKey: String,
@@ -53,19 +50,17 @@ public class SetupOperationCoordinator(
 
     private val activeOwners = ConcurrentHashMap<String, OperationOwner>()
     private val admissionLock = Any()
-    private val _outcomeFlow = MutableStateFlow<SetupOutcome?>(null)
-    public val outcomeFlow: Flow<SetupOutcome?> = _outcomeFlow.asStateFlow()
 
-    public fun isBusy(environmentKey: String): Boolean = activeOwners.containsKey(environmentKey)
+    fun isBusy(environmentKey: String): Boolean = activeOwners.containsKey(environmentKey)
 
-    public fun currentOwner(environmentKey: String): OperationOwner? = activeOwners[environmentKey]
+    fun currentOwner(environmentKey: String): OperationOwner? = activeOwners[environmentKey]
 
     /**
      * Attempts atomic admission for an operation on [environmentKey].
      * Admission decision is held only momentarily; lock is released before invoking [block].
      */
     @Suppress("ReturnCount") // admission has three distinct early exits: journal gate, busy owner, outcome
-    public suspend fun withAdmission(
+    suspend fun withAdmission(
         environmentKey: String,
         operationId: String,
         kind: String,
@@ -88,19 +83,14 @@ public class SetupOperationCoordinator(
         }
 
         return try {
-            val outcome = block()
-            _outcomeFlow.value = outcome
-            outcome
+            block()
         } catch (ce: CancellationException) {
-            _outcomeFlow.value = SetupOutcome.Cancelled
             throw ce
         } catch (t: Throwable) {
-            val failed = SetupOutcome.Failed(
+            SetupOutcome.Failed(
                 stage = null,
                 reason = t.message ?: "Operation failed with unexpected exception",
             )
-            _outcomeFlow.value = failed
-            failed
         } finally {
             synchronized(admissionLock) {
                 activeOwners.remove(environmentKey)
@@ -142,14 +132,12 @@ public class SetupOperationCoordinator(
         }
     }
 
-    public fun cancelActiveOperation(environmentKey: String): SetupOutcome {
+    fun cancelActiveOperation(environmentKey: String): SetupOutcome {
         val owner = synchronized(admissionLock) {
             activeOwners[environmentKey]
         } ?: return SetupOutcome.Failed(stage = null, reason = "No active operation to cancel.")
 
         owner.job?.cancel(CancellationException("Operation explicitly cancelled"))
-        val cancelled = SetupOutcome.Cancelled
-        _outcomeFlow.value = cancelled
-        return cancelled
+        return SetupOutcome.Cancelled
     }
 }

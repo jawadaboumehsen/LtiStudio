@@ -41,7 +41,7 @@ import org.ide.lti.core.domain.plugin.AuthorTaskResult
  * Truthfully reflects AuthorTaskResult, execution state, and selected task.
  */
 @Composable
-public fun PluginPipelineFlow(
+fun PluginPipelineFlow(
     taskResult: AuthorTaskResult? = null,
     isRunningTask: Boolean = false,
     selectedTask: String = "",

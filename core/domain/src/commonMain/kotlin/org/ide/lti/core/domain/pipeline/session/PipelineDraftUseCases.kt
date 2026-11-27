@@ -23,102 +23,101 @@ import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
-public class ObservePipelineDraftSessionUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<PipelineDraftSession> = repository.observeSession(workspaceId)
+class ObservePipelineDraftSessionUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<PipelineDraftSession> = repository.observeSession(workspaceId)
 }
 
-public class SavePipelineDraftUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, expectedRevision: Long): ConfigurationSnapshot =
+class SavePipelineDraftUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, expectedRevision: Long): ConfigurationSnapshot =
         repository.save(workspaceId, expectedRevision)
 }
 
-public class ValidatePipelineDraftUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): ValidationReport = repository.validate(workspaceId)
+class ValidatePipelineDraftUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): ValidationReport = repository.validate(workspaceId)
 }
 
-public class DiscardPipelineDraftChangesUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String): PipelineDraftSession =
-        repository.discardChanges(workspaceId)
+class DiscardPipelineDraftChangesUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String): PipelineDraftSession = repository.discardChanges(workspaceId)
 }
 
 // ---- Per-Stage Configuration Use Cases ----
 
-public class ObserveAcquisitionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<AcquisitionSettings> =
+class ObserveAcquisitionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<AcquisitionSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.acquisition }.distinctUntilChanged()
 }
 
-public class UpdateAcquisitionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: AcquisitionSettings): PipelineDraftSession =
+class UpdateAcquisitionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: AcquisitionSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(acquisition = settings) }
 }
 
-public class ObserveExtractionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<ExtractionSettings> =
+class ObserveExtractionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<ExtractionSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.extraction }.distinctUntilChanged()
 }
 
-public class UpdateExtractionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: ExtractionSettings): PipelineDraftSession =
+class UpdateExtractionConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: ExtractionSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(extraction = settings) }
 }
 
-public class ObserveAssemblyConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<AssemblySettings> =
+class ObserveAssemblyConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<AssemblySettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.assembly }.distinctUntilChanged()
 }
 
-public class UpdateAssemblyConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: AssemblySettings): PipelineDraftSession =
+class UpdateAssemblyConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: AssemblySettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(assembly = settings) }
 }
 
-public class ObserveDebloatConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<DebloatSettings> =
+class ObserveDebloatConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<DebloatSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.debloat }.distinctUntilChanged()
 }
 
-public class UpdateDebloatConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: DebloatSettings): PipelineDraftSession =
+class UpdateDebloatConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: DebloatSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(debloat = settings) }
 }
 
-public class ObserveCustomizationConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<CustomizationSettings> =
+class ObserveCustomizationConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<CustomizationSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.customization }.distinctUntilChanged()
 }
 
-public class UpdateCustomizationConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: CustomizationSettings): PipelineDraftSession =
+class UpdateCustomizationConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: CustomizationSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(customization = settings) }
 }
 
-public class ObserveBuildConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<BuildSettings> =
+class ObserveBuildConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<BuildSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.build }.distinctUntilChanged()
 }
 
-public class UpdateBuildConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: BuildSettings): PipelineDraftSession =
+class UpdateBuildConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: BuildSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(build = settings) }
 }
 
-public class ObserveReleaseConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<ReleaseSettings> =
+class ObserveReleaseConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<ReleaseSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.release }.distinctUntilChanged()
 }
 
-public class UpdateReleaseConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: ReleaseSettings): PipelineDraftSession =
+class UpdateReleaseConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: ReleaseSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(release = settings) }
 }
 
-public class ObservePublishConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public operator fun invoke(workspaceId: String): Flow<PublishSettings> =
+class ObservePublishConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    operator fun invoke(workspaceId: String): Flow<PublishSettings> =
         repository.observeSession(workspaceId).map { it.workingSnapshot.publish }.distinctUntilChanged()
 }
 
-public class UpdatePublishConfigUseCase(private val repository: PipelineDraftSessionRepository) {
-    public suspend operator fun invoke(workspaceId: String, settings: PublishSettings): PipelineDraftSession =
+class UpdatePublishConfigUseCase(private val repository: PipelineDraftSessionRepository) {
+    suspend operator fun invoke(workspaceId: String, settings: PublishSettings): PipelineDraftSession =
         repository.updateWorkingSnapshot(workspaceId) { it.copy(publish = settings) }
 }

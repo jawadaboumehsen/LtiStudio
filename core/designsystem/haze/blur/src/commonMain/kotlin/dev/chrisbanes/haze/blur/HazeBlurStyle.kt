@@ -32,7 +32,7 @@ import dev.chrisbanes.haze.Poko
  * Resolution applies [HazeBlurDefaults.style], this Style, and the modifier's explicit Style in
  * order. Later writes replace earlier writes.
  */
-public val LocalHazeBlurStyle: ProvidableCompositionLocal<HazeBlurStyle> =
+val LocalHazeBlurStyle: ProvidableCompositionLocal<HazeBlurStyle> =
     compositionLocalOf { HazeBlurStyle }
 
 /**
@@ -51,12 +51,12 @@ public val LocalHazeBlurStyle: ProvidableCompositionLocal<HazeBlurStyle> =
  * the block runs.
  */
 @Immutable
-public sealed interface HazeBlurStyle {
+sealed interface HazeBlurStyle {
     /** Returns a Style that applies [other] after this Style. */
-    public fun then(other: HazeBlurStyle): HazeBlurStyle = combineHazeBlurStyles(this, other)
+    fun then(other: HazeBlurStyle): HazeBlurStyle = combineHazeBlurStyles(this, other)
 
     /** Returns a Style that runs [block] after this Style. */
-    public fun then(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
+    fun then(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
         then(HazeBlurStyle(block))
 
     /** The empty Blur Style, which performs no writes. */
@@ -107,7 +107,7 @@ private class CombinedHazeBlurStyle(
  * `remember` or hoist a Style rather than constructing one in each composition. Invalid values throw
  * [IllegalArgumentException] when [block] runs.
  */
-public fun HazeBlurStyle(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
+fun HazeBlurStyle(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
     LeafHazeBlurStyle(inputs = null, block = block)
 
 /**
@@ -116,7 +116,7 @@ public fun HazeBlurStyle(block: HazeBlurStyleScope.() -> Unit): HazeBlurStyle =
  * itself. Otherwise behaves like [HazeBlurStyle].
  */
 @InternalHazeApi
-public fun valueBackedHazeBlurStyle(
+fun valueBackedHazeBlurStyle(
     vararg inputs: Any?,
     block: HazeBlurStyleScope.() -> Unit,
 ): HazeBlurStyle = LeafHazeBlurStyle(inputs.toList(), block)
@@ -147,27 +147,27 @@ internal fun HazeBlurStyle.replay(scope: HazeBlurStyleScope) {
  * [IllegalArgumentException], except that [blurRadius], [noiseFactor] and [alpha] are clamped into
  * their valid ranges, so animation overshoot never throws.
  */
-public sealed interface HazeBlurStyleScope {
+sealed interface HazeBlurStyleScope {
     /** Enables or disables the blur pass. */
-    public fun blurEnabled(enabled: Boolean)
+    fun blurEnabled(enabled: Boolean)
 
     /** Sets the blur [radius]. A negative radius, such as animation overshoot, is treated as zero. */
-    public fun blurRadius(radius: Dp)
+    fun blurRadius(radius: Dp)
 
     /** Sets the noise opacity, coerced to the range `0f..1f`. */
-    public fun noiseFactor(factor: Float)
+    fun noiseFactor(factor: Float)
 
     /** Sets the background color composited behind the blurred input. */
-    public fun backgroundColor(color: Color)
+    fun backgroundColor(color: Color)
 
     /** Replaces the ordered color effects applied to the blurred input. */
-    public fun colorEffects(effects: List<HazeColorEffect>)
+    fun colorEffects(effects: List<HazeColorEffect>)
 
     /** Sets the effect used when blur rendering is unavailable. */
-    public fun fallbackColorEffect(effect: HazeColorEffect?)
+    fun fallbackColorEffect(effect: HazeColorEffect?)
 
     /** Sets the overall effect opacity, coerced to the range `0f..1f`. */
-    public fun alpha(alpha: Float)
+    fun alpha(alpha: Float)
 
     /**
      * Sets the optional alpha [mask] applied to the complete effect.
@@ -175,17 +175,17 @@ public sealed interface HazeBlurStyleScope {
      * When [progressive] is also set, the mask is applied after the progressive intensity, and the
      * two compose: fully transparent mask regions show no effect.
      */
-    public fun mask(mask: Brush?)
+    fun mask(mask: Brush?)
 
     /**
      * Sets the optional progressive effect intensity.
      *
      * It can be combined with [mask], which then fades the whole progressive result.
      */
-    public fun progressive(progressive: HazeProgressive?)
+    fun progressive(progressive: HazeProgressive?)
 
     /** Sets how content outside the input bounds contributes to the blur. */
-    public fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment)
+    fun blurredEdgeTreatment(treatment: BlurredEdgeTreatment)
 }
 
 @Poko
@@ -287,13 +287,13 @@ internal fun resolveHazeBlurStyle(
  * Create effects with [colorFilter] or [tint].
  */
 @Stable
-public sealed interface HazeColorEffect {
+sealed interface HazeColorEffect {
     /** Factories for [HazeColorEffect] values. */
     public companion object {
         /**
          * Creates a color filter effect.
          */
-        public fun colorFilter(
+        fun colorFilter(
             colorFilter: androidx.compose.ui.graphics.ColorFilter,
             blendMode: BlendMode = BlendMode.SrcOver,
         ): HazeColorEffect = ColorFilterHazeColorEffect(colorFilter, blendMode)
@@ -301,7 +301,7 @@ public sealed interface HazeColorEffect {
         /**
          * Creates a color-based tint effect.
          */
-        public fun tint(
+        fun tint(
             color: Color,
             blendMode: BlendMode = BlendMode.SrcOver,
         ): HazeColorEffect {
@@ -312,7 +312,7 @@ public sealed interface HazeColorEffect {
         /**
          * Creates a brush-based tint effect.
          */
-        public fun tint(
+        fun tint(
             brush: Brush,
             blendMode: BlendMode = BlendMode.SrcOver,
         ): HazeColorEffect = TintBrushHazeColorEffect(brush, blendMode)

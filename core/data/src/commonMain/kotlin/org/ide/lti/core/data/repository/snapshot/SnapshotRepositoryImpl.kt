@@ -27,7 +27,7 @@ import org.ide.lti.core.model.workspace.Workspace
  * (written on every save). When the app does not have it (a new install, or the app store lost it), it is read
  * back from the folder of the workspace that points at it.
  */
-public class SnapshotRepositoryImpl(
+class SnapshotRepositoryImpl(
     private val dataSource: SnapshotPreferencesDataSource,
     private val workspaces: WorkspaceRepository? = null,
     private val folders: PipelineExecutionPort? = null,

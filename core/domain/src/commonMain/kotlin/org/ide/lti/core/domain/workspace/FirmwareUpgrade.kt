@@ -15,10 +15,10 @@ import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 /** One line of the upgrade report; [problem] lines need a decision before building. */
-public data class UpgradeLine(val text: String, val problem: Boolean = false)
+data class UpgradeLine(val text: String, val problem: Boolean = false)
 
 /** A titled part of the upgrade report. */
-public data class UpgradeSection(val title: String, val lines: List<UpgradeLine>)
+data class UpgradeSection(val title: String, val lines: List<UpgradeLine>)
 
 /**
  * The firmware upgrade assistant: before the settings of [from] (a workspace of the same phone on its old firmware)
@@ -26,13 +26,13 @@ public data class UpgradeSection(val title: String, val lines: List<UpgradeLine>
  * fits the new one: the firmware identity, the partition images, each debloat pick, each mod operation (against
  * the new assembled tree) and what stays behind. Reads both workspaces; writes nothing.
  */
-public class FirmwareUpgrade(
+class FirmwareUpgrade(
     private val runner: WorkbenchRunner,
     private val settings: WorkspaceSettingsStore,
     private val preflight: Preflight,
 ) {
     /** The report for taking the settings of workspace [from] into workspace [to]. */
-    public suspend fun compare(from: String, to: String): List<UpgradeSection> {
+    suspend fun compare(from: String, to: String): List<UpgradeSection> {
         val old = checkNotNull(settings.current(from)) { "The old workspace has no settings" }
         val mine = checkNotNull(settings.current(to)) { "This workspace has no configuration yet" }
         val picks = old.debloat.removeSelectors

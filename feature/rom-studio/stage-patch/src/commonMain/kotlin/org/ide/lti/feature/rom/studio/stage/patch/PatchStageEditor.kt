@@ -22,7 +22,7 @@ import org.ide.lti.feature.rom.studio.api.StageEditorContext
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-public class PatchStageEditor : StageEditor {
+class PatchStageEditor : StageEditor {
     override val stageId: StageId = StageId.MODULE_APPLICATION
     override val descriptor: StageDescriptor = CanonicalStageDescriptors.PATCH
 

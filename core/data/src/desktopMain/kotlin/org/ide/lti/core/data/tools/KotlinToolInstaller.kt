@@ -47,6 +47,7 @@ import java.net.URI
 import java.nio.channels.ClosedChannelException
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 
 internal interface ToolInstallHost {
     val catalog: ToolGroupCatalog
@@ -403,7 +404,7 @@ internal class KotlinToolInstaller(private val host: ToolInstallHost) {
                     "Git preparation failed (exit $exitCode); attempt $attempt of $GIT_PREP_ATTEMPTS...",
                 ),
             )
-            delay(GIT_RETRY_DELAY_MS)
+            delay(GIT_RETRY_DELAY_MS.milliseconds)
         }
     }
 

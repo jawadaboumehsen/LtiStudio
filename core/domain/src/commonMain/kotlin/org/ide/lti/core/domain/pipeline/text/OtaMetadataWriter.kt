@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.domain.pipeline.text
 
-public object OtaMetadataWriter {
+object OtaMetadataWriter {
 
-    public data class OtaMetadataParams(
+    data class OtaMetadataParams(
         val postBuild: String,
         val postBuildIncremental: String,
         val postSdkLevel: String = "35",
@@ -21,9 +21,9 @@ public object OtaMetadataWriter {
     )
 
     /** Width the A/B package's property-file offsets are padded to, so filling them in keeps the zip's layout. */
-    public const val PROPERTY_FILES_WIDTH: Int = 384
+    const val PROPERTY_FILES_WIDTH: Int = 384
 
-    public fun generate(params: OtaMetadataParams): String = buildString {
+    fun generate(params: OtaMetadataParams): String = buildString {
         appendLine("ota-type=BLOCK")
         appendLine("post-build=${params.postBuild}")
         appendLine("post-build-incremental=${params.postBuildIncremental}")
@@ -37,7 +37,7 @@ public object OtaMetadataWriter {
      * The A/B (payload) package's metadata, keys sorted as AOSP writes them. The two property-file lists are blank
      * here: they hold the members' offsets in the signed zip, which `AbOtaPackage.SCRIPT props` fills in.
      */
-    public fun generateAb(params: OtaMetadataParams): String {
+    fun generateAb(params: OtaMetadataParams): String {
         val blank = " ".repeat(PROPERTY_FILES_WIDTH)
         return buildString {
             appendLine("ota-property-files=$blank")

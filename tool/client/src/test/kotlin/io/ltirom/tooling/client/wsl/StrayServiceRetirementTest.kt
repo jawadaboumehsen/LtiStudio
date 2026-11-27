@@ -54,7 +54,7 @@ class StrayServiceRetirementTest {
     }
 
     /** 71719 has an active run (refuses); 12946 is too old for the shutdown endpoint and idle. */
-    private class FakeProber : DaemonHealthProber(null) {
+    private class FakeProbe : DaemonHealthProbe(null) {
         val shutdownAsked = mutableListOf<Long>()
         override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long) = true
         override suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo = WslServerInfo(
@@ -76,12 +76,12 @@ class StrayServiceRetirementTest {
     fun `adopting a service retires the others, never the one in use or a busy one`() = runTest {
         val current = ServerConnectionDescriptor("172.30.0.1", 43559, "tokA", 76598L, "Ubuntu")
         val cli = FakeCli(ps, ss)
-        val prober = FakeProber()
+        val prober = FakeProbe()
         val manager = WslDaemonManager(
             config = WslDaemonConfig(distroName = "Ubuntu"),
             cli = cli,
             stateStore = StateStore(current),
-            customProber = prober,
+            customProbe = prober,
         )
 
         manager.ensureStarted("Ubuntu")
@@ -93,14 +93,14 @@ class StrayServiceRetirementTest {
     @Test
     fun `a service that is alive but not answering is kept, not replaced by a second one`() = runTest {
         val current = ServerConnectionDescriptor("172.30.0.1", 43559, "tokA", 76598L, "Ubuntu")
-        val silent = object : DaemonHealthProber(null) {
+        val silent = object : DaemonHealthProbe(null) {
             override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long) = false
         }
         val manager = WslDaemonManager(
             config = WslDaemonConfig(distroName = "Ubuntu"),
             cli = FakeCli(ps, ss),
             stateStore = StateStore(current),
-            customProber = silent,
+            customProbe = silent,
         )
 
         // Launching would fail here (no server binary in the fake), so returning proves nothing was launched.

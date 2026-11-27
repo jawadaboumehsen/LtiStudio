@@ -61,7 +61,7 @@ import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-public fun RunPanel(
+fun RunPanel(
     viewModel: BuildRunViewModel,
     historyViewModel: RunHistoryViewModel = koinViewModel(),
     profilesViewModel: ProfilesViewModel = koinViewModel(),
@@ -312,7 +312,7 @@ private fun ActiveRunContent(
 }
 
 @Composable
-public fun ActiveRunContent(
+fun ActiveRunContent(
     uiState: BuildRunUiState,
     onCancel: () -> Unit = {},
     onStart: () -> Unit = {},

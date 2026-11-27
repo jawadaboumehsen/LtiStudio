@@ -24,7 +24,7 @@ import org.ide.lti.core.model.plugin.FileMetadata
  * Key: `build.coverage`
  */
 @Serializable
-public data class CoverageResult(
+data class CoverageResult(
     val uncoveredFsConfig: List<String> = emptyList(),
     val uncoveredContexts: List<String> = emptyList(),
     /**
@@ -36,34 +36,34 @@ public data class CoverageResult(
     val isClean: Boolean
         get() = uncoveredFsConfig.isEmpty() && uncoveredContexts.isEmpty() && unbuildableNames.isEmpty()
 
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(result: CoverageResult): String = json.encodeToString(serializer(), result)
-        public fun decode(string: String): CoverageResult = json.decodeFromString(serializer(), string)
+        fun encode(result: CoverageResult): String = json.encodeToString(serializer(), result)
+        fun decode(string: String): CoverageResult = json.decodeFromString(serializer(), string)
     }
 }
 
 /**
  * Host request for checking coverage across dynamic partitions.
  */
-public data class CoverageCheckRequest(val partitions: List<String>) : org.ide.lti.core.domain.pipeline.HostRequest
+data class CoverageCheckRequest(val partitions: List<String>) : org.ide.lti.core.domain.pipeline.HostRequest
 
 /**
  * Gate verifying that every file to be packaged has an entry in fs_config and file_contexts (FR-015).
  */
-public object CoverageGate {
+object CoverageGate {
     /** How a missing partition root is reported. */
-    public const val ROOT: String = "/"
+    const val ROOT: String = "/"
 
     /**
      * Checks if all paths in [paths] (relative to partition root or work tree) are covered in [fsConfigText] and [fileContextsText].
      */
-    public fun check(
+    fun check(
         partition: String,
         paths: Collection<String>,
         fsConfigText: String,
@@ -111,13 +111,13 @@ public object CoverageGate {
  * The user's own owner, mode and label for files without sidecar lines: the first rule
  * whose [pattern] matches the whole device path wins; files no rule matches get their folder's lines.
  */
-public data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, val mode: String, val label: String) {
-    public companion object {
+data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, val mode: String, val label: String) {
+    companion object {
         private const val FIELDS = 5
         private val MODE = Regex("[0-7]{3,4}")
 
         /** [text]'s rules; a line that is not `<regex> <uid> <gid> <mode> <label>` (or a bad regex) is an error. */
-        public fun parse(text: String): Pair<List<CoverageRule>, List<String>> {
+        fun parse(text: String): Pair<List<CoverageRule>, List<String>> {
             val rules = mutableListOf<CoverageRule>()
             val errors = mutableListOf<String>()
             text.lines().forEachIndexed { index, raw ->
@@ -137,7 +137,7 @@ public data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, v
             return rules to errors
         }
 
-        public fun match(rules: List<CoverageRule>, devicePath: String): CoverageRule? =
+        fun match(rules: List<CoverageRule>, devicePath: String): CoverageRule? =
             rules.firstOrNull { it.pattern.matches(devicePath) }
     }
 }
@@ -145,11 +145,11 @@ public data class CoverageRule(val pattern: Regex, val uid: Int, val gid: Int, v
 /**
  * Proposes and applies missing coverage entries through [SidecarEditor] (FR-016).
  */
-public object CoverageFix {
+object CoverageFix {
     /**
      * Finds the nearest covered parent label in [fileContextsText] for [path].
      */
-    public fun findNearestLabel(fileContextsText: String, partition: String, path: String): String {
+    fun findNearestLabel(fileContextsText: String, partition: String, path: String): String {
         val lines = fileContextsText.lineSequence()
             .filter { it.isNotBlank() && !it.startsWith("#") }
             .map { line ->
@@ -170,7 +170,7 @@ public object CoverageFix {
         return ancestor ?: "u:object_r:system_file:s0"
     }
 
-    public fun fixFsConfig(
+    fun fixFsConfig(
         fsConfigText: String,
         partition: String,
         uncoveredPaths: Collection<String>,
@@ -195,7 +195,7 @@ public object CoverageFix {
         return current
     }
 
-    public fun fixFileContexts(
+    fun fixFileContexts(
         fileContextsText: String,
         partition: String,
         uncoveredPaths: Collection<String>,
@@ -224,7 +224,7 @@ public object CoverageFix {
     }
 
     /** Where an owner or label the build adds comes from. */
-    public enum class Source(public val said: String) {
+    enum class Source(val said: String) {
         YourRule("your coverage rule"),
         RomRules("the ROM's SELinux rules"),
         RomTable("the ROM's fs_config table"),
@@ -233,10 +233,10 @@ public object CoverageFix {
     }
 
     /** What the build gives a path with no line, and where each part comes from. */
-    public data class Preview(val owner: String, val ownerFrom: Source, val label: String, val labelFrom: Source)
+    data class Preview(val owner: String, val ownerFrom: Source, val label: String, val labelFrom: Source)
 
     /** The owner (`uid gid mode`) and label the build would give [path] (inside `work/<partition>/`). */
-    public fun preview(
+    fun preview(
         fileContextsText: String,
         partition: String,
         path: String,

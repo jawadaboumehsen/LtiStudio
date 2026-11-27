@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.domain.pipeline.text
 
-public object SidecarNormalizer {
+object SidecarNormalizer {
 
-    public data class NormalizedSidecars(val fsConfigContent: String, val fileContextContent: String)
+    data class NormalizedSidecars(val fsConfigContent: String, val fileContextContent: String)
 
     /** Every character a file_contexts (PCRE) path regex gives a meaning to. */
     private val REGEX_METACHARS = Regex("""([.+*?^$()\[\]{}|\\])""")
@@ -21,14 +21,14 @@ public object SidecarNormalizer {
      * the file capabilities of the few files that carry them (`security.capability` in hex; files without one print
      * nothing). `getfattr -d -m` is not used: erofsfuse lists the attributes of only some inodes.
      */
-    public const val LABEL_DUMP: String =
+    const val LABEL_DUMP: String =
         "getfattr -R -h -n security.selinux --absolute-names \"\$1\" || exit; " +
             "getfattr -R -h -n security.capability -e hex --absolute-names \"\$1\" 2>/dev/null; exit 0"
 
     /**
      * Normalizes raw find/stat and getfattr output into canonical fs_config and file_context.
      */
-    public fun normalize(
+    fun normalize(
         partition: String,
         mountPrefix: String,
         rawStatLines: List<String>,
@@ -90,7 +90,7 @@ public object SidecarNormalizer {
      * partition is mounted at its name (`product/app/Foo`), and its root is looked up as `/` (mkfs.erofs
      * fails with "failed to find  in canned fs_config" when the root line is the partition name).
      */
-    public fun fsConfigPath(partition: String, path: String): String {
+    fun fsConfigPath(partition: String, path: String): String {
         val rel = path.trim('/')
         return when {
             partition == "system" -> rel
@@ -100,7 +100,7 @@ public object SidecarNormalizer {
     }
 
     /** The (unescaped) file_contexts path of [path]: its device path, `/system/app/Foo`, `/product/app/Foo`. */
-    public fun fileContextPath(partition: String, path: String): String {
+    fun fileContextPath(partition: String, path: String): String {
         val rel = path.trim('/')
         return when {
             partition == "system" -> "/$rel"
@@ -116,12 +116,7 @@ public object SidecarNormalizer {
      * `security.selinux="<label>"`). Entries are joined by path, so traversal order is irrelevant;
      * every file must carry a label (equal-count rule).
      */
-    public fun fromDumps(
-        partition: String,
-        mountPrefix: String,
-        statDump: String,
-        getfattrDump: String,
-    ): NormalizedSidecars {
+    fun fromDumps(partition: String, mountPrefix: String, statDump: String, getfattrDump: String): NormalizedSidecars {
         val labels = parseGetfattr(getfattrDump)
         val capabilities = parseCapabilities(getfattrDump)
         val statLines = mutableListOf<String>()
@@ -139,7 +134,7 @@ public object SidecarNormalizer {
         return normalize(partition, mountPrefix, statLines, selinuxLines)
     }
 
-    public fun parseGetfattr(dump: String): Map<String, String> {
+    fun parseGetfattr(dump: String): Map<String, String> {
         val result = mutableMapOf<String, String>()
         var currentPath: String? = null
         dump.lineSequence().forEach { raw ->
@@ -160,7 +155,7 @@ public object SidecarNormalizer {
      * permitted / inheritable words for capabilities 0-31 and, from revision 2, 32-63) as fs_config writes them:
      * the permitted mask, `0x1000001400` for NET_BIND_SERVICE, NET_ADMIN and BLOCK_SUSPEND.
      */
-    public fun parseCapabilities(dump: String): Map<String, String> {
+    fun parseCapabilities(dump: String): Map<String, String> {
         val result = mutableMapOf<String, String>()
         var currentPath: String? = null
         dump.lineSequence().map { it.trim() }.forEach { line ->
@@ -178,7 +173,7 @@ public object SidecarNormalizer {
     private fun capabilityMask(hex: String): Long? {
         val bytes = hex.chunked(2).mapNotNull { it.toIntOrNull(16) }
         if (bytes.size < CAP_V1_BYTES) return null
-        fun word(at: Int): Long = (0 until 4).fold(0L) { acc, i -> acc or (bytes[at + i].toLong() shl (8 * i)) }
+        fun word(at: Int): Long = (0..<4).fold(0L) { acc, i -> acc or (bytes[at + i].toLong() shl (8 * i)) }
         val high = if (bytes.size >= CAP_V2_BYTES) word(CAP_HIGH_PERMITTED) else 0L
         return (high shl 32) or word(CAP_LOW_PERMITTED)
     }
@@ -206,5 +201,5 @@ public object SidecarNormalizer {
     private const val CAP_LOW_PERMITTED = 4
     private const val CAP_HIGH_PERMITTED = 12
 
-    public fun escapeRegex(path: String): String = path.replace(REGEX_METACHARS, """\\$1""")
+    fun escapeRegex(path: String): String = path.replace(REGEX_METACHARS, """\\$1""")
 }

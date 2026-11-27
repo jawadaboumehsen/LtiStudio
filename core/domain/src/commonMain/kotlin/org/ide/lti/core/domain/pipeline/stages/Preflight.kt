@@ -35,15 +35,13 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.PackageType
 
 /** What fixes a finding: a settings change applied at once, or the screen where it is fixed. */
-public sealed interface PreflightFix {
-    public val label: String
+sealed interface PreflightFix {
+    val label: String
 
-    public class Setting(
-        override val label: String,
-        public val apply: (ConfigurationSnapshot) -> ConfigurationSnapshot,
-    ) : PreflightFix
+    class Setting(override val label: String, val apply: (ConfigurationSnapshot) -> ConfigurationSnapshot) :
+        PreflightFix
 
-    public data class Open(override val label: String, val stage: StageId, val objectId: String) : PreflightFix
+    data class Open(override val label: String, val stage: StageId, val objectId: String) : PreflightFix
 }
 
 internal fun acknowledgeVintfMismatch(id: String) = PreflightFix.Setting("Acknowledge this mismatch") {
@@ -51,14 +49,14 @@ internal fun acknowledgeVintfMismatch(id: String) = PreflightFix.Setting("Acknow
 }
 
 /** One thing that would stop the next build ([blocks]) or that it would only warn about, with its fix. */
-public data class PreflightFinding(
+data class PreflightFinding(
     val code: String,
     val message: String,
     val blocks: Boolean = true,
     val fix: PreflightFix? = null,
 )
 
-public data class PreflightReport(val findings: List<PreflightFinding>, val vintf: VintfAssessment)
+data class PreflightReport(val findings: List<PreflightFinding>, val vintf: VintfAssessment)
 
 /**
  * Will it build? Runs Build & Sign's own checks against the current settings and work/ without building: the
@@ -67,16 +65,16 @@ public data class PreflightReport(val findings: List<PreflightFinding>, val vint
  * the vendor compatibility (VINTF); plus the device configuration's errors. Only the steps that read are run;
  * nothing in the workspace is written.
  */
-public class Preflight(
+class Preflight(
     private val runner: WorkbenchRunner,
     private val settings: WorkspaceSettingsStore,
     private val host: HostStepPort? = null,
     /** The installed plugins, for the mod check: each enabled mod's file anchors against the assembled tree. */
     private val catalog: PluginCatalogPort? = null,
 ) {
-    public suspend fun check(workspaceId: String): List<PreflightFinding> = report(workspaceId).findings
+    suspend fun check(workspaceId: String): List<PreflightFinding> = report(workspaceId).findings
 
-    public suspend fun report(workspaceId: String): PreflightReport {
+    suspend fun report(workspaceId: String): PreflightReport {
         val snapshot = checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
         val validation = DeviceConfigReadiness.check(device, snapshot).filter { it.severity == Severity.ERROR }.map {
@@ -155,7 +153,7 @@ public class Preflight(
      * work tree as the build would meet it; with [with], those settings instead of the saved ones (the upgrade
      * assistant checks another workspace's mods here). Nothing is written.
      */
-    public suspend fun lab(workspaceId: String, with: ConfigurationSnapshot? = null, decode: Boolean = false): ModLab {
+    suspend fun lab(workspaceId: String, with: ConfigurationSnapshot? = null, decode: Boolean = false): ModLab {
         val plugins = checkNotNull(catalog) { "No plugins are installed in this app" }
         val snapshot = with ?: checkNotNull(settings.current(workspaceId)) { "The workspace has no configuration yet" }
         val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
@@ -183,7 +181,7 @@ public class Preflight(
     }
 
     /** Why a build stopped, from its failed stage's message (`<step>: CODE: text`), with the fix offered here. */
-    public fun diagnose(failure: String, snapshot: ConfigurationSnapshot): PreflightFinding? =
+    fun diagnose(failure: String, snapshot: ConfigurationSnapshot): PreflightFinding? =
         CODE.find(failure)?.let { finding(failure.substring(it.range.first), snapshot) }
 
     private fun finding(message: String, snapshot: ConfigurationSnapshot): PreflightFinding {

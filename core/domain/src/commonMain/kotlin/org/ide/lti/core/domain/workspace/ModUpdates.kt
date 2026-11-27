@@ -19,19 +19,19 @@ import org.ide.lti.core.domain.plugin.key
 import org.ide.lti.core.domain.plugin.toInstalledPackage
 
 /** An update waiting for review: what changes per version the workspaces use, and the workspaces it would move. */
-public data class PendingUpdate(val reviews: List<ModUpdateReview>, val moves: List<PluginWorkspaceUsage.PendingMove>)
+data class PendingUpdate(val reviews: List<ModUpdateReview>, val moves: List<PluginWorkspaceUsage.PendingMove>)
 
 /**
  * Reviewing a mod update before the workspaces move onto it: each version they use compared with the newest
  * ([ModUpdateReview]), and, per workspace, the mod lab run with its settings on the new versions (not saved).
  */
-public class ModUpdates(
+class ModUpdates(
     private val catalog: PluginCatalogPort,
     private val usage: PluginWorkspaceUsage,
     private val preflight: Preflight? = null,
 ) {
     /** What installing [newest] of [key] would change for the workspaces; null when no workspace would move. */
-    public suspend fun pending(installed: List<InstalledRecord>, key: String, newest: String): PendingUpdate? {
+    suspend fun pending(installed: List<InstalledRecord>, key: String, newest: String): PendingUpdate? {
         val moves = usage.pendingMoves(installed)
         val records = installed.filter { it.key == key }.associateBy { it.identity.version }
         val newRecord = records[newest]
@@ -57,7 +57,7 @@ public class ModUpdates(
      * The mod lab for [move]'s workspace on the new versions (file operations; APK/JAR edits are checked by the
      * lab's decode in Patches, or the build), as one line: what was checked, and each refusal.
      */
-    public suspend fun check(move: PluginWorkspaceUsage.PendingMove): String {
+    suspend fun check(move: PluginWorkspaceUsage.PendingMove): String {
         val lab = checkNotNull(preflight) { "This app cannot run the mod lab" }.lab(move.workspaceId, move.snapshot)
         val counts = lab.rows.groupingBy { it.status }.eachCount()
         val refused = lab.rows.filter { it.status == LabStatus.REFUSED }

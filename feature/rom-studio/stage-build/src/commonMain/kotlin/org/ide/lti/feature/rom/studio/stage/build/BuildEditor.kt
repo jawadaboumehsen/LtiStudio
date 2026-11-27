@@ -30,7 +30,7 @@ import org.ide.lti.core.model.workspace.BuildSettings
 /** Build & Sign: every pane edits a setting the stage uses, or shows what the last build produced. */
 @Suppress("LongParameterList")
 @Composable
-public fun BuildEditor(
+fun BuildEditor(
     settings: BuildSettings,
     target: TargetDevice,
     facts: BuildFacts,

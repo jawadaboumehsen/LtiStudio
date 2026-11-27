@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
  * Verified Boot descriptor flags (Android Verified Boot / avbtool vbmeta header).
  */
 @Serializable
-public enum class VbmetaFlag(public val bitMask: Int, public val flagName: String, public val description: String) {
+enum class VbmetaFlag(val bitMask: Int, val flagName: String, val description: String) {
     DISABLE_VERITY(1, "FLAG_DISABLE_VERITY", "Disables dm-verity tree checking for verified partitions"),
     DISABLE_VERIFICATION(2, "FLAG_DISABLE_VERIFICATION", "Disables hash and signature verification checks"),
     DO_NOT_USE_AB(4, "FLAG_DO_NOT_USE_AB", "Disables A/B slot switching logic"),
@@ -26,12 +26,12 @@ public enum class VbmetaFlag(public val bitMask: Int, public val flagName: Strin
  * checking, and whether a locked bootloader still boots it. The flags sit in vbmeta's signed header, so changing
  * them breaks the signature; a locked bootloader also refuses disabled verification outright (libavb).
  */
-public enum class VerifiedBootMode(
-    public val flags: Int,
-    public val title: String,
-    public val checks: String,
-    public val stops: String,
-    public val locked: String,
+enum class VerifiedBootMode(
+    val flags: Int,
+    val title: String,
+    val checks: String,
+    val stops: String,
+    val locked: String,
 ) {
     VERIFY_ALL(
         0,
@@ -66,13 +66,13 @@ public enum class VerifiedBootMode(
     ;
 
     /** [current] flags with this mode's two bits, the others (DO_NOT_USE_AB) kept. */
-    public fun applyTo(current: Int): Int = (current and MASK.inv()) or flags
+    fun applyTo(current: Int): Int = (current and MASK.inv()) or flags
 
-    public companion object {
+    companion object {
         private val MASK = VbmetaFlag.DISABLE_VERITY.bitMask or VbmetaFlag.DISABLE_VERIFICATION.bitMask
 
         /** The mode [flags] are in. */
-        public fun of(flags: Int): VerifiedBootMode = entries.first { it.flags == flags and MASK }
+        fun of(flags: Int): VerifiedBootMode = entries.first { it.flags == flags and MASK }
     }
 }
 
@@ -80,27 +80,19 @@ public enum class VerifiedBootMode(
  * A change in a single Verified Boot flag.
  */
 @Serializable
-public data class BootFlagChange(
-    public val flag: VbmetaFlag,
-    public val wasEnabled: Boolean,
-    public val isEnabled: Boolean,
-) {
-    public val isAdded: Boolean get() = !wasEnabled && isEnabled
-    public val isRemoved: Boolean get() = wasEnabled && !isEnabled
+data class BootFlagChange(val flag: VbmetaFlag, val wasEnabled: Boolean, val isEnabled: Boolean) {
+    val isAdded: Boolean get() = !wasEnabled && isEnabled
+    val isRemoved: Boolean get() = wasEnabled && !isEnabled
 }
 
 /**
  * Difference between old and new verified-boot descriptor flags (FR-023).
  */
 @Serializable
-public data class BootFlagDiff(
-    public val oldFlags: Int,
-    public val newFlags: Int,
-    public val changes: List<BootFlagChange> = emptyList(),
-) {
-    public val hasChanges: Boolean get() = oldFlags != newFlags
+data class BootFlagDiff(val oldFlags: Int, val newFlags: Int, val changes: List<BootFlagChange> = emptyList()) {
+    val hasChanges: Boolean get() = oldFlags != newFlags
 
-    public fun describe(): List<String> = buildList {
+    fun describe(): List<String> = buildList {
         for (change in changes) {
             when {
                 change.isAdded -> add("Enable ${change.flag.flagName} (${change.flag.description})")
@@ -116,9 +108,9 @@ public data class BootFlagDiff(
         }
     }
 
-    public companion object {
+    companion object {
 
-        public fun compute(oldFlags: Int, newFlags: Int): BootFlagDiff {
+        fun compute(oldFlags: Int, newFlags: Int): BootFlagDiff {
             val changes = VbmetaFlag.entries.mapNotNull { flag ->
                 val oldSet = (oldFlags and flag.bitMask) != 0
                 val newSet = (newFlags and flag.bitMask) != 0
@@ -131,6 +123,6 @@ public data class BootFlagDiff(
             return BootFlagDiff(oldFlags = oldFlags, newFlags = newFlags, changes = changes)
         }
 
-        public fun toggleFlag(currentFlags: Int, flag: VbmetaFlag): Int = currentFlags xor flag.bitMask
+        fun toggleFlag(currentFlags: Int, flag: VbmetaFlag): Int = currentFlags xor flag.bitMask
     }
 }

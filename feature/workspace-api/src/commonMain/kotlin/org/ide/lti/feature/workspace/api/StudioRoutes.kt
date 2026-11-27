@@ -16,65 +16,61 @@ import org.ide.lti.core.model.run.StageId
 /**
  * Parsed route arguments for the ROM Setup Studio route.
  */
-public data class StudioRouteArgs(val workspaceId: String, val stageId: StageId? = null, val objectId: String? = null)
+data class StudioRouteArgs(val workspaceId: String, val stageId: StageId? = null, val objectId: String? = null)
 
 /**
  * Parsed route arguments for the Run view route.
  */
-public data class RunRouteArgs(val workspaceId: String, val runId: String)
+data class RunRouteArgs(val workspaceId: String, val runId: String)
 
 /**
  * Parsed route arguments for the Plugins host route.
  */
-public data class PluginsRouteArgs(
-    val destination: String,
-    val workspaceId: String? = null,
-    val packageId: String? = null,
-)
+data class PluginsRouteArgs(val destination: String, val workspaceId: String? = null, val packageId: String? = null)
 
 /**
  * Pure route builders and argument parsers for host routes: Studio, Run, and Plugins.
  */
-public object StudioRoutes {
-    public const val STUDIO_BASE: String = "studio"
-    public const val RUN_BASE: String = "run"
-    public const val PLUGINS_BASE: String = "plugins"
+object StudioRoutes {
+    const val STUDIO_BASE: String = "studio"
+    const val RUN_BASE: String = "run"
+    const val PLUGINS_BASE: String = "plugins"
 
-    public const val WORKSPACE_ID_ARG: String = "workspaceId"
-    public const val STAGE_ID_ARG: String = "stageId"
-    public const val OBJECT_ID_ARG: String = "objectId"
-    public const val RUN_ID_ARG: String = "runId"
-    public const val PACKAGE_ID_ARG: String = "packageId"
-    public const val DESTINATION_ARG: String = "destination"
+    const val WORKSPACE_ID_ARG: String = "workspaceId"
+    const val STAGE_ID_ARG: String = "stageId"
+    const val OBJECT_ID_ARG: String = "objectId"
+    const val RUN_ID_ARG: String = "runId"
+    const val PACKAGE_ID_ARG: String = "packageId"
+    const val DESTINATION_ARG: String = "destination"
 
-    public const val STUDIO_PATTERN: String =
+    const val STUDIO_PATTERN: String =
         "$STUDIO_BASE/{$WORKSPACE_ID_ARG}?$STAGE_ID_ARG={$STAGE_ID_ARG}&$OBJECT_ID_ARG={$OBJECT_ID_ARG}"
-    public const val RUN_PATTERN: String = "$RUN_BASE/{$WORKSPACE_ID_ARG}/{$RUN_ID_ARG}"
-    public const val PLUGINS_PATTERN: String =
+    const val RUN_PATTERN: String = "$RUN_BASE/{$WORKSPACE_ID_ARG}/{$RUN_ID_ARG}"
+    const val PLUGINS_PATTERN: String =
         "$PLUGINS_BASE/{$DESTINATION_ARG}?$WORKSPACE_ID_ARG={$WORKSPACE_ID_ARG}&$PACKAGE_ID_ARG={$PACKAGE_ID_ARG}"
 
-    public fun studio(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
+    fun studio(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
         buildStudioRoute(workspaceId, stageId, objectId)
 
-    public fun studio(workspaceId: String, stageId: String?, objectId: String? = null): String =
+    fun studio(workspaceId: String, stageId: String?, objectId: String? = null): String =
         buildStudioRoute(workspaceId, stageId, objectId)
 
-    public fun run(workspaceId: String, runId: String): String = buildRunRoute(workspaceId, runId)
+    fun run(workspaceId: String, runId: String): String = buildRunRoute(workspaceId, runId)
 
-    public fun plugins(destination: String, workspaceId: String? = null, packageId: String? = null): String =
+    fun plugins(destination: String, workspaceId: String? = null, packageId: String? = null): String =
         buildPluginsRoute(destination = destination, workspaceId = workspaceId, packageId = packageId)
 
-    public fun parseStudio(route: String): StudioRouteArgs? = parseStudioRoute(route)
+    fun parseStudio(route: String): StudioRouteArgs? = parseStudioRoute(route)
 
-    public fun parseRun(route: String): RunRouteArgs? = parseRunRoute(route)
+    fun parseRun(route: String): RunRouteArgs? = parseRunRoute(route)
 
-    public fun parsePlugins(route: String): PluginsRouteArgs? = parsePluginsRoute(route)
+    fun parsePlugins(route: String): PluginsRouteArgs? = parsePluginsRoute(route)
 }
 
-public fun buildStudioRoute(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
+fun buildStudioRoute(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
     buildStudioRoute(workspaceId = workspaceId, stageId = stageId?.name, objectId = objectId)
 
-public fun buildStudioRoute(workspaceId: String, stageId: String?, objectId: String? = null): String {
+fun buildStudioRoute(workspaceId: String, stageId: String?, objectId: String? = null): String {
     require(workspaceId.isNotBlank()) { "workspaceId must not be blank" }
     return buildString {
         append(StudioRoutes.STUDIO_BASE)
@@ -94,7 +90,7 @@ public fun buildStudioRoute(workspaceId: String, stageId: String?, objectId: Str
     }
 }
 
-public fun parseStudioRoute(route: String): StudioRouteArgs? {
+fun parseStudioRoute(route: String): StudioRouteArgs? {
     val (pathPart, queryMap) = splitPathAndQuery(route.trim())
     val segments = pathPart.split('/').filter { it.isNotEmpty() }
     val workspaceId = requiredId(segments, 1, queryMap, StudioRoutes.WORKSPACE_ID_ARG)
@@ -107,13 +103,13 @@ public fun parseStudioRoute(route: String): StudioRouteArgs? {
     )
 }
 
-public fun buildRunRoute(workspaceId: String, runId: String): String {
+fun buildRunRoute(workspaceId: String, runId: String): String {
     require(workspaceId.isNotBlank()) { "workspaceId must not be blank" }
     require(runId.isNotBlank()) { "runId must not be blank" }
     return "${StudioRoutes.RUN_BASE}/$workspaceId/$runId"
 }
 
-public fun parseRunRoute(route: String): RunRouteArgs? {
+fun parseRunRoute(route: String): RunRouteArgs? {
     val (pathPart, queryMap) = splitPathAndQuery(route.trim())
     val segments = pathPart.split('/').filter { it.isNotEmpty() }
     val workspaceId = requiredId(segments, 1, queryMap, StudioRoutes.WORKSPACE_ID_ARG)
@@ -123,7 +119,7 @@ public fun parseRunRoute(route: String): RunRouteArgs? {
     return RunRouteArgs(workspaceId = workspaceId, runId = runId)
 }
 
-public fun buildPluginsRoute(destination: String, workspaceId: String? = null, packageId: String? = null): String {
+fun buildPluginsRoute(destination: String, workspaceId: String? = null, packageId: String? = null): String {
     require(destination.isNotBlank()) { "destination must not be blank" }
     return buildString {
         append(StudioRoutes.PLUGINS_BASE)
@@ -143,7 +139,7 @@ public fun buildPluginsRoute(destination: String, workspaceId: String? = null, p
     }
 }
 
-public fun parsePluginsRoute(route: String): PluginsRouteArgs? {
+fun parsePluginsRoute(route: String): PluginsRouteArgs? {
     val (pathPart, queryMap) = splitPathAndQuery(route.trim())
     val segments = pathPart.split('/').filter { it.isNotEmpty() }
     val destination = requiredId(segments, 1, queryMap, StudioRoutes.DESTINATION_ARG)
@@ -156,7 +152,7 @@ public fun parsePluginsRoute(route: String): PluginsRouteArgs? {
     )
 }
 
-public fun NavController.navigateToStudio(
+fun NavController.navigateToStudio(
     workspaceId: String,
     stageId: StageId? = null,
     objectId: String? = null,
@@ -165,11 +161,11 @@ public fun NavController.navigateToStudio(
     navigate(buildStudioRoute(workspaceId, stageId, objectId), navOptions)
 }
 
-public fun NavController.navigateToRun(workspaceId: String, runId: String, navOptions: NavOptions? = null) {
+fun NavController.navigateToRun(workspaceId: String, runId: String, navOptions: NavOptions? = null) {
     navigate(buildRunRoute(workspaceId, runId), navOptions)
 }
 
-public fun NavController.navigateToPlugins(
+fun NavController.navigateToPlugins(
     destination: String,
     workspaceId: String? = null,
     packageId: String? = null,

@@ -18,7 +18,7 @@ import java.security.MessageDigest
  * A file is only returned when `<id>.sha256` exists next to it and its first token matches the
  * file's actual digest; otherwise null, so the pipeline refuses to package a substitute.
  */
-public class ResourceVendoredFileAdapter(
+class ResourceVendoredFileAdapter(
     private val loader: (String) -> ByteArray? = { name ->
         ResourceVendoredFileAdapter::class.java.classLoader?.getResourceAsStream(name)?.use { it.readBytes() }
     },

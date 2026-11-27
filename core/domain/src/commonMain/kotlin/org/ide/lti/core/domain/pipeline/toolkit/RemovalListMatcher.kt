@@ -20,18 +20,18 @@ import kotlinx.serialization.json.JsonPrimitive
  * Scanned removable application or component in the ROM (FR-027).
  */
 @Serializable
-public data class RemovalItem(
-    public val id: String,
-    public val name: String,
-    public val path: String,
-    public val packageId: String? = null,
-    public val sizeBytes: Long = 0L,
-    public val isProtected: Boolean = false,
+data class RemovalItem(
+    val id: String,
+    val name: String,
+    val path: String,
+    val packageId: String? = null,
+    val sizeBytes: Long = 0L,
+    val isProtected: Boolean = false,
 )
 
 /** A community list's opinion of one package (Universal Android Debloater: `Recommended`, `Advanced`, …). */
 @Serializable
-public data class CommunityOpinion(public val rating: String, public val note: String? = null)
+data class CommunityOpinion(val rating: String, val note: String? = null)
 
 /**
  * Saved or preset list of removal entries (package IDs or relative paths). A community list also keeps its
@@ -39,19 +39,19 @@ public data class CommunityOpinion(public val rating: String, public val note: S
  * phone (its codename), offered to the next workspace of that phone.
  */
 @Serializable
-public data class RemovalList(
-    public val name: String,
-    public val entries: List<String> = emptyList(),
-    public val opinions: Map<String, CommunityOpinion> = emptyMap(),
-    public val device: String? = null,
+data class RemovalList(
+    val name: String,
+    val entries: List<String> = emptyList(),
+    val opinions: Map<String, CommunityOpinion> = emptyMap(),
+    val device: String? = null,
 ) {
-    public companion object {
+    companion object {
         private val json = Json {
             ignoreUnknownKeys = true
             prettyPrint = true
         }
 
-        public fun fromJson(text: String): RemovalList = json.decodeFromString(serializer(), text)
+        fun fromJson(text: String): RemovalList = json.decodeFromString(serializer(), text)
 
         /**
          * A list file, named [name] unless it names itself:
@@ -60,7 +60,7 @@ public data class RemovalList(
          *   array of `{"id": …, "removal": …}`): only the packages it rates `Recommended` (all, when it rates none);
          * - plain text, one package name or `partition:path` per line (blank lines and `#` comments skipped).
          */
-        public fun parse(name: String, text: String): RemovalList {
+        fun parse(name: String, text: String): RemovalList {
             val trimmed = text.trimStart()
             val isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
             val root = if (isJson) json.parseToJsonElement(text) else null
@@ -102,7 +102,7 @@ public data class RemovalList(
 
         private const val RECOMMENDED = "Recommended"
 
-        public fun toJson(list: RemovalList): String = json.encodeToString(serializer(), list)
+        fun toJson(list: RemovalList): String = json.encodeToString(serializer(), list)
     }
 }
 
@@ -110,20 +110,20 @@ public data class RemovalList(
  * Outcome of matching a removal list against available workspace items (FR-027).
  */
 @Serializable
-public data class RemovalMatchResult(
-    public val matched: List<RemovalItem> = emptyList(),
-    public val unknown: List<String> = emptyList(),
-    public val blockedProtected: List<RemovalItem> = emptyList(),
-    public val effectiveRemovals: List<RemovalItem> = emptyList(),
+data class RemovalMatchResult(
+    val matched: List<RemovalItem> = emptyList(),
+    val unknown: List<String> = emptyList(),
+    val blockedProtected: List<RemovalItem> = emptyList(),
+    val effectiveRemovals: List<RemovalItem> = emptyList(),
 )
 
 /**
  * Pure matcher for removal lists: matches entries, blocks protected components,
  * and identifies unknown entries to skip rather than silently dropping (FR-027).
  */
-public object RemovalListMatcher {
+object RemovalListMatcher {
 
-    public fun match(
+    fun match(
         list: RemovalList,
         availableItems: List<RemovalItem>,
         protectedIds: Set<String> = emptySet(),

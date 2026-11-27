@@ -9,7 +9,7 @@
  */
 package org.ide.lti.core.model.setup
 
-public data class SetupEnvironment(
+data class SetupEnvironment(
     val distro: String,
     val wslVersion: Int,
     val osId: String,

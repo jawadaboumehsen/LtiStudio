@@ -25,7 +25,7 @@ class WslDaemonUpdateTest {
         override fun isProcessAlive(distro: String, pid: Long): Boolean? = alive()
     }
 
-    private class FakeProber(
+    private class FakeProbe(
         var healthy: Boolean = true,
         var serverInfo: WslServerInfo? = null,
         /** The service accepts a non-forced shutdown (it refuses when a run is active). */
@@ -34,7 +34,7 @@ class WslDaemonUpdateTest {
         var exitsAfterShutdown: Boolean = true,
         /** What a declined shutdown looks like: an explicit refusal, or silence. */
         var refusal: ShutdownOutcome = ShutdownOutcome.NO_ANSWER,
-    ) : DaemonHealthProber(null) {
+    ) : DaemonHealthProbe(null) {
         val shutdownRequests = mutableListOf<Boolean>()
 
         /** The old service's process, as the state store would see it. */
@@ -93,7 +93,7 @@ class WslDaemonUpdateTest {
     fun `adopting daemon with serverVersion unequal to active and activeRuns zero restarts it`() = runTest {
         val existing = ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")
         val stateStore = FakeStateStore(existing)
-        val prober = FakeProber(
+        val prober = FakeProbe(
             healthy = true,
             serverInfo = WslServerInfo(
                 status = "UP",
@@ -115,7 +115,7 @@ class WslDaemonUpdateTest {
             ),
             stateStore = stateStore,
             launcher = launcher,
-            customProber = prober
+            customProbe = prober
         )
 
         val result = manager.ensureRunningVersion(
@@ -133,7 +133,7 @@ class WslDaemonUpdateTest {
     fun `adopting daemon with serverVersion unequal to active and activeRuns greater than zero does not restart and sets updateWaiting`() = runTest {
         val existing = ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")
         val stateStore = FakeStateStore(existing)
-        val prober = FakeProber(
+        val prober = FakeProbe(
             healthy = true,
             serverInfo = WslServerInfo(
                 status = "UP",
@@ -154,7 +154,7 @@ class WslDaemonUpdateTest {
             ),
             stateStore = stateStore,
             launcher = launcher,
-            customProber = prober
+            customProbe = prober
         )
 
         val result = manager.ensureRunningVersion(
@@ -173,7 +173,7 @@ class WslDaemonUpdateTest {
     fun `adopting daemon with equal version is adopted without restart`() = runTest {
         val existing = ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04")
         val stateStore = FakeStateStore(existing)
-        val prober = FakeProber(
+        val prober = FakeProbe(
             healthy = true,
             serverInfo = WslServerInfo(
                 status = "UP",
@@ -194,7 +194,7 @@ class WslDaemonUpdateTest {
             ),
             stateStore = stateStore,
             launcher = launcher,
-            customProber = prober
+            customProbe = prober
         )
 
         val result = manager.ensureRunningVersion(
@@ -221,7 +221,7 @@ class WslDaemonUpdateTest {
             serverVersion = "1.0.0",
             activeRuns = 2,
         )
-        val prober = FakeProber(healthy = true, serverInfo = oldBusy)
+        val prober = FakeProbe(healthy = true, serverInfo = oldBusy)
         val launcher = FakeProcessLauncher()
         val manager = WslDaemonManager(
             config = WslDaemonConfig(
@@ -230,7 +230,7 @@ class WslDaemonUpdateTest {
             ),
             stateStore = FakeStateStore(existing).also { it.alive = { prober.processAlive } },
             launcher = launcher,
-            customProber = prober,
+            customProbe = prober,
         )
         val env = SetupEnvironment("Ubuntu-24.04", 2, "ubuntu", "24.04", "testuser", "/home/testuser")
 
@@ -264,7 +264,7 @@ class WslDaemonUpdateTest {
         activeRuns = runs,
     )
 
-    private fun managerWith(prober: FakeProber, launcher: FakeProcessLauncher) = WslDaemonManager(
+    private fun managerWith(prober: FakeProbe, launcher: FakeProcessLauncher) = WslDaemonManager(
         config = WslDaemonConfig(
             distroName = "Ubuntu-24.04",
             serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
@@ -272,22 +272,22 @@ class WslDaemonUpdateTest {
         stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Ubuntu-24.04"))
             .also { it.alive = { prober.processAlive } },
         launcher = launcher,
-        customProber = prober,
+        customProbe = prober,
     )
 
-    private fun managerWithOwnedService(prober: FakeProber, launcher: FakeProcessLauncher) = WslDaemonManager(
+    private fun managerWithOwnedService(prober: FakeProbe, launcher: FakeProcessLauncher) = WslDaemonManager(
         config = WslDaemonConfig(
             distroName = "Ubuntu-24.04",
             serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
         ),
         stateStore = FakeStateStore(null),
         launcher = launcher,
-        customProber = prober,
+        customProbe = prober,
     )
 
     @Test
     fun `a forced shutdown the service refuses keeps the connection and the launcher it owns`() = runTest {
-        val prober = FakeProber(acceptShutdown = false, refusal = ShutdownOutcome.REFUSED)
+        val prober = FakeProbe(acceptShutdown = false, refusal = ShutdownOutcome.REFUSED)
         val launcher = FakeProcessLauncher()
         val manager = managerWithOwnedService(prober, launcher)
         manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = null)
@@ -301,7 +301,7 @@ class WslDaemonUpdateTest {
 
     @Test
     fun `a forced shutdown nobody answers still tears the owned service down`() = runTest {
-        val prober = FakeProber(acceptShutdown = false, refusal = ShutdownOutcome.NO_ANSWER)
+        val prober = FakeProbe(acceptShutdown = false, refusal = ShutdownOutcome.NO_ANSWER)
         val launcher = FakeProcessLauncher()
         val manager = managerWithOwnedService(prober, launcher)
         manager.ensureRunningVersion(distro = "Ubuntu-24.04", activeVersion = null)
@@ -315,7 +315,7 @@ class WslDaemonUpdateTest {
     @Test
     fun `a run that starts during the update makes the service refuse shutdown and nothing is killed`() = runTest {
         // Idle when we looked, but a run is admitted before the shutdown request lands: the service refuses.
-        val prober = FakeProber(serverInfo = oldIdleService(), acceptShutdown = false)
+        val prober = FakeProbe(serverInfo = oldIdleService(), acceptShutdown = false)
         val launcher = FakeProcessLauncher()
         val manager = managerWith(prober, launcher)
 
@@ -328,7 +328,7 @@ class WslDaemonUpdateTest {
 
     @Test
     fun `a failed health check after shutdown is not proof of exit`() = runTest {
-        val prober = FakeProber(serverInfo = oldIdleService(), acceptShutdown = true, exitsAfterShutdown = false)
+        val prober = FakeProbe(serverInfo = oldIdleService(), acceptShutdown = true, exitsAfterShutdown = false)
         val launcher = FakeProcessLauncher()
         val manager = managerWith(prober, launcher)
 
@@ -340,7 +340,7 @@ class WslDaemonUpdateTest {
 
     @Test
     fun `an old service whose exit cannot be established keeps the update waiting`() = runTest {
-        val prober = FakeProber(serverInfo = oldIdleService())
+        val prober = FakeProbe(serverInfo = oldIdleService())
         val launcher = FakeProcessLauncher()
         val manager = managerWith(prober, launcher)
         prober.processAlive = null
@@ -354,7 +354,7 @@ class WslDaemonUpdateTest {
 
     @Test
     fun `retiring a service in one distro never kills the process launched in another`() = runTest {
-        val prober = FakeProber(serverInfo = oldIdleService())
+        val prober = FakeProbe(serverInfo = oldIdleService())
         val launcher = FakeProcessLauncher()
         // Distro A has no service yet; distro B runs an old one this manager did not launch.
         val manager = WslDaemonManager(
@@ -362,7 +362,7 @@ class WslDaemonUpdateTest {
             stateStore = FakeStateStore(ServerConnectionDescriptor("127.0.0.1", 8080, "oldtoken", 100L, "Distro-B"))
                 .also { it.alive = { prober.processAlive } },
             launcher = launcher,
-            customProber = prober,
+            customProbe = prober,
         )
 
         manager.ensureRunningVersion(distro = "Distro-A", activeVersion = "2.0.0")

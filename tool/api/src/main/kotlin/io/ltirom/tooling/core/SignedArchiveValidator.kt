@@ -4,15 +4,15 @@ import java.io.File
 import java.nio.file.Path
 import java.util.jar.JarFile
 
-public data class SignApkInvocation(
+data class SignApkInvocation(
     val publicKey: File,
     val privateKey: File,
     val inputArchive: File,
     val outputArchive: File
 )
 
-public object SignedArchiveValidator {
-    public fun validateInvocation(invocation: SignApkInvocation) {
+object SignedArchiveValidator {
+    fun validateInvocation(invocation: SignApkInvocation) {
         requireRegular(invocation.publicKey, "public key")
         requireRegular(invocation.privateKey, "private key")
         requireRegular(invocation.inputArchive, "input archive")
@@ -24,7 +24,7 @@ public object SignedArchiveValidator {
      * This rejects unsigned archives and archives whose signer chain cannot be
      * validated by the current JVM trust implementation.
      */
-    public fun verifySignedArchive(archive: File) {
+    fun verifySignedArchive(archive: File) {
         requireRegular(archive, "signed archive")
         JarFile(archive, true).use { jar ->
             var signedEntries = 0

@@ -15,16 +15,16 @@ import org.ide.lti.core.model.run.StageId
  * Registry interface for resolving stage editors.
  * Implementation lives inside rom-studio:shell.
  */
-public interface StageEditorRegistry {
-    public fun editorFor(stageId: StageId): StageEditor?
-    public fun allEditors(): List<StageEditor>
+interface StageEditorRegistry {
+    fun editorFor(stageId: StageId): StageEditor?
+    fun allEditors(): List<StageEditor>
 }
 
-public fun StageEditorRegistry.descriptorFor(stageId: StageId): StageDescriptor? =
+fun StageEditorRegistry.descriptorFor(stageId: StageId): StageDescriptor? =
     editorFor(stageId)?.descriptor
 
-public fun StageEditorRegistry.allDescriptors(): List<StageDescriptor> =
+fun StageEditorRegistry.allDescriptors(): List<StageDescriptor> =
     allEditors().map { it.descriptor }
 
-public fun StageEditorRegistry.owningStage(subobjectId: StudioSubobjectId): StageDescriptor? =
+fun StageEditorRegistry.owningStage(subobjectId: StudioSubobjectId): StageDescriptor? =
     allDescriptors().firstOrNull { it.subobject(subobjectId) != null }

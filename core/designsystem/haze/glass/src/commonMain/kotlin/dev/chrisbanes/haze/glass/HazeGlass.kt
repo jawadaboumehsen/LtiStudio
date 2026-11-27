@@ -65,7 +65,7 @@ import dev.chrisbanes.haze.hazeEffect
  * member ungrouped. It is ignored outside a container.
  */
 @Stable
-public fun Modifier.hazeGlass(
+fun Modifier.hazeGlass(
     input: HazeInput,
     style: GlassStyle = GlassStyle,
     performanceMode: HazePerformanceMode? = null,

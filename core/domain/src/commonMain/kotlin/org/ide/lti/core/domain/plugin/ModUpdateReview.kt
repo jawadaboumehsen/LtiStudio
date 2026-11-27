@@ -20,7 +20,7 @@ import org.ide.lti.core.model.plugin.SettingDefinition
  * conflicts. Each section is a list of lines; an empty section did not change. Whether a workspace's selection still
  * checks with [to] is the mod lab's to say (it needs the workspace's tree).
  */
-public data class ModUpdateReview(
+data class ModUpdateReview(
     val key: String,
     val from: String,
     val to: String,
@@ -29,15 +29,15 @@ public data class ModUpdateReview(
     /** Nothing a review would show changed (a rebuild of the same mod, say). */
     val unchanged: Boolean get() = sections.values.all { it.isEmpty() }
 
-    public companion object {
-        public const val OPTIONS: String = "Options"
-        public const val FILES: String = "Files it edits"
-        public const val DEVICES: String = "Devices and firmwares"
-        public const val DEPENDENCIES: String = "Dependencies and conflicts"
+    companion object {
+        const val OPTIONS: String = "Options"
+        const val FILES: String = "Files it edits"
+        const val DEVICES: String = "Devices and firmwares"
+        const val DEPENDENCIES: String = "Dependencies and conflicts"
 
         /** [old] and [new] (null: that version's plan could not be read, said in its section). */
         @Suppress("LongParameterList")
-        public fun of(
+        fun of(
             key: String,
             from: String,
             to: String,

@@ -9,31 +9,31 @@
  */
 package org.ide.lti.core.model.setup
 
-public enum class Need {
+enum class Need {
     SERVICE,
     BUILD,
     RUNTIME,
 }
 
-public sealed interface RequirementCheck {
-    public data class Command(val name: String) : RequirementCheck
+sealed interface RequirementCheck {
+    data class Command(val name: String) : RequirementCheck
 
-    public data class Package(val name: String) : RequirementCheck
+    data class Package(val name: String) : RequirementCheck
 
-    public data class PythonImport(val modules: List<String>) : RequirementCheck
+    data class PythonImport(val modules: List<String>) : RequirementCheck
 }
 
-public sealed interface RequirementStatus {
-    public data object Present : RequirementStatus
+sealed interface RequirementStatus {
+    data object Present : RequirementStatus
 
-    public data object Missing : RequirementStatus
+    data object Missing : RequirementStatus
 
-    public data class Unavailable(val release: String) : RequirementStatus
+    data class Unavailable(val release: String) : RequirementStatus
 
-    public data class CheckFailed(val reason: String) : RequirementStatus
+    data class CheckFailed(val reason: String) : RequirementStatus
 }
 
-public data class SystemRequirement(
+data class SystemRequirement(
     val id: String,
     val check: RequirementCheck,
     val aptPackages: List<String>,
@@ -45,7 +45,7 @@ public data class SystemRequirement(
     }
 }
 
-public data class PrerequisiteReport(
+data class PrerequisiteReport(
     val environment: SetupEnvironment,
     val results: Map<String, RequirementStatus>,
     val missingPackages: List<String>,

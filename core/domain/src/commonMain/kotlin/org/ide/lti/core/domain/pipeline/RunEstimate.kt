@@ -18,7 +18,7 @@ import org.ide.lti.core.model.run.StageState
  * last [SAMPLES] real runs (not cache hits); the typical time is the sum of their medians, the range the sum of their
  * shortest and longest. A stage that never ran here is [unknown], not guessed.
  */
-public data class RunEstimate(
+data class RunEstimate(
     val typicalMs: Long,
     val shortestMs: Long,
     val longestMs: Long,
@@ -32,7 +32,7 @@ public data class RunEstimate(
     val diskBytes: Long? = null,
 ) {
     /** "Time: about 18 min (12-25 min), from 5+ earlier runs here; disk: about 3.2 GiB more, ...". */
-    public fun describe(): String {
+    fun describe(): String {
         val parts = mutableListOf<String>()
         if (samples > 0) {
             val range = if (shortestMs == longestMs) "" else " (${minutes(shortestMs)}-${minutes(longestMs)})"
@@ -46,8 +46,8 @@ public data class RunEstimate(
         return parts.joinToString("; ").replaceFirstChar { it.uppercase() } + "."
     }
 
-    public companion object {
-        public const val SAMPLES: Int = 5
+    companion object {
+        const val SAMPLES: Int = 5
 
         private fun minutes(ms: Long): String =
             if (ms < MINUTE_MS) "${ms / SECOND_MS} s" else "${(ms + MINUTE_MS / 2) / MINUTE_MS} min"
@@ -62,7 +62,7 @@ public data class RunEstimate(
         private const val MINUTE_MS = 60_000L
 
         /** Null when no stage runs (everything comes from cache). */
-        public fun of(preview: List<StagePreview>, history: List<BuildRun>): RunEstimate? {
+        fun of(preview: List<StagePreview>, history: List<BuildRun>): RunEstimate? {
             val runs = preview.filter { it.runsBecause != null }.map { it.stageId }
             if (runs.isEmpty()) return null
             val newestFirst = history.sortedByDescending { it.startedAt }

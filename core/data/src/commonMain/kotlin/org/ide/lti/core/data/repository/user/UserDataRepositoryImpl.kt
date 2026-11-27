@@ -20,7 +20,7 @@ import org.ide.lti.core.model.user.UserData
 /**
  * Thin [UserDataRepository] wrapper over [LtiPreferencesDataSource].
  */
-public class UserDataRepositoryImpl(
+class UserDataRepositoryImpl(
     private val preferencesDataSource: LtiPreferencesDataSource,
 ) : UserDataRepository {
     override val userData: Flow<UserData> = preferencesDataSource.userData

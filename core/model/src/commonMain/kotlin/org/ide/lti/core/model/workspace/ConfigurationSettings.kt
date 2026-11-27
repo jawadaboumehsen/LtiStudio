@@ -14,10 +14,10 @@ import org.ide.lti.core.model.target.TargetFirmware
 import org.ide.lti.core.model.target.TargetRegion
 
 @Serializable
-public enum class AcquisitionMode { DOWNLOAD, IMPORT_ARCHIVE }
+enum class AcquisitionMode { DOWNLOAD, IMPORT_ARCHIVE }
 
 @Serializable
-public data class AcquisitionSettings(
+data class AcquisitionSettings(
     val mode: AcquisitionMode = AcquisitionMode.DOWNLOAD,
     val region: TargetRegion,
     val firmware: TargetFirmware,
@@ -37,7 +37,7 @@ public data class AcquisitionSettings(
 }
 
 @Serializable
-public data class ExtractionSettings(
+data class ExtractionSettings(
     val adapter: String = "AUTO",
     val dynamicPartitions: List<String> = emptyList(),
     val bootPartitions: List<String> = emptyList(),
@@ -56,10 +56,10 @@ public data class ExtractionSettings(
  * fs_config and SELinux lines.
  */
 @Serializable
-public data class TreeEdit(val partition: String, val path: String, val renameTo: String? = null)
+data class TreeEdit(val partition: String, val path: String, val renameTo: String? = null)
 
 @Serializable
-public data class AssemblySettings(
+data class AssemblySettings(
     val includedPartitions: List<String> = emptyList(),
     val systemExtMode: String = "auto",
     val bootFooterPolicy: String = "erase",
@@ -91,7 +91,7 @@ public data class AssemblySettings(
 }
 
 @Serializable
-public data class DebloatSettings(
+data class DebloatSettings(
     val enabled: Boolean = false,
     /** App folders to remove, as `partition:path` (e.g. `system:system/app/Foo`), picked from the inventory. */
     val removeSelectors: List<String> = emptyList(),
@@ -99,22 +99,17 @@ public data class DebloatSettings(
 )
 
 @Serializable
-public data class PluginLockfile(
+data class PluginLockfile(
     val schemaVersion: Int = 1,
     val entries: List<PluginLockfileEntry> = emptyList(),
     val edges: List<String> = emptyList(),
 )
 
 @Serializable
-public data class PluginLockfileEntry(
-    val publisher: String,
-    val id: String,
-    val version: String,
-    val contentDigest: String,
-)
+data class PluginLockfileEntry(val publisher: String, val id: String, val version: String, val contentDigest: String)
 
 @Serializable
-public data class CustomizationSettings(
+data class CustomizationSettings(
     val lockfile: PluginLockfile = PluginLockfile(),
     val enabledPackages: List<String> = emptyList(),
     val settings: Map<String, Map<String, String>> = emptyMap(),
@@ -136,10 +131,10 @@ public data class CustomizationSettings(
  * <workspace dir>` from inside the work tree. Its text is part of the settings, so editing it re-runs the stage.
  */
 @Serializable
-public data class ProjectScript(val name: String, val content: String = "", val enabled: Boolean = true)
+data class ProjectScript(val name: String, val content: String = "", val enabled: Boolean = true)
 
 @Serializable
-public data class BuildSettings(
+data class BuildSettings(
     /** The filesystem dynamic partitions are built as (`erofs`, `ext4`, `f2fs`), unless [partitionFilesystem] says. */
     val filesystem: String = "erofs",
     val compression: String = "lz4hc,9",
@@ -195,18 +190,18 @@ public data class BuildSettings(
  * update_engine installs to the other slot (stock recovery, adb sideload, an updater app). [BOTH]: one of each.
  */
 @Serializable
-public enum class PackageType {
+enum class PackageType {
     FLASHABLE,
     AB_OTA,
     BOTH,
     ;
 
-    public val flashable: Boolean get() = this != AB_OTA
-    public val abOta: Boolean get() = this != FLASHABLE
+    val flashable: Boolean get() = this != AB_OTA
+    val abOta: Boolean get() = this != FLASHABLE
 }
 
 @Serializable
-public data class SigningPolicy(
+data class SigningPolicy(
     val signImages: Boolean = true,
     val signPackage: Boolean = true,
     val avbKeyRef: String = "keys/avb.pem",
@@ -214,7 +209,7 @@ public data class SigningPolicy(
 )
 
 @Serializable
-public data class ReleaseSettings(
+data class ReleaseSettings(
     val channel: String = "internal",
     val changelog: String = "",
     /** Where devices download a release from; empty until there is one: the manifest then lists no download. */
@@ -231,13 +226,13 @@ public data class ReleaseSettings(
 }
 
 @Serializable
-public enum class PublishProvider { NONE, GITHUB_RELEASE, LOCAL_EXPORT }
+enum class PublishProvider { NONE, GITHUB_RELEASE, LOCAL_EXPORT }
 
 @Serializable
-public enum class CollisionPolicy { FAIL, OVERWRITE, SKIP }
+enum class CollisionPolicy { FAIL, OVERWRITE, SKIP }
 
 @Serializable
-public data class PublishSettings(
+data class PublishSettings(
     val provider: PublishProvider = PublishProvider.NONE,
     val repository: String? = null,
     val sourceTag: String? = null,
@@ -254,4 +249,4 @@ public data class PublishSettings(
 
 /** An fs_mgr [flag] (`avb`, `fileencryption`, …) removed from every line of [mountPoint] in the work tree's fstabs. */
 @Serializable
-public data class FstabFlagRemoval(val mountPoint: String, val flag: String)
+data class FstabFlagRemoval(val mountPoint: String, val flag: String)

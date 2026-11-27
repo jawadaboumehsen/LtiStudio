@@ -46,7 +46,7 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 import kotlin.math.roundToInt
 
-public data class SizeAdvisorState(
+data class SizeAdvisorState(
     val partition: String? = null,
     val results: List<TrialResult> = emptyList(),
     /** The room [partition] has in the super group with the others as they are. */
@@ -56,15 +56,15 @@ public data class SizeAdvisorState(
 )
 
 /** Builds one partition a few ways and keeps the sizes and times (`SizeAdvisor`). */
-public class SizeAdvisorViewModel(
+class SizeAdvisorViewModel(
     private val workspaceId: String,
     private val advisor: SizeAdvisor? = null,
     private val boot: BootWorkbench? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SizeAdvisorState())
-    public val state: StateFlow<SizeAdvisorState> = _state.asStateFlow()
+    val state: StateFlow<SizeAdvisorState> = _state.asStateFlow()
 
-    public fun trial(p: String, settings: BuildSettings, room: Long?, decoders: List<String>) {
+    fun trial(p: String, settings: BuildSettings, room: Long?, decoders: List<String>) {
         val tools = advisor ?: return
         if (_state.value.busy) return
         _state.value = SizeAdvisorState(partition = p, room = room, busy = true)

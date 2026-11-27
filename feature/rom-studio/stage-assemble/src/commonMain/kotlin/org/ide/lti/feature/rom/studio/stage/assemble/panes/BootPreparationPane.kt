@@ -62,7 +62,7 @@ import org.ide.lti.feature.rom.studio.stage.assemble.BootPaneState
  * partition's override, vbmeta flags, root. Nothing here is shown as done until the job in WSL finished.
  */
 @Composable
-public fun BootPreparationPane(
+fun BootPreparationPane(
     settings: AssemblySettings,
     target: TargetDevice,
     state: BootPaneState,
@@ -104,7 +104,7 @@ public fun BootPreparationPane(
 
 /** The acknowledgement a boot action waits for (FR-035); shown by every pane that starts one (Mount table too). */
 @Composable
-public fun BootAckDialog(state: BootPaneState, actions: BootPaneActions) {
+fun BootAckDialog(state: BootPaneState, actions: BootPaneActions) {
     state.pendingAck?.let { feature ->
         AcknowledgementDialog(
             featureId = feature,

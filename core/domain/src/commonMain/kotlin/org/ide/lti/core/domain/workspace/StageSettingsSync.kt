@@ -29,32 +29,32 @@ import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.usecase.workspace.SaveConfigurationSnapshotUseCase
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import kotlin.time.Duration.Companion.milliseconds
 
 /** What a stage editor needs to load and save its part of the workspace configuration. */
-public interface WorkspaceSettingsStore {
-    public val pendingEdits: PendingWorkspaceEdits? get() = null
+interface WorkspaceSettingsStore {
+    val pendingEdits: PendingWorkspaceEdits? get() = null
 
-    public suspend fun flush(workspaceId: String): Result<Unit> =
-        pendingEdits?.flush(workspaceId) ?: Result.success(Unit)
+    suspend fun flush(workspaceId: String): Result<Unit> = pendingEdits?.flush(workspaceId) ?: Result.success(Unit)
 
-    public suspend fun current(workspaceId: String): ConfigurationSnapshot?
+    suspend fun current(workspaceId: String): ConfigurationSnapshot?
 
-    public suspend fun update(
+    suspend fun update(
         workspaceId: String,
         change: (ConfigurationSnapshot) -> ConfigurationSnapshot,
     ): Result<ConfigurationSnapshot>
 
-    public suspend fun device(workspaceId: String): TargetDevice?
+    suspend fun device(workspaceId: String): TargetDevice?
 
     /** The id of each workspace whose settings were just saved. */
-    public val changes: Flow<String> get() = emptyFlow()
+    val changes: Flow<String> get() = emptyFlow()
 
     /** The workspace's device now, then as it is saved (edited in the Target panel while an editor stays open). */
-    public fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = flow { emit(device(workspaceId)) }
+    fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = flow { emit(device(workspaceId)) }
 }
 
 /** The workspace's saved snapshot, changed through [SaveConfigurationSnapshotUseCase.update]. */
-public class SnapshotSettingsStore(
+class SnapshotSettingsStore(
     private val workspaces: WorkspaceRepository,
     private val snapshots: SnapshotRepository,
     private val save: SaveConfigurationSnapshotUseCase,
@@ -87,7 +87,11 @@ public class SnapshotSettingsStore(
 
     // An unreadable device (service down) is not an update: the editor keeps the device it has and reads again later.
     override fun deviceUpdates(workspaceId: String): Flow<TargetDevice?> = devices.observe(workspaceId)
-        .retryWhen { cause, _ -> (cause !is CancellationException).also { if (it) delay(DEVICE_RETRY_MS) } }
+        .retryWhen { cause, _ ->
+            (cause !is CancellationException).also { retry ->
+                if (retry) delay(DEVICE_RETRY_MS.milliseconds)
+            }
+        }
 
     private companion object {
         const val DEVICE_RETRY_MS = 5_000L
@@ -99,7 +103,7 @@ public class SnapshotSettingsStore(
  * snapshot when the editor opens, and saved back (only this group) shortly after each edit. Without a [store]
  * or a workspace id the settings stay local, as before.
  */
-public class StageSettingsSync<T>(
+class StageSettingsSync<T>(
     private val scope: CoroutineScope,
     private val workspaceId: String,
     private val store: WorkspaceSettingsStore?,
@@ -108,24 +112,24 @@ public class StageSettingsSync<T>(
     private val write: (ConfigurationSnapshot, T) -> ConfigurationSnapshot,
 ) {
     private val _settings = MutableStateFlow(initial)
-    public val settings: StateFlow<T> = _settings.asStateFlow()
+    val settings: StateFlow<T> = _settings.asStateFlow()
 
     private val _device = MutableStateFlow<TargetDevice?>(null)
 
     /** The workspace's own device, once loaded; null before or when it has none. */
-    public val device: StateFlow<TargetDevice?> = _device.asStateFlow()
+    val device: StateFlow<TargetDevice?> = _device.asStateFlow()
 
     private val _saveError = MutableStateFlow<String?>(null)
 
     /** Why the last save failed (for example a build is running), or null. */
-    public val saveError: StateFlow<String?> = _saveError.asStateFlow()
+    val saveError: StateFlow<String?> = _saveError.asStateFlow()
 
     private var pendingSave: Job? = null
     private val connected = store != null && workspaceId.isNotBlank()
     private val _loading = MutableStateFlow(connected)
 
     /** True until the initial settings read completes. Refreshes keep the current editor visible. */
-    public val loading: StateFlow<Boolean> = _loading.asStateFlow()
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
     // Each stage uses a distinct settings type. Reopening it replaces, rather than competes with, an old draft.
     private val owner = workspaceId to initial?.let { it::class }
@@ -147,14 +151,14 @@ public class StageSettingsSync<T>(
         }
     }
 
-    public fun update(value: T) {
+    fun update(value: T) {
         revision++
         _settings.value = value
         if (!connected) return
         edits.enqueue(owner, workspaceId) { write(it, value) }
         pendingSave?.cancel()
         pendingSave = scope.launch {
-            delay(SAVE_DELAY_MS) // typing in a field saves once it pauses, not on every key
+            delay(SAVE_DELAY_MS.milliseconds) // typing in a field saves once it pauses, not on every key
             // Further typing cancels only a waiting debounce, never a commit already in progress.
             pendingSave = null
             val result = edits.save(owner)

@@ -35,7 +35,7 @@ package dev.chrisbanes.haze.glass
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class GlassMemberTransition {
+enum class GlassMemberTransition {
     /**
      * A member that attaches within the container's merge distance of a compatible member grows out
      * of it, and retracts into it when it detaches. Without such a neighbour, this falls back to

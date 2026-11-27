@@ -1,6 +1,11 @@
 package io.ltirom.tooling.client
 
-import io.ltirom.tooling.core.*
+import io.ltirom.tooling.core.ExecutionContext
+import io.ltirom.tooling.core.OS
+import io.ltirom.tooling.core.PlatformIdentity
+import io.ltirom.tooling.core.StreamingToolRepository
+import io.ltirom.tooling.core.ToolCommand
+import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.remote.StreamEvent
 import kotlinx.coroutines.flow.Flow
 
@@ -11,13 +16,13 @@ import kotlinx.coroutines.flow.Flow
  *
  * Implements [StreamingToolRepository] to provide reactive stream routing when supported.
  */
-public class SmartToolRepository(
+class SmartToolRepository(
     private val localRepository: ToolRepository,
     private val remoteWslRepository: ToolRepository,
     private val forceRemote: Boolean = false
 ) : StreamingToolRepository {
 
-    public val isUsingRemote: Boolean
+    val isUsingRemote: Boolean
         get() = forceRemote || (PlatformIdentity.CURRENT.os == OS.WINDOWS)
 
     override suspend fun <R> execute(

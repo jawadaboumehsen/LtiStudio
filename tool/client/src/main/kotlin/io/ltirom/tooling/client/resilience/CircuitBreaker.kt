@@ -5,16 +5,16 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-public class CircuitBreakerOpenException(
+class CircuitBreakerOpenException(
     message: String = "Circuit breaker is OPEN. Fast-failing calls until cooldown expires.",
 ) : ToolingException(message)
 
-public class CommandAdmissionException(message: String = "Command admission is closed; client heartbeat required") :
+class CommandAdmissionException(message: String = "Command admission is closed; client heartbeat required") :
     ToolingException(message)
 
-public class ToolingClientException(message: String) : ToolingException(message)
+class ToolingClientException(message: String) : ToolingException(message)
 
-public enum class CircuitState {
+enum class CircuitState {
     CLOSED,
     OPEN,
     HALF_OPEN,
@@ -25,9 +25,9 @@ public enum class CircuitState {
  * If consecutive failures exceed [failureThreshold], trips to [CircuitState.OPEN] to
  * fail-fast immediately without waiting for long network timeouts.
  */
-public class CircuitBreaker(
-    public val failureThreshold: Int = 3,
-    public val resetTimeoutMs: Long = 10_000L,
+class CircuitBreaker(
+    val failureThreshold: Int = 3,
+    val resetTimeoutMs: Long = 10_000L,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
     private val mutex = Mutex()
@@ -38,7 +38,7 @@ public class CircuitBreaker(
     /** The connection the counters belong to; another connection starts from a clean, closed breaker. */
     private var owner: Any? = null
 
-    public suspend fun getState(): CircuitState = mutex.withLock { checkState() }
+    suspend fun getState(): CircuitState = mutex.withLock { checkState() }
 
     private fun checkState(): CircuitState {
         val now = clock()
@@ -48,13 +48,13 @@ public class CircuitBreaker(
         return state
     }
 
-    public suspend fun <T> execute(block: suspend () -> T): T = execute(Unit, block)
+    suspend fun <T> execute(block: suspend () -> T): T = execute(Unit, block)
 
     /**
      * Runs [block] under the breaker of [scope] (the connection it talks to). Failures of a dead server must not
      * hold back its replacement, and a late result of the old connection must not change the new one's state.
      */
-    public suspend fun <T> execute(scope: Any, block: suspend () -> T): T {
+    suspend fun <T> execute(scope: Any, block: suspend () -> T): T {
         mutex.withLock {
             if (owner != scope) {
                 owner = scope
@@ -105,7 +105,7 @@ public class CircuitBreaker(
         }
     }
 
-    public suspend fun reset() = mutex.withLock {
+    suspend fun reset() = mutex.withLock {
         owner = null
         failureCount = 0
         lastFailureEpochMs = 0L

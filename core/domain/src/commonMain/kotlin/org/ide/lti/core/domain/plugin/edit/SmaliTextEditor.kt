@@ -119,7 +119,7 @@ object SmaliTextEditor {
             (end == content.length || text.endsWith('\n') || content[end] == '\n')
     }
 
-    private fun lineOf(content: String, index: Int) = 1 + (0 until index).count { content[it] == '\n' }
+    private fun lineOf(content: String, index: Int) = 1 + (0..<index).count { content[it] == '\n' }
 
     /** The hunks of a unified diff (git headers ignored); text with no `@@` header is one hunk. */
     private fun parseHunks(diffText: String): List<Hunk> {

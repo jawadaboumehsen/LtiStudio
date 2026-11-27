@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Files
 import java.security.MessageDigest
 
-public data class CommandExecutionResult(
+data class CommandExecutionResult(
     val exitCode: Int,
     val stdout: String,
     val stderr: String,
@@ -12,30 +12,30 @@ public data class CommandExecutionResult(
     val stdoutBytes: ByteArray? = null,
 )
 
-public enum class StdinMode {
+enum class StdinMode {
     EMPTY,
     INHERIT,
     PIPE_TEXT,
 }
 
-public enum class StdoutMode {
+enum class StdoutMode {
     CAPTURE_TEXT,
     INHERIT,
     DISCARD,
 }
 
-public enum class ToolRisk {
+enum class ToolRisk {
     READ_ONLY,
     HOST_WRITE,
     DEVICE_WRITE,
     IRREVERSIBLE,
 }
 
-public enum class ArtifactKind { FILE, DIRECTORY }
+enum class ArtifactKind { FILE, DIRECTORY }
 
-public enum class ArtifactDirection { INPUT, OUTPUT, IN_PLACE }
+enum class ArtifactDirection { INPUT, OUTPUT, IN_PLACE }
 
-public data class ArtifactRequirement(
+data class ArtifactRequirement(
     val name: String,
     val path: File,
     val kind: ArtifactKind,
@@ -43,8 +43,8 @@ public data class ArtifactRequirement(
     val required: Boolean = true,
 )
 
-public object ArtifactValidator {
-    public fun validateInputs(toolId: ToolId, requirements: List<ArtifactRequirement>) {
+object ArtifactValidator {
+    fun validateInputs(toolId: ToolId, requirements: List<ArtifactRequirement>) {
         for (requirement in requirements) {
             if (!requirement.required || requirement.direction == ArtifactDirection.OUTPUT) continue
             if (!matchesKind(requirement.path, requirement.kind) || hasSymlinkComponent(requirement.path)) {
@@ -58,7 +58,7 @@ public object ArtifactValidator {
         validateDistinct(toolId, requirements)
     }
 
-    public fun validateOutputs(toolId: ToolId, requirements: List<ArtifactRequirement>) {
+    fun validateOutputs(toolId: ToolId, requirements: List<ArtifactRequirement>) {
         for (requirement in requirements) {
             if (!requirement.required || requirement.direction == ArtifactDirection.INPUT) continue
             if (!matchesKind(requirement.path, requirement.kind) || hasSymlinkComponent(requirement.path)) {
@@ -101,14 +101,14 @@ public object ArtifactValidator {
     }
 }
 
-public interface ToolCommand<out R> {
+interface ToolCommand<out R> {
     val toolId: ToolId
     val risk: ToolRisk
 
     fun getArguments(): List<String>
 
     /** Stable, operation-specific token used for non-interactive confirmation. */
-    public fun operationToken(): String {
+    fun operationToken(): String {
         val canonical = buildString {
             append(toolId.logicalName)
             append('\u0000')
@@ -132,14 +132,14 @@ public interface ToolCommand<out R> {
     /** Paths declared by the reviewed tool specification and checked around execution. */
     val artifactRequirements: List<ArtifactRequirement> get() = emptyList()
 
-    public fun validateInputArtifacts() = ArtifactValidator.validateInputs(toolId, artifactRequirements)
-    public fun validateOutputArtifacts() = ArtifactValidator.validateOutputs(toolId, artifactRequirements)
+    fun validateInputArtifacts() = ArtifactValidator.validateInputs(toolId, artifactRequirements)
+    fun validateOutputArtifacts() = ArtifactValidator.validateOutputs(toolId, artifactRequirements)
 
     fun parseResult(result: CommandExecutionResult): R
 }
 
 /** Binds the selected device at the last possible point before process execution. */
-public class SerialBoundCommand<R>(private val delegate: ToolCommand<R>, private val serial: String) :
+class SerialBoundCommand<R>(private val delegate: ToolCommand<R>, private val serial: String) :
     ToolCommand<R> by delegate {
     init {
         require(serial.isNotBlank()) { "Device serial must not be blank" }
@@ -174,14 +174,14 @@ public class SerialBoundCommand<R>(private val delegate: ToolCommand<R>, private
 }
 
 /** Command contract for stdout that must not be decoded as UTF-8 text. */
-public interface BinaryToolCommand<out R> : ToolCommand<R> {
-    public fun parseBinaryResult(stdout: ByteArray, stderr: String): R
+interface BinaryToolCommand<out R> : ToolCommand<R> {
+    fun parseBinaryResult(stdout: ByteArray, stderr: String): R
 
     override fun parseResult(result: CommandExecutionResult): R =
         parseBinaryResult(result.stdoutBytes ?: result.stdout.toByteArray(Charsets.ISO_8859_1), result.stderr)
 }
 
-public class RawToolCommand(
+class RawToolCommand(
     override val toolId: ToolId,
     private val args: List<String>,
     override val risk: ToolRisk = ToolRisk.READ_ONLY,
@@ -191,7 +191,7 @@ public class RawToolCommand(
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
-public class RemoteCommand(public val shellCommand: String, override val risk: ToolRisk = ToolRisk.DEVICE_WRITE) :
+class RemoteCommand(val shellCommand: String, override val risk: ToolRisk = ToolRisk.DEVICE_WRITE) :
     ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.ADB
     override fun getArguments(): List<String> {
@@ -204,16 +204,16 @@ public class RemoteCommand(public val shellCommand: String, override val risk: T
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
-public class OemCommand(public val oemArgs: List<String>, override val risk: ToolRisk = ToolRisk.IRREVERSIBLE) :
+class OemCommand(val oemArgs: List<String>, override val risk: ToolRisk = ToolRisk.IRREVERSIBLE) :
     ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.FASTBOOT
     override fun getArguments(): List<String> = listOf("oem") + oemArgs
     override fun parseResult(result: CommandExecutionResult): CommandExecutionResult = result
 }
 
-public class GhExtensionCommand(
-    public val extensionName: String,
-    public val extensionArgs: List<String>,
+class GhExtensionCommand(
+    val extensionName: String,
+    val extensionArgs: List<String>,
     override val risk: ToolRisk = ToolRisk.READ_ONLY,
 ) : ToolCommand<CommandExecutionResult> {
     override val toolId: ToolId get() = ToolId.GH
@@ -227,7 +227,7 @@ public class GhExtensionCommand(
 }
 
 /** [SerialBoundCommand] for a command whose stdout is bytes: it stays a [BinaryToolCommand]. */
-public class BinarySerialBoundCommand<R>(private val delegate: BinaryToolCommand<R>, serial: String) :
+class BinarySerialBoundCommand<R>(private val delegate: BinaryToolCommand<R>, serial: String) :
     BinaryToolCommand<R> by delegate {
     private val bound = SerialBoundCommand(delegate, serial)
 
@@ -240,7 +240,7 @@ public class BinarySerialBoundCommand<R>(private val delegate: BinaryToolCommand
  * This command bound to the device [context] selects (`-s <serial>` first, as adb and fastboot read it). A command
  * naming another device itself is refused: it would write to a phone other than the one approved.
  */
-public fun <R> ToolCommand<R>.boundTo(context: ExecutionContext): ToolCommand<R> {
+fun <R> ToolCommand<R>.boundTo(context: ExecutionContext): ToolCommand<R> {
     val serial = when (toolId) {
         ToolId.ADB -> context.adbSerial?.value
         ToolId.FASTBOOT -> context.fastbootSerial?.value

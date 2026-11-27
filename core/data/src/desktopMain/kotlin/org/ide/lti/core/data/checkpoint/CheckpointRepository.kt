@@ -38,7 +38,7 @@ import java.util.UUID
 /**
  * File-system backed repository for stage checkpoints and staging trees over [java.nio].
  */
-public class CheckpointRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : CheckpointPort {
+class CheckpointRepository(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : CheckpointPort {
 
     override suspend fun stage(ws: Workspace, checkpoint: StageCheckpoint, requiredBytes: Long): StagingResult =
         withContext(ioDispatcher) {
@@ -253,7 +253,7 @@ public class CheckpointRepository(private val ioDispatcher: CoroutineDispatcher 
  * symbolic links are typed as [ManifestEntryKind.SYMLINK] without dereferencing, and all other
  * regular files are typed as [ManifestEntryKind.FILE].
  */
-public fun manifestOf(root: Path): ContentManifest {
+fun manifestOf(root: Path): ContentManifest {
     if (!Files.exists(root)) {
         return ContentManifest(emptyList())
     }

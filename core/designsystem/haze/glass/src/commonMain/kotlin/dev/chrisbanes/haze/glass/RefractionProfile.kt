@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.Dp
  * Future minor releases may add subtypes. Keep an `else` branch when you match exhaustively with `when`.
  */
 @Immutable
-public sealed interface RefractionProfile {
+sealed interface RefractionProfile {
     /** Uses [SurfaceProfile] and [GlassOptics.refractionHeightFraction] for refraction and lighting. */
-    public object Surface : RefractionProfile
+    object Surface : RefractionProfile
 
     /**
      * Refraction is strongest at the boundary and decays to zero over [width].
@@ -39,7 +39,7 @@ public sealed interface RefractionProfile {
      * @property width Distance from the boundary over which refraction decays to zero.
      */
     @Immutable
-    public data class Edge(val width: Dp) : RefractionProfile {
+    data class Edge(val width: Dp) : RefractionProfile {
         init {
             requireSpecifiedFiniteNonNegative("width", width)
         }

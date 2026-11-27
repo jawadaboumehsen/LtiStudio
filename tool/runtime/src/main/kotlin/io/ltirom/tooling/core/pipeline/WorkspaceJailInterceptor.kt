@@ -11,9 +11,8 @@ import java.io.File
  * 1. Path traversal defense: blocks unconstrained `..` directory escapes (e.g. `../../etc/passwd` or `..\..\Windows`).
  * 2. Jail containment: verifies absolute paths reside within at least one approved root directory.
  */
-public class WorkspaceJailInterceptor(
-    public val allowedRoots: List<File> = emptyList(),
-    public val allowRelativePathsWithoutEscape: Boolean = true,
+class WorkspaceJailInterceptor(
+    val allowedRoots: List<File> = emptyList(),
 ) : ToolExecutionInterceptor {
 
     private val canonicalRoots: List<File> by lazy {
@@ -41,14 +40,14 @@ public class WorkspaceJailInterceptor(
     }
 
     /** Why [command] may not run (an argument outside the allowed roots), or null; the check [intercept] makes. */
-    public fun violation(command: io.ltirom.tooling.core.ToolCommand<*>): String? {
+    fun violation(command: io.ltirom.tooling.core.ToolCommand<*>): String? {
         if (allowedRoots.isEmpty()) return null
         return command.getArguments().firstNotNullOfOrNull { arg ->
             checkArgument(arg, canonicalRoots)?.let { "Workspace jail violation in argument '$arg': $it" }
         }
     }
 
-    public fun checkArgument(arg: String, roots: List<File>): String? {
+    fun checkArgument(arg: String, roots: List<File>): String? {
         val pathPart = extractPathPart(arg)
 
         // 1. Check for directory traversal sequences

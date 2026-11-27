@@ -22,7 +22,7 @@ import org.ide.lti.core.domain.setup.StepStatus
 import org.ide.lti.core.domain.setup.UserRepairHandoff
 import org.ide.lti.core.model.setup.PersistedUserHandoff
 
-public class InstallPackagesHandler : PlanActionHandler<SetupPlanAction.InstallPackages> {
+class InstallPackagesHandler : PlanActionHandler<SetupPlanAction.InstallPackages> {
     override suspend fun execute(action: SetupPlanAction.InstallPackages, context: ExecutionContext): SetupOutcome? =
         if (action.packages.isNotEmpty()) {
             handleElevatedInstall(action, context)

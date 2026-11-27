@@ -17,7 +17,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stageMetadataModule: Module = module {
+val stageMetadataModule: Module = module {
     single<StageEditor>(named("metadata")) { MetadataStageEditor() }
 
     viewModel { params ->

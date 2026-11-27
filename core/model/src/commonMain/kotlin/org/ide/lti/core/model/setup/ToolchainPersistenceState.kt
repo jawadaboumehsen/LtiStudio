@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
  * Defaults ensure legacy JSON records without ledger fields decode cleanly to no active attempt.
  */
 @Serializable
-public data class ToolchainPersistenceState(
+data class ToolchainPersistenceState(
     val isSetupCompleted: Boolean = false,
     val completedStages: Set<String> = emptySet(),
     val tools: Map<String, PersistedToolState> = emptyMap(),
@@ -37,9 +37,9 @@ public data class ToolchainPersistenceState(
     val toolSelections: Map<String, DistroToolSelections> = emptyMap(),
     val trustedRepositories: Set<String> = emptySet(),
 ) {
-    public fun isStageCompleted(stageName: String): Boolean = stageName in completedStages
+    fun isStageCompleted(stageName: String): Boolean = stageName in completedStages
 
-    public fun isSubmoduleSynced(name: String): Boolean = submodules[name]?.isSynced == true
+    fun isSubmoduleSynced(name: String): Boolean = submodules[name]?.isSynced == true
 
-    public fun isToolCompiled(name: String): Boolean = tools[name]?.isCompiled == true
+    fun isToolCompiled(name: String): Boolean = tools[name]?.isCompiled == true
 }

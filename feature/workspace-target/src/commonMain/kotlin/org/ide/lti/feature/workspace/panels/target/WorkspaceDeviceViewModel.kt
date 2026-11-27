@@ -37,6 +37,7 @@ import org.ide.lti.core.model.target.TargetBinding
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.Workspace
+import kotlin.time.Duration.Companion.milliseconds
 
 data class WorkspaceDeviceUiState(
     val workspaceId: String? = null,
@@ -327,7 +328,7 @@ internal suspend fun observeAgainAfterFailure(observe: suspend () -> Unit) {
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            delay(OBSERVE_RETRY_MS)
+            delay(OBSERVE_RETRY_MS.milliseconds)
         }
     }
 }

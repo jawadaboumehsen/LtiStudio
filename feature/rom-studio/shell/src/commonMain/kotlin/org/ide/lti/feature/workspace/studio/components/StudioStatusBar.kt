@@ -42,7 +42,7 @@ import org.ide.lti.feature.workspace.studio.TargetContextUi
 import org.ide.lti.feature.workspace.studio.WorkspaceShellUiState
 
 @Composable
-public fun StudioStatusBar(
+fun StudioStatusBar(
     uiState: WorkspaceShellUiState,
     modifier: Modifier = Modifier,
     onOpenProblems: (() -> Unit)? = null,

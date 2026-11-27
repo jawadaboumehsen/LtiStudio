@@ -1,14 +1,14 @@
 package io.ltirom.tooling.core
 
 /** Stable transfer telemetry extracted from adb push/pull diagnostics. */
-public data class AdbTransferProgress(
+data class AdbTransferProgress(
     val percent: Int?,
     val transferredBytes: Long?,
     val totalBytes: Long?,
     val rawLines: List<String>
 )
 
-public object AdbTransferProgressParser : ToolOutputParser<AdbTransferProgress> {
+object AdbTransferProgressParser : ToolOutputParser<AdbTransferProgress> {
     private val percentPattern = Regex("(?<!\\d)(\\d{1,3})%")
     private val bytesPattern = Regex("(?i)(\\d+)\\s+bytes")
 

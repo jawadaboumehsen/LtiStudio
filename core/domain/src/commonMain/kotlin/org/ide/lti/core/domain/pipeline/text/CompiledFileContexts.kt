@@ -14,8 +14,8 @@ package org.ide.lti.core.domain.pipeline.text
  * OTA packages' `META/`) back into its text rules. Every rule keeps its regex text and context next to the compiled
  * regex, so nothing is lost; the compiled part is skipped. Formats 1 to 5, for PCRE and PCRE2 builds.
  */
-public object CompiledFileContexts {
-    public const val MAGIC: Long = 0xF97CFF8AL
+object CompiledFileContexts {
+    const val MAGIC: Long = 0xF97CFF8AL
     private const val PCRE_VERSION = 2
     private const val MODE_VERSION = 3
     private const val PREFIX_VERSION = 4
@@ -33,13 +33,13 @@ public object CompiledFileContexts {
     private const val S_IFSOCK = 0xC000
     private const val S_IFIFO = 0x1000
 
-    public fun isCompiled(bytes: ByteArray): Boolean = bytes.size >= 4 && Reader(bytes).u32() == MAGIC
+    fun isCompiled(bytes: ByteArray): Boolean = bytes.size >= 4 && Reader(bytes).u32() == MAGIC
 
     /**
      * [bytes] as text rules, one `<regex>\t[<type>\t]<context>` per line in file order.
      * @throws IllegalArgumentException when it is not a compiled file_contexts of a known format.
      */
-    public fun decode(bytes: ByteArray): String {
+    fun decode(bytes: ByteArray): String {
         val r = Reader(bytes)
         require(r.u32() == MAGIC) { "Not a compiled file_contexts (no 0xf97cff8a magic)." }
         val version = r.u32().toInt()
@@ -48,7 +48,7 @@ public object CompiledFileContexts {
         if (version >= ARCH_VERSION) r.skip(r.u32().toInt())
         repeat(r.u32().toInt()) { r.skip(r.u32().toInt() + 1) } // stems: each with its NUL
         val count = r.u32().toInt()
-        val lines = (0 until count).map {
+        val lines = (0..<count).map {
             val context = r.cString(r.u32().toInt())
             val regex = r.cString(r.u32().toInt())
             val mode = if (version >= MODE_VERSION) r.u32().toInt() else 0
@@ -81,7 +81,7 @@ public object CompiledFileContexts {
 
         fun u32(): Long {
             need(4)
-            val v = (0 until 4).fold(0L) { acc, i -> acc or ((b[at + i].toLong() and 0xFF) shl (8 * i)) }
+            val v = (0..<4).fold(0L) { acc, i -> acc or ((b[at + i].toLong() and 0xFF) shl (8 * i)) }
             at += 4
             return v
         }

@@ -18,7 +18,7 @@ import org.ide.lti.core.model.run.StepCommand
  * Joins split vendor sparse chunks (e.g. `system.img_sparsechunk.0`, `system.img_sparsechunk.1`)
  * into complete raw partition images via `simg2img`. Provides the canonical refusal for unsupported NTPI packages.
  */
-public object ChunkExtractor {
+object ChunkExtractor {
 
     private val CHUNK_REGEX = Regex(
         """^(.*?)(?:\.img)?(?:_sparsechunk|\.chunk|\.sparsechunk)\.?(\d+)$""",
@@ -28,7 +28,7 @@ public object ChunkExtractor {
     /**
      * Checks if [fileNameOrPath] matches a sparse chunk naming pattern.
      */
-    public fun isSparseChunk(fileNameOrPath: String): Boolean {
+    fun isSparseChunk(fileNameOrPath: String): Boolean {
         val fileName = fileNameOrPath.substringAfterLast('/')
         return CHUNK_REGEX.matches(fileName)
     }
@@ -37,7 +37,7 @@ public object ChunkExtractor {
      * Groups chunk file paths by their base partition name and sorts each partition's chunks
      * numerically in ascending order.
      */
-    public fun groupSparseChunks(filePaths: List<String>): Map<String, List<String>> {
+    fun groupSparseChunks(filePaths: List<String>): Map<String, List<String>> {
         val result = mutableMapOf<String, MutableList<Pair<Int, String>>>()
         for (path in filePaths) {
             val fileName = path.substringAfterLast('/')
@@ -54,7 +54,7 @@ public object ChunkExtractor {
     /**
      * Generates a [StepCommand] using `simg2img` to join [chunkPaths] into [outImagePath].
      */
-    public fun joinChunksCommand(chunkPaths: List<String>, outImagePath: String, workingDir: String): StepCommand =
+    fun joinChunksCommand(chunkPaths: List<String>, outImagePath: String, workingDir: String): StepCommand =
         stepCommand(
             toolId = "simg2img",
             args = chunkPaths + listOf(outImagePath),
@@ -64,7 +64,7 @@ public object ChunkExtractor {
     /**
      * Canonical refusal when encountering an NTPI (Nothing Phone packed image) archive (FR-005).
      */
-    public fun ntpiRefusal(item: String, details: String? = null): Refusal = Refusal(
+    fun ntpiRefusal(item: String, details: String? = null): Refusal = Refusal(
         cause = "Nothing Phone packed images (NTPI) are not currently supported.",
         item = item,
         nextStep = "Extract partition images with the vendor utility before importing.",

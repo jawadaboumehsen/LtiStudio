@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.Flow
  * Follows the Interface Segregation Principle (ISP) so that basic consumers only depend on
  * [ToolRepository] without needing to know about reactive flows.
  */
-public interface StreamingToolRepository : ToolRepository {
+interface StreamingToolRepository : ToolRepository {
     /**
      * Executes a tool command and returns a reactive [Flow] of [StreamEvent]s (stdout, stderr, progress, and finish).
      */
-    public fun <R> stream(
+    fun <R> stream(
         command: ToolCommand<R>,
         context: ExecutionContext
     ): Flow<StreamEvent>

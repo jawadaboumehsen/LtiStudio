@@ -12,7 +12,7 @@ package org.ide.lti.core.domain.setup
 /**
  * Status of the connection to the execution environment / daemon bridge.
  */
-public enum class EnvironmentConnectionStatus {
+enum class EnvironmentConnectionStatus {
     CONNECTED,
     DISCONNECTED,
     UNAVAILABLE,
@@ -21,7 +21,7 @@ public enum class EnvironmentConnectionStatus {
 /**
  * Evidence and verification status for an individual tool binary.
  */
-public data class ToolEvidence(
+data class ToolEvidence(
     val toolId: String,
     val recipeGroup: String? = null,
     val sourceRevision: String? = null,
@@ -37,7 +37,7 @@ public data class ToolEvidence(
 /**
  * Capability descriptor for a recipe group and its owned tools.
  */
-public data class RecipeCapability(
+data class RecipeCapability(
     val recipeGroup: String,
     val toolIds: Set<String>,
     val sourceRevision: String? = null,
@@ -57,7 +57,7 @@ public data class RecipeCapability(
 /**
  * Enforces: "Repair invalidates the owning recipe group only and verifies all affected required tools."
  */
-public fun invalidateForRepair(
+fun invalidateForRepair(
     targetToolId: String,
     allTools: Map<String, ToolEvidence>,
     recipes: List<RecipeCapability>,
@@ -77,7 +77,7 @@ public fun invalidateForRepair(
 /**
  * Authoritative point-in-time environment snapshot.
  */
-public data class CheckSnapshot(
+data class CheckSnapshot(
     val environmentKey: String,
     val checkedAt: Long?,
     val lastReadyAt: Long?,
@@ -119,7 +119,7 @@ public data class CheckSnapshot(
     /**
      * Enforces: "Failed execution verification is preserved until a successful execution probe replaces it."
      */
-    public fun withUpdatedToolEvidence(evidence: ToolEvidence): CheckSnapshot {
+    fun withUpdatedToolEvidence(evidence: ToolEvidence): CheckSnapshot {
         val current = requiredToolEvidence[evidence.toolId]
         val updated =
             if (current != null && current.isFailedExecution && !evidence.isVerified) {
@@ -130,8 +130,8 @@ public data class CheckSnapshot(
         return copy(requiredToolEvidence = requiredToolEvidence + (evidence.toolId to updated))
     }
 
-    public companion object {
-        public fun create(
+    companion object {
+        fun create(
             environmentKey: String,
             checkedAt: Long?,
             lastReadyAt: Long?,
@@ -173,7 +173,7 @@ public data class CheckSnapshot(
  * Kind of setup plan. Every environment mutation (including cache reset) is previewed as one of these;
  * a tool test acquires operation ownership without a mutation preview and therefore has no plan kind.
  */
-public enum class SetupPlanKind {
+enum class SetupPlanKind {
     FULL_SETUP,
     STAGE_RETRY,
     REPAIR_TOOL,
@@ -191,8 +191,8 @@ public enum class SetupPlanKind {
  * Legacy SyncSources/BuildRecipes/PublishTools actions are removed. Any code that
  * constructs those types from the old layout is a build error.
  */
-public sealed interface SetupPlanAction {
-    public val description: String
+sealed interface SetupPlanAction {
+    val description: String
 
     /**
      * System package remediation. [packages] are apt packages installed through non-interactive sudo,
@@ -200,12 +200,12 @@ public sealed interface SetupPlanAction {
      * the sudoers mount/umount rule that loop-device mounting needs. Preview and execution both read this
      * one action, so the elevation summary can never differ from what runs.
      */
-    public data class InstallPackages(
+    data class InstallPackages(
         val packages: List<String>,
         val pipPackages: List<String> = emptyList(),
         val configureLoopMountElevation: Boolean = false,
     ) : SetupPlanAction {
-        public val requiresElevation: Boolean
+        val requiresElevation: Boolean
             get() = packages.isNotEmpty() || configureLoopMountElevation
 
         override val description: String =
@@ -224,7 +224,7 @@ public sealed interface SetupPlanAction {
      * the plan was confirmed; confirmation is rejected if the revision changed.
      * [forceRebuildGroups] bypasses artifact-cache reuse for the listed groups only.
      */
-    public data class SwitchToolchain(
+    data class SwitchToolchain(
         val inputs: Map<ToolGroupId, ResolvedInput>,
         val selectionRevision: Long,
         val forceRebuildGroups: Set<ToolGroupId> = emptySet(),
@@ -240,7 +240,7 @@ public sealed interface SetupPlanAction {
 /**
  * Immutable domain setup plan driving preview and confirmed execution.
  */
-public data class SetupPlan(
+data class SetupPlan(
     val planId: String,
     val revisionHash: String,
     val environmentKey: String,
@@ -252,7 +252,7 @@ public data class SetupPlan(
     /**
      * Enforces: "Confirmation requires the displayed plan ID and unchanged revision hash."
      */
-    public fun validateConfirmation(confirmedPlanId: String, confirmedRevisionHash: String) {
+    fun validateConfirmation(confirmedPlanId: String, confirmedRevisionHash: String) {
         require(confirmedPlanId == planId && confirmedRevisionHash == revisionHash) {
             "Confirmation requires the displayed plan ID and unchanged revision hash."
         }
@@ -262,35 +262,35 @@ public data class SetupPlan(
 /**
  * Exhaustive typed outcome for all environment operations.
  */
-public sealed interface SetupOutcome {
-    public val isSuccess: Boolean
+sealed interface SetupOutcome {
+    val isSuccess: Boolean
         get() = this is Succeeded
 
     /**
      * Enforces: "A normal return is not success unless the typed outcome is Succeeded."
      */
-    public fun requireSuccess(): Succeeded {
+    fun requireSuccess(): Succeeded {
         check(this is Succeeded) {
             "A normal return is not success unless the typed outcome is Succeeded."
         }
         return this
     }
 
-    public data class Succeeded(val evidence: Map<String, ToolEvidence> = emptyMap()) : SetupOutcome
+    data class Succeeded(val evidence: Map<String, ToolEvidence> = emptyMap()) : SetupOutcome
 
-    public data class Failed(val stage: String?, val reason: String) : SetupOutcome
+    data class Failed(val stage: String?, val reason: String) : SetupOutcome
 
-    public data object Cancelled : SetupOutcome
+    data object Cancelled : SetupOutcome
 
-    public data class Busy(val ownerId: String) : SetupOutcome
+    data class Busy(val ownerId: String) : SetupOutcome
 
-    public data class Interrupted(val reason: String) : SetupOutcome
+    data class Interrupted(val reason: String) : SetupOutcome
 
     /**
      * The confirmed plan paused because an action requires interactive user authorization.
      * Subsequent build and sync actions are paused. Recheck via resume() continues the plan.
      */
-    public data class AwaitingUserAction(
+    data class AwaitingUserAction(
         val pendingPlanId: String,
         val stage: SetupStepStage,
         val reason: String,
@@ -301,7 +301,7 @@ public sealed interface SetupOutcome {
 /**
  * Diagnostic repair handoff details for actions requiring user terminal authorization.
  */
-public data class UserRepairHandoff(
+data class UserRepairHandoff(
     val actionId: String,
     val description: String,
     val terminalCommand: String,

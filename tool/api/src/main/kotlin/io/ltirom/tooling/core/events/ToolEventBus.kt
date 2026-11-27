@@ -14,42 +14,42 @@ import kotlinx.coroutines.flow.asSharedFlow
  * - Single Responsibility Principle: represents immutable domain events.
  * - Open/Closed Principle: new events can be added without altering existing listeners.
  */
-public sealed interface ToolDomainEvent {
-    public val toolId: ToolId
-    public val context: ExecutionContext
-    public val timestampEpochMs: Long
+sealed interface ToolDomainEvent {
+    val toolId: ToolId
+    val context: ExecutionContext
+    val timestampEpochMs: Long
 
     /**
      * Emitted immediately before tool execution begins.
      */
-    public data class ExecutionStarted(
+    data class ExecutionStarted(
         override val toolId: ToolId,
         override val context: ExecutionContext,
-        public val commandName: String,
-        public val arguments: List<String>,
+        val commandName: String,
+        val arguments: List<String>,
         override val timestampEpochMs: Long = System.currentTimeMillis()
     ) : ToolDomainEvent
 
     /**
      * Emitted upon successful tool completion.
      */
-    public data class ExecutionCompleted(
+    data class ExecutionCompleted(
         override val toolId: ToolId,
         override val context: ExecutionContext,
-        public val durationMs: Long,
-        public val isSuccess: Boolean = true,
+        val durationMs: Long,
+        val isSuccess: Boolean = true,
         override val timestampEpochMs: Long = System.currentTimeMillis()
     ) : ToolDomainEvent
 
     /**
      * Emitted when tool execution fails (e.g. non-zero exit, timeout, safety rejection, exception).
      */
-    public data class ExecutionFailed(
+    data class ExecutionFailed(
         override val toolId: ToolId,
         override val context: ExecutionContext,
-        public val durationMs: Long,
-        public val errorMessage: String,
-        public val throwable: Throwable? = null,
+        val durationMs: Long,
+        val errorMessage: String,
+        val throwable: Throwable? = null,
         override val timestampEpochMs: Long = System.currentTimeMillis()
     ) : ToolDomainEvent
 }
@@ -58,27 +58,27 @@ public sealed interface ToolDomainEvent {
  * Reactive Domain Event Bus contract.
  * Decouples publishers (execution interceptors, repositories) from consumers (UI ViewModels, telemetry, metrics).
  */
-public interface ToolEventBus {
+interface ToolEventBus {
     /**
      * Hot reactive stream of all domain events.
      */
-    public val events: SharedFlow<ToolDomainEvent>
+    val events: SharedFlow<ToolDomainEvent>
 
     /**
      * Suspends until the event is emitted to all active subscribers.
      */
-    public suspend fun publish(event: ToolDomainEvent)
+    suspend fun publish(event: ToolDomainEvent)
 
     /**
      * Non-suspending emission, useful in non-coroutine or fast-path call sites.
      */
-    public fun tryPublish(event: ToolDomainEvent): Boolean
+    fun tryPublish(event: ToolDomainEvent): Boolean
 }
 
 /**
  * Default in-memory implementation of [ToolEventBus] backed by [MutableSharedFlow].
  */
-public class DefaultToolEventBus(
+class DefaultToolEventBus(
     replay: Int = 10,
     extraBufferCapacity: Int = 64
 ) : ToolEventBus {

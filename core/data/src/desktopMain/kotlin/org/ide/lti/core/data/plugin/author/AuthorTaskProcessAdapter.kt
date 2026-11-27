@@ -37,6 +37,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
 
 @Suppress("ReturnCount")
 class AuthorTaskProcessAdapter(
@@ -218,9 +219,9 @@ class AuthorTaskProcessAdapter(
             }
 
             try {
-                withTimeout(timeoutMs) {
+                withTimeout(timeoutMs.milliseconds) {
                     while (process.isAlive) {
-                        delay(POLL_INTERVAL_MS)
+                        delay(POLL_INTERVAL_MS.milliseconds)
                     }
 
                     val exitCode = process.exitValue()

@@ -8,7 +8,7 @@ import io.ltirom.tooling.core.events.ToolEventBus
  * Single Responsibility: Automatically publishes domain events on the [ToolEventBus]
  * for command execution lifecycle transitions (started, completed, failed).
  */
-public class EventPublishingInterceptor(
+class EventPublishingInterceptor(
     private val eventBus: ToolEventBus
 ) : ToolExecutionInterceptor {
 

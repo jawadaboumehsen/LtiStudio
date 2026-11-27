@@ -24,7 +24,7 @@ import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
 /** In-memory, user-editable settings above the immutable persisted snapshot. */
-public data class WorkspacePipelineDraft(
+data class WorkspacePipelineDraft(
     val workspaceId: String,
     val draftRevision: Long,
     val baseSnapshotId: String?,
@@ -43,48 +43,45 @@ public data class WorkspacePipelineDraft(
     private val baseSnapshot: ConfigurationSnapshot? = null,
 ) {
     /** Signing is persisted as part of the build settings, so it has no separate snapshot field. */
-    public val signing get() = build.signing
+    val signing get() = build.signing
 
-    public fun withAcquisition(value: AcquisitionSettings): WorkspacePipelineDraft = withSettings("acquisition") {
+    fun withAcquisition(value: AcquisitionSettings): WorkspacePipelineDraft = withSettings("acquisition") {
         copy(acquisition = value)
     }
 
-    public fun withExtraction(value: ExtractionSettings): WorkspacePipelineDraft = withSettings("extraction") {
+    fun withExtraction(value: ExtractionSettings): WorkspacePipelineDraft = withSettings("extraction") {
         copy(extraction = value)
     }
 
-    public fun withAssembly(value: AssemblySettings): WorkspacePipelineDraft = withSettings("assembly") {
+    fun withAssembly(value: AssemblySettings): WorkspacePipelineDraft = withSettings("assembly") {
         copy(assembly = value)
     }
 
-    public fun withDebloat(value: DebloatSettings): WorkspacePipelineDraft = withSettings("debloat") {
+    fun withDebloat(value: DebloatSettings): WorkspacePipelineDraft = withSettings("debloat") {
         copy(debloat = value)
     }
 
-    public fun withCustomization(value: CustomizationSettings): WorkspacePipelineDraft = withSettings("customization") {
+    fun withCustomization(value: CustomizationSettings): WorkspacePipelineDraft = withSettings("customization") {
         copy(customization = value)
     }
 
-    public fun withBuild(value: BuildSettings): WorkspacePipelineDraft = withSettings("build") {
+    fun withBuild(value: BuildSettings): WorkspacePipelineDraft = withSettings("build") {
         copy(build = value)
     }
 
-    public fun withSigning(value: org.ide.lti.core.model.workspace.SigningPolicy): WorkspacePipelineDraft =
+    fun withSigning(value: org.ide.lti.core.model.workspace.SigningPolicy): WorkspacePipelineDraft =
         withBuild(build.copy(signing = value))
 
-    public fun withRelease(value: ReleaseSettings): WorkspacePipelineDraft = withSettings("release") {
+    fun withRelease(value: ReleaseSettings): WorkspacePipelineDraft = withSettings("release") {
         copy(release = value)
     }
 
-    public fun withPublish(value: PublishSettings): WorkspacePipelineDraft = withSettings("publish") {
+    fun withPublish(value: PublishSettings): WorkspacePipelineDraft = withSettings("publish") {
         copy(publish = value)
     }
 
     /** Reconciles an asynchronous save without replacing edits made after that save started. */
-    public fun reconcileAfterSave(
-        committedSnapshot: ConfigurationSnapshot,
-        savedAsOfRevision: Long,
-    ): WorkspacePipelineDraft {
+    fun reconcileAfterSave(committedSnapshot: ConfigurationSnapshot, savedAsOfRevision: Long): WorkspacePipelineDraft {
         require(committedSnapshot.workspaceId == workspaceId) {
             "Snapshot workspace ${committedSnapshot.workspaceId} does not match draft workspace $workspaceId"
         }
@@ -163,7 +160,7 @@ public data class WorkspacePipelineDraft(
 
     private fun revalidate(): WorkspacePipelineDraft = revalidateFor(null)
 
-    public companion object {
+    companion object {
         fun diagnostics(draft: WorkspacePipelineDraft, target: TargetDevice?): ValidationReport {
             val reports = listOf(
                 "acquisition" to StageSettingsValidator.validateAcquisition(draft.acquisition, target),
@@ -187,7 +184,7 @@ public data class WorkspacePipelineDraft(
             firmware = DefaultTargetCatalog.PQ84P01_GLOBAL_FIRMWARES.first(),
         )
 
-        public fun create(
+        fun create(
             workspaceId: String,
             baseSnapshot: ConfigurationSnapshot?,
             target: TargetDevice? = null,

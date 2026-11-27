@@ -33,7 +33,7 @@ import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.domain.tools.ToolInventory
 import org.ide.lti.core.domain.tools.ToolManager
 
-public class ToolsStage(private val toolManager: ToolManager? = null) : CheckStage {
+class ToolsStage(private val toolManager: ToolManager? = null) : CheckStage {
     override val stage: SetupStepStage = SetupStepStage.TOOLCHAIN_COMPILATION
 
     @Suppress("CyclomaticComplexMethod", "LongMethod", "ReturnCount")

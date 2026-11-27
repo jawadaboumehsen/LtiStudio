@@ -21,12 +21,9 @@ import org.ide.lti.core.model.workspace.Workspace
  * kernel overrides (hashes of its boot images), image-browser edits (its paths) and partitions kept as shipped (its
  * stock trees).
  */
-public class SamePhoneSettings(
-    private val workspaces: WorkspaceRepository,
-    private val settings: WorkspaceSettingsStore,
-) {
+class SamePhoneSettings(private val workspaces: WorkspaceRepository, private val settings: WorkspaceSettingsStore) {
     /** The other workspaces whose device has [workspaceId]'s codename. */
-    public suspend fun others(workspaceId: String): List<Workspace> {
+    suspend fun others(workspaceId: String): List<Workspace> {
         val codename = runCatchingCancellable {
             settings.device(
                 workspaceId,
@@ -38,19 +35,18 @@ public class SamePhoneSettings(
     }
 
     /** Copies [from]'s settings into [to] (see the class); fails when [from] has none. */
-    public suspend fun carry(from: String, to: String): Result<ConfigurationSnapshot> {
+    suspend fun carry(from: String, to: String): Result<ConfigurationSnapshot> {
         val source = settings.current(from) ?: return Result.failure(IllegalStateException("$from has no settings"))
         return settings.update(to) { mine -> carried(source, mine) }
     }
 
-    public companion object {
+    companion object {
         /** [mine] with [source]'s phone settings, without what belongs to [source]'s firmware. */
-        public fun carried(source: ConfigurationSnapshot, mine: ConfigurationSnapshot): ConfigurationSnapshot =
-            mine.copy(
-                assembly = source.assembly.copy(kernelOverrides = emptyMap(), treeEdits = emptyList()),
-                debloat = source.debloat,
-                customization = source.customization,
-                build = source.build.copy(keepStock = emptySet()),
-            )
+        fun carried(source: ConfigurationSnapshot, mine: ConfigurationSnapshot): ConfigurationSnapshot = mine.copy(
+            assembly = source.assembly.copy(kernelOverrides = emptyMap(), treeEdits = emptyList()),
+            debloat = source.debloat,
+            customization = source.customization,
+            build = source.build.copy(keepStock = emptySet()),
+        )
     }
 }

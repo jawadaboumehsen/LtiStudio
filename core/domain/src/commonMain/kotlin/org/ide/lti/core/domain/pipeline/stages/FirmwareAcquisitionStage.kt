@@ -38,7 +38,7 @@ private data class AcquisitionPolicy(val retries: Int, val resume: Boolean, val 
  * interstitials, verify the checksum when declared (else record UNVERIFIED), then promote with `mv`.
  * IMPORT_ARCHIVE: the archive was uploaded by the configuration panel; only its presence and checksum are checked.
  */
-public class FirmwareAcquisitionStage : StageDefinition {
+class FirmwareAcquisitionStage : StageDefinition {
     override val id: StageId = StageId.FIRMWARE_ACQUISITION
 
     override val requiredToolIds: Set<String> = setOf("curl", "file", "sha256sum", "xxd", "test", "mv", "mkdir")
@@ -233,13 +233,13 @@ public class FirmwareAcquisitionStage : StageDefinition {
         }
     }
 
-    public companion object {
+    companion object {
         private const val CURL_RANGE_NOT_SUPPORTED = 33
         private const val MD5_LENGTH = 32
 
-        public fun archiveName(snapshot: ConfigurationSnapshot): String = archiveName(snapshot.acquisition)
+        fun archiveName(snapshot: ConfigurationSnapshot): String = archiveName(snapshot.acquisition)
 
-        public fun archiveName(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
+        fun archiveName(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
             AcquisitionMode.IMPORT_ARCHIVE ->
                 acquisition.archiveRef?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
                     ?: acquisition.archiveRef.orEmpty()
@@ -250,10 +250,10 @@ public class FirmwareAcquisitionStage : StageDefinition {
             }
         }
 
-        public fun archiveRelPath(snapshot: ConfigurationSnapshot): String = archiveRelPath(snapshot.acquisition)
+        fun archiveRelPath(snapshot: ConfigurationSnapshot): String = archiveRelPath(snapshot.acquisition)
 
         /** Where the archive the build uses lives in the workspace folder. */
-        public fun archiveRelPath(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
+        fun archiveRelPath(acquisition: AcquisitionSettings): String = when (acquisition.mode) {
             AcquisitionMode.IMPORT_ARCHIVE -> acquisition.archiveRef.orEmpty()
             AcquisitionMode.DOWNLOAD -> "firmware/downloaded/${archiveName(acquisition)}"
         }

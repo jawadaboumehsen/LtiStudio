@@ -34,7 +34,7 @@ import org.ide.lti.core.model.workspace.AssemblySettings
  */
 @Suppress("UnusedParameter")
 @Composable
-public fun SystemExtHandlingPane(
+fun SystemExtHandlingPane(
     settings: AssemblySettings,
     target: TargetDevice,
     onChange: (AssemblySettings) -> Unit,

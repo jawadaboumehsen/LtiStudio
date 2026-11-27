@@ -13,7 +13,7 @@ package org.ide.lti.feature.rom.studio.api
  * Rendering-agnostic identifier for stage icons.
  * The shell / design system resolves this to the appropriate Compose Painter.
  */
-public enum class StudioIconKey {
+enum class StudioIconKey {
     ACQUIRE,
     EXTRACT,
     ASSEMBLE,

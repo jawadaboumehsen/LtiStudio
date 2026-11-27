@@ -14,12 +14,12 @@ import org.ide.lti.core.model.run.StageId
 /**
  * Canonical contract descriptors for all eight ROM Setup Studio pipeline stages.
  */
-public object CanonicalStageDescriptors {
+object CanonicalStageDescriptors {
     /**
      * The panes the Simple Studio view shows (each stage's first pane among them, so a stage always opens on one).
      * The others stay reachable by a link that opens them, and their settings still apply.
      */
-    public val SIMPLE: Set<String> = setOf(
+    val SIMPLE: Set<String> = setOf(
         "source", "integrity",
         "archive-layout",
         "work-trees", "build-properties",
@@ -31,10 +31,10 @@ public object CanonicalStageDescriptors {
     )
 
     /** The panes of [stage] that a view shows: all, or in [simple] the main ones plus [openId] when one is open. */
-    public fun visible(stage: StageDescriptor, simple: Boolean, openId: String?): List<StudioSubobject> =
+    fun visible(stage: StageDescriptor, simple: Boolean, openId: String?): List<StudioSubobject> =
         stage.subobjects.filter { !simple || it.id.value in SIMPLE || it.id.value == openId }
 
-    public val ACQUIRE: StageDescriptor = StageDescriptor(
+    val ACQUIRE: StageDescriptor = StageDescriptor(
         stageId = StageId.FIRMWARE_ACQUISITION,
         title = "Acquire",
         iconKey = StudioIconKey.ACQUIRE,
@@ -47,7 +47,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val EXTRACT: StageDescriptor = StageDescriptor(
+    val EXTRACT: StageDescriptor = StageDescriptor(
         stageId = StageId.FIRMWARE_EXTRACTION,
         title = "Extract",
         iconKey = StudioIconKey.EXTRACT,
@@ -60,7 +60,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val ASSEMBLE: StageDescriptor = StageDescriptor(
+    val ASSEMBLE: StageDescriptor = StageDescriptor(
         stageId = StageId.WORK_TREE_ASSEMBLY,
         title = "Assemble",
         iconKey = StudioIconKey.ASSEMBLE,
@@ -76,7 +76,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val DEBLOAT: StageDescriptor = StageDescriptor(
+    val DEBLOAT: StageDescriptor = StageDescriptor(
         stageId = StageId.DEBLOAT,
         title = "Debloat",
         iconKey = StudioIconKey.DEBLOAT,
@@ -90,7 +90,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val PATCH: StageDescriptor = StageDescriptor(
+    val PATCH: StageDescriptor = StageDescriptor(
         stageId = StageId.MODULE_APPLICATION,
         title = "Patches and Mods",
         iconKey = StudioIconKey.PATCH,
@@ -111,7 +111,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val BUILD: StageDescriptor = StageDescriptor(
+    val BUILD: StageDescriptor = StageDescriptor(
         stageId = StageId.BUILD_FLASHABLE_ZIP,
         title = "Build and Sign",
         iconKey = StudioIconKey.BUILD,
@@ -128,7 +128,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val METADATA: StageDescriptor = StageDescriptor(
+    val METADATA: StageDescriptor = StageDescriptor(
         stageId = StageId.GENERATE_OTA_MANIFEST,
         title = "Release Metadata",
         iconKey = StudioIconKey.METADATA,
@@ -141,7 +141,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val PUBLISH: StageDescriptor = StageDescriptor(
+    val PUBLISH: StageDescriptor = StageDescriptor(
         stageId = StageId.PUBLISH_RELEASE,
         title = "Publish ROM",
         iconKey = StudioIconKey.PUBLISH,
@@ -157,7 +157,7 @@ public object CanonicalStageDescriptors {
         ),
     )
 
-    public val ALL: List<StageDescriptor> = listOf(
+    val ALL: List<StageDescriptor> = listOf(
         ACQUIRE,
         EXTRACT,
         ASSEMBLE,
@@ -170,11 +170,11 @@ public object CanonicalStageDescriptors {
 
     private val byStageId: Map<StageId, StageDescriptor> = ALL.associateBy { it.stageId }
 
-    public fun descriptorFor(stageId: StageId): StageDescriptor? = byStageId[stageId]
+    fun descriptorFor(stageId: StageId): StageDescriptor? = byStageId[stageId]
 
-    public fun owningStage(subobjectId: StudioSubobjectId): StageDescriptor? =
+    fun owningStage(subobjectId: StudioSubobjectId): StageDescriptor? =
         ALL.firstOrNull { it.subobject(subobjectId) != null }
 
-    public fun subobject(subobjectId: StudioSubobjectId): StudioSubobject? =
+    fun subobject(subobjectId: StudioSubobjectId): StudioSubobject? =
         ALL.firstNotNullOfOrNull { it.subobject(subobjectId) }
 }

@@ -18,26 +18,26 @@ import org.ide.lti.core.model.target.TargetDevice
  * folder, so a workspace found on disk or opened after a reinstall still has it. A new workspace starts from a
  * *copy* of a catalog template, never a link to it.
  */
-public interface WorkspaceDeviceRepository {
+interface WorkspaceDeviceRepository {
     /**
      * The device of [workspaceId], then every later change. Emits null when the folder has no device file. Fails
      * (like [get]) when the file cannot be read, so a caller never mistakes an unreachable file for a missing one.
      */
-    public fun observe(workspaceId: String): Flow<TargetDevice?>
+    fun observe(workspaceId: String): Flow<TargetDevice?>
 
     /**
      * The device stored in the folder of [workspaceId], or null when it has none. Throws when the file exists but
      * cannot be read or parsed, or when the build service cannot be reached: that is not "no device".
      */
-    public suspend fun get(workspaceId: String): TargetDevice?
+    suspend fun get(workspaceId: String): TargetDevice?
 
     /**
      * Writes [device] into the folder of [workspaceId] and returns what was written. The revision is bumped when
      * the content differs from the stored one; identical content keeps it.
      */
-    public suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice
+    suspend fun save(workspaceId: String, device: TargetDevice): TargetDevice
 
-    public companion object {
-        public const val FILE_NAME: String = "device.json"
+    companion object {
+        const val FILE_NAME: String = "device.json"
     }
 }

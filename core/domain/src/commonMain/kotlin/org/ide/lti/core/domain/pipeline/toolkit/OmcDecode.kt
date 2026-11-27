@@ -15,31 +15,26 @@ import kotlinx.serialization.Serializable
  * Decoded carrier and network configuration details (FR-032).
  */
 @Serializable
-public data class CarrierNetwork(
-    public val mcc: String,
-    public val mnc: String,
-    public val networkName: String,
-    public val spName: String? = null,
-)
+data class CarrierNetwork(val mcc: String, val mnc: String, val networkName: String, val spName: String? = null)
 
 /**
  * Decoded Samsung OMC / CSC carrier package details (FR-032, T068).
  */
 @Serializable
-public data class OmcInfo(
-    public val salesCode: String,
-    public val country: String? = null,
-    public val networks: List<CarrierNetwork> = emptyList(),
-    public val features: Map<String, String> = emptyMap(),
+data class OmcInfo(
+    val salesCode: String,
+    val country: String? = null,
+    val networks: List<CarrierNetwork> = emptyList(),
+    val features: Map<String, String> = emptyMap(),
 )
 
 /**
  * Pure Kotlin parser for Samsung region, carrier, and CSC feature configurations (FR-032).
  * Operates without external tools.
  */
-public object OmcDecode {
+object OmcDecode {
 
-    public fun decode(salesCodeText: String?, customerXmlText: String?, cscFeatureXmlText: String?): OmcInfo {
+    fun decode(salesCodeText: String?, customerXmlText: String?, cscFeatureXmlText: String?): OmcInfo {
         val salesCode = salesCodeText?.trim()?.lines()?.firstOrNull()?.trim()
             ?: extractTag(customerXmlText.orEmpty(), "SalesCode")
             ?: "UNKNOWN"

@@ -13,7 +13,7 @@ import kotlin.jvm.JvmField
 
 /** Experimental process-wide runtime feature switches. */
 @ExperimentalHazeApi
-public object HazeFeatureFlags {
+object HazeFeatureFlags {
 
     /**
      * Whether built-in effects may use a platform window-backdrop renderer.
@@ -28,5 +28,5 @@ public object HazeFeatureFlags {
      * retaining a temporary `false` escape hatch for regressions, then remove this experimental flag.
      */
     @JvmField
-    public var isPlatformBackdropEnabled: Boolean = false
+    var isPlatformBackdropEnabled: Boolean = false
 }

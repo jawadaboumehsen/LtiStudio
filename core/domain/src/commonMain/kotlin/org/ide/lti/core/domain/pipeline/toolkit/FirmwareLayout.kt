@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.pipeline.toolkit
 
 /** How a firmware container lays out its partitions, decided from its member list (FR-001..FR-005). */
-public enum class FirmwareLayout {
+enum class FirmwareLayout {
     /** A full A/B OTA: `payload.bin`. */
     Payload,
 
@@ -29,9 +29,9 @@ public enum class FirmwareLayout {
     Unknown,
 }
 
-public object FirmwareLayouts {
+object FirmwareLayouts {
     /** The layout of a container whose members (relative paths) are [members]; the first match wins. */
-    public fun classify(members: List<String>): FirmwareLayout {
+    fun classify(members: List<String>): FirmwareLayout {
         val names = members.map { it.substringAfterLast('/') }
         return when {
             names.any { it == "payload.bin" } -> FirmwareLayout.Payload
@@ -44,10 +44,10 @@ public object FirmwareLayouts {
     }
 
     /** The member whose file name is [fileName], wherever it sits in the container. */
-    public fun member(members: List<String>, fileName: String): String? =
+    fun member(members: List<String>, fileName: String): String? =
         members.firstOrNull { it.substringAfterLast('/') == fileName }
 
     /** Splits a `find -printf '%P\n'` / `unzip -Z1` / `tar -tf` listing into member paths (no directories). */
-    public fun parseListing(listing: String): List<String> =
+    fun parseListing(listing: String): List<String> =
         listing.lineSequence().map { it.trim() }.filter { it.isNotEmpty() && !it.endsWith("/") }.toList()
 }

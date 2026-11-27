@@ -93,7 +93,7 @@ object XmlResourceEditor {
 
     private fun single(root: Element, match: XmlMatch): Element {
         val all = root.getElementsByTagName("*")
-        val hits = (listOf(root) + (0 until all.length).map { all.item(it) as Element }).filter { matches(it, match) }
+        val hits = (listOf(root) + (0..<all.length).map { all.item(it) as Element }).filter { matches(it, match) }
         return when (hits.size) {
             1 -> hits.single()
 
@@ -118,7 +118,7 @@ object XmlResourceEditor {
      * the attributes it names, so a renamed key or a changed value is easy to spot.
      */
     private fun near(root: Element, match: XmlMatch): String {
-        val all = root.getElementsByTagName("*").let { list -> (0 until list.length).map { list.item(it) as Element } }
+        val all = root.getElementsByTagName("*").let { list -> (0..<list.length).map { list.item(it) as Element } }
         val firstAttribute = match.attributes.keys.firstOrNull()
         val similar = all.filter { e ->
             if (match.tag != null) {
@@ -149,7 +149,7 @@ object XmlResourceEditor {
     /** A resource added to the root must not exist already: same tag, type and name, or the same public id. */
     private fun checkNotDeclared(root: Element, added: Element) {
         val name = added.getAttribute("name").takeIf { it.isNotEmpty() } ?: return
-        val siblings = (0 until root.childNodes.length).map { root.childNodes.item(it) }.filterIsInstance<Element>()
+        val siblings = (0..<root.childNodes.length).map { root.childNodes.item(it) }.filterIsInstance<Element>()
         val clash = siblings.firstOrNull { e ->
             resourceType(e) == resourceType(added) && e.getAttribute("name") == name
         } ?: siblings.firstOrNull { e ->
@@ -176,17 +176,17 @@ object XmlResourceEditor {
     /** [fragment]'s nodes, parsed with the root's namespace prefixes (`android:`, `app:`) in scope. */
     private fun fragment(doc: Document, root: Element, fragment: String): List<Node> {
         if (fragment.isBlank()) return emptyList()
-        val namespaces = (0 until root.attributes.length).map { root.attributes.item(it) }
+        val namespaces = (0..<root.attributes.length).map { root.attributes.item(it) }
             .filter { it.nodeName.startsWith("xmlns") }
             .joinToString("") { " ${it.nodeName}=\"${it.nodeValue}\"" }
         val wrapper = parse("<lti-fragment$namespaces>$fragment</lti-fragment>").documentElement
-        return (0 until wrapper.childNodes.length).map { wrapper.childNodes.item(it) }
+        return (0..<wrapper.childNodes.length).map { wrapper.childNodes.item(it) }
             .filter { it.nodeType != Node.TEXT_NODE || it.nodeValue.isNotBlank() }
             .map { doc.importNode(it, true) }
     }
 
     private fun appendIndented(parent: Node, node: Node) {
-        val lastElement = (0 until parent.childNodes.length).map { parent.childNodes.item(it) }
+        val lastElement = (0..<parent.childNodes.length).map { parent.childNodes.item(it) }
             .lastOrNull { it is Element }
         insertIndented(parent, node, lastElement?.nextSibling, like = lastElement)
     }

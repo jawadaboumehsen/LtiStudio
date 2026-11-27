@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
  * A partition group definition inside a dynamic partition (super) image.
  */
 @Serializable
-public data class SuperGroup(val name: String, val maxSize: Long) {
+data class SuperGroup(val name: String, val maxSize: Long) {
     init {
         require(name.isNotBlank()) { "Group name must not be blank" }
         require(maxSize >= 0L) { "Group maxSize must be non-negative" }
@@ -27,7 +27,7 @@ public data class SuperGroup(val name: String, val maxSize: Long) {
  * A logical partition inside a dynamic partition (super) image.
  */
 @Serializable
-public data class SuperPartition(val name: String, val group: String, val size: Long) {
+data class SuperPartition(val name: String, val group: String, val size: Long) {
     init {
         require(name.isNotBlank()) { "Partition name must not be blank" }
         require(group.isNotBlank()) { "Group name must not be blank" }
@@ -41,7 +41,7 @@ public data class SuperPartition(val name: String, val group: String, val size: 
  * Key: `super.layout`
  */
 @Serializable
-public data class SuperLayout(
+data class SuperLayout(
     val superSize: Long,
     val groups: List<SuperGroup> = emptyList(),
     val partitions: List<SuperPartition> = emptyList(),
@@ -52,25 +52,25 @@ public data class SuperLayout(
     val fits: Boolean = true,
     val reason: String? = null,
 ) {
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(layout: SuperLayout): String = json.encodeToString(serializer(), layout)
-        public fun decode(string: String): SuperLayout = json.decodeFromString(serializer(), string)
+        fun encode(layout: SuperLayout): String = json.encodeToString(serializer(), layout)
+        fun decode(string: String): SuperLayout = json.decodeFromString(serializer(), string)
     }
 }
 
 /**
  * Planner calculating layout fitting, free space, and shortfalls for dynamic partitions (super).
  */
-public object SuperLayoutPlanner {
-    public const val DEFAULT_ALIGNMENT: Long = 4096L
+object SuperLayoutPlanner {
+    const val DEFAULT_ALIGNMENT: Long = 4096L
 
-    public fun alignUp(size: Long, alignment: Long = DEFAULT_ALIGNMENT): Long {
+    fun alignUp(size: Long, alignment: Long = DEFAULT_ALIGNMENT): Long {
         if (alignment <= 0L || size <= 0L) return maxOf(0L, size)
         val remainder = size % alignment
         return if (remainder == 0L) size else size + (alignment - remainder)
@@ -85,7 +85,7 @@ public object SuperLayoutPlanner {
             ?: parts.firstOrNull { name -> parts.count { it == name } > 1 }?.let { "Partition '$it' is listed twice" }
     }
 
-    public fun plan(
+    fun plan(
         superSize: Long,
         groups: List<SuperGroup>,
         partitions: List<SuperPartition>,

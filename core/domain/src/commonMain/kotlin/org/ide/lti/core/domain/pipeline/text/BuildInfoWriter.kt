@@ -9,9 +9,9 @@
  */
 package org.ide.lti.core.domain.pipeline.text
 
-public object BuildInfoWriter {
+object BuildInfoWriter {
 
-    public data class BuildInfoParams(
+    data class BuildInfoParams(
         val device: String,
         val version: String,
         val timestamp: Long,
@@ -19,7 +19,7 @@ public object BuildInfoWriter {
         val securityPatch: String,
     )
 
-    public fun generate(params: BuildInfoParams): String {
+    fun generate(params: BuildInfoParams): String {
         return buildString {
             appendLine("ro.lti.device=${params.device}")
             appendLine("ro.lti.version=${params.version}")

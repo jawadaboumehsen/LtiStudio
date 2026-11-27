@@ -18,20 +18,20 @@ import org.ide.lti.core.model.target.WirelessPairingRequest
 /**
  * Repository for physical/emulated ADB & Fastboot device connectivity.
  */
-public interface ConnectedDeviceRepository {
-    public fun getConnectedDevices(): StateFlow<List<ConnectedTargetDevice>>
+interface ConnectedDeviceRepository {
+    fun getConnectedDevices(): StateFlow<List<ConnectedTargetDevice>>
 
-    public fun getSelectedConnectedDevice(): StateFlow<ConnectedTargetDevice?>
+    fun getSelectedConnectedDevice(): StateFlow<ConnectedTargetDevice?>
 
-    public suspend fun selectConnectedDevice(serial: String?)
+    suspend fun selectConnectedDevice(serial: String?)
 
-    public suspend fun refreshConnectedDevices()
+    suspend fun refreshConnectedDevices()
 
-    public suspend fun rebootConnectedDevice(serial: String, mode: DeviceRebootMode): Result<DeviceOperationResult>
+    suspend fun rebootConnectedDevice(serial: String, mode: DeviceRebootMode): Result<DeviceOperationResult>
 
-    public suspend fun pairWirelessDevice(request: WirelessPairingRequest): Result<DeviceOperationResult>
+    suspend fun pairWirelessDevice(request: WirelessPairingRequest): Result<DeviceOperationResult>
 
-    public suspend fun connectWirelessDevice(host: String, port: Int): Result<DeviceOperationResult>
+    suspend fun connectWirelessDevice(host: String, port: Int): Result<DeviceOperationResult>
 
-    public suspend fun disconnectDevice(target: String)
+    suspend fun disconnectDevice(target: String)
 }

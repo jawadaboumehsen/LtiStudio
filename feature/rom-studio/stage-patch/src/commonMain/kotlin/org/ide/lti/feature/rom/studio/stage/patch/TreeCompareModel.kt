@@ -22,7 +22,7 @@ import org.ide.lti.core.domain.workbench.SideComparison
 import org.ide.lti.core.domain.workbench.partition
 
 /** Two trees compared (Patches > Compare): the sides picked, what each workspace offers, the result, a row opened. */
-public data class TreeCompareState(
+data class TreeCompareState(
     /** The workspaces a side can come from (id, name). */
     val workspaces: List<Pair<String, String>> = emptyList(),
     val sources: Map<String, CompareSources> = emptyMap(),
@@ -40,7 +40,7 @@ public data class TreeCompareState(
  * The actions of Patches > Compare's two-tree comparison. Its state lives in [ContentToolsState.trees]; every read runs
  * as one of the content tools' tasks (one at a time, cancellable, a refusal shown like any other).
  */
-public class TreeCompareModel internal constructor(
+class TreeCompareModel internal constructor(
     private val workspaceId: String,
     private val workspaces: WorkspaceRepository?,
     private val current: () -> TreeCompareState,
@@ -50,7 +50,7 @@ public class TreeCompareModel internal constructor(
     private val busy: () -> Boolean = { false },
 ) {
     /** The workspaces and this one's sources; the first time, stock against the build of the same partition. */
-    public fun loadCompare() {
+    fun loadCompare() {
         task("Looking for trees and images") { tools ->
             val all = workspaces?.getWorkspaces()?.first().orEmpty().filter { it.linuxPath != null }
             val own = tools.sources(workspaceId)
@@ -71,7 +71,7 @@ public class TreeCompareModel internal constructor(
     }
 
     /** What [workspace] offers to compare, read once. */
-    public fun loadSources(workspace: String) {
+    fun loadSources(workspace: String) {
         if (workspace in current().sources) return
         task("Reading the trees and images of $workspace") { tools ->
             val found = tools.sources(workspace)
@@ -80,7 +80,7 @@ public class TreeCompareModel internal constructor(
     }
 
     /** Sets side A or B; a super image first lists its partitions to pick one. */
-    public fun pick(sideA: Boolean, side: CompareSide) {
+    fun pick(sideA: Boolean, side: CompareSide) {
         update { if (sideA) it.copy(a = side, result = null) else it.copy(b = side, result = null) }
         val image = side as? CompareSide.Image ?: return
         val kind = current().sources[side.workspaceId]?.images?.firstOrNull { it.path == image.image }?.kind
@@ -95,12 +95,12 @@ public class TreeCompareModel internal constructor(
         }
     }
 
-    public fun trustTimes(on: Boolean) {
+    fun trustTimes(on: Boolean) {
         update { it.copy(trustTimes = on) }
     }
 
     /** Compares side A with side B. */
-    public fun compareTrees() {
+    fun compareTrees() {
         val t = current()
         val a = t.a ?: return
         val b = t.b ?: return
@@ -111,7 +111,7 @@ public class TreeCompareModel internal constructor(
     }
 
     /** Opens a row of the comparison: its line diff, entries, dex files and methods, or sizes and hashes. */
-    public fun open(change: TreeChange) {
+    fun open(change: TreeChange) {
         val result = current().result ?: return
         if (busy()) return
         update { it.copy(opened = change, entry = null) }

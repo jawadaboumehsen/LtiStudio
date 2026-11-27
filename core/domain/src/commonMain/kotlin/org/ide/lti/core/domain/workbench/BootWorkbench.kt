@@ -36,10 +36,10 @@ import org.ide.lti.core.domain.pipeline.toolkit.SigningPlan
 import org.ide.lti.core.domain.pipeline.toolkit.VerityRemovalResult
 
 /** A repacked image saved as the partition's override, with the SHA-256 the Assemble settings record. */
-public data class SavedOverride(val partition: String, val sha256: String, val check: RamdiskCheckResult)
+data class SavedOverride(val partition: String, val sha256: String, val check: RamdiskCheckResult)
 
 /** What [BootWorkbench.editFstabs] does to the first-stage mount table. */
-public enum class FstabEdit(public val title: String) {
+enum class FstabEdit(val title: String) {
     /**
      * Lets every dynamic partition mount as each buildable filesystem: a line is added for whichever is missing,
      * after the existing ones, so the stock one is still tried first.
@@ -59,7 +59,7 @@ public enum class FstabEdit(public val title: String) {
     },
     ;
 
-    public abstract fun apply(fstab: String): String
+    abstract fun apply(fstab: String): String
 }
 
 /**
@@ -67,14 +67,14 @@ public enum class FstabEdit(public val title: String) {
  * `--format mkbootimg` arguments make the round trip exact), `cpio` / `mkbootfs` for the ramdisk folder,
  * `dtc`, `avbtool`; APatch with KernelPatch's `kptools`.
  */
-public class BootWorkbench(
+class BootWorkbench(
     internal val runner: WorkbenchRunner,
     /** A Windows path as WSL sees it (`C:\boot.img` -> `/mnt/c/boot.img`). */
     private val toLinuxPath: (String) -> String,
 ) {
 
     /** Unpacks [partition]'s current image (override, assembled, or extracted) into `workbench/boot/<p>/`. */
-    public suspend fun unpack(workspaceId: String, partition: String): BootParts =
+    suspend fun unpack(workspaceId: String, partition: String): BootParts =
         runner.job(workspaceId, "Unpack $partition") {
             val source = sourceOf(this, partition)
             val dir = dir(partition)
@@ -139,12 +139,12 @@ public class BootWorkbench(
      * The kernel of the boot image the next build uses: its version and what it can read (EROFS compression,
      * ramdisk formats), from its embedded config. Null when the image carries no kernel (init_boot, vendor_boot).
      */
-    public suspend fun kernelFacts(workspaceId: String): KernelFacts? = runner.read(workspaceId) {
+    suspend fun kernelFacts(workspaceId: String): KernelFacts? = runner.read(workspaceId) {
         KernelFacts.parse(sh(KernelFacts.SCRIPT, abs(sourceOf(this, KERNEL_IMAGE)), toolPath("unpack_bootimg")))
     }
 
     /** The ramdisk folder as Windows sees it (to open in Explorer); refuses when the image has none (FR-021). */
-    public suspend fun ramdiskFolder(workspaceId: String, partition: String): String = runner.read(workspaceId) {
+    suspend fun ramdiskFolder(workspaceId: String, partition: String): String = runner.read(workspaceId) {
         val folder = "${dir(partition)}/$RAMDISK_DIR"
         if (!exists(folder)) {
             throw RefusalException(
@@ -155,7 +155,7 @@ public class BootWorkbench(
     }
 
     /** Removes the dm-verity keys from the unpacked ramdisk, nothing else (FR-025). */
-    public suspend fun removeVerityKeys(workspaceId: String, partition: String): VerityRemovalResult =
+    suspend fun removeVerityKeys(workspaceId: String, partition: String): VerityRemovalResult =
         runner.job(workspaceId, "Remove verity keys") {
             val folder = abs("${dir(partition)}/$RAMDISK_DIR")
             val found = run("find", folder, "-type", "f", "(", "-name", "verity_key", "-o", "-name", "*.avbpubkey", ")")
@@ -165,16 +165,16 @@ public class BootWorkbench(
         }
 
     /** The device tree source of the unpacked image, for editing (FR-022). */
-    public suspend fun deviceTree(workspaceId: String, partition: String): String? =
+    suspend fun deviceTree(workspaceId: String, partition: String): String? =
         runner.read(workspaceId) { readText("${dir(partition)}/$DTS") }
 
     /** Shows what saving [newDts] would change, without saving. */
-    public suspend fun previewDeviceTree(workspaceId: String, partition: String, newDts: String): DeviceTreeDiff {
+    suspend fun previewDeviceTree(workspaceId: String, partition: String, newDts: String): DeviceTreeDiff {
         val old = deviceTree(workspaceId, partition).orEmpty()
         return DeviceTreeDiff(old, newDts, lineChanges(old, newDts))
     }
 
-    public suspend fun saveDeviceTree(workspaceId: String, partition: String, newDts: String) {
+    suspend fun saveDeviceTree(workspaceId: String, partition: String, newDts: String) {
         runner.job(workspaceId, "Edit device tree") {
             val candidate = "${dir(partition)}/$DTS.new"
             writeText(candidate, newDts)
@@ -199,7 +199,7 @@ public class BootWorkbench(
      * read back and compared with the folder first; a mismatch blocks the result (FR-021). When [plan] is given
      * the AVB footer is re-signed with it; an image that had a footer gets an unsigned one otherwise (FR-024).
      */
-    public suspend fun repack(workspaceId: String, partition: String, plan: SigningPlan? = null): SavedOverride =
+    suspend fun repack(workspaceId: String, partition: String, plan: SigningPlan? = null): SavedOverride =
         runner.job(workspaceId, "Repack $partition") {
             val dir = dir(partition)
             val state = readText("$dir/$STATE")?.let { json.decodeFromString(BootState.serializer(), it) }
@@ -275,7 +275,7 @@ public class BootWorkbench(
      * refusing one the device would not boot: an AVB footer avbtool cannot read (the bootloader reads it first), or
      * a ramdisk compressed in a format the boot kernel does not unpack.
      */
-    public suspend fun importPatched(workspaceId: String, partition: String, windowsPath: String): SavedOverride =
+    suspend fun importPatched(workspaceId: String, partition: String, windowsPath: String): SavedOverride =
         runner.job(workspaceId, "Import $partition") {
             val linuxSource = toLinuxPath(windowsPath)
             val head = run("xxd", "-p", "-l", "8", linuxSource).trim()
@@ -336,7 +336,7 @@ public class BootWorkbench(
     }
 
     /** Whether the unpacked image already carries Magisk (ramdisk) or APatch (kernel) (FR-026). */
-    public suspend fun rootStatus(workspaceId: String, partition: String): RootStatus = runner.read(workspaceId) {
+    suspend fun rootStatus(workspaceId: String, partition: String): RootStatus = runner.read(workspaceId) {
         val dir = dir(partition)
         when {
             exists("$dir/$RAMDISK_DIR/.backup/.magisk") || exists("$dir/$RAMDISK_DIR/overlay.d/sbin") ->
@@ -354,7 +354,7 @@ public class BootWorkbench(
      * a file descriptor, never the command line, and the file is removed afterwards. Repack to save. Returns the
      * patched kernel's size.
      */
-    public suspend fun patchApatch(workspaceId: String, partition: String, superKey: String): Long? {
+    suspend fun patchApatch(workspaceId: String, partition: String, superKey: String): Long? {
         require(superKey.length >= MIN_SUPERKEY) { "The superkey needs at least $MIN_SUPERKEY characters." }
         return runner.job(workspaceId, "APatch $partition") {
             val kernel = "${dir(partition)}/unpacked/kernel"
@@ -397,7 +397,7 @@ public class BootWorkbench(
     }
 
     /** The AVB flags of the workspace's `vbmeta` image (FR-023). */
-    public suspend fun vbmetaFlags(workspaceId: String, image: String = VBMETA): Int = runner.read(workspaceId) {
+    suspend fun vbmetaFlags(workspaceId: String, image: String = VBMETA): Int = runner.read(workspaceId) {
         readVbmetaFlags(this, image)
     }
 
@@ -405,7 +405,7 @@ public class BootWorkbench(
      * Writes a copy of [image] with [newFlags] to `out/toolkit/` (vbmeta is flashed by hand, never packaged) and
      * returns the change and the copy's path.
      */
-    public suspend fun writeVbmetaFlags(
+    suspend fun writeVbmetaFlags(
         workspaceId: String,
         newFlags: Int,
         image: String = VBMETA,
@@ -416,7 +416,7 @@ public class BootWorkbench(
         // Made and patched under a side name, then renamed over `out`: a link there is replaced, never written through.
         val partial = "$out.partial"
         sh("mkdir -p \"$(dirname \"$2\")\" && rm -f \"$2\" && cp -f \"$1\" \"$2\"", abs(image), abs(partial))
-        val bytes = (0 until INT_BYTES).joinToString("") { i ->
+        val bytes = (0..<INT_BYTES).joinToString("") { i ->
             "\\" + ((newFlags ushr (BITS_PER_BYTE * (INT_BYTES - 1 - i))) and BYTE_MASK).toString(
                 OCTAL,
             ).padStart(3, '0')
@@ -427,7 +427,7 @@ public class BootWorkbench(
     }
 
     /** The signing plan for [partition]: the workspace AVB key and the image's partition size (FR-024). */
-    public suspend fun signingPlan(
+    suspend fun signingPlan(
         workspaceId: String,
         partition: String,
         keyRef: String,
@@ -517,12 +517,12 @@ public class BootWorkbench(
 
     internal fun dir(partition: String): String = "workbench/boot/$partition"
 
-    public companion object {
-        public const val TOOL: String = "boot"
+    companion object {
+        const val TOOL: String = "boot"
         private const val KERNEL_IMAGE = "boot"
 
-        public const val VBMETA: String = "firmware/extracted/vbmeta.img"
-        public const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
+        const val VBMETA: String = "firmware/extracted/vbmeta.img"
+        const val DEFAULT_ALGORITHM: String = "SHA256_RSA4096"
         private const val ARGS = "mkbootimg.args"
         private const val STATE = "state.json"
         private const val FAKEROOT_STATE = "fakeroot.state"
@@ -572,7 +572,7 @@ public class BootWorkbench(
          * For each image [unbuiltEdits] names, the files that differ from when it was unpacked or last repacked; null
          * for an image unpacked before the app kept that list.
          */
-        public suspend fun unbuiltFiles(runner: WorkbenchRunner, workspaceId: String): Map<String, ManifestDiff?> =
+        suspend fun unbuiltFiles(runner: WorkbenchRunner, workspaceId: String): Map<String, ManifestDiff?> =
             unbuiltEdits(runner, workspaceId).associateWith { image ->
                 runner.read(workspaceId) {
                     val dir = "workbench/boot/$image"
@@ -584,7 +584,7 @@ public class BootWorkbench(
          * `unpack_bootimg --format mkbootimg -0` output as arguments: NUL-separated, then one newline. Only that last
          * piece goes; an empty value before it (`--cmdline ''` of an init_boot) is an argument and stays.
          */
-        public fun mkbootimgArgs(text: String): List<String> =
+        fun mkbootimgArgs(text: String): List<String> =
             text.split('\u0000').let { if (it.lastOrNull()?.isBlank() == true) it.dropLast(1) else it }
 
         /**
@@ -592,7 +592,7 @@ public class BootWorkbench(
          * and whether the phone uses it. Without mkdtboimg (optional in its tool group)
          * the dtbo overlays are not read.
          */
-        public suspend fun deviceTreeMounts(runner: WorkbenchRunner, workspaceId: String): MountTable.DeviceTree =
+        suspend fun deviceTreeMounts(runner: WorkbenchRunner, workspaceId: String): MountTable.DeviceTree =
             runner.read(workspaceId) {
                 val dtbo = try {
                     toolPath("mkdtboimg")
@@ -606,7 +606,7 @@ public class BootWorkbench(
          * The unpacked boot images whose ramdisk folder or device tree changed since they were unpacked or last
          * repacked: those edits are not in the next build until repacked.
          */
-        public suspend fun unbuiltEdits(runner: WorkbenchRunner, workspaceId: String): List<String> =
+        suspend fun unbuiltEdits(runner: WorkbenchRunner, workspaceId: String): List<String> =
             runner.read(workspaceId) {
                 // Nothing unpacked yet: no folder, so find fails and finds nothing.
                 tryRun("find", abs("workbench/boot"), "-mindepth", "2", "-maxdepth", "2", "-name", STATE).stdout
@@ -621,7 +621,7 @@ public class BootWorkbench(
         private const val DTS = "dtb.dts"
 
         /** `same` or `differs`: whether the unpacked first device tree compiles back to its own bytes. */
-        public const val DTB_ROUND_TRIP: String = "dtb.roundtrip"
+        const val DTB_ROUND_TRIP: String = "dtb.roundtrip"
 
         /**
          * `sh -c DTB_UNPACK_SCRIPT sh <unpacked dir> <dtc>`: keeps the dtb as found (`dtb.orig`; a vendor_boot dtb is
@@ -630,7 +630,7 @@ public class BootWorkbench(
          * compared with the first tree byte for byte ([DTB_ROUND_TRIP]: `same` or `differs`), and its header says
          * which: when it differs, an edit rewrites the whole tree in dtc's own layout.
          */
-        public const val DTB_UNPACK_SCRIPT: String = """
+        const val DTB_UNPACK_SCRIPT: String = """
             set -e
             cd "$1"
             cp -f unpacked/dtb dtb.orig
@@ -664,7 +664,7 @@ public class BootWorkbench(
          * `sh -c DTB_REPACK_SCRIPT sh <unpacked dir> <dtc>`: the dtb as found when `dtb.dts` was not edited; otherwise
          * the edited first device tree followed by the others byte for byte (dtc reads only the first).
          */
-        public const val DTB_REPACK_SCRIPT: String = """
+        const val DTB_REPACK_SCRIPT: String = """
             set -e
             cd "$1"
             if [ ! -f dtb.orig ] || { [ -f dtb.dts.sha ] && sha256sum -c --status dtb.dts.sha; }; then
@@ -698,7 +698,7 @@ public class BootWorkbench(
         private val json = Json { ignoreUnknownKeys = true }
 
         /** `unpack_bootimg --format info` lines (`key: value`) as header facts. */
-        public fun parseHeader(info: String): BootHeaderFacts {
+        fun parseHeader(info: String): BootHeaderFacts {
             val fields = info.lines().mapNotNull { line ->
                 line.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim().lowercase() to it[1].trim() }
             }.toMap().filterValues { it != "None" } // How unpack_bootimg writes a field this image does not have.
@@ -761,7 +761,7 @@ public class BootWorkbench(
         private fun lineChanges(old: String, new: String): List<String> {
             val a = old.lines()
             val b = new.lines()
-            return (0 until maxOf(a.size, b.size)).mapNotNull { i ->
+            return (0..<maxOf(a.size, b.size)).mapNotNull { i ->
                 val was = a.getOrNull(i)
                 val now = b.getOrNull(i)
                 when {
@@ -787,12 +787,12 @@ private data class BootState(
 )
 
 /** The entries of an unpacked boot image changed, added and removed since it was unpacked or last repacked. */
-public data class ManifestDiff(val changed: Int, val added: Int, val removed: Int) {
-    public val total: Int get() = changed + added + removed
+data class ManifestDiff(val changed: Int, val added: Int, val removed: Int) {
+    val total: Int get() = changed + added + removed
 
-    public companion object {
+    companion object {
         /** [before] and [after] as `BootWorkbench.MANIFEST_SCRIPT` prints them. */
-        public fun of(before: String, after: String): ManifestDiff {
+        fun of(before: String, after: String): ManifestDiff {
             fun entries(text: String) = text.lineSequence().filter(String::isNotBlank)
                 .associate { it.substringBefore('\t') to it.substringAfter('\t') }
             val old = entries(before)
@@ -808,11 +808,11 @@ public data class ManifestDiff(val changed: Int, val added: Int, val removed: In
 
 /** A ramdisk's compression, from its first bytes; the scripts take the input as `$1` and the output as `$2`. */
 @Serializable
-public enum class RamdiskCompression(
-    public val decompress: String,
-    public val compress: String,
+enum class RamdiskCompression(
+    val decompress: String,
+    val compress: String,
     /** The kernel's name for its decoder (`CONFIG_RD_<name>`, `KernelFacts.ramdiskFormats`); null needs none. */
-    public val kernelName: String?,
+    val kernelName: String?,
 ) {
     GZIP("gzip -dc \"$1\" > \"$2\"", "gzip -9nc \"$1\" > \"$2\"", "gzip"),
     LZ4_LEGACY("lz4 -dc \"$1\" > \"$2\"", "lz4 -l -12 --favor-decSpeed -c \"$1\" > \"$2\"", "lz4"),
@@ -821,8 +821,8 @@ public enum class RamdiskCompression(
     NONE("cp -f \"$1\" \"$2\"", "cp -f \"$1\" \"$2\"", null),
     ;
 
-    public companion object {
-        public fun of(head: ByteArray): RamdiskCompression {
+    companion object {
+        fun of(head: ByteArray): RamdiskCompression {
             fun starts(vararg b: Int) = head.size >= b.size && b.indices.all { head[it] == b[it].toByte() }
             return when {
                 starts(0x1f, 0x8b) -> GZIP

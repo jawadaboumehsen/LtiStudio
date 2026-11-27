@@ -18,9 +18,9 @@ import org.ide.lti.core.model.run.StepCommand
  * Supports multi-file archives (ZIP, 7z, RAR, TAR) and single-file stream compressors
  * (Gz, Xz, Lz4, Bz2, Zstd, Brotli).
  */
-public object ArchiveExtractor {
+object ArchiveExtractor {
 
-    public fun extractionCommand(
+    fun extractionCommand(
         format: PackageFormat,
         archivePath: String,
         destDir: String,

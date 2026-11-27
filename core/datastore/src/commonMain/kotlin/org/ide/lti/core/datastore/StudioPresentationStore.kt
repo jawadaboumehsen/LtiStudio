@@ -27,7 +27,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.studio.StudioPresentation
 
 @Serializable
-public data class StudioPresentationMap(
+data class StudioPresentationMap(
     val schemaVersion: Int = 1,
     val presentations: Map<String, StudioPresentation> = emptyMap(),
 )
@@ -38,7 +38,7 @@ public data class StudioPresentationMap(
  * Presentation state is strictly isolated per workspace. Corrupted or undecodable data is safely discarded
  * rather than thrown.
  */
-public class StudioPresentationStore(
+class StudioPresentationStore(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -115,10 +115,10 @@ public class StudioPresentationStore(
         }
     }
 
-    public companion object {
-        public const val KEY_PRESENTATIONS: String = "lti_studio_presentations_v1"
+    companion object {
+        const val KEY_PRESENTATIONS: String = "lti_studio_presentations_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

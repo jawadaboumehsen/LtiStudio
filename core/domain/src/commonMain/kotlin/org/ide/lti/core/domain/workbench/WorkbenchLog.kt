@@ -20,11 +20,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /** How a line of the output reads: a step that worked, information, a warning, an error. */
-public enum class LogLevel { OK, INF, WRN, ERR }
+enum class LogLevel { OK, INF, WRN, ERR }
 
-public data class LogLine(val atMillis: Long, val level: LogLevel, val text: String, val id: Long = 0) {
+data class LogLine(val atMillis: Long, val level: LogLevel, val text: String, val id: Long = 0) {
     /** The wall-clock time on this computer, `HH:MM:SS.mmm`. */
-    public val localTime: String
+    val localTime: String
         get() = Instant.fromEpochMilliseconds(atMillis).toLocalDateTime(TimeZone.currentSystemDefault()).time.toString()
 }
 
@@ -32,12 +32,12 @@ public data class LogLine(val atMillis: Long, val level: LogLevel, val text: Str
  * What the workbench jobs did, in order, for the Studio's Output panel: each job's start and end (or why it was
  * refused), and the lines a tool reports itself (a dry run's findings, its summary). Kept in memory, the last [MAX].
  */
-public class WorkbenchLog(private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() }) {
+class WorkbenchLog(private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() }) {
     private val _lines = MutableStateFlow<List<LogLine>>(emptyList())
     private val nextId = MutableStateFlow(0L)
-    public val lines: StateFlow<List<LogLine>> = _lines.asStateFlow()
+    val lines: StateFlow<List<LogLine>> = _lines.asStateFlow()
 
-    public fun add(level: LogLevel, text: String) {
+    fun add(level: LogLevel, text: String) {
         val at = now()
         val messages = text.lines().filter(String::isNotBlank)
         if (messages.isEmpty()) return
@@ -46,11 +46,11 @@ public class WorkbenchLog(private val now: () -> Long = { Clock.System.now().toE
         _lines.update { (it + added).takeLast(MAX) }
     }
 
-    public fun clear() {
+    fun clear() {
         _lines.value = emptyList()
     }
 
-    public companion object {
-        public const val MAX: Int = 2000
+    companion object {
+        const val MAX: Int = 2000
     }
 }

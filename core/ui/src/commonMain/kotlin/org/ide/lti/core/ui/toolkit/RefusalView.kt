@@ -58,7 +58,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.Refusal
  * 5. Optional action button (e.g. "Add entries" for coverage refusals).
  */
 @Composable
-public fun RefusalView(
+fun RefusalView(
     refusal: Refusal,
     modifier: Modifier = Modifier,
     isInfo: Boolean = false,

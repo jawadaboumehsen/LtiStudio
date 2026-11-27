@@ -53,7 +53,7 @@ import org.ide.lti.core.model.workspace.DebloatSettings
 import java.io.File
 
 /** What the Debloat editor shows from the workspace: the apps in the assembled tree and the last result. */
-public data class DebloatFacts(
+data class DebloatFacts(
     val inventory: List<DebloatCandidate> = emptyList(),
     val loaded: Boolean = false,
     val loading: Boolean = false,
@@ -79,18 +79,18 @@ public data class DebloatFacts(
     val refusal: Refusal? = null,
 ) {
     /** What removing each app would do while the apps in [picked] go too. */
-    public fun risks(picked: Set<String>): Map<String, AppRisk> = DebloatRisk.assess(inventory, apps, picked)
+    fun risks(picked: Set<String>): Map<String, AppRisk> = DebloatRisk.assess(inventory, apps, picked)
 
     /** Every community list's opinion of [packageId], by list name; shown beside the verdict, never part of it. */
-    public fun opinions(packageId: String?): List<Pair<String, CommunityOpinion>> =
+    fun opinions(packageId: String?): List<Pair<String, CommunityOpinion>> =
         packageId?.let { pkg -> presets.mapNotNull { list -> list.opinions[pkg]?.let { list.name to it } } }.orEmpty()
 
     /** The map of the app [selector] names: what relies on it and what it relies on, as the manifests declare. */
-    public fun map(selector: String): AppMap? = DebloatMap.of(selector, apps)
+    fun map(selector: String): AppMap? = DebloatMap.of(selector, apps)
 }
 
-public class DebloatViewModel(
-    public val workspaceId: String,
+class DebloatViewModel(
+    val workspaceId: String,
     initialSettings: DebloatSettings? = null,
     store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
@@ -114,16 +114,16 @@ public class DebloatViewModel(
         write = { snapshot, value -> snapshot.copy(debloat = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<DebloatSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<DebloatSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     private val _facts = MutableStateFlow(DebloatFacts())
-    public val facts: StateFlow<DebloatFacts> = _facts.asStateFlow()
+    val facts: StateFlow<DebloatFacts> = _facts.asStateFlow()
 
-    public fun updateSettings(updated: DebloatSettings) {
+    fun updateSettings(updated: DebloatSettings) {
         val before = settings.value.removeSelectors
         sync.update(updated)
         val device = _facts.value.device
@@ -138,7 +138,7 @@ public class DebloatViewModel(
     }
 
     /** Picks the apps another workspace of this phone picked ([DebloatFacts.devicePicks]). */
-    public fun applyDevicePicks() {
+    fun applyDevicePicks() {
         _facts.value.devicePicks?.let {
             pick(it, "Applied the picks kept for ${it.device}:")
             _facts.update { prev -> prev.copy(devicePicks = null) }
@@ -146,7 +146,7 @@ public class DebloatViewModel(
     }
 
     /** Picks or un-picks [candidate] for removal; a protected app, or one the device needs, is never picked. */
-    public fun toggleRemoval(candidate: DebloatCandidate) {
+    fun toggleRemoval(candidate: DebloatCandidate) {
         if (DebloatInventory.isProtected(candidate)) return
         val selector = selectorOf(candidate)
         val current = settings.value
@@ -160,14 +160,14 @@ public class DebloatViewModel(
         updateSettings(current.copy(enabled = current.enabled || picks.isNotEmpty(), removeSelectors = picks))
     }
 
-    public fun unpick(selector: String) {
+    fun unpick(selector: String) {
         updateSettings(settings.value.copy(removeSelectors = settings.value.removeSelectors - selector))
     }
 
     private var refreshJob: Job? = null
 
     /** Reads the apps of the assembled work tree and the last Debloat result. */
-    public fun refresh() {
+    fun refresh() {
         val facts = workspaceFacts ?: return
         _facts.update { it.copy(loading = true) }
         // A newer refresh replaces this one whole: its risks must never land on the newer inventory.
@@ -262,7 +262,7 @@ public class DebloatViewModel(
      * Puts [point]'s backup back into the work tree (with its sidecar lines) and un-picks the app, so later
      * builds keep it too.
      */
-    public fun restore(point: RestorePoint) {
+    fun restore(point: RestorePoint) {
         val workbench = restore ?: return
         guarded {
             workbench.restore(workspaceId, point.id)
@@ -272,7 +272,7 @@ public class DebloatViewModel(
         }
     }
 
-    public fun restoreAll() {
+    fun restoreAll() {
         val workbench = restore ?: return
         guarded {
             val restored = workbench.restoreAll(workspaceId, DebloatStage.TOOL)
@@ -284,7 +284,7 @@ public class DebloatViewModel(
     }
 
     /** Picks the apps of a removal list file; protected apps and entries this firmware lacks are listed, not picked. */
-    public fun importList() {
+    fun importList() {
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
             guarded {
@@ -359,7 +359,7 @@ public class DebloatViewModel(
     }
 
     /** Saves the current picks as a removal list in a folder the user picks. */
-    public fun exportList() {
+    fun exportList() {
         viewModelScope.launch {
             val folder = pickFolder() ?: return@launch
             guarded {
@@ -372,7 +372,7 @@ public class DebloatViewModel(
     }
 
     /** Keeps the current picks in the app as preset [name] (replacing one of that name). */
-    public fun savePreset(name: String) {
+    fun savePreset(name: String) {
         val store = presets ?: return
         val trimmed = name.trim().takeIf { it.isNotEmpty() } ?: return
         guarded {
@@ -385,11 +385,11 @@ public class DebloatViewModel(
     }
 
     /** Adds preset [name]'s apps to the picks, as an imported list would. */
-    public fun applyPreset(name: String) {
+    fun applyPreset(name: String) {
         _facts.value.presets.firstOrNull { it.name == name }?.let { pick(it, "Applied the preset") }
     }
 
-    public fun deletePreset(name: String) {
+    fun deletePreset(name: String) {
         val store = presets ?: return
         guarded {
             val saved = store.update { all -> all.filter { it.name != name } }
@@ -397,7 +397,7 @@ public class DebloatViewModel(
         }
     }
 
-    public fun dismissMessage() {
+    fun dismissMessage() {
         _facts.update { it.copy(message = null, refusal = null) }
     }
 
@@ -423,12 +423,12 @@ public class DebloatViewModel(
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * The assembled tree as Debloat sees it: work/ after the last build lacks the apps that build removed, but
          * the next build re-assembles them first, so they are still in the inventory (and still picked).
          */
-        public fun withRemoved(tree: List<DebloatCandidate>, last: DebloatDecision?): List<DebloatCandidate> {
+        fun withRemoved(tree: List<DebloatCandidate>, last: DebloatDecision?): List<DebloatCandidate> {
             val present = tree.map(::selectorOf).toSet()
             val removed = last?.removals.orEmpty()
                 .map { DebloatCandidate(it.partition, it.relativePath, it.sizeBytes, it.packageId) }
@@ -439,7 +439,7 @@ public class DebloatViewModel(
         /** App icons copied out of the APKs, in the workspace (re-created on each refresh). */
         private const val ICON_DIR = "workbench/debloat/icons"
 
-        public fun selectorOf(candidate: DebloatCandidate): String = "${candidate.partition}:${candidate.relativePath}"
+        fun selectorOf(candidate: DebloatCandidate): String = "${candidate.partition}:${candidate.relativePath}"
 
         private const val INVENTORY_DEPTH = 7
     }

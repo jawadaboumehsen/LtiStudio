@@ -23,12 +23,12 @@ import kotlin.jvm.JvmInline
  *
  * Future minor releases may add subtypes. Keep an `else` branch when you match exhaustively with `when`.
  */
-public sealed interface OpticalSizeValue<T> {
+sealed interface OpticalSizeValue<T> {
     /** A value which does not change with the material size. */
     @JvmInline
-    public value class Fixed<T>(
+    value class Fixed<T>(
         /** The fixed value. */
-        public val value: T,
+        val value: T,
     ) : OpticalSizeValue<T>
 
     /**
@@ -39,9 +39,9 @@ public sealed interface OpticalSizeValue<T> {
      * between adjacent points.
      */
     @JvmInline
-    public value class Responsive<T> private constructor(
+    value class Responsive<T> private constructor(
         /** The read-only snapshot of ordered interpolation points. */
-        public val points: List<OpticalSizePoint<T>>,
+        val points: List<OpticalSizePoint<T>>,
     ) : OpticalSizeValue<T> {
         /**
          * Creates a responsive value from ordered [points].
@@ -49,7 +49,7 @@ public sealed interface OpticalSizeValue<T> {
          * @throws IllegalArgumentException if fewer than two points are provided or their dimensions
          * are not strictly increasing.
          */
-        public constructor(vararg points: OpticalSizePoint<T>) : this(
+        constructor(vararg points: OpticalSizePoint<T>) : this(
             buildList(points.size) { addAll(points) },
         )
 
@@ -59,7 +59,7 @@ public sealed interface OpticalSizeValue<T> {
          * @throws IllegalArgumentException if fewer than two points are provided or their dimensions
          * are not strictly increasing.
          */
-        public constructor(points: Collection<OpticalSizePoint<T>>) : this(
+        constructor(points: Collection<OpticalSizePoint<T>>) : this(
             buildList(points.size) { addAll(points) },
         )
 
@@ -80,7 +80,7 @@ public sealed interface OpticalSizeValue<T> {
  * @param shortestDimension The positive shortest dimension at which [value] applies.
  * @param value The value to resolve at [shortestDimension].
  */
-public data class OpticalSizePoint<T>(
+data class OpticalSizePoint<T>(
     val shortestDimension: Dp,
     val value: T,
 ) {

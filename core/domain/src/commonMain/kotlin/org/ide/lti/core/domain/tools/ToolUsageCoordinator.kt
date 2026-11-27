@@ -18,7 +18,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-public class ToolUsageCoordinator {
+class ToolUsageCoordinator {
     private val mutex = Mutex()
     private val activeJobIds = mutableSetOf<String>()
     private var isReconciling: Boolean = false
@@ -26,17 +26,17 @@ public class ToolUsageCoordinator {
     private val _jobActive = MutableStateFlow(false)
 
     /** Whether a ROM job (or its reconciliation) owns the tools right now; screens follow it. */
-    public val jobActive: StateFlow<Boolean> = _jobActive.asStateFlow()
+    val jobActive: StateFlow<Boolean> = _jobActive.asStateFlow()
 
     private var activeMutationsCount: Int = 0
 
-    public val isJobActive: Boolean
+    val isJobActive: Boolean
         get() = _jobActive.value
 
-    public val isMutating: Boolean
+    val isMutating: Boolean
         get() = activeMutationsCount > 0
 
-    public suspend fun <T> admitJob(jobId: String, capturePins: suspend () -> T): T = mutex.withLock {
+    suspend fun <T> admitJob(jobId: String, capturePins: suspend () -> T): T = mutex.withLock {
         if (activeMutationsCount > 0) {
             throw IllegalStateException("Tool mutation is in progress")
         }
@@ -47,7 +47,7 @@ public class ToolUsageCoordinator {
         result
     }
 
-    public suspend fun finishJob(jobId: String): Unit = withContext(NonCancellable) {
+    suspend fun finishJob(jobId: String): Unit = withContext(NonCancellable) {
         mutex.withLock {
             activeJobIds.remove(jobId)
             _jobActive.value = activeJobIds.isNotEmpty() || isReconciling
@@ -58,7 +58,7 @@ public class ToolUsageCoordinator {
      * Coordinates every mutation of the component-tool store with ROM execution.
      * Guards admission without holding the mutex across the entire build.
      */
-    public suspend fun <T> withToolMutationAdmission(block: suspend () -> T): Result<T> {
+    suspend fun <T> withToolMutationAdmission(block: suspend () -> T): Result<T> {
         mutex.withLock {
             if (isJobActive) {
                 return Result.failure(IllegalStateException("A ROM job is running"))
@@ -83,9 +83,9 @@ public class ToolUsageCoordinator {
     }
 
     /** Compatibility name for callers whose mutation is specifically a removal. */
-    public suspend fun <T> withRemovalAdmission(block: suspend () -> T): Result<T> = withToolMutationAdmission(block)
+    suspend fun <T> withRemovalAdmission(block: suspend () -> T): Result<T> = withToolMutationAdmission(block)
 
-    public suspend fun markReconciling(reconciling: Boolean) {
+    suspend fun markReconciling(reconciling: Boolean) {
         mutex.withLock {
             isReconciling = reconciling
             _jobActive.value = activeJobIds.isNotEmpty() || isReconciling

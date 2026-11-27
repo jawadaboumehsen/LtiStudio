@@ -7,8 +7,8 @@ import org.ide.lti.core.model.setup.SetupEnvironment
  * Single Responsibility: Inspection and classification of the WSL host environment
  * and installed distributions.
  */
-public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExecutor()) {
-    public fun listDistros(): List<String> {
+class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExecutor()) {
+    fun listDistros(): List<String> {
         val res = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (res.exitCode != 0) return emptyList()
         return res.output.lines()
@@ -20,7 +20,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
      * The WSL version of each distribution `wsl -l -v` lists. A distribution whose row cannot be read, or a
      * failed query, is simply absent: an unknown version is never reported as a number.
      */
-    public fun listDistrosWithVersions(): Map<String, Int> =
+    fun listDistrosWithVersions(): Map<String, Int> =
         listVerboseRows().mapNotNull { row -> row.version?.let { row.name to it } }.toMap()
 
     private class DistroRow(val name: String, val isDefault: Boolean, val version: Int?)
@@ -44,27 +44,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         }
     }
 
-    public fun readOsRelease(distro: String): Map<String, String> {
-        val res = cli.execute(distro, listOf("cat", "/etc/os-release"), timeoutSeconds = 5)
-        if (res.exitCode != 0) return emptyMap()
-        val result = mutableMapOf<String, String>()
-        for (line in res.output.lines()) {
-            val trimmed = line.trim()
-            if (trimmed.isBlank() || trimmed.startsWith("#")) continue
-            val eqIdx = trimmed.indexOf('=')
-            if (eqIdx > 0) {
-                val key = trimmed.substring(0, eqIdx).trim()
-                val value =
-                    trimmed.substring(eqIdx + 1).trim()
-                        .removeSurrounding("\"")
-                        .removeSurrounding("'")
-                result[key] = value
-            }
-        }
-        return result
-    }
-
-    public fun readUser(distro: String): Pair<String, String>? {
+    fun readUser(distro: String): Pair<String, String>? {
         val res = cli.execute(distro, listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""), timeoutSeconds = 5)
         if (res.exitCode != 0) return null
         val lines = res.output.lines().map { it.trim() }.filter { it.isNotBlank() }
@@ -73,7 +53,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         return user to home
     }
 
-    public fun classify(distro: String? = null): DistroStatus {
+    fun classify(distro: String? = null): DistroStatus {
         val hostCheck = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (hostCheck.exitCode != 0) {
             return hostCheck.unavailable()
@@ -183,7 +163,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         )
     }
 
-    public fun detectAll(): List<DistroStatus> {
+    fun detectAll(): List<DistroStatus> {
         val hostCheck = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         if (hostCheck.exitCode != 0) {
             return listOf(hostCheck.unavailable())
@@ -198,7 +178,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         return distros.map { classify(it) }
     }
 
-    public fun resolveWslIp(distro: String): String {
+    fun resolveWslIp(distro: String): String {
         val res = cli.execute(distro, listOf("hostname", "-I"), timeoutSeconds = 5)
         val ip = res.output.split(Regex("\\s+")).firstOrNull()?.trim()
         return if (!ip.isNullOrBlank() && ip.matches(Regex("""^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"""))) {
@@ -208,7 +188,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         }
     }
 
-    public fun resolveWslUserHome(distro: String): String {
+    fun resolveWslUserHome(distro: String): String {
         val userRes = cli.execute(distro, listOf("sh", "-c", "id -un; printf '%s' \"\$HOME\""), timeoutSeconds = 5)
         if (userRes.exitCode != 0) {
             val detail = userRes.failureDetail("wsl.exe exited with code ${userRes.exitCode}")
@@ -246,7 +226,7 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
         return stderr.ifBlank { stdout.takeIf { "Wsl/" in it }.orEmpty() }.ifBlank { fallback }
     }
 
-    public fun isWslInstalled(): Boolean = try {
+    fun isWslInstalled(): Boolean = try {
         val res = cli.executeHost(listOf("wsl.exe", "-l", "-q"), timeoutSeconds = 5, charset = Charsets.UTF_16LE)
         res.exitCode == 0
     } catch (_: Exception) {
@@ -258,18 +238,18 @@ public class WslEnvironmentDetector(private val cli: WslCliExecutor = WslCliExec
      * installed, still WSL 2 and - when [requireDefault] - still the default. The OS and user, which cost a boot
      * to read, are what a cached verification is allowed to keep.
      */
-    public fun stillCurrent(environment: SetupEnvironment, requireDefault: Boolean): Boolean {
+    fun stillCurrent(environment: SetupEnvironment, requireDefault: Boolean): Boolean {
         val row = listVerboseRows().firstOrNull { it.name == environment.distro } ?: return false
         return row.version == 2 && (!requireDefault || row.isDefault)
     }
 
     /** The distro WSL marks as default (`*` in `wsl -l -v`); null when WSL reports none. Never guessed. */
-    public fun getDefaultDistro(): String? = listVerboseRows().firstOrNull { it.isDefault }?.name
+    fun getDefaultDistro(): String? = listVerboseRows().firstOrNull { it.isDefault }?.name
 
     /**
      * Sets the default WSL distribution via `wsl.exe --set-default <name>`.
      */
-    public fun setDefaultDistro(name: String): Result<Unit> = runCatching {
+    fun setDefaultDistro(name: String): Result<Unit> = runCatching {
         val res = cli.executeHost(listOf("wsl.exe", "--set-default", name), timeoutSeconds = 10)
         if (res.exitCode != 0) {
             val err = res.error.ifBlank { res.output }.ifBlank { "Exit code ${res.exitCode}" }

@@ -14,7 +14,7 @@ import androidx.compose.runtime.Stable
 /**
  * The content consumed by a Haze visual effect.
  */
-public sealed interface HazeInput {
+sealed interface HazeInput {
 
     /**
      * Content captured by [hazeSource] modifiers associated with [state].
@@ -24,10 +24,10 @@ public sealed interface HazeInput {
      * @property retention Policy for output retained while selected sources are unavailable.
      */
     @Stable
-    public data class Sources(
-        public val state: HazeState,
-        public val selection: HazeSourceSelection = HazeSourceSelection.Behind,
-        public val retention: HazeSourceRetention = HazeSourceRetention.KeepLastFrame,
+    data class Sources(
+        val state: HazeState,
+        val selection: HazeSourceSelection = HazeSourceSelection.Behind,
+        val retention: HazeSourceRetention = HazeSourceRetention.KeepLastFrame,
     ) : HazeInput
 
     /**
@@ -58,17 +58,17 @@ public sealed interface HazeInput {
      * available. It does not filter native window pixels.
      */
     @Stable
-    public data class Backdrop(
-        public val fallback: HazeInput.Sources?,
+    data class Backdrop(
+        val fallback: HazeInput.Sources?,
     ) : HazeInput {
         /** Creates a backdrop input with the default source fallback for [state], when provided. */
-        public constructor(state: HazeState? = null) : this(state?.let(::Sources))
+        constructor(state: HazeState? = null) : this(state?.let(::Sources))
     }
 
     /**
      * The content of the composable carrying the effect modifier.
      */
-    public data object Content : HazeInput
+    data object Content : HazeInput
 }
 
 /**
@@ -79,15 +79,15 @@ public sealed interface HazeInput {
  * @property key Optional application key supplied to `hazeSource`.
  * @property zIndex Source ordering value supplied to `hazeSource`.
  */
-public class HazeSourceMetadata internal constructor(
-    public val key: Any?,
-    public val zIndex: Float,
+class HazeSourceMetadata internal constructor(
+    val key: Any?,
+    val zIndex: Float,
 )
 
 /**
  * Selects source content for [HazeInput.Sources].
  */
-public sealed interface HazeSourceSelection {
+sealed interface HazeSourceSelection {
 
     /**
      * Refines this selection using immutable source metadata.
@@ -100,7 +100,7 @@ public sealed interface HazeSourceSelection {
      * bodies are not equal. Hoist or `remember` a refined selection that is shared, for example
      * between Glass container members that should merge; they must use one selection value.
      */
-    public fun where(
+    fun where(
         predicate: (HazeSourceMetadata) -> Boolean,
     ): HazeSourceSelection = FilteredHazeSourceSelection(
         selection = this,
@@ -111,12 +111,12 @@ public sealed interface HazeSourceSelection {
      * Sources behind the nearest ancestor [hazeSource], or every source when there is no matching
      * ancestor.
      */
-    public data object Behind : HazeSourceSelection
+    data object Behind : HazeSourceSelection
 
     /**
      * Every source associated with the input state.
      */
-    public data object All : HazeSourceSelection
+    data object All : HazeSourceSelection
 }
 
 @Poko
@@ -145,7 +145,7 @@ internal fun HazeSourceSelection.hasRefinements(): Boolean =
 /**
  * Controls retained output when source content is temporarily unavailable.
  */
-public sealed interface HazeSourceRetention {
+sealed interface HazeSourceRetention {
 
     /**
      * Continue drawing the most recently rendered output.
@@ -157,14 +157,14 @@ public sealed interface HazeSourceRetention {
      * including descendant changes made after capture. Use [ClearWhenUnavailable] when retained
      * output must not show source content that is no longer selected.
      */
-    public data object KeepLastFrame : HazeSourceRetention
+    data object KeepLastFrame : HazeSourceRetention
 
     /**
      * Clear retained output as soon as no source content is available.
      *
      * Prefer this policy for privacy-sensitive surfaces where stale source pixels must not remain.
      */
-    public data object ClearWhenUnavailable : HazeSourceRetention
+    data object ClearWhenUnavailable : HazeSourceRetention
 }
 
 internal fun HazeSourceRetention.keepsLastFrame(): Boolean = when (this) {

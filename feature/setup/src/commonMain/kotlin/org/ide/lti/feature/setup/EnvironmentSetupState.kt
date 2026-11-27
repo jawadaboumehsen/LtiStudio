@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.timing.StartupTiming
-import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
 import org.ide.lti.core.domain.setup.SetupOutcome
 import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupPlanAction
@@ -128,7 +127,6 @@ data class SetupOperation(
 class EnvironmentSetupState(
     private val scope: CoroutineScope,
     private val toolchainService: ToolchainProvisioningService? = null,
-    private val environmentReadinessPort: EnvironmentReadinessPort? = null,
 ) {
     val isToolchainBound: Boolean = toolchainService != null
 

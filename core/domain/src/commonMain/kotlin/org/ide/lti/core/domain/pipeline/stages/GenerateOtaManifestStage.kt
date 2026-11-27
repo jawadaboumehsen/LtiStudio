@@ -28,7 +28,7 @@ import org.ide.lti.core.model.workspace.PackageType
  *
  * A channel value is internal metadata unless a consumer schema supports it.
  */
-public class GenerateOtaManifestStage : StageDefinition {
+class GenerateOtaManifestStage : StageDefinition {
     override val id: StageId = StageId.GENERATE_OTA_MANIFEST
     override val requiredToolIds: Set<String> = setOf("sha256sum", "stat", "cat")
 
@@ -128,7 +128,7 @@ public class GenerateOtaManifestStage : StageDefinition {
         )
     }
 
-    public companion object {
+    companion object {
         const val MANIFEST = "out/manifest.json"
         const val BUILD_INFO = "package.build_info"
         const val CHANGELOG = "package.changelog"

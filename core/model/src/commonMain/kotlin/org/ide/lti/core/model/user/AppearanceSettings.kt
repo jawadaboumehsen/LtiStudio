@@ -10,15 +10,15 @@
 package org.ide.lti.core.model.user
 
 /** The saved accent colour id, compact density, and text size (percent) of the app. */
-public data class AppearanceSettings(
+data class AppearanceSettings(
     val accent: String = DEFAULT_ACCENT,
     val compact: Boolean = false,
     val textScalePercent: Int = DEFAULT_TEXT_SCALE,
     /** Simple Studio view: each stage shows only its main panes; the others keep their settings and still apply. */
     val simpleStudio: Boolean = false,
 ) {
-    public companion object {
-        public const val DEFAULT_ACCENT: String = "default"
-        public const val DEFAULT_TEXT_SCALE: Int = 100
+    companion object {
+        const val DEFAULT_ACCENT: String = "default"
+        const val DEFAULT_TEXT_SCALE: Int = 100
     }
 }

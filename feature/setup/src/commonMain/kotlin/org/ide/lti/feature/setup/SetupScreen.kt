@@ -303,7 +303,6 @@ fun SetupScreenContent(
     val rootFocusRequester = remember { FocusRequester() }
     val searchFocusRequester = remember { FocusRequester() }
     val toolSearchFocusRequester = remember { FocusRequester() }
-    val helpButtonFocusRequester = remember { FocusRequester() }
     val previewInvokerFocusRequester = remember { FocusRequester() }
     var lastInvokingFocusRequester by remember { mutableStateOf<FocusRequester?>(null) }
     var pendingSearchFocus by remember { mutableStateOf(false) }

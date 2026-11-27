@@ -9,13 +9,13 @@
  */
 package org.ide.lti.core.domain.ports
 
-public enum class ToolSource {
+enum class ToolSource {
     DYNAMIC,
     PINNED,
     SYSTEM_PATH,
 }
 
-public data class ToolStatus(
+data class ToolStatus(
     val tool: String,
     val installed: Boolean,
     val path: String,

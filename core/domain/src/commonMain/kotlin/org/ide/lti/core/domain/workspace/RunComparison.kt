@@ -20,7 +20,7 @@ import org.ide.lti.core.model.run.StageState
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 /** Two runs side by side as Markdown; [differences] counts the lines that differ (0: the runs did the same). */
-public data class RunComparisonText(val markdown: String, val differences: Int)
+data class RunComparisonText(val markdown: String, val differences: Int)
 
 /**
  * What differs between two runs of a workspace, from what each run kept: its settings snapshot (every stage's
@@ -28,9 +28,9 @@ public data class RunComparisonText(val markdown: String, val differences: Int)
  * mods changed, the apps removed, the keys it signed with), its tool versions, its packages and how each stage ran.
  * Nothing is read from today's settings or work/; a run without a snapshot or a record says so. Writes nothing.
  */
-public class RunComparison(private val runner: WorkbenchRunner, private val snapshots: SnapshotRepository) {
+class RunComparison(private val runner: WorkbenchRunner, private val snapshots: SnapshotRepository) {
     /** [older] against [newer] (the order only decides which side is "before"). */
-    public suspend fun compare(older: BuildRun, newer: BuildRun): RunComparisonText {
+    suspend fun compare(older: BuildRun, newer: BuildRun): RunComparisonText {
         val a = Side(older, snapshot(older), RunRecord.read(runner, older.workspaceId, older.id))
         val b = Side(newer, snapshot(newer), RunRecord.read(runner, newer.workspaceId, newer.id))
         return of(a, b)
@@ -40,13 +40,13 @@ public class RunComparison(private val runner: WorkbenchRunner, private val snap
         snapshots.getSnapshot(run.snapshotId)?.takeIf { it.workspaceId == run.workspaceId }
 
     /** One run and what it kept. */
-    public data class Side(val run: BuildRun, val snapshot: ConfigurationSnapshot?, val record: RunRecord)
+    data class Side(val run: BuildRun, val snapshot: ConfigurationSnapshot?, val record: RunRecord)
 
-    public companion object {
+    companion object {
         private val json = Json
 
         /** The comparison of [a] (before) and [b] (after). */
-        public fun of(a: Side, b: Side): RunComparisonText {
+        fun of(a: Side, b: Side): RunComparisonText {
             var differences = 0
             val text = buildString {
                 append("# Compare runs\n\n")
@@ -75,13 +75,13 @@ public class RunComparison(private val runner: WorkbenchRunner, private val snap
         }
 
         /** Each stage's settings field that differs, as `build.compression: "lz4" -> "lzma"`. */
-        public fun settingsChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> =
+        fun settingsChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> =
             StageId.entries.flatMap { stage ->
                 StageInputs.changes(StageInputs.settings(stage, before, json), StageInputs.settings(stage, after, json))
             }
 
         /** Each mod added, removed or moved to another version (the snapshots' lockfiles). */
-        public fun modChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> {
+        fun modChanges(before: ConfigurationSnapshot, after: ConfigurationSnapshot): List<String> {
             fun versions(s: ConfigurationSnapshot) = s.customization.lockfile.entries.associate { it.id to it.version }
             return StageInputs.changes(versions(before), versions(after))
         }

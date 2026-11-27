@@ -41,17 +41,17 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
  * never blindly resubmitted."
  * (FR-007, FR-008, SC-003)
  */
-public class SetupRunRecovery(
+class SetupRunRecovery(
     private val transport: RemoteTransportPort,
     private val repository: ToolchainSetupRepository,
     private val clock: () -> Long = System::currentTimeMillis,
     private val activity: SetupActivitySink? = null,
 ) {
-    public companion object {
+    companion object {
         /** Server-side idempotency deduplication window (research.md). */
-        public const val DEDUPLICATION_WINDOW_MS: Long = 600_000L
+        const val DEDUPLICATION_WINDOW_MS: Long = 600_000L
 
-        public const val NOT_SUBMITTED_STATUS: String = "NOT_SUBMITTED"
+        const val NOT_SUBMITTED_STATUS: String = "NOT_SUBMITTED"
     }
 
     private sealed interface ChildReconciliation {
@@ -61,7 +61,7 @@ public class SetupRunRecovery(
     }
 
     @Suppress("ReturnCount", "CyclomaticComplexMethod") // one guard per fail-closed precondition, in journal order
-    public suspend fun recover(
+    suspend fun recover(
         environmentKey: String,
         attemptId: String? = null,
         log: (String) -> Unit = {},

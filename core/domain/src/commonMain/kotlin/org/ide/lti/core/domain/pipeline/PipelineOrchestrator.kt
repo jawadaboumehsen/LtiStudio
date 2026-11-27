@@ -47,28 +47,29 @@ import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.run.StepState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
+import kotlin.time.Duration.Companion.milliseconds
 
-public sealed interface PipelineEvent {
-    public data class StageStarted(val stageId: StageId) : PipelineEvent
+sealed interface PipelineEvent {
+    data class StageStarted(val stageId: StageId) : PipelineEvent
 
-    public data class StageSkipped(val stageId: StageId, val cacheKey: String) : PipelineEvent
+    data class StageSkipped(val stageId: StageId, val cacheKey: String) : PipelineEvent
 
-    public data class StageCompleted(val stageId: StageId, val durationMs: Long) : PipelineEvent
+    data class StageCompleted(val stageId: StageId, val durationMs: Long) : PipelineEvent
 
-    public data class StageFailed(val stageId: StageId, val stepIndex: Int, val exitCode: Int, val message: String) :
+    data class StageFailed(val stageId: StageId, val stepIndex: Int, val exitCode: Int, val message: String) :
         PipelineEvent
 
-    public data class StageCancelled(val stageId: StageId) : PipelineEvent
+    data class StageCancelled(val stageId: StageId) : PipelineEvent
 
-    public data class StageInterrupted(val stageId: StageId) : PipelineEvent
+    data class StageInterrupted(val stageId: StageId) : PipelineEvent
 
-    public data class RunPaused(val stageId: StageId) : PipelineEvent
+    data class RunPaused(val stageId: StageId) : PipelineEvent
 
-    public data class RunResumed(val stageId: StageId) : PipelineEvent
+    data class RunResumed(val stageId: StageId) : PipelineEvent
 
-    public data class StepOutput(val stageId: StageId, val text: String) : PipelineEvent
+    data class StepOutput(val stageId: StageId, val text: String) : PipelineEvent
 
-    public data class RunFinished(val state: RunState) : PipelineEvent
+    data class RunFinished(val state: RunState) : PipelineEvent
 }
 
 /**
@@ -79,7 +80,7 @@ public sealed interface PipelineEvent {
  * matches **and** the recorded output digest still matches the current outputs.
  */
 @Suppress("LargeClass", "TooManyFunctions")
-public class PipelineOrchestrator(
+class PipelineOrchestrator(
     private val executionPort: PipelineExecutionPort,
     private val runRepository: RunRepository,
     private val vendoredFiles: VendoredFilePort,
@@ -186,13 +187,13 @@ public class PipelineOrchestrator(
     private val driving: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     /** Whether this app drives [runId] now: a cancel then waits for this driver to stop. */
-    public fun isDriving(runId: String): Boolean = runId in driving
+    fun isDriving(runId: String): Boolean = runId in driving
 
     /**
      * What a run through [throughStage] would do now, stage by stage: the same cache decisions a run makes, read
      * from the cache records and the workspace; nothing runs and nothing is written.
      */
-    public suspend fun preview(ctx: StageContext, throughStage: StageId? = null): List<StagePreview> {
+    suspend fun preview(ctx: StageContext, throughStage: StageId? = null): List<StagePreview> {
         val pins = toolStore?.paths(ToolGroupCatalog)?.getOrElse { e ->
             throw IllegalStateException("Cannot read the tool versions a build would use", e)
         }
@@ -234,10 +235,10 @@ public class PipelineOrchestrator(
         throw cause
     }
 
-    public fun drive(runId: String, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> =
+    fun drive(runId: String, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> =
         exclusive(runId) { driveRun(runId, ctx, driverInstanceId) }
 
-    public fun resume(run: BuildRun, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> =
+    fun resume(run: BuildRun, ctx: StageContext, driverInstanceId: String): Flow<PipelineEvent> =
         exclusive(run.id) { resumeRun(run, ctx, driverInstanceId) }
 
     /**
@@ -600,7 +601,7 @@ public class PipelineOrchestrator(
         }
     }
 
-    public suspend fun pause(runId: String): Boolean {
+    suspend fun pause(runId: String): Boolean {
         val run = runRepository.getRun(runId) ?: return false
         if (run.state.isTerminal || run.state == RunState.CANCELLING) return false
         runRepository.upsert(run.copy(state = RunState.PAUSED_WAITING_FOR_APP))
@@ -831,7 +832,7 @@ public class PipelineOrchestrator(
                 if (status == null || status.status !in STILL_RUNNING) {
                     finished = status?.exitCode ?: -1
                 } else {
-                    delay(STREAM_RETRY_MS)
+                    delay(STREAM_RETRY_MS.milliseconds)
                 }
             }
         }
@@ -1379,7 +1380,7 @@ private val WORK_GROUP = setOf(StageId.WORK_TREE_ASSEMBLY, StageId.DEBLOAT, Stag
 private val WORK_EDITORS = WORK_GROUP + StageId.BUILD_FLASHABLE_ZIP
 
 /** `<last editing stage> <fingerprint>` of work/ as the last run left it. */
-public const val WORK_RECORD: String = ".cache/work.fp"
+const val WORK_RECORD: String = ".cache/work.fp"
 
 /** `$1` work/: every entry's path, kind, size, mode and link, and every file's md5, without package/. */
 private const val WORK_FINGERPRINT_SCRIPT = """cd "$1" || exit 1
@@ -1390,7 +1391,7 @@ xargs -0 -r -P8 -n64 md5sum < "${'$'}t/f" > "${'$'}t/m" || exit 1
 { LC_ALL=C sort "${'$'}t/l"; LC_ALL=C sort "${'$'}t/m"; } | sha256sum | cut -d' ' -f1"""
 
 /** One stage of [PipelineOrchestrator.preview]: reused from cache ([runsBecause] null), or why it would run. */
-public data class StagePreview(val stageId: StageId, val runsBecause: String?)
+data class StagePreview(val stageId: StageId, val runsBecause: String?)
 
 private const val PREVIEW_ID = "preview"
 private const val EARLIER_RUNS = "an earlier stage runs first, and they share work/"

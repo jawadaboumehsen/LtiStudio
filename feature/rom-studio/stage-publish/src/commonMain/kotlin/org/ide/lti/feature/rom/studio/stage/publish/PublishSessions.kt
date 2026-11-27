@@ -32,12 +32,12 @@ import kotlin.time.TimeSource
  * The publishes of this app session, one per workspace. A publish runs here, not in its editor: it goes on when the
  * editor closes or the person leaves the workspace, and the editor shows it again when it comes back.
  */
-public class PublishSessions internal constructor(
+class PublishSessions internal constructor(
     private val publisher: PublishReleaseUseCase?,
     private val scope: CoroutineScope,
     private val check: (suspend (String, PublishSettings) -> PublishPreflight)?,
 ) {
-    public constructor(
+    constructor(
         publisher: PublishReleaseUseCase?,
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     ) : this(publisher, scope, publisher?.let { use -> { id, settings -> use.preflight(id, settings) } })
@@ -54,14 +54,14 @@ public class PublishSessions internal constructor(
     /** Where each running transfer's speed is measured from. */
     private val rateFrom = ConcurrentHashMap<String, Pair<TimeMark, Long>>()
 
-    public fun state(workspaceId: String): StateFlow<PublishUiState> = flow(workspaceId).asStateFlow()
+    fun state(workspaceId: String): StateFlow<PublishUiState> = flow(workspaceId).asStateFlow()
 
     private fun flow(workspaceId: String) =
         synchronized(states) { states.getOrPut(workspaceId) { MutableStateFlow(PublishUiState()) } }
 
     /** Reads what Publish would do with [settings] (the editor's, maybe unsaved) and the last attempt's journal. */
     @Synchronized
-    public fun refresh(workspaceId: String, settings: PublishSettings) {
+    fun refresh(workspaceId: String, settings: PublishSettings) {
         val checkRelease = check ?: return
         val state = flow(workspaceId)
         latestSettings[workspaceId] = settings
@@ -95,7 +95,7 @@ public class PublishSessions internal constructor(
 
     /** Publishes (or resumes the last attempt). Only called after the person confirms it. */
     @Synchronized
-    public fun publish(workspaceId: String, review: PublishReview) {
+    fun publish(workspaceId: String, review: PublishReview) {
         val use = publisher ?: return
         val state = flow(workspaceId)
         if (state.value.readyReview(review.settings) !== review) return
@@ -126,7 +126,7 @@ public class PublishSessions internal constructor(
 
     /** Stops the running publish; the journal keeps what is done, so publishing again resumes. */
     @Synchronized
-    public fun cancel(workspaceId: String) {
+    fun cancel(workspaceId: String) {
         val state = flow(workspaceId)
         if (!state.value.publishing) return
         state.update { it.copy(cancelling = true) }

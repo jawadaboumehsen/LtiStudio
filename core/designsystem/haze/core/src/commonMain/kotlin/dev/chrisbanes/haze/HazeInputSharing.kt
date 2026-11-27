@@ -40,7 +40,7 @@ package dev.chrisbanes.haze
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
 @ExperimentalHazeApi
-public enum class HazeInputSharing {
+enum class HazeInputSharing {
     /**
      * Shares input on Android when two or more effects sample the source. On other platforms this
      * behaves like [Never].

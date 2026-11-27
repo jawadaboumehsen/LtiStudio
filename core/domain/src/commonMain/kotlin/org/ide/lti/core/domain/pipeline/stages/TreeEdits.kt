@@ -20,7 +20,7 @@ import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.TreeEdit
 
 /** Rewrites the fs_config and SELinux lines of [edits] (already applied to the files) in `work/configs`. */
-public data class TreeEditSidecars(val edits: List<TreeEdit>) : HostRequest
+data class TreeEditSidecars(val edits: List<TreeEdit>) : HostRequest
 
 /**
  * The work-tree renames and deletions kept in [org.ide.lti.core.model.workspace.AssemblySettings.treeEdits]. The
@@ -28,16 +28,16 @@ public data class TreeEditSidecars(val edits: List<TreeEdit>) : HostRequest
  * partition, a rename must not replace anything), then its sidecar lines follow it, so the item keeps its owner,
  * mode and label under the new name.
  */
-public object TreeEdits {
-    public const val SIDECARS_KEY: String = "tree.edits.sidecars"
-    public const val INVALID_TREE_EDIT: String = "INVALID_TREE_EDIT"
+object TreeEdits {
+    const val SIDECARS_KEY: String = "tree.edits.sidecars"
+    const val INVALID_TREE_EDIT: String = "INVALID_TREE_EDIT"
 
     /**
      * `sh -c APPLY_SCRIPT sh <partition dir> <path> [<new name>]`: deletes or renames `<partition dir>/<path>`.
      * Refuses (exit 3, with the reason) a path that is gone, a folder on the way that leads out of the partition, or
      * a new name that is already taken.
      */
-    public const val APPLY_SCRIPT: String = """
+    const val APPLY_SCRIPT: String = """
         set -e
         p="$1"; s="$1/$2"; n="$3"
         if [ ! -e "${'$'}s" ] && [ ! -L "${'$'}s" ]; then
@@ -59,7 +59,7 @@ public object TreeEdits {
     """
 
     /** Why [edit] cannot be applied as written, or null. [partitions] are the device's dynamic partitions. */
-    public fun problem(edit: TreeEdit, partitions: List<String>?): String? {
+    fun problem(edit: TreeEdit, partitions: List<String>?): String? {
         val parts = edit.path.trim('/').split('/')
         return when {
             partitions != null && edit.partition !in partitions -> "${edit.partition} is not a partition of the device."
@@ -83,7 +83,7 @@ public object TreeEdits {
     }
 
     /** Every problem of [edits] for the Assemble settings check: each edit's own, and a path changed twice. */
-    public fun validationErrors(edits: List<TreeEdit>, partitions: List<String>?): List<ValidationError> {
+    fun validationErrors(edits: List<TreeEdit>, partitions: List<String>?): List<ValidationError> {
         val own = edits.mapIndexedNotNull { i, edit ->
             problem(edit, partitions)?.let { error("treeEdits[$i]", "Change to ${edit.partition}/${edit.path}: $it") }
         }
@@ -96,12 +96,12 @@ public object TreeEdits {
         ValidationError(StageId.WORK_TREE_ASSEMBLY, null, field, INVALID_TREE_EDIT, Severity.ERROR, message)
 
     /** The path [edit] leaves in the tree: the new one for a rename, null for a deletion. */
-    public fun result(edit: TreeEdit): String? = edit.renameTo?.let { new ->
+    fun result(edit: TreeEdit): String? = edit.renameTo?.let { new ->
         val path = edit.path.trim('/')
         (path.substringBeforeLast('/', "").let { if (it.isEmpty()) "" else "$it/" }) + new
     }
 
-    public fun steps(ctx: StageContext): List<PipelineStep> {
+    fun steps(ctx: StageContext): List<PipelineStep> {
         val edits = ctx.snapshot.assembly.treeEdits
         if (edits.isEmpty()) return emptyList()
         val apply = edits.mapIndexed { i, edit ->
@@ -119,7 +119,7 @@ public object TreeEdits {
     }
 
     /** [fsConfig] and [fileContexts] of [partition] with [edits] (of that partition) applied, in order. */
-    public fun sidecars(
+    fun sidecars(
         partition: String,
         edits: List<TreeEdit>,
         fsConfig: String,

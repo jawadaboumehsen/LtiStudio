@@ -3,16 +3,13 @@ package io.ltirom.tooling.client.workspace
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
 import org.ide.lti.core.model.setup.SetupEnvironment
-import java.io.File
 
-public data class VirtualWorkspaceDescriptor(
+data class VirtualWorkspaceDescriptor(
     val workspaceId: String,
     val linuxExt4Path: String,
     val windowsUncPath: String,
     val isNativeExt4: Boolean = true
-) {
-    public val windowsFile: File get() = File(windowsUncPath)
-}
+)
 
 /**
  * Workspace Virtualizer that bypasses the slow Plan9 (9P) filesystem (/mnt/c/)
@@ -23,7 +20,7 @@ public data class VirtualWorkspaceDescriptor(
  * Delivers bare-metal NVMe performance (~1,200 MB/s vs ~150 MB/s over 9P)
  * for multi-gigabyte Android partition images (super.img, payload.bin, system.img).
  */
-public class WorkspaceVirtualizer(
+class WorkspaceVirtualizer(
     private val distroName: String? = null,
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(cli)
@@ -37,16 +34,16 @@ public class WorkspaceVirtualizer(
         return workspaceId
     }
 
-    public fun getWslWorkspaceRoot(environment: SetupEnvironment): String {
+    fun getWslWorkspaceRoot(environment: SetupEnvironment): String {
         return "${environment.home}/.ltirom/workspaces"
     }
 
-    public fun getWindowsUncRoot(environment: SetupEnvironment): String {
+    fun getWindowsUncRoot(environment: SetupEnvironment): String {
         val home = environment.home.removePrefix("/").replace('/', '\\')
         return "\\\\wsl.localhost\\${environment.distro}\\$home\\.ltirom\\workspaces"
     }
 
-    public fun allocateWorkspace(workspaceId: String, environment: SetupEnvironment): VirtualWorkspaceDescriptor {
+    fun allocateWorkspace(workspaceId: String, environment: SetupEnvironment): VirtualWorkspaceDescriptor {
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot(environment)}/$workspaceId"
         val uncPath = "${getWindowsUncRoot(environment)}\\$workspaceId"
@@ -62,26 +59,26 @@ public class WorkspaceVirtualizer(
         )
     }
 
-    public fun deleteWorkspace(workspaceId: String, environment: SetupEnvironment): Boolean {
+    fun deleteWorkspace(workspaceId: String, environment: SetupEnvironment): Boolean {
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot(environment)}/$workspaceId"
         val res = cli.execute(environment.distro, listOf("rm", "-rf", linuxPath), timeoutSeconds = 10)
         return res.exitCode == 0
     }
 
-    public fun getWslWorkspaceRoot(): String {
+    fun getWslWorkspaceRoot(): String {
         val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         val home = detector.resolveWslUserHome(distro)
         return "$home/.ltirom/workspaces"
     }
 
-    public fun getWindowsUncRoot(): String {
+    fun getWindowsUncRoot(): String {
         val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         val home = detector.resolveWslUserHome(distro).removePrefix("/").replace('/', '\\')
         return "\\\\wsl.localhost\\$distro\\$home\\.ltirom\\workspaces"
     }
 
-    public fun allocateWorkspace(workspaceId: String): VirtualWorkspaceDescriptor {
+    fun allocateWorkspace(workspaceId: String): VirtualWorkspaceDescriptor {
         val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot()}/$workspaceId"
@@ -98,7 +95,7 @@ public class WorkspaceVirtualizer(
         )
     }
 
-    public fun deleteWorkspace(workspaceId: String): Boolean {
+    fun deleteWorkspace(workspaceId: String): Boolean {
         val distro = distroName ?: error("distroName not configured and no SetupEnvironment provided")
         requireSafeWorkspaceId(workspaceId)
         val linuxPath = "${getWslWorkspaceRoot()}/$workspaceId"

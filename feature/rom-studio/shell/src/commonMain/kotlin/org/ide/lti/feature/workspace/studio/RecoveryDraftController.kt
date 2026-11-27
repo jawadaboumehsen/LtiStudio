@@ -20,16 +20,17 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.ide.lti.core.domain.ports.RecoveryDraftStorePort
 import org.ide.lti.core.model.draft.RecoveryDraftRecord
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Quiet crash-recovery persistence alongside the canonical StudioDraftController. */
-public class RecoveryDraftController(
+class RecoveryDraftController(
     draft: StateFlow<WorkspacePipelineDraft>,
     private val store: RecoveryDraftStorePort,
     private val scope: CoroutineScope,
     private val debounceMillis: Long = DEFAULT_DEBOUNCE_MILLIS,
 ) {
     private val _lastFailure = MutableStateFlow<Throwable?>(null)
-    public val lastFailure: StateFlow<Throwable?> = _lastFailure.asStateFlow()
+    val lastFailure: StateFlow<Throwable?> = _lastFailure.asStateFlow()
     private var discardGeneration = 0L
     private var pending: Job? = null
     private var latestDraft = draft.value
@@ -38,18 +39,18 @@ public class RecoveryDraftController(
         pending = scope.launch {
             draft.collectLatest {
                 latestDraft = it
-                delay(debounceMillis)
+                delay(debounceMillis.milliseconds)
                 persistIfCurrent(it)
             }
         }
     }
 
-    public suspend fun flush() {
+    suspend fun flush() {
         pending?.cancel()
         persistIfCurrent(latestDraft)
     }
 
-    public suspend fun discard() {
+    suspend fun discard() {
         pending?.cancel()
         val persistedGeneration = store.get(latestDraft.workspaceId)?.record?.discardGeneration ?: 0L
         discardGeneration = maxOf(discardGeneration, persistedGeneration) + 1L
@@ -61,7 +62,7 @@ public class RecoveryDraftController(
         }
     }
 
-    public suspend fun retireAfterSave(savedAsOfRevision: Long) {
+    suspend fun retireAfterSave(savedAsOfRevision: Long) {
         store.retireIfRevision(latestDraft.workspaceId, savedAsOfRevision).onFailure(::recordFailure)
     }
 
@@ -93,8 +94,8 @@ public class RecoveryDraftController(
         lastPersistedAt = Clock.System.now(),
     )
 
-    public companion object {
+    companion object {
         /** 500 ms coalesces typing bursts while keeping crash recovery reasonably fresh. */
-        public const val DEFAULT_DEBOUNCE_MILLIS: Long = 500L
+        const val DEFAULT_DEBOUNCE_MILLIS: Long = 500L
     }
 }

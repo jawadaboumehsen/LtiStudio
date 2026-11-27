@@ -22,7 +22,7 @@ import org.ide.lti.feature.rom.studio.api.StageEditorContext
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-public class AcquireStageEditor : StageEditor {
+class AcquireStageEditor : StageEditor {
     override val stageId: StageId = StageId.FIRMWARE_ACQUISITION
     override val descriptor: StageDescriptor = CanonicalStageDescriptors.ACQUIRE
 

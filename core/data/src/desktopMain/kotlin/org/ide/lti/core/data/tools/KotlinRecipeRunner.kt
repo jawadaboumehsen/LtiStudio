@@ -19,12 +19,12 @@ import org.ide.lti.core.domain.setup.ToolOutput
 import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.domain.tools.ToolError
 
-public class KotlinRecipeRunner(
+class KotlinRecipeRunner(
     private val transport: RemoteTransportPort,
     private val commandRunner: RemoteCommandRunner = RemoteCommandRunner(transport),
 ) {
     @Suppress("CyclomaticComplexMethod")
-    public suspend fun executeRecipe(
+    suspend fun executeRecipe(
         srcDir: String,
         outDir: String,
         source: ResolvedSource,

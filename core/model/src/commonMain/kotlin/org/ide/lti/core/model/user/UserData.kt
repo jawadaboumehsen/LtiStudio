@@ -12,7 +12,7 @@ package org.ide.lti.core.model.user
 /**
  * Aggregate root for persisted user preferences.
  */
-public data class UserData(
+data class UserData(
     val theme: String = DEFAULT_THEME,
     val effectsEnabled: Boolean = true,
     val reducedMotion: Boolean = false,
@@ -20,7 +20,7 @@ public data class UserData(
     val notificationSettings: NotificationSettings = NotificationSettings(),
     val appearance: AppearanceSettings = AppearanceSettings(),
 ) {
-    public companion object {
-        public const val DEFAULT_THEME: String = "blue"
+    companion object {
+        const val DEFAULT_THEME: String = "blue"
     }
 }

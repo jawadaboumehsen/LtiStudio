@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
  * Filesystem kind of an extracted partition image (data-model §PartitionImage).
  */
 @Serializable
-public enum class FsType {
+enum class FsType {
     Ext4,
     F2fs,
     Erofs,
@@ -25,10 +25,10 @@ public enum class FsType {
     Unknown,
 }
 
-public object FsTypes {
+object FsTypes {
     /** Bytes to read, from offset [SUPERBLOCK_OFFSET], for [fromSuperblock] (`xxd -p -s 1024 -l 64`). */
-    public const val SUPERBLOCK_OFFSET: Int = 1024
-    public const val SUPERBLOCK_BYTES: Int = 64
+    const val SUPERBLOCK_OFFSET: Int = 1024
+    const val SUPERBLOCK_BYTES: Int = 64
 
     private val EROFS_MAGIC = byteArrayOf(0xE2.toByte(), 0xE1.toByte(), 0xF5.toByte(), 0xE0.toByte())
     private val F2FS_MAGIC = byteArrayOf(0x10, 0x20, 0xF5.toByte(), 0xF2.toByte())
@@ -36,7 +36,7 @@ public object FsTypes {
     private const val EXT4_MAGIC_AT = 56
 
     /** The filesystem of an image from the [SUPERBLOCK_BYTES] bytes at [SUPERBLOCK_OFFSET]. */
-    public fun fromSuperblock(bytes: ByteArray): FsType = when {
+    fun fromSuperblock(bytes: ByteArray): FsType = when {
         startsWith(bytes, 0, EROFS_MAGIC) -> FsType.Erofs
         startsWith(bytes, 0, F2FS_MAGIC) -> FsType.F2fs
         startsWith(bytes, EXT4_MAGIC_AT, EXT4_MAGIC) -> FsType.Ext4
@@ -53,22 +53,22 @@ public object FsTypes {
  * Used under result key `extract.images`.
  */
 @Serializable
-public data class PartitionImage(
+data class PartitionImage(
     val name: String,
     val fsType: FsType,
     val sizeBytes: Long,
     val sparse: Boolean,
     val path: String,
 ) {
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encodeList(images: List<PartitionImage>): String = json.encodeToString(images)
+        fun encodeList(images: List<PartitionImage>): String = json.encodeToString(images)
 
-        public fun decodeList(string: String): List<PartitionImage> = json.decodeFromString(string)
+        fun decodeList(string: String): List<PartitionImage> = json.decodeFromString(string)
     }
 }

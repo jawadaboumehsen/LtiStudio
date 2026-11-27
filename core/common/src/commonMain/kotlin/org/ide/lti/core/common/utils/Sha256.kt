@@ -15,24 +15,24 @@ import okio.ByteString.Companion.toByteString
 /**
  * Shared multiplatform SHA-256 digest computation utility.
  */
-public object Sha256 {
+object Sha256 {
     /**
      * Computes the SHA-256 hexadecimal hash string (lowercase) of the given UTF-8 [input].
      */
-    public fun digest(input: String): String = input.encodeUtf8().sha256().hex()
+    fun digest(input: String): String = input.encodeUtf8().sha256().hex()
 
     /**
      * Computes the SHA-256 hexadecimal hash string (lowercase) of the given [bytes].
      */
-    public fun digest(bytes: ByteArray): String = bytes.toByteString().sha256().hex()
+    fun digest(bytes: ByteArray): String = bytes.toByteString().sha256().hex()
 }
 
 /**
  * Returns the SHA-256 hex string for this string in UTF-8.
  */
-public fun sha256(input: String): String = Sha256.digest(input)
+fun sha256(input: String): String = Sha256.digest(input)
 
 /**
  * Returns the SHA-256 hex string for these bytes.
  */
-public fun sha256(bytes: ByteArray): String = Sha256.digest(bytes)
+fun sha256(bytes: ByteArray): String = Sha256.digest(bytes)

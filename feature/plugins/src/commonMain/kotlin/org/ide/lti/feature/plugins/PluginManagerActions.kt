@@ -14,7 +14,7 @@ import org.ide.lti.core.domain.plugin.InstalledRecord
 import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.plugin.TrustDecision
 
-public data class PluginManagerActions(
+data class PluginManagerActions(
     val onNavigateBack: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onSelectDestination: (PluginDestination) -> Unit = {},

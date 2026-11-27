@@ -2,8 +2,8 @@
             // Regenerate via `./gradlew :tool:codegen:generateToolAdapters`.
             package io.ltirom.tooling.core
 
-            public object ToolMetadataRegistry {
-                public val EXPECTED_SHA256: Map<String, String> = mapOf(
+            object ToolMetadataRegistry {
+                val EXPECTED_SHA256: Map<String, String> = mapOf(
                     "aapt2" to "df312db814c018019b2b79a993b041b738d7b76f4a8f28da25bc874a026368cc",
                     "adb" to "e853bd0ffb1a50df2772d9bc135fa30f567b88c093cf4c040f2e2b87ee5583cb",
                     "apktool" to "17de374e5e34f90d4e6ac333b970814131b74750de1a1468c23ede19b7308f07",
@@ -40,7 +40,7 @@
                     "unpack_bootimg" to "06b54dd9a07c5281778e29e234e76f6e3faee8bf0c904a5ef88fdee30eeed12e",
                     "zipalign" to "3f6c73cdc3f61ccc1dcc55a77eecc2f798a5410998ff1d756f210ae73790d0d6"
                 )
-                public val EXPECTED_PLATFORMS: Map<String, Set<String>> = mapOf(
+                val EXPECTED_PLATFORMS: Map<String, Set<String>> = mapOf(
                     "aapt2" to setOf("linux-x86_64"),
                     "adb" to setOf("linux-x86_64"),
                     "apktool" to setOf("linux-x86_64"),
@@ -16098,5 +16098,5 @@
     }
 ]"""
                 )
-                public val METADATA_JSON: String by lazy { CHUNKS.joinToString("") }
+                val METADATA_JSON: String by lazy { CHUNKS.joinToString("") }
             }

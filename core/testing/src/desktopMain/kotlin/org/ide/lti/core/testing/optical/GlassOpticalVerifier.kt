@@ -332,7 +332,7 @@ object GlassOpticalVerifier {
         var maxL = 0.0
         for (offset in -windowPx..windowPx) {
             val px = bx + offset
-            if (px in 0 until map.width) {
+            if (px in 0..<map.width) {
                 val l = relativeLuminance(map[px, y])
                 if (l < minL) minL = l
                 if (l > maxL) maxL = l

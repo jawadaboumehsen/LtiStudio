@@ -51,7 +51,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceShellUiState
 
 @Suppress("LongParameterList", "UnusedParameter")
 @Composable
-public fun StudioTopAppBar(
+fun StudioTopAppBar(
     uiState: WorkspaceShellUiState,
     onSelectGlobalDestination: (GlobalDestination) -> Unit,
     onValidate: () -> Unit,

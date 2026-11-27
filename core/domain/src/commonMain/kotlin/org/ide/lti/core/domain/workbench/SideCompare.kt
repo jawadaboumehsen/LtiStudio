@@ -24,27 +24,27 @@ import org.ide.lti.core.domain.pipeline.toolkit.TreeDiff
  * One side of a comparison, in any workspace: a partition's tree (`firmware/extracted/<p>`, the stock firmware, or
  * `work/<p>`, the build) or an image read straight from its file (EROFS, ext4, F2FS; sparse or inside super too).
  */
-public sealed interface CompareSide {
-    public val workspaceId: String
+sealed interface CompareSide {
+    val workspaceId: String
 
-    public data class Tree(override val workspaceId: String, val folder: String) : CompareSide
+    data class Tree(override val workspaceId: String, val folder: String) : CompareSide
 
-    public data class Image(override val workspaceId: String, val image: String, val member: String? = null) :
+    data class Image(override val workspaceId: String, val image: String, val member: String? = null) :
         CompareSide
 }
 
 /** The partition a side holds: the tree's folder name, or the image's (or super member's) name. */
-public val CompareSide.partition: String
+val CompareSide.partition: String
     get() = when (this) {
         is CompareSide.Tree -> folder.substringAfterLast('/')
         is CompareSide.Image -> partitionOf(image, member)
     }
 
 /** What a workspace offers to compare: its partition trees and its images. */
-public data class CompareSources(val trees: List<String>, val images: List<WorkspaceImage>)
+data class CompareSources(val trees: List<String>, val images: List<WorkspaceImage>)
 
 /** Two sides compared: every changed path, the superblocks side by side, and how many files were hashed. */
-public data class SideComparison(
+data class SideComparison(
     val a: CompareSide,
     val b: CompareSide,
     val diff: TreeDiff,
@@ -53,24 +53,24 @@ public data class SideComparison(
 )
 
 /** One path of a [SideComparison] looked at closely. */
-public sealed interface EntryComparison {
-    public val path: String
+sealed interface EntryComparison {
+    val path: String
 
     /** Not a regular file on one side (added, removed, a folder or a link): the row says all there is. */
-    public data class NoContent(override val path: String, val reason: String) : EntryComparison
+    data class NoContent(override val path: String, val reason: String) : EntryComparison
 
     /** A text file: its line diff, or null when either side is too long to diff. */
-    public data class Text(override val path: String, val lines: List<String>?) : EntryComparison
+    data class Text(override val path: String, val lines: List<String>?) : EntryComparison
 
     /** A zip archive: its entries on each side. */
-    public data class Archive(override val path: String, val entries: ArchiveDiff) : EntryComparison
+    data class Archive(override val path: String, val entries: ArchiveDiff) : EntryComparison
 
     /** A JAR or APK: its entries, then its dex files and methods. */
-    public data class Code(override val path: String, val entries: ArchiveDiff, val code: CodePackageDiff) :
+    data class Code(override val path: String, val entries: ArchiveDiff, val code: CodePackageDiff) :
         EntryComparison
 
     /** Any other file: sizes and hashes. */
-    public data class Binary(
+    data class Binary(
         override val path: String,
         val sizeA: Long,
         val sizeB: Long,

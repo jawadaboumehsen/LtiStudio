@@ -54,7 +54,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceSection
  * Matches Mockup 09: prominent CTA button on the left with status explanation on the right.
  */
 @Composable
-public fun OverviewCallToAction(
+fun OverviewCallToAction(
     buildState: BuildStateUi,
     nextAction: WorkspaceActionUi?,
     onAction: (WorkspaceActionUi) -> Unit,

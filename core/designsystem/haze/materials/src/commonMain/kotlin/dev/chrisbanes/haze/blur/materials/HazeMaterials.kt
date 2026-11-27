@@ -32,14 +32,14 @@ import dev.chrisbanes.haze.blur.valueBackedHazeBlurStyle
  * It is inspired by the material APIs available in SwiftUI, but it makes no attempt to provide
  * the exact effects provided in iOS.
  */
-public object HazeMaterials {
+object HazeMaterials {
 
     /**
      * A [HazeBlurStyle] which implements a mostly translucent material.
      */
     @Composable
     @ReadOnlyComposable
-    public fun ultraThin(
+    fun ultraThin(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = hazeMaterial(
         containerColor = containerColor,
@@ -53,7 +53,7 @@ public object HazeMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun thin(
+    fun thin(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = hazeMaterial(
         containerColor = containerColor,
@@ -67,7 +67,7 @@ public object HazeMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun regular(
+    fun regular(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = hazeMaterial(
         containerColor = containerColor,
@@ -81,7 +81,7 @@ public object HazeMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun thick(
+    fun thick(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = hazeMaterial(
         containerColor = containerColor,
@@ -94,7 +94,7 @@ public object HazeMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun ultraThick(
+    fun ultraThick(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = hazeMaterial(
         containerColor = containerColor,

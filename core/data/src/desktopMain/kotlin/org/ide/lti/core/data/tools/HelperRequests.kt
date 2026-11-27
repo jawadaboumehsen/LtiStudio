@@ -12,13 +12,13 @@ package org.ide.lti.core.data.tools
 import kotlinx.serialization.Serializable
 
 @Serializable
-public data class OutputData(val file: String, val size: Long = 0L, val mode: String = "exec")
+data class OutputData(val file: String, val size: Long = 0L, val mode: String = "exec")
 
 @Serializable
-public data class RefPayload(val type: String, val name: String)
+data class RefPayload(val type: String, val name: String)
 
 @Serializable
-public data class SourceData(
+data class SourceData(
     val kind: String,
     val repo: String? = null,
     val commit: String? = null,
@@ -31,10 +31,10 @@ public data class SourceData(
 )
 
 @Serializable
-public data class RecipeData(val type: String, val revision: Int = 1)
+data class RecipeData(val type: String, val revision: Int = 1)
 
 @Serializable
-public data class VersionData(
+data class VersionData(
     val schema: Int = 1,
     val group: String,
     val id: String,
@@ -47,7 +47,7 @@ public data class VersionData(
 )
 
 @Serializable
-public data class HelperInstallResult(
+data class HelperInstallResult(
     val ok: Boolean = true,
     val reused: Boolean = false,
     val versionId: String? = null,

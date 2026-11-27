@@ -17,7 +17,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
-public val workspaceRunModule: Module = module {
+val workspaceRunModule: Module = module {
     viewModelOf(::RunHistoryViewModel)
     viewModel { ProfilesViewModel(workspaceManager = get(), profiles = getOrNull(), queue = getOrNull()) }
     viewModel {

@@ -62,8 +62,9 @@ import org.ide.lti.core.model.setup.EnvironmentReadiness
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
+import kotlin.time.Duration.Companion.milliseconds
 
-public data class BuildRunUiState(
+data class BuildRunUiState(
     val currentWorkspace: Workspace? = null,
     val latestRun: BuildRun? = null,
     val isStartingRun: Boolean = false,
@@ -118,7 +119,7 @@ public data class BuildRunUiState(
         get() = latestRun?.state == RunState.PAUSED_WAITING_FOR_APP
 }
 
-public class BuildRunViewModel(
+class BuildRunViewModel(
     private val workspaceManager: WorkspaceManager,
     private val startPipelineRunUseCase: StartPipelineRunUseCase,
     private val observeRunUseCase: ObserveRunUseCase,
@@ -135,7 +136,7 @@ public class BuildRunViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildRunUiState())
-    public val uiState: StateFlow<BuildRunUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<BuildRunUiState> = _uiState.asStateFlow()
     private val autoReattachedRuns = mutableSetOf<String>()
 
     private var phoneCheckJob: Job? = null
@@ -241,7 +242,7 @@ public class BuildRunViewModel(
             while (attached == null) {
                 attached = runCatching { use.invoke(workspaceId, runId) }
                     .onFailure { if (it is CancellationException) throw it }.getOrNull()
-                if (attached == null) delay(REATTACH_RETRY_MS)
+                if (attached == null) delay(REATTACH_RETRY_MS.milliseconds)
             }
         } finally {
             if (attached == null) autoReattachedRuns.remove(runId)
@@ -269,7 +270,7 @@ public class BuildRunViewModel(
                                 (error !is CancellationException).also {
                                     if (it) {
                                         emit(listOf(unreadableDevice(error)))
-                                        delay(DEVICE_RETRY_MS)
+                                        delay(DEVICE_RETRY_MS.milliseconds)
                                     }
                                 }
                             }
@@ -289,12 +290,12 @@ public class BuildRunViewModel(
     }
 
     /** Chooses where the next run stops: after [stage], or (null) after the last stage. */
-    public fun selectThroughStage(stage: StageId?) {
+    fun selectThroughStage(stage: StageId?) {
         _uiState.update { it.copy(throughStage = stage, impact = null) }
     }
 
     /** "What will run?": the next run's cache decisions, stage by stage, without running anything. */
-    public fun previewImpact() {
+    fun previewImpact() {
         val ws = _uiState.value.currentWorkspace ?: return
         val through = _uiState.value.throughStage
         viewModelScope.launch {
@@ -318,7 +319,7 @@ public class BuildRunViewModel(
     }
 
     /** The post-build report of the last run: its packages hashed again, keys, super budget, stages, changes. */
-    public fun makeReport() {
+    fun makeReport() {
         val reporter = buildReport ?: return
         val run = _uiState.value.latestRun ?: return
         viewModelScope.launch {
@@ -341,7 +342,7 @@ public class BuildRunViewModel(
      * Checks the connected phone against the last run after its package was installed: this build running, booted,
      * SELinux, verified boot, crashes. The result is kept with the run and shown like the report.
      */
-    public fun checkPhone() {
+    fun checkPhone() {
         val tester = deviceTest ?: return
         checkPhone(tester::check)
     }
@@ -391,12 +392,12 @@ public class BuildRunViewModel(
         )
     }
 
-    public fun closeReport() {
+    fun closeReport() {
         _uiState.update { it.copy(report = null) }
     }
 
     /** Applies the settings fix of [BuildRunUiState.diagnosis]; the next build then runs with it. */
-    public fun applyFix(fix: PreflightFix.Setting) {
+    fun applyFix(fix: PreflightFix.Setting) {
         val ws = _uiState.value.currentWorkspace ?: return
         val store = settingsStore ?: return
         viewModelScope.launch {
@@ -427,7 +428,7 @@ public class BuildRunViewModel(
         }
     }
 
-    public fun startBuild() {
+    fun startBuild() {
         val ws = _uiState.value.currentWorkspace ?: return
         if (_uiState.value.isRunDisabled) return
 
@@ -453,7 +454,7 @@ public class BuildRunViewModel(
         }
     }
 
-    public fun cancelBuild() {
+    fun cancelBuild() {
         val ws = _uiState.value.currentWorkspace
         val run = _uiState.value.latestRun
         if (ws == null || run == null || !run.state.isActive || cancelRunUseCase == null) return
@@ -488,7 +489,7 @@ public class BuildRunViewModel(
         }
     }
 
-    public fun reattachBuild() {
+    fun reattachBuild() {
         val ws = _uiState.value.currentWorkspace
         val run = _uiState.value.latestRun
         if (ws == null || run == null || !run.state.isActive || reattachRunUseCase == null) return
@@ -498,7 +499,7 @@ public class BuildRunViewModel(
         }
     }
 
-    public fun clearError() {
+    fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
 }

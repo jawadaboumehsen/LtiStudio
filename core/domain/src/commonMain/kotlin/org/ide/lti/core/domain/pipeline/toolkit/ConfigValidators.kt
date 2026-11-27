@@ -13,7 +13,7 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * Domain syntax validators for Android configuration files (FR-031, T067).
  * Validates fstab, build.prop, fs_config, and file_contexts syntax.
  */
-public object ConfigValidators {
+object ConfigValidators {
     private val ID_RANGE = 0L..0xFFFFFFFFL
     private val MODE_RANGE = 0..0b111_111_111_111
     private val WHITESPACE = "\\s+".toRegex()
@@ -29,13 +29,13 @@ public object ConfigValidators {
         .mapIndexed { idx, line -> idx + 1 to line.trim() }
         .filter { (_, line) -> line.isNotEmpty() && !line.startsWith("#") }
 
-    public fun validateFstab(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
+    fun validateFstab(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
         val tokens = line.split(WHITESPACE)
         "Line $n: fstab entries require at least 5 fields (<src> <mnt> <type> <flags> <fs_mgr>), found ${tokens.size}"
             .takeIf { tokens.size < 5 }
     }
 
-    public fun validateBuildProp(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
+    fun validateBuildProp(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
         val key = line.substringBefore('=', missingDelimiterValue = "").trim()
         when {
             line.indexOf('=') <= 0 -> "Line $n: Property entry must contain 'key=value'"
@@ -44,7 +44,7 @@ public object ConfigValidators {
         }
     }
 
-    public fun validateFsConfig(content: String): List<String> = entries(content).flatMap { (n, line) ->
+    fun validateFsConfig(content: String): List<String> = entries(content).flatMap { (n, line) ->
         val tokens = line.split(WHITESPACE)
         if (tokens.size < 4) {
             listOf("Line $n: fs_config requires at least 4 fields (<path> <uid> <gid> <mode>), found ${tokens.size}")
@@ -62,7 +62,7 @@ public object ConfigValidators {
         }
     }
 
-    public fun validateFileContexts(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
+    fun validateFileContexts(content: String): List<String> = entries(content).mapNotNull { (n, line) ->
         val tokens = line.split(WHITESPACE)
         when {
             tokens.size !in 2..MAX_CONTEXT_FIELDS ->

@@ -14,13 +14,13 @@ import kotlin.math.round
 /**
  * Shared utility for formatting byte counts into human-readable strings (B, KB, MB, GB, TB).
  */
-public object ByteFormatter {
+object ByteFormatter {
     private val UNITS = listOf("B", "KB", "MB", "GB", "TB")
     private const val KILO = 1024.0
     private const val HUNDRED = 100.0
     private const val TEN = 10.0
 
-    public fun format(bytes: Long): String {
+    fun format(bytes: Long): String {
         if (bytes < KILO) return "$bytes B"
         var value = bytes.toDouble()
         var unit = 0
@@ -38,4 +38,4 @@ public object ByteFormatter {
     }
 }
 
-public fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)
+fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)

@@ -57,7 +57,7 @@ import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
 
 @Composable
-public fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifier) {
+fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsState()
     val typography = GlassTheme.typography
     var pendingDelete by remember { mutableStateOf<BuildRun?>(null) }

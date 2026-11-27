@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.debloat
 
 /** What another app loses when the one it relies on is removed, worst first. */
-public enum class Loss(public val words: String) {
+enum class Loss(val words: String) {
     /** It needs a library the removed app provides (`<uses-library>`, required). */
     STOPS("stops starting"),
 
@@ -25,24 +25,24 @@ public enum class Loss(public val words: String) {
 }
 
 /** One arrow of the map: [from] relies on [to] through [reasons], and loses [loss] without it. */
-public data class Reliance(val from: String, val to: String, val loss: Loss, val reasons: List<String>)
+data class Reliance(val from: String, val to: String, val loss: Loss, val reasons: List<String>)
 
 /**
  * The map of one app: the apps that rely on it (they lose something when it goes) and those it relies on, from what
  * the ROM's manifests declare. Apps also reach each other while the device runs (intents, bound services, content
  * providers); no file in the firmware records that, so it is not on the map.
  */
-public data class AppMap(val packageId: String, val reliedOnBy: List<Reliance>, val reliesOn: List<Reliance>) {
+data class AppMap(val packageId: String, val reliedOnBy: List<Reliance>, val reliesOn: List<Reliance>) {
     /** The worst loss removing the app causes, or null when nothing declares a reliance on it. */
-    public val worst: Loss? get() = reliedOnBy.minOfOrNull { it.loss }
+    val worst: Loss? get() = reliedOnBy.minOfOrNull { it.loss }
 }
 
-public object DebloatMap {
+object DebloatMap {
     /** The framework: every app asks for its permissions, and it is never removed, so it is no arrow. */
     private const val FRAMEWORK = "android"
 
     /** The map of the app [selector] names among [facts] (one entry per app, as `DebloatRisk.byApp` gives). */
-    public fun of(selector: String, facts: Map<String, AppFacts>): AppMap? {
+    fun of(selector: String, facts: Map<String, AppFacts>): AppMap? {
         val pkg = facts[selector]?.packageId ?: return null
         val app = facts.getValue(selector)
         val all = facts.values.filter { it.packageId != null }

@@ -29,12 +29,12 @@ import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.model.setup.ToolRef
 
 @Suppress("TooManyFunctions")
-public object KotlinStoreLayout {
+object KotlinStoreLayout {
     private val SANITIZE_REGEX = Regex("""[^a-zA-Z0-9._-]+""")
     private val VALID_ID_REGEX = Regex("^[a-zA-Z0-9._-]+$")
     private val RESERVED_NAMES = setOf(".", "..", "current", "previous")
 
-    public fun sanitizeId(raw: String): String {
+    fun sanitizeId(raw: String): String {
         var sanitized = raw.replace(SANITIZE_REGEX, "_").trim('_', '.')
         while (sanitized.contains("..")) {
             sanitized = sanitized.replace("..", "_")
@@ -46,7 +46,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun validateVersionId(versionId: String) {
+    fun validateVersionId(versionId: String) {
         if (versionId.isBlank() ||
             versionId in RESERVED_NAMES ||
             versionId.contains("..") ||
@@ -57,7 +57,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun validateGroupId(group: ToolGroupId) {
+    fun validateGroupId(group: ToolGroupId) {
         if (group.value.isBlank() ||
             group.value in RESERVED_NAMES ||
             group.value.contains("..") ||
@@ -68,7 +68,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun validateOpId(opId: String) {
+    fun validateOpId(opId: String) {
         if (opId.isBlank() ||
             opId in RESERVED_NAMES ||
             opId.contains("..") ||
@@ -79,16 +79,16 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun validateRelativePath(path: String) {
+    fun validateRelativePath(path: String) {
         if (path.isBlank() || path.startsWith("/") || path.startsWith("\\") || path.contains("..")) {
             val err = ToolError.UnsupportedLayout(listOf("Invalid or escaping relative path: $path"))
             throw ToolErrorException(err)
         }
     }
 
-    public fun shellQuote(arg: String): String = "'" + arg.replace("'", "'\\''") + "'"
+    fun shellQuote(arg: String): String = "'" + arg.replace("'", "'\\''") + "'"
 
-    public fun computeVersionId(source: ResolvedSource, @Suppress("UnusedParameter") label: String = ""): String =
+    fun computeVersionId(source: ResolvedSource, @Suppress("UnusedParameter") label: String = ""): String =
         when (source) {
             is ResolvedSource.Git -> {
                 when (val ref = source.ref) {
@@ -108,7 +108,7 @@ public object KotlinStoreLayout {
             is ResolvedSource.Release -> sanitizeId(source.version)
         }
 
-    public fun ResolvedSource.toData(): SourceData = when (this) {
+    fun ResolvedSource.toData(): SourceData = when (this) {
         is ResolvedSource.Git -> {
             val refPayload =
                 when (val r = ref) {
@@ -141,7 +141,7 @@ public object KotlinStoreLayout {
      * (repository, commit, submodules - not the ref name). Two forks at one commit get different parts; the same
      * source always gets the same one.
      */
-    public fun disambiguator(source: ResolvedSource): String {
+    fun disambiguator(source: ResolvedSource): String {
         val data = source.toData()
         val identity =
             listOf(
@@ -162,7 +162,7 @@ public object KotlinStoreLayout {
     private const val SHORT_ID_LENGTH = 7
     private const val DIGEST_BYTES = 4
 
-    public fun SourceData.matches(other: SourceData): Boolean {
+    fun SourceData.matches(other: SourceData): Boolean {
         if (kind != other.kind) return false
         return when (kind) {
             "git" ->
@@ -177,7 +177,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun VersionData.toDomain(groupId: ToolGroupId, catGroup: ToolGroup? = null): InstalledVersion {
+    fun VersionData.toDomain(groupId: ToolGroupId, catGroup: ToolGroup? = null): InstalledVersion {
         val src: ResolvedSource =
             if (source.kind == "release") {
                 ResolvedSource.Release(
@@ -227,7 +227,7 @@ public object KotlinStoreLayout {
         )
     }
 
-    public fun RecipeConfig.typeName(): String = when (this) {
+    fun RecipeConfig.typeName(): String = when (this) {
         is RecipeConfig.AndroidTools -> "android_tools"
         is RecipeConfig.CMake -> "cmake"
         is RecipeConfig.Autotools -> "autotools"
@@ -237,60 +237,56 @@ public object KotlinStoreLayout {
         is RecipeConfig.AospCMake -> "aosp_cmake"
     }
 
-    public fun buildPublishScript(
-        groupDir: String,
-        targetDir: String,
-        outDir: String,
-        workDir: String? = null,
-    ): String = buildString {
-        val qGroup = shellQuote(groupDir)
-        val qTarget = shellQuote(targetDir)
-        val qOut = shellQuote(outDir)
-        appendLine("set -e")
-        appendLine("mkdir -p $qGroup")
-        if (workDir != null) {
-            val qOld = shellQuote("$workDir/old")
-            val targetTmp = "$targetDir.tmp"
-            val qTargetTmp = shellQuote(targetTmp)
-            appendLine("ver_name=\$(basename $qTarget)")
-            appendLine("is_current=0")
-            appendLine("cur_link=\$(readlink $qGroup/current 2>/dev/null || echo '')")
-            appendLine(
-                "if [ \"\$cur_link\" = \"\$ver_name\" ] || [ \"\$cur_link\" = $qTarget ] || [ \"\$(realpath " +
-                    "$qGroup/current 2>/dev/null)\" = \"\$(realpath $qTarget 2>/dev/null)\" ]; then",
-            )
-            appendLine("  is_current=1")
-            appendLine("fi")
-            appendLine(
-                "trap 'status=\$?; if [ \$status -ne 0 ]; then if [ ! -d $qTarget ] && [ -d $qOld ]; then mv -T " +
-                    "$qOld $qTarget 2>/dev/null || true; fi; if [ -d $qTarget ] && " +
-                    "[ \"\$is_current\" = \"1\" ]; then " +
-                    "ln -sfn \"\$ver_name\" $qGroup/current.tmp && mv -T $qGroup/current.tmp $qGroup/current " +
-                    "2>/dev/null || true; fi; fi' EXIT",
-            )
-            appendLine("mv -T $qOut $qTargetTmp")
-            appendLine("if [ \"\$is_current\" = \"1\" ]; then")
-            appendLine("  ln -sfn \"\$(basename $qTargetTmp)\" $qGroup/current.tmp")
-            appendLine("  mv -T $qGroup/current.tmp $qGroup/current")
-            appendLine("fi")
-            appendLine("if [ -e $qTarget ] || [ -L $qTarget ]; then")
-            appendLine("  mv -T $qTarget $qOld")
-            appendLine("fi")
-            appendLine("mv -T $qTargetTmp $qTarget")
-            appendLine("if [ \"\$is_current\" = \"1\" ]; then")
-            appendLine("  ln -sfn \"\$ver_name\" $qGroup/current.tmp")
-            appendLine("  mv -T $qGroup/current.tmp $qGroup/current")
-            appendLine("fi")
-            appendLine("trap - EXIT")
-        } else {
-            appendLine("if [ -e $qTarget ] || [ -L $qTarget ]; then exit 3; fi")
-            // -n prevents replacing an immutable version if another publication wins the race.
-            appendLine("mv -T -n $qOut $qTarget")
-            appendLine("if [ -e $qOut ]; then exit 3; fi")
+    fun buildPublishScript(groupDir: String, targetDir: String, outDir: String, workDir: String? = null): String =
+        buildString {
+            val qGroup = shellQuote(groupDir)
+            val qTarget = shellQuote(targetDir)
+            val qOut = shellQuote(outDir)
+            appendLine("set -e")
+            appendLine("mkdir -p $qGroup")
+            if (workDir != null) {
+                val qOld = shellQuote("$workDir/old")
+                val targetTmp = "$targetDir.tmp"
+                val qTargetTmp = shellQuote(targetTmp)
+                appendLine("ver_name=\$(basename $qTarget)")
+                appendLine("is_current=0")
+                appendLine("cur_link=\$(readlink $qGroup/current 2>/dev/null || echo '')")
+                appendLine(
+                    "if [ \"\$cur_link\" = \"\$ver_name\" ] || [ \"\$cur_link\" = $qTarget ] || " +
+                        "[ \"\$(realpath $qGroup/current 2>/dev/null)\" = " +
+                        "\"\$(realpath $qTarget 2>/dev/null)\" ]; then",
+                )
+                appendLine("  is_current=1")
+                appendLine("fi")
+                appendLine(
+                    "trap 'status=\$?; if [ \$status -ne 0 ]; then if [ ! -d $qTarget ] && [ -d $qOld ]; then " +
+                        "mv -T $qOld $qTarget 2>/dev/null || true; fi; if [ -d $qTarget ] && " +
+                        "[ \"\$is_current\" = \"1\" ]; then ln -sfn \"\$ver_name\" $qGroup/current.tmp && " +
+                        "mv -T $qGroup/current.tmp $qGroup/current 2>/dev/null || true; fi; fi' EXIT",
+                )
+                appendLine("mv -T $qOut $qTargetTmp")
+                appendLine("if [ \"\$is_current\" = \"1\" ]; then")
+                appendLine("  ln -sfn \"\$(basename $qTargetTmp)\" $qGroup/current.tmp")
+                appendLine("  mv -T $qGroup/current.tmp $qGroup/current")
+                appendLine("fi")
+                appendLine("if [ -e $qTarget ] || [ -L $qTarget ]; then")
+                appendLine("  mv -T $qTarget $qOld")
+                appendLine("fi")
+                appendLine("mv -T $qTargetTmp $qTarget")
+                appendLine("if [ \"\$is_current\" = \"1\" ]; then")
+                appendLine("  ln -sfn \"\$ver_name\" $qGroup/current.tmp")
+                appendLine("  mv -T $qGroup/current.tmp $qGroup/current")
+                appendLine("fi")
+                appendLine("trap - EXIT")
+            } else {
+                appendLine("if [ -e $qTarget ] || [ -L $qTarget ]; then exit 3; fi")
+                // -n prevents replacing an immutable version if another publication wins the race.
+                appendLine("mv -T -n $qOut $qTarget")
+                appendLine("if [ -e $qOut ]; then exit 3; fi")
+            }
         }
-    }
 
-    public fun buildSwitchScript(
+    fun buildSwitchScript(
         qTargetVerDir: String,
         groupDir: String,
         qVersionId: String,
@@ -350,7 +346,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun buildRemoveScript(qGroup: String, qTarget: String, qVersion: String): String = buildString {
+    fun buildRemoveScript(qGroup: String, qTarget: String, qVersion: String): String = buildString {
         appendLine("curr=\$(readlink $qGroup/current 2>/dev/null || echo '')")
         appendLine("if [ \"\$curr\" = $qVersion ]; then exit 2; fi")
         appendLine("if [ -L $qTarget ]; then exit 3; fi")
@@ -365,13 +361,13 @@ public object KotlinStoreLayout {
         appendLine("esac")
     }
 
-    public fun buildContainmentScript(qTarget: String, qGroup: String): String = buildString {
+    fun buildContainmentScript(qTarget: String, qGroup: String): String = buildString {
         appendLine("if [ ! -d $qTarget ] || [ -L $qTarget ]; then exit 1; fi")
         appendLine("real=\$(realpath -m $qTarget 2>/dev/null || echo '')")
         appendLine("case \"\$real\" in $qGroup/*) ;; *) exit 2 ;; esac")
     }
 
-    public fun buildResultScript(base: String, opId: String, jsonPayload: String): String = buildString {
+    fun buildResultScript(base: String, opId: String, jsonPayload: String): String = buildString {
         appendLine("set -e")
         appendLine("mkdir -p " + shellQuote("$base/results"))
         val qTmp = shellQuote("$base/results/$opId.json.tmp")
@@ -386,11 +382,10 @@ public object KotlinStoreLayout {
      * Where the mirror of [repoUrl] lives. One folder per repository: a fork shares its upstream's history, and
      * in one shared mirror a tag or commit that exists only upstream would resolve in the fork too.
      */
-    public fun mirrorPath(base: String, group: String, repoUrl: String): String =
-        "$base/src/$group-${repoIdentity(repoUrl)}"
+    fun mirrorPath(base: String, group: String, repoUrl: String): String = "$base/src/$group-${repoIdentity(repoUrl)}"
 
     /** Submodule clones are cached per repository too: a fork may point its submodules somewhere else. */
-    public fun submoduleCachePath(base: String, group: String, repoUrl: String): String =
+    fun submoduleCachePath(base: String, group: String, repoUrl: String): String =
         "${mirrorPath(base, group, repoUrl)}-modules"
 
     private fun repoIdentity(repoUrl: String): String = java.security.MessageDigest.getInstance("SHA-256")
@@ -405,7 +400,7 @@ public object KotlinStoreLayout {
      * just the files of the commit it needs, so a repo with a long history (apktool) is not downloaded whole.
      * [lenientFetch] lets an offline machine still build a commit the mirror already has.
      */
-    public fun buildMirrorScript(base: String, group: String, repoUrl: String, lenientFetch: Boolean): String {
+    fun buildMirrorScript(base: String, group: String, repoUrl: String, lenientFetch: Boolean): String {
         val qMirror = shellQuote(mirrorPath(base, group, repoUrl))
         val qRepo = shellQuote(repoUrl)
         val refspecs = "'+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'"
@@ -425,7 +420,7 @@ public object KotlinStoreLayout {
         }
     }
 
-    public fun buildGitPrepScript(
+    fun buildGitPrepScript(
         base: String,
         group: String,
         repoUrl: String,
@@ -490,13 +485,13 @@ public object KotlinStoreLayout {
      * and `install` alike). `dpkg -s` alone also succeeds for a package that was removed but keeps its
      * configuration, or whose install did not finish.
      */
-    public fun buildPackageCheck(pkg: String): String {
+    fun buildPackageCheck(pkg: String): String {
         val q = shellQuote(pkg)
         return "command -v $q >/dev/null 2>&1 || " +
             "dpkg-query -W -f='\${Status}' $q 2>/dev/null | grep -Eq ' ok installed\$'"
     }
 
-    public fun buildPrepWorkspaceScript(
+    fun buildPrepWorkspaceScript(
         baseDir: String,
         group: String,
         opId: String,
@@ -534,7 +529,7 @@ public object KotlinStoreLayout {
         appendLine("mv " + shellQuote("$workDir/op.json.tmp") + " " + shellQuote("$workDir/op.json"))
     }
 
-    public fun buildInspectScript(qGroupDir: String): String = buildString {
+    fun buildInspectScript(qGroupDir: String): String = buildString {
         appendLine("if [ ! -d $qGroupDir ]; then echo 'ABSENT'; exit 0; fi")
         appendLine("curr=\$(readlink $qGroupDir/current 2>/dev/null || echo '')")
         appendLine("echo \"CURRENT=\$curr\"")
@@ -552,7 +547,7 @@ public object KotlinStoreLayout {
         appendLine("done")
     }
 
-    public suspend fun parseGroupInstalledVersions(
+    suspend fun parseGroupInstalledVersions(
         groupDir: String,
         lines: List<String>,
         groupId: ToolGroupId,
@@ -628,7 +623,7 @@ public object KotlinStoreLayout {
      * version, by activation and by the check of a fresh build: every output is a non-empty executable (or readable
      * jar), every support file exists and - when [probe] - every tool runs and identifies itself.
      */
-    public fun versionCheck(
+    fun versionCheck(
         versionDir: String,
         outputs: List<ToolOutput>,
         supportFiles: List<String>,
@@ -652,7 +647,7 @@ public object KotlinStoreLayout {
      * stub that only exits 1, a wrong-architecture binary) fails here instead of leaving Setup green until the
      * first ROM job. A probe with no arguments runs the tool bare.
      */
-    public fun probeChecks(versionDir: String, outputs: List<ToolOutput>): String {
+    fun probeChecks(versionDir: String, outputs: List<ToolOutput>): String {
         if (outputs.isEmpty()) return "true"
         // In parallel: the whole check takes one timeout, however many tools the group has.
         return buildString {

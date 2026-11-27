@@ -18,7 +18,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stagePatchModule: Module = module {
+val stagePatchModule: Module = module {
     single<StageEditor>(named("patch")) { PatchStageEditor() }
 
     viewModel { params ->

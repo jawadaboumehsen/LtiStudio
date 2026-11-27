@@ -23,7 +23,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * with. The settings, scripts, mod versions and firmware hash are already in the run's snapshot. Each receipt is
  * there only when its stage was part of the run; a run without a record (older ones) reads as [EMPTY].
  */
-public data class RunRecord(
+data class RunRecord(
     val plan: AppliedModulePlan?,
     val debloat: DebloatDecision?,
     /** SHA-256 of the platform certificate the build signed with, when Build was part of the run. */
@@ -35,22 +35,22 @@ public data class RunRecord(
     /** The newest check of a phone running this build ([DeviceTest]); null when none was made. */
     val deviceCheck: DeviceCheckResult? = null,
 ) {
-    public companion object {
-        public val EMPTY: RunRecord = RunRecord(null, null, null, null, present = false)
+    companion object {
+        val EMPTY: RunRecord = RunRecord(null, null, null, null, present = false)
 
         /** The folder of [runId]'s record, relative to the workspace. */
-        public fun dir(runId: String): String = "records/$runId"
+        fun dir(runId: String): String = "records/$runId"
 
         /** The record of [runId] in [workspaceId], read through [runner]; [EMPTY] when it has none. */
-        public suspend fun read(runner: WorkbenchRunner, workspaceId: String, runId: String): RunRecord =
+        suspend fun read(runner: WorkbenchRunner, workspaceId: String, runId: String): RunRecord =
             parse(runner.read(workspaceId) { sh(READ_SCRIPT, abs("."), dir(runId)) })
 
         /** The newest phone check of every run in [workspaceId] that has one, by run id, in one read. */
-        public suspend fun deviceChecks(runner: WorkbenchRunner, workspaceId: String): Map<String, DeviceCheckResult> =
+        suspend fun deviceChecks(runner: WorkbenchRunner, workspaceId: String): Map<String, DeviceCheckResult> =
             parseDeviceChecks(runner.read(workspaceId) { sh(DEVICE_CHECKS_SCRIPT, abs(".")) })
 
         /** What [DEVICE_CHECKS_SCRIPT] printed: `<runId>\t<check JSON>` rows; an unreadable check is left out. */
-        public fun parseDeviceChecks(text: String): Map<String, DeviceCheckResult> = text.lines().mapNotNull { line ->
+        fun parseDeviceChecks(text: String): Map<String, DeviceCheckResult> = text.lines().mapNotNull { line ->
             val parts = line.split('\t', limit = 2).takeIf { it.size == 2 }
             val check = parts?.let { (_, json) ->
                 runCatching { ConfigurationSnapshot.canonicalJson.decodeFromString<DeviceCheckResult>(json) }
@@ -60,7 +60,7 @@ public data class RunRecord(
         }.toMap()
 
         /** What [READ_SCRIPT] printed: `<name>\t<one line of JSON or a fingerprint>` rows. */
-        public fun parse(text: String): RunRecord {
+        fun parse(text: String): RunRecord {
             val rows = text.lines().mapNotNull { line ->
                 line.split('\t', limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] }
             }.toMap()
@@ -92,7 +92,7 @@ public data class RunRecord(
          * not). Written to `<folder>.partial` and renamed, so a cut-off write never looks complete; a record already
          * there (a resumed run) is kept. Only regular files are copied, never a link.
          */
-        public const val WRITE_SCRIPT: String = """cd "$1" || exit 1
+        const val WRITE_SCRIPT: String = """cd "$1" || exit 1
 d="$2"; t="${'$'}d.partial"
 [ -L records ] && exit 1
 [ -d "${'$'}d" ] && exit 0
@@ -137,5 +137,5 @@ exit 0"""
     }
 
     /** The changelog of this run: its mods, removed apps and system changes from [snapshot]. */
-    public fun changes(snapshot: ConfigurationSnapshot?): String = ChangelogDraft.of(plan, debloat, snapshot)
+    fun changes(snapshot: ConfigurationSnapshot?): String = ChangelogDraft.of(plan, debloat, snapshot)
 }

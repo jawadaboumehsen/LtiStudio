@@ -20,10 +20,10 @@ import org.ide.lti.core.model.run.StageId
 // direction), so this route pattern cannot reuse org.ide.lti.shared.navigation.StudioRoutes.STUDIO_PATTERN
 // directly - it is a second, necessarily-independent copy of the SAME string. lti-shared's own test suite
 // (StudioRoutesTest) asserts the two stay byte-identical, since it is the one module able to see both.
-public const val STUDIO_ROUTE_PATTERN: String =
+const val STUDIO_ROUTE_PATTERN: String =
     "studio/{workspaceId}?stageId={stageId}&objectId={objectId}"
 
-public fun NavGraphBuilder.studioScreen(
+fun NavGraphBuilder.studioScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToRun: (workspaceId: String, runId: String) -> Unit = { _, _ -> },
     onNavigateToPlugins: (workspaceId: String?, packageId: String?, destination: String) -> Unit = { _, _, _ -> },

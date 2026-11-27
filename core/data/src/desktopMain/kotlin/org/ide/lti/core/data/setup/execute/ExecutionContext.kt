@@ -21,7 +21,7 @@ import org.ide.lti.core.domain.setup.SetupPlan
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepStatus
 
-public data class ExecutionContext(
+data class ExecutionContext(
     val distro: String,
     val home: String,
     val binDir: String,

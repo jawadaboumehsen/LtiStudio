@@ -19,7 +19,7 @@ import java.io.File
  * points to is never deleted. The bundle is `<resources>/ltirom-server/` containing
  * `server-version.txt` and `checksums.txt` (written by `lti-desktop:stageBundledServer`).
  */
-public class ServerArtifactInstaller(
+class ServerArtifactInstaller(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val bundleDirProvider: () -> File? = {
         System.getProperty("compose.application.resources.dir")
@@ -33,13 +33,13 @@ public class ServerArtifactInstaller(
     },
     private val pathTranslator: WslPathTranslator = WslPathTranslator(),
 ) {
-    public fun getBundledVersion(): String? {
+    fun getBundledVersion(): String? {
         val bundle = bundleDirProvider() ?: return null
         val verFile = File(bundle, VERSION_FILE)
         return if (verFile.isFile) verFile.readText().trim().ifBlank { null } else null
     }
 
-    public fun getActiveVersion(environment: SetupEnvironment): String? {
+    fun getActiveVersion(environment: SetupEnvironment): String? {
         val linkResult = cli.execute(environment.distro, listOf("readlink", "-f", currentLink(environment)))
         return if (linkResult.exitCode == 0 && linkResult.output.isNotBlank()) {
             linkResult.output.trim().substringAfterLast("/").ifBlank { null }
@@ -48,7 +48,7 @@ public class ServerArtifactInstaller(
         }
     }
 
-    public fun status(environment: SetupEnvironment): ServerArtifact {
+    fun status(environment: SetupEnvironment): ServerArtifact {
         val bundled = getBundledVersion()
         val active = getActiveVersion(environment)
         val state =
@@ -67,7 +67,7 @@ public class ServerArtifactInstaller(
      * the new one, the one it replaced and [keepVersions] (the version a still-running service uses); with
      * [prune] false nothing is removed (used when the running version cannot be determined).
      */
-    public fun ensureInstalled(
+    fun ensureInstalled(
         environment: SetupEnvironment,
         keepVersions: Set<String> = emptySet(),
         prune: Boolean = true,
@@ -191,10 +191,10 @@ public class ServerArtifactInstaller(
         javaHome = null,
     )
 
-    public companion object {
-        public const val BUNDLE_DIR_NAME: String = "ltirom-server"
-        public const val VERSION_FILE: String = "server-version.txt"
-        public const val CHECKSUMS_FILE: String = "checksums.txt"
+    companion object {
+        const val BUNDLE_DIR_NAME: String = "ltirom-server"
+        const val VERSION_FILE: String = "server-version.txt"
+        const val CHECKSUMS_FILE: String = "checksums.txt"
         private const val STEP_TIMEOUT_SECONDS: Long = 180
         private const val RUNTIME_MANIFEST = ".extracted.sha256"
     }

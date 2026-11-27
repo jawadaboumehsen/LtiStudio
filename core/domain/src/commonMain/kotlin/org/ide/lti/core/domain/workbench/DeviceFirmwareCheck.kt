@@ -14,7 +14,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.SuperTool
 import org.ide.lti.core.model.target.TargetDevice
 
 /** What the extracted firmware says about the device: its build properties, boot image sizes and super table. */
-public data class FirmwareFacts(
+data class FirmwareFacts(
     val props: Map<String, String>,
     /** Partition size each boot-chain image was signed for (its AVB footer's `Image size`). */
     val partitionSizes: Map<String, Long>,
@@ -28,8 +28,8 @@ public data class FirmwareFacts(
 )
 
 /** One fact: [setting] is the device setting it checks (null for facts shown for reference only). */
-public data class FirmwareFact(val setting: String?, val label: String, val configured: String?, val firmware: String) {
-    public val differs: Boolean
+data class FirmwareFact(val setting: String?, val label: String, val configured: String?, val firmware: String) {
+    val differs: Boolean
         get() = setting != null && configured != firmware
 }
 
@@ -38,9 +38,9 @@ public data class FirmwareFact(val setting: String?, val label: String, val conf
  * fastboot product, virtual A/B, the boot-chain partition sizes and the super table. A wrong size here makes the
  * build sign images for the wrong partition size.
  */
-public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
+class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
 
-    public suspend fun read(workspaceId: String, bootPartitions: List<String>): FirmwareFacts = runner.read(
+    suspend fun read(workspaceId: String, bootPartitions: List<String>): FirmwareFacts = runner.read(
         workspaceId,
     ) {
         val props = PROP_FILES.mapNotNull { readText(it) }.flatMap { it.lines() }
@@ -58,7 +58,7 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
         FirmwareFacts(props, sizes, superLayout, logical)
     }
 
-    public companion object {
+    companion object {
         private const val EXTRACTED = "firmware/extracted"
         private val PROP_FILES = listOf("$EXTRACTED/system/system/build.prop", "$EXTRACTED/vendor/build.prop")
         private val SUPER_IMAGES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img")
@@ -90,7 +90,7 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
         )
 
         /** Each fact of [facts] next to [device]'s setting; facts the firmware does not carry are left out. */
-        public fun compare(device: TargetDevice, facts: FirmwareFacts): List<FirmwareFact> {
+        fun compare(device: TargetDevice, facts: FirmwareFacts): List<FirmwareFact> {
             val p = facts.props
             fun prop(vararg keys: String) = keys.firstNotNullOfOrNull { p[it]?.ifBlank { null } }
             val codename = prop("ro.product.vendor.device", "ro.product.system.device", "ro.product.device")
@@ -162,7 +162,7 @@ public class DeviceFirmwareCheck(private val runner: WorkbenchRunner) {
         }
 
         /** [device] with [fact]'s firmware value; a fact for reference only changes nothing. */
-        public fun apply(device: TargetDevice, fact: FirmwareFact): TargetDevice {
+        fun apply(device: TargetDevice, fact: FirmwareFact): TargetDevice {
             val v = fact.firmware
             return when (fact.setting) {
                 "codename" -> device.copy(codename = v)

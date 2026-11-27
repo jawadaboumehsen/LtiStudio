@@ -24,7 +24,7 @@ import org.ide.lti.core.domain.setup.ToolSource
 import org.ide.lti.core.model.setup.ToolRef
 import java.util.UUID
 
-public data class ToolsState(
+data class ToolsState(
     val inventory: ToolInventory? = null,
     val activeOperations: Map<ToolGroupId, ToolOperation> = emptyMap(),
     val isConnected: Boolean = true,
@@ -33,20 +33,20 @@ public data class ToolsState(
 )
 
 @Suppress("TooManyFunctions")
-public class ToolManager(
+class ToolManager(
     private val port: ToolStorePort,
     private val catalog: ToolGroupCatalog = ToolGroupCatalog,
     private val selectionRepository: org.ide.lti.core.domain.repository.setup.ToolchainSelectionRepository? = null,
     private val usageCoordinator: ToolUsageCoordinator? = null,
 ) {
     private val _state = MutableStateFlow(ToolsState())
-    public val state: StateFlow<ToolsState> = _state.asStateFlow()
+    val state: StateFlow<ToolsState> = _state.asStateFlow()
 
-    public val isRomJobRunning: Boolean
+    val isRomJobRunning: Boolean
         get() = usageCoordinator?.isJobActive == true
 
     /** [isRomJobRunning] as a flow, for screens that must react when a job starts or ends. */
-    public val romJobActive: StateFlow<Boolean> = usageCoordinator?.jobActive ?: MutableStateFlow(false)
+    val romJobActive: StateFlow<Boolean> = usageCoordinator?.jobActive ?: MutableStateFlow(false)
 
     private val refreshCounter = MutableStateFlow(0L)
 
@@ -54,7 +54,7 @@ public class ToolManager(
      * Reads the store and publishes the result - unless a refresh that started later has already published: a
      * slow read that began before a version switch must not bring the old "In use" back after it.
      */
-    public suspend fun refresh(): Result<ToolInventory> {
+    suspend fun refresh(): Result<ToolInventory> {
         val generation = refreshCounter.updateAndGet { it + 1 }
         val res = port.status(catalog)
         _state.update { current ->
@@ -68,11 +68,11 @@ public class ToolManager(
         return res
     }
 
-    public suspend fun portInit(): Result<InitInfo> =
+    suspend fun portInit(): Result<InitInfo> =
         usageCoordinator?.withToolMutationAdmission { port.init().getOrThrow() } ?: port.init()
 
     @Suppress("CyclomaticComplexMethod", "LoopWithTooManyJumpStatements", "ReturnCount")
-    public suspend fun prepareMissing(
+    suspend fun prepareMissing(
         targets: Map<ToolGroupId, ResolvedSource>? = null,
         onEvent: (ToolGroupId, InstallEvent) -> Unit = { _, _ -> },
     ): SetupToolsSummary {
@@ -227,11 +227,11 @@ public class ToolManager(
         return SetupToolsSummary(groupResults)
     }
 
-    public suspend fun retryFailed(onEvent: (ToolGroupId, InstallEvent) -> Unit = { _, _ -> }): SetupToolsSummary =
+    suspend fun retryFailed(onEvent: (ToolGroupId, InstallEvent) -> Unit = { _, _ -> }): SetupToolsSummary =
         prepareMissing(onEvent = onEvent)
 
     @Suppress("CyclomaticComplexMethod", "ReturnCount")
-    public suspend fun installAndUse(
+    suspend fun installAndUse(
         group: ToolGroupId,
         source: ResolvedSource,
         forceNew: Boolean = false,
@@ -265,7 +265,7 @@ public class ToolManager(
     }
 
     @Suppress("CyclomaticComplexMethod", "ReturnCount")
-    public suspend fun repair(
+    suspend fun repair(
         group: ToolGroupId,
         source: ResolvedSource? = null,
         onEvent: (InstallEvent) -> Unit = {},
@@ -316,7 +316,7 @@ public class ToolManager(
         return res
     }
 
-    public suspend fun use(
+    suspend fun use(
         group: ToolGroupId,
         versionId: String,
         choice: ChoiceUpdate = ChoiceUpdate.Record,
@@ -359,7 +359,7 @@ public class ToolManager(
     }
 
     @Suppress("ReturnCount")
-    public suspend fun followStudio(group: ToolGroupId, onEvent: (InstallEvent) -> Unit = {}): OperationResult {
+    suspend fun followStudio(group: ToolGroupId, onEvent: (InstallEvent) -> Unit = {}): OperationResult {
         if (state.value.activeOperations.containsKey(group)) {
             return OperationResult.Failed(ToolError.Busy("Operation in progress for group ${group.value}"), "Busy")
         }
@@ -391,19 +391,19 @@ public class ToolManager(
         }
     }
 
-    public suspend fun refs(group: ToolGroupId, repoUrl: String): Result<RefListing> = port.refs(group, repoUrl)
+    suspend fun refs(group: ToolGroupId, repoUrl: String): Result<RefListing> = port.refs(group, repoUrl)
 
-    public suspend fun resolve(group: ToolGroupId, repoUrl: String, ref: ToolRef): Result<ResolvedSourceCheck> =
+    suspend fun resolve(group: ToolGroupId, repoUrl: String, ref: ToolRef): Result<ResolvedSourceCheck> =
         port.resolve(group, repoUrl, ref)
 
-    public suspend fun isTrusted(repoUrl: String): Boolean = selectionRepository?.isTrusted(repoUrl) ?: true
+    suspend fun isTrusted(repoUrl: String): Boolean = selectionRepository?.isTrusted(repoUrl) ?: true
 
     /** Whether the trust was saved. Callers must not go on as if it were when it was not. */
-    public suspend fun recordTrust(repoUrl: String): Result<Unit> =
+    suspend fun recordTrust(repoUrl: String): Result<Unit> =
         selectionRepository?.recordTrust(repoUrl) ?: Result.success(Unit)
 
     @Suppress("ReturnCount")
-    public suspend fun remove(group: ToolGroupId, versionId: String): OperationResult {
+    suspend fun remove(group: ToolGroupId, versionId: String): OperationResult {
         if (state.value.activeOperations.containsKey(group)) {
             return OperationResult.Failed(ToolError.Busy("Operation in progress for group ${group.value}"), "Busy")
         }
@@ -425,7 +425,7 @@ public class ToolManager(
         }
     }
 
-    public suspend fun cancel(group: ToolGroupId): Result<Unit> {
+    suspend fun cancel(group: ToolGroupId): Result<Unit> {
         val result = port.cancel(group)
         if (result.isSuccess) {
             _state.update { it.copy(activeOperations = it.activeOperations - group) }
@@ -433,7 +433,7 @@ public class ToolManager(
         return result
     }
 
-    public suspend fun cancelAll(budgetMs: Long = DEFAULT_CANCEL_BUDGET_MS): List<Result<Unit>> {
+    suspend fun cancelAll(budgetMs: Long = DEFAULT_CANCEL_BUDGET_MS): List<Result<Unit>> {
         val portResults = port.cancelAll(budgetMs)
         _state.update { it.copy(activeOperations = emptyMap()) }
         return portResults
@@ -465,7 +465,7 @@ public class ToolManager(
         else -> false
     }
 
-    public fun targetSourceForGroup(group: ToolGroup): ResolvedSource {
+    fun targetSourceForGroup(group: ToolGroup): ResolvedSource {
         val groupState = state.value.inventory?.groups?.get(group.id)
         val pick = groupState?.selection
         val current = groupState?.current
@@ -480,7 +480,7 @@ public class ToolManager(
             )
     }
 
-    public fun defaultSourceForGroup(group: ToolGroup): ResolvedSource = when (val s = group.source) {
+    fun defaultSourceForGroup(group: ToolGroup): ResolvedSource = when (val s = group.source) {
         is ToolSource.Git ->
             ResolvedSource.Git(
                 repoUrl = s.recommendedUrl,

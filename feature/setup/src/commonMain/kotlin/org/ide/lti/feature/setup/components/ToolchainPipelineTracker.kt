@@ -77,6 +77,8 @@ import org.ide.lti.feature.setup.SetupRowAction
 import org.ide.lti.feature.setup.TerminalHandoffState
 import org.ide.lti.feature.setup.ToolchainLayoutRecoveryPresentation
 import org.ide.lti.feature.setup.WslRowPresentation
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * 5-stage vertical Toolchain Provisioning Pipeline Tracker (US2).
@@ -497,7 +499,7 @@ private fun VerticalStageRow(
         }
         while (true) {
             value = System.currentTimeMillis()
-            delay(1000L)
+            delay(1.seconds)
         }
     }
 
@@ -549,7 +551,7 @@ private fun StageRowLayoutRecoveryBox(recovery: ToolchainLayoutRecoveryPresentat
     var recoveryCommandCopied by remember(recovery.command) { mutableStateOf(false) }
     LaunchedEffect(recovery.command, recoveryCommandCopied) {
         if (recoveryCommandCopied) {
-            delay(COPIED_FEEDBACK_MS)
+            delay(COPIED_FEEDBACK_MS.milliseconds)
             recoveryCommandCopied = false
         }
     }
@@ -917,7 +919,7 @@ internal fun CopyableErrorText(errorText: String, modifier: Modifier = Modifier)
     var copied by remember(errorText) { mutableStateOf(false) }
     LaunchedEffect(copied) {
         if (copied) {
-            delay(COPIED_FEEDBACK_MS)
+            delay(COPIED_FEEDBACK_MS.milliseconds)
             copied = false
         }
     }

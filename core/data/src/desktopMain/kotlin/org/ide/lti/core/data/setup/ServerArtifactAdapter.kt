@@ -17,7 +17,7 @@ import org.ide.lti.core.model.setup.InstallState
 import org.ide.lti.core.model.setup.ServerArtifact
 import org.ide.lti.core.model.setup.SetupEnvironment
 
-public class ServerArtifactAdapter(
+class ServerArtifactAdapter(
     private val installer: ServerArtifactInstaller = ServerArtifactInstaller(),
     private val daemonManager: WslDaemonManager = WslDaemonManager(),
 ) : ServerArtifactPort {

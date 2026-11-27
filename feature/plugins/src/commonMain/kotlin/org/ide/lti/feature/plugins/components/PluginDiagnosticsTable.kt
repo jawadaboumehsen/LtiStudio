@@ -46,7 +46,7 @@ import org.ide.lti.core.domain.plugin.AuthorDiagnostic
  * Dense diagnostics table matching Concept 15.
  */
 @Composable
-public fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier: Modifier = Modifier) {
+fun PluginDiagnosticsTable(diagnostics: List<AuthorDiagnostic>, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()

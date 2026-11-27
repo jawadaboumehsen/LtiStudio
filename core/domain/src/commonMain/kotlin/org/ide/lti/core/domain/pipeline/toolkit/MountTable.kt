@@ -15,7 +15,7 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * as ext4 needs an ext4 line in every fstab that declares it: `vendor/etc/fstab.*` (and `odm/etc`) of the tree, and
  * the first-stage fstab inside the boot images' ramdisks (vendor_boot on most devices).
  */
-public object MountTable {
+object MountTable {
     /**
      * `sh -c SCRIPT sh <workspace> <unpack_bootimg> [mkdtboimg]`: every line of the tree's fstabs and of the fstabs
      * inside the ramdisks of `work/kernel/<image>.img`, each as `<source>\t<line>`; a source is
@@ -24,7 +24,7 @@ public object MountTable {
      * ramdisk has no fstab) comes as fstab lines too, from `vendor_boot.img:dtb` or `dtbo.img:dt.<n>`; a node with
      * `status = "disabled"` as a `#` line.
      */
-    public const val SCRIPT: String = """
+    const val SCRIPT: String = """
         w="$1"; u="$2"; m="${'$'}{3:-}"
         for f in "${'$'}w"/work/vendor/etc/fstab.* "${'$'}w"/work/odm/etc/fstab.*; do
           [ -f "${'$'}f" ] && sed "s#^#${'$'}{f#"${'$'}w"/}\t#" "${'$'}f"
@@ -73,21 +73,16 @@ public object MountTable {
     private val TOKEN = Regex("""\S+""")
 
     /** One line of a mount table for a dynamic (`logical`) partition. */
-    public data class Entry(val source: String, val mountPoint: String, val type: String)
+    data class Entry(val source: String, val mountPoint: String, val type: String)
 
     /** A mount table that declares a partition, but not as the filesystem it is built as. */
-    public data class Missing(
-        val source: String,
-        val partition: String,
-        val filesystem: String,
-        val declared: Set<String>,
-    )
+    data class Missing(val source: String, val partition: String, val filesystem: String, val declared: Set<String>)
 
     /**
      * The `logical` lines of [SCRIPT]'s output that the phone uses; comments and other partitions are left out. The
      * device tree's fstab counts only when no boot image ramdisk has one: first-stage init reads the ramdisk's first.
      */
-    public fun parse(output: String): List<Entry> {
+    fun parse(output: String): List<Entry> {
         val rows = rows(output)
         val ramdisk = ramdiskHasMounts(rows)
         return rows.filter { !(ramdisk && isDeviceTree(it.source)) }.mapNotNull { row ->
@@ -106,7 +101,7 @@ public object MountTable {
     }
 
     /** One mount of the device tree's fstab. */
-    public data class DeviceTreeMount(
+    data class DeviceTreeMount(
         val source: String,
         val mountPoint: String,
         val device: String,
@@ -120,9 +115,9 @@ public object MountTable {
      * The device tree's fstab in [SCRIPT]'s output, and whether the phone uses it: only when no ramdisk of the boot
      * images carries an fstab (a first-stage fstab there wins).
      */
-    public data class DeviceTree(val mounts: List<DeviceTreeMount>, val inUse: Boolean)
+    data class DeviceTree(val mounts: List<DeviceTreeMount>, val inUse: Boolean)
 
-    public fun deviceTree(output: String): DeviceTree {
+    fun deviceTree(output: String): DeviceTree {
         val rows = rows(output)
         val mounts = rows.filter { isDeviceTree(it.source) && it.tokens.size > FS_MGR_FLAGS }.map { row ->
             val t = row.tokens
@@ -151,7 +146,7 @@ public object MountTable {
     private fun isDeviceTree(source: String) = source.endsWith(":dtb") || source.contains(":dt.")
 
     /** For each partition built as [wanted]`[p]`, the mount tables that declare `/<p>` without that filesystem. */
-    public fun missing(entries: List<Entry>, wanted: Map<String, String>): List<Missing> =
+    fun missing(entries: List<Entry>, wanted: Map<String, String>): List<Missing> =
         entries.groupBy { it.source }.flatMap { (source, lines) ->
             wanted.mapNotNull { (partition, fs) ->
                 val declared = lines.filter { it.mountPoint == "/$partition" }.map { it.type }.toSet()

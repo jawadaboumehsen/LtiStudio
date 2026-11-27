@@ -36,14 +36,14 @@ import dev.chrisbanes.haze.blur.valueBackedHazeBlurStyle
  * When Blur is disabled, each style falls back to a flat frost colour (its foreground tint over the
  * container colour) rather than the blur tint.
  */
-public object CupertinoMaterials {
+object CupertinoMaterials {
 
     /**
      * A [dev.chrisbanes.haze.blur.HazeBlurStyle] which implements a mostly translucent material.
      */
     @Composable
     @ReadOnlyComposable
-    public fun ultraThin(
+    fun ultraThin(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = cupertinoMaterialStyle(containerColor, CupertinoPresets.ultraThin)
 
@@ -53,7 +53,7 @@ public object CupertinoMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun thin(
+    fun thin(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = cupertinoMaterialStyle(containerColor, CupertinoPresets.thin)
 
@@ -63,7 +63,7 @@ public object CupertinoMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun regular(
+    fun regular(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = cupertinoMaterialStyle(containerColor, CupertinoPresets.regular)
 
@@ -72,7 +72,7 @@ public object CupertinoMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun thick(
+    fun thick(
         containerColor: Color = MaterialTheme.colorScheme.surface,
     ): HazeBlurStyle = cupertinoMaterialStyle(containerColor, CupertinoPresets.thick)
 }

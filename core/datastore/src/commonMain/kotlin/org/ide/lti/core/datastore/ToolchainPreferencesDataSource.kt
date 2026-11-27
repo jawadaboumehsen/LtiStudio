@@ -23,7 +23,6 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.AttemptStatus
 import org.ide.lti.core.model.setup.ChildIntentRecord
 import org.ide.lti.core.model.setup.ChildTerminalProof
-import org.ide.lti.core.model.setup.DistroToolSelections
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.PersistedSubmoduleState
 import org.ide.lti.core.model.setup.PersistedToolState
@@ -48,7 +47,7 @@ import org.ide.lti.core.model.setup.ToolchainPersistenceState
  * - "Reset protection: reset cannot erase an active attempt without explicit authorization."
  */
 @Suppress("TooManyFunctions") // one persistence surface: setup evidence plus the attempt journal (US3)
-public class ToolchainPreferencesDataSource(
+class ToolchainPreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -60,17 +59,17 @@ public class ToolchainPreferencesDataSource(
     /**
      * Continuous reactive stream of persisted toolchain state.
      */
-    public val toolchainState: Flow<ToolchainPersistenceState> = _toolchainState.asStateFlow()
+    val toolchainState: Flow<ToolchainPersistenceState> = _toolchainState.asStateFlow()
 
     /**
      * Synchronous snapshot of the current persisted toolchain state.
      */
-    public val currentToolchainState: ToolchainPersistenceState get() = _toolchainState.value
+    val currentToolchainState: ToolchainPersistenceState get() = _toolchainState.value
 
     /**
      * Atomically saves or replaces the complete [ToolchainPersistenceState].
      */
-    public suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit> = withContext(ioDispatcher) {
+    suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val persistResult = persistStateInternal(state)
             if (persistResult.isSuccess) {
@@ -83,30 +82,28 @@ public class ToolchainPreferencesDataSource(
     /**
      * Atomically mutates an individual tool's persisted state.
      */
-    public suspend fun updateTool(
-        toolId: String,
-        transform: (PersistedToolState) -> PersistedToolState,
-    ): Result<Unit> = withContext(ioDispatcher) {
-        mutex.withLock {
-            val current = _toolchainState.value
-            val existingTool = current.tools[toolId] ?: PersistedToolState(id = toolId, binaryName = toolId)
-            val updatedTool = transform(existingTool)
-            val updated = current.copy(
-                tools = current.tools + (toolId to updatedTool),
-                lastVerifiedTimestamp = updatedTool.lastVerifiedTimestamp ?: current.lastVerifiedTimestamp,
-            )
-            val persistResult = persistStateInternal(updated)
-            if (persistResult.isSuccess) {
-                _toolchainState.value = updated
+    suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState): Result<Unit> =
+        withContext(ioDispatcher) {
+            mutex.withLock {
+                val current = _toolchainState.value
+                val existingTool = current.tools[toolId] ?: PersistedToolState(id = toolId, binaryName = toolId)
+                val updatedTool = transform(existingTool)
+                val updated = current.copy(
+                    tools = current.tools + (toolId to updatedTool),
+                    lastVerifiedTimestamp = updatedTool.lastVerifiedTimestamp ?: current.lastVerifiedTimestamp,
+                )
+                val persistResult = persistStateInternal(updated)
+                if (persistResult.isSuccess) {
+                    _toolchainState.value = updated
+                }
+                persistResult
             }
-            persistResult
         }
-    }
 
     /**
      * Atomically mutates an external git submodule's persisted state.
      */
-    public suspend fun updateSubmodule(
+    suspend fun updateSubmodule(
         name: String,
         transform: (PersistedSubmoduleState) -> PersistedSubmoduleState,
     ): Result<Unit> = withContext(ioDispatcher) {
@@ -128,7 +125,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records a setup stage as completed or pending.
      */
-    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> =
+    suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit> =
         withContext(ioDispatcher) {
             mutex.withLock {
                 val current = _toolchainState.value
@@ -149,7 +146,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records overall toolchain setup completion status with timestamp.
      */
-    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit> =
+    suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit> =
         withContext(ioDispatcher) {
             mutex.withLock {
                 val current = _toolchainState.value
@@ -168,7 +165,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records passing doctor diagnostic item IDs.
      */
-    public suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit> = withContext(ioDispatcher) {
+    suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit> = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _toolchainState.value
             val updated = current.copy(passedDiagnosticIds = passedIds)
@@ -183,7 +180,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Records AVB 2.0 key provisioning status and path.
      */
-    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> =
+    suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit> =
         withContext(ioDispatcher) {
             mutex.withLock {
                 val current = _toolchainState.value
@@ -204,7 +201,7 @@ public class ToolchainPreferencesDataSource(
      * Reset protection: an active attempt or a recovery block is never erased unless [force] is true,
      * which is the explicit, user-confirmed authorization to discard it.
      */
-    public suspend fun clearToolchainState(force: Boolean = false): Result<Unit> = mutate { current ->
+    suspend fun clearToolchainState(force: Boolean = false): Result<Unit> = mutate { current ->
         val active = current.activeAttempt
         if (!force && active != null && active.isActive) {
             return@mutate Result.failure(
@@ -231,7 +228,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Journals an authorized attempt before any submission. At most one active attempt per environment.
      */
-    public suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> = mutate { current ->
+    suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit> = mutate { current ->
         if (current.recoveryBlocked) {
             return@mutate Result.failure(
                 IllegalStateException("Recovery blocked: ${current.recoveryBlockReason ?: "unresolved prior attempt"}"),
@@ -257,14 +254,14 @@ public class ToolchainPreferencesDataSource(
         )
     }
 
-    public suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit> =
+    suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit> =
         mutateActiveAttempt(attemptId) { active -> Result.success(active.copy(status = status)) }
 
     /**
      * Enforces "Persist child intent before startRun": the intent is durably appended and its index
      * returned before the caller may submit anything.
      */
-    public suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> {
+    suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int> {
         var assignedIndex = -1
         val result = mutateActiveAttempt(attemptId) { active ->
             assignedIndex = active.orderedIntents.size
@@ -290,14 +287,14 @@ public class ToolchainPreferencesDataSource(
     /**
      * Enforces "Persist runId before acknowledging attachment".
      */
-    public suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> =
+    suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit> =
         mutateChild(attemptId, childIndex) { intent -> intent.copy(runId = runId) }
 
     /**
      * Enforces "Persisted lastSeq never advances beyond durably stored replay evidence": the cursor and
      * the evidence line it proves are written in one durable commit, and the cursor never moves backwards.
      */
-    public suspend fun commitChildCursorAndEvidence(
+    suspend fun commitChildCursorAndEvidence(
         attemptId: String,
         childIndex: Int,
         lastSeq: Long,
@@ -324,7 +321,7 @@ public class ToolchainPreferencesDataSource(
      * Enforces "Fresh retry requires persisted authoritative terminal proof for every possibly submitted
      * child; cancellation acknowledgement alone never unlocks mutation."
      */
-    public suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit> = mutate { current ->
+    suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit> = mutate { current ->
         val active = current.activeAttempt
         val updatedActive = if (active != null && active.attemptId == proof.attemptId) {
             active.copy(
@@ -355,18 +352,18 @@ public class ToolchainPreferencesDataSource(
      * Closes a child the server never accepted. No runId exists, so no proof can be recorded; the explicit
      * terminal status is the authoritative record that nothing was submitted.
      */
-    public suspend fun recordChildNotSubmitted(
+    suspend fun recordChildNotSubmitted(
         attemptId: String,
         childIndex: Int,
         terminalStatus: String,
     ): Result<Unit> = mutateChild(attemptId, childIndex) { intent -> intent.copy(terminalStatus = terminalStatus) }
 
-    public suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> =
+    suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit> =
         mutateActiveAttempt(attemptId) { active ->
             Result.success(active.copy(completedActionIds = (active.completedActionIds + actionId).distinct()))
         }
 
-    public suspend fun recordAttemptAwaitingUserAction(
+    suspend fun recordAttemptAwaitingUserAction(
         attemptId: String,
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
@@ -384,7 +381,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Archives the active attempt into [ToolchainPersistenceState.attemptHistory] with its terminal result.
      */
-    public suspend fun recordAttemptTerminal(
+    suspend fun recordAttemptTerminal(
         attemptId: String,
         status: AttemptStatus,
         outcomeName: String,
@@ -415,7 +412,7 @@ public class ToolchainPreferencesDataSource(
     /**
      * Durably sets or clears the environment recovery block.
      */
-    public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> = mutate { current ->
+    suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit> = mutate { current ->
         Result.success(
             current.copy(
                 recoveryBlocked = blocked,
@@ -431,40 +428,7 @@ public class ToolchainPreferencesDataSource(
         )
     }
 
-    public suspend fun desiredSelections(distro: String): DistroToolSelections =
-        _toolchainState.value.toolSelections[distro] ?: DistroToolSelections()
-
-    public suspend fun saveSelections(
-        distro: String,
-        expectedRevision: Long,
-        desired: Map<String, ToolSelection>,
-    ): Result<Long> = withContext(ioDispatcher) {
-        mutex.withLock {
-            val current = _toolchainState.value
-            val currentDistroSelections = current.toolSelections[distro] ?: DistroToolSelections()
-            if (currentDistroSelections.revision != expectedRevision) {
-                return@withLock Result.failure(
-                    IllegalStateException(
-                        "Stale selection revision for distro $distro: expected $expectedRevision, " +
-                            "current ${currentDistroSelections.revision}",
-                    ),
-                )
-            }
-            val nextRevision = expectedRevision + 1L
-            val updatedSelections = current.toolSelections + (distro to DistroToolSelections(desired, nextRevision))
-            val updated = current.copy(toolSelections = updatedSelections)
-            val persistResult = persistStateInternal(updated)
-            if (persistResult.isSuccess) {
-                _toolchainState.value = updated
-                Result.success(nextRevision)
-            } else {
-                val error = persistResult.exceptionOrNull() ?: IllegalStateException("Failed to persist state")
-                Result.failure(error)
-            }
-        }
-    }
-
-    public suspend fun recordTrust(repoUrl: String): Result<Unit> = mutate { current ->
+    suspend fun recordTrust(repoUrl: String): Result<Unit> = mutate { current ->
         val normalized = ToolSelection.normalizeRepoUrl(repoUrl)
         val updated = if (normalized in current.trustedRepositories) {
             current
@@ -474,7 +438,7 @@ public class ToolchainPreferencesDataSource(
         Result.success(updated)
     }
 
-    public suspend fun isTrusted(repoUrl: String): Boolean {
+    suspend fun isTrusted(repoUrl: String): Boolean {
         val normalized = ToolSelection.normalizeRepoUrl(repoUrl)
         return normalized in _toolchainState.value.trustedRepositories
     }
@@ -546,10 +510,10 @@ public class ToolchainPreferencesDataSource(
         storage.write(encoded)
     }
 
-    public companion object {
-        public const val KEY_TOOLCHAIN_PERSISTENCE_STATE: String = "lti_toolchain_persistence_state_v1"
+    companion object {
+        const val KEY_TOOLCHAIN_PERSISTENCE_STATE: String = "lti_toolchain_persistence_state_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

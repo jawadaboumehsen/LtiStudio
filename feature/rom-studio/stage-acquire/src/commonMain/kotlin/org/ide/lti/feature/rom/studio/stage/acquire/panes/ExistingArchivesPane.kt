@@ -65,7 +65,7 @@ import org.ide.lti.feature.rom.studio.stage.acquire.ArchiveState
 
 /** The firmware archives in the workspace folder: probe them, import one from this computer, pick one. */
 @Composable
-public fun ExistingArchivesPane(
+fun ExistingArchivesPane(
     settings: AcquisitionSettings,
     archiveState: ArchiveState,
     onProbe: () -> Unit,

@@ -45,6 +45,7 @@ import org.ide.lti.core.designsystem.theme.SyntaxColorScheme
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.ui.syntax.SyntaxHighlightingTransformation
 import org.ide.lti.core.ui.syntax.SyntaxLanguage
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Lti code editor component with line numbers, opaque canvas surface, theme-aware syntax highlighting,
@@ -172,7 +173,7 @@ private fun rememberSyntaxHighlighting(
     var highlighting by remember(content, language, syntaxColors) { mutableStateOf<VisualTransformation?>(null) }
     LaunchedEffect(content, language, syntaxColors, readOnly) {
         if (language == SyntaxLanguage.PLAIN_TEXT) return@LaunchedEffect
-        if (!readOnly) delay(100)
+        if (!readOnly) delay(100.milliseconds)
         highlighting = withContext(Dispatchers.Default) {
             val source = AnnotatedString(content)
             val tokens = language.tokenizer.tokenize(content)

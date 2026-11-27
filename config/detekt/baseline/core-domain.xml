@@ -75,8 +75,8 @@
     <ID>ComplexCondition:PipelineOrchestrator.kt:PipelineOrchestrator$status == null || status.status == "INTERRUPTED" || (status.status == "RUNNING" &amp;&amp; status.pid == null &amp;&amp; status.endedAtEpochMs != null)</ID>
     <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$private suspend fun executeStage</ID>
     <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$private suspend fun reconcileRecordedToolStep: Boolean</ID>
-    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$public fun drive: Flow&lt;PipelineEvent&gt;</ID>
-    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$public fun resume: Flow&lt;PipelineEvent&gt;</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$fun drive: Flow&lt;PipelineEvent&gt;</ID>
+    <ID>CyclomaticComplexMethod:PipelineOrchestrator.kt:PipelineOrchestrator$fun resume: Flow&lt;PipelineEvent&gt;</ID>
     <ID>FunctionExpressionBody:AIServiceImpl.kt:AIServiceImpl${ return history.toList() }</ID>
     <ID>FunctionExpressionBody:AvbSizeCalculator.kt:AvbSizeCalculator${ return (bytes + 4095L) / 4096L * 4096L }</ID>
     <ID>FunctionExpressionBody:BuildInfoWriter.kt:BuildInfoWriter${ return buildString { appendLine("ro.lti.device=${params.device}") appendLine("ro.lti.version=${params.version}") appendLine("ro.lti.timestamp=${params.timestamp}") appendLine("ro.build.version.incremental=${params.incremental}") appendLine("ro.build.version.security_patch=${params.securityPatch}") } }</ID>
@@ -103,27 +103,27 @@
     <ID>FunctionLiteral:PipelineOrchestrator.kt:PipelineOrchestrator$&lt;anonymous&gt;</ID>
     <ID>FunctionLiteral:SimulatedExecutionPort.kt:SimulatedExecutionPort$&lt;anonymous&gt;</ID>
     <ID>FunctionLiteral:SimulatedExecutionPort.kt:SimulatedExecutionPort.Companion$&lt;anonymous&gt;</ID>
-    <ID>FunctionSignature:CancelRunUseCase.kt:CancelRunUseCase$public suspend operator fun invoke: Result&lt;BuildRun&gt;</ID>
+    <ID>FunctionSignature:CancelRunUseCase.kt:CancelRunUseCase$suspend operator fun invoke: Result&lt;BuildRun&gt;</ID>
     <ID>FunctionSignature:CreateWorkspaceUseCaseTest.kt:CreateWorkspaceUseCaseTest.FakeWorkspaceRepo$override suspend fun getWorkspace: Workspace?</ID>
     <ID>FunctionSignature:DuplicateTargetUseCase.kt:DuplicateTargetUseCase$operator fun invoke: TargetDevice</ID>
-    <ID>FunctionSignature:DynamicPartitionsOpListWriter.kt:DynamicPartitionsOpListWriter$public fun generateAvbImages: String</ID>
-    <ID>FunctionSignature:DynamicPartitionsOpListWriter.kt:DynamicPartitionsOpListWriter$public fun generateOpList: String</ID>
+    <ID>FunctionSignature:DynamicPartitionsOpListWriter.kt:DynamicPartitionsOpListWriter$fun generateAvbImages: String</ID>
+    <ID>FunctionSignature:DynamicPartitionsOpListWriter.kt:DynamicPartitionsOpListWriter$fun generateOpList: String</ID>
     <ID>FunctionSignature:GetRunHistoryUseCaseTest.kt:GetRunHistoryUseCaseTest.FakeRunRepository$override suspend fun cachedEvents: List&lt;String&gt;</ID>
     <ID>FunctionSignature:OpenWorkspaceByPathUseCase.kt:OpenWorkspaceByPathUseCase$suspend operator fun invoke: Result&lt;Workspace&gt;</ID>
-    <ID>FunctionSignature:PipelineExecutionPort.kt:PipelineExecutionPort$public suspend fun startStep: RunHandle</ID>
+    <ID>FunctionSignature:PipelineExecutionPort.kt:PipelineExecutionPort$suspend fun startStep: RunHandle</ID>
     <ID>FunctionSignature:SaveTargetConfigurationUseCase.kt:SaveTargetConfigurationUseCase$suspend operator fun invoke: Result&lt;TargetConfigurationResult&gt;</ID>
-    <ID>FunctionSignature:SetupLogEvent.kt:SetupLogEvent.Companion$public fun create: SetupLogEvent</ID>
+    <ID>FunctionSignature:SetupLogEvent.kt:SetupLogEvent.Companion$fun create: SetupLogEvent</ID>
     <ID>FunctionSignature:SimulatedExecutionPort.kt:SimulatedExecutionPort$private fun getfattrDump: String</ID>
     <ID>FunctionSignature:SimulatedExecutionPort.kt:SimulatedExecutionPort$private fun statDump: String</ID>
-    <ID>FunctionSignature:StepCommand.kt:public fun stepCommand: StepCommand</ID>
-    <ID>FunctionSignature:ToolCapabilities.kt:ToolCapabilities$public fun isAcceptedExitCode: Boolean</ID>
-    <ID>FunctionSignature:ToolCapabilities.kt:ToolCapabilities$public fun toolsForRecipeGroup: Set&lt;String&gt;</ID>
-    <ID>FunctionSignature:ToolchainProvisioningService.kt:ToolchainProvisioningService$public suspend fun confirm: SetupOutcome</ID>
-    <ID>FunctionSignature:ToolchainSetupRepository.kt:ToolchainSetupRepository$public suspend fun recordChildRunId: Result&lt;Unit&gt;</ID>
-    <ID>FunctionSignature:ToolchainSetupRepository.kt:ToolchainSetupRepository$public suspend fun updateTool: Result&lt;Unit&gt;</ID>
-    <ID>FunctionSignature:UpdaterScriptWriter.kt:UpdaterScriptWriter$public fun generate: String</ID>
+    <ID>FunctionSignature:StepCommand.kt:fun stepCommand: StepCommand</ID>
+    <ID>FunctionSignature:ToolCapabilities.kt:ToolCapabilities$fun isAcceptedExitCode: Boolean</ID>
+    <ID>FunctionSignature:ToolCapabilities.kt:ToolCapabilities$fun toolsForRecipeGroup: Set&lt;String&gt;</ID>
+    <ID>FunctionSignature:ToolchainProvisioningService.kt:ToolchainProvisioningService$suspend fun confirm: SetupOutcome</ID>
+    <ID>FunctionSignature:ToolchainSetupRepository.kt:ToolchainSetupRepository$suspend fun recordChildRunId: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:ToolchainSetupRepository.kt:ToolchainSetupRepository$suspend fun updateTool: Result&lt;Unit&gt;</ID>
+    <ID>FunctionSignature:UpdaterScriptWriter.kt:UpdaterScriptWriter$fun generate: String</ID>
     <ID>ImportOrdering:PipelineExecutionPort.kt:import kotlinx.coroutines.flow.Flow import org.ide.lti.core.model.run.StepCommand import org.ide.lti.core.domain.pipeline.ToolResult import org.ide.lti.core.model.workspace.Workspace</ID>
-    <ID>LongMethod:ToolchainProvisioningService.kt:ToolchainSetupState.Companion$public fun defaultToolsMatrix: List&lt;ToolComponentItem&gt;</ID>
+    <ID>LongMethod:ToolchainProvisioningService.kt:ToolchainSetupState.Companion$fun defaultToolsMatrix: List&lt;ToolComponentItem&gt;</ID>
     <ID>MaxLineLength:PipelineOrchestrator.kt:PipelineOrchestrator$driver.persist { it.withStage(index) { s -&gt; s.copy(state = StageState.RUNNING, startedAt = startedStage) } }</ID>
     <ID>MaxLineLength:PipelineOrchestrator.kt:PipelineOrchestrator$throw StageFailure(index, exitCode, "${step.label}: expected '$missing' in ${step.command.toolId} output")</ID>
     <ID>MaxLineLength:PipelineResumeTest.kt:PipelineResumeTest$assertEquals(PipelineEvent.StageInterrupted(StageId.FIRMWARE_ACQUISITION), events.filterIsInstance&lt;PipelineEvent.StageInterrupted&gt;().single())</ID>
@@ -174,12 +174,12 @@
     <ID>NoWildcardImports:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.domain.ports.*</ID>
     <ID>NoWildcardImports:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.model.target.*</ID>
     <ID>NoWildcardImports:StartPipelineRunUseCaseTest.kt:import org.ide.lti.core.model.workspace.*</ID>
-    <ID>ReturnCount:GetRunHistoryUseCase.kt:GetRunHistoryUseCase$public open suspend operator fun invoke: List&lt;BuildRun&gt;</ID>
+    <ID>ReturnCount:GetRunHistoryUseCase.kt:GetRunHistoryUseCase$open suspend operator fun invoke: List&lt;BuildRun&gt;</ID>
     <ID>ReturnCount:InMemoryRunRepository.kt:InMemoryRunRepository$override suspend fun claimDriver: Boolean</ID>
     <ID>ReturnCount:OpenWorkspaceUseCase.kt:OpenWorkspaceUseCase$suspend operator fun invoke: Result&lt;Workspace&gt;</ID>
     <ID>ReturnCount:PipelineOrchestrator.kt:PipelineOrchestrator$private suspend fun reconcileRecordedToolStep: Boolean</ID>
-    <ID>ReturnCount:PipelineOrchestrator.kt:PipelineOrchestrator$public suspend fun pause: Boolean</ID>
-    <ID>ReturnCount:ReattachRunUseCase.kt:ReattachRunUseCase$public open suspend operator fun invoke: Flow&lt;PipelineEvent&gt;?</ID>
+    <ID>ReturnCount:PipelineOrchestrator.kt:PipelineOrchestrator$suspend fun pause: Boolean</ID>
+    <ID>ReturnCount:ReattachRunUseCase.kt:ReattachRunUseCase$open suspend operator fun invoke: Flow&lt;PipelineEvent&gt;?</ID>
     <ID>ReturnCount:SaveTargetConfigurationUseCase.kt:SaveTargetConfigurationUseCase$suspend operator fun invoke: Result&lt;TargetConfigurationResult&gt;</ID>
     <ID>StatementWrapping:CreateWorkspaceUseCaseTest.kt:CreateWorkspaceUseCaseTest.FakeWorkspaceRepo${ savedRecents.clear() }</ID>
     <ID>StatementWrapping:PipelineResumeTest.kt:PipelineResumeTest.FakeWorkspaceRepo${ workspaces.remove(id) }</ID>

@@ -21,12 +21,12 @@ import com.russhwolf.settings.set
  * any failure it throws and the previous document is untouched. "Journal write failure prevents
  * submission" (FR-007) relies on that contract.
  */
-public interface ToolchainJournalStorage {
+interface ToolchainJournalStorage {
     /** The last durably written document, or null when nothing was ever written. */
-    public fun read(): String?
+    fun read(): String?
 
     /** Atomically replaces the document; throws when durability cannot be guaranteed. */
-    public fun write(json: String)
+    fun write(json: String)
 }
 
 /**
@@ -34,7 +34,7 @@ public interface ToolchainJournalStorage {
  * pre-journal releases wrote to. Not durable for large journals on JVM; production wiring uses
  * [defaultToolchainJournalStorage].
  */
-public class SettingsToolchainJournalStorage(
+class SettingsToolchainJournalStorage(
     private val settings: Settings,
     private val key: String = ToolchainPreferencesDataSource.KEY_TOOLCHAIN_PERSISTENCE_STATE,
 ) : ToolchainJournalStorage {
@@ -46,4 +46,4 @@ public class SettingsToolchainJournalStorage(
 }
 
 /** Platform durable store: an atomically replaced, fsync'd file under the application data directory. */
-public expect fun defaultToolchainJournalStorage(): ToolchainJournalStorage
+expect fun defaultToolchainJournalStorage(): ToolchainJournalStorage

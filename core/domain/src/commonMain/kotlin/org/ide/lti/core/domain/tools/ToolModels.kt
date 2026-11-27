@@ -12,15 +12,15 @@ package org.ide.lti.core.domain.tools
 import org.ide.lti.core.domain.setup.ToolGroupId
 import org.ide.lti.core.model.setup.ToolRef
 
-public data class RecipeSummary(val type: String, val revision: Int)
+data class RecipeSummary(val type: String, val revision: Int)
 
-public data class InstalledOutput(val file: String, val size: Long, val mode: String)
+data class InstalledOutput(val file: String, val size: Long, val mode: String)
 
-public sealed interface ResolvedSource {
+sealed interface ResolvedSource {
     /** Whether [other] is the same code: same repository and commits, or same release entry. */
-    public fun sameIdentityAs(other: ResolvedSource): Boolean
+    fun sameIdentityAs(other: ResolvedSource): Boolean
 
-    public data class Git(
+    data class Git(
         val repoUrl: String,
         val ref: ToolRef,
         val commit: String,
@@ -30,7 +30,7 @@ public sealed interface ResolvedSource {
             other is Git && repoUrl == other.repoUrl && commit == other.commit && submodules == other.submodules
     }
 
-    public data class Release(val version: String, val url: String, val sha256: String, val member: String) :
+    data class Release(val version: String, val url: String, val sha256: String, val member: String) :
         ResolvedSource {
         override fun sameIdentityAs(other: ResolvedSource): Boolean =
             other is Release && version == other.version && url == other.url && sha256 == other.sha256 &&
@@ -38,7 +38,7 @@ public sealed interface ResolvedSource {
     }
 }
 
-public data class InstalledVersion(
+data class InstalledVersion(
     val group: ToolGroupId,
     val id: String,
     val label: String,
@@ -49,17 +49,17 @@ public data class InstalledVersion(
     val intact: Boolean,
 )
 
-public enum class ChoiceUpdate {
+enum class ChoiceUpdate {
     Record,
     Clear,
     Keep,
 }
 
-public data class Selection(val id: String, val source: ResolvedSource)
+data class Selection(val id: String, val source: ResolvedSource)
 
-public data class InterruptedOp(val opId: String, val versionId: String, val startedAt: String)
+data class InterruptedOp(val opId: String, val versionId: String, val startedAt: String)
 
-public enum class GroupStatus {
+enum class GroupStatus {
     NotInstalled,
     Ready,
     NeedsRepair,
@@ -69,14 +69,14 @@ public enum class GroupStatus {
     Interrupted,
 }
 
-public enum class OperationKind {
+enum class OperationKind {
     Install,
     Repair,
     Use,
     Remove,
 }
 
-public enum class OperationPhase {
+enum class OperationPhase {
     Fetching,
     Building,
     Verifying,
@@ -84,98 +84,98 @@ public enum class OperationPhase {
     Switching,
 }
 
-public class ToolErrorException(public val toolError: ToolError) : Exception(toolError.message)
+class ToolErrorException(val toolError: ToolError) : Exception(toolError.message)
 
-public sealed interface ToolError {
-    public val message: String
+sealed interface ToolError {
+    val message: String
 
-    public data class MissingPackages(val packages: List<String>) : ToolError {
+    data class MissingPackages(val packages: List<String>) : ToolError {
         override val message: String get() = "Missing system packages: ${packages.joinToString(", ")}"
     }
 
-    public data class Network(val reason: String) : ToolError {
+    data class Network(val reason: String) : ToolError {
         override val message: String get() = "Network error: $reason"
     }
 
-    public data class Timeout(val detail: String) : ToolError {
+    data class Timeout(val detail: String) : ToolError {
         override val message: String get() = "Timed out: $detail"
     }
 
     /** The new version is in place, but the service doesn't offer its tools. */
-    public data class RegistrationFailed(val detail: String) : ToolError {
+    data class RegistrationFailed(val detail: String) : ToolError {
         override val message: String get() = "Switched, but tools are not registered: $detail"
     }
 
-    public data class RefNotFound(val ref: String) : ToolError {
+    data class RefNotFound(val ref: String) : ToolError {
         override val message: String get() = "Reference not found: $ref"
     }
 
-    public data class UnsupportedLayout(val missingPaths: List<String>) : ToolError {
+    data class UnsupportedLayout(val missingPaths: List<String>) : ToolError {
         override val message: String get() = "Missing required paths: ${missingPaths.joinToString(", ")}"
     }
 
-    public data class PatchFailed(val detail: String) : ToolError {
+    data class PatchFailed(val detail: String) : ToolError {
         override val message: String get() = "Patch failed: $detail"
     }
 
-    public data class BuildFailed(val detail: String) : ToolError {
+    data class BuildFailed(val detail: String) : ToolError {
         override val message: String get() = "Build failed: $detail"
     }
 
-    public data class VerifyFailed(val toolId: String) : ToolError {
+    data class VerifyFailed(val toolId: String) : ToolError {
         override val message: String get() = "Tool verification failed for $toolId"
     }
 
-    public data class ChecksumMismatch(val detail: String) : ToolError {
+    data class ChecksumMismatch(val detail: String) : ToolError {
         override val message: String get() = "Checksum mismatch: $detail"
     }
 
-    public data class DiskFull(val detail: String) : ToolError {
+    data class DiskFull(val detail: String) : ToolError {
         override val message: String get() = "Insufficient disk space: $detail"
     }
 
-    public data class Busy(val detail: String) : ToolError {
+    data class Busy(val detail: String) : ToolError {
         override val message: String get() = "Operation busy: $detail"
     }
 
-    public data class InUse(val detail: String) : ToolError {
+    data class InUse(val detail: String) : ToolError {
         override val message: String get() = "Version in use: $detail"
     }
 
-    public data class NotFound(val detail: String) : ToolError {
+    data class NotFound(val detail: String) : ToolError {
         override val message: String get() = "Not found: $detail"
     }
 
-    public data class ConnectionLost(val detail: String) : ToolError {
+    data class ConnectionLost(val detail: String) : ToolError {
         override val message: String get() = "Connection to build service lost: $detail"
     }
 
-    public data class AdmissionRequired(val detail: String) : ToolError {
+    data class AdmissionRequired(val detail: String) : ToolError {
         override val message: String get() = "Command admission closed: $detail"
     }
 
-    public data class Internal(val detail: String) : ToolError {
+    data class Internal(val detail: String) : ToolError {
         override val message: String get() = "Internal error: $detail"
     }
 }
 
-public sealed interface OperationResult {
-    public data class Reused(val versionId: String) : OperationResult
+sealed interface OperationResult {
+    data class Reused(val versionId: String) : OperationResult
 
-    public data class Installed(val versionId: String) : OperationResult
+    data class Installed(val versionId: String) : OperationResult
 
-    public data class Used(val versionId: String) : OperationResult
+    data class Used(val versionId: String) : OperationResult
 
-    public data class Failed(val error: ToolError, val message: String, val logRef: String? = null) : OperationResult
+    data class Failed(val error: ToolError, val message: String, val logRef: String? = null) : OperationResult
 
-    public data object Cancelled : OperationResult
+    data object Cancelled : OperationResult
 
-    public data class Interrupted(val reason: String) : OperationResult
+    data class Interrupted(val reason: String) : OperationResult
 
-    public data class TrustRequired(val url: String) : OperationResult
+    data class TrustRequired(val url: String) : OperationResult
 }
 
-public data class ToolOperation(
+data class ToolOperation(
     val opId: String,
     val group: ToolGroupId,
     val kind: OperationKind,
@@ -189,7 +189,7 @@ public data class ToolOperation(
     val percent: Int? = null,
 )
 
-public data class GroupState(
+data class GroupState(
     val group: ToolGroupId,
     val current: InstalledVersion?,
     val selection: Selection? = null,
@@ -219,21 +219,21 @@ public data class GroupState(
             }
 }
 
-public data class ToolInventory(val groups: Map<ToolGroupId, GroupState>)
+data class ToolInventory(val groups: Map<ToolGroupId, GroupState>)
 
-public sealed interface GroupSetupResult {
-    public data class Reused(val versionId: String) : GroupSetupResult
+sealed interface GroupSetupResult {
+    data class Reused(val versionId: String) : GroupSetupResult
 
-    public data class Installed(val versionId: String) : GroupSetupResult
+    data class Installed(val versionId: String) : GroupSetupResult
 
-    public data class Failed(val error: ToolError) : GroupSetupResult
+    data class Failed(val error: ToolError) : GroupSetupResult
 
-    public data class NotAttempted(val blocker: ToolError) : GroupSetupResult
+    data class NotAttempted(val blocker: ToolError) : GroupSetupResult
 
-    public data object Cancelled : GroupSetupResult
+    data object Cancelled : GroupSetupResult
 }
 
-public data class SetupToolsSummary(val groupResults: Map<ToolGroupId, GroupSetupResult>) {
+data class SetupToolsSummary(val groupResults: Map<ToolGroupId, GroupSetupResult>) {
     val isComplete: Boolean get() =
         groupResults.values.all {
             it is GroupSetupResult.Reused || it is GroupSetupResult.Installed
@@ -246,4 +246,4 @@ public data class SetupToolsSummary(val groupResults: Map<ToolGroupId, GroupSetu
     val notAttemptedCount: Int get() = groupResults.values.count { it is GroupSetupResult.NotAttempted }
 }
 
-public data class PinnedTools(val paths: Map<String, String>, val versions: Map<String, String>)
+data class PinnedTools(val paths: Map<String, String>, val versions: Map<String, String>)

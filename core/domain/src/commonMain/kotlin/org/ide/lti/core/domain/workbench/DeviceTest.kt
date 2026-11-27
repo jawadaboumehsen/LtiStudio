@@ -21,10 +21,10 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 /** How one check on the phone came out; a [NOTE] is a fact to know, not a failure. */
 @Serializable
-public enum class DeviceVerdict { PASS, FAIL, NOTE }
+enum class DeviceVerdict { PASS, FAIL, NOTE }
 
 @Serializable
-public data class DeviceCheckItem(val name: String, val verdict: DeviceVerdict, val detail: String)
+data class DeviceCheckItem(val name: String, val verdict: DeviceVerdict, val detail: String)
 
 /**
  * What a phone said after a run's package was installed on it, kept with that run (`records/<runId>/`). Three
@@ -32,7 +32,7 @@ public data class DeviceCheckItem(val name: String, val verdict: DeviceVerdict, 
  * passed ([passed]).
  */
 @Serializable
-public data class DeviceCheckResult(
+data class DeviceCheckResult(
     val runId: String,
     val checkedAt: String,
     val serial: String,
@@ -46,7 +46,7 @@ public data class DeviceCheckResult(
     val passed: Boolean get() = installed && items.none { it.verdict == DeviceVerdict.FAIL }
 
     /** The result as Markdown, for the dialog and the build report. */
-    public fun markdown(): String = buildString {
+    fun markdown(): String = buildString {
         append("Phone ${model ?: serial} ($serial), checked $checkedAt: ")
         append(
             when {
@@ -64,13 +64,13 @@ public data class DeviceCheckResult(
  * fully, and what it reports (SELinux, verified boot, crashes since boot). Reads the phone over adb only and writes
  * the result into the run's record.
  */
-public class DeviceTest(
+class DeviceTest(
     private val runner: WorkbenchRunner,
     private val probe: PhoneProbe,
     private val clock: Clock = Clock.System,
 ) {
     /** Checks the one phone booted into Android against [run], and keeps the result with the run. */
-    public suspend fun check(run: BuildRun): DeviceCheckResult {
+    suspend fun check(run: BuildRun): DeviceCheckResult {
         val stamp = run.runtimeValues[RuntimeKeys.RUN_TIMESTAMP]
         if (!madePackage(run) || stamp == null) {
             throw RefusalException(
@@ -104,12 +104,12 @@ public class DeviceTest(
         return result
     }
 
-    public companion object {
+    companion object {
         /** Whether [run] succeeded with a package (a run stopped before Build & Sign has none to install). */
-        public fun madePackage(run: BuildRun): Boolean = run.state == RunState.SUCCEEDED && run.artifacts.isNotEmpty()
+        fun madePackage(run: BuildRun): Boolean = run.state == RunState.SUCCEEDED && run.artifacts.isNotEmpty()
 
         /** The checks from what [PHONE_SCRIPT] printed (`key=value` lines, `crash=<process>` per crashed one). */
-        public fun items(answers: String, stamp: String): List<DeviceCheckItem> {
+        fun items(answers: String, stamp: String): List<DeviceCheckItem> {
             val lines = answers.lines().map { it.trim() }
             fun value(key: String) = lines.firstOrNull { it.startsWith("$key=") }?.substringAfter('=').orEmpty()
             val running = value("stamp")

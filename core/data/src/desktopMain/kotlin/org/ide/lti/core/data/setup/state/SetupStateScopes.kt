@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.ide.lti.core.data.setup.check.StageOutcome
 import org.ide.lti.core.domain.setup.DiagnosticCheckItem
-import org.ide.lti.core.domain.setup.SetupStepDetail
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
@@ -26,9 +25,9 @@ import org.ide.lti.core.model.setup.SetupAttemptRecord
  * Scope for mutating active execution/operation state on [ToolchainSetupState].
  * Dropped automatically when superseded by a newer operation id.
  */
-public class OperationScope(
-    public val environmentKey: String,
-    public val operationId: String,
+class OperationScope(
+    val environmentKey: String,
+    val operationId: String,
     private val stateFlow: MutableStateFlow<ToolchainSetupState>,
     private val activeOpId: () -> String?,
 ) {
@@ -39,7 +38,7 @@ public class OperationScope(
         }
     }
 
-    public fun start(stage: SetupStepStage? = null) {
+    fun start(stage: SetupStepStage? = null) {
         updateIfActive {
             it.copy(
                 isRunning = true,
@@ -49,11 +48,11 @@ public class OperationScope(
         }
     }
 
-    public fun setCurrentStage(stage: SetupStepStage?) {
+    fun setCurrentStage(stage: SetupStepStage?) {
         updateIfActive { it.copy(currentStage = stage) }
     }
 
-    public fun finish() {
+    fun finish() {
         updateIfActive {
             it.copy(
                 isRunning = false,
@@ -63,7 +62,7 @@ public class OperationScope(
         }
     }
 
-    public fun appendLog(line: String) {
+    fun appendLog(line: String) {
         updateIfActive {
             it.copy(
                 logs = it.logs + line,
@@ -72,7 +71,7 @@ public class OperationScope(
         }
     }
 
-    public fun setStepRunId(stage: SetupStepStage, runId: String) {
+    fun setStepRunId(stage: SetupStepStage, runId: String) {
         updateIfActive {
             it.copy(stepRunIds = it.stepRunIds + (stage to runId))
         }
@@ -83,9 +82,9 @@ public class OperationScope(
  * Scope for mutating environment inspection and diagnostic check results.
  * Dropped automatically when superseded by a newer check id.
  */
-public class CheckScope(
-    public val environmentKey: String,
-    public val checkId: String,
+class CheckScope(
+    val environmentKey: String,
+    val checkId: String,
     private val stateFlow: MutableStateFlow<ToolchainSetupState>,
     private val activeCheckId: () -> String?,
 ) {
@@ -96,15 +95,11 @@ public class CheckScope(
         }
     }
 
-    public fun setChecking(checking: Boolean) {
+    fun setChecking(checking: Boolean) {
         updateIfActive { it.copy(isChecking = checking) }
     }
 
-    public fun setDistroInfo(
-        activeDistro: String?,
-        installedDistros: List<String>,
-        distroStatuses: List<DistroStatus>,
-    ) {
+    fun setDistroInfo(activeDistro: String?, installedDistros: List<String>, distroStatuses: List<DistroStatus>) {
         updateIfActive {
             it.copy(
                 activeDistro = activeDistro,
@@ -114,19 +109,15 @@ public class CheckScope(
         }
     }
 
-    public fun setDaemonPing(pingMs: Long?) {
+    fun setDaemonPing(pingMs: Long?) {
         updateIfActive { it.copy(daemonPingMs = pingMs) }
     }
 
-    public fun setDiagnostics(diagnostics: List<DiagnosticCheckItem>) {
+    fun setDiagnostics(diagnostics: List<DiagnosticCheckItem>) {
         updateIfActive { it.copy(diagnostics = diagnostics) }
     }
 
-    public fun setSteps(steps: List<SetupStepDetail>) {
-        updateIfActive { it.copy(steps = steps) }
-    }
-
-    public fun setStorage(availableBytes: Long?, measuredAt: Long?) {
+    fun setStorage(availableBytes: Long?, measuredAt: Long?) {
         updateIfActive {
             it.copy(
                 storageAvailableBytes = availableBytes,
@@ -135,16 +126,7 @@ public class CheckScope(
         }
     }
 
-    public fun setPaths(userHome: String?, workDirLinuxPath: String?) {
-        updateIfActive {
-            it.copy(
-                userHome = userHome,
-                workDirLinuxPath = workDirLinuxPath,
-            )
-        }
-    }
-
-    public fun setCheckTimestamps(checkedAt: Long?, lastReadyAt: Long?) {
+    fun setCheckTimestamps(checkedAt: Long?, lastReadyAt: Long?) {
         updateIfActive {
             it.copy(
                 checkedAt = checkedAt,
@@ -153,11 +135,11 @@ public class CheckScope(
         }
     }
 
-    public fun setCurrentStage(stage: SetupStepStage?) {
+    fun setCurrentStage(stage: SetupStepStage?) {
         updateIfActive { it.copy(currentStage = stage) }
     }
 
-    public fun setStepRunning(stage: SetupStepStage) {
+    fun setStepRunning(stage: SetupStepStage) {
         updateIfActive { state ->
             state.copy(
                 currentStage = stage,
@@ -176,7 +158,7 @@ public class CheckScope(
         }
     }
 
-    public fun setStepOutcome(stage: SetupStepStage, outcome: StageOutcome, durationMs: Long? = null) {
+    fun setStepOutcome(stage: SetupStepStage, outcome: StageOutcome, durationMs: Long? = null) {
         val now = System.currentTimeMillis()
         updateIfActive { state ->
             val status =
@@ -213,7 +195,7 @@ public class CheckScope(
         }
     }
 
-    public fun setToolsMatrix(matrix: List<ToolComponentItem>) {
+    fun setToolsMatrix(matrix: List<ToolComponentItem>) {
         updateIfActive { it.copy(toolsMatrix = matrix) }
     }
 }
@@ -221,15 +203,12 @@ public class CheckScope(
 /**
  * Scope for mutating installed and verified toolchain inventory.
  */
-public class InstalledScope(
-    public val environmentKey: String,
-    private val stateFlow: MutableStateFlow<ToolchainSetupState>,
-) {
-    public fun setToolsMatrix(matrix: List<ToolComponentItem>) {
+class InstalledScope(val environmentKey: String, private val stateFlow: MutableStateFlow<ToolchainSetupState>) {
+    fun setToolsMatrix(matrix: List<ToolComponentItem>) {
         stateFlow.update { it.copy(toolsMatrix = matrix) }
     }
 
-    public fun updateTool(toolId: String, transform: (ToolComponentItem) -> ToolComponentItem) {
+    fun updateTool(toolId: String, transform: (ToolComponentItem) -> ToolComponentItem) {
         stateFlow.update { state ->
             state.copy(
                 toolsMatrix =
@@ -240,7 +219,7 @@ public class InstalledScope(
         }
     }
 
-    public fun setPublishedToolIds(published: Set<String>, unpublished: Set<String> = emptySet()) {
+    fun setPublishedToolIds(published: Set<String>, unpublished: Set<String> = emptySet()) {
         stateFlow.update {
             it.copy(
                 publishedToolIds = published,
@@ -249,43 +228,21 @@ public class InstalledScope(
         }
     }
 
-    public fun setVerifiedTimestamp(timestamp: Long?) {
+    fun setVerifiedTimestamp(timestamp: Long?) {
         stateFlow.update { it.copy(lastVerifiedTimestamp = timestamp) }
-    }
-
-    public fun setAvbKey(provisioned: Boolean, path: String? = null) {
-        stateFlow.update {
-            it.copy(
-                isAvbKeyProvisioned = provisioned,
-                avbKeyPath = path,
-            )
-        }
     }
 }
 
 /**
  * Scope for mutating journal recovery and pending attempt states.
  */
-public class RecoveryScope(
-    public val environmentKey: String,
-    private val stateFlow: MutableStateFlow<ToolchainSetupState>,
-) {
-    public fun setPendingAttempt(attemptId: String?, attempt: SetupAttemptRecord?, reason: String? = null) {
+class RecoveryScope(val environmentKey: String, private val stateFlow: MutableStateFlow<ToolchainSetupState>) {
+    fun setPendingAttempt(attemptId: String?, attempt: SetupAttemptRecord?, reason: String? = null) {
         stateFlow.update {
             it.copy(
                 pendingAttemptId = attemptId,
                 pendingAttempt = attempt,
                 recoveryBlockReason = reason,
-            )
-        }
-    }
-
-    public fun clearPendingAttempt() {
-        stateFlow.update {
-            it.copy(
-                pendingAttemptId = null,
-                pendingAttempt = null,
-                recoveryBlockReason = null,
             )
         }
     }

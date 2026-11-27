@@ -19,10 +19,10 @@ import androidx.savedstate.read
 // direction), so this route pattern cannot reuse org.ide.lti.shared.navigation.StudioRoutes.PLUGINS_PATTERN
 // directly - it is a second, necessarily-independent copy of the SAME string. lti-shared's own test suite
 // (StudioRoutesTest) asserts the two stay byte-identical.
-public const val PLUGINS_ROUTE_PATTERN: String =
+const val PLUGINS_ROUTE_PATTERN: String =
     "plugins/{destination}?workspaceId={workspaceId}&packageId={packageId}"
 
-public fun NavGraphBuilder.pluginsScreen(
+fun NavGraphBuilder.pluginsScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToSetup: () -> Unit = {},
     onOpenSettings: () -> Unit = {},

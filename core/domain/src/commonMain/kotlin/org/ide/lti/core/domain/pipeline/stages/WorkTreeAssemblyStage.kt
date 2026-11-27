@@ -29,7 +29,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * rsync per partition with sidecars, optional `system_ext` fold-in, boot images with AVB footers
  * erased, AOT purge, and the `build.prop` stamp.
  */
-public class WorkTreeAssemblyStage : StageDefinition {
+class WorkTreeAssemblyStage : StageDefinition {
     override val id: StageId = StageId.WORK_TREE_ASSEMBLY
 
     override val requiredToolIds: Set<String> = setOf("rsync", "avbtool", "find", "cp", "mkdir", "cat", "sha256sum")
@@ -338,7 +338,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
         return lines.joinToString("\n", postfix = "\n")
     }
 
-    public companion object {
+    companion object {
         /** The dynamic partitions Assemble lays out as their own tree: selected ones, without a folded system_ext. */
         internal fun assembledPartitions(ctx: StageContext): List<String> =
             selectedPartitions(ctx).filter { it != "system_ext" || !foldsSystemExt(ctx, selectedPartitions(ctx)) }
@@ -385,7 +385,7 @@ public class WorkTreeAssemblyStage : StageDefinition {
         private const val FIND_VERIFIED_FSTABS =
             "cd \"\$1\" && grep -rlE '[[:space:],](avb|avb_keys|verify|verifyatboot)([=,[:space:]]|$)' " +
                 "--include='fstab*' . | sed 's#^\\./##' || true"
-        public const val BUILD_PROP: String = "work/system/system/build.prop"
+        const val BUILD_PROP: String = "work/system/system/build.prop"
         private val SUPPORTED_SYSTEM_EXT_MODES = setOf("auto", "fold", "standalone")
         private val SUPPORTED_FOOTER_POLICIES = setOf("erase", "preserve")
         private val RESERVED_PROPERTIES = setOf("ro.build.version.release", "ro.build.version.security_patch")

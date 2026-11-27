@@ -16,13 +16,13 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.DebloatSettings
 
-public const val MALFORMED_SELECTOR: String = "MALFORMED_SELECTOR"
-public const val UNMATCHED_SELECTOR: String = "UNMATCHED_SELECTOR"
-public const val PARTITION_NOT_IN_TARGET: String = "PARTITION_NOT_IN_TARGET"
-public const val PROTECTED_ENTRY: String = "PROTECTED_ENTRY"
+const val MALFORMED_SELECTOR: String = "MALFORMED_SELECTOR"
+const val UNMATCHED_SELECTOR: String = "UNMATCHED_SELECTOR"
+const val PARTITION_NOT_IN_TARGET: String = "PARTITION_NOT_IN_TARGET"
+const val PROTECTED_ENTRY: String = "PROTECTED_ENTRY"
 
 @Serializable
-public data class DebloatCandidate(
+data class DebloatCandidate(
     val partition: String,
     val relativePath: String,
     val sizeBytes: Long,
@@ -30,13 +30,13 @@ public data class DebloatCandidate(
 )
 
 @Serializable
-public enum class RemovalReason {
+enum class RemovalReason {
     PRESET,
     EXPLICIT_SELECTOR,
 }
 
 @Serializable
-public data class DebloatResolvedRemoval(
+data class DebloatResolvedRemoval(
     val partition: String,
     val relativePath: String,
     val sizeBytes: Long,
@@ -46,14 +46,14 @@ public data class DebloatResolvedRemoval(
 )
 
 @Serializable
-public enum class KeepReason {
+enum class KeepReason {
     KEEP_SELECTOR,
     PROTECTED_POLICY,
     UNKNOWN_RISK,
 }
 
 @Serializable
-public data class KeptEntry(val partition: String, val relativePath: String, val reason: KeepReason)
+data class KeptEntry(val partition: String, val relativePath: String, val reason: KeepReason)
 
 /**
  * Resolved debloat decision.
@@ -64,19 +64,19 @@ public data class KeptEntry(val partition: String, val relativePath: String, val
  *   not rebuilt-image savings.
  */
 @Serializable
-public data class DebloatDecision(
+data class DebloatDecision(
     val removals: List<DebloatResolvedRemoval>,
     val kept: List<KeptEntry>,
     val logicalBytesFreed: Long,
 )
 
-public sealed interface DebloatResolution {
-    public data class Resolved(val decision: DebloatDecision) : DebloatResolution
-    public data class Rejected(val report: ValidationReport) : DebloatResolution
+sealed interface DebloatResolution {
+    data class Resolved(val decision: DebloatDecision) : DebloatResolution
+    data class Rejected(val report: ValidationReport) : DebloatResolution
 }
 
-public object DebloatResolver {
-    public fun resolve(
+object DebloatResolver {
+    fun resolve(
         settings: DebloatSettings,
         inventory: List<DebloatCandidate>,
         presetSelectors: List<String>,
@@ -92,7 +92,7 @@ public object DebloatResolver {
 }
 
 @Suppress("ReturnCount")
-public fun resolve(
+fun resolve(
     settings: DebloatSettings,
     inventory: List<DebloatCandidate>,
     presetSelectors: List<String>,

@@ -28,8 +28,8 @@ import java.net.URLEncoder
  * Desktop file-system-backed implementation of [TargetRevisionRepository] persisting
  * target revisions as JSON documents in the platform's local application data directory.
  */
-public class TargetRevisionRepositoryImpl(
-    public val baseDir: File = resolveDefaultBaseDir(),
+class TargetRevisionRepositoryImpl(
+    val baseDir: File = resolveDefaultBaseDir(),
     private val activeBindingsProvider: (suspend (profileId: String, revision: Int) -> List<String>)? = null,
 ) : TargetRevisionRepository {
 
@@ -159,12 +159,12 @@ public class TargetRevisionRepositoryImpl(
         }
     }
 
-    public companion object {
-        public const val REFERENCED_TARGET_REVISION: String = TargetRevisionRepository.REFERENCED_TARGET_REVISION
+    companion object {
+        const val REFERENCED_TARGET_REVISION: String = TargetRevisionRepository.REFERENCED_TARGET_REVISION
 
         private fun encodeProfileId(profileId: String): String = URLEncoder.encode(profileId, "UTF-8")
 
-        public fun resolveDefaultBaseDir(): File {
+        fun resolveDefaultBaseDir(): File {
             val localAppData = System.getenv("LOCALAPPDATA")
             return if (!localAppData.isNullOrBlank()) {
                 File(localAppData, "LtiRomGui/target-revisions")

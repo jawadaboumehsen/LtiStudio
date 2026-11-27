@@ -37,7 +37,7 @@ import org.ide.lti.feature.rom.studio.stage.assemble.panes.WorkTreesPane
 
 @Suppress("LongParameterList")
 @Composable
-public fun AssembleEditor(
+fun AssembleEditor(
     settings: AssemblySettings,
     target: TargetDevice,
     onChange: (AssemblySettings) -> Unit,

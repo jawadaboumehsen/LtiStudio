@@ -17,9 +17,9 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * the files they changed, the apps Debloat removed (`work/debloat/result.json`) and the space they freed, and the
  * build type and property overrides of the settings. Plain text the user edits before release.
  */
-public object ChangelogDraft {
+object ChangelogDraft {
     /** The files the last build left: `work/modules/plan.json` and Debloat's `result.json`, as text. */
-    public fun of(planJson: String?, debloatJson: String?, snapshot: ConfigurationSnapshot?): String = of(
+    fun of(planJson: String?, debloatJson: String?, snapshot: ConfigurationSnapshot?): String = of(
         planJson?.let {
             runCatching {
                 ConfigurationSnapshot.canonicalJson.decodeFromString<AppliedModulePlan>(
@@ -31,9 +31,9 @@ public object ChangelogDraft {
         snapshot,
     )
 
-    public const val PLAN: String = "work/modules/plan.json"
+    const val PLAN: String = "work/modules/plan.json"
 
-    public fun of(plan: AppliedModulePlan?, debloat: DebloatDecision?, snapshot: ConfigurationSnapshot?): String {
+    fun of(plan: AppliedModulePlan?, debloat: DebloatDecision?, snapshot: ConfigurationSnapshot?): String {
         val sections = buildList {
             plan?.takeIf { it.lockfileEntries.isNotEmpty() }?.let { p ->
                 add(

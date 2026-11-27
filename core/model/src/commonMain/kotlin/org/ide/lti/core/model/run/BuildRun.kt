@@ -152,7 +152,7 @@ data class BuildRun(
 )
 
 @Serializable
-public data class BuildRunSummary(
+data class BuildRunSummary(
     val id: String,
     val workspaceId: String,
     val snapshotId: String,
@@ -165,9 +165,9 @@ public data class BuildRunSummary(
 )
 
 @Serializable
-public data class RunIndex(val schemaVersion: Int = 1, val items: List<BuildRunSummary> = emptyList())
+data class RunIndex(val schemaVersion: Int = 1, val items: List<BuildRunSummary> = emptyList())
 
-public fun BuildRun.toSummary(): BuildRunSummary = BuildRunSummary(
+fun BuildRun.toSummary(): BuildRunSummary = BuildRunSummary(
     id = id,
     workspaceId = workspaceId,
     snapshotId = snapshotId,

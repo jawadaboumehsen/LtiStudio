@@ -36,7 +36,7 @@ import org.ide.lti.core.designsystem.theme.StrokeWidth
  * [GlassDropdownMenuDivider] as content.
  */
 @Composable
-public fun GlassDropdownMenu(
+fun GlassDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -70,7 +70,7 @@ public fun GlassDropdownMenu(
  * Section header row inside a [GlassDropdownMenu].
  */
 @Composable
-public fun GlassDropdownMenuHeader(title: String, modifier: Modifier = Modifier) {
+fun GlassDropdownMenuHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelSmall,
@@ -83,7 +83,7 @@ public fun GlassDropdownMenuHeader(title: String, modifier: Modifier = Modifier)
  * A single selectable row inside a [GlassDropdownMenu].
  */
 @Composable
-public fun GlassDropdownMenuItem(
+fun GlassDropdownMenuItem(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -124,7 +124,7 @@ public fun GlassDropdownMenuItem(
  * A thin separator between item groups inside a [GlassDropdownMenu].
  */
 @Composable
-public fun GlassDropdownMenuDivider(modifier: Modifier = Modifier) {
+fun GlassDropdownMenuDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         modifier = modifier.padding(vertical = Spacing.ExtraSmall),
         color = MaterialTheme.colorScheme.outline.copy(alpha = AlphaTokens.Subtle),

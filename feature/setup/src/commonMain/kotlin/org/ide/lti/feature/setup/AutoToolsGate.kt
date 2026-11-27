@@ -24,12 +24,12 @@ import org.ide.lti.core.domain.setup.ToolchainSetupState
  * - Never starts twice in one launch (attemptedThisLaunch == true blocks it).
  * - Never starts while disconnected (!isServerConnected blocks it).
  */
-public object AutoToolsGate {
-    public fun shouldStart(state: ToolchainSetupState, attemptedThisLaunch: Boolean): Boolean =
+object AutoToolsGate {
+    fun shouldStart(state: ToolchainSetupState, attemptedThisLaunch: Boolean): Boolean =
         blockReason(state, attemptedThisLaunch) == null
 
     /** Why the automatic run does not start, or null when it should; written to the activity log. */
-    public fun blockReason(state: ToolchainSetupState, attemptedThisLaunch: Boolean): String? {
+    fun blockReason(state: ToolchainSetupState, attemptedThisLaunch: Boolean): String? {
         fun status(stage: SetupStepStage) = state.steps.firstOrNull { it.stage == stage }?.status
         val notReady =
             listOf(SetupStepStage.WSL_DETECTION, SetupStepStage.SERVER_CONNECTIVITY, SetupStepStage.SYSTEM_PACKAGES)

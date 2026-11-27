@@ -1,19 +1,24 @@
 package io.ltirom.tooling.client
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.CancellationException
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ltirom.tooling.core.ports.PathTranslatorPort
 import io.ltirom.tooling.core.remote.PathTranslationDirection
 import io.ltirom.tooling.core.remote.PathTranslationRequest
 import io.ltirom.tooling.core.remote.PathTranslationResponse
+import kotlinx.coroutines.CancellationException
 import org.ide.lti.core.model.setup.SetupEnvironment
 import java.util.Collections
 import java.util.LinkedHashMap
 
-public class WslPathTranslator(
+class WslPathTranslator(
     private val distroName: String? = null,
     private val httpClient: HttpClient? = null,
     private val serverBaseUrl: String? = null,
@@ -43,7 +48,7 @@ public class WslPathTranslator(
             },
         )
 
-    public fun toWslPath(windowsPath: String): String {
+    fun toWslPath(windowsPath: String): String {
         if (windowsPath.isBlank()) return windowsPath
         return toWslCache.computeIfAbsent(windowsPath) { computeToWslPath(it) }
     }
@@ -78,16 +83,16 @@ public class WslPathTranslator(
         return normalized.replace('\\', '/')
     }
 
-    public fun toWindowsPath(environment: SetupEnvironment, wslPath: String): String =
+    fun toWindowsPath(environment: SetupEnvironment, wslPath: String): String =
         toWindowsPath(wslPath, environment.distro)
 
-    public fun toWindowsPath(wslPath: String, distro: String): String {
+    fun toWindowsPath(wslPath: String, distro: String): String {
         if (wslPath.isBlank()) return wslPath
         val key = "$distro:$wslPath"
         return toWinCache.computeIfAbsent(key) { computeToWindowsPath(wslPath, distro) }
     }
 
-    public fun toWindowsPath(wslPath: String): String {
+    fun toWindowsPath(wslPath: String): String {
         val distro = distroName ?: error("distroName not configured in WslPathTranslator and no distro specified")
         return toWindowsPath(wslPath, distro)
     }

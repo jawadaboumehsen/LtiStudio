@@ -64,6 +64,7 @@ import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.StrokeWidth
 import org.ide.lti.core.designsystem.theme.codeFontFamily
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Minimalist, dark glass terminal console drawer displaying real-time execution logs.
@@ -91,7 +92,7 @@ fun GlassConsoleDrawer(
 
     LaunchedEffect(isCopied) {
         if (isCopied) {
-            delay(2000)
+            delay(2.seconds)
             isCopied = false
         }
     }

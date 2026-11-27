@@ -27,7 +27,7 @@ import org.ide.lti.core.model.setup.ToolchainPersistenceState
 /**
  * Thin [ToolchainSetupRepository] wrapper over [ToolchainPreferencesDataSource].
  */
-public class ToolchainSetupRepositoryImpl(
+class ToolchainSetupRepositoryImpl(
     private val preferencesDataSource: ToolchainPreferencesDataSource,
     private val selectionRepository: ToolchainSelectionRepository =
         ToolchainSelectionRepositoryImpl(preferencesDataSource),

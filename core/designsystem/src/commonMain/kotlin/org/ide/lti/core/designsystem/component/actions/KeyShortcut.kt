@@ -27,7 +27,7 @@ import androidx.compose.ui.input.key.type
  * [isCtrlOrCmd] matches either Ctrl (Windows/Linux) or Cmd/Meta (macOS) so callers don't need to
  * branch on platform.
  */
-public fun Modifier.onKeyShortcut(
+fun Modifier.onKeyShortcut(
     key: Key,
     isCtrlOrCmd: Boolean = false,
     isShift: Boolean = false,

@@ -57,6 +57,8 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceType
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Desktop platform implementation checking the LTI_SETUP_BENCHMARK environment variable.
@@ -147,7 +149,7 @@ fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
     // Warmup countdown
     LaunchedEffect(Unit) {
         while (warmupRemainingSeconds > 0 && !isRunningScenario) {
-            delay(1000)
+            delay(1.seconds)
             warmupRemainingSeconds--
         }
     }
@@ -181,10 +183,10 @@ fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
                             } else if (firstVisible == 0 && workspacesListState.firstVisibleItemScrollOffset == 0) {
                                 direction = 1f
                             }
-                            delay(16)
+                            delay(16.milliseconds)
                         }
                     }
-                delay(segmentDuration)
+                delay(segmentDuration.milliseconds)
                 seg1Job.cancel()
                 val seg1EndNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Workspaces' ended at monotonic nanos: $seg1EndNanos")
@@ -217,10 +219,10 @@ fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
                             } else if (currentVal <= 10) {
                                 direction = 1f
                             }
-                            delay(16)
+                            delay(16.milliseconds)
                         }
                     }
-                delay(segmentDuration)
+                delay(segmentDuration.milliseconds)
                 seg2Job.cancel()
                 val seg2EndNanos = System.nanoTime()
                 println("[SetupBenchmark] Segment 'Tools' ended at monotonic nanos: $seg2EndNanos")
@@ -265,7 +267,7 @@ fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
                                     },
                                 )
                             }
-                            delay(16)
+                            delay(16.milliseconds)
                         }
                     }
 
@@ -274,14 +276,14 @@ fun SetupPerformanceScenarioDriver(modifier: Modifier = Modifier) {
                 val modalDisplayDuration = (segmentDuration * 0.25).toLong()
                 val remainingSegmentDuration = segmentDuration - modalOpenDelay - modalDisplayDuration
 
-                delay(modalOpenDelay)
+                delay(modalOpenDelay.milliseconds)
                 activeOperation = createBenchmarkPreviewOperation()
                 statusMessage = "Segment 3/3: Exercising Provisioning Preview Modal"
-                delay(modalDisplayDuration)
+                delay(modalDisplayDuration.milliseconds)
                 activeOperation = null
                 statusMessage = "Segment 3/3: Resuming Environment Activity Scroll"
                 if (remainingSegmentDuration > 0) {
-                    delay(remainingSegmentDuration)
+                    delay(remainingSegmentDuration.milliseconds)
                 }
 
                 seg3Job.cancel()

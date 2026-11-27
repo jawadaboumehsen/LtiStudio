@@ -38,18 +38,17 @@ import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-public object ArchiveTransferCodes {
-    public const val SOURCE_MISSING: String = "SOURCE_MISSING"
-    public const val PATH_ESCAPES_WORKSPACE: String = "PATH_ESCAPES_WORKSPACE"
-    public const val INSECURE_SOURCE: String = "INSECURE_SOURCE"
-    public const val CREDENTIALS_IN_URL: String = "CREDENTIALS_IN_URL"
-    public const val CHECKSUM_MISMATCH: String = "CHECKSUM_MISMATCH"
-    public const val TRANSFER_FAILED: String = "TRANSFER_FAILED"
-    public const val DISK_FULL: String = "DISK_FULL"
+object ArchiveTransferCodes {
+    const val SOURCE_MISSING: String = "SOURCE_MISSING"
+    const val PATH_ESCAPES_WORKSPACE: String = "PATH_ESCAPES_WORKSPACE"
+    const val INSECURE_SOURCE: String = "INSECURE_SOURCE"
+    const val CREDENTIALS_IN_URL: String = "CREDENTIALS_IN_URL"
+    const val CHECKSUM_MISMATCH: String = "CHECKSUM_MISMATCH"
+    const val TRANSFER_FAILED: String = "TRANSFER_FAILED"
+    const val DISK_FULL: String = "DISK_FULL"
 }
 
-public class ArchiveTransferAdapter(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) :
-    BoundedTransferPort {
+class ArchiveTransferAdapter(private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO) : BoundedTransferPort {
 
     private val cancellations = ConcurrentHashMap<String, AtomicBoolean>()
 

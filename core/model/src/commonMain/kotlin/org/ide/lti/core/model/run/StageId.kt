@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
  * 8. [PUBLISH_RELEASE] - Publish artifacts to a release channel
  */
 @Serializable
-public enum class StageId {
+enum class StageId {
     FIRMWARE_ACQUISITION,
     FIRMWARE_EXTRACTION,
     WORK_TREE_ASSEMBLY,

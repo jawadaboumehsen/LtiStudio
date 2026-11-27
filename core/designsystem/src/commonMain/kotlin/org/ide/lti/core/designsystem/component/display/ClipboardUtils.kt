@@ -20,13 +20,13 @@ import kotlinx.coroutines.launch
 internal expect fun createPlainTextClipEntry(text: String): ClipEntry
 
 /** Writes plain [text] to this [Clipboard] entry. */
-public suspend fun Clipboard.setPlainText(text: String) {
+suspend fun Clipboard.setPlainText(text: String) {
     setClipEntry(createPlainTextClipEntry(text))
 }
 
 /** Returns a stable callback that writes plain text to [LocalClipboard]. */
 @Composable
-public fun rememberCopyToClipboard(): (String) -> Unit {
+fun rememberCopyToClipboard(): (String) -> Unit {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     return remember(clipboard, scope) {

@@ -18,12 +18,12 @@ import org.ide.lti.core.model.run.StepCommand
  * Streams partitions directly from `payload.bin` or full-OTA zip archives without
  * unpacking a full temporary copy of `payload.bin` to disk (SC-003).
  */
-public object PayloadExtractor {
+object PayloadExtractor {
 
     /**
      * Generates a [StepCommand] to extract partitions directly from [archiveOrPayloadPath] into [destDir].
      */
-    public fun extractionCommand(
+    fun extractionCommand(
         archiveOrPayloadPath: String,
         destDir: String,
         workingDir: String,
@@ -53,7 +53,7 @@ public object PayloadExtractor {
      * Inspects OTA zip `metadata` string to determine if the package is an incremental update: only an incremental
      * names the build it starts from. `pre-device` is in full OTAs too.
      */
-    public fun isIncrementalMetadata(metadataContent: String): Boolean = metadataContent.lineSequence().any { line ->
+    fun isIncrementalMetadata(metadataContent: String): Boolean = metadataContent.lineSequence().any { line ->
         val trimmed = line.trim()
         trimmed.startsWith("pre-build=") || trimmed.startsWith("pre-build-incremental=")
     }
@@ -61,7 +61,7 @@ public object PayloadExtractor {
     /**
      * Constructs the canonical [Refusal] for an incremental payload package (FR-007).
      */
-    public fun incrementalRefusal(item: String, details: String? = null): Refusal =
+    fun incrementalRefusal(item: String, details: String? = null): Refusal =
         PackageManifest.incrementalRefusal(item = item, details = details).refusal
             ?: Refusal(
                 cause = "The package is an incremental update.",

@@ -11,35 +11,31 @@ package org.ide.lti.core.domain.pipeline.migration
 
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
-public class UnsupportedConfigurationVersionException(
-    public val version: Int,
-    public val currentSupportedVersion: Int,
-) : IllegalArgumentException(
-    "Configuration snapshot schema version $version is newer than current supported version $currentSupportedVersion",
-)
+class UnsupportedConfigurationVersionException(val version: Int, val currentSupportedVersion: Int) :
+    IllegalArgumentException(
+        "Configuration snapshot schema version $version is newer than " +
+            "current supported version $currentSupportedVersion",
+    )
 
-public class ConfigurationMigrationFailedException(
-    public val fromVersion: Int,
-    public val toVersion: Int,
-    cause: Throwable,
-) : RuntimeException(
-    "Failed to migrate configuration snapshot from v$fromVersion to v$toVersion: ${cause.message}",
-    cause,
-)
+class ConfigurationMigrationFailedException(val fromVersion: Int, val toVersion: Int, cause: Throwable) :
+    RuntimeException(
+        "Failed to migrate configuration snapshot from v$fromVersion to v$toVersion: ${cause.message}",
+        cause,
+    )
 
-public interface ConfigurationMigration {
-    public val fromVersion: Int
-    public val toVersion: Int
-    public fun migrate(snapshot: ConfigurationSnapshot): ConfigurationSnapshot
+interface ConfigurationMigration {
+    val fromVersion: Int
+    val toVersion: Int
+    fun migrate(snapshot: ConfigurationSnapshot): ConfigurationSnapshot
 }
 
-public class ConfigurationMigrationRegistry(
+class ConfigurationMigrationRegistry(
     private val migrations: List<ConfigurationMigration> = emptyList(),
     private val targetVersion: Int = ConfigurationSnapshot.CURRENT_SCHEMA_VERSION,
 ) {
     private val migrationChain: Map<Int, ConfigurationMigration> = migrations.associateBy { it.fromVersion }
 
-    public fun migrateToLatest(snapshot: ConfigurationSnapshot): ConfigurationSnapshot {
+    fun migrateToLatest(snapshot: ConfigurationSnapshot): ConfigurationSnapshot {
         validateVersion(snapshot.schemaVersion)
 
         var active = snapshot

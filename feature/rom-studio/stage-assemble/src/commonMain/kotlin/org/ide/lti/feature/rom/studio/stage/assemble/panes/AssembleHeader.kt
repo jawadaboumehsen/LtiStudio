@@ -40,7 +40,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  */
 @Suppress("LongParameterList")
 @Composable
-public fun AssembleHeader(
+fun AssembleHeader(
     title: String,
     subtitle: String,
     targetSpec: String = "PQ84P01 / Development",

@@ -13,7 +13,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vinceglb.filekit.core.FileKit
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -150,8 +149,6 @@ class SetupViewModel(
         toolchainService?.state
             ?: fallbackToolchainState.asStateFlow()
 
-    private var autoRunJob: Job? = null
-
     private val fallbackSelectedTarget = MutableStateFlow<TargetDevice?>(DEFAULT_OFFICIAL_TARGETS.firstOrNull())
 
     val availableTargets: StateFlow<List<TargetDevice>> =
@@ -180,7 +177,6 @@ class SetupViewModel(
         EnvironmentSetupState(
             scope = viewModelScope,
             toolchainService = toolchainService,
-            environmentReadinessPort = environmentReadinessPort,
         )
 
     val setupActivityState =
@@ -270,10 +266,6 @@ class SetupViewModel(
     }
 
     val environmentNotice: StateFlow<String?> = environmentSetupState.environmentNotice
-
-    fun showEnvironmentNotice(message: String) {
-        environmentSetupState.setEnvironmentNotice(message)
-    }
 
     fun dismissEnvironmentNotice() {
         environmentSetupState.dismissEnvironmentNotice()

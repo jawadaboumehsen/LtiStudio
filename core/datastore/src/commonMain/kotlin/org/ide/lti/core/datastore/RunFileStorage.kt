@@ -12,12 +12,12 @@ package org.ide.lti.core.datastore
 /**
  * Storage interface for persisting full BuildRun states and event logs as local files.
  */
-public interface RunFileStorage {
-    public suspend fun saveRun(runId: String, json: String)
-    public suspend fun getRun(runId: String): String?
-    public suspend fun appendEvents(runId: String, events: List<String>)
-    public suspend fun getEvents(runId: String, fromSeq: Long = 0L): List<String>
-    public suspend fun deleteRun(runId: String)
+interface RunFileStorage {
+    suspend fun saveRun(runId: String, json: String)
+    suspend fun getRun(runId: String): String?
+    suspend fun appendEvents(runId: String, events: List<String>)
+    suspend fun getEvents(runId: String, fromSeq: Long = 0L): List<String>
+    suspend fun deleteRun(runId: String)
 }
 
-public expect fun defaultRunFileStorage(): RunFileStorage
+expect fun defaultRunFileStorage(): RunFileStorage

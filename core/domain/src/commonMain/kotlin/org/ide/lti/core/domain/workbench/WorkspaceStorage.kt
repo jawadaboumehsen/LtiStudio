@@ -17,7 +17,7 @@ import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.model.run.StageId
 
 /** One folder of a workspace and what it takes on disk. */
-public data class FolderUsage(
+data class FolderUsage(
     val path: String,
     val bytes: Long,
     /** The next build makes it again, so it may be deleted to free the space. */
@@ -29,15 +29,15 @@ public data class FolderUsage(
  * What a workspace's folders take in WSL, and deleting the ones the next build makes again. A deleted folder is
  * rebuilt because a stage counts as cached only while its declared outputs are still there.
  */
-public class WorkspaceStorage(private val runner: WorkbenchRunner, private val runs: RunRepository) {
+class WorkspaceStorage(private val runner: WorkbenchRunner, private val runs: RunRepository) {
 
     /** The known folders that exist, largest first, and everything else in the workspace as `other`. */
-    public suspend fun usage(workspaceId: String): List<FolderUsage> = runner.read(workspaceId) {
+    suspend fun usage(workspaceId: String): List<FolderUsage> = runner.read(workspaceId) {
         parseUsage(sh(USAGE_SCRIPT, root, *FOLDERS.map { it.path }.toTypedArray()))
     }
 
     /** Deletes [path] when it is one the next build makes again; returns the bytes freed. */
-    public suspend fun clean(workspaceId: String, path: String): Long {
+    suspend fun clean(workspaceId: String, path: String): Long {
         cleanRefusal(path, runs.latestActive(workspaceId) != null)?.let { throw RefusalException(it) }
         // Without the link check: freeing a folder is how a link in it goes (`rm -rf` does not follow one).
         return runner.job(workspaceId, "Free disk space", checkLinks = false) {
@@ -53,7 +53,7 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
 
     private data class Folder(val path: String, val cleanable: Boolean, val note: String)
 
-    public companion object {
+    companion object {
         private const val OTHER = "other"
 
         private val FOLDERS = listOf(
@@ -87,7 +87,7 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
                 "\"\$(du -sb \"\$r/\$p\" | cut -f1)\"; done; printf '.\\t%s\\n' \"\$(du -sb \"\$r\" | cut -f1)\""
 
         /** [USAGE_SCRIPT]'s output as known folders (largest first) plus `other` for the rest of the total. */
-        public fun parseUsage(output: String): List<FolderUsage> {
+        fun parseUsage(output: String): List<FolderUsage> {
             val sizes = output.lines().mapNotNull { line ->
                 val (path, bytes) = line.split('\t').takeIf { it.size == 2 } ?: return@mapNotNull null
                 bytes.trim().toLongOrNull()?.let { path to it }
@@ -99,7 +99,7 @@ public class WorkspaceStorage(private val runner: WorkbenchRunner, private val r
         }
 
         /** Why [path] may not be deleted now, or null when it may. */
-        public fun cleanRefusal(path: String, runActive: Boolean): Refusal? = when {
+        fun cleanRefusal(path: String, runActive: Boolean): Refusal? = when {
             FOLDERS.none { it.path == path && it.cleanable } -> Refusal(
                 "$path is not one the next build makes again.",
                 path,

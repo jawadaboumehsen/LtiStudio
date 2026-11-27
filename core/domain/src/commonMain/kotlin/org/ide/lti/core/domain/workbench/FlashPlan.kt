@@ -12,13 +12,13 @@ package org.ide.lti.core.domain.workbench
 import org.ide.lti.core.model.target.TargetDevice
 
 /** How one image would fare. */
-public enum class PlanVerdict { FITS, NOTE, NAMED_CONFIRMATION, REFUSED }
+enum class PlanVerdict { FITS, NOTE, NAMED_CONFIRMATION, REFUSED }
 
 /**
  * Where [image] would land and why it may or may not. [destination] is the phone's partition; [measured] says whether
  * its name and size came from the phone, or are assumed from the device configuration.
  */
-public data class PlanRow(
+data class PlanRow(
     val image: ProjectImage,
     val destination: String?,
     val measured: Boolean,
@@ -28,30 +28,30 @@ public data class PlanRow(
 )
 
 /** The picked images mapped to the phone, and what stops the whole set. Nothing here writes. */
-public data class FlashPlan(val rows: List<PlanRow>, val refusals: List<String>, val notes: List<String>) {
-    public val refused: Boolean get() = refusals.isNotEmpty() || rows.any { it.verdict == PlanVerdict.REFUSED }
+data class FlashPlan(val rows: List<PlanRow>, val refusals: List<String>, val notes: List<String>) {
+    val refused: Boolean get() = refusals.isNotEmpty() || rows.any { it.verdict == PlanVerdict.REFUSED }
 }
 
-public object FlashPlanner {
+object FlashPlanner {
     /**
      * What holds the phone's identity, its calibration and the keys written once on the factory line (IMEI and
      * modem NV, sensor and DDR calibration, device-unique keys, lock state): refused on every transport, because
      * nothing could put it back.
      */
-    public val IDENTITY: Set<String> = setOf(
+    val IDENTITY: Set<String> = setOf(
         "persist", "persistbak", "modemst1", "modemst2", "fsg", "fsc", "efs", "efs1", "efs2", "sec_efs", "nvdata",
         "nvram", "nvcfg", "protect1", "protect2", "proinfo", "prodinfo", "devinfo", "frp", "cdt", "ddr", "secdata",
         "otp", "seccfg",
     )
 
     /** What holds the boot loaders and their trusted firmware: a wrong image costs fastboot itself. */
-    public val BOOTLOADER: Set<String> = setOf(
+    val BOOTLOADER: Set<String> = setOf(
         "abl", "xbl", "xbl_config", "xbl_ramdump", "sbl1", "aboot", "tz", "hyp", "rpm", "pmic", "keymaster",
         "cmnlib", "cmnlib64", "devcfg", "qupfw", "uefi", "uefisecapp", "imagefv", "aop", "aop_config", "shrm",
         "cpucp", "cpucp_dtb", "preloader", "lk", "bootloader", "tee", "sspm", "spmfw", "mcupm", "gz", "scp",
     )
 
-    public fun plan(phone: PhoneFacts?, device: TargetDevice?, picked: List<ProjectImage>): FlashPlan {
+    fun plan(phone: PhoneFacts?, device: TargetDevice?, picked: List<ProjectImage>): FlashPlan {
         val rows = picked.map { row(it, phone, device, picked) }
         val clashes = rows.filter { it.destination != null }.groupBy { it.destination }.filterValues { it.size > 1 }
         val checked = rows.map { r ->

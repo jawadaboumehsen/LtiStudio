@@ -25,20 +25,20 @@ import org.ide.lti.core.domain.pipeline.toolkit.SuperLayout
 import org.ide.lti.core.domain.pipeline.toolkit.SuperTool
 
 /** A browsed partition: its entries and where its files are, as Windows sees them (to open in Explorer). */
-public data class PartitionTree(val tree: ImageTree, val source: String, val hostFolder: String?)
+data class PartitionTree(val tree: ImageTree, val source: String, val hostFolder: String?)
 
 /** An image opened read-only: the partitions of a super image, or a filesystem's files. */
-public sealed interface OpenedImage {
-    public data class Super(val layout: SuperLayout) : OpenedImage
+sealed interface OpenedImage {
+    data class Super(val layout: SuperLayout) : OpenedImage
 
-    public data class Files(val tree: PartitionTree) : OpenedImage
+    data class Files(val tree: PartitionTree) : OpenedImage
 }
 
 /**
  * What the build records for one item: its device path, its fs_config line and SELinux label (null when it has
  * none yet), and, when one is missing, what the build gives it ([preview]).
  */
-public data class EntryDetails(
+data class EntryDetails(
     val devicePath: String,
     val fsConfigLine: String?,
     val label: String?,
@@ -52,7 +52,7 @@ public data class EntryDetails(
  * the assembled `work/` tree, which carries the edits), with owner, mode and SELinux label from the sidecars
  * Extract read off the mounted image; nothing is guessed.
  */
-public class ImageWorkbench(
+class ImageWorkbench(
     private val runner: WorkbenchRunner,
     /** A Windows path as WSL sees it (`C:\\system.img` -> `/mnt/c/system.img`). */
     private val toLinuxPath: (String) -> String = { it },
@@ -62,7 +62,7 @@ public class ImageWorkbench(
      * (a sparse one is expanded), and returns its SHA-256 for the Extract settings. EROFS, ext4 or F2FS: Extract
      * reads them with erofsfuse, fuse2fs and dump.f2fs.
      */
-    public suspend fun importReplacement(workspaceId: String, partition: String, windowsPath: String): String =
+    suspend fun importReplacement(workspaceId: String, partition: String, windowsPath: String): String =
         runner.job(workspaceId, "Import $partition image") {
             val source = toLinuxPath(windowsPath)
             val dest = FirmwareExtractionStage.replacementPath(partition)
@@ -89,7 +89,7 @@ public class ImageWorkbench(
             run("sha256sum", abs(dest)).trim().substringBefore(' ')
         }
 
-    public suspend fun tree(workspaceId: String, partition: String): PartitionTree = runner.read(workspaceId) {
+    suspend fun tree(workspaceId: String, partition: String): PartitionTree = runner.read(workspaceId) {
         val (dir, configs) = when {
             exists("work/$partition") -> "work/$partition" to "work/configs"
 
@@ -114,7 +114,7 @@ public class ImageWorkbench(
      * Entries of every partition in [partitions] whose name contains [query], as `<partition>/<path>` with owner,
      * mode and label. Partitions not unpacked yet are skipped; at most [SEARCH_LIMIT] hits.
      */
-    public suspend fun search(workspaceId: String, partitions: List<String>, query: String): ImageTree {
+    suspend fun search(workspaceId: String, partitions: List<String>, query: String): ImageTree {
         require(query.trim().length >= 2) { "Search for at least two characters." }
         val hits = partitions.flatMap { p ->
             val tree = try {
@@ -130,14 +130,14 @@ public class ImageWorkbench(
     }
 
     /** Copies [path] of [partition]'s tree to `out/toolkit/<partition>/<path>`; returns it as Windows sees it. */
-    public suspend fun extract(workspaceId: String, partition: String, path: String): String =
+    suspend fun extract(workspaceId: String, partition: String, path: String): String =
         extractMany(workspaceId, partition, listOf(path))
 
     /**
      * Copies each of [paths] of [partition]'s tree to `out/toolkit/<partition>/<path>`; returns
      * the copy of a single path, else the `out/toolkit/<partition>` folder, as Windows sees it.
      */
-    public suspend fun extractMany(workspaceId: String, partition: String, paths: List<String>): String =
+    suspend fun extractMany(workspaceId: String, partition: String, paths: List<String>): String =
         runner.job(workspaceId, "Extract $partition") {
             val source = tree(workspaceId, partition).source
             val rels = paths.map { it.trimEnd('/') }.distinct()
@@ -160,7 +160,7 @@ public class ImageWorkbench(
      * Unpacks `firmware/extracted/<partition>.img` into its tree and sidecars again, as Extract
      * does: the user's own image first when Extract uses one for [partition] ([replacementSha256], checked).
      */
-    public suspend fun reextract(workspaceId: String, partition: String, replacementSha256: String? = null): Unit =
+    suspend fun reextract(workspaceId: String, partition: String, replacementSha256: String? = null): Unit =
         runner.job(workspaceId, "Re-extract $partition") {
             val extracted = FirmwareExtractionStage.EXTRACTED
             val image = "$extracted/$partition.img"
@@ -223,7 +223,7 @@ public class ImageWorkbench(
         }
 
     /** The superblock of [partition]'s stock image and of its last built one. */
-    public suspend fun imageInfo(workspaceId: String, partition: String): ImageInfo = runner.read(workspaceId) {
+    suspend fun imageInfo(workspaceId: String, partition: String): ImageInfo = runner.read(workspaceId) {
         ImageInfo(
             stock = superblockOf("${FirmwareExtractionStage.EXTRACTED}/$partition.img"),
             built = superblockOf("out/images/$partition.img"),
@@ -231,7 +231,7 @@ public class ImageWorkbench(
     }
 
     /** Converts a sparse image to raw, or raw to sparse, into `out/toolkit/` (FR-010). */
-    public suspend fun convert(workspaceId: String, image: String, toSparse: Boolean): String =
+    suspend fun convert(workspaceId: String, image: String, toSparse: Boolean): String =
         runner.job(workspaceId, "Convert ${image.substringAfterLast('/')}") {
             val name = image.substringAfterLast('/').removeSuffix(".img")
             val dest = "out/toolkit/$name.${if (toSparse) "sparse" else "raw"}.img"
@@ -248,7 +248,7 @@ public class ImageWorkbench(
      * Cuts [image] into parts of at most [maxMegabytes] (`<name>.img.parts/<name>.img.part00`, …; join them with `cat`)
      * (FR-010). These are byte parts, not sparse chunks: the tool groups build no `simg2simg`.
      */
-    public suspend fun split(workspaceId: String, image: String, maxMegabytes: Int): List<String> =
+    suspend fun split(workspaceId: String, image: String, maxMegabytes: Int): List<String> =
         runner.job(workspaceId, "Split ${image.substringAfterLast('/')}") {
             require(maxMegabytes > 0) { "The part size must be positive." }
             val name = "${image.substringAfterLast('/')}.part"
@@ -270,7 +270,7 @@ public class ImageWorkbench(
         }
 
     /** The EROFS, ext4, F2FS and super images in the workspace (firmware, the user's own, the built ones). */
-    public suspend fun images(workspaceId: String): List<WorkspaceImage> = runner.read(
+    suspend fun images(workspaceId: String): List<WorkspaceImage> = runner.read(
         workspaceId,
     ) { workspaceImages() }
 
@@ -278,7 +278,7 @@ public class ImageWorkbench(
      * Opens [image] read-only: a super image (also a sparse one, once expanded) gives the partitions inside it to
      * pick from; a filesystem image gives its files at once.
      */
-    public suspend fun open(workspaceId: String, image: String): OpenedImage =
+    suspend fun open(workspaceId: String, image: String): OpenedImage =
         runner.job(workspaceId, "Read ${image.substringAfterLast('/')}") {
             val img = readableImage(image, member = null)
             if (isSuperImage(img)) {
@@ -294,7 +294,7 @@ public class ImageWorkbench(
      * unpacking it into the project; with [member], that partition of a super image. Only [BROWSE_CACHE] is written
      * (a sparse image expanded, a partition taken out of super, an F2FS image dumped).
      */
-    public suspend fun browse(workspaceId: String, image: String, member: String? = null): PartitionTree =
+    suspend fun browse(workspaceId: String, image: String, member: String? = null): PartitionTree =
         runner.job(workspaceId, "Read ${member ?: image.substringAfterLast('/')}") {
             val img = readableImage(image, member)
             val entries = readImage(img, partitionOf(image, member), fsOfImage(img))
@@ -303,24 +303,20 @@ public class ImageWorkbench(
         }
 
     /** Copies [paths] out of [image] (or its [member]) to `out/toolkit/<partition>/`; returns that folder. */
-    public suspend fun extractFromImage(
-        workspaceId: String,
-        image: String,
-        member: String?,
-        paths: List<String>,
-    ): String = runner.job(workspaceId, "Copy out of ${member ?: image.substringAfterLast('/')}") {
-        val img = readableImage(image, member)
-        val folder = partitionOf(image, member)
-        copyOutOfImage(img, fsOfImage(img), folder, paths.map { it.trimEnd('/') }.distinct())
-        hostPath("out/toolkit/$folder") ?: abs("out/toolkit/$folder")
-    }
+    suspend fun extractFromImage(workspaceId: String, image: String, member: String?, paths: List<String>): String =
+        runner.job(workspaceId, "Copy out of ${member ?: image.substringAfterLast('/')}") {
+            val img = readableImage(image, member)
+            val folder = partitionOf(image, member)
+            copyOutOfImage(img, fsOfImage(img), folder, paths.map { it.trimEnd('/') }.distinct())
+            hostPath("out/toolkit/$folder") ?: abs("out/toolkit/$folder")
+        }
 
     /**
      * What the build records for [path] of [partition] in the tree at [source] (`work/<p>` or the extracted one):
      * its fs_config and SELinux lines, and for a missing one what the build adds and why ([coverageRules] first,
      * then the ROM's own rules, then Android's defaults or the folder).
      */
-    public suspend fun details(
+    suspend fun details(
         workspaceId: String,
         partition: String,
         path: String,
@@ -383,7 +379,7 @@ public class ImageWorkbench(
         }
 
     /** The groups, partitions and free space of the workspace's super image (FR-011), from `lpdump`. */
-    public suspend fun superLayout(workspaceId: String): SuperLayout = runner.read(workspaceId) {
+    suspend fun superLayout(workspaceId: String): SuperLayout = runner.read(workspaceId) {
         val image = SUPER_CANDIDATES.firstOrNull { exists(it) }
             ?: throw RefusalException(
                 Refusal("No super image in the workspace.", "super.img", "Run the build through Extract or Build."),

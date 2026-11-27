@@ -12,7 +12,7 @@ package org.ide.lti.core.domain.pipeline.stages
 import org.ide.lti.core.domain.pipeline.CacheKeys
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
-public enum class VintfStatus(public val label: String) {
+enum class VintfStatus(val label: String) {
     COMPATIBLE("Compatible"),
     INCOMPATIBLE("Incompatible"),
     INCOMPLETE("Incomplete"),
@@ -20,25 +20,25 @@ public enum class VintfStatus(public val label: String) {
 }
 
 /** The input to inspect or restore to complete a compatibility check. */
-public enum class VintfEvidenceKind { ASSEMBLY, PARTITION, FIRMWARE_METADATA, APEX, KERNEL, TOOL, SCAN }
+enum class VintfEvidenceKind { ASSEMBLY, PARTITION, FIRMWARE_METADATA, APEX, KERNEL, TOOL, SCAN }
 
-public data class VintfEvidence(val message: String, val kind: VintfEvidenceKind)
+data class VintfEvidence(val message: String, val kind: VintfEvidenceKind)
 
-public data class VintfSkuResult(
+data class VintfSkuResult(
     val vendorSku: String?,
     val odmSku: String?,
     val status: VintfStatus,
     val provisional: Boolean = false,
 )
 
-public data class VintfAssessment(
+data class VintfAssessment(
     val status: VintfStatus,
     val evidence: List<VintfEvidence> = emptyList(),
     val androidRelease: String? = null,
     val firstApiLevel: Int? = null,
     val skuResults: List<VintfSkuResult> = emptyList(),
 ) {
-    public val missingEvidence: List<String> get() = evidence.map { it.message }
+    val missingEvidence: List<String> get() = evidence.map { it.message }
 }
 
 /**
@@ -50,7 +50,7 @@ public data class VintfAssessment(
  * SELinux mapping file for the vendor's sepolicy
  * version, without which init cannot build the policy and the phone does not boot.
  */
-public object VintfCheck {
+object VintfCheck {
     /**
      * Args are work/, checkvintf, unpack_bootimg, fsck.erofs, SKU source options, and selected partitions.
      * Prints section headers for mapping, vendor-sepolicy, a missing tool, kernel status and one result per
@@ -58,7 +58,7 @@ public object VintfCheck {
      * payload) and the boot kernel's release and IKCONFIG are put in a temporary folder. Missing inputs are listed
      * in `missing` blocks and `done` records the number of SKU results written.
      */
-    public const val SCRIPT: String = """w="${'$'}1"; cv=${'$'}(command -v "${'$'}2" 2>/dev/null); unpack="${'$'}3"; fsck="${'$'}4"
+    const val SCRIPT: String = """w="${'$'}1"; cv=${'$'}(command -v "${'$'}2" 2>/dev/null); unpack="${'$'}3"; fsck="${'$'}4"
 shift 4
 archive=""
 sku_source_changed=false
@@ -426,10 +426,10 @@ printf '@@@ done %s\n' "${'$'}count"
 exit 0"""
 
     /** Not a refusal: what could not be judged. */
-    public const val NOT_CHECKED: String = "VINTF_NOT_CHECKED"
+    const val NOT_CHECKED: String = "VINTF_NOT_CHECKED"
 
     /** Build refusals. Missing selected partitions and SELinux mappings cannot be acknowledged. */
-    public fun refusals(text: String, acknowledgements: Set<String> = emptySet(), scope: String = ""): List<String> {
+    fun refusals(text: String, acknowledgements: Set<String> = emptySet(), scope: String = ""): List<String> {
         val s = sections(text)
         val sepolicyEvidence = listOfNotNull(sepolicy(s))
         val missingPartitions = s.missing
@@ -474,7 +474,7 @@ exit 0"""
             )
         }
 
-    public fun assess(text: String?, exitCode: Int = 0): VintfAssessment {
+    fun assess(text: String?, exitCode: Int = 0): VintfAssessment {
         if (text == null) {
             return VintfAssessment(
                 VintfStatus.NOT_RUN,
@@ -497,7 +497,7 @@ exit 0"""
     }
 
     /** What could not be judged, for the Preflight (never a refusal). */
-    public fun notes(text: String): List<String> = assess(text).missingEvidence.map { "$NOT_CHECKED: $it" }
+    fun notes(text: String): List<String> = assess(text).missingEvidence.map { "$NOT_CHECKED: $it" }
 
     private fun missingEvidence(s: Sections): List<VintfEvidence> = buildList {
         addAll(s.missing)

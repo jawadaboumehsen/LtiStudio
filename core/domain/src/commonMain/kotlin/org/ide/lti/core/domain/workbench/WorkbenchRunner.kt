@@ -34,7 +34,7 @@ import org.ide.lti.core.model.workspace.Workspace
  * build service. One editing job per workspace at a time (FR-039); every command is cancellable (FR-036) and
  * every failure is a [Refusal] naming cause, item and next step (FR-037).
  */
-public class WorkbenchRunner(
+class WorkbenchRunner(
     private val workspaces: WorkspaceRepository,
     private val port: PipelineExecutionPort,
     private val lock: JobLock,
@@ -45,13 +45,13 @@ public class WorkbenchRunner(
     /** The active WSL distribution: a workspace found in the work folder records none of its own. */
     private val distro: () -> String? = { null },
     /** Where every job's start, end and reported lines go (the Studio's Output panel). */
-    public val log: WorkbenchLog = WorkbenchLog(),
+    val log: WorkbenchLog = WorkbenchLog(),
 ) {
     /** Whether [feature] (a [RiskyFeature]) was acknowledged in [workspaceId]; asked once per workspace (FR-035). */
-    public suspend fun isAcknowledged(workspaceId: String, feature: String): Boolean =
+    suspend fun isAcknowledged(workspaceId: String, feature: String): Boolean =
         acknowledgements.isAcknowledged(workspace(workspaceId), feature)
 
-    public suspend fun acknowledge(workspaceId: String, feature: String) {
+    suspend fun acknowledge(workspaceId: String, feature: String) {
         acknowledgements.acknowledge(workspace(workspaceId), feature, Clock.System.now().toString())
     }
 
@@ -62,7 +62,7 @@ public class WorkbenchRunner(
      * Runs [block] holding [workspaceId]'s job lock as [jobName]; refuses when another job holds it. Also refused
      * while the workspace holds a link where the tools work ([checkLinks]: only freeing a folder goes without).
      */
-    public suspend fun <T> job(
+    suspend fun <T> job(
         workspaceId: String,
         jobName: String,
         checkLinks: Boolean = true,
@@ -96,25 +96,25 @@ public class WorkbenchRunner(
      * Reads without the job lock or the service's workspace lock (listing, viewing): a build's next step must never
      * find the workspace held by a page that only looks at it. Its commands are refused while a build runs.
      */
-    public suspend fun <T> read(workspaceId: String, block: suspend Job.() -> T): T =
+    suspend fun <T> read(workspaceId: String, block: suspend Job.() -> T): T =
         Job(workspace(workspaceId), exclusive = false).block()
 
     private suspend fun refuseDuringBuild(workspaceId: String) {
         runs?.latestActive(workspaceId)?.let { throw RefusalException(RefusalCatalog.buildRunning(it.id)) }
     }
 
-    public inner class Job internal constructor(public val ws: Workspace, private val exclusive: Boolean = true) {
-        public val root: String = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
+    inner class Job internal constructor(val ws: Workspace, private val exclusive: Boolean = true) {
+        val root: String = checkNotNull(ws.linuxPath) { "workspace ${ws.id} has no WSL folder" }
 
-        public fun abs(rel: String): String = if (rel.startsWith("/")) rel else "$root/$rel"
+        fun abs(rel: String): String = if (rel.startsWith("/")) rel else "$root/$rel"
 
         /** A line of this job's own in the Output panel. */
-        public fun report(level: LogLevel, text: String) {
+        fun report(level: LogLevel, text: String) {
             log.add(level, text)
         }
 
         /** Runs [tool] to the end (cancelling the job stops it); refuses with its error output on failure. */
-        public suspend fun run(tool: String, vararg args: String): String {
+        suspend fun run(tool: String, vararg args: String): String {
             val result = tryRun(tool, *args)
             if (result.exitCode != 0) {
                 throw RefusalException(
@@ -129,7 +129,7 @@ public class WorkbenchRunner(
             return result.stdout
         }
 
-        public suspend fun tryRun(tool: String, vararg args: String): ToolResult {
+        suspend fun tryRun(tool: String, vararg args: String): ToolResult {
             if (!exclusive) refuseDuringBuild(ws.id)
             return port.runToEnd(ws, tool, args.toList(), exclusive)
         }
@@ -141,7 +141,7 @@ public class WorkbenchRunner(
          * caller replaces it (`rm` first, or `mv -T`), never writes through it. Folders that do not exist yet are
          * judged by the part that does.
          */
-        public suspend fun folderResolvesInside(rel: String, base: String): Boolean = tryRun(
+        suspend fun folderResolvesInside(rel: String, base: String): Boolean = tryRun(
             "sh",
             "-c",
             "r=$(realpath -m -- \"$(dirname -- \"$1\")\") && w=$(realpath -m -- \"$2\") && " +
@@ -196,7 +196,7 @@ public class WorkbenchRunner(
         }
 
         /** Refuses a write to [rel] unless [folderResolvesInside]. */
-        public suspend fun requireFolderInside(rel: String, base: String) {
+        suspend fun requireFolderInside(rel: String, base: String) {
             if (!folderResolvesInside(rel, base)) {
                 throw RefusalException(
                     Refusal(
@@ -209,10 +209,10 @@ public class WorkbenchRunner(
         }
 
         /** Runs a POSIX shell [script] whose inputs are passed as `$1..$n` ([args]), never spliced into it. */
-        public suspend fun sh(script: String, vararg args: String): String = run("sh", "-c", script, "sh", *args)
+        suspend fun sh(script: String, vararg args: String): String = run("sh", "-c", script, "sh", *args)
 
         /** [rel] as Windows sees it (`\\wsl.localhost\<distro>\…`), for opening in Explorer; null without a distro. */
-        public fun hostPath(rel: String): String? = (ws.environmentId?.distro ?: distro())?.let { name ->
+        fun hostPath(rel: String): String? = (ws.environmentId?.distro ?: distro())?.let { name ->
             "\\\\wsl.localhost\\$name\\" + abs(rel).trim('/').replace('/', '\\')
         }
 
@@ -220,14 +220,14 @@ public class WorkbenchRunner(
          * The executable the build service runs for [toolId] (its `~/.ltirom/tools.d/<id>.json` manifest), for a
          * shell script that needs the tool or a file shipped beside it.
          */
-        public suspend fun toolPath(toolId: String): String =
+        suspend fun toolPath(toolId: String): String =
             sh(TOOL_PATH_SCRIPT, toolId).trim().ifEmpty { throw RefusalException(RefusalCatalog.toolMissing(toolId)) }
 
-        public suspend fun exists(rel: String): Boolean = port.stat(ws, rel).exists
+        suspend fun exists(rel: String): Boolean = port.stat(ws, rel).exists
 
-        public suspend fun readText(rel: String): String? = port.readFile(ws, rel)
+        suspend fun readText(rel: String): String? = port.readFile(ws, rel)
 
-        public suspend fun writeText(rel: String, text: String) {
+        suspend fun writeText(rel: String, text: String) {
             check(port.uploadFile(ws, rel, text.encodeToByteArray())) { "Could not write $rel" }
         }
 
@@ -235,7 +235,7 @@ public class WorkbenchRunner(
          * Copies [itemRel] (file or folder) to `restore/<tool>/<stamp>/<itemRel>` and records it in the workspace
          * restore index before a destructive change (FR-038).
          */
-        public suspend fun backup(tool: String, itemRel: String): RestorePoint {
+        suspend fun backup(tool: String, itemRel: String): RestorePoint {
             val now = Clock.System.now()
             val backupRel = "restore/$tool/${now.toEpochMilliseconds()}/$itemRel"
             // An item the tool is about to create has nothing to copy: its point records that it was added.
@@ -265,10 +265,10 @@ public class WorkbenchRunner(
 }
 
 /** Features that change what the device boots and so are acknowledged before their first use in a workspace. */
-public object RiskyFeature {
-    public const val ROOT_PATCH: String = "root-patch"
-    public const val VBMETA_FLAGS: String = "vbmeta-flags"
-    public const val KERNEL_OVERRIDE: String = "kernel-override"
-    public const val LIBRARY_PATCH: String = "library-patch"
-    public const val PACKAGE_REBUILD: String = "package-rebuild"
+object RiskyFeature {
+    const val ROOT_PATCH: String = "root-patch"
+    const val VBMETA_FLAGS: String = "vbmeta-flags"
+    const val KERNEL_OVERRIDE: String = "kernel-override"
+    const val LIBRARY_PATCH: String = "library-patch"
+    const val PACKAGE_REBUILD: String = "package-rebuild"
 }

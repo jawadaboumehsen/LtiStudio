@@ -30,8 +30,10 @@ import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.tools.ToolError
 import org.ide.lti.core.domain.tools.ToolErrorException
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
-public enum class CommandCategory(public val defaultTimeoutSeconds: Long) {
+enum class CommandCategory(val defaultTimeoutSeconds: Long) {
     SHORT(60L),
     NETWORK(1200L),
     BUILD(3600L),
@@ -42,14 +44,14 @@ public enum class CommandCategory(public val defaultTimeoutSeconds: Long) {
  * Single class used by KotlinToolStoreAdapter and KotlinRecipeRunner to execute commands
  * through RemoteTransportPort with categorized timeouts, streaming, cancellation, and network retries.
  */
-public class RemoteCommandRunner(
+class RemoteCommandRunner(
     private val transport: RemoteTransportPort,
     private val networkBackoffMs: List<Long> = listOf(1000L, 2000L, 4000L),
 ) {
     private val activeExecutions = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     @Suppress("ReturnCount")
-    public suspend fun execute(
+    suspend fun execute(
         script: String,
         category: CommandCategory = CommandCategory.SHORT,
         timeoutSeconds: Long = category.defaultTimeoutSeconds,
@@ -60,7 +62,7 @@ public class RemoteCommandRunner(
         var lastResponse: ToolExecutionResponse? = null
         var lastError: Throwable? = null
 
-        for (attempt in 0 until maxAttempts) {
+        for (attempt in 0..<maxAttempts) {
             try {
                 val effectiveCwd = cwd?.takeIf { it.isNotBlank() && it.startsWith("/") } ?: "/tmp"
                 val req =
@@ -74,7 +76,7 @@ public class RemoteCommandRunner(
                     )
                 val resp =
                     withContext(Dispatchers.IO) {
-                        withTimeout(timeoutSeconds * 1000L + 15_000L) {
+                        withTimeout(timeoutSeconds.seconds + 15.seconds) {
                             transport.execute(req)
                         }
                     }
@@ -96,7 +98,7 @@ public class RemoteCommandRunner(
 
             if (category == CommandCategory.NETWORK && attempt < maxAttempts - 1) {
                 val backoff = networkBackoffMs.getOrElse(attempt) { 1000L }
-                delay(backoff)
+                delay(backoff.milliseconds)
             }
         }
 
@@ -105,12 +107,12 @@ public class RemoteCommandRunner(
         return Result.failure(ToolErrorException(ToolError.Network(errorMsg)))
     }
 
-    public companion object {
+    companion object {
         /** Compiler command lines (erofs-utils forces CMAKE_VERBOSE_MAKEFILE) run to kilobytes each. */
-        public const val MAX_LOG_LINE_CHARS: Int = 1000
+        const val MAX_LOG_LINE_CHARS: Int = 1000
 
         /** The service ends a run that hit its time limit with a summary containing this. */
-        public const val TIMED_OUT_MARKER: String = "timed out"
+        const val TIMED_OUT_MARKER: String = "timed out"
 
         private const val STOP_CONFIRM_MS = 6_000L
         private const val STOP_POLL_MS = 100L
@@ -126,14 +128,14 @@ public class RemoteCommandRunner(
 
         private const val NO_RESULT = "the run ended without a result (was the build service restarted?)"
 
-        public fun isTimeout(summary: String?): Boolean = summary?.contains(TIMED_OUT_MARKER) == true
+        fun isTimeout(summary: String?): Boolean = summary?.contains(TIMED_OUT_MARKER) == true
 
-        public const val DEFAULT_MAX_OUTPUT_CHARS: Int = 512 * 1024
-        public const val MAX_DIAGNOSTIC_CHARS: Int = 64 * 1024
+        const val DEFAULT_MAX_OUTPUT_CHARS: Int = 512 * 1024
+        const val MAX_DIAGNOSTIC_CHARS: Int = 64 * 1024
     }
 
     @Suppress("ReturnCount")
-    public suspend fun streamCollect(
+    suspend fun streamCollect(
         script: String,
         category: CommandCategory = CommandCategory.SHORT,
         timeoutSeconds: Long = category.defaultTimeoutSeconds,
@@ -145,7 +147,7 @@ public class RemoteCommandRunner(
         var lastError: Throwable? = null
         var lastExitCode = -1
 
-        for (attempt in 0 until maxAttempts) {
+        for (attempt in 0..<maxAttempts) {
             try {
                 val outputBuffer = StringBuilder()
                 var cut = false
@@ -194,7 +196,7 @@ public class RemoteCommandRunner(
 
             if (category == CommandCategory.NETWORK && attempt < maxAttempts - 1) {
                 val backoff = networkBackoffMs.getOrElse(attempt) { 1000L }
-                delay(backoff)
+                delay(backoff.milliseconds)
             }
         }
 
@@ -203,7 +205,7 @@ public class RemoteCommandRunner(
     }
 
     @Suppress("CyclomaticComplexMethod")
-    public fun stream(
+    fun stream(
         script: String,
         category: CommandCategory = CommandCategory.BUILD,
         timeoutSeconds: Long = category.defaultTimeoutSeconds,
@@ -246,7 +248,7 @@ public class RemoteCommandRunner(
             if (runHandle != null) {
                 activeExecutions[key] = runHandle.runId
                 withContext(Dispatchers.IO) {
-                    withTimeout(timeoutSeconds * 1000L + 30_000L) {
+                    withTimeout(timeoutSeconds.seconds + 30.seconds) {
                         transport.attachRun(runHandle.runId).collect { event ->
                             when (val ev = event.event) {
                                 is StreamEvent.OutputChunk -> send(if (raw) ev.text else ev.text.forLog())
@@ -267,7 +269,7 @@ public class RemoteCommandRunner(
                 }
             } else {
                 withContext(Dispatchers.IO) {
-                    withTimeout(timeoutSeconds * 1000L + 30_000L) {
+                    withTimeout(timeoutSeconds.seconds + 30.seconds) {
                         transport.stream(req).collect { event ->
                             when (event) {
                                 is StreamEvent.OutputChunk -> send(if (raw) event.text else event.text.forLog())
@@ -342,13 +344,14 @@ public class RemoteCommandRunner(
                 error is CancellationException || attempt >= START_ATTEMPTS -> throw error
             }
             attempt++
-            delay(START_RETRY_DELAY_MS)
+            delay(START_RETRY_DELAY_MS.milliseconds)
         }
     }
 
     /** [stopRemote] outside any cancellation of the caller, for a bounded time; no answer in time is no. */
-    private suspend fun stopConfirmed(id: String, durable: Boolean): Boolean =
-        withContext(NonCancellable) { withTimeoutOrNull(STOP_CONFIRM_MS) { stopRemote(id, durable) } } == true
+    private suspend fun stopConfirmed(id: String, durable: Boolean): Boolean = withContext(NonCancellable) {
+        withTimeoutOrNull(STOP_CONFIRM_MS.milliseconds) { stopRemote(id, durable) }
+    } == true
 
     /**
      * Asks the service to stop [id]; whether it did. A [durable] run has a record, so only that can say, whatever
@@ -373,7 +376,7 @@ public class RemoteCommandRunner(
             val status = read.getOrNull()
             if (read.isSuccess && status == null) return false
             if (status != null && status.status in FINISHED_STATES) return status.unconfirmedSurvivors.isEmpty()
-            delay(STOP_POLL_MS)
+            delay(STOP_POLL_MS.milliseconds)
         }
     }
 
@@ -392,7 +395,7 @@ public class RemoteCommandRunner(
      * Asks every requested run to stop, even after one refuses. The handles stay until each run's own stream ends
      * ([stream]'s `finally`): a cancel that failed can be tried again, and its stream can still stop the right run.
      */
-    public suspend fun cancelActive(key: String? = null): Boolean {
+    suspend fun cancelActive(key: String? = null): Boolean {
         val ids = if (key != null) listOfNotNull(activeExecutions[key]) else activeExecutions.values.toList()
         return ids.map { requestStop(it) }.all { it }
     }

@@ -16,10 +16,10 @@ import org.ide.lti.core.domain.pipeline.HostRequest
  * changing the work tree; the result is [LabRow.encode]d, one row per operation. With [decode], APK/JAR edits are
  * applied to their decoded packages in memory too (about a minute per package), else marked for the build.
  */
-public data class LabModules(val apply: ApplyModules, val decode: Boolean = false) : HostRequest
+data class LabModules(val apply: ApplyModules, val decode: Boolean = false) : HostRequest
 
 /** What the check could say about one operation. */
-public enum class LabStatus {
+enum class LabStatus {
     /** Its target, preimage hash, anchor or key match the assembled tree. */
     CHECKED,
 
@@ -34,7 +34,7 @@ public enum class LabStatus {
 }
 
 /** One operation of one mod (`publisher:id`) in the mod lab. */
-public data class LabRow(
+data class LabRow(
     val mod: String,
     val operationId: String,
     val status: LabStatus,
@@ -46,9 +46,9 @@ public data class LabRow(
     /** The files inside the package those edits touch (`smali_classes2/…/X.smali`, `res/…`); likewise. */
     val files: List<String> = emptyList(),
 ) {
-    public companion object {
+    companion object {
         /** One tab-separated line per row: the host step result is text (the detail's line breaks as `\u001F`). */
-        public fun encode(rows: List<LabRow>): String = rows.joinToString("\n") { row ->
+        fun encode(rows: List<LabRow>): String = rows.joinToString("\n") { row ->
             listOf(
                 row.mod,
                 row.operationId,
@@ -61,7 +61,7 @@ public data class LabRow(
         }
 
         /** The rows [encode] wrote; a line it did not write is skipped. */
-        public fun decode(text: String): List<LabRow> = text.lines().mapNotNull { line ->
+        fun decode(text: String): List<LabRow> = text.lines().mapNotNull { line ->
             val parts = line.split('\t', limit = 7).takeIf { it.size >= 4 } ?: return@mapNotNull null
             fun list(i: Int) = parts.getOrNull(i).orEmpty().split(LIST_BREAK).filter { it.isNotEmpty() }
             LabStatus.entries.firstOrNull { it.name == parts[2] }?.let { status ->
@@ -76,13 +76,13 @@ public data class LabRow(
 }
 
 /** The mod lab's answer: a row per operation, and what stopped the plans before any operation was checked. */
-public data class ModLab(val rows: List<LabRow>, val problems: List<String>)
+data class ModLab(val rows: List<LabRow>, val problems: List<String>)
 
 /**
  * `Landroid/security/KeyStore2;->getSecurityLevel(I)L…;` → `KeyStore2.getSecurityLevel`; a member file
  * (`smali_classes6/io/lti/Hook.smali`) → `Hook.smali`.
  */
-public fun shortMember(member: String): String {
+fun shortMember(member: String): String {
     if ("->" !in member) return member.substringAfterLast('/')
     val type = member.substringBefore("->").removeSuffix(";").substringAfterLast('/')
     return "$type.${member.substringAfter("->").substringBefore('(').substringBefore(':')}"

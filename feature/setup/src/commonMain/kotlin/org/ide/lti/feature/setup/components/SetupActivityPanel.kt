@@ -75,6 +75,7 @@ import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.domain.setup.SetupLogEvent
 import org.ide.lti.feature.setup.LogFilter
 import org.ide.lti.feature.setup.SetupActivityState
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Evaluates whether user scroll activity should pause auto-follow.
@@ -128,14 +129,14 @@ fun SetupActivityPanel(
 
     LaunchedEffect(isCopiedAll) {
         if (isCopiedAll) {
-            delay(2000)
+            delay(2.seconds)
             isCopiedAll = false
         }
     }
 
     LaunchedEffect(isCopiedSelection) {
         if (isCopiedSelection) {
-            delay(2000)
+            delay(2.seconds)
             isCopiedSelection = false
         }
     }

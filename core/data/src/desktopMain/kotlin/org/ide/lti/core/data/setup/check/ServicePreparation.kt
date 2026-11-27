@@ -29,36 +29,36 @@ import org.ide.lti.core.model.setup.SetupEnvironment
 import org.ide.lti.core.model.setup.closestToUsable
 import org.ide.lti.core.model.setup.distroName
 
-public sealed interface WslPreparationResult {
-    public data class Success(
+sealed interface WslPreparationResult {
+    data class Success(
         val environment: SetupEnvironment,
         val installedDistros: List<String>,
         val detectionStatuses: List<DistroStatus>,
     ) : WslPreparationResult
 
-    public data class Failure(val description: String, val error: String, val detectionStatuses: List<DistroStatus>) :
+    data class Failure(val description: String, val error: String, val detectionStatuses: List<DistroStatus>) :
         WslPreparationResult
 }
 
-public sealed interface PackagesPreparationResult {
-    public val prerequisiteReport: PrerequisiteReport
+sealed interface PackagesPreparationResult {
+    val prerequisiteReport: PrerequisiteReport
 
-    public data class Success(override val prerequisiteReport: PrerequisiteReport) : PackagesPreparationResult
+    data class Success(override val prerequisiteReport: PrerequisiteReport) : PackagesPreparationResult
 
-    public data class Failure(
+    data class Failure(
         val description: String,
         val error: String,
         override val prerequisiteReport: PrerequisiteReport,
     ) : PackagesPreparationResult
 }
 
-public sealed interface ServerPreparationResult {
-    public data class Success(val pingMs: Long, val connPid: Long?) : ServerPreparationResult
+sealed interface ServerPreparationResult {
+    data class Success(val pingMs: Long, val connPid: Long?) : ServerPreparationResult
 
-    public data class Outdated(val runningVersion: String?, val activeVersion: String?, val runningActiveRuns: Int) :
+    data class Outdated(val runningVersion: String?, val activeVersion: String?, val runningActiveRuns: Int) :
         ServerPreparationResult
 
-    public data class Failure(
+    data class Failure(
         val description: String,
         val error: String,
         val failureCategory: DaemonFailureCategory? = DaemonFailureCategory.UNREACHABLE,
@@ -69,7 +69,7 @@ public sealed interface ServerPreparationResult {
  * Service preparation component responsible for WSL selection, host prerequisite probing,
  * and bundled build service lifecycle (FR-003, T029).
  */
-public class ServicePreparation(
+class ServicePreparation(
     private val hostPrerequisitePort: HostPrerequisitePort,
     private val supervisor: DaemonSupervisorPort,
     private val transport: RemoteTransportPort,
@@ -77,7 +77,7 @@ public class ServicePreparation(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val remotePrerequisiteProbe: RemotePrerequisiteProbe = RemotePrerequisiteProbe(transport),
 ) {
-    public suspend fun verifyWsl(
+    suspend fun verifyWsl(
         @Suppress("UnusedParameter") preferredDistro: String?,
         persistedDistro: String?,
         currentEnvironment: SetupEnvironment?,
@@ -115,7 +115,7 @@ public class ServicePreparation(
         WslPreparationResult.Success(selectedEnv, distros, detectionStatuses)
     }
 
-    public suspend fun verifySystemPackages(selectedEnv: SetupEnvironment): PackagesPreparationResult =
+    suspend fun verifySystemPackages(selectedEnv: SetupEnvironment): PackagesPreparationResult =
         withContext(dispatcher) {
             val prerequisiteReport =
                 try {
@@ -170,7 +170,7 @@ public class ServicePreparation(
             }
         }
 
-    public suspend fun verifyServer(selectedEnv: SetupEnvironment, javaHome: String? = null): ServerPreparationResult =
+    suspend fun verifyServer(selectedEnv: SetupEnvironment, javaHome: String? = null): ServerPreparationResult =
         withContext(dispatcher) {
             if (serverArtifactPort != null) {
                 val installed = serverArtifactPort.ensureInstalled(selectedEnv)

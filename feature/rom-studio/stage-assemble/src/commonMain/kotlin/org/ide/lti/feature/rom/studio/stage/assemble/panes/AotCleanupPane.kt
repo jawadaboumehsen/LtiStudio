@@ -35,7 +35,7 @@ import org.ide.lti.core.model.workspace.AssemblySettings
  */
 @Suppress("UnusedParameter")
 @Composable
-public fun AotCleanupPane(
+fun AotCleanupPane(
     settings: AssemblySettings,
     target: TargetDevice,
     onChange: (AssemblySettings) -> Unit,

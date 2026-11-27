@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import org.ide.lti.core.model.studio.StudioPresentation
 
-public interface StudioPresentationStorePort {
+interface StudioPresentationStorePort {
     val presentations: Flow<Map<String, StudioPresentation>>
     val currentPresentations: Map<String, StudioPresentation>
     fun presentation(workspaceId: String): Flow<StudioPresentation?>
@@ -24,7 +24,7 @@ public interface StudioPresentationStorePort {
     suspend fun clear(workspaceId: String)
 }
 
-public class InMemoryStudioPresentationStore(initial: Map<String, StudioPresentation> = emptyMap()) :
+class InMemoryStudioPresentationStore(initial: Map<String, StudioPresentation> = emptyMap()) :
     StudioPresentationStorePort {
     private val _presentations = MutableStateFlow(initial)
     override val presentations: Flow<Map<String, StudioPresentation>> = _presentations.asStateFlow()

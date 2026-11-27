@@ -86,7 +86,7 @@ import org.jetbrains.skia.Image as SkiaImage
  */
 @Suppress("LongParameterList")
 @Composable
-public fun DebloatEditor(
+fun DebloatEditor(
     settings: DebloatSettings,
     facts: DebloatFacts,
     onChange: (DebloatSettings) -> Unit,
@@ -213,16 +213,16 @@ private fun LazyListScope.inventorySection(
 }
 
 /** What the Debloat editor can ask for besides picking (see DebloatViewModel). */
-public class DebloatActions(
-    public val restore: (RestorePoint) -> Unit = {},
-    public val restoreAll: () -> Unit = {},
-    public val importList: () -> Unit = {},
-    public val exportList: () -> Unit = {},
-    public val savePreset: (String) -> Unit = {},
-    public val applyPreset: (String) -> Unit = {},
-    public val deletePreset: (String) -> Unit = {},
-    public val applyDevicePicks: () -> Unit = {},
-    public val dismiss: () -> Unit = {},
+class DebloatActions(
+    val restore: (RestorePoint) -> Unit = {},
+    val restoreAll: () -> Unit = {},
+    val importList: () -> Unit = {},
+    val exportList: () -> Unit = {},
+    val savePreset: (String) -> Unit = {},
+    val applyPreset: (String) -> Unit = {},
+    val deletePreset: (String) -> Unit = {},
+    val applyDevicePicks: () -> Unit = {},
+    val dismiss: () -> Unit = {},
 )
 
 @Composable

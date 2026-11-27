@@ -29,7 +29,7 @@ import org.ide.lti.core.model.workspace.WorkspaceType
  *
  * Does not contain hard-coded Ubuntu or lti distribution paths.
  */
-public class WorkDirDiscoveryService(
+class WorkDirDiscoveryService(
     private val fileSystem: FileSystem = FileSystem.SYSTEM,
     private val json: Json = Json { ignoreUnknownKeys = true },
     private val environmentId: EnvironmentId? = null,
@@ -37,7 +37,7 @@ public class WorkDirDiscoveryService(
     private val defaultUser: String? = null,
     private val workDirLinuxPath: String? = null,
 ) {
-    public fun discoverWorkspaces(
+    fun discoverWorkspaces(
         basePathOverride: String? = null,
         environmentIdOverride: EnvironmentId? = null,
     ): List<RecentProject> {

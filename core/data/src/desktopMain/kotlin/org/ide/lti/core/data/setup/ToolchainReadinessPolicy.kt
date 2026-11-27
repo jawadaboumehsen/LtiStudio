@@ -16,7 +16,7 @@ import org.ide.lti.core.domain.setup.ToolGroupCatalog
 /**
  * Structured evaluation outcome of the execution daemon's health response.
  */
-public data class DaemonHealthEvaluation(
+data class DaemonHealthEvaluation(
     val isHealthy: Boolean,
     val category: DaemonFailureCategory?,
     val message: String,
@@ -34,15 +34,15 @@ public data class DaemonHealthEvaluation(
  *    Null daemon health and stale results fail closed." (FR-002)
  * - "Empty tool inventory is not healthy."
  */
-public object ToolchainReadinessPolicy {
+object ToolchainReadinessPolicy {
     /** Minimum supported Java runtime major version on host/daemon. */
-    public const val MIN_JAVA_VERSION: Int = 17
+    const val MIN_JAVA_VERSION: Int = 17
 
     /** Canonical primary health status defined by WslServerInfo in LtiRomServer. */
-    public const val CANONICAL_HEALTHY_STATUS: String = "UP"
+    const val CANONICAL_HEALTHY_STATUS: String = "UP"
 
     /** Backward-compatibility health status accepted if an older server instance is deployed. */
-    public const val COMPATIBILITY_HEALTHY_STATUS: String = "HEALTHY"
+    const val COMPATIBILITY_HEALTHY_STATUS: String = "HEALTHY"
 
     private val HEALTHY_STATUSES = setOf(CANONICAL_HEALTHY_STATUS, COMPATIBILITY_HEALTHY_STATUS)
     private val UNHEALTHY_STATUSES = setOf("DOWN", "UNHEALTHY", "DEGRADED", "ERROR", "OUT_OF_SERVICE")
@@ -51,13 +51,13 @@ public object ToolchainReadinessPolicy {
      * The core native toolchain binaries required for Android dynamic partition and ROM operations.
      * Derived from authoritative [ToolGroupCatalog.allOutputs] with `requiredForProduct = true` (FR-028).
      */
-    public val REQUIRED_PRODUCT_TOOLS: Set<String>
+    val REQUIRED_PRODUCT_TOOLS: Set<String>
         get() = ToolGroupCatalog.allOutputs.filter { it.requiredForProduct }.map { it.toolId }.toSet()
 
     /**
      * Host environment utilities and runtime dependencies required for tool execution and packaging.
      */
-    public val REQUIRED_HOST_PACKAGES: Set<String> =
+    val REQUIRED_HOST_PACKAGES: Set<String> =
         setOf(
             "curl", "unzip", "zip", "sha256sum", "sha1sum", "rsync", "getfattr", "fusermount3", "brotli", "file",
             "xxd", "truncate", "find", "stat", "cat", "test", "cp", "mv", "rm", "mkdir", "touch", "java",
@@ -66,22 +66,9 @@ public object ToolchainReadinessPolicy {
         )
 
     /**
-     * Required capability check for mkfs.erofs: must support --fs-config-file.
-     */
-    public const val EROFS_REQUIRED_FLAG: String = "--fs-config-file"
-
-    /**
-     * Checks whether mkfs.erofs execution output supports the required --fs-config-file capability.
-     */
-    public fun isErofsCompatible(exitCode: Int, stdout: String): Boolean {
-        val accepted = ToolGroupCatalog.outputFor("mkfs.erofs")?.probe?.acceptedExitCodes ?: setOf(0)
-        return exitCode in accepted && stdout.contains(EROFS_REQUIRED_FLAG)
-    }
-
-    /**
      * Validates that Java version string meets [MIN_JAVA_VERSION].
      */
-    public fun isJavaVersionSupported(versionStr: String?): Boolean {
+    fun isJavaVersionSupported(versionStr: String?): Boolean {
         val trimmed = versionStr?.trim() ?: return false
         val match =
             Regex("""^(\d+)""").find(trimmed)
@@ -95,7 +82,7 @@ public object ToolchainReadinessPolicy {
      * Evaluates daemon status BEFORE Java runtime so a DOWN daemon is not mislabeled as Java incompatible.
      * Keeps user-facing message concise and clean; logs/tails live in technicalDetails.
      */
-    public fun evaluateDaemonHealth(health: WslServerInfo?, launchErrorTail: String? = null): DaemonHealthEvaluation {
+    fun evaluateDaemonHealth(health: WslServerInfo?, launchErrorTail: String? = null): DaemonHealthEvaluation {
         val details = launchErrorTail?.takeIf { it.isNotBlank() }
         val statusUpper = health?.status?.trim()?.uppercase()
         return when {
@@ -150,18 +137,18 @@ public object ToolchainReadinessPolicy {
         }
     }
 
-    public sealed interface OperationReadiness {
-        public data object Ready : OperationReadiness
+    sealed interface OperationReadiness {
+        data object Ready : OperationReadiness
 
-        public data class Blocked(val missingTools: List<String>, val reason: String) : OperationReadiness
+        data class Blocked(val missingTools: List<String>, val reason: String) : OperationReadiness
     }
 
-    public fun checkOperationReadiness(
+    fun checkOperationReadiness(
         operation: String,
         state: org.ide.lti.core.domain.tools.ToolsState?,
     ): OperationReadiness = checkOperationReadiness(operation, state?.inventory)
 
-    public fun checkOperationReadiness(
+    fun checkOperationReadiness(
         operation: String,
         inventory: org.ide.lti.core.domain.tools.ToolInventory?,
     ): OperationReadiness {

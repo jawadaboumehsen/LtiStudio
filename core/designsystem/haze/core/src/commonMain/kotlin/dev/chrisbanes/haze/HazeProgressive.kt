@@ -25,7 +25,7 @@ import kotlin.jvm.JvmInline
  * Parameters for applying a progressive visual effect.
  */
 @Immutable
-public sealed interface HazeProgressive {
+sealed interface HazeProgressive {
 
     /**
      * A linear gradient effect.
@@ -42,12 +42,12 @@ public sealed interface HazeProgressive {
      * [androidx.compose.ui.geometry.Offset.Infinite] which represents the bottom-right of the drawing area.
      * @param endIntensity - The intensity of the haze effect at the end, in the range `0f`..`1f`
      */
-    public data class LinearGradient(
-        public val easing: Easing = EaseIn,
-        public val start: Offset = Offset.Zero,
-        public val startIntensity: Float = 0f,
-        public val end: Offset = Offset.Infinite,
-        public val endIntensity: Float = 1f,
+    data class LinearGradient(
+        val easing: Easing = EaseIn,
+        val start: Offset = Offset.Zero,
+        val startIntensity: Float = 0f,
+        val end: Offset = Offset.Infinite,
+        val endIntensity: Float = 1f,
     ) : HazeProgressive {
         init {
             requireIntensity("startIntensity", startIntensity)
@@ -75,12 +75,12 @@ public sealed interface HazeProgressive {
      * the largest radius that can fit within the bounds of the drawing area.
      * @param radiusIntensity - The intensity of the haze effect at the [radius], in the range `0f`..`1f`
      */
-    public class RadialGradient(
-        public val easing: Easing = EaseIn,
-        public val center: Offset = Offset.Unspecified,
-        public val centerIntensity: Float = 1f,
-        public val radius: Float = Float.POSITIVE_INFINITY,
-        public val radiusIntensity: Float = 0f,
+    class RadialGradient(
+        val easing: Easing = EaseIn,
+        val center: Offset = Offset.Unspecified,
+        val centerIntensity: Float = 1f,
+        val radius: Float = Float.POSITIVE_INFINITY,
+        val radiusIntensity: Float = 0f,
     ) : HazeProgressive {
         init {
             requireIntensity("centerIntensity", centerIntensity)
@@ -125,7 +125,7 @@ public sealed interface HazeProgressive {
      * @property brush Brush whose alpha channel controls the effect intensity.
      */
     @JvmInline
-    public value class Brush(public val brush: androidx.compose.ui.graphics.Brush) : HazeProgressive
+    value class Brush(val brush: androidx.compose.ui.graphics.Brush) : HazeProgressive
 
     /** Convenience factories for common progressive effects. */
     public companion object {
@@ -141,7 +141,7 @@ public sealed interface HazeProgressive {
          * [Float.POSITIVE_INFINITY] which represents the bottom of the drawing area.
          * @param endIntensity - The intensity of the haze effect at the end, in the range `0f`..`1f`.
          */
-        public fun verticalGradient(
+        fun verticalGradient(
             easing: Easing = EaseIn,
             startY: Float = 0f,
             startIntensity: Float = 0f,
@@ -167,7 +167,7 @@ public sealed interface HazeProgressive {
          * [Float.POSITIVE_INFINITY] which represents the right of the drawing area.
          * @param endIntensity - The intensity of the haze effect at the end, in the range `0f`..`1f`.
          */
-        public fun horizontalGradient(
+        fun horizontalGradient(
             easing: Easing = EaseIn,
             startX: Float = 0f,
             startIntensity: Float = 0f,
@@ -185,7 +185,7 @@ public sealed interface HazeProgressive {
          * Helper function for building a [HazeProgressive.Brush] with a [androidx.compose.ui.graphics.Shader]. The block is
          * provided with the size of the content, allowing you to setup the shader as required.
          */
-        public inline fun forShader(
+        inline fun forShader(
             crossinline block: (Size) -> Shader,
         ): Brush = Brush(
             object : ShaderBrush() {
@@ -197,7 +197,7 @@ public sealed interface HazeProgressive {
 
 /** Converts this progressive effect into an alpha-mask [Brush] with [numStops] samples. */
 @InternalHazeApi
-public fun HazeProgressive.asBrush(numStops: Int = 20): Brush = when (this) {
+fun HazeProgressive.asBrush(numStops: Int = 20): Brush = when (this) {
     is HazeProgressive.LinearGradient -> asBrush(numStops)
     is HazeProgressive.RadialGradient -> asBrush(numStops)
     is HazeProgressive.Brush -> brush

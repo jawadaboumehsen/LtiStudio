@@ -12,7 +12,7 @@ package org.ide.lti.core.domain.setup
 /**
  * Descriptor of a component group that will revert to its own previous version.
  */
-public data class RevertingGroup(
+data class RevertingGroup(
     val groupId: ToolGroupId,
     val currentArtifactId: String,
     val previousArtifactId: String,
@@ -24,8 +24,8 @@ public data class RevertingGroup(
 /**
  * Outcome of a component-version undo operation.
  */
-public sealed interface RestoreOutcome {
-    public data class Succeeded(val revertSet: List<RevertingGroup>, val desiredUpdated: Boolean) : RestoreOutcome
+sealed interface RestoreOutcome {
+    data class Succeeded(val revertSet: List<RevertingGroup>, val desiredUpdated: Boolean) : RestoreOutcome
 
-    public data class Failed(val reason: String) : RestoreOutcome
+    data class Failed(val reason: String) : RestoreOutcome
 }

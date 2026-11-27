@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.ports
 
 /** What the running app is and where it keeps its data, as Settings › About shows it. */
-public data class AppEnvironment(
+data class AppEnvironment(
     /** The packaged version, or null for a development run (`gradlew run`). */
     val version: String?,
     val runtime: String,
@@ -19,9 +19,9 @@ public data class AppEnvironment(
     val logsDirectory: String,
 )
 
-public interface AppEnvironmentPort {
-    public fun environment(): AppEnvironment
+interface AppEnvironmentPort {
+    fun environment(): AppEnvironment
 
     /** Opens [path] in the system file manager; false when it cannot. */
-    public suspend fun openFolder(path: String): Boolean
+    suspend fun openFolder(path: String): Boolean
 }

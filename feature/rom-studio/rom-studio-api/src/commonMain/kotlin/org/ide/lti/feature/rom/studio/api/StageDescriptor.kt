@@ -14,7 +14,7 @@ import org.ide.lti.core.model.run.StageId
 /**
  * A selectable subobject/section within a stage editor.
  */
-public data class StudioSubobject(
+data class StudioSubobject(
     val id: StudioSubobjectId,
     val title: String,
     val accessibleLabel: String = title,
@@ -29,7 +29,7 @@ public data class StudioSubobject(
  * Metadata descriptor for a pipeline stage editor.
  * Note: Does not declare a positional index; execution and rail order is derived from canonical PipelineStageSequence.
  */
-public data class StageDescriptor(
+data class StageDescriptor(
     val stageId: StageId,
     val title: String,
     val accessibleLabel: String = title,
@@ -45,5 +45,5 @@ public data class StageDescriptor(
         }
     }
 
-    public fun subobject(id: StudioSubobjectId): StudioSubobject? = subobjects.firstOrNull { it.id == id }
+    fun subobject(id: StudioSubobjectId): StudioSubobject? = subobjects.firstOrNull { it.id == id }
 }

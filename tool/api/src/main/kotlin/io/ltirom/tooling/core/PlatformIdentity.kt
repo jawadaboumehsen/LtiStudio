@@ -2,24 +2,24 @@ package io.ltirom.tooling.core
 
 import java.util.Locale
 
-public enum class OS {
+enum class OS {
     LINUX, WINDOWS, MACOS, UNKNOWN;
 
-    public fun isUnix(): Boolean = this == LINUX || this == MACOS
+    fun isUnix(): Boolean = this == LINUX || this == MACOS
 }
 
-public enum class Arch {
+enum class Arch {
     X86_64, AARCH64, UNKNOWN
 }
 
-public data class PlatformIdentity(
+data class PlatformIdentity(
     val os: OS,
     val arch: Arch
 ) {
-    public fun key(): String = "${os.name.lowercase(Locale.US)}-${arch.name.lowercase(Locale.US)}"
+    fun key(): String = "${os.name.lowercase(Locale.US)}-${arch.name.lowercase(Locale.US)}"
 
-    public companion object {
-        public val CURRENT: PlatformIdentity by lazy {
+    companion object {
+        val CURRENT: PlatformIdentity by lazy {
             val osName = System.getProperty("os.name").lowercase(Locale.US)
             val os = when {
                 osName.contains("linux") -> OS.LINUX

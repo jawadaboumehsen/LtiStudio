@@ -59,7 +59,7 @@ data class PreflightUiState(
 )
 
 /** Will it build? Runs the preflight and applies a finding's settings fix, then checks again. */
-public class PreflightViewModel internal constructor(
+class PreflightViewModel internal constructor(
     private val workspaceId: String,
     private val report: (suspend (String) -> PreflightReport)?,
     private val settings: WorkspaceSettingsStore? = null,
@@ -68,7 +68,7 @@ public class PreflightViewModel internal constructor(
     private val nextBuild: NextBuild? = null,
     private val runs: RunRepository? = null,
 ) : ViewModel() {
-    public constructor(
+    constructor(
         workspaceId: String,
         preflight: Preflight? = null,
         settings: WorkspaceSettingsStore? = null,
@@ -79,7 +79,7 @@ public class PreflightViewModel internal constructor(
     ) : this(workspaceId, preflight?.let { it::report }, settings, samePhone, upgrade, nextBuild, runs)
 
     private val _state = MutableStateFlow(PreflightUiState())
-    public val state: StateFlow<PreflightUiState> = _state.asStateFlow()
+    val state: StateFlow<PreflightUiState> = _state.asStateFlow()
 
     private var checkJob: Job? = null
     private var nextJob: Job? = null
@@ -111,7 +111,7 @@ public class PreflightViewModel internal constructor(
     }
 
     /** The upgrade assistant: what of [from]'s settings fits this workspace's firmware, before taking them. */
-    public fun compareWith(from: Workspace) {
+    fun compareWith(from: Workspace) {
         val assistant = upgrade ?: return
         _state.update { it.copy(comparing = true, comparedWith = from, upgrade = null, error = null) }
         viewModelScope.launch {
@@ -131,7 +131,7 @@ public class PreflightViewModel internal constructor(
     }
 
     /** Copies [from]'s phone settings (assembly, debloat, mods, build) here, then checks again. */
-    public fun carryFrom(from: Workspace) {
+    fun carryFrom(from: Workspace) {
         val finder = samePhone ?: return
         viewModelScope.launch {
             finder.carry(from.id, workspaceId)
@@ -144,7 +144,7 @@ public class PreflightViewModel internal constructor(
         }
     }
 
-    public fun check() {
+    fun check() {
         if (_state.value.checking || _state.value.readingNext) return
         val checker = report ?: return readNext()
         _state.update {
@@ -217,7 +217,7 @@ public class PreflightViewModel internal constructor(
     }
 
     /** Saves the fix's settings change and checks again. */
-    public fun apply(fix: PreflightFix.Setting) {
+    fun apply(fix: PreflightFix.Setting) {
         val store = settings ?: return
         viewModelScope.launch {
             store.update(workspaceId, fix.apply)

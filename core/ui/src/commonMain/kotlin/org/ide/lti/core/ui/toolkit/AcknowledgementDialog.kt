@@ -26,7 +26,7 @@ import org.ide.lti.core.designsystem.theme.Spacing
  * Reuses the existing [GlassDialog] component per constitution.
  */
 @Composable
-public fun AcknowledgementDialog(
+fun AcknowledgementDialog(
     featureId: String,
     warningMessage: String,
     onAcknowledge: (featureId: String) -> Unit,

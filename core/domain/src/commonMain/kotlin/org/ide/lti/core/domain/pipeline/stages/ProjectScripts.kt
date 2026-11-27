@@ -18,7 +18,7 @@ import org.ide.lti.core.domain.pipeline.stepCommand
  * Adds the missing fs_config / file_context lines of [partitions] in work/: from the first of the user's [rules]
  * (`CoverageRule` lines) matching the path, else like their nearest parent.
  */
-public data class CoverageFixRequest(val partitions: List<String>, val rules: String = "") : HostRequest
+data class CoverageFixRequest(val partitions: List<String>, val rules: String = "") : HostRequest
 
 /**
  * The user's shell scripts ([org.ide.lti.core.model.workspace.ProjectScript]), run by the Patches stage after the
@@ -26,12 +26,12 @@ public data class CoverageFixRequest(val partitions: List<String>, val rules: St
  * all of them before any runs; then each runs from inside work/; files it adds get sidecar lines like their parent
  * folder, so the Build stage's coverage gate passes.
  */
-public object ProjectScripts {
-    public const val DIR: String = "scripts"
-    public const val SIDECARS_KEY: String = "scripts.sidecars"
-    public val NAME: Regex = Regex("[A-Za-z0-9_-]{1,64}")
+object ProjectScripts {
+    const val DIR: String = "scripts"
+    const val SIDECARS_KEY: String = "scripts.sidecars"
+    val NAME: Regex = Regex("[A-Za-z0-9_-]{1,64}")
 
-    public fun steps(ctx: StageContext): List<PipelineStep> {
+    fun steps(ctx: StageContext): List<PipelineStep> {
         val scripts = ctx.snapshot.customization.scripts.filter { it.enabled }
         val work = ctx.abs("work")
         // Every script is written and checked before the first one runs: a syntax error in a later script must not

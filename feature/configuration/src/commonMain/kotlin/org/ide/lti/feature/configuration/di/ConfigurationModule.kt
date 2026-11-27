@@ -17,8 +17,6 @@ val configurationModule = module {
     viewModel {
         ConfigurationViewModel(
             getAvailableTargetsUseCase = get(),
-            getSelectedTargetUseCase = get(),
-            selectTargetUseCase = get(),
             createTargetScaffoldUseCase = get(),
             duplicateTargetUseCase = get(),
             deleteTargetUseCase = get(),

@@ -22,32 +22,32 @@ import androidx.compose.ui.unit.toIntSize
 
 /** Built-in-only owner which relocates material output behind its recorded children. */
 @InternalHazeApi
-public interface HazeEffectSurfaceOwner {
+interface HazeEffectSurfaceOwner {
     /** Current owner coordinates; relocation cannot draw until they are attached. */
-    public val surfaceCoordinates: LayoutCoordinates?
+    val surfaceCoordinates: LayoutCoordinates?
 
     /** Called when geometry, input, or renderer state changes. */
-    public fun onSurfaceChanged(surface: HazeEffectSurface)
+    fun onSurfaceChanged(surface: HazeEffectSurface)
 
     /**
      * Only XY placement or capture bounds changed; member size and its translation-only linear
      * transform are unchanged. Owners must still redraw and refresh capture/composition footprints.
      * Defaults to the full-change notification for owners that do not distinguish placement.
      */
-    public fun onSurfacePlacementChanged(surface: HazeEffectSurface) {
+    fun onSurfacePlacementChanged(surface: HazeEffectSurface) {
         onSurfaceChanged(surface)
     }
 
     /** Called when the member releases this owner or detaches. */
-    public fun onSurfaceReleased(surface: HazeEffectSurface)
+    fun onSurfaceReleased(surface: HazeEffectSurface)
 
     /** Whether a temporary native interference buffer fits this owner's rendering budget. */
-    public fun canComposeNativeSurfaces(bounds: Rect): Boolean
+    fun canComposeNativeSurfaces(bounds: Rect): Boolean
 }
 
 /** Opaque core-owned surface. Source selection, capture, retention and native policy stay in core. */
 @InternalHazeApi
-public class HazeEffectSurface internal constructor(
+class HazeEffectSurface internal constructor(
     internal val node: HazeEffectNode,
     private val configured: HazeConfiguredSurfaceDraw? = null,
 ) {
@@ -55,7 +55,7 @@ public class HazeEffectSurface internal constructor(
         private set
 
     /** Relocates only material output; replacing/removing the owner restores ordinary member draw. */
-    public fun relocateTo(owner: HazeEffectSurfaceOwner?) {
+    fun relocateTo(owner: HazeEffectSurfaceOwner?) {
         if (this.owner === owner) return
         this.owner?.onSurfaceReleased(this)
         this.owner = owner
@@ -65,13 +65,13 @@ public class HazeEffectSurface internal constructor(
     }
 
     /** Member bounds in the owner's coordinates, or null before valid placement. */
-    public fun boundsInOwner(): Rect? = configured?.bounds ?: node.surfaceBounds(owner?.surfaceCoordinates)
+    fun boundsInOwner(): Rect? = configured?.bounds ?: node.surfaceBounds(owner?.surfaceCoordinates)
 
     /**
      * The source areas this member's input currently resolves to. Equal inputs can still resolve
      * differently, for example `Behind` under different source ancestors.
      */
-    public fun inputSelection(): Set<Any> = node.areas.toSet()
+    fun inputSelection(): Set<Any> = node.areas.toSet()
 
     /**
      * Creates an independently owned renderer over these members' core-selected input captures.
@@ -80,7 +80,7 @@ public class HazeEffectSurface internal constructor(
      * Pass false for [drawsMembersOnDecline] when the owner already outputs those surfaces, so the
      * cluster draws nothing instead of drawing them a second time.
      */
-    public fun <Style> createConfiguredSurface(
+    fun <Style> createConfiguredSurface(
         factory: HazeEffectFactory<Style>,
         style: Style,
         bounds: Rect,
@@ -125,7 +125,7 @@ internal class HazeSurfaceFootprint(val output: Rect, val nativeCapture: Rect?, 
  * [surfaces] is resolved after child recording has refreshed member captures and snapshots.
  */
 @InternalHazeApi
-public fun ContentDrawScope.drawHazeEffectSurfaces(
+fun ContentDrawScope.drawHazeEffectSurfaces(
     owner: HazeEffectSurfaceOwner,
     surfaces: () -> List<HazeEffectSurface>,
     children: GraphicsLayer,

@@ -60,7 +60,7 @@ import org.ide.lti.core.model.workspace.PublishSettings
 
 @Suppress("LongParameterList", "UnusedParameter")
 @Composable
-public fun PublishEditor(
+fun PublishEditor(
     settings: PublishSettings,
     target: TargetDevice,
     validationErrors: List<ValidationError> = emptyList(),

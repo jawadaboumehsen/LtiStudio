@@ -49,7 +49,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.RestorePointState
  * in this workspace in one place (FR-038, US6, T073).
  */
 @Composable
-public fun WorkspaceRestorePointsPanel(
+fun WorkspaceRestorePointsPanel(
     restoreIndex: RestoreIndex,
     restoreMessage: String? = null,
     onRestoreOne: (String) -> Unit = {},

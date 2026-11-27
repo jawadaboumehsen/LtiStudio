@@ -27,7 +27,7 @@ import org.ide.lti.core.model.target.WirelessPairingRequest
  * (used when these use cases are unavailable/no-op) is what the product actually ships with
  * today. See dynamic-prancing-lake.md "Decisions needed" #3.
  */
-public class ConnectedDeviceRepositoryImpl : ConnectedDeviceRepository {
+class ConnectedDeviceRepositoryImpl : ConnectedDeviceRepository {
     private val devices = MutableStateFlow<List<ConnectedTargetDevice>>(emptyList())
     private val selected = MutableStateFlow<ConnectedTargetDevice?>(null)
 

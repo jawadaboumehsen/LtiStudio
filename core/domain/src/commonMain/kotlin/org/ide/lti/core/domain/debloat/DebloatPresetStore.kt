@@ -15,12 +15,12 @@ import org.ide.lti.core.domain.pipeline.toolkit.RemovalList
  * Named debloat picks the app keeps (not a workspace), so the same apps can be picked again on another firmware or
  * workspace. Entries are package names where known, else `partition:path` (`RemovalListMatcher` takes both).
  */
-public interface DebloatPresetStore {
-    public suspend fun load(): List<RemovalList>
+interface DebloatPresetStore {
+    suspend fun load(): List<RemovalList>
 
-    public suspend fun save(presets: List<RemovalList>)
+    suspend fun save(presets: List<RemovalList>)
 
     /** Reads, changes and saves in one step (two editors saving at once never lose each other's preset). */
-    public suspend fun update(change: (List<RemovalList>) -> List<RemovalList>): List<RemovalList> =
+    suspend fun update(change: (List<RemovalList>) -> List<RemovalList>): List<RemovalList> =
         change(load()).also { save(it) }
 }

@@ -52,7 +52,7 @@ import org.ide.lti.core.model.workspace.ReleaseSettings
 
 @Suppress("LongParameterList", "UnusedParameter")
 @Composable
-public fun MetadataEditor(
+fun MetadataEditor(
     settings: ReleaseSettings,
     target: TargetDevice,
     validationErrors: List<ValidationError> = emptyList(),

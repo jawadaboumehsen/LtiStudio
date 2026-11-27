@@ -11,21 +11,21 @@ import io.ltirom.tooling.core.ToolResult
  * Adheres to Open/Closed Principle: new execution behaviors can be added as interceptors
  * without modifying any repository or command implementations.
  */
-public interface ToolExecutionInterceptor {
-    public suspend fun <R> intercept(chain: ExecutionChain<R>): ToolResult<R>
+interface ToolExecutionInterceptor {
+    suspend fun <R> intercept(chain: ExecutionChain<R>): ToolResult<R>
 }
 
 /**
  * Encapsulates the execution context and proceeding mechanism in the interceptor chain.
  */
-public interface ExecutionChain<R> {
-    public val command: ToolCommand<R>
-    public val context: ExecutionContext
+interface ExecutionChain<R> {
+    val command: ToolCommand<R>
+    val context: ExecutionContext
 
     /**
      * Proceeds to the next interceptor in the chain, optionally with an updated command or context.
      */
-    public suspend fun proceed(
+    suspend fun proceed(
         command: ToolCommand<R> = this.command,
         context: ExecutionContext = this.context
     ): ToolResult<R>
@@ -35,10 +35,10 @@ public interface ExecutionChain<R> {
  * Composable execution pipeline organizing an ordered chain of [ToolExecutionInterceptor]s
  * ending in a terminal execution block.
  */
-public class ToolExecutionPipeline(
-    public val interceptors: List<ToolExecutionInterceptor> = emptyList()
+class ToolExecutionPipeline(
+    val interceptors: List<ToolExecutionInterceptor> = emptyList()
 ) {
-    public suspend fun <R> execute(
+    suspend fun <R> execute(
         command: ToolCommand<R>,
         context: ExecutionContext,
         terminal: suspend (ToolCommand<R>, ExecutionContext) -> ToolResult<R>

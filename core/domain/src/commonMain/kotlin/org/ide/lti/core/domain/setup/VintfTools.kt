@@ -16,7 +16,7 @@ import org.ide.lti.core.model.setup.ToolRef
  * android-16.0.0_r4: system/libvintf plus the AOSP projects it needs, each pinned, and the CMake build the app
  * carries (resources tool-recipes/vintf: AOSP ships no build of it outside its tree).
  */
-public val VINTF_TOOLS_GROUP: ToolGroup =
+val VINTF_TOOLS_GROUP: ToolGroup =
     ToolGroup(
         id = ToolGroupId("vintf-tools"),
         source =

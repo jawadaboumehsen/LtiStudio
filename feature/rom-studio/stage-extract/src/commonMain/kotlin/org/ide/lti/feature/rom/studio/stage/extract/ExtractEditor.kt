@@ -61,7 +61,7 @@ import org.ide.lti.feature.rom.studio.api.toggledSelection
 
 @Suppress("UnusedParameter")
 @Composable
-public fun ExtractEditor(
+fun ExtractEditor(
     settings: ExtractionSettings,
     target: TargetDevice,
     validationErrors: List<ValidationError> = emptyList(),

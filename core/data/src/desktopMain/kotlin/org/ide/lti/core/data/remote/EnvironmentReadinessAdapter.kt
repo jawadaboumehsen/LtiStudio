@@ -39,15 +39,15 @@ import org.ide.lti.core.model.workspace.Workspace
  * Adapter implementing [EnvironmentReadinessPort] by delegating host readiness checks to [ToolchainProvisioningService]
  * and performing workspace-specific structure, manifest, and cryptographic key validation.
  */
-public class EnvironmentReadinessAdapter(
+class EnvironmentReadinessAdapter(
     private val toolchainService: ToolchainProvisioningService,
     private val transport: RemoteTransportPort,
     private val requiredProductTools: Set<String> = DEFAULT_REQUIRED_PRODUCT_TOOLS,
 ) : EnvironmentReadinessPort {
-    public companion object {
-        public const val WORK_DIR_NAME: String = "LtiRomWorkDir"
-        public val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
-        public val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
+    companion object {
+        const val WORK_DIR_NAME: String = "LtiRomWorkDir"
+        val DEFAULT_REQUIRED_PRODUCT_TOOLS: Set<String> = ToolchainReadinessPolicy.REQUIRED_PRODUCT_TOOLS
+        val DEFAULT_REQUIRED_HOST_PACKAGES: Set<String> = ToolchainReadinessPolicy.REQUIRED_HOST_PACKAGES
     }
 
     // Follows the live setup state (the one the Setup screen shows), not a value cached at the last refresh():
@@ -141,12 +141,6 @@ public class EnvironmentReadinessAdapter(
                 missingToolIds = requiredProductTools - state.publishedToolIds,
             )
         }
-
-    private fun doctorFailure(step: SetupStepDetail) = EnvironmentReadiness(
-        state = EnvironmentReadinessState.TOOLS_INCOMPATIBLE,
-        failingCheck = step.description,
-        remediation = "Run pre-flight doctor checks and apply repairs",
-    )
 
     private fun liveReadiness(state: ToolchainSetupState) = if (state.canLaunchWorkspace) {
         EnvironmentReadiness(

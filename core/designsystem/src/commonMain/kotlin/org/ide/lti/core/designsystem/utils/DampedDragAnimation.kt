@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 class DampedDragAnimation(
@@ -105,7 +106,7 @@ class DampedDragAnimation(
 
     fun release() {
         animationScope.launch {
-            delay(16L)
+            delay(16.milliseconds)
             if (value != targetValue) {
                 val threshold = (valueRange.endInclusive - valueRange.start) * 0.025f
                 snapshotFlow { valueAnimation.value }

@@ -117,7 +117,7 @@ import kotlin.math.abs
  * such as a bridge. To fade glass, use the style's `alpha`.
  */
 @Stable
-public fun Modifier.hazeGlassContainer(
+fun Modifier.hazeGlassContainer(
     mergeDistance: Dp = GlassDefaults.mergeDistance,
     scrollState: ScrollableState? = null,
     memberTransitionSpec: FiniteAnimationSpec<Float> = spring(),

@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.debloat
 
 /** An app the ROM itself says can go, the space it frees and why. */
-public data class DebloatSuggestion(
+data class DebloatSuggestion(
     val candidate: DebloatCandidate,
     val packageId: String,
     val label: String?,
@@ -24,8 +24,8 @@ public data class DebloatSuggestion(
  * first. What the apps do at run time (intents, bound services) is in no file, so "nothing relies on it" means
  * nothing the ROM declares.
  */
-public object DebloatSuggestions {
-    public fun of(
+object DebloatSuggestions {
+    fun of(
         inventory: List<DebloatCandidate>,
         apps: Map<String, AppFacts>,
         picked: Set<String>,

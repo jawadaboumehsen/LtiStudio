@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
  * A file or directory record inside an extracted partition image.
  */
 @Serializable
-public data class ImageTreeEntry(
+data class ImageTreeEntry(
     val path: String,
     val size: Long,
     val mode: Int,
@@ -44,18 +44,18 @@ public data class ImageTreeEntry(
  * Key: `image.tree.<name>`
  */
 @Serializable
-public data class ImageTree(val entries: List<ImageTreeEntry> = emptyList()) {
-    public fun find(path: String): ImageTreeEntry? = entries.firstOrNull { it.path == path }
+data class ImageTree(val entries: List<ImageTreeEntry> = emptyList()) {
+    fun find(path: String): ImageTreeEntry? = entries.firstOrNull { it.path == path }
 
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(tree: ImageTree): String = json.encodeToString(serializer(), tree)
-        public fun decode(string: String): ImageTree = json.decodeFromString(serializer(), string)
+        fun encode(tree: ImageTree): String = json.encodeToString(serializer(), tree)
+        fun decode(string: String): ImageTree = json.decodeFromString(serializer(), string)
     }
 }
 
@@ -63,7 +63,7 @@ public data class ImageTree(val entries: List<ImageTreeEntry> = emptyList()) {
  * Diagnostic record of a single entry changed between expected and actual image trees.
  */
 @Serializable
-public data class ImageTreeChange(val path: String, val reason: String)
+data class ImageTreeChange(val path: String, val reason: String)
 
 /**
  * Comparison result between an image tree before edit and after rebuild (contracts: `step-results.md`, US2).
@@ -71,21 +71,21 @@ public data class ImageTreeChange(val path: String, val reason: String)
  * Key: `image.verify.<name>`
  */
 @Serializable
-public data class ImageVerify(
+data class ImageVerify(
     val ok: Boolean,
     val missing: List<String> = emptyList(),
     val extra: List<String> = emptyList(),
     val changed: List<ImageTreeChange> = emptyList(),
 ) {
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(verify: ImageVerify): String = json.encodeToString(serializer(), verify)
-        public fun decode(string: String): ImageVerify = json.decodeFromString(serializer(), string)
+        fun encode(verify: ImageVerify): String = json.encodeToString(serializer(), verify)
+        fun decode(string: String): ImageVerify = json.decodeFromString(serializer(), string)
 
         /**
          * What a built image's sidecars (read back from the image) get wrong against the ones the build asked
@@ -93,7 +93,7 @@ public data class ImageVerify(
          * Expected entries for files the tree no longer has are not reported: [missingFromImage] is what finds a file
          * of the tree that the image lost.
          */
-        public fun sidecarDifferences(
+        fun sidecarDifferences(
             expectedFsConfig: String,
             expectedFileContexts: String,
             builtFsConfig: String,
@@ -119,7 +119,7 @@ public data class ImageVerify(
         }
 
         /** The paths of [treeListing] (`find -printf %P`) with no line in [statDump] (stat `%n` under [mountPoint]). */
-        public fun missingFromImage(treeListing: String, statDump: String, mountPoint: String): List<String> {
+        fun missingFromImage(treeListing: String, statDump: String, mountPoint: String): List<String> {
             val built = statDump.lineSequence().map { it.substringAfter(" $mountPoint/", "") }.toSet()
             return treeListing.lines().filter { it.isNotEmpty() && it !in built }
         }
@@ -146,7 +146,7 @@ public data class ImageVerify(
         private val WHITESPACE = Regex("""\s+""")
         private const val OWNER_FIELDS = 4
 
-        public fun compare(expected: ImageTree, actual: ImageTree): ImageVerify {
+        fun compare(expected: ImageTree, actual: ImageTree): ImageVerify {
             val expectedMap = expected.entries.associateBy { it.path }
             val actualMap = actual.entries.associateBy { it.path }
 

@@ -18,20 +18,20 @@ import org.ide.lti.core.model.user.UserData
 /**
  * Repository for persisted user preferences.
  */
-public interface UserDataRepository {
-    public val userData: Flow<UserData>
+interface UserDataRepository {
+    val userData: Flow<UserData>
 
-    public val currentUserData: UserData
+    val currentUserData: UserData
 
-    public suspend fun setTheme(theme: String)
+    suspend fun setTheme(theme: String)
 
-    public suspend fun setEffectsEnabled(enabled: Boolean)
+    suspend fun setEffectsEnabled(enabled: Boolean)
 
-    public suspend fun setReducedMotion(reducedMotion: Boolean)
+    suspend fun setReducedMotion(reducedMotion: Boolean)
 
-    public suspend fun setEditorSettings(editorSettings: EditorSettings)
+    suspend fun setEditorSettings(editorSettings: EditorSettings)
 
-    public suspend fun setNotificationSettings(notificationSettings: NotificationSettings)
+    suspend fun setNotificationSettings(notificationSettings: NotificationSettings)
 
-    public suspend fun setAppearance(appearance: AppearanceSettings)
+    suspend fun setAppearance(appearance: AppearanceSettings)
 }

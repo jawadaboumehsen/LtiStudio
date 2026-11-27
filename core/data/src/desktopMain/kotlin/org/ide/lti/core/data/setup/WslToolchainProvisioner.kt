@@ -98,7 +98,7 @@ import java.util.UUID
  *   zero-start builds, Git clones, and native compilations across launches.
  */
 @Suppress("TooManyFunctions")
-public class WslToolchainProvisioner(
+class WslToolchainProvisioner(
     private val supervisor: DaemonSupervisorPort,
     private val transport: RemoteTransportPort,
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(),
@@ -184,7 +184,7 @@ public class WslToolchainProvisioner(
         _state.update { it.withJournal(persisted) }
     }
 
-    public companion object {
+    companion object {
         private const val STATE_LOG_TAIL_LINES: Int = 100
 
         /** `$1` = output file: a new RSA-4096 key, created readable by its owner only (umask before openssl). */
@@ -204,12 +204,10 @@ public class WslToolchainProvisioner(
         private const val OWNER_READ: Int = 0x100 // 0400
         private const val OWNER_EXECUTE: Int = 0x40 // 0100
 
-        public val REQUIRED_DEV_PACKAGES: List<String> = RequirementCatalog.HOST_LIBRARY_PACKAGES + "libfuse3-dev"
-
-        public val SUPPORTED_RECIPES: Set<String> get() = ToolCapabilities.SUPPORTED_TOOL_IDS
+        val REQUIRED_DEV_PACKAGES: List<String> = RequirementCatalog.HOST_LIBRARY_PACKAGES + "libfuse3-dev"
 
         /** Whether the app can build [toolId] itself (its group has a recipe). */
-        public fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
+        fun isRecipeSupported(toolId: String): Boolean = ToolCapabilities.isRecipeSupported(toolId)
 
         /** Names from `find -printf "%m %f\n"` lines that are usable tools: a JAR readable, the rest executable. */
         internal fun usableToolFiles(listing: String): Set<String> = listing.lineSequence().mapNotNull { line ->
@@ -376,7 +374,6 @@ public class WslToolchainProvisioner(
             )
 
         environmentCheck.run(ctx, scope)
-        val currentSteps = _state.value.steps
         val (storageAvailableBytes, storageMeasuredAt) = measureStorage(cleanHome)
         val now = System.currentTimeMillis()
         val detectedDistro = _state.value.activeDistro
@@ -523,12 +520,6 @@ public class WslToolchainProvisioner(
         }
     }
 
-    /** Shows [stage] as running and yields, so the UI sees it before the stage blocks. */
-    private suspend fun setStepRunning(stage: SetupStepStage) {
-        _state.update { it.withStepRunning(stage, System.currentTimeMillis()) }
-        kotlinx.coroutines.yield()
-    }
-
     override fun setStepProgress(stage: SetupStepStage, currentItem: String, index: Int, total: Int) {
         _state.update { it.withStepProgress(stage, currentItem, index, total, System.currentTimeMillis()) }
     }
@@ -560,7 +551,7 @@ public class WslToolchainProvisioner(
      * Makes the AVB signing key in WSL when it is missing; false when busy or it could not be made. The service,
      * home and distro are given when called from setup, else found.
      */
-    public suspend fun provisionAvbKey(
+    suspend fun provisionAvbKey(
         serviceCli: WslCliExecutor? = null,
         home: String? = null,
         distroName: String? = null,

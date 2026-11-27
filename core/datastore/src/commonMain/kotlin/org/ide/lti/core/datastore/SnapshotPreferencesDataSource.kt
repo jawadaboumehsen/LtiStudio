@@ -27,7 +27,7 @@ import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 @Serializable
-public data class SnapshotList(val schemaVersion: Int = 1, val items: List<ConfigurationSnapshot> = emptyList())
+data class SnapshotList(val schemaVersion: Int = 1, val items: List<ConfigurationSnapshot> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for configuration snapshots.
@@ -35,7 +35,7 @@ public data class SnapshotList(val schemaVersion: Int = 1, val items: List<Confi
  * Implements strict immutability: saving a snapshot whose ID is already persisted throws
  * [IllegalArgumentException].
  */
-public class SnapshotPreferencesDataSource(
+class SnapshotPreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -43,14 +43,14 @@ public class SnapshotPreferencesDataSource(
     private val mutex = Mutex()
 
     private val _snapshots = MutableStateFlow(readSnapshotsSafe())
-    public val snapshots: Flow<List<ConfigurationSnapshot>> = _snapshots.asStateFlow()
-    public val currentSnapshots: List<ConfigurationSnapshot> get() = _snapshots.value
+    val snapshots: Flow<List<ConfigurationSnapshot>> = _snapshots.asStateFlow()
+    val currentSnapshots: List<ConfigurationSnapshot> get() = _snapshots.value
 
-    public fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> = _snapshots.map { list ->
+    fun snapshotsForWorkspace(workspaceId: String): Flow<List<ConfigurationSnapshot>> = _snapshots.map { list ->
         list.filter { it.workspaceId == workspaceId }
     }
 
-    public suspend fun getSnapshot(id: String): ConfigurationSnapshot? = withContext(ioDispatcher) {
+    suspend fun getSnapshot(id: String): ConfigurationSnapshot? = withContext(ioDispatcher) {
         mutex.withLock {
             _snapshots.value.firstOrNull { it.id == id }
         }
@@ -60,7 +60,7 @@ public class SnapshotPreferencesDataSource(
      * Atomically saves an immutable configuration snapshot.
      * Throws [IllegalArgumentException] if a snapshot with the given ID already exists.
      */
-    public suspend fun saveSnapshot(snapshot: ConfigurationSnapshot): Unit = withContext(ioDispatcher) {
+    suspend fun saveSnapshot(snapshot: ConfigurationSnapshot): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _snapshots.value
             require(current.none { it.id == snapshot.id }) {
@@ -72,7 +72,7 @@ public class SnapshotPreferencesDataSource(
         }
     }
 
-    public suspend fun clear(): Unit = withContext(ioDispatcher) {
+    suspend fun clear(): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             settings.remove(KEY_SNAPSHOTS)
             _snapshots.value = emptyList()
@@ -112,10 +112,10 @@ public class SnapshotPreferencesDataSource(
         settings[KEY_SNAPSHOTS] = json.encodeToString(SnapshotList(schemaVersion = 1, items = snapshots))
     }
 
-    public companion object {
-        public const val KEY_SNAPSHOTS: String = "lti_snapshots_v1"
+    companion object {
+        const val KEY_SNAPSHOTS: String = "lti_snapshots_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

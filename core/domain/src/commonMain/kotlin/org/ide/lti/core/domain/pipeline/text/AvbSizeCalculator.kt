@@ -11,18 +11,18 @@ package org.ide.lti.core.domain.pipeline.text
 
 import kotlin.math.ceil
 
-public object AvbSizeCalculator {
+object AvbSizeCalculator {
 
-    public fun computeReserveBytes(imageSizeBytes: Long): Long {
+    fun computeReserveBytes(imageSizeBytes: Long): Long {
         val expanded = ceil(imageSizeBytes * 1.003 + 999.0 / 1000.0).toLong()
         val rawOverhead = expanded - imageSizeBytes
         val minOverhead = maxOf(rawOverhead, 262144L)
         return roundTo4KiB(minOverhead)
     }
 
-    public fun roundTo4KiB(bytes: Long): Long = (bytes + 4095L) / 4096L * 4096L
+    fun roundTo4KiB(bytes: Long): Long = (bytes + 4095L) / 4096L * 4096L
 
-    public suspend fun findPartitionSize(
+    suspend fun findPartitionSize(
         imageSizeBytes: Long,
         calcMaxImageSize: suspend (partitionSize: Long) -> Long,
     ): Long {

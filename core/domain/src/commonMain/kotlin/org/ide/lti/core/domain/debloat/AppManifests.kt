@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.debloat
 
 /** What an app's manifest says that matters when removing it. */
-public data class AppFacts(
+data class AppFacts(
     val packageId: String? = null,
     val sharedUserId: String? = null,
     /** `android:persistent`: Android keeps it running all the time. */
@@ -53,7 +53,7 @@ public data class AppFacts(
     val unreadable: Boolean = false,
 ) {
     /** The signer's common name (`CN=`), else its organization, else the whole subject. */
-    public val signerName: String?
+    val signerName: String?
         get() = signer?.let { s ->
             listOf("CN", "O").firstNotNullOfOrNull { key ->
                 Regex("""(?:^|,)$key=((?:\\,|[^,])*)""").find(s)?.groupValues?.get(1)?.replace("\\,", ",")
@@ -61,7 +61,7 @@ public data class AppFacts(
         }
 
     /** Two APKs of one app (splits) as one app. */
-    public operator fun plus(other: AppFacts): AppFacts = AppFacts(
+    operator fun plus(other: AppFacts): AppFacts = AppFacts(
         packageId = packageId ?: other.packageId,
         sharedUserId = sharedUserId ?: other.sharedUserId,
         persistent = persistent || other.persistent,
@@ -90,11 +90,11 @@ public data class AppFacts(
  * Reads every APK manifest of the work tree with aapt2 (the one apktool ships, cached by the jar's hash), eight at a
  * time, and keeps only the [AppFacts] lines: the whole xmltree of a ROM is about 15 MB, the facts under 100 KB.
  */
-public object AppManifests {
+object AppManifests {
     private const val HEX = 16
 
     /** `sh -c SCRIPT sh <work dir>`: `@ <apk path relative to work>` then that APK's fact lines. */
-    public const val SCRIPT: String = """
+    const val SCRIPT: String = """
         set -e
         w="$1"
         j=$(sed -n 's/.*"executable" *: *"\([^"]*\)".*/\1/p' "${'$'}HOME/.ltirom/tools.d/apktool.json" 2>/dev/null)
@@ -140,7 +140,7 @@ public object AppManifests {
      * `sh -c LABELS_SCRIPT sh <work dir> <icon dir>`: `@ <apk path>` then `label <name>` and `icon <file>`, the icon
      * copied into the icon dir. An XML icon (adaptive or vector) is written as a `.vec` bundle [VectorIcons] reads.
      */
-    public const val LABELS_SCRIPT: String = """
+    const val LABELS_SCRIPT: String = """
         set -e
         w="$1"; d="$2"
         j=$(sed -n 's/.*"executable" *: *"\([^"]*\)".*/\1/p' "${'$'}HOME/.ltirom/tools.d/apktool.json" 2>/dev/null)
@@ -196,7 +196,7 @@ public object AppManifests {
      * APK Signing Block (v3, else v2), else from the v1 `.RSA`/`.DSA`/`.EC` in META-INF: only the end of each APK
      * is read.
      */
-    public const val SIGNERS_SCRIPT: String = """
+    const val SIGNERS_SCRIPT: String = """
         set -e
         w="$1"
         t=$(mktemp -d)
@@ -306,7 +306,7 @@ JAVA
     """
 
     /** [SCRIPT]'s, [LABELS_SCRIPT]'s or [SIGNERS_SCRIPT]'s output as facts per APK path (relative to `work/`). */
-    public fun parse(output: String): Map<String, AppFacts> {
+    fun parse(output: String): Map<String, AppFacts> {
         val blocks = linkedMapOf<String, MutableList<String>>()
         var current: MutableList<String>? = null
         output.lineSequence().map(String::trim).filter(String::isNotEmpty).forEach { line ->

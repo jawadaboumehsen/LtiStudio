@@ -34,46 +34,46 @@ import dev.chrisbanes.haze.Poko
  */
 @Immutable
 @Poko
-public class GlassOptics(
+class GlassOptics(
     /** Finite refraction strength in the inclusive range `0f..1f`. */
-    public val refractionStrength: Float = 0.7f,
+    val refractionStrength: Float = 0.7f,
     /**
      * Finite fraction of the material's shortest side used by [SurfaceProfile], in `0f..1f`.
      * With [RefractionProfile.Edge], this controls lighting only; edge width is authored separately.
      */
-    public val refractionHeightFraction: Float = 0.25f,
+    val refractionHeightFraction: Float = 0.25f,
     /** Specified, finite, non-negative maximum distance that refraction displaces content. */
-    public val refractionDisplacement: Dp = 15.dp,
+    val refractionDisplacement: Dp = 15.dp,
     /**
      * Depth perception factor whose values must be finite and in `0f..1f`.
      *
      * Values greater than `0f` require an additional blurred content sample on full renderers.
      */
-    public val depth: OpticalSizeValue<Float> = OpticalSizeValue.Fixed(1f),
+    val depth: OpticalSizeValue<Float> = OpticalSizeValue.Fixed(1f),
     /**
      * Maximum blur radius whose values must be specified, finite, and non-negative.
      *
      * There is no authored upper limit. The renderer quality cap is applied after resolution.
      */
-    public val blurRadius: OpticalSizeValue<Dp> = OpticalSizeValue.Fixed(14.dp),
+    val blurRadius: OpticalSizeValue<Dp> = OpticalSizeValue.Fixed(14.dp),
     /** Optional progressive intensity, retaining the contract of [HazeProgressive]. */
-    public val progressive: HazeProgressive? = null,
+    val progressive: HazeProgressive? = null,
     /** Finite strength of the inverted edge-refraction fold, in the inclusive range `0f..1f`. */
-    public val refractionFoldStrength: Float = 0f,
+    val refractionFoldStrength: Float = 0f,
     /**
      * Finite intensity of secondary edge-refraction detail, in the inclusive range `0f..1f`.
      *
      * `0f` disables the detail pass. Non-zero values may retain additional rendering layers on full
      * renderers.
      */
-    public val refractionDetailIntensity: Float = 0.76f,
+    val refractionDetailIntensity: Float = 0.76f,
     /** Sampling profile. The default preserves refraction derived from [SurfaceProfile]. */
-    public val refractionProfile: RefractionProfile = RefractionProfile.Surface,
+    val refractionProfile: RefractionProfile = RefractionProfile.Surface,
 ) {
     /** Optical configurations used by the built-in Glass styles. */
     public companion object {
         /** Size-responsive optics used by [GlassStyle.regular]. Copy to customise Regular. */
-        public val regular: GlassOptics = GlassOptics(
+        val regular: GlassOptics = GlassOptics(
             // Compact controls retain refracted detail; larger surfaces fully diffuse the backdrop.
             depth = OpticalSizeValue.Responsive(
                 OpticalSizePoint(64.dp, 0.65f),
@@ -93,7 +93,7 @@ public class GlassOptics(
         )
 
         /** Shallow diffusion and edge refraction used by [GlassStyle.clear]. Copy to customise Clear. */
-        public val clear: GlassOptics = GlassOptics(
+        val clear: GlassOptics = GlassOptics(
             refractionStrength = 0.85f,
             refractionHeightFraction = 0.35f,
             refractionDisplacement = 56.dp,
@@ -140,7 +140,7 @@ public class GlassOptics(
     }
 
     /** Returns a copy of these optics with the given values replaced. */
-    public fun copy(
+    fun copy(
         refractionStrength: Float = this.refractionStrength,
         refractionHeightFraction: Float = this.refractionHeightFraction,
         refractionDisplacement: Dp = this.refractionDisplacement,

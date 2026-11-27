@@ -39,7 +39,7 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ExtractionSettings
 
 /** What the workspace holds for Extract: the source archive's members and the images the last run produced. */
-public data class ExtractFacts(
+data class ExtractFacts(
     val loaded: Boolean = false,
     val archive: String? = null,
     val members: List<String> = emptyList(),
@@ -59,7 +59,7 @@ public data class ExtractFacts(
 )
 
 /** One place in an archive: [archive] itself, or the member [chain] leads to inside it, and what it holds. */
-public data class ArchiveBrowse(
+data class ArchiveBrowse(
     /** A workspace path (`firmware/downloaded/update.zip`) or a file the user picked (a Windows path). */
     val archive: String? = null,
     val chain: List<String> = emptyList(),
@@ -71,7 +71,7 @@ public data class ArchiveBrowse(
 )
 
 /** What the archive browser can do; [ExtractStageEditor] wires these to [ExtractViewModel]. */
-public data class ArchiveActions(
+data class ArchiveActions(
     val pickArchive: () -> Unit = {},
     val enter: (String) -> Unit = {},
     val up: () -> Unit = {},
@@ -79,8 +79,8 @@ public data class ArchiveActions(
     val copyOut: () -> Unit = {},
 )
 
-public class ExtractViewModel(
-    public val workspaceId: String,
+class ExtractViewModel(
+    val workspaceId: String,
     initialSettings: ExtractionSettings? = null,
     private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
@@ -94,7 +94,7 @@ public class ExtractViewModel(
     private val pickArchive: suspend () -> String? = { DialogUtils.selectFilePath("Pick an archive to look inside") },
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -105,28 +105,28 @@ public class ExtractViewModel(
         write = { snapshot, value -> snapshot.copy(extraction = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<ExtractionSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<ExtractionSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
-    public fun updateSettings(updated: ExtractionSettings) {
+    fun updateSettings(updated: ExtractionSettings) {
         sync.update(updated)
     }
 
     private val _facts = MutableStateFlow(ExtractFacts())
-    public val facts: StateFlow<ExtractFacts> = _facts.asStateFlow()
+    val facts: StateFlow<ExtractFacts> = _facts.asStateFlow()
 
     /** A failure no tool reported (the service gone, a hash that could not run), said in the pane instead of lost. */
     private fun failure(e: Exception, partition: String): Refusal =
         Refusal(e.message ?: "Unknown error", partition, "Check the build service and try again.")
 
     /** Uses an image the user picks instead of the firmware's for [partition]. */
-    public fun replacePartition(partition: String) {
+    fun replacePartition(partition: String) {
         val workbench = images ?: return
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
@@ -152,7 +152,7 @@ public class ExtractViewModel(
      * Unpacks [partition]'s image into `firmware/extracted/<p>` and its sidecars again, the
      * user's own image when one is set, without a whole Extract run.
      */
-    public fun reextract(partition: String) {
+    fun reextract(partition: String) {
         val workbench = images ?: return
         viewModelScope.launch {
             _facts.update { it.copy(reextracting = partition, replaceRefusal = null, reextractMessage = null) }
@@ -172,31 +172,31 @@ public class ExtractViewModel(
     }
 
     /** Goes back to the firmware's own image for [partition] (the imported file stays until freed). */
-    public fun useStockImage(partition: String) {
+    fun useStockImage(partition: String) {
         updateSettings(settings.value.copy(replacementImages = settings.value.replacementImages - partition))
     }
 
     /** Looks inside a file the user picks (any archive on the PC), at its top level. */
-    public fun openArchive() {
+    fun openArchive() {
         viewModelScope.launch { pickArchive()?.let { browse(it, emptyList()) } }
     }
 
     /** Goes into [member] of the current level (an archive inside the archive). */
-    public fun enter(member: String) {
+    fun enter(member: String) {
         val b = _facts.value.browse
         val archive = b.archive ?: return
         viewModelScope.launch { browse(archive, b.chain + member) }
     }
 
     /** Back to the level holding the current one. */
-    public fun up() {
+    fun up() {
         val b = _facts.value.browse
         val archive = b.archive ?: return
         if (b.chain.isEmpty()) return
         viewModelScope.launch { browse(archive, b.chain.dropLast(1)) }
     }
 
-    public fun toggleMember(member: String) {
+    fun toggleMember(member: String) {
         _facts.update { prev ->
             val b = prev.browse
             val selected = if (member in b.selected) b.selected - member else b.selected + member
@@ -205,7 +205,7 @@ public class ExtractViewModel(
     }
 
     /** Copies the selected members of the current level to `out/toolkit/archive/`. */
-    public fun copyOutSelected() {
+    fun copyOutSelected() {
         val b = _facts.value.browse
         val workbench = archives?.takeIf { b.selected.isNotEmpty() && b.busy == null } ?: return
         val archive = b.archive ?: return
@@ -254,7 +254,7 @@ public class ExtractViewModel(
     }
 
     /** Reads the archive Acquire selected (or the newest downloaded one) and `firmware/extracted/`. */
-    public fun refreshFacts() {
+    fun refreshFacts() {
         val facts = workspaceFacts ?: return
         viewModelScope.launch {
             // The archive the build will use, by the same rule as the Acquire stage.

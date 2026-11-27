@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.flow
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-public data class RecordedInvocation(
+data class RecordedInvocation(
     val command: ToolCommand<*>,
     val context: ExecutionContext,
     val timestampEpochMs: Long = System.currentTimeMillis()
 )
 
-public class FakeToolRepository(
+class FakeToolRepository(
     private val defaultHandler: suspend (ToolCommand<*>, ExecutionContext) -> Any? = { cmd, _ ->
         CommandExecutionResult(
             exitCode = 0,
@@ -29,16 +29,16 @@ public class FakeToolRepository(
 ) : StreamingToolRepository {
 
     private val _invocations = mutableListOf<RecordedInvocation>()
-    public val invocations: List<RecordedInvocation> get() = _invocations.toList()
+    val invocations: List<RecordedInvocation> get() = _invocations.toList()
 
     private val customHandlers = mutableMapOf<ToolId, suspend (ToolCommand<*>, ExecutionContext) -> Any?>()
     private val customStreamHandlers = mutableMapOf<ToolId, (ToolCommand<*>, ExecutionContext) -> Flow<StreamEvent>>()
 
-    public fun onTool(toolId: ToolId, handler: suspend (ToolCommand<*>, ExecutionContext) -> Any?) {
+    fun onTool(toolId: ToolId, handler: suspend (ToolCommand<*>, ExecutionContext) -> Any?) {
         customHandlers[toolId] = handler
     }
 
-    public fun onStreamTool(toolId: ToolId, streamProvider: (ToolCommand<*>, ExecutionContext) -> Flow<StreamEvent>) {
+    fun onStreamTool(toolId: ToolId, streamProvider: (ToolCommand<*>, ExecutionContext) -> Flow<StreamEvent>) {
         customStreamHandlers[toolId] = streamProvider
     }
 
@@ -65,13 +65,13 @@ public class FakeToolRepository(
         }
     }
 
-    public fun reset() {
+    fun reset() {
         _invocations.clear()
         customHandlers.clear()
         customStreamHandlers.clear()
     }
 
-    public fun assertInvoked(toolId: ToolId, times: Int? = null) {
+    fun assertInvoked(toolId: ToolId, times: Int? = null) {
         val matches = _invocations.filter { it.command.toolId == toolId }
         if (times != null) {
             assertEquals(times, matches.size, "Expected $times executions of tool $toolId but found ${matches.size}")
@@ -80,12 +80,12 @@ public class FakeToolRepository(
         }
     }
 
-    public fun assertNeverInvoked(toolId: ToolId) {
+    fun assertNeverInvoked(toolId: ToolId) {
         val matches = _invocations.filter { it.command.toolId == toolId }
         assertTrue(matches.isEmpty(), "Expected tool $toolId to never be executed, but found ${matches.size} calls")
     }
 
-    public fun assertArgumentPresent(toolId: ToolId, expectedArg: String) {
+    fun assertArgumentPresent(toolId: ToolId, expectedArg: String) {
         val matchingInvocation = _invocations.firstOrNull { it.command.toolId == toolId }
         assertTrue(matchingInvocation != null, "No execution of tool $toolId was recorded")
         val args = matchingInvocation.command.getArguments()

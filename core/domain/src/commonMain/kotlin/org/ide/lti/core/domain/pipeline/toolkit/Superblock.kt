@@ -10,14 +10,14 @@
 package org.ide.lti.core.domain.pipeline.toolkit
 
 /** A partition's stock image and its last built one, side by side; either is null when it does not exist. */
-public data class ImageInfo(val stock: Superblock?, val built: Superblock?)
+data class ImageInfo(val stock: Superblock?, val built: Superblock?)
 
 /**
  * What an image's superblock says: its filesystem, file size, and the fields its own tool
  * prints (`dump.erofs`, `dumpe2fs -h`, `dump.f2fs`), the ones worth comparing, in that tool's words.
  */
-public data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: List<Pair<String, String>>) {
-    public companion object {
+data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: List<Pair<String, String>>) {
+    companion object {
         private val EROFS = listOf(
             "Filesystem blocksize",
             "Filesystem blocks",
@@ -40,7 +40,7 @@ public data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: Li
         )
 
         /** The fields of [dump] named for [fs], in that order; a field the tool did not print is left out. */
-        public fun fields(fs: FsType, dump: String): List<Pair<String, String>> {
+        fun fields(fs: FsType, dump: String): List<Pair<String, String>> {
             val all = dump.lines().mapNotNull { raw ->
                 val line = raw.trim()
                 when {
@@ -76,7 +76,7 @@ public data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: Li
          * [a] and [b] side by side: filesystem, image size, then every field either prints (names shared across
          * filesystems where they mean the same), in [a]'s order then [b]'s; a side without the field shows null.
          */
-        public fun compare(a: Superblock?, b: Superblock?): List<SuperblockRow> {
+        fun compare(a: Superblock?, b: Superblock?): List<SuperblockRow> {
             fun fields(s: Superblock?) = s?.let {
                 listOf("Filesystem" to it.fs.name.lowercase(), "Image size" to "${it.sizeBytes} bytes") +
                     it.fields.map { (k, v) -> (SHARED[k] ?: k) to v }
@@ -89,6 +89,6 @@ public data class Superblock(val fs: FsType, val sizeBytes: Long, val fields: Li
 }
 
 /** One superblock field of two images. */
-public data class SuperblockRow(val field: String, val a: String?, val b: String?) {
-    public val differs: Boolean get() = a != b
+data class SuperblockRow(val field: String, val a: String?, val b: String?) {
+    val differs: Boolean get() = a != b
 }

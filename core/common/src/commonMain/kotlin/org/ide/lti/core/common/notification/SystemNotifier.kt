@@ -12,15 +12,15 @@ package org.ide.lti.core.common.notification
 /**
  * Platform-level sink for system notifications (e.g. OS tray/toast).
  */
-public interface SystemNotifier {
-    public val isSupported: Boolean
-    public fun notify(notification: SystemNotification)
+interface SystemNotifier {
+    val isSupported: Boolean
+    fun notify(notification: SystemNotification)
 }
 
 /**
  * Default fallback implementation for environments without notification capabilities or during tests.
  */
-public object NoOpSystemNotifier : SystemNotifier {
+object NoOpSystemNotifier : SystemNotifier {
     override val isSupported: Boolean = false
 
     override fun notify(notification: SystemNotification) {
@@ -32,15 +32,15 @@ public object NoOpSystemNotifier : SystemNotifier {
  * Thread-safe delegating [SystemNotifier] that allows platform implementations (such as Compose Desktop
  * tray state) to attach and detach dynamically across application lifecycle boundaries.
  */
-public class DelegatingSystemNotifier : SystemNotifier {
+class DelegatingSystemNotifier : SystemNotifier {
     @kotlin.jvm.Volatile
     private var delegate: SystemNotifier = NoOpSystemNotifier
 
-    public fun attach(notifier: SystemNotifier) {
+    fun attach(notifier: SystemNotifier) {
         delegate = notifier
     }
 
-    public fun detach() {
+    fun detach() {
         delegate = NoOpSystemNotifier
     }
 

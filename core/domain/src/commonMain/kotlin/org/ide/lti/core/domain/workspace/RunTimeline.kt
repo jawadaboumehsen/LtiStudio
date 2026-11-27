@@ -20,8 +20,8 @@ import org.ide.lti.core.model.run.StageStep
  * and its share of the stages that ran, why it ran, and its slowest steps. Steps are timed only in runs recorded
  * since steps keep their times; older runs show the stages alone. Reads only the run.
  */
-public object RunTimeline {
-    public fun of(run: BuildRun): String = buildString {
+object RunTimeline {
+    fun of(run: BuildRun): String = buildString {
         append("## Timeline\n\n")
         val ran = run.stages.filter { it.state != StageState.SKIPPED && it.state != StageState.NOT_RUN }
         val total = ran.sumOf { it.durationMs ?: 0L }

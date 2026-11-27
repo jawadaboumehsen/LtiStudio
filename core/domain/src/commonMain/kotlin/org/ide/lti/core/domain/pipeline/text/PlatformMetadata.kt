@@ -14,22 +14,22 @@ package org.ide.lti.core.domain.pipeline.text
  * file_contexts rules and its owner, mode and capabilities from the ROM's fs_config tables or Android's defaults,
  * as Android's build would give them. Read from the assembled work tree ([load]).
  */
-public class PlatformMetadata(public val contexts: FileContextRules, public val owners: OwnerRules) {
+class PlatformMetadata(val contexts: FileContextRules, val owners: OwnerRules) {
     /** The label the ROM's rules give [path] (inside `work/<partition>/`), or null when none applies. */
-    public fun label(partition: String, path: String, kind: EntryKind): String? =
+    fun label(partition: String, path: String, kind: EntryKind): String? =
         contexts.label(SidecarNormalizer.fileContextPath(partition, path), kind)
 
-    public fun owner(partition: String, path: String, isDirectory: Boolean): Pair<Owner, OwnerRules.Source> =
+    fun owner(partition: String, path: String, isDirectory: Boolean): Pair<Owner, OwnerRules.Source> =
         owners.owner(SidecarNormalizer.fsConfigPath(partition, path), isDirectory)
 
-    public companion object {
-        public val NONE: PlatformMetadata = PlatformMetadata(FileContextRules.EMPTY, OwnerRules.ANDROID_ONLY)
+    companion object {
+        val NONE: PlatformMetadata = PlatformMetadata(FileContextRules.EMPTY, OwnerRules.ANDROID_ONLY)
 
         /**
          * The rule files inside `work/`, in the order Android loads them. system_ext and product may be folded into
          * system; `nonplat_file_contexts` is vendor's name for its rules before Android 9.
          */
-        public val CONTEXT_FILES: List<String> = listOf(
+        val CONTEXT_FILES: List<String> = listOf(
             "system/system/etc/selinux/plat_file_contexts",
             "system/system/system_ext/etc/selinux/system_ext_file_contexts",
             "system_ext/etc/selinux/system_ext_file_contexts",
@@ -41,10 +41,10 @@ public class PlatformMetadata(public val contexts: FileContextRules, public val 
         )
 
         /** Where Android 7 and older keep the rules, compiled: read only when no text rules exist. */
-        public val COMPILED_FILES: List<String> = listOf("system/file_contexts.bin", "system/system/file_contexts.bin")
+        val COMPILED_FILES: List<String> = listOf("system/file_contexts.bin", "system/system/file_contexts.bin")
 
         /** The device's fs_config tables inside `work/`: `<base>/etc/fs_config_dirs` and `fs_config_files`. */
-        public val OWNER_TABLE_BASES: List<String> = listOf(
+        val OWNER_TABLE_BASES: List<String> = listOf(
             "system/system",
             "system/system/system_ext",
             "system_ext",
@@ -58,7 +58,7 @@ public class PlatformMetadata(public val contexts: FileContextRules, public val 
         )
 
         /** Every file [load] may read, relative to `work/`. */
-        public val FILES: List<String>
+        val FILES: List<String>
             get() = CONTEXT_FILES + COMPILED_FILES + OWNER_TABLE_BASES.flatMap {
                 listOf("$it/etc/fs_config_dirs", "$it/etc/fs_config_files")
             }
@@ -67,7 +67,7 @@ public class PlatformMetadata(public val contexts: FileContextRules, public val 
          * The work tree's rules; [read] gives a file's bytes (a path relative to `work/`), or null when it is absent.
          * A file that cannot be read as rules is skipped: Android's defaults and the folder still answer.
          */
-        public fun load(read: (String) -> ByteArray?): PlatformMetadata {
+        fun load(read: (String) -> ByteArray?): PlatformMetadata {
             val texts = CONTEXT_FILES.mapNotNull { read(it)?.decodeToString() }
             val rules = texts.ifEmpty {
                 COMPILED_FILES.mapNotNull { file ->

@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.debloat
 
 /** A proposal for a size goal: the apps to pick, what they free, how far short it stays, the ones kept by request. */
-public data class GoalPlan(
+data class GoalPlan(
     val picks: List<DebloatSuggestion>,
     val freedBytes: Long,
     val shortBytes: Long,
@@ -22,8 +22,8 @@ public data class GoalPlan(
  * package or name holds a keep word, picked largest first until the goal is met. Nothing is picked here: the plan
  * is shown, and each pick then goes through Debloat's own checks.
  */
-public object DebloatGoal {
-    public fun plan(suggestions: List<DebloatSuggestion>, targetBytes: Long, keep: List<String>): GoalPlan {
+object DebloatGoal {
+    fun plan(suggestions: List<DebloatSuggestion>, targetBytes: Long, keep: List<String>): GoalPlan {
         val words = keep.map { it.trim().lowercase() }.filter { it.isNotEmpty() }
         val (kept, open) = suggestions.partition { s ->
             words.any { w -> w in s.packageId.lowercase() || w in s.label.orEmpty().lowercase() }

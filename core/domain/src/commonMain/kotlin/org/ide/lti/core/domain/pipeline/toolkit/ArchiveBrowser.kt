@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.pipeline.toolkit
 
 /** One member of an archive: its size unpacked and packed, and how it is packed (`Deflate`, `Store`, `LZMA2:23`). */
-public data class ArchiveMember(
+data class ArchiveMember(
     val path: String,
     val size: Long?,
     val packedSize: Long?,
@@ -22,7 +22,7 @@ public data class ArchiveMember(
  * What one level of an archive holds. [format] is read from the file's first bytes; a file
  * that is not an archive (an image, a payload) has no [members], and [notArchive] says so.
  */
-public data class ArchiveListing(
+data class ArchiveListing(
     val format: PackageFormat,
     val members: List<ArchiveMember> = emptyList(),
     val notArchive: Boolean = false,
@@ -33,7 +33,7 @@ public data class ArchiveListing(
  * 7-Zip does not read. A chain of members leads inside: each is unpacked into a cache folder in turn, after its
  * first 512 bytes show it is an archive, so opening a 7 GB payload never unpacks it.
  */
-public object ArchiveBrowser {
+object ArchiveBrowser {
     /** Single-stream compressors: one member, unpacked without naming it. */
     private val STREAMS = setOf(
         PackageFormat.Gz,
@@ -49,7 +49,7 @@ public object ArchiveBrowser {
      * `magic <hex>` of the innermost file, then (list) 7-Zip's `-slt` listing or `lz4`, or (extract) `extracted
      * <member>` per member copied into the dest dir. `notarchive <member>` stops at a chain member that is no archive.
      */
-    public const val SCRIPT: String = """
+    const val SCRIPT: String = """
         set -e
         mode="$1"; z="$2"; c="$3"; dest="$4"; f="$5"; shift 5
         mkdir -p "${'$'}c"
@@ -101,7 +101,7 @@ public object ArchiveBrowser {
     """
 
     /** [SCRIPT]'s list output for the file named [name] (its last chain member, or the archive itself). */
-    public fun parse(output: String, name: String): ArchiveListing {
+    fun parse(output: String, name: String): ArchiveListing {
         val lines = output.lines()
         val format = lines.firstOrNull { it.startsWith("magic ") }?.removePrefix("magic ")
             ?.let { FormatDetector.detect(FormatDetector.fromHex(it)) } ?: PackageFormat.Unknown

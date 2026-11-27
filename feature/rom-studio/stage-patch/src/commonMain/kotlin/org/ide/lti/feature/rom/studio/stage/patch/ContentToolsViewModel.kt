@@ -48,21 +48,21 @@ import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.workspace.SigningPolicy
 
 /** Navigator items of the Patches/Mods stage that open a content tool instead of the plugin pages. */
-public object ContentTools {
-    public const val DEODEX: String = "deodex"
-    public const val PACKAGES: String = "package-editor"
-    public const val LIBRARY: String = "library-patch"
-    public const val CONFIGS: String = "config-files"
-    public const val COMPARE: String = "compare"
-    public const val CSC: String = "samsung-csc"
-    public val ALL: Set<String> = setOf(DEODEX, PACKAGES, LIBRARY, CONFIGS, COMPARE, CSC)
+object ContentTools {
+    const val DEODEX: String = "deodex"
+    const val PACKAGES: String = "package-editor"
+    const val LIBRARY: String = "library-patch"
+    const val CONFIGS: String = "config-files"
+    const val COMPARE: String = "compare"
+    const val CSC: String = "samsung-csc"
+    val ALL: Set<String> = setOf(DEODEX, PACKAGES, LIBRARY, CONFIGS, COMPARE, CSC)
 }
 
 /** What the content tools compare (FR-033). */
-public enum class CompareKind { FILES, ARCHIVES, FOLDERS, CODE }
+enum class CompareKind { FILES, ARCHIVES, FOLDERS, CODE }
 
 /** The content tools of the Patches/Mods stage as their panes show them (FR-028..FR-033). */
-public data class ContentToolsState(
+data class ContentToolsState(
     val busy: String? = null,
     val message: String? = null,
     val refusal: Refusal? = null,
@@ -92,8 +92,8 @@ public data class ContentToolsState(
     val trees: TreeCompareState = TreeCompareState(),
 )
 
-public class ContentToolsViewModel(
-    public val workspaceId: String,
+class ContentToolsViewModel(
+    val workspaceId: String,
     private val content: ContentWorkbench? = null,
     private val comparing: CompareWorkbench? = null,
     private val runner: WorkbenchRunner? = null,
@@ -105,10 +105,10 @@ public class ContentToolsViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ContentToolsState())
-    public val state: StateFlow<ContentToolsState> = _state.asStateFlow()
+    val state: StateFlow<ContentToolsState> = _state.asStateFlow()
 
     /** Patches > Compare: two trees of any workspaces. */
-    public val trees: TreeCompareModel = TreeCompareModel(
+    val trees: TreeCompareModel = TreeCompareModel(
         workspaceId = workspaceId,
         workspaces = workspaces,
         current = { _state.value.trees },
@@ -129,7 +129,7 @@ public class ContentToolsViewModel(
             ?.launchIn(viewModelScope)
     }
 
-    public fun setDeodex(scope: DeodexScope? = null, file: String? = null, keepPrecompiled: Boolean? = null) {
+    fun setDeodex(scope: DeodexScope? = null, file: String? = null, keepPrecompiled: Boolean? = null) {
         _state.update {
             it.copy(
                 deodexScope = scope ?: it.deodexScope,
@@ -140,7 +140,7 @@ public class ContentToolsViewModel(
     }
 
     /** Analyze (dry run) when [dryRun], else deodex: the scope and options set with [setDeodex]. */
-    public fun deodex(dryRun: Boolean = false) {
+    fun deodex(dryRun: Boolean = false) {
         val s = _state.value
         task(if (dryRun) "Analyzing" else "Deodexing") { tools ->
             val results = tools.deodex(workspaceId, s.deodexScope, s.deodexFile, dryRun, s.keepPrecompiled)
@@ -150,7 +150,7 @@ public class ContentToolsViewModel(
     }
 
     /** The content tool's backups of precompiled files (what deodexing removed). */
-    public fun refreshDeodexBackups() {
+    fun refreshDeodexBackups() {
         val workbench = restore ?: return
         viewModelScope.launch {
             val points = runCatchingCancellable { workbench.list(workspaceId).items }.getOrDefault(emptyList())
@@ -159,7 +159,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun restoreDeodexBackup(point: RestorePoint) {
+    fun restoreDeodexBackup(point: RestorePoint) {
         val workbench = restore ?: return
         task("Restoring ${point.itemPath}") {
             workbench.restore(workspaceId, point.id)
@@ -168,7 +168,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun decode(path: String) {
+    fun decode(path: String) {
         task("Decoding ${path.substringAfterLast('/')}") { tools ->
             val folder = tools.decode(workspaceId, path)
             _state.update { it.copy(decodedFolder = folder, message = "Decoded to $folder; edit it, then rebuild.") }
@@ -176,7 +176,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun rebuild(path: String) {
+    fun rebuild(path: String) {
         withAck(RiskyFeature.PACKAGE_REBUILD) {
             task("Rebuilding ${path.substringAfterLast('/')}") { tools ->
                 val platformKey = store?.current(workspaceId)?.build?.signing?.platformKeyRef
@@ -186,7 +186,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun patchLibrary(apex: String, library: String, find: String, replace: String, dest: String) {
+    fun patchLibrary(apex: String, library: String, find: String, replace: String, dest: String) {
         withAck(RiskyFeature.LIBRARY_PATCH) {
             task("Patching ${library.substringAfterLast('/')}") { tools ->
                 val result = tools.patchApexLibrary(workspaceId, apex, library, find, replace, dest)
@@ -195,7 +195,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun loadConfig(kind: ConfigKind, path: String) {
+    fun loadConfig(kind: ConfigKind, path: String) {
         // While a task runs nothing changes: a switch now would pair this read's text with another path.
         if (_state.value.busy != null) return
         _state.update { it.copy(configKind = kind, configPath = path, configText = null, configErrors = emptyList()) }
@@ -206,11 +206,11 @@ public class ContentToolsViewModel(
     }
 
     /** Edits the loaded text; the syntax is checked as it is typed (FR-031). */
-    public fun editConfig(text: String) {
+    fun editConfig(text: String) {
         _state.update { it.copy(configText = text, configErrors = errorsOf(it.configKind, text)) }
     }
 
-    public fun saveConfig() {
+    fun saveConfig() {
         val current = _state.value
         val text = current.configText ?: return
         task("Saving ${current.configPath.substringAfterLast('/')}") { tools ->
@@ -224,7 +224,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun compare(kind: CompareKind, a: String, b: String) {
+    fun compare(kind: CompareKind, a: String, b: String) {
         compareTask("Comparing") { tools ->
             when (kind) {
                 CompareKind.FILES -> tools.compareFiles(
@@ -263,22 +263,22 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun readCsc() {
+    fun readCsc() {
         task("Reading Samsung CSC") { tools ->
             val csc = tools.samsungCsc(workspaceId)
             _state.update { it.copy(csc = csc) }
         }
     }
 
-    public fun cancel() {
+    fun cancel() {
         job?.cancel()
     }
 
-    public fun dismiss() {
+    fun dismiss() {
         _state.update { it.copy(message = null, refusal = null) }
     }
 
-    public fun acknowledge(feature: String) {
+    fun acknowledge(feature: String) {
         val next = afterAck
         afterAck = null
         _state.update { it.copy(pendingAck = null) }
@@ -288,7 +288,7 @@ public class ContentToolsViewModel(
         }
     }
 
-    public fun dismissAck() {
+    fun dismissAck() {
         afterAck = null
         _state.update { it.copy(pendingAck = null) }
     }
@@ -347,8 +347,8 @@ public class ContentToolsViewModel(
         }
     }
 
-    public companion object {
-        public fun errorsOf(kind: ConfigKind, text: String): List<String> = when (kind) {
+    companion object {
+        fun errorsOf(kind: ConfigKind, text: String): List<String> = when (kind) {
             ConfigKind.FSTAB -> ConfigValidators.validateFstab(text)
             ConfigKind.BUILD_PROP -> ConfigValidators.validateBuildProp(text)
             ConfigKind.FS_CONFIG -> ConfigValidators.validateFsConfig(text)

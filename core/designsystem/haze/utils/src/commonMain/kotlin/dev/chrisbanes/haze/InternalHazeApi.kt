@@ -21,4 +21,4 @@ package dev.chrisbanes.haze
     AnnotationTarget.TYPEALIAS,
 )
 @Retention(AnnotationRetention.BINARY)
-public annotation class InternalHazeApi
+annotation class InternalHazeApi

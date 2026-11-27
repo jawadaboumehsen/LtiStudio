@@ -17,23 +17,23 @@ import org.ide.lti.core.model.plugin.FileMetadata
  * path at once — the single-pass rule from LtiRom's debloat.sh, whose per-package `sed -i` raced and lost
  * entries.
  */
-public object SidecarEditor {
+object SidecarEditor {
     /** fs_config [text] without [paths] (inside `work/<partition>/`) and anything below them. */
-    public fun withoutFsConfig(text: String, partition: String, paths: Collection<String>): String =
+    fun withoutFsConfig(text: String, partition: String, paths: Collection<String>): String =
         filterLines(text, paths.map { SidecarNormalizer.fsConfigPath(partition, it) })
 
     /** file_context [text] without [paths] (inside `work/<partition>/`) and anything below them. */
-    public fun withoutFileContext(text: String, partition: String, paths: Collection<String>): String = filterLines(
+    fun withoutFileContext(text: String, partition: String, paths: Collection<String>): String = filterLines(
         text,
         paths.map { SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, it)) },
     )
 
     /** fs_config [text] with the lines of [from] and below it (inside `work/<partition>/`) moved to [to]. */
-    public fun withRenamedFsConfig(text: String, partition: String, from: String, to: String): String =
+    fun withRenamedFsConfig(text: String, partition: String, from: String, to: String): String =
         renameKeys(text, SidecarNormalizer.fsConfigPath(partition, from), SidecarNormalizer.fsConfigPath(partition, to))
 
     /** file_context [text] with the lines of [from] and below it (inside `work/<partition>/`) moved to [to]. */
-    public fun withRenamedFileContext(text: String, partition: String, from: String, to: String): String = renameKeys(
+    fun withRenamedFileContext(text: String, partition: String, from: String, to: String): String = renameKeys(
         text,
         SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, from)),
         SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, to)),
@@ -49,11 +49,11 @@ public object SidecarEditor {
     }
 
     /** fs_config [text] with [backup]'s lines for [path] (inside `work/<partition>/`) and below it put back. */
-    public fun withRestoredFsConfig(text: String, backup: String, partition: String, path: String): String =
+    fun withRestoredFsConfig(text: String, backup: String, partition: String, path: String): String =
         restoreLines(text, backup, SidecarNormalizer.fsConfigPath(partition, path))
 
     /** file_context [text] with [backup]'s lines for [path] (inside `work/<partition>/`) and below it put back. */
-    public fun withRestoredFileContext(text: String, backup: String, partition: String, path: String): String =
+    fun withRestoredFileContext(text: String, backup: String, partition: String, path: String): String =
         restoreLines(text, backup, SidecarNormalizer.escapeRegex(SidecarNormalizer.fileContextPath(partition, path)))
 
     /**
@@ -62,7 +62,7 @@ public object SidecarEditor {
      * [platform] (the ROM's fs_config tables, then Android's defaults: `bin/` folders `0 2000 751`, their files
      * `0 2000 755`); without it, root-owned `0755` folders and `0644` files.
      */
-    public fun withFsConfig(
+    fun withFsConfig(
         text: String,
         partition: String,
         path: String,
@@ -90,7 +90,7 @@ public object SidecarEditor {
      * (replacing an existing one); otherwise a new entry gets what [platform]'s rules (the ROM's file_contexts) say,
      * else the label of its closest listed parent, as restorecon would.
      */
-    public fun withFileContext(
+    fun withFileContext(
         text: String,
         partition: String,
         path: String,

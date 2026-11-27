@@ -12,4 +12,4 @@ package org.ide.lti.feature.rom.studio.api
 import org.ide.lti.core.common.utils.ByteFormatter
 
 /** A file size for people: `512 B`, `8.4 KB`, `31 MB`, `3.9 GB` (binary units, one decimal below 100). */
-public fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)
+fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)

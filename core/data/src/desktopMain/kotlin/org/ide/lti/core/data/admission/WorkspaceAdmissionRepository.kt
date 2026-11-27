@@ -23,7 +23,7 @@ import org.ide.lti.core.domain.ports.WorkspaceWriteLease
 import java.nio.file.Files
 import java.nio.file.Path
 
-public class WorkspaceAdmissionRepository(storageDir: Path? = null) : WorkspaceAdmissionPort {
+class WorkspaceAdmissionRepository(storageDir: Path? = null) : WorkspaceAdmissionPort {
 
     private val mutex = Mutex()
     private val activeLeases = mutableMapOf<String, WorkspaceWriteLease>()

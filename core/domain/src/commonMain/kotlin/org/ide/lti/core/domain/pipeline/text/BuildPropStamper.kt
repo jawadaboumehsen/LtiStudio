@@ -16,7 +16,7 @@ import org.ide.lti.core.domain.pipeline.StageContext
  * `build.prop` stamp (contract Stage 3 step 6): drop then append the `org.lti.build.*` keys and
  * replace `ro.build.type` in place. Pure text transform so it can be unit-tested.
  */
-public object BuildPropStamper {
+object BuildPropStamper {
     private val LTI_KEYS = listOf(
         "org.lti.build.date",
         "org.lti.build.device",
@@ -24,7 +24,7 @@ public object BuildPropStamper {
         "org.lti.build.variant",
     )
 
-    public fun stamper(ctx: StageContext): (String) -> String = { original ->
+    fun stamper(ctx: StageContext): (String) -> String = { original ->
         stamp(
             original = original,
             date = requireNotNull(ctx.value(RuntimeKeys.RUN_DATE)) { "run date missing from runtime values" },
@@ -34,7 +34,7 @@ public object BuildPropStamper {
         )
     }
 
-    public fun stamp(original: String, date: String, device: String, version: String, buildType: String): String {
+    fun stamp(original: String, date: String, device: String, version: String, buildType: String): String {
         val kept = original.lineSequence()
             .filterNot { line -> LTI_KEYS.any { key -> line.startsWith("$key=") } }
             .map { line -> if (line.startsWith("ro.build.type=")) "ro.build.type=$buildType" else line }
@@ -50,7 +50,7 @@ public object BuildPropStamper {
     }
 
     /** Replaces the `ro.lti.*` keys LtiRom's updater reads with this build's (the same as `build_info.txt`). */
-    public fun stampRelease(original: String, device: String, version: String, timestamp: Long): String {
+    fun stampRelease(original: String, device: String, version: String, timestamp: Long): String {
         val keys = listOf("ro.lti.device", "ro.lti.version", "ro.lti.timestamp")
         val kept = original.lineSequence()
             .filterNot { line -> keys.any { line.startsWith("$it=") } }
@@ -61,7 +61,7 @@ public object BuildPropStamper {
     }
 
     /** Reads a key from stock `build.prop` text captured at extraction time. */
-    public fun prop(buildProp: String?, key: String): String? =
+    fun prop(buildProp: String?, key: String): String? =
         buildProp?.lineSequence()?.firstOrNull { it.startsWith("$key=") }
             ?.substringAfter('=')?.trim()?.takeIf { it.isNotEmpty() }
 }

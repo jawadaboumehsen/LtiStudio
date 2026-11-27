@@ -36,6 +36,7 @@ import org.ide.lti.core.domain.tools.ResolvedSourceCheck
 import org.ide.lti.core.domain.tools.ToolManager
 import org.ide.lti.core.model.setup.ToolRef
 import org.ide.lti.core.model.setup.ToolSelection
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class PrimaryButtonAction {
     Use,
@@ -183,10 +184,6 @@ class ToolsPageState(val manager: ToolManager, private val scope: CoroutineScope
         _isInspectorOpen.value = false
     }
 
-    fun toggleInspector() {
-        _isInspectorOpen.value = !_isInspectorOpen.value
-    }
-
     fun selectPreviousGroup() {
         val all = ToolGroupCatalog.allGroups
         val currentIndex = all.indexOfFirst { it.id == _selectedGroup.value }
@@ -198,7 +195,7 @@ class ToolsPageState(val manager: ToolManager, private val scope: CoroutineScope
     fun selectNextGroup() {
         val all = ToolGroupCatalog.allGroups
         val currentIndex = all.indexOfFirst { it.id == _selectedGroup.value }
-        if (currentIndex in 0 until all.size - 1) {
+        if (currentIndex in 0..<all.size - 1) {
             selectGroup(all[currentIndex + 1].id)
         }
     }
@@ -298,10 +295,6 @@ class ToolsPageState(val manager: ToolManager, private val scope: CoroutineScope
 
     private val _actionError = MutableStateFlow<ToolActionError?>(null)
     val actionError: StateFlow<ToolActionError?> = _actionError.asStateFlow()
-
-    fun dismissActionError() {
-        _actionError.value = null
-    }
 
     /** The group is captured now: the selection may move on before the call runs. */
     private fun launchChange(group: ToolGroupId, change: suspend () -> OperationResult) {
@@ -433,7 +426,7 @@ class ToolsPageState(val manager: ToolManager, private val scope: CoroutineScope
             // Typing a URL: wait for a pause instead of asking the network after every character.
             refsReload =
                 scope.launch {
-                    delay(REFS_RELOAD_DEBOUNCE_MS)
+                    delay(REFS_RELOAD_DEBOUNCE_MS.milliseconds)
                     loadRefs()
                 }
         }

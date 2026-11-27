@@ -21,7 +21,7 @@ import java.nio.file.StandardCopyOption
  * Atomically writes UTF-8 [text] to [target] via a temporary sibling file so crashes or disk errors
  * never leave a torn record.
  */
-public fun atomicWrite(target: Path, text: String, fsync: Boolean = false, allowNonAtomicFallback: Boolean = true) {
+fun atomicWrite(target: Path, text: String, fsync: Boolean = false, allowNonAtomicFallback: Boolean = true) {
     atomicWrite(
         target = target,
         fsync = fsync,
@@ -35,7 +35,7 @@ public fun atomicWrite(target: Path, text: String, fsync: Boolean = false, allow
  * Atomically writes bytes via [writer] to a temporary sibling of [target], optionally syncing the
  * file descriptor before replacing [target].
  */
-public fun atomicWrite(
+fun atomicWrite(
     target: Path,
     fsync: Boolean = false,
     allowNonAtomicFallback: Boolean = true,
@@ -66,7 +66,7 @@ public fun atomicWrite(
  * does not support atomic moves, falls back to standard replace if [allowNonAtomicFallback] is true,
  * otherwise throws [IOException].
  */
-public fun atomicMove(source: Path, destination: Path, allowNonAtomicFallback: Boolean = true) {
+fun atomicMove(source: Path, destination: Path, allowNonAtomicFallback: Boolean = true) {
     try {
         Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
     } catch (e: AtomicMoveNotSupportedException) {
@@ -80,5 +80,5 @@ public fun atomicMove(source: Path, destination: Path, allowNonAtomicFallback: B
 /**
  * Returns the UTF-8 text of [file] when it exists and is non-blank, otherwise null.
  */
-public fun readIfPresent(file: Path?): String? =
+fun readIfPresent(file: Path?): String? =
     file?.takeIf(Files::exists)?.let(Files::readString)?.takeIf(String::isNotBlank)

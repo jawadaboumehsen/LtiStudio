@@ -13,9 +13,9 @@ import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.model.workspace.BuildSettings
 
 /** One way to build an EROFS image: what `mkfs.erofs` is given. */
-public data class TrialOption(val label: String, val compression: String, val dedupe: Boolean, val clusterKib: Int?) {
+data class TrialOption(val label: String, val compression: String, val dedupe: Boolean, val clusterKib: Int?) {
     /** [settings] with this option as [p]'s own choice. */
-    public fun applyTo(settings: BuildSettings, p: String): BuildSettings = settings.copy(
+    fun applyTo(settings: BuildSettings, p: String): BuildSettings = settings.copy(
         partitionCompression = settings.partitionCompression + (p to compression),
         partitionDedupe = settings.partitionDedupe + (p to dedupe),
         partitionClusterKib = if (clusterKib == null) {
@@ -27,19 +27,14 @@ public data class TrialOption(val label: String, val compression: String, val de
 }
 
 /** A trial build's image size and how long it took; [error] when mkfs.erofs failed. */
-public data class TrialResult(
-    val option: TrialOption,
-    val bytes: Long?,
-    val seconds: Double?,
-    val error: String? = null,
-)
+data class TrialResult(val option: TrialOption, val bytes: Long?, val seconds: Double?, val error: String? = null)
 
 /**
  * Size advisor: builds one partition's EROFS image a few ways into `workbench/trial` (and deletes it), measures each,
  * and says which to use: the fastest that fits the room left in the super group, else the smallest.
  */
-public class SizeAdvisor(private val runner: WorkbenchRunner) {
-    public suspend fun trial(
+class SizeAdvisor(private val runner: WorkbenchRunner) {
+    suspend fun trial(
         workspaceId: String,
         p: String,
         options: List<TrialOption>,
@@ -85,7 +80,7 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
         }
     }
 
-    public companion object {
+    companion object {
         private const val KIB = 1024L
         private const val MIB = KIB * KIB
         private const val BLOCK = 4096
@@ -98,7 +93,7 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
          * The ways worth trying for [p]: as set now, a 64 KiB cluster, deduplicated (when the boot kernel at
          * [kernelVersion] reads it), both, and lzma (when [decoders] has it). Ways equal to another are tried once.
          */
-        public fun options(
+        fun options(
             settings: BuildSettings,
             p: String,
             kernelVersion: String?,
@@ -128,7 +123,7 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
          * [bytes] of a bare image as the build leaves it: with the AVB hashtree (32 bytes per 4 KiB block, each
          * level rounded to a block, no FEC) and a reserve for the footer and its vbmeta.
          */
-        public fun signedBytes(bytes: Long): Long {
+        fun signedBytes(bytes: Long): Long {
             var level = bytes
             var tree = 0L
             while (level > BLOCK) {
@@ -140,7 +135,7 @@ public class SizeAdvisor(private val runner: WorkbenchRunner) {
         }
 
         /** The fastest result that fits in [room] bytes once signed, else the smallest; null when none built. */
-        public fun recommend(results: List<TrialResult>, room: Long?): TrialResult? {
+        fun recommend(results: List<TrialResult>, room: Long?): TrialResult? {
             val built = results.filter { it.bytes != null }
             val fitting = built.filter { room == null || signedBytes(it.bytes!!) <= room }
             return fitting.minByOrNull { it.seconds ?: Double.MAX_VALUE } ?: built.minByOrNull { it.bytes!! }

@@ -28,7 +28,7 @@ import dev.chrisbanes.haze.blur.valueBackedHazeBlurStyle
  * reused while that color is unchanged.
  */
 @Composable
-public fun HazeBlurStyle.Companion.Material3(
+fun HazeBlurStyle.Companion.Material3(
     containerColor: Color = MaterialTheme.colorScheme.surface,
 ): HazeBlurStyle = remember(containerColor) {
     HazeBlurStyle { backgroundColor(containerColor) }
@@ -49,7 +49,7 @@ public fun HazeBlurStyle.Companion.Material3(
  */
 @Composable
 @ReadOnlyComposable
-public fun HazeBlurStyle.Companion.Material3(
+fun HazeBlurStyle.Companion.Material3(
     containerColor: Color = MaterialTheme.colorScheme.surface,
     block: HazeBlurStyleScope.() -> Unit,
 ): HazeBlurStyle = valueBackedHazeBlurStyle("Material3", containerColor, block) {

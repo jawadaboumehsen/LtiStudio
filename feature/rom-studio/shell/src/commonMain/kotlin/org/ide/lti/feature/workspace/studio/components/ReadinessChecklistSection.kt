@@ -68,7 +68,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
  * (Source firmware, Debloat, Patches, Signing key, and Publication).
  */
 @Composable
-public fun ReadinessChecklistSection(
+fun ReadinessChecklistSection(
     items: List<ReadinessItemUi>,
     reviewCount: Int,
     onAction: (WorkspaceActionUi) -> Unit,

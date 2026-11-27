@@ -27,12 +27,8 @@ import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 import io.ltirom.tooling.core.remote.StreamEvent as CoreStreamEvent
 
-public class StepExecutionAdapter(
-    private val transport: RemoteTransportPort,
-    private val pollIntervalMs: Long = DEFAULT_POLL_INTERVAL_MS,
-) : PipelineExecutionPort {
+class StepExecutionAdapter(private val transport: RemoteTransportPort) : PipelineExecutionPort {
     private companion object {
-        const val DEFAULT_POLL_INTERVAL_MS = 500L
         val TERMINAL =
             setOf(
                 RunStatusValue.COMPLETED,

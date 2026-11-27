@@ -6,39 +6,39 @@ import kotlinx.coroutines.CancellationException
  * Railway-Oriented Programming Result Monad for tool operations.
  * Replaces unconstrained exception throwing with explicit, typed outcomes.
  */
-public sealed interface ToolResult<out T> {
+sealed interface ToolResult<out T> {
 
     /** Successful execution with computed value and elapsed duration */
-    public data class Success<T>(
+    data class Success<T>(
         val value: T,
         val durationMs: Long
     ) : ToolResult<T>
 
     /** Typed failure representing distinct error domains */
-    public sealed interface Failure : ToolResult<Nothing> {
-        public val message: String
+    sealed interface Failure : ToolResult<Nothing> {
+        val message: String
 
         /** WSL or remote server daemon could not be reached over network */
-        public data class DaemonUnreachable(
+        data class DaemonUnreachable(
             val host: String,
             val port: Int,
             override val message: String
         ) : Failure
 
         /** Execution or connection timed out */
-        public data class ConnectionTimeout(
+        data class ConnectionTimeout(
             val timeoutMs: Long,
             override val message: String
         ) : Failure
 
         /** The requested tool binary does not exist or is not executable */
-        public data class ToolNotFound(
+        data class ToolNotFound(
             val toolId: String,
             override val message: String
         ) : Failure
 
         /** Process completed with a non-zero / unaccepted exit code */
-        public data class NonZeroExit(
+        data class NonZeroExit(
             val toolId: String,
             val exitCode: Int,
             val stdout: String,
@@ -47,42 +47,42 @@ public sealed interface ToolResult<out T> {
         ) : Failure
 
         /** Command was rejected by safety policy or sandboxing */
-        public data class SecurityViolation(
+        data class SecurityViolation(
             override val message: String
         ) : Failure
 
         /** Input, output, or argument validation failure */
-        public data class ValidationFailed(
+        data class ValidationFailed(
             override val message: String,
             val cause: Throwable? = null
         ) : Failure
 
         /** Generic execution or IO failure */
-        public data class ExecutionError(
+        data class ExecutionError(
             override val message: String,
             val cause: Throwable? = null
         ) : Failure
     }
 
-    public val isSuccess: Boolean get() = this is Success
-    public val isFailure: Boolean get() = this is Failure
+    val isSuccess: Boolean get() = this is Success
+    val isFailure: Boolean get() = this is Failure
 }
 
-public inline fun <T, R> ToolResult<T>.map(transform: (T) -> R): ToolResult<R> {
+inline fun <T, R> ToolResult<T>.map(transform: (T) -> R): ToolResult<R> {
     return when (this) {
         is ToolResult.Success -> ToolResult.Success(transform(value), durationMs)
         is ToolResult.Failure -> this
     }
 }
 
-public inline fun <T, R> ToolResult<T>.flatMap(transform: (T) -> ToolResult<R>): ToolResult<R> {
+inline fun <T, R> ToolResult<T>.flatMap(transform: (T) -> ToolResult<R>): ToolResult<R> {
     return when (this) {
         is ToolResult.Success -> transform(value)
         is ToolResult.Failure -> this
     }
 }
 
-public fun <T> ToolResult<T>.getOrThrow(): T {
+fun <T> ToolResult<T>.getOrThrow(): T {
     return when (this) {
         is ToolResult.Success -> value
         is ToolResult.Failure.ToolNotFound -> throw ToolingException(message)
@@ -95,19 +95,19 @@ public fun <T> ToolResult<T>.getOrThrow(): T {
     }
 }
 
-public fun <T> ToolResult<T>.getOrElse(default: (ToolResult.Failure) -> T): T {
+fun <T> ToolResult<T>.getOrElse(default: (ToolResult.Failure) -> T): T {
     return when (this) {
         is ToolResult.Success -> value
         is ToolResult.Failure -> default(this)
     }
 }
 
-public inline fun <T> ToolResult<T>.onSuccess(action: (T) -> Unit): ToolResult<T> {
+inline fun <T> ToolResult<T>.onSuccess(action: (T) -> Unit): ToolResult<T> {
     if (this is ToolResult.Success) action(value)
     return this
 }
 
-public inline fun <T> ToolResult<T>.onFailure(action: (ToolResult.Failure) -> Unit): ToolResult<T> {
+inline fun <T> ToolResult<T>.onFailure(action: (ToolResult.Failure) -> Unit): ToolResult<T> {
     if (this is ToolResult.Failure) action(this)
     return this
 }
@@ -115,7 +115,7 @@ public inline fun <T> ToolResult<T>.onFailure(action: (ToolResult.Failure) -> Un
 /**
  * Executes a tool command catching exceptions and wrapping into a typed [ToolResult].
  */
-public suspend fun <R> ToolRepository.executeResult(
+suspend fun <R> ToolRepository.executeResult(
     command: ToolCommand<R>,
     context: ExecutionContext
 ): ToolResult<R> {

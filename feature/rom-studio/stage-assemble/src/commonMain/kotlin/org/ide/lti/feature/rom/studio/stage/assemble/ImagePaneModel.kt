@@ -34,7 +34,7 @@ import org.ide.lti.core.domain.workbench.WorkspaceImage
 import org.ide.lti.core.model.workspace.TreeEdit
 
 /** The image browser as the pane shows it (FR-008, FR-010, FR-011). */
-public data class ImagePaneState(
+data class ImagePaneState(
     val partition: String = "system",
     val tree: PartitionTree? = null,
     val filter: String = "",
@@ -70,43 +70,43 @@ public data class ImagePaneState(
 }
 
 /** What the image browser can ask for (see [ImagePaneModel]). */
-public class ImagePaneActions(
-    public val selectPartition: (String) -> Unit = {},
-    public val setFilter: (String) -> Unit = {},
-    public val extract: (ImageTreeEntry) -> Unit = {},
-    public val openTree: () -> Unit = {},
-    public val convert: (image: String, toSparse: Boolean) -> Unit = { _, _ -> },
-    public val split: (image: String, megabytes: Int) -> Unit = { _, _ -> },
-    public val readSuper: () -> Unit = {},
-    public val cancel: () -> Unit = {},
+class ImagePaneActions(
+    val selectPartition: (String) -> Unit = {},
+    val setFilter: (String) -> Unit = {},
+    val extract: (ImageTreeEntry) -> Unit = {},
+    val openTree: () -> Unit = {},
+    val convert: (image: String, toSparse: Boolean) -> Unit = { _, _ -> },
+    val split: (image: String, megabytes: Int) -> Unit = { _, _ -> },
+    val readSuper: () -> Unit = {},
+    val cancel: () -> Unit = {},
     /** Searches every partition for the current filter text (names only). */
-    public val searchAll: () -> Unit = {},
-    public val toggleSelected: (ImageTreeEntry) -> Unit = {},
-    public val clearSelection: () -> Unit = {},
+    val searchAll: () -> Unit = {},
+    val toggleSelected: (ImageTreeEntry) -> Unit = {},
+    val clearSelection: () -> Unit = {},
     /** Copies every selected entry out at once. */
-    public val extractSelected: () -> Unit = {},
+    val extractSelected: () -> Unit = {},
     /** Lists the workspace's images for the picker. */
-    public val listImages: () -> Unit = {},
+    val listImages: () -> Unit = {},
     /** Reads an image (or, for super, lists its partitions) straight from its file. */
-    public val browseImage: (WorkspaceImage) -> Unit = {},
+    val browseImage: (WorkspaceImage) -> Unit = {},
     /** Reads one partition of the open super image. */
-    public val browseMember: (String) -> Unit = {},
+    val browseMember: (String) -> Unit = {},
     /** Shows a row's details: what the build records for it. */
-    public val focus: (ImageTreeEntry) -> Unit = {},
+    val focus: (ImageTreeEntry) -> Unit = {},
     /** Opens the folder holding a row in Explorer. */
-    public val reveal: (ImageTreeEntry) -> Unit = {},
-    public val startRename: (ImageTreeEntry) -> Unit = {},
-    public val rename: (newName: String) -> Unit = {},
-    public val startDelete: (ImageTreeEntry) -> Unit = {},
-    public val confirmDelete: () -> Unit = {},
+    val reveal: (ImageTreeEntry) -> Unit = {},
+    val startRename: (ImageTreeEntry) -> Unit = {},
+    val rename: (newName: String) -> Unit = {},
+    val startDelete: (ImageTreeEntry) -> Unit = {},
+    val confirmDelete: () -> Unit = {},
     /** Closes the rename or delete dialog without a change. */
-    public val dismissEdit: () -> Unit = {},
+    val dismissEdit: () -> Unit = {},
     /** Takes a kept change back (the next build leaves the item as it is). */
-    public val undoEdit: (TreeEdit) -> Unit = {},
+    val undoEdit: (TreeEdit) -> Unit = {},
 )
 
 /** The image browser's state and jobs; only the latest job runs (a new one cancels the last). */
-public class ImagePaneModel(
+class ImagePaneModel(
     private val scope: CoroutineScope,
     private val workspaceId: String,
     private val images: ImageWorkbench?,
@@ -119,17 +119,17 @@ public class ImagePaneModel(
     /** The user's coverage rules (Build & Sign), tried first for an item with no line. */
     private val coverageRules: suspend () -> String = { "" },
 ) {
-    public companion object {
+    companion object {
         /** [ImagePaneState.partition] while the tree shows a search across every partition. */
-        public const val ALL: String = "*"
+        const val ALL: String = "*"
     }
 
     private val mutableState = MutableStateFlow(ImagePaneState())
-    public val state: StateFlow<ImagePaneState> = mutableState.asStateFlow()
+    val state: StateFlow<ImagePaneState> = mutableState.asStateFlow()
 
     private var job: Job? = null
 
-    public val actions: ImagePaneActions = ImagePaneActions(
+    val actions: ImagePaneActions = ImagePaneActions(
         selectPartition = ::selectPartition,
         setFilter = { query -> mutableState.update { it.copy(filter = query) } },
         extract = ::extract,

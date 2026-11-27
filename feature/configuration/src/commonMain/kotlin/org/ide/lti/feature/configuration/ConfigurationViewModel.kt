@@ -21,9 +21,7 @@ import org.ide.lti.core.domain.usecase.target.CreateTargetScaffoldUseCase
 import org.ide.lti.core.domain.usecase.target.DeleteTargetUseCase
 import org.ide.lti.core.domain.usecase.target.DuplicateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
-import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.usecase.target.ValidateTargetConfigurationUseCase
 import org.ide.lti.core.model.target.TargetDevice
 
@@ -38,8 +36,6 @@ import org.ide.lti.core.model.target.TargetDevice
  */
 class ConfigurationViewModel(
     private val getAvailableTargetsUseCase: GetAvailableTargetsUseCase,
-    private val getSelectedTargetUseCase: GetSelectedTargetUseCase,
-    private val selectTargetUseCase: SelectTargetUseCase,
     private val createTargetScaffoldUseCase: CreateTargetScaffoldUseCase,
     private val duplicateTargetUseCase: DuplicateTargetUseCase,
     private val deleteTargetUseCase: DeleteTargetUseCase,

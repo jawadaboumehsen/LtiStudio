@@ -18,7 +18,7 @@ import kotlin.jvm.JvmInline
  */
 @Serializable
 @JvmInline
-public value class CredentialRef(public val key: String) {
+value class CredentialRef(val key: String) {
     init {
         require(key.isNotBlank()) { "CredentialRef key must not be blank" }
         require(!key.contains('\n') && !key.contains('\u0000')) {

@@ -38,7 +38,7 @@ import org.ide.lti.core.model.workspace.PluginLockfileEntry
  * The stage remains pure and plans only; the actual filesystem and bytecode mutations are performed
  * by the execution adapter wired to the "modules applied" Check step by the pipeline orchestrator or host.
  */
-public class ModuleApplicationStage(private val catalog: PluginCatalogPort = EmptyPluginCatalog) : StageDefinition {
+class ModuleApplicationStage(private val catalog: PluginCatalogPort = EmptyPluginCatalog) : StageDefinition {
     override val id: StageId = StageId.MODULE_APPLICATION
     override val requiredToolIds: Set<String> = emptySet()
 
@@ -293,7 +293,7 @@ public class ModuleApplicationStage(private val catalog: PluginCatalogPort = Emp
  * Canonical record written to `work/modules/plan.json` containing the resolved operations and digests.
  */
 @Serializable
-public data class AppliedModulePlan(
+data class AppliedModulePlan(
     val lockfileEntries: List<PluginLockfileEntry>,
     val operationIds: List<String>,
     val operations: List<AppliedOperationSummary>,
@@ -304,7 +304,7 @@ public data class AppliedModulePlan(
  * Summary descriptor of a single applied operation within [AppliedModulePlan].
  */
 @Serializable
-public data class AppliedOperationSummary(val id: String, val kind: String, val target: String)
+data class AppliedOperationSummary(val id: String, val kind: String, val target: String)
 
 @Serializable
 private data class AppliedModuleSummary(val enabled: List<String>, val operations: Int)

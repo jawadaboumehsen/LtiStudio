@@ -17,23 +17,23 @@ import org.ide.lti.core.model.setup.SystemRequirement
  * Authoritative system requirements catalog derived directly from inspectors and build recipes.
  * Replaces legacy PackageCatalog.
  */
-public object RequirementCatalog {
+object RequirementCatalog {
     /**
      * Libraries the pinned sources compile and link against (android-tools: its README's dependency list plus
      * what vendor/CMakeLists.txt links: bzip2, zlib; erofs-tools bundles all of its own). Its build system does
      * not check these, so a missing one only shows up as a compile error mid-build. The one list the package
      * probe, the Doctor and the approved packages all read.
      */
-    public val NATIVE_DEV_PACKAGES: List<String> =
+    val NATIVE_DEV_PACKAGES: List<String> =
         listOf(
             "libprotobuf-dev", "libbrotli-dev", "libbz2-dev", "libgtest-dev", "liblz4-dev",
             "libpcre2-dev", "libzstd-dev", "zlib1g-dev", "libusb-1.0-0-dev", "uuid-dev",
         )
 
     /** Build tools plus [NATIVE_DEV_PACKAGES]: what the Doctor's library check verifies. */
-    public val HOST_LIBRARY_PACKAGES: List<String> = listOf("pkg-config", "protobuf-compiler") + NATIVE_DEV_PACKAGES
+    val HOST_LIBRARY_PACKAGES: List<String> = listOf("pkg-config", "protobuf-compiler") + NATIVE_DEV_PACKAGES
 
-    public val REQUIREMENTS: List<SystemRequirement> =
+    val REQUIREMENTS: List<SystemRequirement> =
         listOf(
             // BUILD: Java compiler for tools and compilation
             SystemRequirement(
@@ -241,9 +241,9 @@ public object RequirementCatalog {
                 )
             }
 
-    public val ALL_APT_PACKAGES: Set<String> = REQUIREMENTS.flatMap { it.aptPackages }.toSet()
+    val ALL_APT_PACKAGES: Set<String> = REQUIREMENTS.flatMap { it.aptPackages }.toSet()
 
-    public val APPROVED_APT_PACKAGES: Map<String, List<String>> =
+    val APPROVED_APT_PACKAGES: Map<String, List<String>> =
         mapOf(
             "host_compilers" to listOf("build-essential", "cmake", "make", "clang", "autoconf", "automake", "libtool"),
             "host_libraries" to HOST_LIBRARY_PACKAGES,
@@ -266,7 +266,7 @@ public object RequirementCatalog {
             "build_cache" to listOf("ccache"),
         )
 
-    public fun isPackageApproved(packageName: String): Boolean = packageName in ALL_APT_PACKAGES
+    fun isPackageApproved(packageName: String): Boolean = packageName in ALL_APT_PACKAGES
 
-    public fun getRequirement(id: String): SystemRequirement? = REQUIREMENTS.firstOrNull { it.id == id }
+    fun getRequirement(id: String): SystemRequirement? = REQUIREMENTS.firstOrNull { it.id == id }
 }

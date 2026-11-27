@@ -61,7 +61,7 @@ import java.io.File
  * - [ToolStorePort] → [KotlinToolStoreAdapter]
  * - [ComponentToolsHandler] (registered into [PlanExecutor])
  */
-public val toolingModule =
+val toolingModule =
     module {
         single<WslPresencePort> { WslPresenceAdapter() }
         single<HostPrerequisitePort> { WslHostPrerequisiteProbe() }

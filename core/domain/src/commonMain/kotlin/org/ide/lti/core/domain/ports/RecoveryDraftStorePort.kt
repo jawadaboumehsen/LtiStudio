@@ -12,7 +12,7 @@ package org.ide.lti.core.domain.ports
 import org.ide.lti.core.model.draft.RecoveryDraftReadResult
 import org.ide.lti.core.model.draft.RecoveryDraftRecord
 
-public interface RecoveryDraftStorePort {
+interface RecoveryDraftStorePort {
     suspend fun persist(record: RecoveryDraftRecord): Result<RecoveryDraftRecord>
     suspend fun get(
         workspaceId: String,

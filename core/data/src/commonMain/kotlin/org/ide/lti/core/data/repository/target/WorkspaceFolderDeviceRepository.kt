@@ -26,7 +26,7 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.Workspace
 
 /** Reads and writes `device.json` in the workspace folder through the build service; nothing is kept in the app. */
-public class WorkspaceFolderDeviceRepository(
+class WorkspaceFolderDeviceRepository(
     private val workspaces: WorkspaceRepository,
     private val files: PipelineExecutionPort,
     private val json: Json = DeviceJson,
@@ -71,19 +71,19 @@ public class WorkspaceFolderDeviceRepository(
         return json.decodeFromString<TargetDevice>(text)
     }
 
-    public companion object {
+    companion object {
         private const val CHANGE_BUFFER = 16
         private const val MANIFEST = "workspace.json"
 
         /** Readable on disk and tolerant of fields added later. */
-        public val DeviceJson: Json = Json {
+        val DeviceJson: Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             prettyPrint = true
         }
 
         /** [incoming] with the revision after [stored]: bumped when the content differs, unchanged otherwise. */
-        public fun nextRevision(stored: TargetDevice?, incoming: TargetDevice): TargetDevice = when {
+        fun nextRevision(stored: TargetDevice?, incoming: TargetDevice): TargetDevice = when {
             stored == null -> incoming
             stored.copy(revision = incoming.revision) == incoming -> incoming.copy(revision = stored.revision)
             else -> incoming.copy(revision = stored.revision + 1)

@@ -22,33 +22,33 @@ import org.ide.lti.feature.workspace.api.parsePluginsRoute as apiParsePluginsRou
 import org.ide.lti.feature.workspace.api.parseRunRoute as apiParseRunRoute
 import org.ide.lti.feature.workspace.api.parseStudioRoute as apiParseStudioRoute
 
-public typealias StudioRouteArgs = org.ide.lti.feature.workspace.api.StudioRouteArgs
-public typealias RunRouteArgs = org.ide.lti.feature.workspace.api.RunRouteArgs
-public typealias PluginsRouteArgs = org.ide.lti.feature.workspace.api.PluginsRouteArgs
-public typealias StudioRoutes = org.ide.lti.feature.workspace.api.StudioRoutes
+typealias StudioRouteArgs = org.ide.lti.feature.workspace.api.StudioRouteArgs
+typealias RunRouteArgs = org.ide.lti.feature.workspace.api.RunRouteArgs
+typealias PluginsRouteArgs = org.ide.lti.feature.workspace.api.PluginsRouteArgs
+typealias StudioRoutes = org.ide.lti.feature.workspace.api.StudioRoutes
 
-public fun buildStudioRoute(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
+fun buildStudioRoute(workspaceId: String, stageId: StageId? = null, objectId: String? = null): String =
     apiBuildStudioRoute(workspaceId, stageId, objectId)
 
-public fun buildStudioRoute(workspaceId: String, stageId: String?, objectId: String? = null): String =
+fun buildStudioRoute(workspaceId: String, stageId: String?, objectId: String? = null): String =
     apiBuildStudioRoute(workspaceId, stageId, objectId)
 
-public fun parseStudioRoute(route: String): StudioRouteArgs? = apiParseStudioRoute(route)
+fun parseStudioRoute(route: String): StudioRouteArgs? = apiParseStudioRoute(route)
 
-public fun buildRunRoute(workspaceId: String, runId: String): String = apiBuildRunRoute(workspaceId, runId)
+fun buildRunRoute(workspaceId: String, runId: String): String = apiBuildRunRoute(workspaceId, runId)
 
-public fun parseRunRoute(route: String): RunRouteArgs? = apiParseRunRoute(route)
+fun parseRunRoute(route: String): RunRouteArgs? = apiParseRunRoute(route)
 
-public fun buildPluginsRoute(destination: String, workspaceId: String? = null, packageId: String? = null): String =
+fun buildPluginsRoute(destination: String, workspaceId: String? = null, packageId: String? = null): String =
     apiBuildPluginsRoute(
         destination = destination,
         workspaceId = workspaceId,
         packageId = packageId,
     )
 
-public fun parsePluginsRoute(route: String): PluginsRouteArgs? = apiParsePluginsRoute(route)
+fun parsePluginsRoute(route: String): PluginsRouteArgs? = apiParsePluginsRoute(route)
 
-public fun NavController.navigateToStudio(
+fun NavController.navigateToStudio(
     workspaceId: String,
     stageId: StageId? = null,
     objectId: String? = null,
@@ -60,10 +60,10 @@ public fun NavController.navigateToStudio(
     navOptions = navOptions,
 )
 
-public fun NavController.navigateToRun(workspaceId: String, runId: String, navOptions: NavOptions? = null): Unit =
+fun NavController.navigateToRun(workspaceId: String, runId: String, navOptions: NavOptions? = null): Unit =
     apiNavigateToRun(workspaceId = workspaceId, runId = runId, navOptions = navOptions)
 
-public fun NavController.navigateToPlugins(
+fun NavController.navigateToPlugins(
     destination: String,
     workspaceId: String? = null,
     packageId: String? = null,

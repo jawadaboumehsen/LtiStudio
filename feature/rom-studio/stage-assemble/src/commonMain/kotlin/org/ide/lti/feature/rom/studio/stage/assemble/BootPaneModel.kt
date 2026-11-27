@@ -42,7 +42,7 @@ import org.ide.lti.core.domain.workbench.workFstabs
 import org.ide.lti.core.model.workspace.SigningPolicy
 
 /** The boot-chain workbench as the pane shows it (FR-020..FR-026). */
-public data class BootPaneState(
+data class BootPaneState(
     val image: String = "boot",
     val parts: BootParts? = null,
     val rootStatus: RootStatus = RootStatus.NotPatched,
@@ -79,45 +79,45 @@ public data class BootPaneState(
 }
 
 /** What the boot pane can ask for; each one is a real job in the workspace (see [BootPaneModel]). */
-public class BootPaneActions(
-    public val selectImage: (String) -> Unit = {},
-    public val unpack: () -> Unit = {},
-    public val openRamdisk: () -> Unit = {},
-    public val removeVerityKeys: () -> Unit = {},
-    public val editDeviceTree: (String) -> Unit = {},
-    public val previewDeviceTree: () -> Unit = {},
-    public val saveDeviceTree: () -> Unit = {},
-    public val setSign: (Boolean) -> Unit = {},
-    public val repack: () -> Unit = {},
-    public val dropOverride: (String) -> Unit = {},
-    public val importPatched: () -> Unit = {},
-    public val patchApatch: (String) -> Unit = {},
-    public val loadVbmeta: () -> Unit = {},
-    public val toggleVbmeta: (VbmetaFlag) -> Unit = {},
-    public val setVerifiedBoot: (VerifiedBootMode) -> Unit = {},
-    public val writeVbmeta: () -> Unit = {},
-    public val cancel: () -> Unit = {},
-    public val dismiss: () -> Unit = {},
-    public val acknowledge: (String) -> Unit = {},
-    public val dismissAck: () -> Unit = {},
-    public val readKernel: () -> Unit = {},
+class BootPaneActions(
+    val selectImage: (String) -> Unit = {},
+    val unpack: () -> Unit = {},
+    val openRamdisk: () -> Unit = {},
+    val removeVerityKeys: () -> Unit = {},
+    val editDeviceTree: (String) -> Unit = {},
+    val previewDeviceTree: () -> Unit = {},
+    val saveDeviceTree: () -> Unit = {},
+    val setSign: (Boolean) -> Unit = {},
+    val repack: () -> Unit = {},
+    val dropOverride: (String) -> Unit = {},
+    val importPatched: () -> Unit = {},
+    val patchApatch: (String) -> Unit = {},
+    val loadVbmeta: () -> Unit = {},
+    val toggleVbmeta: (VbmetaFlag) -> Unit = {},
+    val setVerifiedBoot: (VerifiedBootMode) -> Unit = {},
+    val writeVbmeta: () -> Unit = {},
+    val cancel: () -> Unit = {},
+    val dismiss: () -> Unit = {},
+    val acknowledge: (String) -> Unit = {},
+    val dismissAck: () -> Unit = {},
+    val readKernel: () -> Unit = {},
     /** Adds EROFS, ext4 and F2FS mount lines to the first-stage fstab and saves the image as an override. */
-    public val addMountLines: () -> Unit = {},
+    val addMountLines: () -> Unit = {},
     /** Removes the AVB/verity flags from the first-stage fstab and saves the image as an override. */
-    public val removeIntegrityFlags: () -> Unit = {},
+    val removeIntegrityFlags: () -> Unit = {},
     /** Looks for unpacked images edited but not repacked ([BootPaneState.unbuilt]). */
-    public val checkUnbuilt: () -> Unit = {},
-    public val readDeviceTree: () -> Unit = {},
-    public val readMountTables: () -> Unit = {},
+    val checkUnbuilt: () -> Unit = {},
+    val readDeviceTree: () -> Unit = {},
+    val readMountTables: () -> Unit = {},
     /** Removes one fs_mgr flag (mount point, flag) from vendor_boot's first-stage mount table. */
-    public val removeFirstStageFlag: (String, String) -> Unit = { _, _ -> },
+    val removeFirstStageFlag: (String, String) -> Unit = { _, _ -> },
 )
 
 /**
  * The boot pane's state and jobs. A repacked or imported image becomes the partition's override, recorded in the
  * Assemble settings through [overrides] / [setOverrides] (the next build uses it).
  */
-public class BootPaneModel(
+class BootPaneModel(
     private val scope: CoroutineScope,
     private val workspaceId: String,
     private val boot: BootWorkbench?,
@@ -131,18 +131,18 @@ public class BootPaneModel(
     /** The AVB key the Build stage signs with (Build & Sign's setting). */
     private val avbKeyRef: suspend () -> String = { SigningPolicy().avbKeyRef },
 ) {
-    public companion object {
+    companion object {
         /** Where the first-stage fstab lives, in order of preference. */
-        public val MOUNT_TABLE_IMAGES: List<String> = listOf("vendor_boot", "boot")
+        val MOUNT_TABLE_IMAGES: List<String> = listOf("vendor_boot", "boot")
     }
 
     private val mutableState = MutableStateFlow(BootPaneState())
-    public val state: StateFlow<BootPaneState> = mutableState.asStateFlow()
+    val state: StateFlow<BootPaneState> = mutableState.asStateFlow()
 
     private var job: Job? = null
     private var afterAck: (() -> Unit)? = null
 
-    public val actions: BootPaneActions = BootPaneActions(
+    val actions: BootPaneActions = BootPaneActions(
         // Not during a task: its results and its lock belong to the image it started on.
         selectImage = { image ->
             if (state.value.busy == null) {

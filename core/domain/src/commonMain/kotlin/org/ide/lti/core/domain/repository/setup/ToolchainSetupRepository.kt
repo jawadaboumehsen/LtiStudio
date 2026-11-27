@@ -32,83 +32,79 @@ import org.ide.lti.core.model.setup.ToolchainPersistenceState
  * - "Persisted lastSeq never advances beyond durably stored replay evidence."
  * - "Reset protection: reset cannot erase an active attempt without explicit authorization."
  */
-public interface ToolchainSetupRepository : ToolchainSelectionRepository {
-    public val toolchainState: Flow<ToolchainPersistenceState>
+interface ToolchainSetupRepository : ToolchainSelectionRepository {
+    val toolchainState: Flow<ToolchainPersistenceState>
 
-    public val currentState: ToolchainPersistenceState
+    val currentState: ToolchainPersistenceState
 
-    public suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit>
+    suspend fun saveToolchainState(state: ToolchainPersistenceState): Result<Unit>
 
-    public suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState): Result<Unit>
+    suspend fun updateTool(toolId: String, transform: (PersistedToolState) -> PersistedToolState): Result<Unit>
 
-    public suspend fun updateSubmodule(
+    suspend fun updateSubmodule(
         name: String,
         transform: (PersistedSubmoduleState) -> PersistedSubmoduleState,
     ): Result<Unit>
 
-    public suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit>
+    suspend fun markStageCompleted(stageName: String, completed: Boolean): Result<Unit>
 
-    public suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit>
+    suspend fun markSetupCompleted(completed: Boolean, timestamp: Long? = null): Result<Unit>
 
-    public suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit>
+    suspend fun updateDiagnosticsSnapshot(passedIds: Set<String>): Result<Unit>
 
-    public suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit>
+    suspend fun updateAvbKeyState(provisioned: Boolean, keyPath: String?): Result<Unit>
 
     /**
      * Resets toolchain state. With [force] false an active, un-reconciled attempt is preserved and the
      * call fails; [force] true is the explicit, user-confirmed authorization to discard it.
      */
-    public suspend fun clearToolchainState(force: Boolean = false): Result<Unit>
+    suspend fun clearToolchainState(force: Boolean = false): Result<Unit>
 
     // ---- Durable ledger and attempt operations (003 US3) ----
 
     /** Journals a newly confirmed attempt. Fails while another attempt is still active or recovery is blocked. */
-    public suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit>
+    suspend fun recordAttemptAuthorized(attempt: SetupAttemptRecord): Result<Unit>
 
     /** Moves the active attempt between AUTHORIZED / RUNNING / RECONNECTING without touching its children. */
-    public suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit>
+    suspend fun updateAttemptStatus(attemptId: String, status: AttemptStatus): Result<Unit>
 
     /**
      * Appends a child command intent (exact request, idempotency key, unique lock) to the active attempt
      * BEFORE the command is submitted, returning the assigned child index.
      * Enforces "Persist child intent before startRun".
      */
-    public suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int>
+    suspend fun appendChildIntent(attemptId: String, intent: ChildIntentRecord): Result<Int>
 
     /** Enforces "persist runId before acknowledging attachment". */
-    public suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit>
+    suspend fun recordChildRunId(attemptId: String, childIndex: Int, runId: String): Result<Unit>
 
     /** Atomically commits replay evidence together with the cursor it proves. */
-    public suspend fun commitChildCursorAndEvidence(
+    suspend fun commitChildCursorAndEvidence(
         attemptId: String,
         childIndex: Int,
         lastSeq: Long,
         evidenceLine: String? = null,
     ): Result<Unit>
 
-    public suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit>
+    suspend fun recordChildTerminalProof(proof: ChildTerminalProof): Result<Unit>
 
     /**
      * Closes a journaled child that the server provably never accepted (no run under its unique lock inside
      * the deduplication window) with [terminalStatus]; nothing is resubmitted.
      */
-    public suspend fun recordChildNotSubmitted(attemptId: String, childIndex: Int, terminalStatus: String): Result<Unit>
+    suspend fun recordChildNotSubmitted(attemptId: String, childIndex: Int, terminalStatus: String): Result<Unit>
 
     /** Records that one of the attempt's planned actions completed. */
-    public suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit>
+    suspend fun recordPlanActionCompleted(attemptId: String, actionId: String): Result<Unit>
 
-    public suspend fun recordAttemptTerminal(
-        attemptId: String,
-        status: AttemptStatus,
-        outcome: SetupOutcome,
-    ): Result<Unit>
+    suspend fun recordAttemptTerminal(attemptId: String, status: AttemptStatus, outcome: SetupOutcome): Result<Unit>
 
     /** Records that the attempt is paused awaiting external user authorization. */
-    public suspend fun recordAttemptAwaitingUserAction(
+    suspend fun recordAttemptAwaitingUserAction(
         attemptId: String,
         handoff: PersistedUserHandoff,
         plan: PersistedSetupPlan,
     ): Result<Unit>
 
-    public suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit>
+    suspend fun setRecoveryBlocked(blocked: Boolean, reason: String?): Result<Unit>
 }

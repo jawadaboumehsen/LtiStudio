@@ -20,15 +20,15 @@ import java.nio.file.Path
  * Adapter scanning work-tree partition roots for candidate debloat targets and extracting
  * relevant sidecar configuration lines (fs_config, file_context).
  */
-public class DebloatInventoryAdapter {
+class DebloatInventoryAdapter {
 
-    public suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> =
+    suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> =
         Companion.inventory(workTreeRoot, partitionRoots)
 
-    public suspend fun sidecarEntriesFor(workTreeRoot: Path, partition: String, relativePath: String): List<String> =
+    suspend fun sidecarEntriesFor(workTreeRoot: Path, partition: String, relativePath: String): List<String> =
         Companion.sidecarEntriesFor(workTreeRoot, partition, relativePath)
 
-    public companion object {
+    companion object {
         /**
          * Walks each present partition root in [partitionRoots] under [workTreeRoot], emitting
          * one [DebloatCandidate] per regular file with its actual byte size.
@@ -37,7 +37,7 @@ public class DebloatInventoryAdapter {
          * (`app/<Name>/<Name>.apk` or `priv-app/<Name>/<Name>.apk`), otherwise `null`. Symlinks
          * are skipped.
          */
-        public suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> =
+        suspend fun inventory(workTreeRoot: Path, partitionRoots: Map<String, String>): List<DebloatCandidate> =
             withContext(Dispatchers.IO) {
                 val candidates = mutableListOf<DebloatCandidate>()
                 for ((partition, relRoot) in partitionRoots) {
@@ -94,35 +94,32 @@ public class DebloatInventoryAdapter {
          * and `<workTreeRoot>/configs/file_context-<partition>` (falling back to `file_contexts-<partition>`),
          * returning the unmodified line texts.
          */
-        public suspend fun sidecarEntriesFor(
-            workTreeRoot: Path,
-            partition: String,
-            relativePath: String,
-        ): List<String> = withContext(Dispatchers.IO) {
-            val configsDir = workTreeRoot.resolve("configs").normalize()
-            val matchingLines = mutableListOf<String>()
-            val escapedPath = relativePath.replace(".", "\\.")
+        suspend fun sidecarEntriesFor(workTreeRoot: Path, partition: String, relativePath: String): List<String> =
+            withContext(Dispatchers.IO) {
+                val configsDir = workTreeRoot.resolve("configs").normalize()
+                val matchingLines = mutableListOf<String>()
+                val escapedPath = relativePath.replace(".", "\\.")
 
-            val targetFiles = listOf(
-                configsDir.resolve("fs_config-$partition"),
-                configsDir.resolve("file_context-$partition").takeIf { Files.exists(it) }
-                    ?: configsDir.resolve("file_contexts-$partition"),
-            )
+                val targetFiles = listOf(
+                    configsDir.resolve("fs_config-$partition"),
+                    configsDir.resolve("file_context-$partition").takeIf { Files.exists(it) }
+                        ?: configsDir.resolve("file_contexts-$partition"),
+                )
 
-            for (file in targetFiles) {
-                if (Files.exists(file)) {
-                    val lines = Files.readAllLines(file, Charsets.UTF_8)
-                    for (line in lines) {
-                        val trimmed = line.trim()
-                        if (trimmed.isEmpty() || trimmed.startsWith('#')) continue
-                        if (trimmed.contains(relativePath) || trimmed.contains(escapedPath)) {
-                            matchingLines.add(line)
+                for (file in targetFiles) {
+                    if (Files.exists(file)) {
+                        val lines = Files.readAllLines(file, Charsets.UTF_8)
+                        for (line in lines) {
+                            val trimmed = line.trim()
+                            if (trimmed.isEmpty() || trimmed.startsWith('#')) continue
+                            if (trimmed.contains(relativePath) || trimmed.contains(escapedPath)) {
+                                matchingLines.add(line)
+                            }
                         }
                     }
                 }
-            }
 
-            matchingLines
-        }
+                matchingLines
+            }
     }
 }

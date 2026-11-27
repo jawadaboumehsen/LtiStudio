@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * All operations execute through [RemoteTransportPort]. No bash -c chains or temporary .sh scripts are ever created.
  */
-public class RemoteWorkspaceProvisioner(
+class RemoteWorkspaceProvisioner(
     private val transport: RemoteTransportPort,
     private val readinessPort: EnvironmentReadinessPort,
     private val keyProvisioner: WorkspaceKeyProvisioner = WorkspaceKeyProvisioner(transport),

@@ -1,7 +1,7 @@
 package io.ltirom.tooling.core
 
-public class SecretString(private val rawValue: String) {
-    public fun getUnsafeValue(): String = rawValue
+class SecretString(private val rawValue: String) {
+    fun getUnsafeValue(): String = rawValue
 
     override fun toString(): String = "[REDACTED]"
 
@@ -16,20 +16,20 @@ public class SecretString(private val rawValue: String) {
     }
 }
 
-public class Redactor {
+class Redactor {
     private val patterns = mutableSetOf<String>()
 
-    public fun register(secret: String) {
+    fun register(secret: String) {
         if (secret.length >= 4) {
             patterns.add(secret)
         }
     }
 
-    public fun register(secret: SecretString) {
+    fun register(secret: SecretString) {
         register(secret.getUnsafeValue())
     }
 
-    public fun redact(input: String): String {
+    fun redact(input: String): String {
         if (patterns.isEmpty()) return input
         var current = input
         for (pattern in patterns) {

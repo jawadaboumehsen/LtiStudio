@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * using the build service [PipelineExecutionPort] when available, or falling back
  * directly to the host filesystem for local execution and real-host testing.
  */
-public class WorkspaceToolkitStores(
+class WorkspaceToolkitStores(
     private val execution: PipelineExecutionPort? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : RestorePointStore,
@@ -49,11 +49,11 @@ public class WorkspaceToolkitStores(
     /** This app run: a lock written by an earlier run (the app crashed or was killed) is stale, not held. */
     private val session = java.util.UUID.randomUUID().toString()
 
-    public companion object {
-        public const val ACKNOWLEDGEMENTS_FILE: String = "facts/acknowledgements.json"
-        public const val RESTORE_DIR: String = "restore"
-        public const val RESTORE_INDEX_FILE: String = "restore/index.json"
-        public const val JOB_LOCK_FILE: String = ".job.lock"
+    companion object {
+        const val ACKNOWLEDGEMENTS_FILE: String = "facts/acknowledgements.json"
+        const val RESTORE_DIR: String = "restore"
+        const val RESTORE_INDEX_FILE: String = "restore/index.json"
+        const val JOB_LOCK_FILE: String = ".job.lock"
         private const val SEPARATOR = "\t"
     }
 

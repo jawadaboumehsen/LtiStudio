@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicLong
  * Receiver of streamed run output carrying its real journal identity, so that reconnect/replay
  * deduplicates by (attemptId, childRunId, sequence) instead of re-appending under a synthetic counter.
  */
-public fun interface SetupActivitySink {
-    public fun record(attemptId: String, childRunId: String, sequence: Long, text: String)
+fun interface SetupActivitySink {
+    fun record(attemptId: String, childRunId: String, sequence: Long, text: String)
 }
 
 /**
@@ -42,18 +42,18 @@ public fun interface SetupActivitySink {
  * [onRecorded] is invoked for every newly retained event (after deduplication) so the owner can mirror
  * a short tail into its immutable state without re-reading the whole buffer.
  */
-public class SetupLogBuffer(
+class SetupLogBuffer(
     private val maxLines: Int = SetupLogConstants.MAX_BUFFER_LINES,
     private val maxPayloadBytes: Long = SetupLogConstants.MAX_PAYLOAD_BYTES,
     private val logDirectory: File? = defaultLogDirectory(),
     private val maxLogFileSizeBytes: Long = DEFAULT_MAX_LOG_FILE_SIZE,
     private val onRecorded: (SetupLogEvent) -> Unit = {},
 ) : SetupActivitySink {
-    public companion object {
-        public const val DEFAULT_MAX_LOG_FILE_SIZE: Long = 8 * 1024 * 1024L // 8 MiB
+    companion object {
+        const val DEFAULT_MAX_LOG_FILE_SIZE: Long = 8 * 1024 * 1024L // 8 MiB
 
         /** Same app-data root as the journal and run files (`<LOCALAPPDATA>/LtiRomGui/logs/setup`). */
-        public fun defaultLogDirectory(): File = resolveAppDataDir("logs/setup").toFile()
+        fun defaultLogDirectory(): File = resolveAppDataDir("logs/setup").toFile()
     }
 
     private val lock = Any()
@@ -77,13 +77,13 @@ public class SetupLogBuffer(
     private var payloadBytes: Long = 0L
     private var dropped: Long = 0L
 
-    public val size: Int
+    val size: Int
         get() = synchronized(lock) { deque.size }
 
-    public val totalPayloadBytes: Long
+    val totalPayloadBytes: Long
         get() = synchronized(lock) { payloadBytes }
 
-    public val droppedLineCount: Long
+    val droppedLineCount: Long
         get() = synchronized(lock) { dropped }
 
     override fun record(attemptId: String, childRunId: String, sequence: Long, text: String) {
@@ -94,7 +94,7 @@ public class SetupLogBuffer(
      * Appends [event]; returns false when its identity is already retained (replay duplicate).
      * Applies the 16 KiB line limit, then evicts from the head until both retention caps hold.
      */
-    public fun append(event: SetupLogEvent): Boolean {
+    fun append(event: SetupLogEvent): Boolean {
         val safeEvent = SetupLogEvent.create(
             attemptId = event.attemptId,
             childRunId = event.childRunId,
@@ -194,17 +194,17 @@ public class SetupLogBuffer(
     }
 
     /** The most recently written log file (any attempt, or the `local` checks log); null when none exists. */
-    public fun latestLogFile(): File? = logDirectory
+    fun latestLogFile(): File? = logDirectory
         ?.listFiles { file -> file.isFile && file.name.endsWith(".log") }
         ?.maxByOrNull { it.lastModified() }
 
-    public fun getLogFile(attemptId: String?): File? {
+    fun getLogFile(attemptId: String?): File? {
         val dir = logDirectory ?: return null
         val file = File(dir, "${fileIdFor(attemptId)}.log")
         return if (file.exists()) file else null
     }
 
-    public fun append(
+    fun append(
         attemptId: String,
         childRunId: String,
         sequence: Long,
@@ -213,7 +213,7 @@ public class SetupLogBuffer(
     ): Boolean = append(SetupLogEvent(attemptId, childRunId, sequence, text, kind))
 
     /** Appends narration that has no server run identity, under a process-local monotonic sequence. */
-    public fun append(
+    fun append(
         text: String,
         attemptId: String,
         childRunId: String,
@@ -221,18 +221,18 @@ public class SetupLogBuffer(
     ): Boolean = append(SetupLogEvent(attemptId, childRunId, localSequence.getAndIncrement(), text, kind))
 
     /** Point-in-time copy of retained events; bounded by [maxLines] and [maxPayloadBytes]. */
-    public fun snapshot(): List<SetupLogEvent> = synchronized(lock) { deque.toList() }
+    fun snapshot(): List<SetupLogEvent> = synchronized(lock) { deque.toList() }
 
     /**
      * Retained history followed by live events. Subscription is registered before the snapshot is
      * taken so no event can fall between them; an event seen in both is a duplicate by identity,
      * which every consumer must ignore (the buffer itself does for its own retention).
      */
-    public fun observe(): Flow<SetupLogEvent> = events.onSubscription {
+    fun observe(): Flow<SetupLogEvent> = events.onSubscription {
         for (event in snapshot()) emit(event)
     }
 
-    public fun clear() {
+    fun clear() {
         synchronized(lock) {
             deque.clear()
             retainedIds.clear()

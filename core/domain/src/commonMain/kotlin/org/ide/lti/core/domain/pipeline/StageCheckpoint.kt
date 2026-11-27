@@ -11,21 +11,16 @@ package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.model.run.StageId
 
-public enum class ManifestEntryKind {
+enum class ManifestEntryKind {
     FILE,
     SYMLINK,
     SIDECAR,
 }
 
-public data class ManifestEntry(
-    val relPath: String,
-    val sizeBytes: Long,
-    val sha256: String,
-    val kind: ManifestEntryKind,
-)
+data class ManifestEntry(val relPath: String, val sizeBytes: Long, val sha256: String, val kind: ManifestEntryKind)
 
-public data class ContentManifest(val entries: List<ManifestEntry>) {
-    public fun canonicalDigest(): String {
+data class ContentManifest(val entries: List<ManifestEntry>) {
+    fun canonicalDigest(): String {
         val serialized = entries
             .sortedBy { it.relPath }
             .joinToString("") { entry ->
@@ -35,7 +30,7 @@ public data class ContentManifest(val entries: List<ManifestEntry>) {
     }
 }
 
-public data class VerificationReceipt(
+data class VerificationReceipt(
     val verifiedAtEpochMs: Long,
     val method: String,
     val verified: Boolean,
@@ -45,7 +40,7 @@ public data class VerificationReceipt(
 /**
  * Working paths are private staging copies/reflinks, never writable upstream inputs.
  */
-public data class StageCheckpoint(
+data class StageCheckpoint(
     val stageId: StageId,
     val stageVersion: Int,
     val inputDigest: String,

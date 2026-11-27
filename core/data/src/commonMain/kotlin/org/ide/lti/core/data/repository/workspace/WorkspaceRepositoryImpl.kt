@@ -34,7 +34,7 @@ import org.ide.lti.core.model.workspace.WorkspaceSession
  * dynamically discovers physical workspaces on disk using [WorkDirDiscoveryService],
  * and manages workspace sessions.
  */
-public class WorkspaceRepositoryImpl(
+class WorkspaceRepositoryImpl(
     private val preferencesDataSource: WorkspacePreferencesDataSource,
     private val discoveryService: WorkDirDiscoveryService = WorkDirDiscoveryService(),
     private val notifier: SystemNotifier? = null,

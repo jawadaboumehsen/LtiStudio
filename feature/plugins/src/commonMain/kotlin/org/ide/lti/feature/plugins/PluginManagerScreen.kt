@@ -53,7 +53,7 @@ import org.ide.lti.feature.plugins.components.pluginCardSurface
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-public fun PluginManagerScreen(
+fun PluginManagerScreen(
     initialDestination: String = "installed",
     initialWorkspaceId: String? = null,
     initialPackageId: String? = null,
@@ -154,7 +154,7 @@ public fun PluginManagerScreen(
 }
 
 @Composable
-public fun PluginManagerContent(
+fun PluginManagerContent(
     state: PluginManagerUiState,
     actions: PluginManagerActions = PluginManagerActions(),
     onNavigateToSetup: () -> Unit = {},

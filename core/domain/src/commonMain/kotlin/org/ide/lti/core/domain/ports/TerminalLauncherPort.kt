@@ -12,14 +12,14 @@ package org.ide.lti.core.domain.ports
 /**
  * Port for launching a host interactive terminal attached to a specific WSL environment.
  */
-public interface TerminalLauncherPort {
+interface TerminalLauncherPort {
     /**
      * Launches an external interactive terminal session inside the specified [distro].
      */
-    public fun launchTerminal(distro: String): Result<Unit>
+    fun launchTerminal(distro: String): Result<Unit>
 
     /**
      * Launches an external interactive terminal running the WSL distribution installer for [distro].
      */
-    public fun launchInstaller(distro: String): Result<Unit>
+    fun launchInstaller(distro: String): Result<Unit>
 }

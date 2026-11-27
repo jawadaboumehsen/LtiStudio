@@ -11,12 +11,12 @@ package org.ide.lti.core.domain.pipeline
 
 import org.ide.lti.core.model.run.StageId
 
-public class PipelineDefinitionRegistry(
+class PipelineDefinitionRegistry(
     private val definitions: Map<StageId, StageDefinition> = DefaultPipelineStages.all.associateBy { it.id },
 ) {
-    public val order: List<StageId> get() = PipelineStageSequence.ORDER
+    val order: List<StageId> get() = PipelineStageSequence.ORDER
 
-    public fun executableStages(): List<StageDefinition> = order.filter { it != StageId.PUBLISH_RELEASE }.map { id ->
+    fun executableStages(): List<StageDefinition> = order.filter { it != StageId.PUBLISH_RELEASE }.map { id ->
         definitions[id] ?: throw IllegalStateException("Missing definition for stage $id")
     }
 }

@@ -15,8 +15,8 @@ import org.ide.lti.core.domain.ports.ToolRegistryResult
 import org.ide.lti.core.domain.ports.ToolSource
 import org.ide.lti.core.domain.ports.ToolStatus
 
-public object ToolStatusMapper {
-    public fun toDomain(dto: ToolStatusInfo): ToolStatus = ToolStatus(
+object ToolStatusMapper {
+    fun toDomain(dto: ToolStatusInfo): ToolStatus = ToolStatus(
         tool = dto.tool,
         installed = dto.installed,
         path = dto.path,
@@ -24,7 +24,7 @@ public object ToolStatusMapper {
         reason = dto.reason,
     )
 
-    public fun toDomain(result: ToolListResult): ToolRegistryResult = when (result) {
+    fun toDomain(result: ToolListResult): ToolRegistryResult = when (result) {
         is ToolListResult.Tools -> ToolRegistryResult.Tools(result.list.map { toDomain(it) })
         is ToolListResult.ServiceError -> ToolRegistryResult.ServiceError(result.reason)
         is ToolListResult.Unreachable -> ToolRegistryResult.Unreachable(result.reason)

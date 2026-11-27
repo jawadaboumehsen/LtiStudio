@@ -30,10 +30,10 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 
 @Serializable
-public data class WorkspaceList(val schemaVersion: Int = 2, val items: List<Workspace> = emptyList())
+data class WorkspaceList(val schemaVersion: Int = 2, val items: List<Workspace> = emptyList())
 
 @Serializable
-public data class RecentProjectList(val schemaVersion: Int = 2, val items: List<RecentProject> = emptyList())
+data class RecentProjectList(val schemaVersion: Int = 2, val items: List<RecentProject> = emptyList())
 
 /**
  * Thread-safe multiplatform persistent preferences data source for workspace state and recents.
@@ -46,7 +46,7 @@ public data class RecentProjectList(val schemaVersion: Int = 2, val items: List<
  * - Thread Safety: Employs coroutine [Mutex] to eliminate race conditions across I/O threads.
  * - Error Resilience: Recovers automatically from corrupted storage payloads without crashing.
  */
-public class WorkspacePreferencesDataSource(
+class WorkspacePreferencesDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -54,20 +54,19 @@ public class WorkspacePreferencesDataSource(
     private val mutex = Mutex()
 
     private val _decodeWarnings = MutableSharedFlow<DecodeWarning>(replay = 64, extraBufferCapacity = 64)
-    public val decodeWarnings: Flow<DecodeWarning> = _decodeWarnings.asSharedFlow()
+    val decodeWarnings: Flow<DecodeWarning> = _decodeWarnings.asSharedFlow()
 
     private val _recentProjects = MutableStateFlow(readRecentProjectsSafe())
-    public val recentProjects: Flow<List<RecentProject>> = _recentProjects.asStateFlow()
-    public val currentRecentProjects: List<RecentProject> get() = _recentProjects.value
+    val recentProjects: Flow<List<RecentProject>> = _recentProjects.asStateFlow()
+    val currentRecentProjects: List<RecentProject> get() = _recentProjects.value
 
     private val _workspaces = MutableStateFlow(readWorkspacesSafe())
-    public val workspaces: Flow<List<Workspace>> = _workspaces.asStateFlow()
-    public val currentWorkspaces: List<Workspace> get() = _workspaces.value
+    val workspaces: Flow<List<Workspace>> = _workspaces.asStateFlow()
 
     /**
      * Atomically adds or promotes a project in the recent list.
      */
-    public suspend fun addRecentProject(project: RecentProject, maxItems: Int = 20): Unit = withContext(ioDispatcher) {
+    suspend fun addRecentProject(project: RecentProject, maxItems: Int = 20): Unit = withContext(ioDispatcher) {
         if (isSystemStaging(project)) return@withContext
         mutex.withLock {
             val current = _recentProjects.value.toMutableList()
@@ -82,7 +81,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically removes a project from the recent projects list by workspaceId.
      */
-    public suspend fun removeRecentProject(workspaceId: String): Unit = withContext(ioDispatcher) {
+    suspend fun removeRecentProject(workspaceId: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _recentProjects.value.filterNot { it.workspaceId == workspaceId }
             persistRecentProjectsInternal(current)
@@ -93,7 +92,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically saves or replaces the complete list of recent projects.
      */
-    public suspend fun saveRecentProjects(projects: List<RecentProject>): Unit = withContext(ioDispatcher) {
+    suspend fun saveRecentProjects(projects: List<RecentProject>): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             persistRecentProjectsInternal(projects)
             _recentProjects.value = projects
@@ -103,7 +102,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically clears all recent projects.
      */
-    public suspend fun clearRecentProjects(): Unit = withContext(ioDispatcher) {
+    suspend fun clearRecentProjects(): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             settings.remove(KEY_RECENT_PROJECTS)
             _recentProjects.value = emptyList()
@@ -113,7 +112,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Retrieves a workspace by its unique ID.
      */
-    public suspend fun getWorkspace(id: String): Workspace? = withContext(ioDispatcher) {
+    suspend fun getWorkspace(id: String): Workspace? = withContext(ioDispatcher) {
         mutex.withLock {
             _workspaces.value.firstOrNull { it.id == id }
         }
@@ -122,7 +121,7 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically saves or updates a workspace record.
      */
-    public suspend fun saveWorkspace(workspace: Workspace): Unit = withContext(ioDispatcher) {
+    suspend fun saveWorkspace(workspace: Workspace): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _workspaces.value.toMutableList()
             current.removeAll { it.id == workspace.id }
@@ -135,21 +134,11 @@ public class WorkspacePreferencesDataSource(
     /**
      * Atomically deletes a workspace by its ID.
      */
-    public suspend fun deleteWorkspace(id: String): Unit = withContext(ioDispatcher) {
+    suspend fun deleteWorkspace(id: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val current = _workspaces.value.filterNot { it.id == id }
             persistWorkspacesInternal(current)
             _workspaces.value = current
-        }
-    }
-
-    /**
-     * Atomically clears all stored workspaces.
-     */
-    public suspend fun clearWorkspaces(): Unit = withContext(ioDispatcher) {
-        mutex.withLock {
-            settings.remove(KEY_WORKSPACES)
-            _workspaces.value = emptyList()
         }
     }
 
@@ -243,23 +232,23 @@ public class WorkspacePreferencesDataSource(
         settings[KEY_WORKSPACES] = json.encodeToString(wrapper)
     }
 
-    public companion object {
-        public const val KEY_RECENT_PROJECTS: String = "lti_recent_projects_v1"
-        public const val KEY_WORKSPACES: String = "lti_workspaces_v1"
+    companion object {
+        const val KEY_RECENT_PROJECTS: String = "lti_recent_projects_v1"
+        const val KEY_WORKSPACES: String = "lti_workspaces_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true
             prettyPrint = false
         }
 
-        public fun isSystemStaging(project: RecentProject): Boolean {
+        fun isSystemStaging(project: RecentProject): Boolean {
             if (project.workspaceId in listOf("ltirom_staging_workdir", "ltirom_workdir")) return true
             return isSystemStagingPath(project.path)
         }
 
-        public fun isSystemStagingPath(path: String): Boolean {
+        fun isSystemStagingPath(path: String): Boolean {
             val normalized = path.trim().trimEnd('/', '\\').replace('\\', '/')
             val isWorkDirRoot = normalized.endsWith("/LtiRomWorkDir") || normalized.endsWith("LtiRomWorkDir")
             val isSubTargetOrProject = normalized.contains("/target/") || normalized.contains("/projects/")

@@ -5,7 +5,7 @@ import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 
 @Serializable
-public data class AuditRecord(
+data class AuditRecord(
     val timestamp: Long,
     val toolId: String,
     val risk: String,
@@ -17,10 +17,10 @@ public data class AuditRecord(
     val binarySha256: String,
     val traceId: String = TraceContext.create().traceId
 ) {
-    public companion object {
+    companion object {
         private val json = Json { prettyPrint = false }
 
-        public fun create(
+        fun create(
             binary: ToolBinary,
             command: ToolCommand<*>,
             result: CommandExecutionResult,
@@ -56,7 +56,7 @@ public data class AuditRecord(
         }
     }
 
-    public fun toJson(): String {
+    fun toJson(): String {
         return json.encodeToString(serializer(), this)
     }
 }

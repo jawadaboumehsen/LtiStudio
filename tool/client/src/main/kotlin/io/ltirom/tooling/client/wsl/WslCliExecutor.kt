@@ -6,18 +6,18 @@ import java.nio.charset.Charset
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
-public data class CliExecutionResult(val exitCode: Int, val output: String, val error: String)
+data class CliExecutionResult(val exitCode: Int, val output: String, val error: String)
 
 /**
  * Single Responsibility: Raw execution of host and WSL commands with timeouts,
  * deadlock-free stream drainage, bounded memory limits, and character set handling.
  */
-public open class WslCliExecutor {
+open class WslCliExecutor {
 
-    public companion object {
-        public const val MAX_CAPTURE_BYTES: Int = 1024 * 1024 // 1 MB ceiling
-        public const val STREAM_JOIN_TIMEOUT_MS: Long = 2000L
-        public const val PROCESS_TERMINATION_GRACE_MS: Long = 2000L
+    companion object {
+        const val MAX_CAPTURE_BYTES: Int = 1024 * 1024 // 1 MB ceiling
+        const val STREAM_JOIN_TIMEOUT_MS: Long = 2000L
+        const val PROCESS_TERMINATION_GRACE_MS: Long = 2000L
     }
 
     private class BoundedStreamDrainer(
@@ -65,7 +65,7 @@ public open class WslCliExecutor {
      * [execute] for coroutine callers: cancelling the caller interrupts the command (the process tree is
      * killed), so work after a cancelled step never starts.
      */
-    public open suspend fun run(
+    open suspend fun run(
         distro: String,
         command: List<String>,
         timeoutSeconds: Long = 10,
@@ -79,7 +79,7 @@ public open class WslCliExecutor {
         }
     }
 
-    public open suspend fun run(
+    open suspend fun run(
         distro: String,
         command: List<String>,
         timeoutSeconds: Long,
@@ -88,7 +88,7 @@ public open class WslCliExecutor {
         execute(distro, command, timeoutSeconds, Charsets.UTF_8, user, null)
     }
 
-    public open fun execute(
+    open fun execute(
         distro: String,
         command: List<String>,
         timeoutSeconds: Long = 10,
@@ -112,7 +112,7 @@ public open class WslCliExecutor {
         return runProcess(ProcessBuilder(wslCommandLine(distro, command, user)), timeoutSeconds, charset, stdin)
     }
 
-    public open fun execute(
+    open fun execute(
         distro: String,
         command: List<String>,
         timeoutSeconds: Long,
@@ -144,7 +144,7 @@ public open class WslCliExecutor {
         }
     }
 
-    public open fun executeHost(
+    open fun executeHost(
         command: List<String>,
         timeoutSeconds: Long = 10,
         charset: Charset = Charsets.UTF_8,

@@ -99,7 +99,7 @@ internal object PartitionPathResolver {
 
         val relToRoot = partitionRoot.relativize(resolved)
         var curr = partitionRoot
-        for (i in 0 until relToRoot.nameCount) {
+        for (i in 0..<relToRoot.nameCount) {
             val segment = relToRoot.getName(i)
             if (segment.toString().isEmpty()) continue
             curr = curr.resolve(segment)

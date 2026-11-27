@@ -29,13 +29,13 @@ import org.jetbrains.compose.resources.painterResource
  * This object lives in `core:designsystem` and deliberately has no dependency on `core:model` or `StageId`.
  * The mapping between pipeline stages and these painter accessors is owned exclusively by the destination catalog.
  */
-public object AppIconsRomStages {
-    public val acquire: @Composable () -> Painter = { painterResource(Res.drawable.ideGeneralDownload) }
-    public val extract: @Composable () -> Painter = { painterResource(Res.drawable.ideNodesExtractedFolder) }
-    public val assemble: @Composable () -> Painter = { painterResource(Res.drawable.ideBuildTaskGroup) }
-    public val debloat: @Composable () -> Painter = { painterResource(Res.drawable.ideDelete) }
-    public val patches: @Composable () -> Painter = { painterResource(Res.drawable.ideNodesPlugin) }
-    public val build: @Composable () -> Painter = { painterResource(Res.drawable.ideBuildBuild) }
-    public val releaseMetadata: @Composable () -> Painter = { painterResource(Res.drawable.ideFileTypesManifest) }
-    public val publish: @Composable () -> Painter = { painterResource(Res.drawable.ideGeneralUpload) }
+object AppIconsRomStages {
+    val acquire: @Composable () -> Painter = { painterResource(Res.drawable.ideGeneralDownload) }
+    val extract: @Composable () -> Painter = { painterResource(Res.drawable.ideNodesExtractedFolder) }
+    val assemble: @Composable () -> Painter = { painterResource(Res.drawable.ideBuildTaskGroup) }
+    val debloat: @Composable () -> Painter = { painterResource(Res.drawable.ideDelete) }
+    val patches: @Composable () -> Painter = { painterResource(Res.drawable.ideNodesPlugin) }
+    val build: @Composable () -> Painter = { painterResource(Res.drawable.ideBuildBuild) }
+    val releaseMetadata: @Composable () -> Painter = { painterResource(Res.drawable.ideFileTypesManifest) }
+    val publish: @Composable () -> Painter = { painterResource(Res.drawable.ideGeneralUpload) }
 }

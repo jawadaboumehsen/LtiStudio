@@ -29,13 +29,13 @@ import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
  * Tools over the assembled `work/` tree (FR-016, FR-028..FR-033). Every change backs up what it replaces first
  * (a restore point) and is checked after it is made.
  */
-public class ContentWorkbench(private val runner: WorkbenchRunner) {
+class ContentWorkbench(private val runner: WorkbenchRunner) {
 
     /**
      * `sh -n` of a project script's [content], the check the build runs before any script: the
      * shell's message (`sh: 3: Syntax error: …`), or null when it parses.
      */
-    public suspend fun checkScript(workspaceId: String, content: String): String? = runner.read(workspaceId) {
+    suspend fun checkScript(workspaceId: String, content: String): String? = runner.read(workspaceId) {
         val result = tryRun("sh", "-c", "printf '%s' \"\$1\" | sh -n", "sh", content)
         if (result.exitCode == 0) null else result.stderr.ifBlank { result.stdout }.trim().ifEmpty { "sh -n failed" }
     }
@@ -47,7 +47,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
      * vdexExtractor) and is reported with the VDEX version. A [dryRun] changes nothing and says what it would do.
      * Every finding and a summary go to the Output panel.
      */
-    public suspend fun deodex(
+    suspend fun deodex(
         workspaceId: String,
         scope: DeodexScope = DeodexScope.APPS,
         file: String? = null,
@@ -114,7 +114,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
     )
 
     /** Decodes [path] (an APK or JAR in the work tree) with apktool into `workbench/apk/`; returns that folder. */
-    public suspend fun decode(workspaceId: String, path: String): String = runner.job(workspaceId, "Decode") {
+    suspend fun decode(workspaceId: String, path: String): String = runner.job(workspaceId, "Decode") {
         requireInWork(path)
         val out = decodedDir(path)
         val framework = "work/system/system/framework/framework-res.apk"
@@ -137,7 +137,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
      * Rebuilds [path] from its decoded folder, aligns and signs an APK with the workspace platform key, tests the
      * archive, then replaces the original (backed up first) (FR-029).
      */
-    public suspend fun rebuild(workspaceId: String, path: String, platformKeyRef: String): ApkPatchResult =
+    suspend fun rebuild(workspaceId: String, path: String, platformKeyRef: String): ApkPatchResult =
         runner.job(workspaceId, "Rebuild") {
             requireInWork(path)
             val decoded = decodedDir(path)
@@ -197,7 +197,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
      * [systemDest] in the work tree with sidecar entries (as a module overlay does). A library that already holds
      * [replaceHex] is reported, not patched twice (FR-030).
      */
-    public suspend fun patchApexLibrary(
+    suspend fun patchApexLibrary(
         workspaceId: String,
         apex: String,
         library: String,
@@ -260,13 +260,13 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
     }
 
     /** The text of a configuration file in the work tree (FR-031). */
-    public suspend fun readConfig(workspaceId: String, path: String): String = runner.read(workspaceId) {
+    suspend fun readConfig(workspaceId: String, path: String): String = runner.read(workspaceId) {
         requireInWork(path)
         readText(path) ?: throw RefusalException(Refusal("The file does not exist.", path, "Pick another file."))
     }
 
     /** Validates [text] for [kind] and saves it over [path], backing the old text up first (FR-031). */
-    public suspend fun saveConfig(workspaceId: String, kind: ConfigKind, path: String, text: String): ConfigEditDiff =
+    suspend fun saveConfig(workspaceId: String, kind: ConfigKind, path: String, text: String): ConfigEditDiff =
         runner.job(workspaceId, "Edit ${path.substringAfterLast('/')}") {
             requireInWork(path)
             val errors = when (kind) {
@@ -288,7 +288,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         }
 
     /** Samsung region/carrier data of the work tree in readable form (FR-032); encrypted CSC files are refused. */
-    public suspend fun samsungCsc(workspaceId: String): OmcInfo = runner.read(workspaceId) {
+    suspend fun samsungCsc(workspaceId: String): OmcInfo = runner.read(workspaceId) {
         suspend fun find(name: String) = run(
             "find",
             abs("work"),
@@ -321,7 +321,7 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
     }
 
     /** Files of [partitions] in the work tree with no fs_config or file_contexts entry (FR-015). */
-    public suspend fun coverage(workspaceId: String, partitions: List<String>): CoverageResult = runner.read(
+    suspend fun coverage(workspaceId: String, partitions: List<String>): CoverageResult = runner.read(
         workspaceId,
     ) {
         partitions.filter { exists("work/$it") }.map { p ->
@@ -393,8 +393,8 @@ public class ContentWorkbench(private val runner: WorkbenchRunner) {
         return "workbench/apk/${rel.substringAfterLast('/')}-$hash"
     }
 
-    public companion object {
-        public const val TOOL: String = "content"
+    companion object {
+        const val TOOL: String = "content"
         private const val FRAMEWORK_DIR = "workbench/apk/framework"
         private const val DETAILS = 4_000
         private const val HEX_DIGITS = "0123456789abcdef"
@@ -469,7 +469,7 @@ echo patched"""
         internal fun lineChanges(old: String, new: String): List<String> {
             val a = old.lines()
             val b = new.lines()
-            return (0 until maxOf(a.size, b.size)).mapNotNull { i ->
+            return (0..<maxOf(a.size, b.size)).mapNotNull { i ->
                 val was = a.getOrNull(i)
                 val now = b.getOrNull(i)
                 when {

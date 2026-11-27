@@ -24,7 +24,7 @@ import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 
 /** A firmware archive in the workspace folder; [ref] is what `AcquisitionSettings.archiveRef` stores. */
-public data class FirmwareArchive(
+data class FirmwareArchive(
     val ref: String,
     val name: String,
     val sizeBytes: Long,
@@ -36,7 +36,7 @@ public data class FirmwareArchive(
  * Importing copies the file inside WSL (from its `/mnt/<drive>` path), so a multi-GB archive never passes
  * through the app's memory.
  */
-public class FirmwareArchives(
+class FirmwareArchives(
     private val workspaces: WorkspaceRepository,
     private val execution: PipelineExecutionPort,
     /** An import waits for no build: it is refused while one runs, and holds the lock a build start takes. */
@@ -46,7 +46,7 @@ public class FirmwareArchives(
     private val toLinuxPath: (String) -> String,
 ) {
     /** The archives already in the workspace folder, by name. */
-    public suspend fun list(workspaceId: String): List<FirmwareArchive> {
+    suspend fun list(workspaceId: String): List<FirmwareArchive> {
         val ws = workspace(workspaceId)
         val dir = "${root(ws)}/$DIR"
         // Listing changes nothing: the folder is made by the first import, which checks the way there.
@@ -59,7 +59,7 @@ public class FirmwareArchives(
     }
 
     /** Copies the archive at [localPath] (a path on this computer) into the workspace folder. */
-    public suspend fun import(workspaceId: String, localPath: String): FirmwareArchive {
+    suspend fun import(workspaceId: String, localPath: String): FirmwareArchive {
         val ws = workspace(workspaceId)
         val lock = jobLock ?: return importHeld(ws, localPath)
         return lock.withLock(
@@ -128,12 +128,12 @@ public class FirmwareArchives(
         return result.stdout
     }
 
-    public companion object {
-        public const val DIR: String = "firmware/downloaded"
+    companion object {
+        const val DIR: String = "firmware/downloaded"
         private const val LISTING = "%s\\t%f\\n" // find -printf: size<TAB>name per file
         private const val QUICK_TIMEOUT_MS = 60_000L
         private const val HEADER_BYTES = "512"
         private const val COPY_TIMEOUT_MS = 3_600_000L
-        public const val IMPORT_HOLDER: String = "Importing a firmware archive"
+        const val IMPORT_HOLDER: String = "Importing a firmware archive"
     }
 }

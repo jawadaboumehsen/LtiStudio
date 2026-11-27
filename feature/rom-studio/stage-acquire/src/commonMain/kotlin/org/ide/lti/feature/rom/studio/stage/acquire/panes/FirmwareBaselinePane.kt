@@ -45,7 +45,7 @@ import org.ide.lti.core.model.workspace.AcquisitionSettings
 /** The firmware the build starts from: the device's own list (device.json), per region. */
 @Suppress("UnusedParameter")
 @Composable
-public fun FirmwareBaselinePane(
+fun FirmwareBaselinePane(
     settings: AcquisitionSettings,
     target: TargetDevice,
     onChange: (AcquisitionSettings) -> Unit = {},

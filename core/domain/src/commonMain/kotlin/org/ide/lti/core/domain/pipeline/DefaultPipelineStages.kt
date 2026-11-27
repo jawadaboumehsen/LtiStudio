@@ -19,9 +19,9 @@ import org.ide.lti.core.domain.pipeline.stages.WorkTreeAssemblyStage
 import org.ide.lti.core.domain.plugin.EmptyPluginCatalog
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 
-public object DefaultPipelineStages {
+object DefaultPipelineStages {
     /** The stages, with Patches/Mods resolving plans from [catalog] (the installed plugins in the app). */
-    public fun with(catalog: PluginCatalogPort): List<StageDefinition> = listOf(
+    fun with(catalog: PluginCatalogPort): List<StageDefinition> = listOf(
         FirmwareAcquisitionStage(),
         FirmwareExtractionStage(),
         WorkTreeAssemblyStage(),
@@ -31,7 +31,7 @@ public object DefaultPipelineStages {
         GenerateOtaManifestStage(),
     )
 
-    public val all: List<StageDefinition> = with(EmptyPluginCatalog)
+    val all: List<StageDefinition> = with(EmptyPluginCatalog)
 
-    public val allRequiredToolIds: Set<String> = all.flatMap { it.requiredToolIds }.toSet()
+    val allRequiredToolIds: Set<String> = all.flatMap { it.requiredToolIds }.toSet()
 }

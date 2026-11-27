@@ -1,6 +1,6 @@
 package io.ltirom.tooling.core
 
-public data class ExecutionContext(
+data class ExecutionContext(
     val isInteractive: Boolean = false,
     val autoConfirm: Boolean = false,
     val adbSerial: AdbSerial? = null,

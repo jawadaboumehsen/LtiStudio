@@ -26,7 +26,7 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 /**
  * Immutable session state tracking working draft vs persisted baseline for a workspace.
  */
-public data class PipelineDraftSession(
+data class PipelineDraftSession(
     val workspaceId: String,
     val persistedSnapshot: ConfigurationSnapshot,
     val workingSnapshot: ConfigurationSnapshot,
@@ -34,10 +34,10 @@ public data class PipelineDraftSession(
     val workingRevision: Long,
     val target: TargetDevice? = null,
 ) {
-    public val isDirty: Boolean get() = workingRevision != persistedRevision
+    val isDirty: Boolean get() = workingRevision != persistedRevision
 
-    public companion object {
-        public fun initial(
+    companion object {
+        fun initial(
             workspaceId: String,
             baseline: ConfigurationSnapshot?,
             target: TargetDevice? = null,
@@ -65,10 +65,10 @@ public data class PipelineDraftSession(
     }
 }
 
-public class OptimisticRevisionConflictException(
-    public val workspaceId: String,
-    public val expectedRevision: Long,
-    public val actualRevision: Long,
+class OptimisticRevisionConflictException(
+    val workspaceId: String,
+    val expectedRevision: Long,
+    val actualRevision: Long,
 ) : IllegalStateException(
     "Save rejected for workspace $workspaceId: expected revision $expectedRevision but working " +
         "revision is $actualRevision",
@@ -77,7 +77,7 @@ public class OptimisticRevisionConflictException(
 /**
  * In-memory repository managing pipeline draft sessions across active workspaces.
  */
-public class PipelineDraftSessionRepository {
+class PipelineDraftSessionRepository {
     private val sessions = mutableMapOf<String, MutableStateFlow<PipelineDraftSession>>()
     private val mutex = Mutex()
 
@@ -88,10 +88,9 @@ public class PipelineDraftSessionRepository {
         MutableStateFlow(PipelineDraftSession.initial(workspaceId, baseline))
     }
 
-    public fun observeSession(workspaceId: String): Flow<PipelineDraftSession> =
-        getOrCreateFlow(workspaceId).asStateFlow()
+    fun observeSession(workspaceId: String): Flow<PipelineDraftSession> = getOrCreateFlow(workspaceId).asStateFlow()
 
-    public suspend fun updateWorkingSnapshot(
+    suspend fun updateWorkingSnapshot(
         workspaceId: String,
         transform: (ConfigurationSnapshot) -> ConfigurationSnapshot,
     ): PipelineDraftSession = mutex.withLock {
@@ -106,7 +105,7 @@ public class PipelineDraftSessionRepository {
         updatedSession
     }
 
-    public suspend fun save(workspaceId: String, expectedRevision: Long): ConfigurationSnapshot = mutex.withLock {
+    suspend fun save(workspaceId: String, expectedRevision: Long): ConfigurationSnapshot = mutex.withLock {
         val flow = getOrCreateFlow(workspaceId)
         val current = flow.value
         if (current.workingRevision != expectedRevision) {
@@ -129,7 +128,7 @@ public class PipelineDraftSessionRepository {
         committed
     }
 
-    public suspend fun discardChanges(workspaceId: String): PipelineDraftSession = mutex.withLock {
+    suspend fun discardChanges(workspaceId: String): PipelineDraftSession = mutex.withLock {
         val flow = getOrCreateFlow(workspaceId)
         val current = flow.value
         val newRevision = current.workingRevision + 1
@@ -142,7 +141,7 @@ public class PipelineDraftSessionRepository {
         resetSession
     }
 
-    public fun validate(workspaceId: String): ValidationReport {
+    fun validate(workspaceId: String): ValidationReport {
         val session = getOrCreateFlow(workspaceId).value
         val draft = session.workingSnapshot
         val target = session.target

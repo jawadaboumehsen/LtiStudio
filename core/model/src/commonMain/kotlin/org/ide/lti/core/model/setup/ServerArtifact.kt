@@ -9,15 +9,15 @@
  */
 package org.ide.lti.core.model.setup
 
-public sealed interface InstallState {
-    public data object NotInstalled : InstallState
-    public data object Outdated : InstallState
-    public data class Staged(val version: String) : InstallState
-    public data object Current : InstallState
-    public data class Failed(val step: String, val stderr: String) : InstallState
+sealed interface InstallState {
+    data object NotInstalled : InstallState
+    data object Outdated : InstallState
+    data class Staged(val version: String) : InstallState
+    data object Current : InstallState
+    data class Failed(val step: String, val stderr: String) : InstallState
 }
 
-public data class ServerArtifact(
+data class ServerArtifact(
     val bundledVersion: String?,
     val activeVersion: String?,
     val runningVersion: String?,

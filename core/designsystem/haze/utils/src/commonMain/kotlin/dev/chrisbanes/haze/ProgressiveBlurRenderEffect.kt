@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Shader
  * versions approximate progressive blur with layered or masked platform blur instead.
  */
 @InternalHazeApi
-public fun createProgressiveBlurRenderEffect(
+fun createProgressiveBlurRenderEffect(
     blurRadiusPx: Float,
     size: Size,
     offset: Offset,

@@ -69,7 +69,7 @@ import org.jetbrains.compose.resources.painterResource
  * Contains ONLY Installed, Marketplace, Import package, and Author tools.
  */
 @Composable
-public fun PluginSidebar(
+fun PluginSidebar(
     currentDestination: PluginDestination,
     onSelectDestination: (PluginDestination) -> Unit,
     onOpenSettings: () -> Unit = {},

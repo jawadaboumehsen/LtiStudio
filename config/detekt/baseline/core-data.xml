@@ -95,7 +95,7 @@
     <ID>ComplexCondition:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$cmdStr.contains("test -e") || cmdStr.contains("test -d") || cmdStr.contains("test -x") || cmdStr.contains("test -r") || cmdStr.contains("test -f")</ID>
     <ID>CyclomaticComplexMethod:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$private fun resolvePhysicalWorkDir: Path?</ID>
     <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$override suspend fun verifyEnvironment: ToolchainSetupState</ID>
-    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$public suspend fun provisionAvbKey: Boolean</ID>
+    <ID>CyclomaticComplexMethod:WslToolchainProvisioner.kt:WslToolchainProvisioner$suspend fun provisionAvbKey: Boolean</ID>
     <ID>CyclomaticComplexMethod:WslToolchainProvisionerTest.kt:WslToolchainProvisionerTest.FakeWslCliExecutor$override fun execute: CliExecutionResult</ID>
     <ID>FunctionExpressionBody:DesktopFileSystemRepository.kt:DesktopFileSystemRepository${ return fileSystem.exists(path.toPath()) }</ID>
     <ID>FunctionExpressionBody:DesktopFileSystemRepository.kt:DesktopFileSystemRepository${ return try { FileSystems.getDefault().newWatchService() } catch (e: Exception) { logger.e(e) { "Failed to create WatchService" } null } }</ID>
@@ -131,8 +131,8 @@
     <ID>FunctionSignature:InMemoryRunRepository.kt:InMemoryRunRepository$override suspend fun latestActive: BuildRun?</ID>
     <ID>FunctionSignature:SetupExecutionPathTest.kt:SetupExecutionPathTest$@Test fun `after SERVER_CONNECTIVITY succeeds setup uses strictly transport executor and records zero wsl calls`</ID>
     <ID>FunctionSignature:SetupExecutionPathTest.kt:SetupExecutionPathTest.SpyWslCliExecutor$override fun executeHost: CliExecutionResult</ID>
-    <ID>FunctionSignature:SetupLogBuffer.kt:SetupLogBuffer$public fun append: Boolean</ID>
-    <ID>FunctionSignature:SetupPlanFactory.kt:SetupPlanFactory$public fun computeRevisionHash: String</ID>
+    <ID>FunctionSignature:SetupLogBuffer.kt:SetupLogBuffer$fun append: Boolean</ID>
+    <ID>FunctionSignature:SetupPlanFactory.kt:SetupPlanFactory$fun computeRevisionHash: String</ID>
     <ID>FunctionSignature:SetupRecoveryTest.kt:SetupRecoveryTest$private fun reopen</ID>
     <ID>FunctionSignature:SetupRecoveryTest.kt:SetupRecoveryTest$private suspend fun journalIntent: Int</ID>
     <ID>FunctionSignature:SetupRecoveryTest.kt:SetupRecoveryTest.PersistentFakeServer$override suspend fun listRuns: List&lt;RunStatus&gt;</ID>
@@ -235,7 +235,7 @@
     <ID>MultiLineIfElse:WslToolchainProvisioner.kt:WslToolchainProvisioner$it.copy( status = testStatus, path = if (exists) binaryPath else null, // A failed probe replaces any earlier success evidence (FR-010). lastTested = if (testStatus == StepStatus.SUCCESS) "Just now" else null, )</ID>
     <ID>MultiLineIfElse:WslToolchainProvisioner.kt:WslToolchainProvisioner$step</ID>
     <ID>MultiLineIfElse:WslToolchainProvisioner.kt:WslToolchainProvisioner$tool</ID>
-    <ID>NestedBlockDepth:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$public fun discoverWorkspaces: List&lt;RecentProject&gt;</ID>
+    <ID>NestedBlockDepth:WorkDirDiscoveryService.kt:WorkDirDiscoveryService$fun discoverWorkspaces: List&lt;RecentProject&gt;</ID>
     <ID>NoConsecutiveBlankLines:PlatformRepositoryModule.desktop.kt: </ID>
     <ID>NoConsecutiveBlankLines:RepositoryModule.kt: </ID>
     <ID>NoConsecutiveBlankLines:SetupConsentTest.kt: </ID>

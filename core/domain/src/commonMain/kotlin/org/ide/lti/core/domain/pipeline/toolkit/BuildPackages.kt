@@ -13,7 +13,7 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * Packages the Build stage makes besides the flashable zip (FR-013). Their names are what
  * `BuildSettings.extraPackages` stores.
  */
-public enum class PackageKind {
+enum class PackageKind {
     /** A fastboot images zip: the full super.img and the boot images. */
     FullPackage,
 
@@ -31,7 +31,7 @@ public enum class PackageKind {
 }
 
 /** Build warnings the user accepts by name (`BuildSettings.acknowledgedWarnings`) (FR-017). */
-public enum class BuildWarningKind {
+enum class BuildWarningKind {
     /** A dynamic partition chosen as a standalone image is also inside super.img. */
     SuperOverlap,
 

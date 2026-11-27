@@ -19,20 +19,20 @@ import kotlin.jvm.JvmInline
  * [Default] uses [Balanced]. [Quality] requests full-resolution input, while [Fixed] lets you
  * choose a quality level between the [Performance] and [Quality] profiles.
  */
-public sealed interface HazePerformanceMode {
+sealed interface HazePerformanceMode {
     /** Library-defined performance defaults. */
     public companion object {
         /** Offers a middle ground between visual detail and rendering cost. */
-        public val Balanced: HazePerformanceMode = Fixed(0.5f)
+        val Balanced: HazePerformanceMode = Fixed(0.5f)
 
         /** Points to the library's current default performance profile. */
-        public val Default: HazePerformanceMode = Balanced
+        val Default: HazePerformanceMode = Balanced
 
         /** Requests the highest rendering fidelity. */
-        public val Quality: HazePerformanceMode = Fixed(1f)
+        val Quality: HazePerformanceMode = Fixed(1f)
 
         /** Requests the lowest supported rendering fidelity. */
-        public val Performance: HazePerformanceMode = Fixed(0f)
+        val Performance: HazePerformanceMode = Fixed(0f)
     }
 
     /**
@@ -45,7 +45,7 @@ public sealed interface HazePerformanceMode {
         message = "Adaptive performance selection is no longer supported. Use HazePerformanceMode.Default.",
         replaceWith = ReplaceWith("HazePerformanceMode.Default"),
     )
-    public data object Adaptive : HazePerformanceMode
+    data object Adaptive : HazePerformanceMode
 
     /**
      * Requests a fixed quality level for built-in effects.
@@ -59,7 +59,7 @@ public sealed interface HazePerformanceMode {
      * (highest supported quality). Must be finite and within this range.
      */
     @JvmInline
-    public value class Fixed(public val qualityFraction: Float) : HazePerformanceMode {
+    value class Fixed(val qualityFraction: Float) : HazePerformanceMode {
         init {
             require(qualityFraction.isFinite() && qualityFraction >= 0f && qualityFraction <= 1f) {
                 "qualityFraction needs to be finite and in the range 0 <= x <= 1f"
@@ -74,4 +74,4 @@ public sealed interface HazePerformanceMode {
  * Effects observe changes at their modifier nodes. An explicit performance mode on an effect
  * takes precedence over this value. Without a provider, effects use [HazePerformanceMode.Default].
  */
-public val LocalHazePerformanceMode: ProvidableCompositionLocal<HazePerformanceMode> = compositionLocalOf { HazePerformanceMode.Default }
+val LocalHazePerformanceMode: ProvidableCompositionLocal<HazePerformanceMode> = compositionLocalOf { HazePerformanceMode.Default }

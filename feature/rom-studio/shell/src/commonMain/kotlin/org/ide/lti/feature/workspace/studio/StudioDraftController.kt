@@ -24,29 +24,29 @@ import org.ide.lti.core.model.workspace.PublishSettings
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
 /** Owns draft revisions and asynchronous save reconciliation for one workspace. */
-public class StudioDraftController(initialDraft: WorkspacePipelineDraft, private val target: TargetDevice? = null) {
+class StudioDraftController(initialDraft: WorkspacePipelineDraft, private val target: TargetDevice? = null) {
     private val _draft = MutableStateFlow(initialDraft)
-    public val draft: StateFlow<WorkspacePipelineDraft> = _draft.asStateFlow()
+    val draft: StateFlow<WorkspacePipelineDraft> = _draft.asStateFlow()
 
-    public fun applyAcquisition(value: AcquisitionSettings) = edit { it.withAcquisition(value) }
-    public fun applyExtraction(value: ExtractionSettings) = edit { it.withExtraction(value) }
-    public fun applyAssembly(value: AssemblySettings) = edit { it.withAssembly(value) }
-    public fun applyDebloat(value: DebloatSettings) = edit { it.withDebloat(value) }
-    public fun applyCustomization(value: CustomizationSettings) = edit { it.withCustomization(value) }
-    public fun applyBuild(value: BuildSettings) = edit { it.withBuild(value) }
-    public fun applyRelease(value: ReleaseSettings) = edit { it.withRelease(value) }
-    public fun applyPublish(value: PublishSettings) = edit { it.withPublish(value) }
+    fun applyAcquisition(value: AcquisitionSettings) = edit { it.withAcquisition(value) }
+    fun applyExtraction(value: ExtractionSettings) = edit { it.withExtraction(value) }
+    fun applyAssembly(value: AssemblySettings) = edit { it.withAssembly(value) }
+    fun applyDebloat(value: DebloatSettings) = edit { it.withDebloat(value) }
+    fun applyCustomization(value: CustomizationSettings) = edit { it.withCustomization(value) }
+    fun applyBuild(value: BuildSettings) = edit { it.withBuild(value) }
+    fun applyRelease(value: ReleaseSettings) = edit { it.withRelease(value) }
+    fun applyPublish(value: PublishSettings) = edit { it.withPublish(value) }
 
     /** Reset is an edit, so observers can order it after an in-flight save. */
-    public fun reset() = edit { it.resetToBase() }
+    fun reset() = edit { it.resetToBase() }
 
     /** Returns an independent controller; immutable settings values require no deep copy. */
-    public fun duplicate(): StudioDraftController = StudioDraftController(_draft.value.copy(), target)
+    fun duplicate(): StudioDraftController = StudioDraftController(_draft.value.copy(), target)
 
     /** Clears all supported persisted settings to their type defaults and starts a fresh draft. */
-    public fun delete() = edit { it.copyFromDefaults() }
+    fun delete() = edit { it.copyFromDefaults() }
 
-    public fun reconcileAfterSave(snapshot: ConfigurationSnapshot, savedAsOfRevision: Long) {
+    fun reconcileAfterSave(snapshot: ConfigurationSnapshot, savedAsOfRevision: Long) {
         _draft.value = _draft.value.reconcileAfterSave(snapshot, savedAsOfRevision).revalidateFor(target)
     }
 

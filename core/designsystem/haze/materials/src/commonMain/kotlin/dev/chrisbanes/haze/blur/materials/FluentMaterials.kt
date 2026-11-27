@@ -33,14 +33,14 @@ import dev.chrisbanes.haze.blur.valueBackedHazeBlurStyle
  * The primary use case for using these is for when aiming for consistency with native UI
  * (i.e. for when mixing Compose Multiplatform content alongside WinUI content).
  */
-public object FluentMaterials {
+object FluentMaterials {
 
     /**
      * A [HazeBlurStyle] which implements a mostly translucent material.
      */
     @Composable
     @ReadOnlyComposable
-    public fun thinAcrylic(
+    fun thinAcrylic(
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeAcrylicMaterial(
         containerColor = if (isDark) {
@@ -65,7 +65,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun accentAcrylicBase(
+    fun accentAcrylicBase(
         accentColor: Color = MaterialTheme.colorScheme.primaryContainer,
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeAcrylicMaterial(
@@ -82,7 +82,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun accentAcrylicDefault(
+    fun accentAcrylicDefault(
         accentColor: Color = MaterialTheme.colorScheme.primaryContainer,
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeAcrylicMaterial(
@@ -99,7 +99,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun acrylicBase(
+    fun acrylicBase(
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = acrylicBaseStyle(isDark)
 
@@ -129,7 +129,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun acrylicDefault(
+    fun acrylicDefault(
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeAcrylicMaterial(
         containerColor = if (isDark) {
@@ -154,7 +154,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun mica(
+    fun mica(
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeMicaMaterial(
         containerColor = if (isDark) {
@@ -174,7 +174,7 @@ public object FluentMaterials {
      */
     @Composable
     @ReadOnlyComposable
-    public fun micaAlt(
+    fun micaAlt(
         isDark: Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f,
     ): HazeBlurStyle = hazeMicaMaterial(
         containerColor = if (isDark) {

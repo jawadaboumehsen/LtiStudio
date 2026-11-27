@@ -13,12 +13,12 @@ import org.ide.lti.core.model.target.PackagePolicy
 import org.ide.lti.core.model.target.TargetDevice
 
 @Suppress("MaxLineLength") // The Edify statements read best whole.
-public object UpdaterScriptWriter {
+object UpdaterScriptWriter {
 
     /** [text] inside an Edify string: a quote in a version or device name must not end the string. */
     private fun edify(text: String): String = text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
 
-    public fun generate(target: TargetDevice, policy: PackagePolicy, romVersion: String = "1.0.0"): String {
+    fun generate(target: TargetDevice, policy: PackagePolicy, romVersion: String = "1.0.0"): String {
         val sb = StringBuilder()
 
         // 1. Device assertions

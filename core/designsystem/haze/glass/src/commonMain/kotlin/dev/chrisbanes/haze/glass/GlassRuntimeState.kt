@@ -60,7 +60,7 @@ internal abstract class GlassRuntimeState {
     internal open val observesPointerEvents: Boolean
         get() = interactionSlotsSnapshot.hovered != null || interactionSlotsSnapshot.pressed != null
 
-    public var interactionSource: InteractionSource? = null
+    var interactionSource: InteractionSource? = null
         set(value) {
             if (field !== value) {
                 HazeLogger.d(TAG) { "interactionSource changed. Current: $field. New: $value" }
@@ -72,7 +72,7 @@ internal abstract class GlassRuntimeState {
     internal val interactionLightRadiusFraction: Float
         get() = inheritedStyleValues.interactionLightRadiusFraction
 
-    public var interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly
+    var interactionTransformTarget: GlassTransformTarget = GlassTransformTarget.MaterialOnly
         set(value) {
             if (field != value) {
                 HazeLogger.d(TAG) { "interactionTransformTarget changed. Current: $field. New: $value" }
@@ -81,7 +81,7 @@ internal abstract class GlassRuntimeState {
             }
         }
 
-    public var interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer
+    var interactionTransformPivot: GlassTransformPivot = GlassTransformPivot.Pointer
         set(value) {
             if (field != value) {
                 HazeLogger.d(TAG) { "interactionTransformPivot changed. Current: $field. New: $value" }
@@ -93,7 +93,7 @@ internal abstract class GlassRuntimeState {
     internal val interactionPositionAnimationSpec
         get() = inheritedStyleValues.interactionPositionAnimationSpec
 
-    public var interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System
+    var interactionReducedMotionPolicy: GlassReducedMotionPolicy = GlassReducedMotionPolicy.System
         set(value) {
             if (field != value) {
                 HazeLogger.d(TAG) { "interactionReducedMotionPolicy changed. Current: $field. New: $value" }

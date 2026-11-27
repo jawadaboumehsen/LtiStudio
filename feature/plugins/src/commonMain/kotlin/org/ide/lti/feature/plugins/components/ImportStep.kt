@@ -9,7 +9,7 @@
  */
 package org.ide.lti.feature.plugins.components
 
-public enum class ImportStep(public val stepNumber: Int, public val title: String, public val subtitle: String) {
+enum class ImportStep(val stepNumber: Int, val title: String, val subtitle: String) {
     INSPECT(1, "Inspect", "Completed"),
     REVIEW(2, "Review", "Current"),
     INSTALL(3, "Install", "Pending"),

@@ -14,21 +14,21 @@ import org.ide.lti.core.model.plugin.PluginPlanTemplate
 /**
  * Access port for installed plugin plan templates and package content digests.
  */
-public interface PluginCatalogPort {
+interface PluginCatalogPort {
     /** Returns the plan template from the installed store, or null if uninstalled or missing. */
-    public fun templateFor(publisher: String, id: String, version: String): PluginPlanTemplate?
+    fun templateFor(publisher: String, id: String, version: String): PluginPlanTemplate?
 
     /** Returns the verified package content digest, or null if uninstalled or missing. */
-    public fun contentDigestFor(publisher: String, id: String, version: String): String?
+    fun contentDigestFor(publisher: String, id: String, version: String): String?
 
     /** Where the installed package's assets (files its plan copies) are, on this computer; null if unknown. */
-    public fun assetRootFor(publisher: String, id: String, version: String): String? = null
+    fun assetRootFor(publisher: String, id: String, version: String): String? = null
 }
 
 /**
  * Default catalog that returns null for everything; used when no catalog is supplied.
  */
-public object EmptyPluginCatalog : PluginCatalogPort {
+object EmptyPluginCatalog : PluginCatalogPort {
     override fun templateFor(publisher: String, id: String, version: String): PluginPlanTemplate? = null
     override fun contentDigestFor(publisher: String, id: String, version: String): String? = null
 }

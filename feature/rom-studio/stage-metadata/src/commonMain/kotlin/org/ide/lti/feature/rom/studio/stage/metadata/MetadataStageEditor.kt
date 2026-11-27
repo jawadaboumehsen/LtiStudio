@@ -23,7 +23,7 @@ import org.ide.lti.feature.rom.studio.api.StageEditorContext
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-public class MetadataStageEditor : StageEditor {
+class MetadataStageEditor : StageEditor {
     override val stageId: StageId = StageId.GENERATE_OTA_MANIFEST
     override val descriptor: StageDescriptor = CanonicalStageDescriptors.METADATA
 

@@ -15,25 +15,22 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.ExtractionSettings
 import org.ide.lti.core.model.workspace.PackageType
 
-public object CacheKeys {
+object CacheKeys {
     /**
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    public const val PIPELINE_VERSION: String = "2026-11-13.1"
-
-    /** Each field with its length: `a=b,c=d` as one value must not read like `a=b` and `c=d` as two. */
-    private fun keyOf(fields: List<String>): String = sha256(fields.joinToString("") { "${it.length}:$it" })
+    const val PIPELINE_VERSION: String = "2026-11-13.1"
 
     private fun Map<String, Any>.keyField(): String =
         toSortedMap().entries.joinToString("") { (k, v) -> "${k.length}:$k${v.toString().length}:$v" }
 
-    public fun sha256(text: String): String = org.ide.lti.core.common.utils.sha256(text)
+    fun sha256(text: String): String = org.ide.lti.core.common.utils.sha256(text)
 
-    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String =
+    fun stage2ExtractionKey(stage1Key: String, target: TargetDevice): String =
         stage2ExtractionKey(stage1Key, target, ExtractionSettings())
 
-    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, extraction: ExtractionSettings): String {
+    fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, extraction: ExtractionSettings): String {
         val raw = listOf(
             stage1Key,
             target.dynamicPartitions.sorted().joinToString(","),
@@ -49,10 +46,10 @@ public object CacheKeys {
         return sha256(raw)
     }
 
-    public fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String =
+    fun stage2ExtractionKey(stage1Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String =
         stage2ExtractionKey(stage1Key, target, snapshot.extraction)
 
-    public fun stage3AssemblyKey(stage2Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String {
+    fun stage3AssemblyKey(stage2Key: String, target: TargetDevice, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
             stage2Key,
             target.hasStandaloneSystemExt.toString(),
@@ -71,7 +68,7 @@ public object CacheKeys {
         return sha256(raw)
     }
 
-    public fun stage4ModuleKey(stage3Key: String, snapshot: ConfigurationSnapshot): String {
+    fun stage4ModuleKey(stage3Key: String, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
             stage3Key,
             snapshot.customization.enabledPackages.sorted().joinToString(","),
@@ -79,7 +76,7 @@ public object CacheKeys {
         return sha256(raw)
     }
 
-    public fun stage5BuildZipKey(
+    fun stage5BuildZipKey(
         stage4Key: String,
         snapshot: ConfigurationSnapshot,
         avbPubkeySha1: String = "",
@@ -125,7 +122,7 @@ public object CacheKeys {
         return sha256(raw.joinToString("|"))
     }
 
-    public fun stage6ManifestKey(stage5Key: String, snapshot: ConfigurationSnapshot): String {
+    fun stage6ManifestKey(stage5Key: String, snapshot: ConfigurationSnapshot): String {
         val raw = listOf(
             stage5Key,
             snapshot.release.otaBaseUrl,

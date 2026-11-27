@@ -13,12 +13,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.net.URLEncoder
 import java.security.MessageDigest
 
-public object OtaManifestWriter {
+object OtaManifestWriter {
 
     /** The A/B OTA zip offered next to the main package (`"ota"` in the entry). */
-    public data class OtaPackage(val filename: String, val size: Long, val sha256: String)
+    data class OtaPackage(val filename: String, val size: Long, val sha256: String)
 
-    public fun generate(
+    fun generate(
         datetime: Long,
         device: String,
         filename: String,
@@ -75,8 +75,8 @@ public object OtaManifestWriter {
     private const val OTA_INDENT = 16
 
     /** [text] escaped for use between JSON quotes (any quote, backslash or control character). */
-    public fun jsonText(text: String): String = JsonPrimitive(text).toString().removeSurrounding("\"")
+    fun jsonText(text: String): String = JsonPrimitive(text).toString().removeSurrounding("\"")
 
     /** [text] as one URL path segment: `#`, `?`, spaces and `/` cannot change what the URL names. */
-    public fun urlSegment(text: String): String = URLEncoder.encode(text, Charsets.UTF_8).replace("+", "%20")
+    fun urlSegment(text: String): String = URLEncoder.encode(text, Charsets.UTF_8).replace("+", "%20")
 }

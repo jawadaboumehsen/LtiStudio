@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-public data class ToolExecutionRequest(
+data class ToolExecutionRequest(
     val toolId: String,
     val arguments: List<String>,
     val workingDirectory: String? = null,
@@ -17,7 +17,7 @@ public data class ToolExecutionRequest(
 )
 
 @Serializable
-public data class ToolExecutionResponse(
+data class ToolExecutionResponse(
     val exitCode: Int,
     val stdout: String,
     val stderr: String,
@@ -29,27 +29,27 @@ public data class ToolExecutionResponse(
  * writes (and has persisted in its run journals), so they must not follow this package.
  */
 @Serializable
-public sealed class StreamEvent {
+sealed class StreamEvent {
     @Serializable
     @SerialName("io.ltirom.server.model.StreamEvent.OutputChunk")
-    public data class OutputChunk(val text: String, val isError: Boolean = false) : StreamEvent()
+    data class OutputChunk(val text: String, val isError: Boolean = false) : StreamEvent()
 
     @Serializable
     @SerialName("io.ltirom.server.model.StreamEvent.ProgressUpdate")
-    public data class ProgressUpdate(val fraction: Float, val message: String? = null) : StreamEvent()
+    data class ProgressUpdate(val fraction: Float, val message: String? = null) : StreamEvent()
 
     @Serializable
     @SerialName("io.ltirom.server.model.StreamEvent.ExecutionFinished")
-    public data class ExecutionFinished(val exitCode: Int, val durationMs: Long, val summary: String? = null) :
+    data class ExecutionFinished(val exitCode: Int, val durationMs: Long, val summary: String? = null) :
         StreamEvent()
 
     @Serializable
     @SerialName("io.ltirom.server.model.StreamEvent.Heartbeat")
-    public data class Heartbeat(val timestampEpochMs: Long) : StreamEvent()
+    data class Heartbeat(val timestampEpochMs: Long) : StreamEvent()
 }
 
 @Serializable
-public data class WslServerInfo(
+data class WslServerInfo(
     val status: String,
     val distro: String,
     val kernelRelease: String,
@@ -65,19 +65,19 @@ public data class WslServerInfo(
 )
 
 @Serializable
-public data class PathTranslationRequest(val path: String, val direction: PathTranslationDirection)
+data class PathTranslationRequest(val path: String, val direction: PathTranslationDirection)
 
 @Serializable
-public enum class PathTranslationDirection {
+enum class PathTranslationDirection {
     WINDOWS_TO_WSL,
     WSL_TO_WINDOWS,
 }
 
 @Serializable
-public data class PathTranslationResponse(val originalPath: String, val translatedPath: String)
+data class PathTranslationResponse(val originalPath: String, val translatedPath: String)
 
 @Serializable
-public data class ToolStatusInfo(
+data class ToolStatusInfo(
     val tool: String,
     val installed: Boolean,
     val path: String = "",
@@ -86,24 +86,24 @@ public data class ToolStatusInfo(
     val reason: String? = null,
 )
 
-public sealed interface ToolListResult {
-    public data class Tools(val list: List<ToolStatusInfo>) : ToolListResult
+sealed interface ToolListResult {
+    data class Tools(val list: List<ToolStatusInfo>) : ToolListResult
 
     /** The service answered, but not with a tool list (an HTTP error, an unreadable body). */
-    public data class ServiceError(val reason: String) : ToolListResult
+    data class ServiceError(val reason: String) : ToolListResult
 
     /** There was no answer at all: the connection failed or timed out. */
-    public data class Unreachable(val reason: String) : ToolListResult
+    data class Unreachable(val reason: String) : ToolListResult
 }
 
 @Serializable
-public data class ShutdownResponse(val status: String)
+data class ShutdownResponse(val status: String)
 
 @Serializable
-public data class BinaryTransferResponse(val path: String, val bytesTransferred: Long, val durationMs: Long)
+data class BinaryTransferResponse(val path: String, val bytesTransferred: Long, val durationMs: Long)
 
 @Serializable
-public enum class SessionStatus {
+enum class SessionStatus {
     RUNNING,
     COMPLETED,
     FAILED,
@@ -111,7 +111,7 @@ public enum class SessionStatus {
 }
 
 @Serializable
-public data class SessionSummary(
+data class SessionSummary(
     val sessionId: String,
     val toolId: String,
     val arguments: List<String>,
@@ -122,4 +122,4 @@ public data class SessionSummary(
 )
 
 @Serializable
-public data class SequencedStreamEvent(val seq: Long, val event: StreamEvent)
+data class SequencedStreamEvent(val seq: Long, val event: StreamEvent)

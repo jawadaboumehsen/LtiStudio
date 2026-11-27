@@ -37,7 +37,7 @@ import org.ide.lti.feature.rom.studio.stage.acquire.panes.SourceModePane
 
 @Suppress("LongParameterList")
 @Composable
-public fun AcquireEditor(
+fun AcquireEditor(
     settings: AcquisitionSettings,
     target: TargetDevice,
     onChange: (AcquisitionSettings) -> Unit,

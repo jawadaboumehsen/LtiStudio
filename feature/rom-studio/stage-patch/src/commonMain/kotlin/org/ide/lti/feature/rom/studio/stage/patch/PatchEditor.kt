@@ -57,7 +57,7 @@ import org.ide.lti.core.model.workspace.CustomizationSettings
  */
 @Suppress("LongParameterList")
 @Composable
-public fun PatchEditor(
+fun PatchEditor(
     settings: CustomizationSettings,
     facts: PatchFacts,
     onToggle: (String) -> Unit,

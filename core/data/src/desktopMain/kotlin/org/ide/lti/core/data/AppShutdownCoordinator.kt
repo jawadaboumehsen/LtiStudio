@@ -26,9 +26,10 @@ import org.ide.lti.core.domain.tools.ToolManager
 import org.ide.lti.core.domain.tools.ToolStorePort
 import org.ide.lti.core.model.workspace.Workspace
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-public class AppShutdownCoordinator(
+class AppShutdownCoordinator(
     private val transport: RemoteTransportPort,
     private val heartbeatMonitor: DaemonHeartbeatMonitor? = null,
     private val toolManager: ToolManager? = null,
@@ -43,7 +44,7 @@ public class AppShutdownCoordinator(
 
     override suspend fun shutdown(): ShutdownReport = shutdown(10.seconds)
 
-    public suspend fun shutdown(timeout: Duration): ShutdownReport = withTimeoutOrNull(timeout) {
+    suspend fun shutdown(timeout: Duration): ShutdownReport = withTimeoutOrNull(timeout) {
         closing = true
         // The tools' cleanup runs uninterruptibly, so it gets its own share of the deadline, not all of it.
         val toolBudgetMs = timeout.inWholeMilliseconds * TOOL_SHARE_PERCENT / PERCENT
@@ -96,7 +97,10 @@ public class AppShutdownCoordinator(
     }
 
     override suspend fun forceShutdown() {
-        if (withTimeoutOrNull(FORCE_SHUTDOWN_MS) { heartbeatMonitor?.shutdown() } == null && heartbeatMonitor != null) {
+        val stopped = withTimeoutOrNull(FORCE_SHUTDOWN_MS.milliseconds) {
+            heartbeatMonitor?.shutdown()
+        } != null
+        if (!stopped && heartbeatMonitor != null) {
             heartbeatMonitor.abort()
         }
     }

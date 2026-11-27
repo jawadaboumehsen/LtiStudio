@@ -10,9 +10,9 @@
 package org.ide.lti.core.domain.pipeline.text
 
 /** An fs_config line's owner, group, permission bits and capabilities. */
-public data class Owner(val uid: Int, val gid: Int, val mode: Int, val capabilities: Long = 0L) {
+data class Owner(val uid: Int, val gid: Int, val mode: Int, val capabilities: Long = 0L) {
     /** `<uid> <gid> <mode> capabilities=0x<caps>`, as fs_config lines say it (mode in octal, at least 3 digits). */
-    public val fsConfigFields: String
+    val fsConfigFields: String
         get() = "$uid $gid ${mode.toString(
             OCTAL,
         ).padStart(MODE_DIGITS, '0')} capabilities=0x${capabilities.toString(HEX)}"
@@ -30,13 +30,13 @@ public data class Owner(val uid: Int, val gid: Int, val mode: Int, val capabilit
  * then Android's built-in table (`bin/` folders are `root:shell 0751`, their files `0755`), then root `0755` for
  * folders and `0644` for files. Paths are as fs_config lines write them (`system/bin/sh`, `vendor/bin/cnd`).
  */
-public class OwnerRules(private val dirs: List<Entry>, private val files: List<Entry>) {
-    public data class Entry(val pattern: String, val owner: Owner)
+class OwnerRules(private val dirs: List<Entry>, private val files: List<Entry>) {
+    data class Entry(val pattern: String, val owner: Owner)
 
     /** Where an answer came from. */
-    public enum class Source { Device, Android, Default }
+    enum class Source { Device, Android, Default }
 
-    public fun owner(path: String, isDirectory: Boolean): Pair<Owner, Source> {
+    fun owner(path: String, isDirectory: Boolean): Pair<Owner, Source> {
         val clean = path.trim('/')
         fun find(table: List<Entry>) = table.firstOrNull { matches(it.pattern, clean, isDirectory) }?.owner
         val device = find(if (isDirectory) dirs else files)
@@ -48,8 +48,8 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
         }
     }
 
-    public companion object {
-        public val ANDROID_ONLY: OwnerRules = OwnerRules(emptyList(), emptyList())
+    companion object {
+        val ANDROID_ONLY: OwnerRules = OwnerRules(emptyList(), emptyList())
         private const val HEADER = 16
         private const val DIR_MODE = 0x1ED // 0755
         private const val FILE_MODE = 0x1A4 // 0644
@@ -64,7 +64,7 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
          * One binary table: entries of `u16 length, u16 mode, u16 uid, u16 gid, u64 capabilities, NUL-ended path`
          * (little-endian, [length] covering it all). A damaged tail ends the list, never a wrong entry.
          */
-        public fun decodeTable(bytes: ByteArray): List<Entry> {
+        fun decodeTable(bytes: ByteArray): List<Entry> {
             val out = mutableListOf<Entry>()
             var at = 0
             fun u16(i: Int) = (bytes[i].toInt() and 0xFF) or ((bytes[i + 1].toInt() and 0xFF) shl 8)
@@ -73,7 +73,7 @@ public class OwnerRules(private val dirs: List<Entry>, private val files: List<E
                 // As Android's reader: a record past the end, or a path without its NUL inside it, is a damaged tail.
                 val nul = (at + HEADER until at + length).takeIf { length > HEADER && at + length <= bytes.size }
                     ?.firstOrNull { bytes[it] == 0.toByte() } ?: break
-                val caps = (0 until 8).fold(0L) { acc, i -> acc or ((bytes[at + 8 + i].toLong() and 0xFF) shl (8 * i)) }
+                val caps = (0..<8).fold(0L) { acc, i -> acc or ((bytes[at + 8 + i].toLong() and 0xFF) shl (8 * i)) }
                 val name = bytes.decodeToString(at + HEADER, nul)
                 if (name.isNotEmpty()) out += Entry(name, Owner(u16(at + 4), u16(at + 6), u16(at + 2), caps))
                 at += length

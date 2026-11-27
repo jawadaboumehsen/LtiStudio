@@ -16,7 +16,7 @@ import androidx.compose.animation.core.FiniteAnimationSpec
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class GlassTransformTarget {
+enum class GlassTransformTarget {
     /** Scales the generated Glass material while leaving the composable content unchanged. */
     MaterialOnly,
 
@@ -29,7 +29,7 @@ public enum class GlassTransformTarget {
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class GlassTransformPivot {
+enum class GlassTransformPivot {
     /** Uses the current pointer or interaction position as the transform pivot. */
     Pointer,
 
@@ -45,7 +45,7 @@ public enum class GlassTransformPivot {
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class GlassReducedMotionPolicy {
+enum class GlassReducedMotionPolicy {
     /**
      * Follows the current platform motion-duration scale. At a non-zero scale, interaction responses
      * and container member transitions run under that scale. At zero (animations off), interaction
@@ -72,29 +72,29 @@ public enum class GlassReducedMotionPolicy {
  * implementation point. Each node evaluates these declarations into node-owned runtime state.
  */
 @GlassStyleDsl
-public sealed interface GlassInteractionScope {
+sealed interface GlassInteractionScope {
     /** Sets the finite lighting multiplier in the inclusive range `0f..1f`. */
-    public fun lightingIntensity(intensity: Float)
+    fun lightingIntensity(intensity: Float)
 
     /** Sets the finite refraction multiplier in the inclusive range `0f..2f`. */
-    public fun refractionMultiplier(multiplier: Float)
+    fun refractionMultiplier(multiplier: Float)
 
     /** Sets the finite additive white-point adjustment in the inclusive range `-1f..1f`. */
-    public fun whitePointDelta(delta: Float)
+    fun whitePointDelta(delta: Float)
 
     /** Sets a finite uniform scale in `0f < scale <= 1f`. */
-    public fun scale(scale: Float) {
+    fun scale(scale: Float) {
         scale(scaleX = scale, scaleY = scale)
     }
 
     /** Sets finite horizontal and vertical scales in `0f < value <= 1f`. */
-    public fun scale(scaleX: Float, scaleY: Float)
+    fun scale(scaleX: Float, scaleY: Float)
 
     /**
      * Applies [toSpec] when entering and [fromSpec] when leaving the response declared by [block].
      * Animation specs retain the contract of their owning [FiniteAnimationSpec] type.
      */
-    public fun animate(
+    fun animate(
         toSpec: FiniteAnimationSpec<Float>,
         fromSpec: FiniteAnimationSpec<Float>,
         block: GlassInteractionScope.() -> Unit,

@@ -18,7 +18,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-public val romStudioShellModule: Module = module {
+val romStudioShellModule: Module = module {
     single<StageEditorRegistry> {
         DefaultStageEditorRegistry(
             editors = getAll(),
@@ -54,4 +54,4 @@ public val romStudioShellModule: Module = module {
     }
 }
 
-public val romStudioModule: Module get() = romStudioShellModule
+val romStudioModule: Module get() = romStudioShellModule

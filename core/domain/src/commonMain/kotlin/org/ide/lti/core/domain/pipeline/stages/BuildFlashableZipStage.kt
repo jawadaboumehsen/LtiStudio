@@ -47,7 +47,7 @@ private data class PackagingPolicy(
  *
  * Every size, digest and salt comes from a captured step result; nothing is defaulted.
  */
-public class BuildFlashableZipStage : StageDefinition {
+class BuildFlashableZipStage : StageDefinition {
     override val id: StageId = StageId.BUILD_FLASHABLE_ZIP
 
     override val requiredToolIds: Set<String> = setOf(
@@ -675,7 +675,7 @@ public class BuildFlashableZipStage : StageDefinition {
             )
         }
 
-    public companion object {
+    companion object {
         /**
          * Build writes every partition of the device, so one Extract or Assemble left out would be missing from super,
          * or come from an older tree. Such a selection stays usable for a run that stops before Build.
@@ -703,21 +703,21 @@ public class BuildFlashableZipStage : StageDefinition {
             }
         }
 
-        public const val STAGE_DIR: String = "out/package/.stage"
-        public const val UNSIGNED_MARKER: String = "out/package/UNSIGNED"
+        const val STAGE_DIR: String = "out/package/.stage"
+        const val UNSIGNED_MARKER: String = "out/package/UNSIGNED"
         private const val AVB_PUBKEY = "work/package/avb.avbpubkey"
         internal val PLATFORM_KEY_FILES: List<String> = listOf("x509.pem", "pk8", "key.pem")
 
         /** A file of the configured platform key pair (`keys/platform` -> `keys/platform.pk8`). */
-        public fun platformKey(ctx: StageContext, ext: String): String =
+        fun platformKey(ctx: StageContext, ext: String): String =
             ctx.abs("${ctx.snapshot.build.signing.platformKeyRef}.$ext")
-        public const val COVERAGE_RESULT_KEY: String = RuntimeKeys.BUILD_COVERAGE
-        public const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
-        public const val PACKAGE_BUILD_PROP: String = "package.build.prop"
-        public const val VENDOR_BUILD_PROP: String = "package.vendor.build.prop"
-        public const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
+        const val COVERAGE_RESULT_KEY: String = RuntimeKeys.BUILD_COVERAGE
+        const val UPDATE_BINARY_RESOURCE: String = "updater/update-binary"
+        const val PACKAGE_BUILD_PROP: String = "package.build.prop"
+        const val VENDOR_BUILD_PROP: String = "package.vendor.build.prop"
+        const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
         private const val EROFS_TIMESTAMP = "1640995200"
-        public const val EXTRA_DIR: String = "out/extra"
+        const val EXTRA_DIR: String = "out/extra"
 
         /** mkfs.erofs's data deduplication and tail fragments (`BuildFilesystems.erofsDedupe`). */
         private const val DEDUPE = "-Ededupe,fragments"
@@ -733,21 +733,21 @@ public class BuildFlashableZipStage : StageDefinition {
             "changelog.md",
         )
 
-        public fun footeredSize(p: String): String = "image.$p.footeredSize"
+        fun footeredSize(p: String): String = "image.$p.footeredSize"
 
         /** `du -sb` of `work/<p>`: the bytes of the files [p]'s image was built from. */
-        public fun contentSize(p: String): String = "image.$p.contentSize"
+        fun contentSize(p: String): String = "image.$p.contentSize"
 
-        public fun ext4MeasureKey(p: String): String = "image.$p.ext4.measure"
+        fun ext4MeasureKey(p: String): String = "image.$p.ext4.measure"
 
-        public fun ext4TrialKey(p: String): String = "image.$p.ext4.trial"
+        fun ext4TrialKey(p: String): String = "image.$p.ext4.trial"
 
-        public fun f2fsPrepareKey(p: String): String = "image.$p.f2fs.prepare"
+        fun f2fsPrepareKey(p: String): String = "image.$p.f2fs.prepare"
 
-        public fun f2fsTrialKey(p: String): String = "image.$p.f2fs.trial"
-        public fun stagedBootSize(b: String): String = "package.boot.$b.size"
+        fun f2fsTrialKey(p: String): String = "image.$p.f2fs.trial"
+        fun stagedBootSize(b: String): String = "package.boot.$b.size"
 
-        public fun zipName(ctx: StageContext): String {
+        fun zipName(ctx: StageContext): String {
             val date = requireNotNull(ctx.value(RuntimeKeys.RUN_DATE)) { "run date missing from runtime values" }
             return renderName(
                 template = ctx.snapshot.build.filenameTemplate,
@@ -758,26 +758,26 @@ public class BuildFlashableZipStage : StageDefinition {
         }
 
         /** The package name for [template]; the build and the Output naming preview both use this. */
-        public fun renderName(template: String, version: String, date: String, device: String): String = template
+        fun renderName(template: String, version: String, date: String, device: String): String = template
             .replace("{version}", version)
             .replace("{date}", date)
             .replace("{device}", device)
 
         /** The build's main package, which Release metadata and Publish use: the A/B OTA when it is the only one. */
-        public fun zipRelPath(ctx: StageContext): String = "out/package/${packageName(ctx)}"
+        fun zipRelPath(ctx: StageContext): String = "out/package/${packageName(ctx)}"
 
-        public fun packageName(ctx: StageContext): String =
+        fun packageName(ctx: StageContext): String =
             if (ctx.snapshot.build.packageType == PackageType.AB_OTA) otaName(ctx) else zipName(ctx)
 
         /** The recovery flashable zip. */
-        public fun flashableRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"
+        fun flashableRelPath(ctx: StageContext): String = "out/package/${zipName(ctx)}"
 
         /** The A/B OTA zip: the flashable zip's name with `-ota`. */
-        public fun otaName(ctx: StageContext): String = zipName(ctx).removeSuffix(".zip") + "-ota.zip"
+        fun otaName(ctx: StageContext): String = zipName(ctx).removeSuffix(".zip") + "-ota.zip"
 
-        public fun otaRelPath(ctx: StageContext): String = "out/package/${otaName(ctx)}"
+        fun otaRelPath(ctx: StageContext): String = "out/package/${otaName(ctx)}"
 
-        public fun bootPartitionBytes(target: TargetDevice, image: String): Long = when (image) {
+        fun bootPartitionBytes(target: TargetDevice, image: String): Long = when (image) {
             "boot" -> target.bootPartitionBytes
             "vendor_boot" -> target.vendorBootPartitionBytes
             "init_boot" -> target.initBootPartitionBytes

@@ -1,11 +1,24 @@
 package io.ltirom.tooling.core
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.measureTimeMillis
+import kotlin.time.Duration.Companion.milliseconds
 
-public class ProcessToolRepository(
+class ProcessToolRepository(
     private val binaryResolver: (ToolId) -> ToolBinary,
     private val environment: ProcessEnvironment,
     private val safetyPolicy: ToolSafetyPolicy,
@@ -59,7 +72,7 @@ public class ProcessToolRepository(
                     val descendantWatcher = launch(Dispatchers.IO) {
                         while (p.isAlive) {
                             rememberDescendants(p, knownDescendants)
-                            delay(DESCENDANT_SCAN_MILLIS)
+                            delay(DESCENDANT_SCAN_MILLIS.milliseconds)
                         }
                     }
 
@@ -82,7 +95,7 @@ public class ProcessToolRepository(
 
                         // The deadline covers the readers too: a child that keeps the pipes open after the
                         // process exits must not hold the call past its time (cleanup below ends that child).
-                        val (code, stdoutData, stderrData) = withTimeout(command.timeoutMs) {
+                        val (code, stdoutData, stderrData) = withTimeout(command.timeoutMs.milliseconds) {
                             val code = runInterruptible(Dispatchers.IO) { p.waitFor() }
                             Triple(code, stdoutJob.await(), stderrJob.await())
                         }

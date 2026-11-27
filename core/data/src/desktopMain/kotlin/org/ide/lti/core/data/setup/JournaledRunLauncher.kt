@@ -24,7 +24,7 @@ import org.ide.lti.core.model.setup.PersistedExecutionRequest
 /**
  * Journal identity of the attempt on whose behalf server commands are submitted.
  */
-public data class SetupJournalContext(
+data class SetupJournalContext(
     val environmentKey: String,
     val attemptId: String,
     /**
@@ -38,26 +38,22 @@ public data class SetupJournalContext(
 /**
  * Typed result of one journaled server command.
  */
-public sealed interface JournaledRunResult {
+sealed interface JournaledRunResult {
     /**
      * The run reached an authoritative terminal state; [exitCode] is the server-reported code and [errorTail]
      * the last lines it wrote to stderr (why it failed, e.g. CMake's "Could NOT find BZip2").
      */
-    public data class Finished(
-        val runId: String,
-        val status: RunStatusValue,
-        val exitCode: Int,
-        val errorTail: String = "",
-    ) : JournaledRunResult
+    data class Finished(val runId: String, val status: RunStatusValue, val exitCode: Int, val errorTail: String = "") :
+        JournaledRunResult
 
     /** The journal could not be written before submission: nothing was submitted. */
-    public data class JournalRejected(val reason: String) : JournaledRunResult
+    data class JournalRejected(val reason: String) : JournaledRunResult
 
     /**
      * The command may have been submitted but its identity or evidence could not be durably recorded, or the
      * stream ended without an authoritative terminal state. Recovery is blocked until reconciled.
      */
-    public data class Interrupted(val reason: String) : JournaledRunResult
+    data class Interrupted(val reason: String) : JournaledRunResult
 }
 
 /**
@@ -73,13 +69,13 @@ public sealed interface JournaledRunResult {
  *
  * Idempotency keys and locks are derived from environment/attempt/child action identity, never static.
  */
-public class JournaledRunLauncher(
+class JournaledRunLauncher(
     private val transport: RemoteTransportPort,
     private val repository: ToolchainSetupRepository,
     private val context: SetupJournalContext,
 ) {
-    public companion object {
-        public val TERMINAL_STATUSES: Set<RunStatusValue> = setOf(
+    companion object {
+        val TERMINAL_STATUSES: Set<RunStatusValue> = setOf(
             RunStatusValue.COMPLETED,
             RunStatusValue.FAILED,
             RunStatusValue.CANCELLED,
@@ -88,15 +84,15 @@ public class JournaledRunLauncher(
 
         private const val ERROR_TAIL_LINES = 8
 
-        public fun idempotencyKey(context: SetupJournalContext, actionId: String): String =
+        fun idempotencyKey(context: SetupJournalContext, actionId: String): String =
             "${context.environmentKey}:${context.attemptId}:$actionId"
 
-        public fun workspaceLock(context: SetupJournalContext, actionId: String): String =
+        fun workspaceLock(context: SetupJournalContext, actionId: String): String =
             "lock:${context.environmentKey}:${context.attemptId}:$actionId"
     }
 
     @Suppress("ReturnCount")
-    public suspend fun run(
+    suspend fun run(
         stage: SetupStepStage,
         actionId: String,
         request: ToolExecutionRequest,
@@ -163,7 +159,7 @@ public class JournaledRunLauncher(
      * the authoritative terminal proof. Shared by first execution and by reconnection.
      */
     @Suppress("ReturnCount")
-    public suspend fun attachAndCommit(
+    suspend fun attachAndCommit(
         childIndex: Int,
         runId: String,
         fromSeq: Long,

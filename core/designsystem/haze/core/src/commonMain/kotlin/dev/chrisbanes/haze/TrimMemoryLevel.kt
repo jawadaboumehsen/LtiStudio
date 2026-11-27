@@ -14,7 +14,7 @@ package dev.chrisbanes.haze
  *
  * @property severity Comparable severity used to order increasingly urgent requests.
  */
-public enum class TrimMemoryLevel(public val severity: Int) {
+enum class TrimMemoryLevel(val severity: Int) {
     /** The UI is no longer visible, allowing UI-only cached resources to be released. */
     UI_HIDDEN(severity = 10),
 

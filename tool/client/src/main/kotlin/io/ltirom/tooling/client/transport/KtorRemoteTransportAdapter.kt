@@ -1,16 +1,30 @@
 package io.ltirom.tooling.client.transport
 
-import io.ktor.client.*
-import io.ktor.client.call.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.plugins.timeout
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.*
-import io.ktor.websocket.*
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.http.encodeURLParameter
+import io.ktor.http.isSuccess
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.close
+import io.ktor.websocket.readText
 import io.ltirom.tooling.client.resilience.CircuitBreaker
 import io.ltirom.tooling.client.resilience.CommandAdmissionException
 import io.ltirom.tooling.core.RemoteCancellationUnconfirmedException
@@ -20,7 +34,21 @@ import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
 import io.ltirom.tooling.core.ports.StopClientResult
-import io.ltirom.tooling.core.remote.*
+import io.ltirom.tooling.core.remote.InvalidWorkingDirectory
+import io.ltirom.tooling.core.remote.RunCancelResponse
+import io.ltirom.tooling.core.remote.RunConflict
+import io.ltirom.tooling.core.remote.RunHandle
+import io.ltirom.tooling.core.remote.RunStatus
+import io.ltirom.tooling.core.remote.RunStatusValue
+import io.ltirom.tooling.core.remote.SequencedStreamEvent
+import io.ltirom.tooling.core.remote.SessionSummary
+import io.ltirom.tooling.core.remote.StartRunRequest
+import io.ltirom.tooling.core.remote.StreamEvent
+import io.ltirom.tooling.core.remote.ToolExecutionRequest
+import io.ltirom.tooling.core.remote.ToolExecutionResponse
+import io.ltirom.tooling.core.remote.ToolListResult
+import io.ltirom.tooling.core.remote.ToolStatusInfo
+import io.ltirom.tooling.core.remote.WslServerInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -35,12 +63,14 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Adapter implementing [RemoteTransportPort] via Ktor HTTP and WebSocket clients.
  * Protected with [CircuitBreaker] resilience and distributed [TraceContext] propagation.
  */
-public class KtorRemoteTransportAdapter(
+class KtorRemoteTransportAdapter(
     private val supervisor: DaemonSupervisorPort,
     private val httpClient: HttpClient,
     private val json: Json =
@@ -48,12 +78,12 @@ public class KtorRemoteTransportAdapter(
             ignoreUnknownKeys = true
             encodeDefaults = true
         },
-    public val circuitBreaker: CircuitBreaker = CircuitBreaker(),
+    val circuitBreaker: CircuitBreaker = CircuitBreaker(),
 ) : RemoteTransportPort {
-    public companion object {
-        public const val PROTOCOL_VERSION: String = "1.2.0"
-        public const val HEADER_PROTOCOL_VERSION: String = "X-LtiRom-Protocol-Version"
-        public const val DEFAULT_HEARTBEAT_TIMEOUT_MS: Long = 45_000L
+    companion object {
+        const val PROTOCOL_VERSION: String = "1.2.0"
+        const val HEADER_PROTOCOL_VERSION: String = "X-LtiRom-Protocol-Version"
+        const val DEFAULT_HEARTBEAT_TIMEOUT_MS: Long = 45_000L
 
         /** Time on top of a command's own timeout for the service to finish and answer. */
         private const val EXECUTE_RESPONSE_MARGIN_MS: Long = 30_000L
@@ -256,7 +286,7 @@ public class KtorRemoteTransportAdapter(
         } finally {
             if (!finished) {
                 withContext(NonCancellable) {
-                    withTimeoutOrNull(5_000L) {
+                    withTimeoutOrNull(5.seconds) {
                         cancelExecutionDirect(conn, traceId, "SIGTERM")
                     }
                 }
@@ -385,7 +415,7 @@ public class KtorRemoteTransportAdapter(
 
     override suspend fun sendHeartbeat(descriptor: ServerConnectionDescriptor): Boolean = withContext(Dispatchers.IO) {
         try {
-            withTimeoutOrNull(10_000L) {
+            withTimeoutOrNull(10.seconds) {
                 val response =
                     httpClient.post("${descriptor.httpBaseUrl}/api/v1/client/heartbeat") {
                         withAuth(descriptor, includeProtocol = true)
@@ -453,7 +483,7 @@ public class KtorRemoteTransportAdapter(
     ) {
         val confirmed =
             withContext(NonCancellable) {
-                withTimeoutOrNull(5_000L) {
+                withTimeoutOrNull(5.seconds) {
                     cancelExecutionDirect(conn, executionId, signal)
                 } ?: false
             }
@@ -641,7 +671,7 @@ public class KtorRemoteTransportAdapter(
      * is rethrown to it, and the cursor advances only after an event was delivered, so nothing is skipped.
      * A normal "Completed" close ends the stream; persistent failures stop after [MAX_RECONNECTS_WITHOUT_PROGRESS].
      */
-    public fun attachRun(
+    fun attachRun(
         runId: String,
         fromSeq: Long = 1L,
         heartbeatTimeoutMs: Long = DEFAULT_HEARTBEAT_TIMEOUT_MS,
@@ -672,7 +702,7 @@ public class KtorRemoteTransportAdapter(
                     while (true) {
                         val frame =
                             try {
-                                withTimeout(heartbeatTimeoutMs) {
+                                withTimeout(heartbeatTimeoutMs.milliseconds) {
                                     incoming.receiveCatching().getOrNull()
                                 }
                             } catch (_: TimeoutCancellationException) {
@@ -752,7 +782,7 @@ public class KtorRemoteTransportAdapter(
                         "Lost the output of run '$runId' after $failuresWithoutProgress reconnect attempts without progress",
                     )
                 }
-                delay((100L * failuresWithoutProgress).coerceAtMost(2000L))
+                delay((100L * failuresWithoutProgress).coerceAtMost(2000L).milliseconds)
             }
 
             if (!shouldReconnect || finished) {

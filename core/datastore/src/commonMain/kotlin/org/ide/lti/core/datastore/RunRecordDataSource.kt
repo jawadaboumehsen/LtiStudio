@@ -37,7 +37,7 @@ import org.ide.lti.core.model.workspace.DecodeWarning
  * Backed by [Settings] for the lightweight [RunIndex] (`lti_runs_v1`) and [RunFileStorage]
  * for full [BuildRun] JSON state and mirrored event logs (`.events.jsonl`).
  */
-public class RunRecordDataSource(
+class RunRecordDataSource(
     private val settings: Settings = Settings(),
     private val json: Json = defaultJson(),
     private val fileStorage: RunFileStorage = defaultRunFileStorage(),
@@ -46,13 +46,13 @@ public class RunRecordDataSource(
     private val mutex = Mutex()
 
     private val _decodeWarnings = MutableSharedFlow<DecodeWarning>(replay = 64, extraBufferCapacity = 64)
-    public val decodeWarnings: Flow<DecodeWarning> = _decodeWarnings.asSharedFlow()
+    val decodeWarnings: Flow<DecodeWarning> = _decodeWarnings.asSharedFlow()
 
     private val _runsIndex = MutableStateFlow(readRunsIndexSafe())
-    public val runsIndex: Flow<List<BuildRunSummary>> = _runsIndex.asStateFlow()
-    public val currentSummaries: List<BuildRunSummary> get() = _runsIndex.value
+    val runsIndex: Flow<List<BuildRunSummary>> = _runsIndex.asStateFlow()
+    val currentSummaries: List<BuildRunSummary> get() = _runsIndex.value
 
-    public suspend fun saveRun(run: BuildRun): Unit = withContext(ioDispatcher) {
+    suspend fun saveRun(run: BuildRun): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             val summary = run.toSummary()
             val current = _runsIndex.value.toMutableList()
@@ -85,14 +85,7 @@ public class RunRecordDataSource(
         }
     }
 
-    public suspend fun updateSummaries(summaries: List<BuildRunSummary>): Unit = withContext(ioDispatcher) {
-        mutex.withLock {
-            persistRunsIndexInternal(summaries)
-            _runsIndex.value = summaries
-        }
-    }
-
-    public suspend fun getRun(runId: String): BuildRun? = withContext(ioDispatcher) {
+    suspend fun getRun(runId: String): BuildRun? = withContext(ioDispatcher) {
         val rawJson = fileStorage.getRun(runId) ?: return@withContext null
         try {
             json.decodeFromString<BuildRun>(rawJson)
@@ -104,15 +97,15 @@ public class RunRecordDataSource(
         }
     }
 
-    public suspend fun appendEvents(runId: String, events: List<String>): Unit = withContext(ioDispatcher) {
+    suspend fun appendEvents(runId: String, events: List<String>): Unit = withContext(ioDispatcher) {
         fileStorage.appendEvents(runId, events)
     }
 
-    public suspend fun getEvents(runId: String, fromSeq: Long = 0L): List<String> = withContext(ioDispatcher) {
+    suspend fun getEvents(runId: String, fromSeq: Long = 0L): List<String> = withContext(ioDispatcher) {
         fileStorage.getEvents(runId, fromSeq)
     }
 
-    public suspend fun deleteRun(runId: String): Unit = withContext(ioDispatcher) {
+    suspend fun deleteRun(runId: String): Unit = withContext(ioDispatcher) {
         mutex.withLock {
             // The index first: if it cannot be written nothing has changed. If the files then cannot be deleted the
             // run is listed again, and deleting it can be tried again.
@@ -126,17 +119,6 @@ public class RunRecordDataSource(
                 throw e
             }
             _runsIndex.value = current
-        }
-    }
-
-    public suspend fun clearRuns(): Unit = withContext(ioDispatcher) {
-        mutex.withLock {
-            val allIds = _runsIndex.value.map { it.id }
-            settings.remove(KEY_RUNS)
-            _runsIndex.value = emptyList()
-            for (id in allIds) {
-                fileStorage.deleteRun(id)
-            }
         }
     }
 
@@ -179,10 +161,10 @@ public class RunRecordDataSource(
         _decodeWarnings.tryEmit(warning)
     }
 
-    public companion object {
-        public const val KEY_RUNS: String = "lti_runs_v1"
+    companion object {
+        const val KEY_RUNS: String = "lti_runs_v1"
 
-        public fun defaultJson(): Json = Json {
+        fun defaultJson(): Json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true

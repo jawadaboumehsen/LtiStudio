@@ -84,7 +84,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-public fun StudioIconKey.painter(): Painter = when (this) {
+fun StudioIconKey.painter(): Painter = when (this) {
     StudioIconKey.ACQUIRE -> AppIconsRomStages.acquire()
     StudioIconKey.EXTRACT -> AppIconsRomStages.extract()
     StudioIconKey.ASSEMBLE -> AppIconsRomStages.assemble()
@@ -97,7 +97,7 @@ public fun StudioIconKey.painter(): Painter = when (this) {
 
 @Suppress("LongParameterList", "UnusedParameter")
 @Composable
-public fun StudioScreen(
+fun StudioScreen(
     workspaceId: String,
     modifier: Modifier = Modifier,
     initialStageId: StageId? = null,
@@ -307,7 +307,7 @@ private fun dispatchOverviewAction(
 
 @Suppress("LongParameterList")
 @Composable
-public fun StudioShellContent(
+fun StudioShellContent(
     uiState: WorkspaceShellUiState,
     onSelectGlobalDestination: (GlobalDestination) -> Unit,
     onSelectWorkspaceSection: (WorkspaceSection) -> Unit,

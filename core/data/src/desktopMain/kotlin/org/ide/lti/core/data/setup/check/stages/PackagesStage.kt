@@ -24,7 +24,7 @@ import org.ide.lti.core.model.setup.RequirementStatus
  * Queries prerequisite packages through the build service via [RemotePrerequisiteProbe]
  * or [ServicePreparation].
  */
-public class PackagesStage(
+class PackagesStage(
     private val servicePreparation: ServicePreparation? = null,
     private val probe: RemotePrerequisiteProbe? = null,
 ) : CheckStage {

@@ -38,10 +38,10 @@ private const val RECENT_RUNS = 5
 /**
  * Pure mapper transforming domain entities and validation reports into [WorkspaceOverviewUiState].
  */
-public object WorkspaceOverviewMapper {
+object WorkspaceOverviewMapper {
 
     @Suppress("LongParameterList")
-    public fun map(
+    fun map(
         workspace: Workspace? = null,
         targetDevice: TargetDevice? = null,
         draft: WorkspacePipelineDraft? = null,

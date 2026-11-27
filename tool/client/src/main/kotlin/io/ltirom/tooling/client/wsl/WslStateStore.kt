@@ -1,17 +1,21 @@
 package io.ltirom.tooling.client.wsl
 
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 /**
  * Single Responsibility: Reading and parsing ~/.ltirom/server.state lockfile from WSL
  * for zero-latency warm client re-attachment.
  */
-public open class WslStateStore(
+open class WslStateStore(
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) {
-    public open fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? {
+    open fun readState(distro: String, wslIp: String): ServerConnectionDescriptor? {
         val res = cli.execute(distro, listOf("bash", "-c", "cat ~/.ltirom/server.state 2>/dev/null"), timeoutSeconds = 3)
         val text = res.output.trim()
         if (text.isBlank() || !text.startsWith("{")) return null
@@ -37,7 +41,7 @@ public open class WslStateStore(
      * when it cannot be told (unknown pid, or the WSL call failed). A failed health check is not proof of
      * exit; this is.
      */
-    public open fun isProcessAlive(distro: String, pid: Long): Boolean? {
+    open fun isProcessAlive(distro: String, pid: Long): Boolean? {
         if (pid <= 0) return null
         val res = cli.execute(
             distro,

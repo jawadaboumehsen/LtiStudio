@@ -266,7 +266,7 @@ object ModCheck {
         /** A symbolic link anywhere on the way would lead out of the partition, as the build refuses it. */
         private fun crossesLink(base: Path, path: Path): Boolean {
             val relative = base.relativize(path)
-            return (0 until relative.nameCount).any { Files.isSymbolicLink(base.resolve(relative.subpath(0, it + 1))) }
+            return (0..<relative.nameCount).any { Files.isSymbolicLink(base.resolve(relative.subpath(0, it + 1))) }
         }
 
         fun put(key: String, entry: Entry) {

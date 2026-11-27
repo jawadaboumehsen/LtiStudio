@@ -12,9 +12,10 @@ package org.ide.lti.core.domain.workbench
 import kotlinx.coroutines.delay
 import org.ide.lti.core.domain.pipeline.toolkit.Refusal
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
+import kotlin.time.Duration.Companion.seconds
 
 /** How a phone is connected, as adb or fastboot report it. */
-public enum class PhoneMode(public val words: String, public val fastboot: Boolean = false) {
+enum class PhoneMode(val words: String, val fastboot: Boolean = false) {
     ANDROID("Android, over adb"),
     RECOVERY("recovery, over adb"),
     SIDELOAD("recovery sideload"),
@@ -25,13 +26,13 @@ public enum class PhoneMode(public val words: String, public val fastboot: Boole
 }
 
 /** One partition as the phone reports it (`fastboot getvar all`). */
-public data class PhonePartition(val name: String, val sizeBytes: Long?, val logical: Boolean)
+data class PhonePartition(val name: String, val sizeBytes: Long?, val logical: Boolean)
 
 /**
  * What a connected phone says about itself. [values] are its answers as read (`getvar all`, or `getprop` over adb),
  * kept whole; the rest is taken from them. A null fact was not answered: nothing here is assumed.
  */
-public data class PhoneFacts(
+data class PhoneFacts(
     val serial: String,
     val mode: PhoneMode,
     val values: Map<String, String> = emptyMap(),
@@ -41,32 +42,32 @@ public data class PhoneFacts(
     private fun first(vararg keys: String) = keys.firstNotNullOfOrNull { values[it]?.takeIf(String::isNotBlank) }
 
     /** Fastboot's `product`, else Android's device name. */
-    public val product: String? get() = first("product", "ro.product.device", "ro.product.vendor.device")
-    public val model: String? get() = first("ro.product.model", "ro.product.vendor.model")
+    val product: String? get() = first("product", "ro.product.device", "ro.product.vendor.device")
+    val model: String? get() = first("ro.product.model", "ro.product.vendor.model")
 
     /** The running slot as a suffix (`_a`), or null on a phone without slots. */
-    public val currentSlot: String?
+    val currentSlot: String?
         get() = first("current-slot", "ro.boot.slot_suffix")?.let { if (it.startsWith("_")) it else "_$it" }
 
-    public val slotCount: Int? get() = first("slot-count")?.toIntOrNull()
+    val slotCount: Int? get() = first("slot-count")?.toIntOrNull()
 
     /** Whether fastboot will write: `unlocked`, else Android's `ro.boot.flash.locked`. */
-    public val unlocked: Boolean?
+    val unlocked: Boolean?
         get() = first("unlocked")?.let { it == "yes" } ?: first("ro.boot.flash.locked")?.let { it == "0" }
 
     /** Virtual A/B: `none`, `snapshotted` or `merging`. */
-    public val snapshotStatus: String? get() = first("snapshot-update-status")
-    public val maxDownloadBytes: Long? get() = first("max-download-size")?.let(::number)
-    public val superName: String? get() = first("super-partition-name")
+    val snapshotStatus: String? get() = first("snapshot-update-status")
+    val maxDownloadBytes: Long? get() = first("max-download-size")?.let(::number)
+    val superName: String? get() = first("super-partition-name")
 
     /** Empty unless fastboot was asked: Android does not list its partitions to a user. */
-    public val partitions: List<PhonePartition>
+    val partitions: List<PhonePartition>
         get() = values.keys.filter { it.startsWith(SIZE) }.map { key ->
             val name = key.removePrefix(SIZE)
             PhonePartition(name, number(values.getValue(key)), values["$LOGICAL$name"] == "yes")
         }.sortedBy { it.name }
 
-    public fun partition(name: String): PhonePartition? = partitions.firstOrNull { it.name == name }
+    fun partition(name: String): PhonePartition? = partitions.firstOrNull { it.name == name }
 
     private companion object {
         const val SIZE = "partition-size:"
@@ -80,9 +81,9 @@ public data class PhoneFacts(
 }
 
 /** Reads what adb and fastboot print. */
-public object PhoneReadout {
+object PhoneReadout {
     /** The phones `adb devices -l` and `fastboot devices` list, with the mode each is in. */
-    public fun devices(adb: String, fastboot: String): List<Pair<String, PhoneMode>> {
+    fun devices(adb: String, fastboot: String): List<Pair<String, PhoneMode>> {
         val overAdb = adb.lines().drop(1).mapNotNull { line ->
             val parts = line.trim().split(Regex("\\s+"))
             val serial = parts.firstOrNull()?.takeIf {
@@ -119,7 +120,7 @@ public object PhoneReadout {
      * `fastboot getvar all` (`(bootloader) partition-size:boot_a:0x6000000`): each variable by its name, the
      * partition ones keeping theirs (`partition-size:boot_a`).
      */
-    public fun fastbootVars(text: String): Map<String, String> = text.lines().mapNotNull { raw ->
+    fun fastbootVars(text: String): Map<String, String> = text.lines().mapNotNull { raw ->
         val line = raw.trim().removePrefix("(bootloader)").trim()
         val name = line.substringBefore(':', "")
         // A per-partition variable names its partition too; any other value may itself hold a colon.
@@ -132,7 +133,7 @@ public object PhoneReadout {
         setOf("partition-size", "partition-type", "is-logical", "has-slot", "slot-successful", "slot-unbootable")
 
     /** `adb shell getprop` (`[ro.product.device]: [PQ84P01]`). */
-    public fun props(text: String): Map<String, String> = text.lines().mapNotNull { line ->
+    fun props(text: String): Map<String, String> = text.lines().mapNotNull { line ->
         PROP.find(line)?.destructured?.let { (key, value) -> key to value }
     }.toMap()
 
@@ -140,7 +141,7 @@ public object PhoneReadout {
 }
 
 /** An image of the project that could go to the phone: built by the last build, or as the firmware shipped it. */
-public data class ProjectImage(
+data class ProjectImage(
     /** Workspace-relative path. */
     val path: String,
     /** The partition it is for (the file name without `.img`). */
@@ -156,9 +157,9 @@ public data class ProjectImage(
  * Talks to a phone attached to WSL (usbipd) with the managed adb and fastboot. It only reads, and reboots on request:
  * it never writes a partition.
  */
-public class PhoneProbe(private val runner: WorkbenchRunner) {
+class PhoneProbe(private val runner: WorkbenchRunner) {
     /** Every connected phone and what it answers. */
-    public suspend fun read(workspaceId: String): List<PhoneFacts> = runner.read(workspaceId) {
+    suspend fun read(workspaceId: String): List<PhoneFacts> = runner.read(workspaceId) {
         val adb = toolPath("adb")
         val fastboot = toolPath("fastboot")
         val adbList = answer("adb devices", LIST_SCRIPT, adb)
@@ -188,7 +189,7 @@ public class PhoneProbe(private val runner: WorkbenchRunner) {
      * Reboots [phone] into [to] and waits until it is really there (up to [WAIT_SECONDS]); returns it as read then,
      * or null when it did not come back in that mode.
      */
-    public suspend fun reboot(workspaceId: String, phone: PhoneFacts, to: PhoneMode): PhoneFacts? {
+    suspend fun reboot(workspaceId: String, phone: PhoneFacts, to: PhoneMode): PhoneFacts? {
         val target = when (to) {
             PhoneMode.BOOTLOADER -> "bootloader"
             PhoneMode.FASTBOOTD -> "fastboot"
@@ -200,14 +201,14 @@ public class PhoneProbe(private val runner: WorkbenchRunner) {
             sh(REBOOT_SCRIPT, tool, phone.serial, target)
         }
         repeat(WAIT_SECONDS / POLL_SECONDS) {
-            delay(POLL_SECONDS * MILLIS)
+            delay(POLL_SECONDS.seconds)
             read(workspaceId).firstOrNull { it.serial == phone.serial && it.mode == to }?.let { return it }
         }
         return null
     }
 
     /** The images of the workspace that could be flashed: the build's, then the firmware's as shipped. */
-    public suspend fun images(workspaceId: String): List<ProjectImage> = runner.read(workspaceId) {
+    suspend fun images(workspaceId: String): List<ProjectImage> = runner.read(workspaceId) {
         sh(IMAGES_SCRIPT, root).lines().filterNot { "super_empty" in it }.mapNotNull { line ->
             val f = line.split('\t').takeIf { it.size == IMAGE_FIELDS } ?: return@mapNotNull null
             ProjectImage(
@@ -221,7 +222,7 @@ public class PhoneProbe(private val runner: WorkbenchRunner) {
         }
     }
 
-    public companion object {
+    companion object {
         private const val LIST_SCRIPT = "timeout 15 \"\$1\" devices -l 2>&1"
         private const val GETVAR_SCRIPT = "timeout 30 \"\$1\" -s \"\$2\" getvar all 2>&1"
         private const val GETPROP_SCRIPT = "timeout 15 \"\$1\" -s \"\$2\" shell getprop 2>&1"
@@ -261,6 +262,5 @@ done"""
         private const val IMAGE_FIELDS = 4
         private const val WAIT_SECONDS = 90
         private const val POLL_SECONDS = 3
-        private const val MILLIS = 1000L
     }
 }

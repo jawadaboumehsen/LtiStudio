@@ -17,12 +17,12 @@ import org.ide.lti.core.model.run.StepCommand
  *
  * Reconstructs raw partition images from transfer lists and `.new.dat` / `.new.dat.br` data.
  */
-public object BlockOtaExtractor {
+object BlockOtaExtractor {
 
     /**
      * Generates a [StepCommand] to decompress a Brotli-compressed `.new.dat.br` file.
      */
-    public fun decompressBrotliCommand(brPath: String, outPath: String, workingDir: String): StepCommand = stepCommand(
+    fun decompressBrotliCommand(brPath: String, outPath: String, workingDir: String): StepCommand = stepCommand(
         toolId = "brotli",
         args = listOf("-d", "-f", brPath, "-o", outPath),
         workingDir = workingDir,
@@ -31,7 +31,7 @@ public object BlockOtaExtractor {
     /**
      * Generates a [StepCommand] to convert transfer list and new data into a raw image using `sdat2img`.
      */
-    public fun sdat2imgCommand(
+    fun sdat2imgCommand(
         transferListPath: String,
         newDatPath: String,
         outImagePath: String,
@@ -45,7 +45,7 @@ public object BlockOtaExtractor {
     /**
      * Discovers all partition names present in the archive by inspecting member names for `*.transfer.list`.
      */
-    public fun discoverPartitions(memberNames: List<String>): List<String> =
+    fun discoverPartitions(memberNames: List<String>): List<String> =
         memberNames.filter { it.endsWith(".transfer.list") }
             .map { it.substringAfterLast('/').substringBefore(".transfer.list") }
             .distinct()
@@ -53,7 +53,7 @@ public object BlockOtaExtractor {
     /**
      * Constructs the sequence of conversion commands needed to produce `<partition>.img`.
      */
-    public fun conversionSteps(
+    fun conversionSteps(
         partition: String,
         isBrotli: Boolean,
         sourceDir: String,
@@ -76,7 +76,7 @@ public object BlockOtaExtractor {
     /**
      * Constructs the canonical [Refusal] for an incremental block-OTA package (FR-007).
      */
-    public fun incrementalRefusal(item: String, details: String? = null): Refusal =
+    fun incrementalRefusal(item: String, details: String? = null): Refusal =
         PackageManifest.incrementalRefusal(item = item, details = details).refusal
             ?: Refusal(
                 cause = "The package is an incremental update.",

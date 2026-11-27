@@ -26,7 +26,7 @@ import org.ide.lti.core.model.setup.InstallState
  * Ensures server bundle is installed and intact, starts daemon via supervisor,
  * and verifies health/heartbeat response.
  */
-public class ServiceStage(
+class ServiceStage(
     private val installer: ServerArtifactInstaller = ServerArtifactInstaller(),
     private val supervisor: DaemonSupervisorPort? = null,
     private val transport: RemoteTransportPort? = null,

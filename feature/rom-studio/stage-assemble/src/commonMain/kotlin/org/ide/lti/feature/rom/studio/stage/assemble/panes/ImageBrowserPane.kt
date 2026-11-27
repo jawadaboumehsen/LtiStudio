@@ -83,7 +83,7 @@ import org.ide.lti.feature.rom.studio.stage.assemble.ImagePaneState
  * layout (FR-011).
  */
 @Composable
-public fun ImageBrowserPane(
+fun ImageBrowserPane(
     target: TargetDevice,
     state: ImagePaneState,
     actions: ImagePaneActions,
@@ -330,7 +330,7 @@ private fun SuperblockRow(key: String, stock: String, built: String) {
 
 /** Sparse/raw conversion, splitting (FR-010) and the super layout (FR-011) of images in the workspace. */
 @Composable
-public fun ImageToolsPane(state: ImagePaneState, actions: ImagePaneActions, modifier: Modifier = Modifier) {
+fun ImageToolsPane(state: ImagePaneState, actions: ImagePaneActions, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth().testTag("ImageToolsPane"),
         verticalArrangement = Arrangement.spacedBy(Spacing.Medium),

@@ -31,8 +31,8 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AcquisitionMode
 import org.ide.lti.core.model.workspace.AcquisitionSettings
 
-public class AcquireViewModel(
-    public val workspaceId: String,
+class AcquireViewModel(
+    val workspaceId: String,
     initialSettings: AcquisitionSettings? = null,
     store: WorkspaceSettingsStore? = null,
     private val archives: FirmwareArchives? = null,
@@ -40,7 +40,7 @@ public class AcquireViewModel(
     private val pickFile: suspend () -> String? = { DialogUtils.selectFile()?.path },
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -55,28 +55,28 @@ public class AcquireViewModel(
         write = { snapshot, value -> snapshot.copy(acquisition = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<AcquisitionSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<AcquisitionSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
-    public fun updateSettings(updated: AcquisitionSettings) {
+    fun updateSettings(updated: AcquisitionSettings) {
         sync.update(updated)
     }
 
     private val _integrity = MutableStateFlow(IntegrityFacts())
 
     /** The archive in the workspace and the SHA-256 the last run measured, for the Integrity pane. */
-    public val integrity: StateFlow<IntegrityFacts> = _integrity.asStateFlow()
+    val integrity: StateFlow<IntegrityFacts> = _integrity.asStateFlow()
 
     private var integrityJob: Job? = null
 
     /** Re-reads the archive's size and hashes it as it is now; a newer request replaces an unfinished one. */
-    public fun refreshIntegrity() {
+    fun refreshIntegrity() {
         val facts = facts ?: return
         integrityJob?.cancel()
         val relPath = FirmwareAcquisitionStage.archiveRelPath(settings.value)
@@ -103,15 +103,15 @@ public class AcquireViewModel(
     private val _archiveState = MutableStateFlow(ArchiveState())
 
     /** The archives in the workspace folder, as last probed, and what Probe/Import is doing. */
-    public val archiveState: StateFlow<ArchiveState> = _archiveState.asStateFlow()
+    val archiveState: StateFlow<ArchiveState> = _archiveState.asStateFlow()
 
     /** Lists the archives already in the workspace's `firmware/downloaded/`. */
-    public fun probe() {
+    fun probe() {
         viewModelScope.launch { archiveJob { it.list(workspaceId) } }
     }
 
     /** Asks for an archive on this computer, copies it into the workspace and selects it. */
-    public fun importArchive() {
+    fun importArchive() {
         if (_archiveState.value.busy) return
         viewModelScope.launch {
             val path = pickFile() ?: return@launch
@@ -125,7 +125,7 @@ public class AcquireViewModel(
     }
 
     /** Uses [archive] for the build: the Acquire stage then checks it exists instead of downloading. */
-    public fun selectArchive(archive: FirmwareArchive) {
+    fun selectArchive(archive: FirmwareArchive) {
         updateSettings(settings.value.copy(mode = AcquisitionMode.IMPORT_ARCHIVE, archiveRef = archive.ref))
         _archiveState.update { it.copy(lastDetectedFormat = archive.detectedFormat) }
     }
@@ -160,7 +160,7 @@ public class AcquireViewModel(
 }
 
 /** What the Existing archives pane shows. */
-public data class ArchiveState(
+data class ArchiveState(
     val archives: List<FirmwareArchive> = emptyList(),
     val probed: Boolean = false,
     val busy: Boolean = false,
@@ -169,7 +169,7 @@ public data class ArchiveState(
 )
 
 /** What the Integrity pane shows: the archive in the workspace and the hash its last run measured. */
-public data class IntegrityFacts(
+data class IntegrityFacts(
     val archivePath: String? = null,
     val archiveSizeBytes: Long? = null,
     val measuredSha256: String? = null,

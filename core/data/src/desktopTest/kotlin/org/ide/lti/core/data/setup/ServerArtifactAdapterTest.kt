@@ -12,7 +12,7 @@ package org.ide.lti.core.data.setup
 import io.ltirom.tooling.client.WslDaemonConfig
 import io.ltirom.tooling.client.WslDaemonManager
 import io.ltirom.tooling.client.wsl.CliExecutionResult
-import io.ltirom.tooling.client.wsl.DaemonHealthProber
+import io.ltirom.tooling.client.wsl.DaemonHealthProbe
 import io.ltirom.tooling.client.wsl.ServerArtifactInstaller
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslProcessLaunchResult
@@ -57,7 +57,7 @@ class ServerArtifactAdapterTest {
         }
     }
 
-    private class FakeProber : DaemonHealthProber(null) {
+    private class FakeProbe : DaemonHealthProbe(null) {
         override suspend fun isHealthy(info: ServerConnectionDescriptor, timeoutMs: Long): Boolean = true
         override suspend fun getServerInfo(info: ServerConnectionDescriptor): WslServerInfo? = WslServerInfo(
             status = "UP",
@@ -83,14 +83,14 @@ class ServerArtifactAdapterTest {
     @Test
     fun `javaHome reaches launcher exactly as passed when calling ensureRunningCurrent`() = runTest {
         val launcher = RecordingLauncher()
-        val prober = FakeProber()
+        val healthProbe = FakeProbe()
         val daemonManager = WslDaemonManager(
             config = WslDaemonConfig(
                 distroName = "Ubuntu-24.04",
                 serverBinaryWslPath = "/home/testuser/.ltirom/server/current/bin/ltirom-server",
             ),
             launcher = launcher,
-            customProber = prober,
+            customProbe = healthProbe,
         )
         val installer = ServerArtifactInstaller(
             cli = FakeCli(),
@@ -133,10 +133,10 @@ class ServerArtifactAdapterTest {
         }
         try {
             File(tempDir, "server-version.txt").writeText("1.0.0\n")
-            val prober = FakeProber()
+            val healthProbe = FakeProbe()
             val daemonManager = WslDaemonManager(
                 config = WslDaemonConfig(distroName = "Ubuntu-24.04"),
-                customProber = prober,
+                customProbe = healthProbe,
             )
             val installer = ServerArtifactInstaller(
                 cli = FakeCli(),

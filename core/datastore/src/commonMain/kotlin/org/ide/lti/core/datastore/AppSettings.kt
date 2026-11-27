@@ -12,4 +12,4 @@ package org.ide.lti.core.datastore
 import com.russhwolf.settings.Settings
 
 /** The app's own key-value store (workspace records, snapshots cache, setup state, preferences). */
-public expect fun appSettings(): Settings
+expect fun appSettings(): Settings

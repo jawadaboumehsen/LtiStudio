@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.BlendMode
  * Creates a color filter that blends with a given color.
  */
 @InternalHazeApi
-public expect fun createBlendColorFilter(
+expect fun createBlendColorFilter(
     color: Int,
     blendMode: BlendMode,
 ): PlatformColorFilter

@@ -12,15 +12,15 @@ package org.ide.lti.core.domain.ports
 import kotlinx.coroutines.flow.Flow
 import org.ide.lti.core.model.workspace.Workspace
 
-public const val MAX_TRANSFER_CHUNK_BYTES: Long = 8L * 1024 * 1024
+const val MAX_TRANSFER_CHUNK_BYTES: Long = 8L * 1024 * 1024
 
-public sealed interface TransferSource {
-    public data class LocalFile(val absolutePath: String) : TransferSource
-    public data class RemoteUrl(val url: String) : TransferSource
-    public data class ExistingWorkspaceFile(val relPath: String) : TransferSource
+sealed interface TransferSource {
+    data class LocalFile(val absolutePath: String) : TransferSource
+    data class RemoteUrl(val url: String) : TransferSource
+    data class ExistingWorkspaceFile(val relPath: String) : TransferSource
 }
 
-public enum class TransferState {
+enum class TransferState {
     SELECTED,
     VALIDATING,
     TRANSFERRING,
@@ -30,7 +30,7 @@ public enum class TransferState {
     CANCELLED,
 }
 
-public data class TransferSession(
+data class TransferSession(
     val id: String,
     val workspaceId: String,
     val capturedRevision: Int,
@@ -43,7 +43,7 @@ public data class TransferSession(
     val cleanupEvidence: List<String> = emptyList(),
 )
 
-public data class TransferReceipt(
+data class TransferReceipt(
     val sessionId: String,
     val finalRelPath: String,
     val sizeBytes: Long,
@@ -51,25 +51,25 @@ public data class TransferReceipt(
     val verifiedAgainstExpected: Boolean,
 )
 
-public sealed interface TransferProgress {
-    public data class Progress(val session: TransferSession) : TransferProgress
-    public data class Finalized(val receipt: TransferReceipt) : TransferProgress
-    public data class Failed(val session: TransferSession, val reason: String) : TransferProgress
-    public data class Cancelled(val session: TransferSession) : TransferProgress
+sealed interface TransferProgress {
+    data class Progress(val session: TransferSession) : TransferProgress
+    data class Finalized(val receipt: TransferReceipt) : TransferProgress
+    data class Failed(val session: TransferSession, val reason: String) : TransferProgress
+    data class Cancelled(val session: TransferSession) : TransferProgress
 }
 
 /**
  * Result of probing an existing file in a workspace. Identity is bytes, not filename.
  */
-public data class ExistingFileProbe(
+data class ExistingFileProbe(
     val exists: Boolean,
     val isRegularFile: Boolean,
     val sizeBytes: Long?,
     val sha256: String?,
 )
 
-public interface BoundedTransferPort {
-    public fun transfer(ws: Workspace, session: TransferSession, expectedSha256: String?): Flow<TransferProgress>
-    public suspend fun cancel(sessionId: String): Boolean
-    public suspend fun probeExisting(ws: Workspace, relPath: String): ExistingFileProbe
+interface BoundedTransferPort {
+    fun transfer(ws: Workspace, session: TransferSession, expectedSha256: String?): Flow<TransferProgress>
+    suspend fun cancel(sessionId: String): Boolean
+    suspend fun probeExisting(ws: Workspace, relPath: String): ExistingFileProbe
 }

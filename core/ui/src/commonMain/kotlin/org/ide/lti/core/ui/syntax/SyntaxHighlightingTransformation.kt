@@ -37,7 +37,7 @@ class SyntaxHighlightingTransformation(
         for (token in tokens) {
             val start = token.range.first
             val endExclusive = token.range.last + 1
-            if (start in 0 until textLength && endExclusive > start) {
+            if (start in 0..<textLength && endExclusive > start) {
                 val clampedEnd = endExclusive.coerceAtMost(textLength)
                 val color = when (token.kind) {
                     SyntaxTokenKind.KEYWORD -> syntaxColors.keyword

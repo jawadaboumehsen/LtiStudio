@@ -78,6 +78,7 @@ import org.ide.lti.core.designsystem.theme.sceneHazeInput
 import org.ide.lti.core.designsystem.theme.toggleThumbSelection
 import kotlin.math.abs
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 /**
@@ -263,7 +264,7 @@ internal fun GlassToggleImpl(
 
     LaunchedEffect(optimisticTarget) {
         if (optimisticTarget != null) {
-            delay(500L)
+            delay(500.milliseconds)
             if (optimisticTarget != null && checked != optimisticTarget) {
                 optimisticTarget = null
                 val restored = if (checked) 1f else 0f

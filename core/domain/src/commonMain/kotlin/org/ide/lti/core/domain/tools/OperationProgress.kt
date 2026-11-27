@@ -14,7 +14,7 @@ package org.ide.lti.core.domain.tools
  * (git's "Receiving objects: 45%", cmake/make's "[ 45%]", ninja's "[12/345]"). Nothing is invented: a phase whose
  * tool prints no percentage stays at the start of its range, and the bar never moves backwards.
  */
-public object OperationProgress {
+object OperationProgress {
     private const val FETCH_END = 20
     private const val BUILD_END = 85
     private const val VERIFY_END = 92
@@ -27,7 +27,7 @@ public object OperationProgress {
     private val ninjaStep = Regex("""\[(\d+)/(\d+)]""")
 
     /** The share of the bar a [phase] owns, as start..end percent. */
-    public fun range(phase: OperationPhase): IntRange = when (phase) {
+    fun range(phase: OperationPhase): IntRange = when (phase) {
         OperationPhase.Fetching -> 0..FETCH_END
         OperationPhase.Building -> FETCH_END..BUILD_END
         OperationPhase.Verifying -> BUILD_END..VERIFY_END
@@ -36,7 +36,7 @@ public object OperationProgress {
     }
 
     /** The 0..1 fraction of its own work a tool printed in [text] (the last one wins), or null if it printed none. */
-    public fun fractionIn(text: String): Double? =
+    fun fractionIn(text: String): Double? =
         text.lineSequence().toList().asReversed().firstNotNullOfOrNull { lineFraction(it) }
 
     private fun lineFraction(line: String): Double? {
@@ -52,13 +52,13 @@ public object OperationProgress {
     }
 
     /** [op] after moving to [phase]: the bar jumps to the start of that phase's range if it is not already past it. */
-    public fun enter(op: ToolOperation, phase: OperationPhase): ToolOperation = op.copy(
+    fun enter(op: ToolOperation, phase: OperationPhase): ToolOperation = op.copy(
         phase = phase,
         percent = op.percent?.let { maxOf(it, range(phase).first) },
     )
 
     /** [op] after [text] of output: moved forward by a percentage the tool printed, within the phase it is in. */
-    public fun onOutput(op: ToolOperation, text: String): ToolOperation {
+    fun onOutput(op: ToolOperation, text: String): ToolOperation {
         val current = op.percent
         val fraction = if (op.phase == OperationPhase.Fetching || op.phase == OperationPhase.Building) {
             fractionIn(text)

@@ -10,7 +10,7 @@
 package org.ide.lti.core.domain.pipeline.text
 
 /** What a path is, for rules that apply to one kind only (`--` file, `-d` folder, `-l` link in file_contexts). */
-public enum class EntryKind { File, Directory, Link }
+enum class EntryKind { File, Directory, Link }
 
 /**
  * The SELinux rules a ROM labels its files with (`plat_file_contexts`, `vendor_file_contexts`, …), looked up as
@@ -18,18 +18,18 @@ public enum class EntryKind { File, Directory, Link }
  * without regex characters (exact paths) are tried first, then the last matching rule wins. A `<<none>>` context
  * means "leave it unlabelled", which is no answer here.
  */
-public class FileContextRules private constructor(private val specs: List<Spec>) {
+class FileContextRules private constructor(private val specs: List<Spec>) {
     private class Spec(val regex: Regex, val kind: EntryKind?, val context: String)
 
-    public val size: Int get() = specs.size
+    val size: Int get() = specs.size
 
     /** The context [devicePath] (`/system/bin/sh`) gets as a [kind], or null when no rule names one. */
-    public fun label(devicePath: String, kind: EntryKind): String? = specs.lastOrNull { spec ->
+    fun label(devicePath: String, kind: EntryKind): String? = specs.lastOrNull { spec ->
         (spec.kind == null || spec.kind == kind) && spec.regex.matches(devicePath)
     }?.context?.takeIf { it != NONE }
 
-    public companion object {
-        public val EMPTY: FileContextRules = FileContextRules(emptyList())
+    companion object {
+        val EMPTY: FileContextRules = FileContextRules(emptyList())
         private const val NONE = "<<none>>"
         private val FIELDS = Regex("""\s+""")
 
@@ -37,7 +37,7 @@ public class FileContextRules private constructor(private val specs: List<Spec>)
          * The rules of [texts] in the order Android loads them (plat, system_ext, product, vendor, odm). A line whose
          * regex Kotlin cannot compile is skipped: one odd rule must not stop the rest from labelling.
          */
-        public fun parse(texts: List<String>): FileContextRules {
+        fun parse(texts: List<String>): FileContextRules {
             val all = texts.flatMap { text ->
                 text.lineSequence().mapNotNull { raw ->
                     val line = raw.trim()

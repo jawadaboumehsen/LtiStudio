@@ -17,7 +17,7 @@ import org.ide.lti.core.model.setup.PersistedResolvedInput
 import org.ide.lti.core.model.setup.PersistedSetupPlan
 import org.ide.lti.core.model.setup.ToolRef
 
-public fun SetupPlanAction.toPersistedPlanAction(): PersistedPlanAction = when (this) {
+fun SetupPlanAction.toPersistedPlanAction(): PersistedPlanAction = when (this) {
     is SetupPlanAction.InstallPackages ->
         PersistedPlanAction(
             actionId = actionId(),
@@ -63,7 +63,7 @@ public fun SetupPlanAction.toPersistedPlanAction(): PersistedPlanAction = when (
         )
 }
 
-public fun SetupPlan.toPersistedSetupPlan(): PersistedSetupPlan = PersistedSetupPlan(
+fun SetupPlan.toPersistedSetupPlan(): PersistedSetupPlan = PersistedSetupPlan(
     planId = planId,
     revisionHash = revisionHash,
     environmentKey = environmentKey,

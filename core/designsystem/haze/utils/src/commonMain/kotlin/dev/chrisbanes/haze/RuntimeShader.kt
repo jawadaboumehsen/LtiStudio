@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Shader
  * - On Skiko: `org.jetbrains.skia.RuntimeEffect`
  */
 @InternalHazeApi
-public expect class PlatformRuntimeEffect
+expect class PlatformRuntimeEffect
 
 /**
  * A platform runtime shader or its native render-effect graph could not be constructed.
@@ -27,7 +27,7 @@ public expect class PlatformRuntimeEffect
  * failures from uniform configuration or content drawing.
  */
 @InternalHazeApi
-public class RuntimeShaderRenderEffectException(
+class RuntimeShaderRenderEffectException(
     cause: Throwable,
 ) : RuntimeException("Unable to construct a runtime shader render effect", cause)
 
@@ -37,7 +37,7 @@ public class RuntimeShaderRenderEffectException(
  * [RuntimeShaderRenderEffectException] is rethrown unchanged, and errors are not caught.
  */
 @InternalHazeApi
-public inline fun <T> wrapRuntimeShaderConstruction(block: () -> T): T = try {
+inline fun <T> wrapRuntimeShaderConstruction(block: () -> T): T = try {
     block()
 } catch (failure: RuntimeShaderRenderEffectException) {
     throw failure
@@ -49,11 +49,11 @@ public inline fun <T> wrapRuntimeShaderConstruction(block: () -> T): T = try {
  * Creates a [PlatformRuntimeEffect] from SKSL shader code.
  */
 @InternalHazeApi
-public expect fun createRuntimeEffect(sksl: String): PlatformRuntimeEffect
+expect fun createRuntimeEffect(sksl: String): PlatformRuntimeEffect
 
 /** Returns whether runtime-shader render effects are supported on the current platform. */
 @InternalHazeApi
-public expect fun isRuntimeShaderRenderEffectSupported(): Boolean
+expect fun isRuntimeShaderRenderEffectSupported(): Boolean
 
 /**
  * Creates a runtime shader [PlatformRenderEffect] with the given effect and child shaders.
@@ -70,7 +70,7 @@ public expect fun isRuntimeShaderRenderEffectSupported(): Boolean
  * @param uniforms Block to configure uniforms on the shader.
  */
 @InternalHazeApi
-public expect fun createRuntimeShaderRenderEffect(
+expect fun createRuntimeShaderRenderEffect(
     effect: PlatformRuntimeEffect,
     shaderNames: Array<String>,
     inputs: Array<PlatformRenderEffect?>,
@@ -79,9 +79,9 @@ public expect fun createRuntimeShaderRenderEffect(
 
 /** A runtime shader render effect whose uniforms can be updated without recompiling its source. */
 @InternalHazeApi
-public interface MutableRuntimeShaderRenderEffect {
+interface MutableRuntimeShaderRenderEffect {
     /** Applies [uniforms] and returns the render effect containing the updated values. */
-    public fun updateUniforms(
+    fun updateUniforms(
         uniforms: RuntimeShaderUniformProvider.() -> Unit,
     ): PlatformRenderEffect
 
@@ -92,7 +92,7 @@ public interface MutableRuntimeShaderRenderEffect {
      *
      * @throws UnsupportedOperationException if replacing child inputs is not supported.
      */
-    public fun updateInputs(
+    fun updateInputs(
         inputs: Array<PlatformRenderEffect?>,
         uniforms: RuntimeShaderUniformProvider.() -> Unit,
     ): PlatformRenderEffect = throw UnsupportedOperationException(
@@ -108,7 +108,7 @@ public interface MutableRuntimeShaderRenderEffect {
  * [createRuntimeShaderRenderEffect]: exactly one name and exactly one input.
  */
 @InternalHazeApi
-public expect fun createMutableRuntimeShaderRenderEffect(
+expect fun createMutableRuntimeShaderRenderEffect(
     effect: PlatformRuntimeEffect,
     shaderNames: Array<String>,
     inputs: Array<PlatformRenderEffect?>,
@@ -118,39 +118,39 @@ public expect fun createMutableRuntimeShaderRenderEffect(
  * Interface for setting uniforms on runtime shaders.
  */
 @InternalHazeApi
-public interface RuntimeShaderUniformProvider {
+interface RuntimeShaderUniformProvider {
     /**
      * Sets a color-managed uniform.
      */
-    public fun setColorUniform(name: String, color: Color)
+    fun setColorUniform(name: String, color: Color)
 
     /**
      * Sets a float uniform.
      */
-    public fun setFloatUniform(name: String, value: Float)
+    fun setFloatUniform(name: String, value: Float)
 
     /**
      * Sets a float2 uniform.
      */
-    public fun setFloatUniform(name: String, value1: Float, value2: Float)
+    fun setFloatUniform(name: String, value1: Float, value2: Float)
 
     /**
      * Sets a float4 uniform.
      */
-    public fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float)
+    fun setFloatUniform(name: String, value1: Float, value2: Float, value3: Float, value4: Float)
 
     /**
      * Sets a float array uniform, such as `uniform float4 values[4]`, from consecutive [values].
      */
-    public fun setFloatUniform(name: String, values: FloatArray)
+    fun setFloatUniform(name: String, values: FloatArray)
 
     /**
      * Sets an int uniform.
      */
-    public fun setIntUniform(name: String, value: Int)
+    fun setIntUniform(name: String, value: Int)
 
     /**
      * Sets a child shader uniform.
      */
-    public fun setChildShader(name: String, shader: Shader)
+    fun setChildShader(name: String, shader: Shader)
 }

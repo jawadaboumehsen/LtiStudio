@@ -14,7 +14,7 @@ import org.ide.lti.core.designsystem.icon.AppIcon
 /**
  * Grouping for a [CommandItem] inside [GlassCommandPalette].
  */
-public enum class CommandCategory(public val displayName: String) {
+enum class CommandCategory(val displayName: String) {
     NAVIGATION("Navigation"),
     TARGET("Target"),
     CONFIG("Configuration"),
@@ -25,12 +25,12 @@ public enum class CommandCategory(public val displayName: String) {
 /**
  * A single executable entry in [GlassCommandPalette].
  */
-public class CommandItem(
-    public val id: String,
-    public val title: String,
-    public val subtitle: String,
-    public val category: CommandCategory,
-    public val icon: AppIcon,
-    public val shortcut: String? = null,
-    public val onExecute: () -> Unit,
+class CommandItem(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val category: CommandCategory,
+    val icon: AppIcon,
+    val shortcut: String? = null,
+    val onExecute: () -> Unit,
 )

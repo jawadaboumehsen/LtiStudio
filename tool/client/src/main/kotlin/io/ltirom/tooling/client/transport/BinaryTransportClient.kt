@@ -1,12 +1,21 @@
 package io.ltirom.tooling.client.transport
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
-import io.ktor.utils.io.*
+import io.ktor.http.contentLength
+import io.ktor.http.encodeURLParameter
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.readAvailable
+import io.ktor.utils.io.writeFully
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.remote.BinaryTransferResponse
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +24,7 @@ import java.io.File
 
 private const val TRANSFER_CHUNK_SIZE = 256 * 1024
 
-public data class TransferProgress(
+data class TransferProgress(
     val bytesTransferred: Long,
     val totalBytes: Long,
     val fraction: Float = if (totalBytes > 0) bytesTransferred.toFloat() / totalBytes else 0f,
@@ -25,8 +34,8 @@ public data class TransferProgress(
  * High-performance client for dual-channel zero-copy binary streaming
  * of multi-gigabyte Android ROM images (super.img, payload.bin, boot.img).
  */
-public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort, private val httpClient: HttpClient) {
-    public suspend fun uploadFile(
+class BinaryTransportClient(private val supervisor: DaemonSupervisorPort, private val httpClient: HttpClient) {
+    suspend fun uploadFile(
         localFile: File,
         remotePath: String,
         onProgress: ((TransferProgress) -> Unit)? = null,
@@ -62,7 +71,7 @@ public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort,
         response.body<BinaryTransferResponse>()
     }
 
-    public suspend fun downloadFile(
+    suspend fun downloadFile(
         remotePath: String,
         destinationFile: File,
         onProgress: ((TransferProgress) -> Unit)? = null,
@@ -87,15 +96,15 @@ public class BinaryTransportClient(private val supervisor: DaemonSupervisorPort,
             ).toFile()
             try {
                 partial.outputStream().use { output ->
-                val buffer = ByteArray(TRANSFER_CHUNK_SIZE)
-                while (!channel.isClosedForRead) {
-                    val read = channel.readAvailable(buffer, 0, buffer.size)
-                    if (read <= 0) break
-                    output.write(buffer, 0, read)
-                    bytesReceived += read
-                    onProgress?.invoke(TransferProgress(bytesReceived, totalSize))
+                    val buffer = ByteArray(TRANSFER_CHUNK_SIZE)
+                    while (!channel.isClosedForRead) {
+                        val read = channel.readAvailable(buffer, 0, buffer.size)
+                        if (read <= 0) break
+                        output.write(buffer, 0, read)
+                        bytesReceived += read
+                        onProgress?.invoke(TransferProgress(bytesReceived, totalSize))
+                    }
                 }
-            }
                 if (totalSize >= 0 && bytesReceived != totalSize) {
                     throw java.io.IOException("Download of $remotePath ended at $bytesReceived of $totalSize bytes")
                 }

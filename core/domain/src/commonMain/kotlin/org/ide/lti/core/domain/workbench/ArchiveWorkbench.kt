@@ -16,13 +16,13 @@ import org.ide.lti.core.domain.pipeline.toolkit.ArchiveListing
  * Browses a firmware archive and the archives inside it (`ArchiveBrowser`), and copies
  * chosen members out to `out/toolkit/archive/`. The archive is a workspace file, or any file the user picked.
  */
-public class ArchiveWorkbench(
+class ArchiveWorkbench(
     private val runner: WorkbenchRunner,
     /** A Windows path as WSL sees it (`C:\fw.zip` -> `/mnt/c/fw.zip`). */
     private val toLinuxPath: (String) -> String = { it },
 ) {
     /** What [archive], or the member [chain] leads to inside it, holds. */
-    public suspend fun list(workspaceId: String, archive: String, chain: List<String>): ArchiveListing =
+    suspend fun list(workspaceId: String, archive: String, chain: List<String>): ArchiveListing =
         runner.read(workspaceId) {
             requireFolderInside("$CACHE/member", CACHE)
             val output = sh(
@@ -38,35 +38,31 @@ public class ArchiveWorkbench(
         }
 
     /** Copies [members] of the level [chain] leads to into `out/toolkit/archive/`; returns that folder. */
-    public suspend fun extract(
-        workspaceId: String,
-        archive: String,
-        chain: List<String>,
-        members: List<String>,
-    ): String = runner.job(workspaceId, "Copy out of ${(chain.lastOrNull() ?: archive).substringAfterLast('/')}") {
-        // The script keeps members inside the folder; this keeps the folder inside the workspace.
-        requireFolderInside("$OUT/member", OUT)
-        requireFolderInside("$CACHE/member", CACHE)
-        sh(
-            ArchiveBrowser.SCRIPT,
-            "extract",
-            toolPath(SEVEN_ZIP),
-            abs(CACHE),
-            abs(OUT),
-            where(archive),
-            *chain.toTypedArray(),
-            "--",
-            *members.toTypedArray(),
-        )
-        hostPath(OUT) ?: abs(OUT)
-    }
+    suspend fun extract(workspaceId: String, archive: String, chain: List<String>, members: List<String>): String =
+        runner.job(workspaceId, "Copy out of ${(chain.lastOrNull() ?: archive).substringAfterLast('/')}") {
+            // The script keeps members inside the folder; this keeps the folder inside the workspace.
+            requireFolderInside("$OUT/member", OUT)
+            requireFolderInside("$CACHE/member", CACHE)
+            sh(
+                ArchiveBrowser.SCRIPT,
+                "extract",
+                toolPath(SEVEN_ZIP),
+                abs(CACHE),
+                abs(OUT),
+                where(archive),
+                *chain.toTypedArray(),
+                "--",
+                *members.toTypedArray(),
+            )
+            hostPath(OUT) ?: abs(OUT)
+        }
 
     /** A workspace path as is; a Windows path (`C:\…`, `\\wsl.localhost\…`) as WSL sees it. */
     private fun WorkbenchRunner.Job.where(archive: String): String =
         if ('\\' in archive || archive.getOrNull(1) == ':') toLinuxPath(archive) else abs(archive)
 
-    public companion object {
-        public const val OUT: String = "out/toolkit/archive"
+    companion object {
+        const val OUT: String = "out/toolkit/archive"
         private const val CACHE = "out/toolkit/archive-cache"
         private const val SEVEN_ZIP = "7zz"
     }

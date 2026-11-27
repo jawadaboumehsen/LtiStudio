@@ -12,13 +12,13 @@ package org.ide.lti.core.domain.workbench
 import org.ide.lti.core.model.target.TargetDevice
 
 /** One device-configuration value next to what the phone measured, and how to take the phone's. */
-public class PhoneFact(
-    public val label: String,
-    public val configured: String,
-    public val measured: String,
-    public val apply: (TargetDevice) -> TargetDevice,
+class PhoneFact(
+    val label: String,
+    val configured: String,
+    val measured: String,
+    val apply: (TargetDevice) -> TargetDevice,
 ) {
-    public val differs: Boolean get() = configured != measured
+    val differs: Boolean get() = configured != measured
 }
 
 /**
@@ -26,8 +26,8 @@ public class PhoneFact(
  * phone answered is compared: its fastboot product, the super partition's size and the boot chain's partition sizes
  * (the running slot's copy).
  */
-public object PhoneDeviceCheck {
-    public fun facts(phone: PhoneFacts, device: TargetDevice): List<PhoneFact> {
+object PhoneDeviceCheck {
+    fun facts(phone: PhoneFacts, device: TargetDevice): List<PhoneFact> {
         fun size(name: String): Long? {
             val own = phone.partition(name) ?: phone.currentSlot?.let { phone.partition(name + it) }
             return own?.sizeBytes

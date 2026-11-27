@@ -22,11 +22,11 @@ import org.ide.lti.core.model.setup.SystemRequirement
  * Checks system package prerequisites through the running build service [RemoteTransportPort],
  * ensuring all command execution runs on the remote server instead of local wsl.exe.
  */
-public class RemotePrerequisiteProbe(
+class RemotePrerequisiteProbe(
     private val transport: RemoteTransportPort,
     private val requirements: List<SystemRequirement> = RequirementCatalog.REQUIREMENTS,
 ) {
-    public suspend fun probe(environment: SetupEnvironment): PrerequisiteReport {
+    suspend fun probe(environment: SetupEnvironment): PrerequisiteReport {
         val script = buildScript()
         val execRes =
             transport.execute(

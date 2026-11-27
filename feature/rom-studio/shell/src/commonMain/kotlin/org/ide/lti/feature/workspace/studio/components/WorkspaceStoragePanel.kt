@@ -56,33 +56,31 @@ import org.ide.lti.core.domain.workbench.WorkspaceStorage
 import org.ide.lti.feature.rom.studio.api.formatBytes
 
 /** What the Disk usage panel shows; [busy] names the folder being measured or deleted. */
-public data class StorageState(
+data class StorageState(
     val folders: List<FolderUsage> = emptyList(),
     val loaded: Boolean = false,
     val busy: String? = null,
     val message: String? = null,
 )
 
-public class WorkspaceStorageViewModel(
-    private val workspaceId: String,
-    private val storage: WorkspaceStorage? = null,
-) : ViewModel() {
+class WorkspaceStorageViewModel(private val workspaceId: String, private val storage: WorkspaceStorage? = null) :
+    ViewModel() {
     private val mutableState = MutableStateFlow(StorageState())
-    public val state: StateFlow<StorageState> = mutableState.asStateFlow()
+    val state: StateFlow<StorageState> = mutableState.asStateFlow()
 
-    public fun refresh(): Unit = task("Measuring") {
+    fun refresh(): Unit = task("Measuring") {
         val folders = it.usage(workspaceId)
         mutableState.update { s -> s.copy(folders = folders, loaded = true) }
     }
 
     /** Deletes [path] (a folder the next build makes again) and measures again. */
-    public fun clean(path: String): Unit = task(path) {
+    fun clean(path: String): Unit = task(path) {
         val freed = it.clean(workspaceId, path)
         val folders = it.usage(workspaceId)
         mutableState.update { s -> s.copy(folders = folders, message = "Freed ${formatBytes(freed)} ($path).") }
     }
 
-    public fun dismissMessage() {
+    fun dismissMessage() {
         mutableState.update { it.copy(message = null) }
     }
 
@@ -108,7 +106,7 @@ public class WorkspaceStorageViewModel(
 
 /** What each workspace folder takes in WSL, and freeing the ones the next build makes again. */
 @Composable
-public fun WorkspaceStoragePanel(viewModel: WorkspaceStorageViewModel, modifier: Modifier = Modifier) {
+fun WorkspaceStoragePanel(viewModel: WorkspaceStorageViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel) { if (!state.loaded) viewModel.refresh() }
     Box(modifier = modifier.fillMaxSize().testTag("WorkspaceStoragePanel"), contentAlignment = Alignment.TopCenter) {

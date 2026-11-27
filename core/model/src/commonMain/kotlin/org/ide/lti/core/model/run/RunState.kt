@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
  * QUEUED -> RUNNING -> (PAUSED_WAITING_FOR_APP <-> RUNNING) -> (CANCELLING ->) CANCELLED | SUCCEEDED | FAILED | INTERRUPTED
  */
 @Serializable
-public enum class RunState {
+enum class RunState {
     QUEUED,
     RUNNING,
     PAUSED_WAITING_FOR_APP,
@@ -29,9 +29,9 @@ public enum class RunState {
     INTERRUPTED,
     ;
 
-    public val isTerminal: Boolean
+    val isTerminal: Boolean
         get() = this == CANCELLED || this == SUCCEEDED || this == FAILED || this == INTERRUPTED
 
-    public val isActive: Boolean
+    val isActive: Boolean
         get() = !isTerminal
 }

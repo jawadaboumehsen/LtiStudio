@@ -41,10 +41,10 @@ import org.ide.lti.core.model.workspace.BuildSettings
 import org.ide.lti.feature.rom.studio.api.formatBytes
 
 /** A partition's own compression choices before a goal changed them, to put back. */
-public data class CompressionBefore(val compression: String?, val dedupe: Boolean?, val clusterKib: Int?)
+data class CompressionBefore(val compression: String?, val dedupe: Boolean?, val clusterKib: Int?)
 
 /** What the compression half of the size goal shows: the measuring, its steps and what Undo puts back. */
-public data class CompressionGoalState(
+data class CompressionGoalState(
     val measuring: Boolean = false,
     /** The partition being tried now, as "system (1 of 7)". */
     val trying: String? = null,
@@ -55,17 +55,17 @@ public data class CompressionGoalState(
 )
 
 /** Measures what compression would save ([CompressionGoal]) and applies or undoes the chosen steps. */
-public class CompressionGoalViewModel(
+class CompressionGoalViewModel(
     private val workspaceId: String,
     private val goal: CompressionGoal? = null,
     private val store: WorkspaceSettingsStore? = null,
 ) : ViewModel() {
     private val saves = Mutex()
     private val _state = MutableStateFlow(CompressionGoalState())
-    public val state: StateFlow<CompressionGoalState> = _state.asStateFlow()
+    val state: StateFlow<CompressionGoalState> = _state.asStateFlow()
 
     /** Trials compression until [shortBytes] are covered; ignored while one is running. */
-    public fun measure(shortBytes: Long) {
+    fun measure(shortBytes: Long) {
         val measurer = goal ?: return
         if (_state.value.measuring) return
         _state.update { it.copy(measuring = true, error = null) }
@@ -86,7 +86,7 @@ public class CompressionGoalViewModel(
     }
 
     /** Saves [steps]' options as their partitions' own compression choices, remembering what was there. */
-    public fun use(steps: List<CompressionStep>) {
+    fun use(steps: List<CompressionStep>) {
         val settings = store ?: return
         viewModelScope.launch {
             saves.withLock {
@@ -110,7 +110,7 @@ public class CompressionGoalViewModel(
     }
 
     /** Puts back what [use] changed, partition by partition (other build settings edited since stay). */
-    public fun undo() {
+    fun undo() {
         val settings = store ?: return
         viewModelScope.launch {
             saves.withLock {

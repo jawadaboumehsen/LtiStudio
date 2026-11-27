@@ -24,7 +24,7 @@ import org.ide.lti.core.domain.workspace.BuildQueue
 import org.ide.lti.core.domain.workspace.QueueState
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 
-public data class ProfilesUiState(
+data class ProfilesUiState(
     val workspaceId: String? = null,
     val profiles: List<BuildProfile> = emptyList(),
     val nameInput: String = "",
@@ -37,13 +37,13 @@ public data class ProfilesUiState(
 )
 
 /** Run panel > Profiles: named settings of the workspace, their differences, using one, and building several. */
-public class ProfilesViewModel(
+class ProfilesViewModel(
     private val workspaceManager: WorkspaceManager,
     private val profiles: BuildProfiles? = null,
     private val queue: BuildQueue? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfilesUiState())
-    public val state: StateFlow<ProfilesUiState> = _state.asStateFlow()
+    val state: StateFlow<ProfilesUiState> = _state.asStateFlow()
 
     private var workspaceGeneration = 0L
 
@@ -60,23 +60,23 @@ public class ProfilesViewModel(
         }
     }
 
-    public fun setName(name: String) {
+    fun setName(name: String) {
         _state.update { it.copy(nameInput = name) }
     }
 
     /** The current settings saved under the typed name. */
-    public fun saveCurrent() {
+    fun saveCurrent() {
         val name = _state.value.nameInput
         act(clearName = name) { ws, store -> store.saveCurrent(ws, name) }
     }
 
-    public fun delete(name: String) {
+    fun delete(name: String) {
         act { ws, store -> store.delete(ws, name) }
         _state.update { it.copy(queued = it.queued - name) }
     }
 
     /** Shows (or hides) what using [profile] would change. */
-    public fun toggleDifferences(profile: BuildProfile) {
+    fun toggleDifferences(profile: BuildProfile) {
         val shown = _state.value.differences
         val ws = _state.value.workspaceId
         val store = profiles
@@ -92,7 +92,7 @@ public class ProfilesViewModel(
     }
 
     /** [profile]'s settings made the current ones. */
-    public fun use(profile: BuildProfile) {
+    fun use(profile: BuildProfile) {
         val ws = _state.value.workspaceId ?: return
         val store = profiles ?: return
         val generation = workspaceGeneration
@@ -104,16 +104,16 @@ public class ProfilesViewModel(
     }
 
     /** Adds [name] to the end of the queue, or takes it out. */
-    public fun toggleQueued(name: String) {
+    fun toggleQueued(name: String) {
         _state.update { s -> s.copy(queued = if (name in s.queued) s.queued - name else s.queued + name) }
     }
 
-    public fun startQueue() {
+    fun startQueue() {
         val ws = _state.value.workspaceId ?: return
         queue?.start(ws, _state.value.queued)
     }
 
-    public fun stopQueue() {
+    fun stopQueue() {
         queue?.stop()
     }
 

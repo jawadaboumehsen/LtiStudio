@@ -15,7 +15,7 @@ package dev.chrisbanes.haze.glass
  *
  * Future minor releases may add entries. Keep an `else` branch when you match exhaustively with `when`.
  */
-public enum class ChromaticAberrationMode {
+enum class ChromaticAberrationMode {
     /**
      * Three-sample split: red shifted forward, green centered, blue shifted backward.
      * Fast and suitable for most use cases.

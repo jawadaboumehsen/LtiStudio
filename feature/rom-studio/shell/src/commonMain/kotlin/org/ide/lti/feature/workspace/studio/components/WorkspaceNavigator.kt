@@ -43,7 +43,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceSection
 import org.ide.lti.feature.workspace.studio.WorkspaceShellUiState
 
 @Composable
-public fun WorkspaceNavigator(
+fun WorkspaceNavigator(
     uiState: WorkspaceShellUiState,
     onSelectSection: (WorkspaceSection) -> Unit,
     modifier: Modifier = Modifier,

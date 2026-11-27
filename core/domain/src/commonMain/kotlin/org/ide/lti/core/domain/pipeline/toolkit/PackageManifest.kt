@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
  * Metadata entry for a single partition discovered in an incoming firmware package.
  */
 @Serializable
-public data class PartitionEntry(val name: String, val sizeBytes: Long, val sourceMember: String) {
+data class PartitionEntry(val name: String, val sizeBytes: Long, val sourceMember: String) {
     init {
         require(name.isNotBlank()) { "Partition name must not be blank" }
         require(sizeBytes >= 0) { "Partition sizeBytes must be non-negative" }
@@ -28,26 +28,25 @@ public data class PartitionEntry(val name: String, val sizeBytes: Long, val sour
  * Manifest describing an imported vendor firmware package (FR-001, FR-007).
  */
 @Serializable
-public data class PackageManifest(
+data class PackageManifest(
     val format: PackageFormat,
     val declaredChecksum: String? = null,
     val partitions: List<PartitionEntry> = emptyList(),
     val refusal: Refusal? = null,
 ) {
 
-    public companion object {
+    companion object {
         private val json = Json {
             prettyPrint = false
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(manifest: PackageManifest): String =
-            json.encodeToString(PackageManifest.serializer(), manifest)
+        fun encode(manifest: PackageManifest): String = json.encodeToString(PackageManifest.serializer(), manifest)
 
-        public fun decode(string: String): PackageManifest = json.decodeFromString(PackageManifest.serializer(), string)
+        fun decode(string: String): PackageManifest = json.decodeFromString(PackageManifest.serializer(), string)
 
-        public fun incrementalRefusal(item: String, details: String? = null): PackageManifest = PackageManifest(
+        fun incrementalRefusal(item: String, details: String? = null): PackageManifest = PackageManifest(
             format = PackageFormat.AndroidPayload,
             refusal = Refusal(
                 cause = "The package is an incremental update.",
@@ -57,7 +56,7 @@ public data class PackageManifest(
             ),
         )
 
-        public fun unknownRefusal(item: String, details: String? = null): PackageManifest = PackageManifest(
+        fun unknownRefusal(item: String, details: String? = null): PackageManifest = PackageManifest(
             format = PackageFormat.Unknown,
             refusal = Refusal(
                 cause = "The package format was not recognized.",
@@ -73,16 +72,16 @@ public data class PackageManifest(
  * Result of comparing a firmware package's actual checksum against its expected checksum (FR-006).
  */
 @Serializable
-public data class ChecksumResult(val ok: Boolean, val expected: String?, val actual: String) {
-    public companion object {
+data class ChecksumResult(val ok: Boolean, val expected: String?, val actual: String) {
+    companion object {
         private val json = Json {
             prettyPrint = false
             ignoreUnknownKeys = true
             encodeDefaults = true
         }
 
-        public fun encode(result: ChecksumResult): String = json.encodeToString(serializer(), result)
+        fun encode(result: ChecksumResult): String = json.encodeToString(serializer(), result)
 
-        public fun decode(string: String): ChecksumResult = json.decodeFromString(serializer(), string)
+        fun decode(string: String): ChecksumResult = json.decodeFromString(serializer(), string)
     }
 }

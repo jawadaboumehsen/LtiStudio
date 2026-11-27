@@ -16,20 +16,20 @@ import org.ide.lti.core.model.security.CredentialRef
  * Infrastructure implementations (OS keychain, secure storage, in-memory test vault)
  * implement this interface.
  */
-public interface SecretStorePort {
-    public suspend fun getSecret(ref: CredentialRef): String?
-    public suspend fun storeSecret(ref: CredentialRef, secret: String)
-    public suspend fun deleteSecret(ref: CredentialRef)
-    public suspend fun hasSecret(ref: CredentialRef): Boolean
+interface SecretStorePort {
+    suspend fun getSecret(ref: CredentialRef): String?
+    suspend fun storeSecret(ref: CredentialRef, secret: String)
+    suspend fun deleteSecret(ref: CredentialRef)
+    suspend fun hasSecret(ref: CredentialRef): Boolean
 }
 
 /**
  * Utility for redacting sensitive values from strings before logging or UI export.
  */
-public object SecretRedactor {
-    public const val REDACTED_PLACEHOLDER: String = "***REDACTED***"
+object SecretRedactor {
+    const val REDACTED_PLACEHOLDER: String = "***REDACTED***"
 
-    public fun redact(raw: String, secrets: Collection<String>): String {
+    fun redact(raw: String, secrets: Collection<String>): String {
         var result = raw
         for (secret in secrets) {
             if (secret.isNotBlank()) {
@@ -39,7 +39,7 @@ public object SecretRedactor {
         return result
     }
 
-    public fun redactSecretValue(secret: String?): String {
+    fun redactSecretValue(secret: String?): String {
         if (secret.isNullOrEmpty()) return ""
         return REDACTED_PLACEHOLDER
     }

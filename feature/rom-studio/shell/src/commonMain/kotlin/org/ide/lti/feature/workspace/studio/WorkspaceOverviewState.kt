@@ -15,7 +15,7 @@ import org.ide.lti.core.model.run.StageId
 /**
  * Fixed five-item readiness matrix concerns in specification order.
  */
-public enum class ReadinessId(public val displayName: String) {
+enum class ReadinessId(val displayName: String) {
     SOURCE("Source firmware"),
     DEBLOAT("Debloat"),
     PATCHES("Patches"),
@@ -26,7 +26,7 @@ public enum class ReadinessId(public val displayName: String) {
 /**
  * Severity indicator for readiness concerns.
  */
-public enum class ReadinessSeverity {
+enum class ReadinessSeverity {
     Ready,
     Warning,
     Blocking,
@@ -39,27 +39,27 @@ public enum class ReadinessSeverity {
  * Exhaustive typed actions that can be triggered from workspace overview.
  */
 @Immutable
-public sealed interface WorkspaceActionUi {
-    public data class OpenStage(val stageId: StageId, val objectId: String? = null) : WorkspaceActionUi
+sealed interface WorkspaceActionUi {
+    data class OpenStage(val stageId: StageId, val objectId: String? = null) : WorkspaceActionUi
 
-    public data class OpenWorkspaceSection(val section: WorkspaceSection) : WorkspaceActionUi
+    data class OpenWorkspaceSection(val section: WorkspaceSection) : WorkspaceActionUi
 
-    public data object Reload : WorkspaceActionUi
+    data object Reload : WorkspaceActionUi
 
-    public data object Validate : WorkspaceActionUi
+    data object Validate : WorkspaceActionUi
 
-    public data object Save : WorkspaceActionUi
+    data object Save : WorkspaceActionUi
 
-    public data object OpenSetup : WorkspaceActionUi
+    data object OpenSetup : WorkspaceActionUi
 
-    public data object OpenSettings : WorkspaceActionUi
+    data object OpenSettings : WorkspaceActionUi
 }
 
 /**
  * Four stable truthful target summary columns plus revision and binding header.
  */
 @Immutable
-public data class TargetSummaryUi(
+data class TargetSummaryUi(
     val revision: DisplayValue,
     val binding: DisplayValue,
     val deviceId: DisplayValue,
@@ -73,7 +73,7 @@ public data class TargetSummaryUi(
  * Single row in the fixed 5-row readiness matrix.
  */
 @Immutable
-public data class ReadinessItemUi(
+data class ReadinessItemUi(
     val id: ReadinessId,
     val title: String,
     val contextLabel: String,
@@ -89,27 +89,22 @@ public data class ReadinessItemUi(
  * Current or latest build execution state.
  */
 @Immutable
-public sealed interface BuildStateUi {
-    public data object NotStarted : BuildStateUi
+sealed interface BuildStateUi {
+    data object NotStarted : BuildStateUi
 
-    public data class InProgress(val runId: String, val stageLabel: String, val progress: Float? = null) :
+    data class InProgress(val runId: String, val stageLabel: String, val progress: Float? = null) : BuildStateUi
+
+    data class Succeeded(val runId: String, val completedAt: String, val artifactCount: Int) : BuildStateUi
+
+    data class Failed(val runId: String, val failedAt: String, val stageLabel: String, val errorMessage: String) :
         BuildStateUi
-
-    public data class Succeeded(val runId: String, val completedAt: String, val artifactCount: Int) : BuildStateUi
-
-    public data class Failed(
-        val runId: String,
-        val failedAt: String,
-        val stageLabel: String,
-        val errorMessage: String,
-    ) : BuildStateUi
 }
 
 /**
  * Item in recent workspace activity feed.
  */
 @Immutable
-public data class ActivityItemUi(
+data class ActivityItemUi(
     val id: String,
     val title: String,
     val timestamp: String,
@@ -121,21 +116,21 @@ public data class ActivityItemUi(
  * Top-level loading state of the overview content.
  */
 @Immutable
-public sealed interface ContentLoadState {
-    public data object Loading : ContentLoadState
+sealed interface ContentLoadState {
+    data object Loading : ContentLoadState
 
-    public data object Content : ContentLoadState
+    data object Content : ContentLoadState
 
-    public data object Empty : ContentLoadState
+    data object Empty : ContentLoadState
 
-    public data class Error(val message: String) : ContentLoadState
+    data class Error(val message: String) : ContentLoadState
 }
 
 /**
  * Complete immutable UI state for the Workspace Overview.
  */
 @Immutable
-public data class WorkspaceOverviewUiState(
+data class WorkspaceOverviewUiState(
     val workspaceTitle: String = "",
     val subtitle: String = "",
     val targetSummary: TargetSummaryUi = TargetSummaryUi(

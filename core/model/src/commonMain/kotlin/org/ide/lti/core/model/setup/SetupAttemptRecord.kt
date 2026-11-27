@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
  * Lifecycle status of an environment setup attempt.
  */
 @Serializable
-public enum class AttemptStatus {
+enum class AttemptStatus {
     AUTHORIZED,
     RUNNING,
     RECONNECTING,
@@ -31,7 +31,7 @@ public enum class AttemptStatus {
  * Exact immutable execution request persisted before submission to the daemon runner.
  */
 @Serializable
-public data class PersistedExecutionRequest(
+data class PersistedExecutionRequest(
     val toolId: String,
     val arguments: List<String> = emptyList(),
     val workingDirectory: String = "/",
@@ -50,7 +50,7 @@ public data class PersistedExecutionRequest(
  * - "Persisted lastSeq never advances beyond durably stored replay evidence."
  */
 @Serializable
-public data class ChildIntentRecord(
+data class ChildIntentRecord(
     val childIndex: Int,
     val stage: String,
     val actionId: String,
@@ -71,7 +71,7 @@ public data class ChildIntentRecord(
  * cancellation acknowledgement alone never unlocks mutation."
  */
 @Serializable
-public data class ChildTerminalProof(
+data class ChildTerminalProof(
     val environmentKey: String,
     val attemptId: String,
     val runId: String,
@@ -89,7 +89,7 @@ public data class ChildTerminalProof(
  * Enforces: "Reconnect reuses attemptId; explicit retry allocates a new attemptId."
  */
 @Serializable
-public data class SetupAttemptRecord(
+data class SetupAttemptRecord(
     val attemptId: String,
     val environmentKey: String,
     val planId: String,
@@ -120,7 +120,7 @@ public data class SetupAttemptRecord(
                 status == AttemptStatus.AWAITING_USER_ACTION
 
     /** A child is proven when its own terminal status or a persisted proof for its runId exists. */
-    public fun isChildProven(intent: ChildIntentRecord): Boolean =
+    fun isChildProven(intent: ChildIntentRecord): Boolean =
         intent.terminalStatus != null || terminalProofs.any { it.runId == intent.runId }
 
     /** Possibly submitted children (every persisted intent) lacking authoritative terminal proof. */
@@ -132,7 +132,7 @@ public data class SetupAttemptRecord(
  * Persisted handoff details for an action awaiting user terminal authorization.
  */
 @Serializable
-public data class PersistedUserHandoff(
+data class PersistedUserHandoff(
     val actionId: String,
     val distro: String,
     val command: String,
@@ -149,7 +149,7 @@ public data class PersistedUserHandoff(
  * [selectionRevision] and [forceRebuildGroups] likewise default to pre-008 values.
  */
 @Serializable
-public data class PersistedPlanAction(
+data class PersistedPlanAction(
     val actionId: String,
     val type: String,
     val payload: List<String> = emptyList(),
@@ -164,7 +164,7 @@ public data class PersistedPlanAction(
  * is non-null. The [kind] field discriminates: "git" or "release".
  */
 @Serializable
-public data class PersistedResolvedInput(
+data class PersistedResolvedInput(
     val kind: String,
     // Git fields
     val repoUrl: String? = null,
@@ -184,7 +184,7 @@ public data class PersistedResolvedInput(
  * Persisted setup plan enabling durable recovery and continuation across sessions.
  */
 @Serializable
-public data class PersistedSetupPlan(
+data class PersistedSetupPlan(
     val planId: String,
     val revisionHash: String,
     val environmentKey: String,
@@ -197,7 +197,7 @@ public data class PersistedSetupPlan(
  * Persisted snapshot of the target WSL environment.
  */
 @Serializable
-public data class PersistedEnvironment(
+data class PersistedEnvironment(
     val distro: String,
     val wslVersion: Int,
     val osId: String,
@@ -206,7 +206,7 @@ public data class PersistedEnvironment(
     val home: String,
 )
 
-public fun SetupEnvironment.toPersisted(): PersistedEnvironment = PersistedEnvironment(
+fun SetupEnvironment.toPersisted(): PersistedEnvironment = PersistedEnvironment(
     distro = distro,
     wslVersion = wslVersion,
     osId = osId,
@@ -215,7 +215,7 @@ public fun SetupEnvironment.toPersisted(): PersistedEnvironment = PersistedEnvir
     home = home,
 )
 
-public fun PersistedEnvironment.toDomain(): SetupEnvironment = SetupEnvironment(
+fun PersistedEnvironment.toDomain(): SetupEnvironment = SetupEnvironment(
     distro = distro,
     wslVersion = wslVersion,
     osId = osId,

@@ -4,7 +4,7 @@ import io.ltirom.tooling.codegen.spec.Compiler
 import io.ltirom.tooling.core.ToolId
 import java.io.File
 
-public fun main(args: Array<String>) {
+fun main(args: Array<String>) {
     if (args.isEmpty()) {
         printUsage()
         return

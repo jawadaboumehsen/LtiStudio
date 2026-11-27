@@ -16,19 +16,19 @@ import org.ide.lti.core.domain.setup.SetupLogKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.model.setup.SetupEnvironment
 
-public sealed interface StageOutcome {
-    public val description: String
+sealed interface StageOutcome {
+    val description: String
 
-    public data class Success(override val description: String) : StageOutcome
+    data class Success(override val description: String) : StageOutcome
 
-    public data class Failed(override val description: String, val error: String? = null) : StageOutcome
+    data class Failed(override val description: String, val error: String? = null) : StageOutcome
 
-    public data class Warning(override val description: String, val warning: String? = null) : StageOutcome
+    data class Warning(override val description: String, val warning: String? = null) : StageOutcome
 
-    public data class Pending(override val description: String, val error: String? = null) : StageOutcome
+    data class Pending(override val description: String, val error: String? = null) : StageOutcome
 }
 
-public data class CheckContext(
+data class CheckContext(
     val environment: SetupEnvironment,
     val readOnlyCommands: ReadOnlyCommands,
     val userHome: String,
@@ -42,8 +42,8 @@ public data class CheckContext(
     val alreadyVerifiedWsl: Boolean = false,
 )
 
-public interface CheckStage {
-    public val stage: SetupStepStage
+interface CheckStage {
+    val stage: SetupStepStage
 
-    public suspend fun run(ctx: CheckContext, scope: CheckScope): StageOutcome
+    suspend fun run(ctx: CheckContext, scope: CheckScope): StageOutcome
 }

@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
  * Persisted, per-tool compilation/verification record.
  */
 @Serializable
-public data class PersistedToolState(
+data class PersistedToolState(
     val id: String,
     val binaryName: String,
     val isCompiled: Boolean = false,

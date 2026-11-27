@@ -14,7 +14,7 @@ import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 
 /** One partition built a smaller way than now: measured by a trial build ([SizeAdvisor]), both sizes and times. */
-public data class CompressionStep(
+data class CompressionStep(
     val partition: String,
     val option: TrialOption,
     val nowBytes: Long,
@@ -31,7 +31,7 @@ public data class CompressionStep(
  * boot kernel reads it, lzma when it decodes it); per partition the smallest result that is smaller than now. Trials
  * build into `workbench/trial` and delete it: nothing of the build changes until a step is used.
  */
-public class CompressionGoal(
+class CompressionGoal(
     private val advisor: SizeAdvisor,
     private val boot: BootWorkbench,
     private val settings: WorkspaceSettingsStore,
@@ -42,7 +42,7 @@ public class CompressionGoal(
      * [shortBytes]: each trial is a full build of a partition, minutes for system with deduplication.
      * [progress] hears which partition is being tried, as "system (1 of 7)".
      */
-    public suspend fun measure(
+    suspend fun measure(
         workspaceId: String,
         shortBytes: Long,
         progress: (String) -> Unit = {},
@@ -81,9 +81,9 @@ public class CompressionGoal(
         }
     }
 
-    public companion object {
+    companion object {
         /** The largest savings first until [shortBytes] are covered; all of them when they cannot be. */
-        public fun pick(steps: List<CompressionStep>, shortBytes: Long): List<CompressionStep> {
+        fun pick(steps: List<CompressionStep>, shortBytes: Long): List<CompressionStep> {
             val picked = mutableListOf<CompressionStep>()
             var saved = 0L
             for (step in steps.sortedByDescending { it.savingBytes }) {

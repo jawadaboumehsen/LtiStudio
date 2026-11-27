@@ -18,7 +18,7 @@ import org.ide.lti.core.model.workspace.Workspace
  * does while one is there. Firmware contents are left alone, as links are normal in them: the partition trees of
  * `work/`, and what lies deeper than the app's own folders. Throws when the scan fails: that proves nothing.
  */
-public suspend fun PipelineExecutionPort.linkInWorkspace(ws: Workspace): String? {
+suspend fun PipelineExecutionPort.linkInWorkspace(ws: Workspace): String? {
     val root = ws.linuxPath ?: return null
     val scan = execute(ws, StepCommand("find", linkScanArgs(root), root))
     check(scan.exitCode == 0) { "The workspace could not be checked for links: ${scan.stderr.trim()}" }
@@ -26,7 +26,7 @@ public suspend fun PipelineExecutionPort.linkInWorkspace(ws: Workspace): String?
 }
 
 /** Fails with what to remove when [linkInWorkspace] finds a link. */
-public suspend fun PipelineExecutionPort.requireNoLinkInWorkspace(ws: Workspace) {
+suspend fun PipelineExecutionPort.requireNoLinkInWorkspace(ws: Workspace) {
     linkInWorkspace(ws)?.let { link ->
         error("$link is a link, which could lead this work out of the workspace. Remove it; nothing was changed.")
     }

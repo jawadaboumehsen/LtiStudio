@@ -47,20 +47,20 @@ import org.ide.lti.core.domain.workspace.ModUpdates
 import org.ide.lti.core.domain.workspace.PendingUpdate
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 
-public enum class PluginDestination(public val id: String, public val title: String) {
+enum class PluginDestination(val id: String, val title: String) {
     INSTALLED("installed", "Installed"),
     MARKETPLACE("marketplace", "Marketplace"),
     IMPORT("import", "Import"),
     AUTHOR_TOOLS("author_tools", "Author Tools"),
     ;
 
-    public companion object {
-        public fun fromId(id: String): PluginDestination =
+    companion object {
+        fun fromId(id: String): PluginDestination =
             entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: INSTALLED
     }
 }
 
-public data class PluginManagerUiState(
+data class PluginManagerUiState(
     val destination: PluginDestination = PluginDestination.INSTALLED,
     val activeWorkspaceId: String? = null,
     val searchQuery: String = "",
@@ -98,7 +98,7 @@ public data class PluginManagerUiState(
 )
 
 @Suppress("TooManyFunctions") // unified state holder for installed, marketplace, import, and author tools
-public class PluginManagerViewModel(
+class PluginManagerViewModel(
     private val installPluginUseCase: InstallPluginUseCase,
     private val pluginLifecycleUseCase: PluginLifecycleUseCase,
     private val authorProjectTrustUseCase: AuthorProjectTrustUseCase,
@@ -119,7 +119,7 @@ public class PluginManagerViewModel(
             selectedPackageKey = initialPackageId,
         ),
     )
-    public val uiState: StateFlow<PluginManagerUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<PluginManagerUiState> = _uiState.asStateFlow()
 
     private var installedRefresh: Job? = null
 
@@ -147,35 +147,35 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun selectDestination(destination: PluginDestination) {
+    fun selectDestination(destination: PluginDestination) {
         _uiState.update { it.copy(destination = destination, errorMessage = null, notificationMessage = null) }
     }
 
-    public fun setSearchQuery(query: String) {
+    fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    public fun setActiveWorkspaceId(workspaceId: String) {
+    fun setActiveWorkspaceId(workspaceId: String) {
         _uiState.update { it.copy(activeWorkspaceId = workspaceId) }
     }
 
-    public fun selectPackage(packageKey: String?) {
+    fun selectPackage(packageKey: String?) {
         _uiState.update { it.copy(selectedPackageKey = packageKey) }
     }
 
-    public fun openDetails(record: InstalledRecord) {
+    fun openDetails(record: InstalledRecord) {
         _uiState.update { it.copy(detailsRecord = record, isDetailsOpen = true) }
     }
 
-    public fun closeDetails() {
+    fun closeDetails() {
         _uiState.update { it.copy(isDetailsOpen = false, detailsRecord = null) }
     }
 
-    public fun dismissNotification() {
+    fun dismissNotification() {
         _uiState.update { it.copy(notificationMessage = null, errorMessage = null) }
     }
 
-    public fun refreshInstalled() {
+    fun refreshInstalled() {
         installedRefresh?.cancel()
         _uiState.update { it.copy(isInstalledLoading = true) }
         installedRefresh = viewModelScope.launch {
@@ -194,7 +194,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun archivePackage(record: InstalledRecord) {
+    fun archivePackage(record: InstalledRecord) {
         viewModelScope.launch {
             when (val outcome = pluginLifecycleUseCase.archive(record.identity)) {
                 is LifecycleOutcome.Applied -> {
@@ -210,7 +210,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun uninstallPackage(record: InstalledRecord) {
+    fun uninstallPackage(record: InstalledRecord) {
         viewModelScope.launch {
             // Read now, not from the list on screen: a workspace may have started using it since.
             val references = packageReferences(pluginInstallPort.installed(), workspaceUsage?.usersOf().orEmpty())[
@@ -230,11 +230,11 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun setMarketplaceUrlInput(url: String) {
+    fun setMarketplaceUrlInput(url: String) {
         _uiState.update { it.copy(marketplaceUrlInput = url) }
     }
 
-    public fun configureMarketplaceSource(label: String, url: String) {
+    fun configureMarketplaceSource(label: String, url: String) {
         val trimmed = url.trim()
         if (!trimmed.startsWith("https://", ignoreCase = true)) {
             _uiState.update {
@@ -253,7 +253,7 @@ public class PluginManagerViewModel(
     /** The newest fetch: an older source answering later is dropped, never shown as the configured one. */
     private var fetchRequest = 0L
 
-    public fun fetchMarketplace(source: IndexSource? = _uiState.value.marketplaceSource, allowCache: Boolean = true) {
+    fun fetchMarketplace(source: IndexSource? = _uiState.value.marketplaceSource, allowCache: Boolean = true) {
         if (source == null) return
         val request = ++fetchRequest
         viewModelScope.launch {
@@ -275,7 +275,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun startInstallFromMarketplace(entry: IndexEntry, trust: TrustDecision) {
+    fun startInstallFromMarketplace(entry: IndexEntry, trust: TrustDecision) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -331,7 +331,7 @@ public class PluginManagerViewModel(
     }
 
     /** Runs the mod lab for [move]'s workspace on the new versions (nothing is saved). */
-    public fun checkUpdate(move: PluginWorkspaceUsage.PendingMove) {
+    fun checkUpdate(move: PluginWorkspaceUsage.PendingMove) {
         val updates = modUpdates ?: return
         _uiState.update { it.copy(updateChecks = it.updateChecks + (move.name to CHECKING)) }
         viewModelScope.launch {
@@ -341,7 +341,7 @@ public class PluginManagerViewModel(
     }
 
     /** Moves the workspaces onto the reviewed update and removes the versions nothing uses any more. */
-    public fun applyUpdate() {
+    fun applyUpdate() {
         val installed = _uiState.value.pendingInstalled ?: return
         viewModelScope.launch {
             val note = updateAfterInstall(installed)
@@ -356,7 +356,7 @@ public class PluginManagerViewModel(
     }
 
     /** Leaves the workspaces on the versions they use; the new one stays installed for later. */
-    public fun dismissUpdate() {
+    fun dismissUpdate() {
         _uiState.update { it.copy(pendingUpdate = null, pendingInstalled = null, updateChecks = emptyMap()) }
     }
 
@@ -399,7 +399,7 @@ public class PluginManagerViewModel(
         viewModelScope.launch { pluginInstallPort.discard(java.nio.file.Path.of(copy)) }
     }
 
-    public fun setImportPathInput(path: String) {
+    fun setImportPathInput(path: String) {
         inspectRequest++
         discardInspected()
         _uiState.update {
@@ -414,7 +414,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun inspectImportPath(path: String) {
+    fun inspectImportPath(path: String) {
         val trimmed = path.trim()
         if (trimmed.isBlank()) return
 
@@ -460,11 +460,11 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun dismissLegacyFormatWarning() {
+    fun dismissLegacyFormatWarning() {
         _uiState.update { it.copy(isLegacyUnsupportedFormat = false, legacyFormatName = null) }
     }
 
-    public fun confirmImportInstall(trust: TrustDecision) {
+    fun confirmImportInstall(trust: TrustDecision) {
         // The picked file itself, held to the inspected content by its digest: a file changed since (or an
         // inspection of another one) fails the check instead of installing something else.
         val path = _uiState.value.importPathInput.trim()
@@ -495,12 +495,12 @@ public class PluginManagerViewModel(
     /** The newest trust check: one for a path edited since is dropped, never shown for the new path. */
     private var trustRequest = 0L
 
-    public fun setAuthorProjectPathInput(path: String) {
+    fun setAuthorProjectPathInput(path: String) {
         trustRequest++
         _uiState.update { it.copy(authorProjectPathInput = path, authorTrustCheck = null) }
     }
 
-    public fun checkAuthorProject(projectPath: String) {
+    fun checkAuthorProject(projectPath: String) {
         val trimmed = projectPath.trim()
         if (trimmed.isBlank()) return
         val request = ++trustRequest
@@ -513,7 +513,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun approveAuthorProject(sdkVersion: String = "1.0.0", generatorEntry: String = "") {
+    fun approveAuthorProject(sdkVersion: String = "1.0.0", generatorEntry: String = "") {
         val path = _uiState.value.authorProjectPathInput
         if (path.isBlank()) return
         viewModelScope.launch {
@@ -534,7 +534,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun revokeAuthorProject(projectPath: String = _uiState.value.authorProjectPathInput) {
+    fun revokeAuthorProject(projectPath: String = _uiState.value.authorProjectPathInput) {
         if (projectPath.isBlank()) return
         viewModelScope.launch {
             authorProjectTrustUseCase.revoke(projectPath)
@@ -548,7 +548,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun selectAuthorTask(task: String) {
+    fun selectAuthorTask(task: String) {
         _uiState.update {
             if (it.isAuthorTaskRunning) return@update it
             it.copy(
@@ -558,7 +558,7 @@ public class PluginManagerViewModel(
         }
     }
 
-    public fun runAuthorTask(task: String = _uiState.value.authorSelectedTask, timeoutMs: Long = 60000L) {
+    fun runAuthorTask(task: String = _uiState.value.authorSelectedTask, timeoutMs: Long = 60000L) {
         val path = _uiState.value.authorProjectPathInput
         if (path.isBlank() || _uiState.value.isAuthorTaskRunning) return
         // Set before the task starts: no other task can be picked while this one has no result yet.

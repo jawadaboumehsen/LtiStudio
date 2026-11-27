@@ -1,9 +1,26 @@
 package io.ltirom.tooling.client
 
 import io.ltirom.tooling.client.transport.KtorRemoteTransportAdapter
-import io.ltirom.tooling.core.*
+import io.ltirom.tooling.core.AuditRecord
+import io.ltirom.tooling.core.BinaryToolCommand
+import io.ltirom.tooling.core.CommandExecutionResult
+import io.ltirom.tooling.core.ExecutionContext
+import io.ltirom.tooling.core.Redactor
+import io.ltirom.tooling.core.StdinMode
+import io.ltirom.tooling.core.StreamingToolRepository
+import io.ltirom.tooling.core.ToolCommand
+import io.ltirom.tooling.core.ToolResult
+import io.ltirom.tooling.core.ToolSafetyException
+import io.ltirom.tooling.core.ToolSafetyPolicy
+import io.ltirom.tooling.core.boundTo
 import io.ltirom.tooling.core.events.ToolEventBus
-import io.ltirom.tooling.core.pipeline.*
+import io.ltirom.tooling.core.getOrThrow
+import io.ltirom.tooling.core.pipeline.AuditLoggingInterceptor
+import io.ltirom.tooling.core.pipeline.EventPublishingInterceptor
+import io.ltirom.tooling.core.pipeline.SafetyCheckInterceptor
+import io.ltirom.tooling.core.pipeline.ToolExecutionInterceptor
+import io.ltirom.tooling.core.pipeline.ToolExecutionPipeline
+import io.ltirom.tooling.core.pipeline.WorkspaceJailInterceptor
 import io.ltirom.tooling.core.ports.PathTranslatorPort
 import io.ltirom.tooling.core.ports.RemoteTransportPort
 import io.ltirom.tooling.core.remote.StreamEvent
@@ -20,7 +37,7 @@ import kotlinx.coroutines.flow.Flow
  * - Interface Segregation Principle: implements [StreamingToolRepository] which segregates
  *   batch [execute] from reactive [stream].
  */
-public class RemoteWslToolRepository(
+class RemoteWslToolRepository(
     private val transport: RemoteTransportPort,
     private val pathTranslator: PathTranslatorPort = WslPathTranslator(),
     private val safetyPolicy: ToolSafetyPolicy = ToolSafetyPolicy(),
@@ -46,7 +63,7 @@ public class RemoteWslToolRepository(
     /**
      * Backward-compatible convenience constructor accepting [WslDaemonManager].
      */
-    public constructor(
+    constructor(
         daemonManager: WslDaemonManager,
         pathTranslator: PathTranslatorPort = WslPathTranslator(),
         safetyPolicy: ToolSafetyPolicy = ToolSafetyPolicy(),
@@ -68,7 +85,7 @@ public class RemoteWslToolRepository(
 
     private val windowsDriveRegex = Regex("""^[a-zA-Z]:[\\/].*""")
 
-    public fun translateArgument(arg: String): String {
+    fun translateArgument(arg: String): String {
         if (windowsDriveRegex.matches(arg) || arg.startsWith("\\\\wsl")) {
             return pathTranslator.toRemote(arg)
         }
@@ -164,10 +181,4 @@ public class RemoteWslToolRepository(
 
         return transport.stream(request)
     }
-
-    /**
-     * Backward-compatible alias for [stream].
-     */
-    public fun <R> executeStreaming(command: ToolCommand<R>, context: ExecutionContext): Flow<StreamEvent> =
-        stream(command, context)
 }

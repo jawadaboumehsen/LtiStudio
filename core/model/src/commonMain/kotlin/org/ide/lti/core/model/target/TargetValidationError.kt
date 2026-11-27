@@ -12,16 +12,16 @@ package org.ide.lti.core.model.target
 /**
  * A single target-configuration validation failure.
  */
-public sealed class TargetValidationError(public val field: String, public val message: String) {
-    public object EmptyId : TargetValidationError("id", "Target ID cannot be blank.")
-    public object EmptyName : TargetValidationError("name", "Target name cannot be blank.")
-    public object EmptyCodename : TargetValidationError("codename", "Target codename cannot be blank.")
-    public object EmptySocPlatform : TargetValidationError("socPlatform", "SoC platform cannot be blank.")
-    public object EmptyFilesystemType : TargetValidationError("filesystemType", "Filesystem type cannot be blank.")
-    public object InvalidSuperPartitionSize :
+sealed class TargetValidationError(val field: String, val message: String) {
+    object EmptyId : TargetValidationError("id", "Target ID cannot be blank.")
+    object EmptyName : TargetValidationError("name", "Target name cannot be blank.")
+    object EmptyCodename : TargetValidationError("codename", "Target codename cannot be blank.")
+    object EmptySocPlatform : TargetValidationError("socPlatform", "SoC platform cannot be blank.")
+    object EmptyFilesystemType : TargetValidationError("filesystemType", "Filesystem type cannot be blank.")
+    object InvalidSuperPartitionSize :
         TargetValidationError("superPartitionBytes", "Super partition size must be greater than zero.")
-    public object EmptyDynamicPartitions :
+    object EmptyDynamicPartitions :
         TargetValidationError("dynamicPartitions", "At least one dynamic partition is required.")
-    public object EmptyBootPartitions :
+    object EmptyBootPartitions :
         TargetValidationError("bootPartitions", "At least one boot partition is required.")
 }

@@ -11,9 +11,9 @@ import kotlin.test.assertFalse
 class WslDaemonDecompositionTest {
 
     @Test
-    fun `DaemonHealthProber returns false when server is unreachable`() = runBlocking {
+    fun `DaemonHealthProbe returns false when server is unreachable`() = runBlocking {
         val client = HttpClient(CIO)
-        val prober = DaemonHealthProber(client)
+        val probe = DaemonHealthProbe(client)
         val info = ServerConnectionDescriptor(
             host = "127.0.0.1",
             port = 59999,
@@ -23,7 +23,7 @@ class WslDaemonDecompositionTest {
         )
 
         try {
-            val isHealthy = prober.isHealthy(info, timeoutMs = 500L)
+            val isHealthy = probe.isHealthy(info, timeoutMs = 500L)
             assertFalse(isHealthy)
         } finally {
             client.close()

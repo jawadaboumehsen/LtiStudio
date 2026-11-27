@@ -10,6 +10,6 @@
 package org.ide.lti.core.domain.pipeline.toolkit
 
 /** Where a boot-chain image edited in the Studio goes; the Assemble stage copies it into the build (FR-020..FR-026). */
-public object KernelOverrides {
-    public fun path(partition: String): String = "overrides/kernel/$partition.img"
+object KernelOverrides {
+    fun path(partition: String): String = "overrides/kernel/$partition.img"
 }

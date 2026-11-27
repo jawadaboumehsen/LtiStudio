@@ -45,7 +45,7 @@ import org.ide.lti.core.model.run.StageState
  * full JSON + event logs on local filesystem), and mirrors runs and stage logs into
  * the remote workspace when [PipelineExecutionPort] is available and connected.
  */
-public class RunRepositoryImpl(
+class RunRepositoryImpl(
     private val runRecordDataSource: RunRecordDataSource,
     private val workspaceRepository: WorkspaceRepository? = null,
     private val executionPort: PipelineExecutionPort? = null,

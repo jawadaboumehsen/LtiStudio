@@ -22,7 +22,7 @@ import java.nio.file.Files
  * Desktop JVM implementation of [RunFileStorage] storing runs as JSON files
  * and event logs as JSONL lines in the platform's local application data directory.
  */
-public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBaseDir()) : RunFileStorage {
+class DesktopRunFileStorage(val baseDir: File = resolveDefaultBaseDir()) : RunFileStorage {
 
     init {
         if (!baseDir.exists()) {
@@ -83,8 +83,8 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
         Files.deleteIfExists(File(baseDir, "$runId.json").toPath())
     }
 
-    public companion object {
-        public fun resolveDefaultBaseDir(): File {
+    companion object {
+        fun resolveDefaultBaseDir(): File {
             val localAppData = System.getenv("LOCALAPPDATA")
             return if (!localAppData.isNullOrBlank()) {
                 File(localAppData, "LtiRomGui/runs")
@@ -100,4 +100,4 @@ public class DesktopRunFileStorage(public val baseDir: File = resolveDefaultBase
     }
 }
 
-public actual fun defaultRunFileStorage(): RunFileStorage = DesktopRunFileStorage()
+actual fun defaultRunFileStorage(): RunFileStorage = DesktopRunFileStorage()

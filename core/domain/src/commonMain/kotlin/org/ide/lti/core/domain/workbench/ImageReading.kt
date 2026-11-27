@@ -20,10 +20,10 @@ import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.pipeline.toolkit.Superblock
 
 /** What an image in the workspace holds, as its first bytes say. */
-public enum class ImageKind { Erofs, Ext4, F2fs, Super, Sparse }
+enum class ImageKind { Erofs, Ext4, F2fs, Super, Sparse }
 
 /** An image the browser can open read-only: a partition image or a super image. */
-public data class WorkspaceImage(val path: String, val sizeBytes: Long, val kind: ImageKind)
+data class WorkspaceImage(val path: String, val sizeBytes: Long, val kind: ImageKind)
 
 /** Folder for the copies a read needs (a sparse image expanded, a partition taken out of super): never the project. */
 internal const val BROWSE_CACHE = "workbench/browse"
@@ -122,7 +122,7 @@ internal const val TREE_HASH_SCRIPT: String = "cd \"\$1\" && tr '\\n' '\\000' < 
 private const val BROWSER_LISTING = "%y\\t%s\\t%l\\t%P\\n"
 
 /** Where an image sits, in words: the stock firmware, the user's own, or a build's. */
-public fun imageOrigin(path: String): String = when (path.substringBeforeLast('/')) {
+fun imageOrigin(path: String): String = when (path.substringBeforeLast('/')) {
     "firmware/extracted" -> "Stock firmware"
     "firmware/raw" -> "Firmware package"
     "firmware/replacements" -> "Your images"
@@ -200,7 +200,7 @@ private suspend fun WorkbenchRunner.Job.requireRoomToExpand(image: String, raw: 
     if (exists(raw)) return
     // Sparse header: block size (u32 at 12) and block count (u32 at 16), little-endian.
     val header = FormatDetector.fromHex(run("xxd", "-p", "-s", "12", "-l", "8", abs(image)))
-    fun u32(at: Int) = (0 until 4).fold(0L) { acc, i -> acc or ((header[at + i].toLong() and 0xFF) shl (8 * i)) }
+    fun u32(at: Int) = (0..<4).fold(0L) { acc, i -> acc or ((header[at + i].toLong() and 0xFF) shl (8 * i)) }
     val rawBytes = u32(0) * u32(4)
     val free = run("df", "--output=avail", "-B1", abs(BROWSE_CACHE)).lines().last { it.isNotBlank() }.trim().toLong()
     if (rawBytes > free) {

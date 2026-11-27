@@ -30,7 +30,7 @@ import org.ide.lti.core.model.workspace.AcquisitionSettings
 
 @Suppress("UnusedParameter")
 @Composable
-public fun SourceModePane(
+fun SourceModePane(
     settings: AcquisitionSettings,
     target: TargetDevice,
     onChange: (AcquisitionSettings) -> Unit,

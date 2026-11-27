@@ -12,8 +12,8 @@ package org.ide.lti.core.domain.repository.setup
 /**
  * Repository interface for toolchain repository trust persistence.
  */
-public interface ToolchainSelectionRepository {
-    public suspend fun recordTrust(repoUrl: String): Result<Unit>
+interface ToolchainSelectionRepository {
+    suspend fun recordTrust(repoUrl: String): Result<Unit>
 
-    public suspend fun isTrusted(repoUrl: String): Boolean
+    suspend fun isTrusted(repoUrl: String): Boolean
 }

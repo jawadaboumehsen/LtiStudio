@@ -47,7 +47,7 @@ import org.ide.lti.feature.workspace.studio.components.TargetProfileCard
  * 4. Recent activity card.
  */
 @Composable
-public fun WorkspaceOverview(
+fun WorkspaceOverview(
     state: WorkspaceOverviewUiState,
     modifier: Modifier = Modifier,
     onAction: (WorkspaceActionUi) -> Unit = {},

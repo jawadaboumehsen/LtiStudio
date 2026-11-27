@@ -15,17 +15,17 @@ import org.ide.lti.feature.rom.studio.api.StageEditor
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.StudioSubobjectId
 
-public class MissingStageEditorException(public val missingStageIds: Set<StageId>) :
+class MissingStageEditorException(val missingStageIds: Set<StageId>) :
     IllegalStateException(
         "Missing stage editor registration for canonical stage(s): ${missingStageIds.joinToString()}",
     )
 
-public class DuplicateStageEditorException(public val duplicateStageIds: Set<StageId>) :
+class DuplicateStageEditorException(val duplicateStageIds: Set<StageId>) :
     IllegalStateException(
         "Duplicate stage editor registration detected for stage(s): ${duplicateStageIds.joinToString()}",
     )
 
-public class UnknownSubobjectException(public val stageId: StageId, public val subobjectId: StudioSubobjectId) :
+class UnknownSubobjectException(val stageId: StageId, val subobjectId: StudioSubobjectId) :
     IllegalArgumentException(
         "Subobject '$subobjectId' is not defined in descriptor for stage $stageId",
     )
@@ -33,7 +33,7 @@ public class UnknownSubobjectException(public val stageId: StageId, public val s
 /**
  * Concrete implementation of [StageEditorRegistry] with fail-fast validation against [PipelineStageSequence.ORDER].
  */
-public class DefaultStageEditorRegistry(editors: List<StageEditor>, enforceFullPipeline: Boolean = true) :
+class DefaultStageEditorRegistry(editors: List<StageEditor>, enforceFullPipeline: Boolean = true) :
     StageEditorRegistry {
 
     private val editorMap: Map<StageId, StageEditor>
@@ -63,7 +63,7 @@ public class DefaultStageEditorRegistry(editors: List<StageEditor>, enforceFullP
         return PipelineStageSequence.ORDER.mapNotNull { editorMap[it] }
     }
 
-    public fun validateSubobject(stageId: StageId, subobjectId: StudioSubobjectId) {
+    fun validateSubobject(stageId: StageId, subobjectId: StudioSubobjectId) {
         val editor = editorFor(stageId) ?: return
         if (editor.descriptor.subobject(subobjectId) == null) {
             throw UnknownSubobjectException(stageId, subobjectId)

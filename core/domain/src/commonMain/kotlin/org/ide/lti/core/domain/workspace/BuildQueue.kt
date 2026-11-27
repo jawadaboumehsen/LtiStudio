@@ -25,14 +25,14 @@ import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 
 /** One profile of a [BuildQueue] and how far it got. */
-public data class QueuedBuild(val profile: String, val status: String = WAITING, val runId: String? = null) {
-    public companion object {
-        public const val WAITING: String = "waiting"
+data class QueuedBuild(val profile: String, val status: String = WAITING, val runId: String? = null) {
+    companion object {
+        const val WAITING: String = "waiting"
     }
 }
 
 /** The queue now: its workspace, its builds in order, and whether it is going. */
-public data class QueueState(
+data class QueueState(
     val workspaceId: String? = null,
     val builds: List<QueuedBuild> = emptyList(),
     val running: Boolean = false,
@@ -45,14 +45,14 @@ public data class QueueState(
  * built in full; the next starts once that run has ended. A failed build stops the queue. Stopping lets the running
  * build finish and starts no other. The queue lives while the app does; a build it started goes on as any build.
  */
-public class BuildQueue internal constructor(
+class BuildQueue internal constructor(
     private val profiles: BuildProfiles,
     private val start: suspend (workspaceId: String) -> Result<BuildRun>,
     private val runs: RunRepository,
     private val scope: CoroutineScope,
     private val check: (suspend (String) -> List<PreflightFinding>)?,
 ) {
-    public constructor(
+    constructor(
         profiles: BuildProfiles,
         start: suspend (workspaceId: String) -> Result<BuildRun>,
         runs: RunRepository,
@@ -61,10 +61,10 @@ public class BuildQueue internal constructor(
     ) : this(profiles, start, runs, scope, preflight?.let { it::check })
 
     private val _state = MutableStateFlow(QueueState())
-    public val state: StateFlow<QueueState> = _state.asStateFlow()
+    val state: StateFlow<QueueState> = _state.asStateFlow()
 
     /** Builds [names] of [workspaceId]'s profiles in that order; refused while a queue is going. */
-    public fun start(workspaceId: String, names: List<String>) {
+    fun start(workspaceId: String, names: List<String>) {
         val builds = names.map { QueuedBuild(it) }
         if (builds.isEmpty()) return
         val previous = _state.value
@@ -81,7 +81,7 @@ public class BuildQueue internal constructor(
     }
 
     /** Lets any build already committed to launch finish before accepting another queue. */
-    public fun stop() {
+    fun stop() {
         _state.update { state ->
             if (!state.running || state.stopRequested) return@update state
             val builds = state.builds.map {

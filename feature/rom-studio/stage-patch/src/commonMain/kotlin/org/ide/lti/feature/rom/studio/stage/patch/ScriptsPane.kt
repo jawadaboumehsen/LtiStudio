@@ -46,14 +46,14 @@ import org.ide.lti.core.model.workspace.ProjectScript
 import org.ide.lti.core.ui.GlassCodeEditor
 
 /** Navigator item of the Patches/Mods stage for the user's shell scripts. */
-public const val SCRIPTS: String = "scripts"
+const val SCRIPTS: String = "scripts"
 
 /**
  * The user's shell scripts, run by the Patches stage after the modules. Each runs as
  * `sh <script> <work dir> <workspace dir>` from inside work/; a script that fails stops the build.
  */
 @Composable
-public fun ScriptsPane(
+fun ScriptsPane(
     settings: CustomizationSettings,
     onChange: (CustomizationSettings) -> Unit,
     modifier: Modifier = Modifier,

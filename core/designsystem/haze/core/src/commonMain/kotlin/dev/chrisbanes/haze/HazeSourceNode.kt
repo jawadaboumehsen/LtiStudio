@@ -52,7 +52,7 @@ import kotlin.math.roundToInt
 
 /** Marks Haze APIs that are experimental and may change without notice. */
 @RequiresOptIn(message = "Experimental Haze API", level = RequiresOptIn.Level.WARNING)
-public annotation class ExperimentalHazeApi
+annotation class ExperimentalHazeApi
 
 internal enum class HazeTraversableNodeKeys {
     Effect,

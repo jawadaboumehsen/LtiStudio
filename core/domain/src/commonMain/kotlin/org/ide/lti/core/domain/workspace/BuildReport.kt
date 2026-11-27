@@ -17,20 +17,20 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 
 /** The post-build report as Markdown, and the [problems] it found (a package changed or gone, super over). */
-public data class BuildReportText(val markdown: String, val problems: List<String>)
+data class BuildReportText(val markdown: String, val problems: List<String>)
 
 /**
  * The post-build report: one page of what a finished run left, read again now. Each package is hashed again and
  * compared with the hash the build recorded; the signing keys' fingerprints; the built images against the super
  * group; how each stage ran; the tool versions; and what the run did ([RunRecord]). Writes nothing.
  */
-public class BuildReport(
+class BuildReport(
     private val runner: WorkbenchRunner,
     private val settings: WorkspaceSettingsStore,
     private val snapshots: SnapshotRepository,
 ) {
     /** The report of [run], read now from its workspace. */
-    public suspend fun of(run: BuildRun): BuildReportText {
+    suspend fun of(run: BuildRun): BuildReportText {
         val snapshot = snapshots.getSnapshot(run.snapshotId)?.takeIf { it.workspaceId == run.workspaceId }
         val device = settings.device(run.workspaceId)
         val files = run.artifacts.map { it.linuxPath }

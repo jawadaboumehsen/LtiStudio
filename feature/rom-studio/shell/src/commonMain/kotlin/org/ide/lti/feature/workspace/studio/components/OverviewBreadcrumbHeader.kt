@@ -54,7 +54,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
  * contextual subtitle, target context, and actions. Matches Mockup 09.
  */
 @Composable
-public fun OverviewBreadcrumbHeader(
+fun OverviewBreadcrumbHeader(
     title: String,
     subtitle: String,
     onReload: () -> Unit,

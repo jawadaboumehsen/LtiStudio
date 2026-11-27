@@ -19,10 +19,10 @@ import org.ide.lti.core.model.workspace.WorkspaceKeys
  * Provisions per-workspace cryptographic keys (AVB 2.0 RSA-4096 and platform RSA-2048 x509+pk8)
  * strictly via [RemoteTransportPort] tool execution requests.
  */
-public class WorkspaceKeyProvisioner(
+class WorkspaceKeyProvisioner(
     private val transport: RemoteTransportPort,
 ) {
-    public suspend fun provisionKeys(
+    suspend fun provisionKeys(
         workspaceRoot: String,
         keySource: KeySource = KeySource.GENERATE,
         globalAvbKeyPath: String? = null,

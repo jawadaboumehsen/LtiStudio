@@ -21,7 +21,7 @@ import org.ide.lti.core.domain.ports.TerminalLauncherPort
  * The shell starts in the Linux home (`--cd ~`), not in the app's Windows folder under `/mnt/c`, and the
  * tab keeps a title naming the distro, so the window is recognisably WSL whatever the user's prompt is.
  */
-public class DesktopTerminalLauncher(
+class DesktopTerminalLauncher(
     private val processStarter: (List<String>) -> Unit = { cmd -> ProcessBuilder(cmd).start() },
 ) : TerminalLauncherPort {
     override fun launchTerminal(distro: String): Result<Unit> = tryLaunchWindowsTerminal(distro)

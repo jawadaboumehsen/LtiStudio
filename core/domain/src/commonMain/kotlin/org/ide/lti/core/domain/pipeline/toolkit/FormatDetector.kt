@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
  * Supported vendor firmware package formats classified from content magic bytes (FR-001).
  */
 @Serializable
-public enum class PackageFormat {
+enum class PackageFormat {
     Zip,
     SevenZ,
     Rar,
@@ -36,7 +36,7 @@ public enum class PackageFormat {
  * Detects firmware container formats purely from header bytes and structure,
  * never from file extensions or names.
  */
-public object FormatDetector {
+object FormatDetector {
     private val ZIP_MAGIC_LOCAL = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
     private val ZIP_MAGIC_EMPTY = byteArrayOf(0x50, 0x4B, 0x05, 0x06)
     private val ZIP_MAGIC_SPANNED = byteArrayOf(0x50, 0x4B, 0x07, 0x08)
@@ -83,13 +83,13 @@ public object FormatDetector {
      * The [PackageFormat] of a file from its first bytes (at least 512 for TAR). What a zip or tar holds
      * (payload, raw images, block OTA, Odin) is decided later from its member list ([FirmwareLayouts]).
      */
-    public fun detect(bytes: ByteArray): PackageFormat =
+    fun detect(bytes: ByteArray): PackageFormat =
         SIGNATURES.firstOrNull { (magic, _) -> matches(bytes, 0, magic) }?.second
             ?: PackageFormat.Tar.takeIf { matches(bytes, USTAR_OFFSET, USTAR_MAGIC) }
             ?: PackageFormat.Unknown
 
     /** The bytes of an `xxd -p` dump (whitespace ignored). */
-    public fun fromHex(hex: String): ByteArray {
+    fun fromHex(hex: String): ByteArray {
         val clean = hex.filter { !it.isWhitespace() }
         return ByteArray(clean.length / 2) { i -> clean.substring(i * 2, i * 2 + 2).toInt(HEX_RADIX).toByte() }
     }

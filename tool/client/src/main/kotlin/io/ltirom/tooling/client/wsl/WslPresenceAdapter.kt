@@ -5,7 +5,7 @@ import org.ide.lti.core.domain.ports.WslPresencePort
 /**
  * Adapter implementing [WslPresencePort] by delegating to [WslEnvironmentDetector].
  */
-public class WslPresenceAdapter(
+class WslPresenceAdapter(
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector()
 ) : WslPresencePort {
     override suspend fun isWslInstalled(): Boolean = detector.isWslInstalled()

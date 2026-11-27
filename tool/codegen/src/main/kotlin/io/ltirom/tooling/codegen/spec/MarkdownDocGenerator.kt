@@ -9,7 +9,8 @@ object MarkdownDocGenerator {
         val file = File(outputDir, "${spec.tool.lowercase()}.md")
 
         val content = buildString {
-            appendLine("# ${spec.tool.capitalize()} Tool Reference")
+            val toolTitle = spec.tool.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            appendLine("# $toolTitle Tool Reference")
             appendLine()
             appendLine("## Metadata")
             appendLine("- **Executable**: `${spec.executable}`")
@@ -94,4 +95,3 @@ object MarkdownDocGenerator {
         file.writeText(content.trimEnd() + "\n")
     }
 }
-private fun String.capitalize() = replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }

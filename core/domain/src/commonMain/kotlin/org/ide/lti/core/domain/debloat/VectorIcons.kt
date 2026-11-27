@@ -14,24 +14,24 @@ package org.ide.lti.core.domain.debloat
  * writes: `== root` then the icon's `aapt2 dump xmltree`, and one `== <id> xml|img <file>|color <#argb>` section per
  * resource it refers to. Each layer becomes a colour, a bitmap file or an SVG document, for the UI to draw in order.
  */
-public object VectorIcons {
+object VectorIcons {
     /** One layer, drawn inside its box shrunk by [inset] (a fraction of the box) on every side. */
-    public sealed interface Layer {
-        public val inset: Float
+    sealed interface Layer {
+        val inset: Float
 
-        public data class Fill(val argb: Long, override val inset: Float = 0f) : Layer
+        data class Fill(val argb: Long, override val inset: Float = 0f) : Layer
 
         /** A bitmap file in the bundle's folder. */
-        public data class Bitmap(val file: String, override val inset: Float = 0f) : Layer
+        data class Bitmap(val file: String, override val inset: Float = 0f) : Layer
 
         /** An SVG document whose viewBox is the vector's viewport. */
-        public data class Svg(val svg: String, override val inset: Float = 0f) : Layer
+        data class Svg(val svg: String, override val inset: Float = 0f) : Layer
     }
 
     /** [layers] bottom to top; an [adaptive] icon is 108 units of which a launcher shows the middle 72. */
-    public data class Icon(val layers: List<Layer>, val adaptive: Boolean)
+    data class Icon(val layers: List<Layer>, val adaptive: Boolean)
 
-    public fun parse(bundle: String): Icon? {
+    fun parse(bundle: String): Icon? {
         val sections = sections(bundle)
         val root = sections["root"]?.let { tree(it.body) } ?: return null
         val refs = Refs(sections)

@@ -51,7 +51,7 @@ import org.ide.lti.feature.rom.studio.api.toggledSelection
  */
 @Suppress("LongParameterList", "UnusedParameter")
 @Composable
-public fun WorkTreesPane(
+fun WorkTreesPane(
     settings: AssemblySettings,
     target: TargetDevice,
     onChange: (AssemblySettings) -> Unit,

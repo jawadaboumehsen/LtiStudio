@@ -28,7 +28,7 @@ import kotlin.streams.toList
 @Serializable
 private data class IntentData(val workspaceId: String, val snapshotId: String, val status: String)
 
-public class SnapshotMaterializer(
+class SnapshotMaterializer(
     private val storageDir: Path,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : SnapshotMaterializerPort {

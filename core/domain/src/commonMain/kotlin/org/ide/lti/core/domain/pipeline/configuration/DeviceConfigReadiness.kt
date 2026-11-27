@@ -20,14 +20,14 @@ import org.ide.lti.core.model.workspace.ConfigurationSnapshot
  * Only the fields the pipeline cannot run without are checked; every other field keeps its default. The
  * stage-scoped rules already in [StageSettingsValidator] are reused, so each rule lives in one place.
  */
-public object DeviceConfigReadiness {
-    public const val REQUIRED: String = "REQUIRED"
-    public const val INVALID_FORMAT: String = "INVALID_FORMAT"
-    public const val UNKNOWN_PARTITION: String = "UNKNOWN_PARTITION"
-    public const val DUPLICATE_PARTITION: String = "DUPLICATE_PARTITION"
-    public const val INVALID_SIZE: String = "INVALID_SIZE"
-    public const val SIGNING_DISABLED: String = "SIGNING_DISABLED"
-    public const val CHECKSUM_CONFLICT: String = "CHECKSUM_CONFLICT"
+object DeviceConfigReadiness {
+    const val REQUIRED: String = "REQUIRED"
+    const val INVALID_FORMAT: String = "INVALID_FORMAT"
+    const val UNKNOWN_PARTITION: String = "UNKNOWN_PARTITION"
+    const val DUPLICATE_PARTITION: String = "DUPLICATE_PARTITION"
+    const val INVALID_SIZE: String = "INVALID_SIZE"
+    const val SIGNING_DISABLED: String = "SIGNING_DISABLED"
+    const val CHECKSUM_CONFLICT: String = "CHECKSUM_CONFLICT"
 
     private val KNOWN_DYNAMIC = setOf(
         "system",
@@ -48,24 +48,24 @@ public object DeviceConfigReadiness {
     private val STAGE_FIELDS = setOf("region", "blockSize", "alignment", "filesystem")
 
     /** The [ValidationError.objectId] of a problem fixed in the device configuration (see [isDeviceIssue]). */
-    public const val DEVICE_OBJECT: String = "device"
+    const val DEVICE_OBJECT: String = "device"
 
     /** Whether [error] is fixed in the device configuration rather than in a stage's settings. */
-    public fun isDeviceIssue(error: ValidationError): Boolean = error.stageId == null || error.objectId == DEVICE_OBJECT
+    fun isDeviceIssue(error: ValidationError): Boolean = error.stageId == null || error.objectId == DEVICE_OBJECT
 
     /** Whether [fieldPath] belongs to the device configuration rather than to a stage's settings. */
-    public fun isDeviceField(fieldPath: String): Boolean =
+    fun isDeviceField(fieldPath: String): Boolean =
         fieldPath !in STAGE_FIELDS && STAGE_FIELD_PREFIXES.none { fieldPath.startsWith(it) }
 
     /**
      * The problems a run that stops after [throughStage] meets: a later stage's settings cannot stop it (Extract
      * can then give the facts that finish them). Device problems (no stage) always count. Null runs every stage.
      */
-    public fun upTo(issues: List<ValidationError>, throughStage: StageId?): List<ValidationError> =
+    fun upTo(issues: List<ValidationError>, throughStage: StageId?): List<ValidationError> =
         if (throughStage == null) issues else issues.filter { it.stageId == null || it.stageId <= throughStage }
 
     /** Blocking problems with [target] and [snapshot]; empty means the build may start. */
-    public fun check(target: TargetDevice, snapshot: ConfigurationSnapshot): List<ValidationError> {
+    fun check(target: TargetDevice, snapshot: ConfigurationSnapshot): List<ValidationError> {
         val problems = Problems()
         problems.identity(target)
         problems.firmware(target, snapshot)

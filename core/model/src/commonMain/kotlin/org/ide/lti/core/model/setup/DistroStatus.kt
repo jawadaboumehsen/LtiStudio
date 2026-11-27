@@ -9,17 +9,17 @@
  */
 package org.ide.lti.core.model.setup
 
-public sealed interface DistroStatus {
-    public data class WslUnavailable(val detail: String, val accessDenied: Boolean = false) : DistroStatus
-    public data object NoDistro : DistroStatus
-    public data class StartupFailed(val distro: String, val detail: String) : DistroStatus
-    public data class Unsupported(val distro: String, val reason: String) : DistroStatus
-    public data class NoUsableUser(val distro: String, val reason: String) : DistroStatus
-    public data class Usable(val environment: SetupEnvironment) : DistroStatus
+sealed interface DistroStatus {
+    data class WslUnavailable(val detail: String, val accessDenied: Boolean = false) : DistroStatus
+    data object NoDistro : DistroStatus
+    data class StartupFailed(val distro: String, val detail: String) : DistroStatus
+    data class Unsupported(val distro: String, val reason: String) : DistroStatus
+    data class NoUsableUser(val distro: String, val reason: String) : DistroStatus
+    data class Usable(val environment: SetupEnvironment) : DistroStatus
 }
 
 /** The status nearest to usable, so a stray non-Ubuntu distro never hides the real problem. */
-public fun List<DistroStatus>.closestToUsable(): DistroStatus? = minByOrNull {
+fun List<DistroStatus>.closestToUsable(): DistroStatus? = minByOrNull {
     when (it) {
         is DistroStatus.Usable -> 0
         is DistroStatus.NoUsableUser -> 1
@@ -31,7 +31,7 @@ public fun List<DistroStatus>.closestToUsable(): DistroStatus? = minByOrNull {
 }
 
 /** The distro this status is about; null when there is none (WSL missing or no distro installed). */
-public val DistroStatus.distroName: String?
+val DistroStatus.distroName: String?
     get() = when (this) {
         is DistroStatus.Usable -> environment.distro
         is DistroStatus.Unsupported -> distro

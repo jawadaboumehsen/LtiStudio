@@ -18,8 +18,8 @@ import java.io.File
  * new complete journal, never a torn one. Every failure throws so the caller never acknowledges an
  * unpersisted write.
  */
-public class FileToolchainJournalStorage(
-    public val file: File,
+class FileToolchainJournalStorage(
+    val file: File,
 ) : ToolchainJournalStorage {
 
     override fun read(): String? {
@@ -31,11 +31,11 @@ public class FileToolchainJournalStorage(
         atomicWrite(file.toPath(), json, fsync = true, allowNonAtomicFallback = false)
     }
 
-    public companion object {
-        public fun resolveDefaultFile(): File =
+    companion object {
+        fun resolveDefaultFile(): File =
             File(DesktopRunFileStorage.resolveDefaultBaseDir().parentFile, "toolchain/journal.json")
     }
 }
 
-public actual fun defaultToolchainJournalStorage(): ToolchainJournalStorage =
+actual fun defaultToolchainJournalStorage(): ToolchainJournalStorage =
     FileToolchainJournalStorage(FileToolchainJournalStorage.resolveDefaultFile())

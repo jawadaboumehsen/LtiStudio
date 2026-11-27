@@ -2,14 +2,14 @@ package io.ltirom.tooling.core
 
 import java.io.File
 
-public class DefaultToolResolver(
+class DefaultToolResolver(
     private val toolsBinDir: File,
     private val expectedSha256: Map<ToolId, String> = emptyMap(),
     private val expectedPlatforms: Map<ToolId, Set<String>> = emptyMap(),
     private val allowPathFallback: Boolean = false,
     private val enforceFingerprint: Boolean = false
 ) {
-    public fun resolve(toolId: ToolId): ToolBinary {
+    fun resolve(toolId: ToolId): ToolBinary {
         val vendored = File(toolsBinDir, toolId.logicalName)
         if (vendored.isFile && vendored.canExecute()) {
             return verify(toolId, vendored)

@@ -16,7 +16,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-public val workspaceTargetModule: Module = module {
+val workspaceTargetModule: Module = module {
     viewModel {
         WorkspaceConfigurationViewModel(
             workspaceManager = get(),

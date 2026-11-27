@@ -30,7 +30,7 @@ import dev.chrisbanes.haze.glass.GlassStyle
  * creates one.
  */
 @Composable
-public fun GlassStyle.material3(
+fun GlassStyle.material3(
     containerColor: Color = MaterialTheme.colorScheme.surface,
     tint: Color? = null,
 ): GlassStyle = remember(this, containerColor, tint) {

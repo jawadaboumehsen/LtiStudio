@@ -50,7 +50,7 @@ import org.ide.lti.core.model.workspace.AcquisitionSettings
 
 @Suppress("UnusedParameter")
 @Composable
-public fun DownloadPolicyPane(
+fun DownloadPolicyPane(
     settings: AcquisitionSettings,
     target: TargetDevice,
     onChange: (AcquisitionSettings) -> Unit,

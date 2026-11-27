@@ -18,7 +18,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stageDebloatModule: Module = module {
+val stageDebloatModule: Module = module {
     viewModel { params ->
         CompressionGoalViewModel(
             workspaceId = params.getOrNull<String>() ?: "",

@@ -30,7 +30,7 @@ import kotlin.math.floor
 
 /** Independently owned, configured surface; member input selection/capture stays in core. */
 @InternalHazeApi
-public class HazeConfiguredEffectSurface<Style> internal constructor(
+class HazeConfiguredEffectSurface<Style> internal constructor(
     anchor: HazeEffectSurface,
     factory: HazeEffectFactory<Style>,
     style: Style,
@@ -41,17 +41,17 @@ public class HazeConfiguredEffectSurface<Style> internal constructor(
     private val renderer = ConfiguredSurface(anchor, factory.createRenderer(), style, bounds, members, drawsMembersOnDecline)
 
     /** Opaque handle submitted to the same owner draw boundary as ordinary surfaces. */
-    public val surface: HazeEffectSurface = HazeEffectSurface(anchor.node, renderer).also {
+    val surface: HazeEffectSurface = HazeEffectSurface(anchor.node, renderer).also {
         it.relocateTo(anchor.owner)
     }
 
     /** Replaces immutable configuration and geometry without recreating renderer resources. */
-    public fun update(style: Style, bounds: Rect, members: List<HazeEffectSurface>) {
+    fun update(style: Style, bounds: Rect, members: List<HazeEffectSurface>) {
         if (renderer.update(style, bounds, members)) surface.changed()
     }
 
     /** Releases this surface's renderer and native resources once on split, merge or detach. */
-    public fun dispose() {
+    fun dispose() {
         surface.relocateTo(null)
         renderer.dispose()
     }

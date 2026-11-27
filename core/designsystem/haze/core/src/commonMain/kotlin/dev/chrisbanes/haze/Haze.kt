@@ -40,11 +40,11 @@ import androidx.compose.ui.unit.Dp
 
 /** Creates and remembers a [HazeState] for coordinating Haze sources and effects. */
 @Composable
-public fun rememberHazeState(): HazeState = remember { HazeState() }
+fun rememberHazeState(): HazeState = remember { HazeState() }
 
 /** Shared state that associates [hazeSource] content with source-backed Haze effects. */
 @Stable
-public class HazeState {
+class HazeState {
     // Only tests set this, before the state is used, so it is not snapshot state and effects do not observe it.
     internal var positionStrategy: HazePositionStrategy = HazePositionStrategy.Auto
 
@@ -300,7 +300,7 @@ internal fun HazeArea.notifyPreDrawListeners(
  * instead.
  */
 @Stable
-public fun Modifier.hazeSource(
+fun Modifier.hazeSource(
     state: HazeState,
     zIndex: Float = 0f,
     key: Any? = null,
@@ -324,7 +324,7 @@ public fun Modifier.hazeSource(
  */
 @ExperimentalHazeApi
 @Stable
-public fun Modifier.hazeSource(
+fun Modifier.hazeSource(
     state: HazeState,
     zIndex: Float = 0f,
     key: Any? = null,

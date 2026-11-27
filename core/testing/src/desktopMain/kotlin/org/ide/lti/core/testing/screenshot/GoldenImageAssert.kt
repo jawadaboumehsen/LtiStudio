@@ -211,8 +211,8 @@ object GoldenImageAssert {
         var maskedPixels = 0
         val diffImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
-        for (y in 0 until height) {
-            for (x in 0 until width) {
+        for (y in 0..<height) {
+            for (x in 0..<width) {
                 if (isMasked(x, y, masks)) {
                     maskedPixels++
                     diffImage.setRGB(x, y, AwtColor(0, 200, 255, 40).rgb)

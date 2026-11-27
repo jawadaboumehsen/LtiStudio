@@ -24,14 +24,14 @@ import org.ide.lti.core.model.target.DefaultTargetCatalog
 import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.ReleaseSettings
 
-public class MetadataViewModel(
-    public val workspaceId: String,
+class MetadataViewModel(
+    val workspaceId: String,
     initialSettings: ReleaseSettings? = null,
     private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -42,16 +42,16 @@ public class MetadataViewModel(
         write = { snapshot, value -> snapshot.copy(release = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<ReleaseSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<ReleaseSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
-    public fun updateSettings(updated: ReleaseSettings) {
+    fun updateSettings(updated: ReleaseSettings) {
         sync.update(updated)
     }
 
@@ -63,13 +63,13 @@ public class MetadataViewModel(
     val draftLoading: StateFlow<Boolean> = _draftLoading.asStateFlow()
 
     /** The manifest the last build wrote (`out/manifest.json`), or null before Release metadata has run. */
-    public val manifest: StateFlow<String?> = _manifest.asStateFlow()
+    val manifest: StateFlow<String?> = _manifest.asStateFlow()
 
     /**
      * Puts a changelog drafted from the last build into the field: its mods and the files they changed, the apps
      * Debloat removed, the build type and property overrides (`ChangelogDraft`). Nothing changes when there is none.
      */
-    public fun draftChangelog() {
+    fun draftChangelog() {
         val facts = workspaceFacts ?: return
         if (_draftLoading.value) return
         _draftLoading.value = true
@@ -91,7 +91,7 @@ public class MetadataViewModel(
         }
     }
 
-    public fun refreshManifest() {
+    fun refreshManifest() {
         val facts = workspaceFacts ?: return
         _manifestLoading.value = true
         viewModelScope.launch {

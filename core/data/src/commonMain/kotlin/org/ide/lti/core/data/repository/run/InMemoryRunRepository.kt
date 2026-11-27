@@ -21,7 +21,7 @@ import org.ide.lti.core.model.run.BuildRun
  * with build history (feature 001, T086/T090). It exists so the active-run guard in
  * `SaveConfigurationSnapshotUseCase` is enforced from the first run started in this session.
  */
-public class InMemoryRunRepository : RunRepository {
+class InMemoryRunRepository : RunRepository {
 
     private val runs = MutableStateFlow<Map<String, BuildRun>>(emptyMap())
     private val events = mutableMapOf<String, MutableList<String>>()

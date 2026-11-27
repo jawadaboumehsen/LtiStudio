@@ -93,7 +93,7 @@ object FileMutationCodes {
  * operation's target, preimage hash, text anchor and property key. Bytecode edits are not checked (they need the
  * packages decoded). The result is `ok`, else one line per plugin that would be refused.
  */
-public data class CheckModules(val apply: ApplyModules) : HostRequest
+data class CheckModules(val apply: ApplyModules) : HostRequest
 
 /**
  * Apply these resolved plugin plans to the workspace work tree, in order (a [PipelineStep.Host] request).
@@ -101,7 +101,7 @@ public data class CheckModules(val apply: ApplyModules) : HostRequest
  * device's partitions, each a folder of `work/`.
  */
 
-public data class ApplyModules(
+data class ApplyModules(
     val plans: List<ConcreteMutationPlan>,
     val assetRoots: Map<String, String>,
     val partitions: List<String>,

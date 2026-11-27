@@ -37,7 +37,7 @@ import dev.chrisbanes.haze.hazeEffect
  * @param expandLayerBounds Whether Blur may expand its capture layer by the resolved radius.
  */
 @Stable
-public fun Modifier.hazeBlur(
+fun Modifier.hazeBlur(
     input: HazeInput,
     style: HazeBlurStyle = HazeBlurStyle,
     performanceMode: HazePerformanceMode? = null,

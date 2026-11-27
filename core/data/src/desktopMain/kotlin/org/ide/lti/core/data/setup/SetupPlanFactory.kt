@@ -33,10 +33,10 @@ import org.ide.lti.core.domain.tools.ToolManager
  * and represents the catalog's recommended versions at their pinned commits — not live network
  * resolution.
  */
-public object SetupPlanFactory {
+object SetupPlanFactory {
     private val planSequence = java.util.concurrent.atomic.AtomicLong(0)
 
-    public fun createPlan(
+    fun createPlan(
         kind: SetupPlanKind,
         targetId: String? = null,
         snapshot: ToolchainSetupState,
@@ -74,7 +74,7 @@ public object SetupPlanFactory {
     /**
      * Hash of the evidence a plan was derived from: stage statuses and inputs.
      */
-    public fun computeRevisionHash(
+    fun computeRevisionHash(
         snapshot: ToolchainSetupState,
         switchInputs: Map<ToolGroupId, ResolvedInput>? = null,
         selectionRevision: Long? = null,
@@ -195,7 +195,7 @@ public object SetupPlanFactory {
     // Default catalog inputs: pinned recommended commits from the catalog.
     // -----------------------------------------------------------------------
 
-    public fun defaultCatalogInputs(): Map<ToolGroupId, ResolvedInput> = ToolGroupCatalog.allGroups.associate { group ->
+    fun defaultCatalogInputs(): Map<ToolGroupId, ResolvedInput> = ToolGroupCatalog.allGroups.associate { group ->
         val input: ResolvedInput =
             when (val source = group.source) {
                 is ToolSource.Git ->
@@ -229,7 +229,7 @@ public object SetupPlanFactory {
         group.id to input
     }
 
-    public fun ResolvedSource.toResolvedInput(group: ToolGroup): ResolvedInput = when (this) {
+    fun ResolvedSource.toResolvedInput(group: ToolGroup): ResolvedInput = when (this) {
         is ResolvedSource.Git ->
             ResolvedInput.Git(
                 group = group.id,
@@ -253,7 +253,7 @@ public object SetupPlanFactory {
     /**
      * Resolve switch inputs from ToolManager's authoritative target selection.
      */
-    public fun toolManagerTargets(toolManager: ToolManager?): Map<ToolGroupId, ResolvedInput> {
+    fun toolManagerTargets(toolManager: ToolManager?): Map<ToolGroupId, ResolvedInput> {
         if (toolManager == null) return defaultCatalogInputs()
         return ToolGroupCatalog.allGroups.associate { group ->
             val target = toolManager.targetSourceForGroup(group)

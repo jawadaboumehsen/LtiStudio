@@ -14,13 +14,13 @@ import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 
-public data class RunHandle(
+data class RunHandle(
     val runId: String,
     val status: String,
     val startedAtEpochMs: Long,
 )
 
-public data class StepStatus(
+data class StepStatus(
     val runId: String,
     val status: String,
     val exitCode: Int? = null,
@@ -31,41 +31,36 @@ public data class StepStatus(
 )
 
 /** The service reports this step as over. Anything else, a null status too, does not say it has stopped. */
-public val StepStatus.hasFinished: Boolean
+val StepStatus.hasFinished: Boolean
     get() = status in FINISHED_STEP_STATES
 
 private val FINISHED_STEP_STATES = setOf("COMPLETED", "FAILED", "CANCELLED", "INTERRUPTED")
 
-public data class FileStat(
-    val path: String,
-    val exists: Boolean,
-    val sizeBytes: Long = 0L,
-    val isDirectory: Boolean = false,
-)
+data class FileStat(val path: String, val exists: Boolean, val sizeBytes: Long = 0L, val isDirectory: Boolean = false)
 
-public sealed interface StepEvent {
-    public data class Output(val seq: Long, val text: String, val isError: Boolean = false) : StepEvent
-    public data class Finished(val exitCode: Int) : StepEvent
-    public data object Heartbeat : StepEvent
+sealed interface StepEvent {
+    data class Output(val seq: Long, val text: String, val isError: Boolean = false) : StepEvent
+    data class Finished(val exitCode: Int) : StepEvent
+    data object Heartbeat : StepEvent
 }
 
-public interface PipelineExecutionPort {
-    public suspend fun startStep(
+interface PipelineExecutionPort {
+    suspend fun startStep(
         ws: Workspace,
         step: StepCommand,
         idempotencyKey: String,
     ): RunHandle
 
-    public fun observe(serverRunId: String, fromSeq: Long = 0L): Flow<StepEvent>
+    fun observe(serverRunId: String, fromSeq: Long = 0L): Flow<StepEvent>
 
-    public suspend fun status(serverRunId: String): StepStatus?
+    suspend fun status(serverRunId: String): StepStatus?
 
-    public suspend fun cancel(serverRunId: String): Boolean
+    suspend fun cancel(serverRunId: String): Boolean
 
     /** Small host-generated metadata only. */
-    public suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean
+    suspend fun uploadFile(ws: Workspace, relPath: String, bytes: ByteArray): Boolean
 
-    public suspend fun uploadBounded(
+    suspend fun uploadBounded(
         ws: Workspace,
         relPath: String,
         totalBytes: Long,
@@ -74,13 +69,13 @@ public interface PipelineExecutionPort {
         "bounded streaming upload is not supported by this transport",
     )
 
-    public suspend fun readFile(ws: Workspace, relPath: String): String?
+    suspend fun readFile(ws: Workspace, relPath: String): String?
 
-    public suspend fun stat(ws: Workspace, relPath: String): FileStat
+    suspend fun stat(ws: Workspace, relPath: String): FileStat
 
     /** Synchronous tool call for quick queries (`stat`, `sha256sum`, AVB probes); not journaled. */
-    public suspend fun execute(ws: Workspace, command: StepCommand): ToolResult
+    suspend fun execute(ws: Workspace, command: StepCommand): ToolResult
 
     /** Free bytes on the workspace filesystem, or null when it cannot be determined. */
-    public suspend fun checkAvailableDiskSpace(ws: Workspace): Long?
+    suspend fun checkAvailableDiskSpace(ws: Workspace): Long?
 }

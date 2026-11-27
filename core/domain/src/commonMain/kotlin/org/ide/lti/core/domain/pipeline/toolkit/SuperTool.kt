@@ -15,14 +15,14 @@ package org.ide.lti.core.domain.pipeline.toolkit
  *
  * Key: `super.layout`
  */
-public object SuperTool {
+object SuperTool {
 
     /**
      * Parses `lpdump` output (AOSP `PrintMetadata`: "Partition table", "Block device table" and "Group table"
      * sections) into a [SuperLayout] planned with [SuperLayoutPlanner]. A partition's size is the sum of its
      * linear extents (`<first> .. <last> linear <device> <sector>`, 512-byte sectors).
      */
-    public fun parseLpdumpOutput(output: String): SuperLayout {
+    fun parseLpdumpOutput(output: String): SuperLayout {
         val sections = sections(output)
         val groups = records(sections[GROUPS].orEmpty()).mapNotNull { r ->
             val size = field(r, "Maximum size")?.substringBefore(' ')?.toLongOrNull() ?: return@mapNotNull null

@@ -48,11 +48,13 @@ import org.ide.lti.feature.rom.studio.api.StageDescriptor
 import org.ide.lti.feature.rom.studio.api.StageEditorRegistry
 import org.ide.lti.feature.rom.studio.api.allDescriptors
 import org.ide.lti.feature.rom.studio.shell.registry.DefaultStageEditorRegistry
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Tabs available in the bottom activity/problems/artifacts dock.
  */
-public enum class StudioDockTab(public val title: String) {
+enum class StudioDockTab(val title: String) {
     ACTIVITY("Activity"),
     PROBLEMS("Problems"),
     ARTIFACTS("Artifacts"),
@@ -61,7 +63,7 @@ public enum class StudioDockTab(public val title: String) {
 /**
  * Presentation model for a stage navigation rail item derived from the catalog.
  */
-public data class StudioRailItem(
+data class StudioRailItem(
     val stage: StageDescriptor,
     val isSelected: Boolean,
     val errorCount: Int = 0,
@@ -72,7 +74,7 @@ public data class StudioRailItem(
 /**
  * UI State for ROM Setup Studio.
  */
-public data class StudioUiState(
+data class StudioUiState(
     val workspaceId: String = "",
     val entry: StudioEntry = StudioEntry.Overview(StudioEntryReason.NEW_WORKSPACE),
     val presentation: StudioPresentation = StudioPresentation(workspaceId = ""),
@@ -105,9 +107,9 @@ public data class StudioUiState(
  *   and never resets a draft.
  */
 @Suppress("TooManyFunctions", "LargeClass")
-public class StudioViewModel(
+class StudioViewModel(
     private val studioPresentationStore: StudioPresentationStorePort,
-    public val stageEditorRegistry: StageEditorRegistry =
+    val stageEditorRegistry: StageEditorRegistry =
         DefaultStageEditorRegistry(emptyList(), enforceFullPipeline = false),
     initialWorkspaceId: String = "",
     private val workspaceManager: WorkspaceManager? = null,
@@ -140,12 +142,12 @@ public class StudioViewModel(
             validationReport = ValidationReport(errors = emptyList()),
         ),
     )
-    public val uiState: StateFlow<StudioUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<StudioUiState> = _uiState.asStateFlow()
 
     private val _shellState = MutableStateFlow(
         buildInitialShellState(initialWorkspaceId, activeDescriptors()),
     )
-    public val shellState: StateFlow<WorkspaceShellUiState> = _shellState.asStateFlow()
+    val shellState: StateFlow<WorkspaceShellUiState> = _shellState.asStateFlow()
 
     init {
         observeWorkspaces()
@@ -228,7 +230,7 @@ public class StudioViewModel(
      * Handles entry or route parameter updates for the studio host route.
      * Calls [resolveStudioEntry] with the route arguments and stored presentation.
      */
-    public fun onEntry(workspaceId: String, requestedStageId: StageId? = null, requestedObjectId: String? = null) {
+    fun onEntry(workspaceId: String, requestedStageId: StageId? = null, requestedObjectId: String? = null) {
         requestedWorkspaceId = workspaceId
         refreshValidation(workspaceId)
         // Only the newest entry applies: a slow read for the workspace left a moment ago never switches back to it.
@@ -276,7 +278,7 @@ public class StudioViewModel(
      * If the current editor object belongs to this stage, it is preserved; otherwise selects the first subobject.
      * Presentation state only: never starts work, never mutates a snapshot, never resets a draft.
      */
-    public fun selectStage(stageId: StageId) {
+    fun selectStage(stageId: StageId) {
         // A stage opens only after the ones before it are configured: a locked one opens what to finish first.
         val report = _uiState.value.validationReport
         val blocker = stageBlocking(stageId, activeDescriptors().map { it.stageId }, report)
@@ -323,7 +325,7 @@ public class StudioViewModel(
      * A stage/object pair the catalog does not recognize is a no-op, matching [resolveStudioEntry]'s
      * own guarantee that an invalid selection is never silently persisted.
      */
-    public fun selectObject(stageId: StageId, objectId: String) {
+    fun selectObject(stageId: StageId, objectId: String) {
         val descriptors = activeDescriptors()
         val stage = descriptors.firstOrNull { it.stageId == stageId }
         if (stage == null || stage.subobjects.none { it.id.value == objectId }) return
@@ -351,28 +353,8 @@ public class StudioViewModel(
     /**
      * Updates the user-adjustable object navigator width (clamped to 200..360).
      */
-    public fun setNavigatorWidth(width: Int) {
+    fun setNavigatorWidth(width: Int) {
         val updatedPresentation = _uiState.value.presentation.withNavigatorWidth(width)
-        _uiState.update { it.copy(presentation = updatedPresentation) }
-
-        viewModelScope.launch {
-            studioPresentationStore.put(updatedPresentation)
-        }
-    }
-
-    /**
-     * Updates the expanded state of an editor section.
-     */
-    public fun toggleSectionExpanded(objectId: String, sectionId: String) {
-        val currentSections = _uiState.value.presentation.expandedSections[objectId] ?: emptySet()
-        val updatedSet = if (sectionId in currentSections) {
-            currentSections - sectionId
-        } else {
-            currentSections + sectionId
-        }
-        val updatedMap = _uiState.value.presentation.expandedSections + (objectId to updatedSet)
-        val updatedPresentation = _uiState.value.presentation.copy(expandedSections = updatedMap)
-
         _uiState.update { it.copy(presentation = updatedPresentation) }
 
         viewModelScope.launch {
@@ -383,7 +365,7 @@ public class StudioViewModel(
     /**
      * Switches center pane mode to Overview without destroying the last editor context.
      */
-    public fun openOverview() {
+    fun openOverview() {
         val descriptors = activeDescriptors()
         val overviewEntry = StudioEntry.Overview(StudioEntryReason.RESTORED)
         val updatedPresentation = _uiState.value.presentation.withOverview()
@@ -405,7 +387,7 @@ public class StudioViewModel(
     /**
      * Restores the last active editor context from presentation state.
      */
-    public fun returnToEditor() {
+    fun returnToEditor() {
         val pres = _uiState.value.presentation
         val descriptors = activeDescriptors()
         val stageId = pres.editorStageId ?: descriptors.first().stageId
@@ -430,7 +412,7 @@ public class StudioViewModel(
         }
     }
 
-    public fun selectGlobalDestination(destination: GlobalDestination) {
+    fun selectGlobalDestination(destination: GlobalDestination) {
         if (destination == GlobalDestination.Workspace) {
             openOverview()
         }
@@ -449,7 +431,7 @@ public class StudioViewModel(
         }
     }
 
-    public fun selectWorkspaceSection(section: WorkspaceSection) {
+    fun selectWorkspaceSection(section: WorkspaceSection) {
         openOverview()
         _shellState.update { current ->
             current.copy(
@@ -462,12 +444,8 @@ public class StudioViewModel(
         }
     }
 
-    public fun setRestoreIndex(index: RestoreIndex) {
-        _uiState.update { it.copy(restoreIndex = index) }
-    }
-
     /** Reads the workspace's one restore index; a point whose backup was deleted shows as such (FR-038). */
-    public fun refreshRestorePoints() {
+    fun refreshRestorePoints() {
         val workbench = restore ?: return
         withRestoreProgress("Loading restore points…") { workspaceId ->
             val result = runCatchingCancellable { workbench.list(workspaceId) }
@@ -488,7 +466,7 @@ public class StudioViewModel(
      * Copies [pointId]'s backup back. A debloat point is also un-picked, so the next build keeps the app (the
      * build re-assembles work/ from the firmware and Debloat would otherwise remove it again).
      */
-    public fun restorePoint(pointId: String) {
+    fun restorePoint(pointId: String) {
         val workbench = restore ?: return
         withRestoreProgress("Restoring backup…") { workspaceId ->
             val message = try {
@@ -536,7 +514,7 @@ public class StudioViewModel(
     /** The newest validation: an older one, or one of a workspace left since, reports nothing when it ends. */
     private var validateRequest = 0L
 
-    public fun validateWorkspace() {
+    fun validateWorkspace() {
         val generation = ++validateRequest
         val workspaceId = _uiState.value.workspaceId
         val isLatest = { generation == validateRequest && _uiState.value.workspaceId == workspaceId }
@@ -592,7 +570,7 @@ public class StudioViewModel(
         // Edits save a few times a second: one check after they settle, not one service round trip per save.
         validationJob?.cancel()
         validationJob = viewModelScope.launch {
-            delay(VALIDATION_DEBOUNCE_MS)
+            delay(VALIDATION_DEBOUNCE_MS.milliseconds)
             // A read that failed (the service busy or down) is not a missing configuration: keep what is known.
             val snapshot = runCatchingCancellable { settingsStore?.current(workspaceId) }.getOrElse { return@launch }
             val report = currentValidation(workspaceId, snapshot)
@@ -628,7 +606,7 @@ public class StudioViewModel(
         return buildValidation(missing, snapshot, device)
     }
 
-    public fun saveWorkspace() {
+    fun saveWorkspace() {
         val generation = 1L
         _shellState.update { current ->
             current.copy(
@@ -661,15 +639,11 @@ public class StudioViewModel(
         }
     }
 
-    public fun markDirty(isDirty: Boolean = true) {
+    fun markDirty(isDirty: Boolean = true) {
         _shellState.update { it.copy(hasUnsavedChanges = isDirty) }
     }
 
-    public fun setConnectionState(connectionState: ConnectionUiState) {
-        _shellState.update { it.copy(connection = connectionState) }
-    }
-
-    public fun setActivityState(activityState: ActivityUiState) {
+    fun setActivityState(activityState: ActivityUiState) {
         _shellState.update { it.copy(activity = activityState) }
     }
 
@@ -688,30 +662,30 @@ public class StudioViewModel(
     private fun buildShellState(uiState: StudioUiState): WorkspaceShellUiState =
         buildWorkspaceShellState(_shellState.value, uiState, device, activeDescriptors())
 
-    public fun setSearchQuery(query: String) {
+    fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    public fun setActiveDockTab(tab: StudioDockTab) {
+    fun setActiveDockTab(tab: StudioDockTab) {
         _uiState.update { it.copy(activeDockTab = tab, isDockExpanded = true) }
     }
 
-    public fun toggleDock() {
+    fun toggleDock() {
         _uiState.update { it.copy(isDockExpanded = !it.isDockExpanded) }
     }
 
-    public fun toggleNavigatorDrawer() {
+    fun toggleNavigatorDrawer() {
         _uiState.update { it.copy(isNavigatorDrawerOpen = !it.isNavigatorDrawerOpen) }
     }
 
-    public fun closeNavigatorDrawer() {
+    fun closeNavigatorDrawer() {
         _uiState.update { it.copy(isNavigatorDrawerOpen = false) }
     }
 
-    public fun requestSave() {
+    fun requestSave() {
         _uiState.update { it.copy(saveRequestedNotification = "Configuration saved successfully.") }
         viewModelScope.launch {
-            kotlinx.coroutines.delay(2000)
+            delay(2.seconds)
             _uiState.update { it.copy(saveRequestedNotification = null) }
         }
     }
@@ -726,7 +700,7 @@ private fun <T> Flow<T>.retryingAfter(fallback: T): Flow<T> = retryWhen { cause,
     (cause !is CancellationException).also {
         if (it) {
             emit(fallback)
-            delay(OBSERVE_RETRY_MS)
+            delay(OBSERVE_RETRY_MS.milliseconds)
         }
     }
 }

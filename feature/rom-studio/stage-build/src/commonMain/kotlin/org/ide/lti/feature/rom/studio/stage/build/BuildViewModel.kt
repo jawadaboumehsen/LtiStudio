@@ -35,7 +35,7 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.BuildSettings
 
 /** What the last builds produced, for the Build & Sign panes; empty before Build & Sign has run. */
-public data class BuildFacts(
+data class BuildFacts(
     val loaded: Boolean = false,
     val images: List<WorkspaceFile> = emptyList(),
     /** The stock images Extract unpacked, the size estimate of a partition not built yet. */
@@ -58,7 +58,7 @@ public data class BuildFacts(
 )
 
 /** The coverage check of the Build & Sign stage: running, its result, or why it could not run. */
-public data class CoverageState(
+data class CoverageState(
     val busy: String? = null,
     val result: CoverageResult? = null,
     val refusal: Refusal? = null,
@@ -70,8 +70,8 @@ public data class CoverageState(
     val saveError: String? = null,
 )
 
-public class BuildViewModel(
-    public val workspaceId: String,
+class BuildViewModel(
+    val workspaceId: String,
     initialSettings: BuildSettings? = null,
     private val store: WorkspaceSettingsStore? = null,
     private val workspaceFacts: WorkspaceFacts? = null,
@@ -80,7 +80,7 @@ public class BuildViewModel(
     private val images: ImageWorkbench? = null,
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -91,28 +91,28 @@ public class BuildViewModel(
         write = { snapshot, value -> snapshot.copy(build = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<BuildSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<BuildSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
     private val _facts = MutableStateFlow(BuildFacts())
-    public val facts: StateFlow<BuildFacts> = _facts.asStateFlow()
+    val facts: StateFlow<BuildFacts> = _facts.asStateFlow()
 
-    public fun updateSettings(updated: BuildSettings) {
+    fun updateSettings(updated: BuildSettings) {
         sync.update(updated)
     }
 
     private val _coverage = MutableStateFlow(CoverageState())
 
     /** The work tree's permission and label coverage, as last checked (FR-015). */
-    public val coverage: StateFlow<CoverageState> = _coverage.asStateFlow()
+    val coverage: StateFlow<CoverageState> = _coverage.asStateFlow()
 
-    public fun checkCoverage() {
+    fun checkCoverage() {
         coverageTask("Checking the work tree") { it.coverage(workspaceId, partitions()) }
     }
 
@@ -120,7 +120,7 @@ public class BuildViewModel(
      * Makes every build add the missing fs_config and file_contexts lines (FR-016), at the end of the Patches
      * stage. Writing them into work/configs now would not last: the next build assembles work/ again first.
      */
-    public fun setFillInEveryBuild(on: Boolean) {
+    fun setFillInEveryBuild(on: Boolean) {
         val store = store ?: return
         viewModelScope.launch {
             store.update(workspaceId) { it.copy(customization = it.customization.copy(fillMissingSidecars = on)) }
@@ -149,7 +149,7 @@ public class BuildViewModel(
     }
 
     /** Saves the user's coverage rules (tried before "like its folder" when lines are added). */
-    public fun setCoverageRules(text: String) {
+    fun setCoverageRules(text: String) {
         _coverage.value = _coverage.value.copy(rules = text)
         rulesSync.update(text)
     }
@@ -193,7 +193,7 @@ public class BuildViewModel(
         }.toMap()
     }.orEmpty()
 
-    public fun refresh() {
+    fun refresh() {
         val facts = workspaceFacts ?: return
         viewModelScope.launch {
             suspend fun value(key: String) = facts.lastValue(workspaceId, key)

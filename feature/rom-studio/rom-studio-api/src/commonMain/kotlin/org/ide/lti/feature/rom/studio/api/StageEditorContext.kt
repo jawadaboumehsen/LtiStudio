@@ -12,7 +12,7 @@ package org.ide.lti.feature.rom.studio.api
 /**
  * Context provided by the ROM Studio shell to an active StageEditor.
  */
-public data class StageEditorContext(
+data class StageEditorContext(
     val workspaceId: String,
     val selectedObjectId: StudioSubobjectId?,
     val onSelectedObjectChange: (StudioSubobjectId) -> Unit,

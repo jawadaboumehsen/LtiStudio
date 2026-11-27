@@ -51,7 +51,7 @@ import org.ide.lti.feature.rom.studio.stage.assemble.BootPaneState
  * the first-stage one inside vendor_boot (changed by a vendor_boot override), and the one in the device trees.
  */
 @Composable
-public fun MountTablePane(
+fun MountTablePane(
     settings: AssemblySettings,
     onChange: (AssemblySettings) -> Unit,
     modifier: Modifier = Modifier,

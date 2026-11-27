@@ -22,7 +22,7 @@ import org.ide.lti.core.domain.setup.ToolchainSetupState
 /**
  * Coordinates recovery of interrupted setup operations and journals (T031, T085, T086).
  */
-public class RecoveryCoordinator(
+class RecoveryCoordinator(
     private val transport: RemoteTransportPort,
     private val supervisor: DaemonSupervisorPort,
     private val repository: ToolchainSetupRepository?,
@@ -34,7 +34,7 @@ public class RecoveryCoordinator(
             SetupRunRecovery(transport, it, activity = activity)
         }
 
-    public suspend fun recover(
+    suspend fun recover(
         distro: String,
         attemptId: String?,
         ensureConnected: suspend () -> Unit,

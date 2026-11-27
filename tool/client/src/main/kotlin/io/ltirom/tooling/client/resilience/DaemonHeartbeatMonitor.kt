@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Background monitor that polls daemon health every [intervalMs] and updates [ConnectionStateHolder].
@@ -25,7 +26,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * the state to [ConnectionState.Reconnecting] and attempts zero-latency warm re-attachment.
  * Also sends client heartbeats to the build service to maintain command admission.
  */
-public class DaemonHeartbeatMonitor(
+class DaemonHeartbeatMonitor(
     private val supervisor: DaemonSupervisorPort,
     private val stateHolder: ConnectionStateHolder = ConnectionStateHolder(),
     private val intervalMs: Long = 5_000L,
@@ -39,7 +40,7 @@ public class DaemonHeartbeatMonitor(
     @Volatile
     private var isShuttingDown: Boolean = false
 
-    public val isShutdown: Boolean get() = isShuttingDown
+    val isShutdown: Boolean get() = isShuttingDown
 
     @Volatile
     private var isHandshakeEstablished: Boolean = false
@@ -51,13 +52,13 @@ public class DaemonHeartbeatMonitor(
     private val handshakeMutex = Mutex()
     private var inFlightHandshake: Deferred<Boolean>? = null
 
-    public suspend fun isAdmissionReady(): Boolean {
+    suspend fun isAdmissionReady(): Boolean {
         if (isShuttingDown || !isHandshakeEstablished) return false
         val current = supervisor.getConnectionInfo()
         return current != null && current == boundConnection
     }
 
-    public suspend fun awaitInitialHeartbeat(
+    suspend fun awaitInitialHeartbeat(
         timeoutMs: Long = DEFAULT_HANDSHAKE_TIMEOUT_MS,
         forceRefresh: Boolean = false,
         targetConnection: ServerConnectionDescriptor? = null,
@@ -84,8 +85,9 @@ public class DaemonHeartbeatMonitor(
                 if (!forceRefresh && isHandshakeEstablished && boundConnection == currentConn) {
                     return true
                 }
-                if (inFlightTarget == currentConn && inFlightHandshake?.isActive == true) {
-                    inFlightHandshake!!
+                val currentHandshake = inFlightHandshake
+                if (inFlightTarget == currentConn && currentHandshake != null && currentHandshake.isActive) {
+                    currentHandshake
                 } else {
                     if (boundConnection != null || inFlightTarget != null) {
                         if (boundConnection != currentConn || inFlightTarget != currentConn) {
@@ -100,7 +102,7 @@ public class DaemonHeartbeatMonitor(
             }
 
         return try {
-            withTimeoutOrNull(timeoutMs) {
+            withTimeoutOrNull(timeoutMs.milliseconds) {
                 deferred.await()
             } ?: false
         } catch (ce: CancellationException) {
@@ -111,7 +113,7 @@ public class DaemonHeartbeatMonitor(
     private suspend fun executeHandshake(target: ServerConnectionDescriptor, generation: Long): Boolean {
         val ack =
             try {
-                withTimeoutOrNull(DEFAULT_HANDSHAKE_TIMEOUT_MS) {
+                withTimeoutOrNull(DEFAULT_HANDSHAKE_TIMEOUT_MS.milliseconds) {
                     transport?.sendHeartbeat(target) ?: supervisor.isHealthy(target)
                 } ?: false
             } catch (ce: CancellationException) {
@@ -143,18 +145,18 @@ public class DaemonHeartbeatMonitor(
         }
     }
 
-    public fun start() {
+    fun start() {
         if (isShuttingDown || monitorJob?.isActive == true) return
         monitorJob =
             scope.launch {
                 while (isActive && !isShuttingDown) {
-                    delay(intervalMs)
+                    delay(intervalMs.milliseconds)
                     checkLiveness()
                 }
             }
     }
 
-    public suspend fun checkLiveness() {
+    suspend fun checkLiveness() {
         val gen = connectionGeneration
         val currentConn = supervisor.getConnectionInfo()
         if (currentConn == null) {
@@ -271,7 +273,7 @@ public class DaemonHeartbeatMonitor(
         }
     }
 
-    public fun resetHandshake() {
+    fun resetHandshake() {
         scope.launch {
             handshakeMutex.withLock {
                 resetHandshakeInternal()
@@ -290,12 +292,12 @@ public class DaemonHeartbeatMonitor(
         return previousInFlight
     }
 
-    public fun stop() {
+    fun stop() {
         monitorJob?.cancel()
         monitorJob = null
     }
 
-    public suspend fun shutdown() {
+    suspend fun shutdown() {
         isShuttingDown = true
         val handshakeToJoin =
             handshakeMutex.withLock {
@@ -314,16 +316,16 @@ public class DaemonHeartbeatMonitor(
      * when the time allowed for an orderly shutdown has run out - [shutdown] itself can be waiting on a check that
      * is stuck inside the lock, and must not be asked again then.
      */
-    public fun abort() {
+    fun abort() {
         isShuttingDown = true
         monitorJob?.cancel()
         monitorJob = null
         inFlightHandshake?.cancel()
     }
 
-    public val currentState: ConnectionState get() = stateHolder.currentState
+    val currentState: ConnectionState get() = stateHolder.currentState
 
-    public fun markDisconnected(reason: String? = null) {
+    fun markDisconnected(reason: String? = null) {
         stateHolder.transitionTo(ConnectionState.Disconnected(reason))
     }
 
@@ -332,7 +334,7 @@ public class DaemonHeartbeatMonitor(
         scope.cancel()
     }
 
-    public companion object {
-        public const val DEFAULT_HANDSHAKE_TIMEOUT_MS: Long = 5_000L
+    companion object {
+        const val DEFAULT_HANDSHAKE_TIMEOUT_MS: Long = 5_000L
     }
 }

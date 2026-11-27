@@ -9,20 +9,20 @@
  */
 package org.ide.lti.core.domain.tools
 
-public sealed interface ShutdownReport {
-    public data object Stopped : ShutdownReport
+sealed interface ShutdownReport {
+    data object Stopped : ShutdownReport
 
-    public data class Unconfirmed(val executionIds: List<String>) : ShutdownReport
+    data class Unconfirmed(val executionIds: List<String>) : ShutdownReport
 }
 
-public interface AppShutdownPort {
+interface AppShutdownPort {
     /** Set before the build service is told to stop, so what that stop breaks is not taken for a failure. */
-    public val closing: Boolean get() = false
+    val closing: Boolean get() = false
 
-    public suspend fun shutdown(): ShutdownReport
+    suspend fun shutdown(): ShutdownReport
 
-    public suspend fun forceShutdown() {}
+    suspend fun forceShutdown() {}
 
     /** The workspaces with a build or a job (a publish, say) that closing the app would stop. */
-    public suspend fun activeWork(): List<String> = emptyList()
+    suspend fun activeWork(): List<String> = emptyList()
 }

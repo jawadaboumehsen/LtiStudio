@@ -9,20 +9,21 @@ import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.util.UUID
 import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
 
-public data class WslProcessLaunchResult(val process: Process, val port: Int, val token: String, val pid: Long)
+data class WslProcessLaunchResult(val process: Process, val port: Int, val token: String, val pid: Long)
 
 /**
  * Single Responsibility: Spawns the LtiRomServer process in WSL and parses the handshake.
  */
-public open class WslProcessLauncher(internal val startupTimeoutMs: Long = 20_000L) {
-    public var lastLogTail: String? = null
+open class WslProcessLauncher(internal val startupTimeoutMs: Long = 20_000L) {
+    var lastLogTail: String? = null
         private set
 
-    public open suspend fun launch(distro: String, binaryPath: String): WslProcessLaunchResult =
+    open suspend fun launch(distro: String, binaryPath: String): WslProcessLaunchResult =
         launch(distro, binaryPath, null)
 
-    public open suspend fun launch(distro: String, binaryPath: String, javaHome: String?): WslProcessLaunchResult {
+    open suspend fun launch(distro: String, binaryPath: String, javaHome: String?): WslProcessLaunchResult {
         val token = UUID.randomUUID().toString().replace("-", "")
 
         val effectiveJavaHome =
@@ -58,7 +59,7 @@ public open class WslProcessLauncher(internal val startupTimeoutMs: Long = 20_00
     /**
      * Waits for `LTI_WSL_SERVER_READY port=… token=… pid=…` and returns (port, pid).
      *
-     * One daemon thread owns the process output for the process's whole life: it recognises the handshake
+     * One daemon thread owns the process output for the process's whole life: it recognizes the handshake
      * itself (so no amount of output after it can push it out of a buffer), keeps a short tail for errors,
      * then keeps draining so the service never blocks on a full pipe. The wait is a coroutine with a hard
      * [startupTimeoutMs] deadline, so a partial line, a hung process or the caller's cancellation cannot
@@ -87,7 +88,7 @@ public open class WslProcessLauncher(internal val startupTimeoutMs: Long = 20_00
 
         val match =
             try {
-                withTimeout(startupTimeoutMs) { ready.await() }
+                withTimeout(startupTimeoutMs.milliseconds) { ready.await() }
             } catch (_: TimeoutCancellationException) {
                 null
             } catch (e: CancellationException) {

@@ -1,16 +1,16 @@
 package io.ltirom.tooling.client
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ltirom.tooling.client.wsl.DaemonHealthProber
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.DEFAULT
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.serialization.kotlinx.json.json
+import io.ltirom.tooling.client.wsl.DaemonHealthProbe
 import io.ltirom.tooling.client.wsl.ShutdownOutcome
 import io.ltirom.tooling.client.wsl.WslCliExecutor
 import io.ltirom.tooling.client.wsl.WslEnvironmentDetector
@@ -18,18 +18,18 @@ import io.ltirom.tooling.client.wsl.WslProcessLauncher
 import io.ltirom.tooling.client.wsl.WslStateStore
 import io.ltirom.tooling.core.ports.DaemonSupervisorPort
 import io.ltirom.tooling.core.ports.ServerConnectionDescriptor
-import io.ltirom.tooling.core.remote.ToolStatusInfo
 import io.ltirom.tooling.core.remote.WslServerInfo
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.ide.lti.core.model.setup.SetupEnvironment
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
-public typealias ServerConnectionInfo = ServerConnectionDescriptor
-
-public data class WslDaemonConfig(
+data class WslDaemonConfig(
     val distroName: String? = null,
     val serverBinaryWslPath: String? = null,
     val autoStart: Boolean = true,
@@ -42,13 +42,13 @@ public data class WslDaemonConfig(
  * lockfile reading to [WslStateStore] (installation belongs to `ServerArtifactInstaller`),
  * and implements [DaemonSupervisorPort].
  */
-public class WslDaemonManager(
+class WslDaemonManager(
     private val config: WslDaemonConfig = WslDaemonConfig(),
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(cli),
     private val stateStore: WslStateStore = WslStateStore(cli),
     private val launcher: WslProcessLauncher = WslProcessLauncher(config.startupTimeoutMs),
-    customProber: DaemonHealthProber? = null,
+    customProbe: DaemonHealthProbe? = null,
 ) : DaemonSupervisorPort {
     private val mutex = Mutex()
 
@@ -63,13 +63,10 @@ public class WslDaemonManager(
     private var owned: OwnedProcess? = null
     private var connectionInfo: ServerConnectionDescriptor? = null
 
-    public val activeDistro: String? get() = connectionInfo?.distro ?: boundDistro ?: config.distroName
-
-    /** Absolute home of the user that owns the running service, when known. */
-    public val activeHome: String? get() = boundHome
+    val activeDistro: String? get() = connectionInfo?.distro ?: boundDistro ?: config.distroName
 
     /** Resolves and remembers the owner home used by the current distro. */
-    public suspend fun resolveActiveHome(): String {
+    fun resolveActiveHome(): String {
         boundHome?.let { return it }
         val distro = activeDistro ?: error("Build service has not selected a WSL distribution")
         return detector.resolveWslUserHome(distro).also { boundHome = it }
@@ -90,24 +87,24 @@ public class WslDaemonManager(
      * once the old service has no active runs, instead of being forgotten by the next status read.
      */
     private var desiredVersion: String? = null
-    private val prober: DaemonHealthProber by lazy { customProber ?: DaemonHealthProber(httpClient) }
+    private val healthProbe: DaemonHealthProbe by lazy { customProbe ?: DaemonHealthProbe(httpClient) }
 
     override var lastStartAdopted: Boolean = false
         private set
 
-    public var isUpdateWaiting: Boolean = false
+    var isUpdateWaiting: Boolean = false
         private set
 
     override val lastLaunchErrorLogTail: String? get() = launcher.lastLogTail
 
-    public val json: Json =
+    val json: Json =
         Json {
             ignoreUnknownKeys = true
             isLenient = true
             encodeDefaults = true
         }
 
-    public val httpClient: HttpClient by lazy {
+    val httpClient: HttpClient by lazy {
         HttpClient(CIO) {
             // CIO's own default cuts every request at 15 s; each request sets its own limit instead (a command
             // runs as long as its timeoutMs allows).
@@ -124,9 +121,7 @@ public class WslDaemonManager(
         }
     }
 
-    public fun isRunning(): Boolean = owned?.takeIf { it.belongsTo(connectionInfo) }?.process?.isAlive == true
-
-    public suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor = ensureRunningVersion(
+    suspend fun ensureStarted(environment: SetupEnvironment): ServerConnectionDescriptor = ensureRunningVersion(
         distro = environment.distro,
         activeVersion = null,
         home = environment.home,
@@ -136,7 +131,7 @@ public class WslDaemonManager(
     override suspend fun ensureStarted(distro: String): ServerConnectionDescriptor =
         ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
 
-    public suspend fun ensureStarted(distro: String, home: String? = null): ServerConnectionDescriptor =
+    suspend fun ensureStarted(distro: String, home: String? = null): ServerConnectionDescriptor =
         ensureRunningVersion(
             distro = distro,
             activeVersion = null,
@@ -153,7 +148,7 @@ public class WslDaemonManager(
         return ensureRunningVersion(distro = distro, activeVersion = null, home = null, javaHome = null)
     }
 
-    public suspend fun ensureRunningVersion(
+    suspend fun ensureRunningVersion(
         distro: String,
         activeVersion: String? = null,
         home: String? = null,
@@ -185,7 +180,7 @@ public class WslDaemonManager(
         javaHome?.let { boundJavaHome = it }
         val current = connectionInfo
         if (current != null && current.distro == distro && isHealthy(current)) {
-            val sInfo = prober.getServerInfo(current)
+            val sInfo = healthProbe.getServerInfo(current)
             if (sInfo != null && (wanted == null || sInfo.serverVersion == wanted)) {
                 lastStartAdopted = true
                 isUpdateWaiting = false
@@ -195,7 +190,7 @@ public class WslDaemonManager(
 
         val existing = checkExistingDaemon(distro)
         if (existing != null && isHealthy(existing)) {
-            val sInfo = prober.getServerInfo(existing)
+            val sInfo = healthProbe.getServerInfo(existing)
             if (sInfo != null) {
                 if (wanted == null || sInfo.serverVersion == wanted) {
                     connectionInfo = existing
@@ -246,8 +241,8 @@ public class WslDaemonManager(
                 parseLtiRomServices(ps, ss, keep.host, keep.distro).filter { it.pid != keep.pid }
             }
         for (stray in strays) {
-            if (prober.requestShutdown(stray, force = false) == ShutdownOutcome.ACCEPTED) continue
-            if (prober.getServerInfo(stray)?.activeRuns == 0) {
+            if (healthProbe.requestShutdown(stray, force = false) == ShutdownOutcome.ACCEPTED) continue
+            if (healthProbe.getServerInfo(stray)?.activeRuns == 0) {
                 withContext(Dispatchers.IO) {
                     cli.execute(keep.distro, listOf("kill", "-TERM", stray.pid.toString()), timeoutSeconds = 5)
                 }
@@ -263,18 +258,12 @@ public class WslDaemonManager(
 
     override suspend fun getConnectionInfo(): ServerConnectionDescriptor? = mutex.withLock { connectionInfo }
 
-    public fun checkExistingDaemon(distro: String): ServerConnectionDescriptor? {
+    fun checkExistingDaemon(distro: String): ServerConnectionDescriptor? {
         val wslIp = detector.resolveWslIp(distro)
         return stateStore.readState(distro, wslIp)
     }
 
-    public fun listWslDistros(): List<String> = detector.listDistros()
-
-    public fun resolveWslIp(distro: String): String = detector.resolveWslIp(distro)
-
-    public fun resolveWslUserHome(distro: String): String = detector.resolveWslUserHome(distro)
-
-    public fun findServerBinary(distro: String, home: String? = null): String {
+    fun findServerBinary(distro: String, home: String? = null): String {
         if (config.serverBinaryWslPath != null) return config.serverBinaryWslPath
         val userHome = home ?: detector.resolveWslUserHome(distro)
         val ext4Current = "$userHome/.ltirom/server/current/bin/ltirom-server"
@@ -331,38 +320,28 @@ public class WslDaemonManager(
         )
     }
 
-    override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = prober.isHealthy(info)
+    override suspend fun isHealthy(info: ServerConnectionDescriptor): Boolean = healthProbe.isHealthy(info)
 
-    public suspend fun isHealthy(): Boolean {
+    suspend fun isHealthy(): Boolean {
         val info = getConnectionInfo() ?: return false
         return isHealthy(info)
     }
 
-    public suspend fun getServerInfo(): WslServerInfo? {
+    suspend fun getServerInfo(): WslServerInfo? {
         val info = ensureStarted()
-        return prober.getServerInfo(info)
+        return healthProbe.getServerInfo(info)
     }
 
     /**
      * Reads the running service's info for [environment] without starting, adopting or restarting
      * anything, so a status read never changes [isUpdateWaiting] or the connection.
      */
-    public suspend fun getServerInfo(environment: SetupEnvironment): WslServerInfo? {
+    suspend fun getServerInfo(environment: SetupEnvironment): WslServerInfo? {
         val info =
             mutex.withLock { connectionInfo }?.takeIf { it.distro == environment.distro }
                 ?: checkExistingDaemon(environment.distro)
                 ?: return null
-        return prober.getServerInfo(info)
-    }
-
-    public suspend fun getAvailableTools(): List<ToolStatusInfo> {
-        val info = ensureStarted()
-        return prober.getAvailableTools(info)
-    }
-
-    public suspend fun getAvailableTools(environment: SetupEnvironment): List<ToolStatusInfo> {
-        val info = ensureStarted(environment)
-        return prober.getAvailableTools(info)
+        return healthProbe.getServerInfo(info)
     }
 
     override suspend fun shutdownDaemon(): Boolean = shutdownDaemon(force = false)
@@ -384,14 +363,14 @@ public class WslDaemonManager(
             when (withContext(Dispatchers.IO) { stateStore.isProcessAlive(info.distro, info.pid) }) {
                 false -> return true
                 null -> return false
-                true -> delay(RETIRE_POLL_MS)
+                true -> delay(RETIRE_POLL_MS.milliseconds)
             }
         }
         return false
     }
 
     private suspend fun stopDaemonInternal(info: ServerConnectionDescriptor, force: Boolean): Boolean {
-        val outcome = prober.requestShutdown(info, force)
+        val outcome = healthProbe.requestShutdown(info, force)
         val stoppedCleanly = outcome == ShutdownOutcome.ACCEPTED
 
         // A forced stop also tears down on silence (the service is unreachable, so the launcher is all that's left),

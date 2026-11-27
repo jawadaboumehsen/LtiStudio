@@ -47,7 +47,7 @@ import org.ide.lti.feature.workspace.studio.WorkspaceActionUi
  * Matches Mockup 09 card presentation with natural typography.
  */
 @Composable
-public fun RecentActivitySection(
+fun RecentActivitySection(
     activities: List<ActivityItemUi>,
     onOpenHistory: () -> Unit,
     onAction: (WorkspaceActionUi) -> Unit,

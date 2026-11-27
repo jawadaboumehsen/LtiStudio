@@ -17,7 +17,7 @@ import kotlin.jvm.JvmInline
  */
 @Serializable
 @JvmInline
-public value class StudioSubobjectId(public val value: String) {
+value class StudioSubobjectId(val value: String) {
     init {
         require(value.isNotBlank()) { "StudioSubobjectId value must not be blank" }
         require(!value.contains('\n') && !value.contains('\u0000')) {

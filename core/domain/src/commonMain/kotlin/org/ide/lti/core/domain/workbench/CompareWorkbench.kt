@@ -29,10 +29,10 @@ import org.ide.lti.core.domain.pipeline.toolkit.WorkspaceDiff
  * for the purpose, and a partition of the build against the stock firmware. Reads only, except
  * the decoded copies it keeps in `workbench/compare/`.
  */
-public class CompareWorkbench(private val runner: WorkbenchRunner) {
+class CompareWorkbench(private val runner: WorkbenchRunner) {
 
     /** Line differences between two files in the workspace (FR-033). */
-    public suspend fun compareFiles(workspaceId: String, a: String, b: String): FileDiff = runner.read(workspaceId) {
+    suspend fun compareFiles(workspaceId: String, a: String, b: String): FileDiff = runner.read(workspaceId) {
         val left = readText(a) ?: throw missing(a)
         val right = readText(b) ?: throw missing(b)
         val changes = ContentWorkbench.lineChanges(left, right)
@@ -40,14 +40,14 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
     }
 
     /** Members missing, added or changed (by CRC) between two zip archives (APK, JAR, OTA) (FR-033). */
-    public suspend fun compareArchives(workspaceId: String, a: String, b: String): ArchiveDiff = runner.read(
+    suspend fun compareArchives(workspaceId: String, a: String, b: String): ArchiveDiff = runner.read(
         workspaceId,
     ) {
         archiveDiff(zipMembers(this, a), zipMembers(this, b))
     }
 
     /** Files missing, added or changed (by SHA-256) between two folders of the workspace (FR-033). */
-    public suspend fun compareFolders(workspaceId: String, a: String, b: String): WorkspaceDiff = runner.read(
+    suspend fun compareFolders(workspaceId: String, a: String, b: String): WorkspaceDiff = runner.read(
         workspaceId,
     ) {
         val left = hashes(this, a)
@@ -63,7 +63,7 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
      * Classes (smali files) added, removed or changed between two decoded packages, and for a changed class its
      * methods added, removed or changed (FR-033).
      */
-    public suspend fun compareCode(workspaceId: String, a: String, b: String): CodePackageDiff = runner.read(
+    suspend fun compareCode(workspaceId: String, a: String, b: String): CodePackageDiff = runner.read(
         workspaceId,
     ) { codeDiff(this, a, b) }
 
@@ -71,7 +71,7 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
      * Decodes two APKs or JARs of the workspace (the build's `work/` or the stock `firmware/extracted/`) with
      * apktool, code only and without line numbers, and compares them method by method.
      */
-    public suspend fun compareCodeFiles(workspaceId: String, a: String, b: String): CodePackageDiff =
+    suspend fun compareCodeFiles(workspaceId: String, a: String, b: String): CodePackageDiff =
         runner.job(workspaceId, "Compare ${b.substringAfterLast('/')}") {
             listOf(a, b).forEach(::requireInWorkspaceTree)
             val (left, right) = listOf(a to "workbench/compare/a", b to "workbench/compare/b").map { (file, out) ->
@@ -86,13 +86,13 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
         }
 
     /** The partition trees and images of [workspaceId] a side can be. */
-    public suspend fun sources(workspaceId: String): CompareSources = runner.read(workspaceId) { compareSources() }
+    suspend fun sources(workspaceId: String): CompareSources = runner.read(workspaceId) { compareSources() }
 
     /**
      * The partitions inside [image] of [workspaceId] when it is a super image (a sparse one is expanded once to tell),
      * else none.
      */
-    public suspend fun superPartitions(workspaceId: String, image: String): List<String> =
+    suspend fun superPartitions(workspaceId: String, image: String): List<String> =
         runner.job(workspaceId, "Read ${image.substringAfterLast('/')}") {
             val img = readableImage(image, member = null)
             if (!isSuperImage(img)) return@job emptyList()
@@ -104,7 +104,7 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
      * label, link target) or kind changed; and both superblocks. Each side is read in its own workspace's job. Files
      * of the same size are hashed on both sides; with [trustTimes] only those whose modification time differs.
      */
-    public suspend fun compareSides(a: CompareSide, b: CompareSide, trustTimes: Boolean = false): SideComparison {
+    suspend fun compareSides(a: CompareSide, b: CompareSide, trustTimes: Boolean = false): SideComparison {
         val left = runner.job(a.workspaceId, "Read ${a.partition} (A)") { snapshot(a) }
         val right = runner.job(b.workspaceId, "Read ${b.partition} (B)") { snapshot(b) }
         val candidates = TreeCompare.hashCandidates(left.entries, right.entries, trustTimes)
@@ -126,7 +126,7 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
      * [change] of a [compareSides] looked at closely: a text file's line diff, a zip's entries, a JAR's or APK's dex
      * files and methods, else sizes and hashes. Only a content change has more to show than its row.
      */
-    public suspend fun compareEntry(a: CompareSide, b: CompareSide, change: TreeChange): EntryComparison {
+    suspend fun compareEntry(a: CompareSide, b: CompareSide, change: TreeChange): EntryComparison {
         val path = change.path
         val name = path.substringAfterLast('/')
         if (change.kind != TreeChangeKind.CONTENT) {
@@ -244,7 +244,6 @@ public class CompareWorkbench(private val runner: WorkbenchRunner) {
 
     internal companion object {
         private const val DETAILS = 4_000
-        private const val HASH_BATCH = 2_000
         private val ESCAPE = Regex("""\\(.)""")
         private val WHITESPACE = Regex("""\s+""")
         private const val ZIP_COLUMNS = 8

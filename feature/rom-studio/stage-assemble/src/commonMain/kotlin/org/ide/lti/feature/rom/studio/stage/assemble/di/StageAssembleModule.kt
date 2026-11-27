@@ -17,7 +17,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-public val stageAssembleModule: Module = module {
+val stageAssembleModule: Module = module {
     single<StageEditor>(named("assemble")) { AssembleStageEditor() }
 
     viewModel { params ->

@@ -19,7 +19,7 @@ import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 
 /** What building now would do, next to the last build that worked. */
-public data class NextBuildFacts(
+data class NextBuildFacts(
     /** The newest succeeded run that made a package; null when none has here. */
     val lastGood: BuildRun?,
     /** Settings fields and mod versions changed since [lastGood]; null when its snapshot is unavailable. */
@@ -35,13 +35,13 @@ public data class NextBuildFacts(
  * that made a package (its snapshot against the current one), which stages run and why ([preview], the same code
  * as a run), and the time and disk earlier runs took for them. Writes nothing.
  */
-public class NextBuild(
+class NextBuild(
     private val workspaces: WorkspaceRepository,
     private val snapshots: SnapshotRepository,
     private val runs: RunRepository,
     private val preview: suspend (workspaceId: String) -> Result<List<StagePreview>>,
 ) {
-    public suspend fun of(workspaceId: String): NextBuildFacts {
+    suspend fun of(workspaceId: String): NextBuildFacts {
         // The preview saves pending settings first, so the current snapshot below is the one it judged.
         val stages = preview(workspaceId).getOrThrow()
         val history = runs.observeRuns(workspaceId).first()

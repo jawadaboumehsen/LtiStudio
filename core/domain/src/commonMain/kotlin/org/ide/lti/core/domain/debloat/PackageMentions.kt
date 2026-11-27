@@ -14,9 +14,9 @@ package org.ide.lti.core.domain.debloat
  * `etc/default-permissions` XMLs, with the `package="…"` values each holds. A file that only names apps the debloat
  * removes is removed with them; one that also declares a library, feature or permission is always kept.
  */
-public object PackageMentions {
+object PackageMentions {
     /** A file's named packages, and whether it declares anything of its own (then it is never removed). */
-    public data class Mentions(val packages: Set<String>, val declares: Boolean)
+    data class Mentions(val packages: Set<String>, val declares: Boolean)
 
     /** Elements that only grant or configure the package they name; a file of these alone goes with its apps. */
     private const val PACKAGE_TAGS: String = "permissions|config|privapp-permissions|permission|deny-permission|" +
@@ -26,7 +26,7 @@ public object PackageMentions {
         "install-in-user-type|install-in|do-not-install-in|default-enabled-vr-app"
 
     /** `sh -c SCRIPT sh <work dir>`: `<file>\t<package>` per mention, `<file>\t!` for a file that declares things. */
-    public const val SCRIPT: String = """
+    const val SCRIPT: String = """
         cd "$1" || exit 0
         xmls() { find . -type f -name '*.xml' \( -path '*/etc/permissions/*' -o -path '*/etc/sysconfig/*' -o -path '*/etc/default-permissions/*' \) -print0; }
         xmls | xargs -0 -r grep -oHE 'package="[A-Za-z][A-Za-z0-9_.]*"' 2>/dev/null |
@@ -45,17 +45,17 @@ public object PackageMentions {
     """
 
     /** [SCRIPT]'s output by file (relative to work/). */
-    public fun parse(output: String): Map<String, Mentions> = output.lines()
+    fun parse(output: String): Map<String, Mentions> = output.lines()
         .mapNotNull { line -> line.split('\t').takeIf { it.size == 2 && it[0].isNotBlank() } }
         .groupBy({ it[0] }, { it[1] })
         .mapValues { (_, values) -> Mentions(values.filter { it != "!" }.toSet(), "!" in values) }
 
     /** The files that name [pkg]. */
-    public fun namedIn(mentions: Map<String, Mentions>, pkg: String): List<String> =
+    fun namedIn(mentions: Map<String, Mentions>, pkg: String): List<String> =
         mentions.filterValues { pkg in it.packages }.keys.sorted()
 
     /** The files that name only apps of [removed] and declare nothing: removed with those apps. */
-    public fun orphaned(mentions: Map<String, Mentions>, removed: Set<String>): List<String> =
+    fun orphaned(mentions: Map<String, Mentions>, removed: Set<String>): List<String> =
         mentions.filterValues { !it.declares && it.packages.isNotEmpty() && removed.containsAll(it.packages) }
             .keys.sorted()
 }

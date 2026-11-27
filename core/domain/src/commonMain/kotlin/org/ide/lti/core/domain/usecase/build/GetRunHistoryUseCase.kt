@@ -23,21 +23,18 @@ import org.ide.lti.core.model.run.Presence
  * When an execution transport is available and online, probes artifact presence via [PipelineExecutionPort.stat].
  * When offline or stat fails, falls back gracefully to cached presence values without crashing or dropping records.
  */
-public open class GetRunHistoryUseCase(
+open class GetRunHistoryUseCase(
     private val runRepository: RunRepository,
     private val workspaceRepository: WorkspaceRepository? = null,
     private val executionPort: PipelineExecutionPort? = null,
 ) {
-    public open fun observe(workspaceId: String): Flow<List<BuildRun>> {
+    open fun observe(workspaceId: String): Flow<List<BuildRun>> {
         return runRepository.observeRuns(workspaceId).map { runs ->
             runs.sortedByDescending { it.startedAt }
         }
     }
 
-    public open suspend operator fun invoke(
-        workspaceId: String,
-        refreshArtifactPresence: Boolean = true,
-    ): List<BuildRun> {
+    open suspend operator fun invoke(workspaceId: String, refreshArtifactPresence: Boolean = true): List<BuildRun> {
         val runs = runRepository.observeRuns(workspaceId).first().sortedByDescending { it.startedAt }
         if (!refreshArtifactPresence || workspaceRepository == null || executionPort == null) {
             return runs

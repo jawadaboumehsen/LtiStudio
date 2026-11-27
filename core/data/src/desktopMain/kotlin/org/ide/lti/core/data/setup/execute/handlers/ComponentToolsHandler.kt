@@ -25,8 +25,7 @@ import org.ide.lti.core.domain.tools.ResolvedSource
 import org.ide.lti.core.domain.tools.ToolManager
 
 /** Executes setup and retry plans through the same component store used by the Tools editor. */
-public class ComponentToolsHandler(private val manager: ToolManager) :
-    PlanActionHandler<SetupPlanAction.SwitchToolchain> {
+class ComponentToolsHandler(private val manager: ToolManager) : PlanActionHandler<SetupPlanAction.SwitchToolchain> {
     override suspend fun execute(action: SetupPlanAction.SwitchToolchain, context: ExecutionContext): SetupOutcome? =
         if (context.plan.kind == SetupPlanKind.FULL_SETUP && action.forceRebuildGroups.isEmpty()) {
             executePrepareMissing(action, context)

@@ -63,7 +63,7 @@ import org.ide.lti.core.ui.toolkit.RefusalView
 
 /** The content tool named by [toolId] (one of [ContentTools.ALL]) over the assembled work tree. */
 @Composable
-public fun ContentToolsPane(
+fun ContentToolsPane(
     toolId: String,
     state: ContentToolsState,
     viewModel: ContentToolsViewModel,

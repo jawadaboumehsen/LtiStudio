@@ -12,22 +12,22 @@ package org.ide.lti.core.domain.ports
 import kotlinx.serialization.Serializable
 
 @Serializable
-public enum class EnvironmentUse {
+enum class EnvironmentUse {
     BUILD_USE,
     MAINTENANCE,
 }
 
 @Serializable
-public data class EnvironmentLease(
+data class EnvironmentLease(
     val environmentKey: String,
     val use: EnvironmentUse,
     val operationId: String,
     val acquiredAtEpochMs: Long,
 )
 
-public sealed interface EnvironmentAdmission {
-    public data class Admitted(val lease: EnvironmentLease) : EnvironmentAdmission
-    public data class Busy(val owners: List<EnvironmentLease>) : EnvironmentAdmission
+sealed interface EnvironmentAdmission {
+    data class Admitted(val lease: EnvironmentLease) : EnvironmentAdmission
+    data class Busy(val owners: List<EnvironmentLease>) : EnvironmentAdmission
 }
 
 /**
@@ -37,14 +37,10 @@ public sealed interface EnvironmentAdmission {
  * MAINTENANCE is exclusive and admitted only when no lease of either kind is active;
  * BUILD_USE is shared (many) and denied while MAINTENANCE is active.
  */
-public interface EnvironmentLeasePort {
-    public suspend fun tryAcquire(
-        environmentKey: String,
-        use: EnvironmentUse,
-        operationId: String,
-    ): EnvironmentAdmission
+interface EnvironmentLeasePort {
+    suspend fun tryAcquire(environmentKey: String, use: EnvironmentUse, operationId: String): EnvironmentAdmission
 
-    public suspend fun release(lease: EnvironmentLease)
+    suspend fun release(lease: EnvironmentLease)
 
-    public suspend fun activeLeases(environmentKey: String): List<EnvironmentLease>
+    suspend fun activeLeases(environmentKey: String): List<EnvironmentLease>
 }

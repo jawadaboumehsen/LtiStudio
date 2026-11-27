@@ -17,6 +17,7 @@ import org.ide.lti.core.domain.pipeline.ToolResult
 import org.ide.lti.core.domain.pipeline.stepCommand
 import org.ide.lti.core.model.workspace.Workspace
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Runs a command as a service step and reads it to its end. For long work outside the pipeline (publishing
@@ -25,7 +26,7 @@ import java.util.UUID
  * caller, or a read that fails, cancels the command on the service too: the caller's job lock is released next, so
  * nothing may go on changing the workspace behind it.
  */
-public suspend fun PipelineExecutionPort.runToEnd(
+suspend fun PipelineExecutionPort.runToEnd(
     ws: Workspace,
     tool: String,
     args: List<String>,
@@ -65,7 +66,7 @@ private suspend fun PipelineExecutionPort.readToEnd(runId: String, stdout: Strin
             if (status == null || status.status !in STILL_RUNNING) {
                 exitCode = status?.exitCode ?: -1
             } else {
-                delay(RETRY_MS)
+                delay(RETRY_MS.milliseconds)
             }
         }
     }

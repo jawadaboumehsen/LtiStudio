@@ -34,7 +34,7 @@ import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.workspace.Workspace
 
-public data class RunHistoryUiState(
+data class RunHistoryUiState(
     val currentWorkspace: Workspace? = null,
     val runs: List<BuildRun> = emptyList(),
     val selectedRun: BuildRun? = null,
@@ -50,7 +50,7 @@ public data class RunHistoryUiState(
     val deviceChecks: Map<String, DeviceCheckResult> = emptyMap(),
 )
 
-public class RunHistoryViewModel(
+class RunHistoryViewModel(
     private val workspaceManager: WorkspaceManager,
     private val getRunHistoryUseCase: GetRunHistoryUseCase,
     private val runRepository: RunRepository,
@@ -59,7 +59,7 @@ public class RunHistoryViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RunHistoryUiState())
-    public val uiState: StateFlow<RunHistoryUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<RunHistoryUiState> = _uiState.asStateFlow()
 
     private var analysisJob: Job? = null
 
@@ -109,14 +109,14 @@ public class RunHistoryViewModel(
         _uiState.update { if (it.selectedRun?.id == runId) it.copy(selectedRunLogs = logs) else it }
     }
 
-    public fun selectRun(run: BuildRun) {
+    fun selectRun(run: BuildRun) {
         if (_uiState.value.currentWorkspace?.id != run.workspaceId) return
         _uiState.update { it.withSelection(run) }
         viewModelScope.launch { showLogs(run.id) }
     }
 
     /** Compares the selected run with [other]: the earlier of the two is "before". */
-    public fun compareWith(other: BuildRun) {
+    fun compareWith(other: BuildRun) {
         val comparer = runComparison
         val selected = _uiState.value.selectedRun
         if (comparer == null || selected == null || _uiState.value.isComparing) return
@@ -140,7 +140,7 @@ public class RunHistoryViewModel(
      * The run inspector: where the selected run's time went (stages, their share, why each ran, slowest steps), then
      * what differs from the previous successful run, when there is one.
      */
-    public fun inspect() {
+    fun inspect() {
         val run = _uiState.value.selectedRun ?: return
         if (_uiState.value.isComparing) return
         val previous = _uiState.value.runs
@@ -197,15 +197,15 @@ public class RunHistoryViewModel(
         }
     }
 
-    public fun closeInspection() {
+    fun closeInspection() {
         _uiState.update { it.copy(inspection = null) }
     }
 
-    public fun closeComparison() {
+    fun closeComparison() {
         _uiState.update { it.copy(comparison = null) }
     }
 
-    public fun refreshHistory() {
+    fun refreshHistory() {
         val ws = _uiState.value.currentWorkspace ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -228,7 +228,7 @@ public class RunHistoryViewModel(
         }
     }
 
-    public fun deleteRun(runId: String) {
+    fun deleteRun(runId: String) {
         if (_uiState.value.runs.firstOrNull { it.id == runId }?.state?.isActive == true) return
         viewModelScope.launch {
             try {

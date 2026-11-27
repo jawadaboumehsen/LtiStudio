@@ -27,27 +27,27 @@ import dev.chrisbanes.haze.Poko
  */
 @Immutable
 @Poko
-public class GlassAccessibilitySettings(
+class GlassAccessibilitySettings(
     /**
      * Makes Glass materials more opaque by fully diffusing a stronger blur, so content behind them
      * is less legible. Fallback rendering uses an opaque base that follows the system appearance
      * supplied by the Compose host, not `MaterialTheme` or other in-app theme state. Set
      * [reducedTransparencyFallbackColor] to match an in-app theme.
      */
-    public val reduceTransparency: Boolean = false,
+    val reduceTransparency: Boolean = false,
     /**
      * Enforces minimum tone contrast and edge separation. Tone contrast applies only to full
      * rendering; fallback rendering omits color adjustments, so it gets the stronger edge alone.
      */
-    public val increaseContrast: Boolean = false,
+    val increaseContrast: Boolean = false,
     /** Enforces a visible edge without changing tone contrast. */
-    public val showBorders: Boolean = false,
+    val showBorders: Boolean = false,
     /**
      * Opaque base for reduced-transparency fallback, or null for white in light and black in dark
      * host appearance. Set it when the app theme differs from the host appearance. `Color.Unspecified`
      * is rejected, not treated as null: pass null to select the default.
      */
-    public val reducedTransparencyFallbackColor: Color? = null,
+    val reducedTransparencyFallbackColor: Color? = null,
 ) {
     init {
         require(
@@ -59,7 +59,7 @@ public class GlassAccessibilitySettings(
     }
 
     /** Returns a copy of these settings with the given values replaced. */
-    public fun copy(
+    fun copy(
         reduceTransparency: Boolean = this.reduceTransparency,
         increaseContrast: Boolean = this.increaseContrast,
         showBorders: Boolean = this.showBorders,
@@ -73,5 +73,5 @@ public class GlassAccessibilitySettings(
 }
 
 /** Accessibility preferences inherited by Glass nodes in this composition subtree. */
-public val LocalGlassAccessibilitySettings: ProvidableCompositionLocal<GlassAccessibilitySettings> =
+val LocalGlassAccessibilitySettings: ProvidableCompositionLocal<GlassAccessibilitySettings> =
     compositionLocalOf { GlassAccessibilitySettings() }

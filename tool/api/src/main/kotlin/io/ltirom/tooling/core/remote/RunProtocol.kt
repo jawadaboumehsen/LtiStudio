@@ -3,7 +3,7 @@ package io.ltirom.tooling.core.remote
 import kotlinx.serialization.Serializable
 
 @Serializable
-public enum class RunStatusValue {
+enum class RunStatusValue {
     QUEUED,
     RUNNING,
     CANCELLING,
@@ -14,13 +14,13 @@ public enum class RunStatusValue {
 }
 
 @Serializable
-public enum class RunPurpose {
+enum class RunPurpose {
     SETUP,
     WORKSPACE,
 }
 
 @Serializable
-public data class StartRunRequest(
+data class StartRunRequest(
     val request: ToolExecutionRequest,
     val idempotencyKey: String,
     val workspaceLock: String? = null,
@@ -28,16 +28,16 @@ public data class StartRunRequest(
 )
 
 @Serializable
-public data class RunHandle(val runId: String, val status: RunStatusValue, val startedAtEpochMs: Long)
+data class RunHandle(val runId: String, val status: RunStatusValue, val startedAtEpochMs: Long)
 
 @Serializable
-public data class RunConflict(val existingRunId: String, val message: String? = null)
+data class RunConflict(val existingRunId: String, val message: String? = null)
 
 @Serializable
-public data class InvalidWorkingDirectory(val path: String? = null, val reason: String = "working directory missing")
+data class InvalidWorkingDirectory(val path: String? = null, val reason: String = "working directory missing")
 
 @Serializable
-public data class RunStatus(
+data class RunStatus(
     val runId: String,
     val status: RunStatusValue,
     val exitCode: Int? = null,
@@ -49,7 +49,7 @@ public data class RunStatus(
 )
 
 @Serializable
-public data class RunCancelResponse(val accepted: Boolean, val status: RunStatusValue, val message: String? = null)
+data class RunCancelResponse(val accepted: Boolean, val status: RunStatusValue, val message: String? = null)
 
 @Serializable
-public data class ActiveRuns(val runIds: List<String>, val message: String? = null)
+data class ActiveRuns(val runIds: List<String>, val message: String? = null)

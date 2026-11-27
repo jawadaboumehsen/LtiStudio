@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.TileMode
  * - On Skiko: `org.jetbrains.skia.ImageFilter`
  */
 @InternalHazeApi
-public expect class PlatformRenderEffect
+expect class PlatformRenderEffect
 
 /**
  * Platform-specific color filter type.
@@ -31,19 +31,19 @@ public expect class PlatformRenderEffect
  * - On Skiko: `org.jetbrains.skia.ColorFilter`
  */
 @InternalHazeApi
-public expect class PlatformColorFilter
+expect class PlatformColorFilter
 
 /**
  * Creates a [PlatformRenderEffect] from a shader.
  */
 @InternalHazeApi
-public expect fun createShaderRenderEffect(shader: Shader, crop: Rect? = null): PlatformRenderEffect
+expect fun createShaderRenderEffect(shader: Shader, crop: Rect? = null): PlatformRenderEffect
 
 /**
  * Creates a blend [PlatformRenderEffect] from two render effects.
  */
 @InternalHazeApi
-public expect fun createBlendRenderEffect(
+expect fun createBlendRenderEffect(
     blendMode: BlendMode,
     background: PlatformRenderEffect,
     foreground: PlatformRenderEffect,
@@ -54,7 +54,7 @@ public expect fun createBlendRenderEffect(
  * Creates a color filter [PlatformRenderEffect].
  */
 @InternalHazeApi
-public expect fun createColorFilterRenderEffect(
+expect fun createColorFilterRenderEffect(
     colorFilter: PlatformColorFilter,
     input: PlatformRenderEffect? = null,
     crop: Rect? = null,
@@ -69,7 +69,7 @@ public expect fun createColorFilterRenderEffect(
  * @param radiusY Blur radius in the Y direction (pixels)
  */
 @InternalHazeApi
-public expect fun createBlurRenderEffect(
+expect fun createBlurRenderEffect(
     radiusX: Float,
     radiusY: Float,
     tileMode: TileMode,
@@ -81,7 +81,7 @@ public expect fun createBlurRenderEffect(
  * Creates an offset [PlatformRenderEffect].
  */
 @InternalHazeApi
-public expect fun createOffsetRenderEffect(
+expect fun createOffsetRenderEffect(
     offsetX: Float,
     offsetY: Float,
     input: PlatformRenderEffect? = null,
@@ -92,13 +92,13 @@ public expect fun createOffsetRenderEffect(
  * Chains this render effect with another, composing them.
  */
 @InternalHazeApi
-public expect fun PlatformRenderEffect.then(other: PlatformRenderEffect): PlatformRenderEffect
+expect fun PlatformRenderEffect.then(other: PlatformRenderEffect): PlatformRenderEffect
 
 /**
  * Blends this render effect with a foreground effect.
  */
 @InternalHazeApi
-public fun PlatformRenderEffect.blendForeground(
+fun PlatformRenderEffect.blendForeground(
     foreground: PlatformRenderEffect,
     blendMode: BlendMode,
     offset: Offset = Offset.Unspecified,
@@ -116,4 +116,4 @@ public fun PlatformRenderEffect.blendForeground(
  * Converts this platform render effect to a Compose [RenderEffect].
  */
 @InternalHazeApi
-public expect fun PlatformRenderEffect.asComposeRenderEffect(): RenderEffect
+expect fun PlatformRenderEffect.asComposeRenderEffect(): RenderEffect

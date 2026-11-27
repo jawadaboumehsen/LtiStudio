@@ -19,36 +19,36 @@ import org.ide.lti.core.model.run.StepCommand
 import org.ide.lti.core.model.workspace.Workspace
 
 /** A file in the workspace folder, [path] relative to the directory it was listed from. */
-public data class WorkspaceFile(val path: String, val sizeBytes: Long)
+data class WorkspaceFile(val path: String, val sizeBytes: Long)
 
 /**
  * What the build actually produced, for the stage editors: values the last runs captured (measured
  * hashes, sizes) and the files in the workspace folder. Every read is best effort: an unreachable
  * service or a missing file gives null / empty, never sample data.
  */
-public class WorkspaceFacts(
+class WorkspaceFacts(
     private val workspaces: WorkspaceRepository,
     private val files: PipelineExecutionPort,
     private val runs: RunRepository,
 ) {
     /** The newest value a run of [workspaceId] captured under [key], or null when no run captured it. */
-    public suspend fun lastValue(workspaceId: String, key: String): String? = attempt {
+    suspend fun lastValue(workspaceId: String, key: String): String? = attempt {
         runs.observeRuns(workspaceId).first()
             .sortedByDescending { it.startedAt }
             .firstNotNullOfOrNull { it.runtimeValues[key] }
     }
 
-    public suspend fun stat(workspaceId: String, relPath: String): FileStat? =
+    suspend fun stat(workspaceId: String, relPath: String): FileStat? =
         attempt { files.stat(workspace(workspaceId), relPath).takeIf { it.exists } }
 
-    public suspend fun read(workspaceId: String, relPath: String): String? =
+    suspend fun read(workspaceId: String, relPath: String): String? =
         attempt { files.readFile(workspace(workspaceId), relPath) }
 
     /**
      * Files under [relDir] (down to [maxDepth] levels), optionally only names matching the shell pattern
      * [name]. Empty when the directory does not exist yet (its stage has not run).
      */
-    public suspend fun list(
+    suspend fun list(
         workspaceId: String,
         relDir: String,
         maxDepth: Int = 1,
@@ -68,7 +68,7 @@ public class WorkspaceFacts(
     }.orEmpty()
 
     /** The SHA-256 of the file at [relPath] as it is now (hashed again, so a replaced file is never "verified"). */
-    public suspend fun sha256(workspaceId: String, relPath: String): String? = attempt {
+    suspend fun sha256(workspaceId: String, relPath: String): String? = attempt {
         val ws = workspace(workspaceId)
         val base = ws.linuxPath ?: ws.path
         val result = files.execute(ws, StepCommand("sha256sum", listOf("$base/$relPath"), base, HASH_TIMEOUT_MS))
@@ -76,7 +76,7 @@ public class WorkspaceFacts(
     }
 
     /** Member names of the zip at [relPath] in the workspace, or empty when it does not exist. */
-    public suspend fun zipMembers(workspaceId: String, relPath: String): List<String> = attempt {
+    suspend fun zipMembers(workspaceId: String, relPath: String): List<String> = attempt {
         val ws = workspace(workspaceId)
         val base = ws.linuxPath ?: ws.path
         val result = files.execute(ws, StepCommand("unzip", listOf("-Z1", "$base/$relPath"), base, LIST_TIMEOUT_MS))

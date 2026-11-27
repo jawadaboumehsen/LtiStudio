@@ -26,7 +26,6 @@ import org.ide.lti.core.domain.usecase.target.CreateTargetScaffoldUseCase
 import org.ide.lti.core.domain.usecase.target.DeleteTargetUseCase
 import org.ide.lti.core.domain.usecase.target.DuplicateTargetUseCase
 import org.ide.lti.core.domain.usecase.target.GetAvailableTargetsUseCase
-import org.ide.lti.core.domain.usecase.target.GetSelectedTargetUseCase
 import org.ide.lti.core.domain.usecase.target.SaveTargetConfigurationUseCase
 import org.ide.lti.core.domain.usecase.target.SelectTargetUseCase
 import org.ide.lti.core.domain.usecase.target.UpdateTargetUseCase
@@ -133,8 +132,6 @@ class ConfigurationViewModelTest {
 
         val viewModel = ConfigurationViewModel(
             getAvailableTargetsUseCase = GetAvailableTargetsUseCase(repo),
-            getSelectedTargetUseCase = GetSelectedTargetUseCase(repo),
-            selectTargetUseCase = selectTarget,
             createTargetScaffoldUseCase = createScaffold,
             duplicateTargetUseCase = duplicateTarget,
             deleteTargetUseCase = deleteTarget,
@@ -471,8 +468,6 @@ class ConfigurationViewModelTest {
 
             val viewModel = ConfigurationViewModel(
                 getAvailableTargetsUseCase = GetAvailableTargetsUseCase(repo),
-                getSelectedTargetUseCase = GetSelectedTargetUseCase(repo),
-                selectTargetUseCase = selectTarget,
                 createTargetScaffoldUseCase = createScaffold,
                 duplicateTargetUseCase = duplicateTarget,
                 deleteTargetUseCase = deleteTarget,

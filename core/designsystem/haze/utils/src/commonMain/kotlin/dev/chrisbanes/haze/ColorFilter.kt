@@ -20,4 +20,4 @@ import androidx.compose.ui.graphics.ColorFilter
  * nativeColorFilter property.
  */
 @InternalHazeApi
-public expect fun ColorFilter.toPlatformColorFilter(): PlatformColorFilter
+expect fun ColorFilter.toPlatformColorFilter(): PlatformColorFilter

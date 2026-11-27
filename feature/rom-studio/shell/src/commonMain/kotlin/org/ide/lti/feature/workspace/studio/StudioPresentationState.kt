@@ -23,12 +23,12 @@ import org.ide.lti.core.model.studio.StudioPresentation
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
 
-public sealed interface StudioEntry {
-    public data class Overview(val reason: StudioEntryReason) : StudioEntry
-    public data class Editor(val stageId: StageId, val objectId: String, val reason: StudioEntryReason) : StudioEntry
+sealed interface StudioEntry {
+    data class Overview(val reason: StudioEntryReason) : StudioEntry
+    data class Editor(val stageId: StageId, val objectId: String, val reason: StudioEntryReason) : StudioEntry
 }
 
-public enum class StudioEntryReason {
+enum class StudioEntryReason {
     DEEP_LINK,
     RESTORED,
     NEW_WORKSPACE,
@@ -56,7 +56,7 @@ public enum class StudioEntryReason {
  *    first subobject and [StudioEntryReason.OBJECT_NOT_FOUND]; stored stage no longer valid -> [StudioEntry.Overview]
  *    with [StudioEntryReason.STAGE_NOT_FOUND].
  */
-public fun resolveStudioEntry(
+fun resolveStudioEntry(
     presentation: StudioPresentation?,
     requestedStageId: StageId?,
     requestedObjectId: String?,
@@ -153,7 +153,7 @@ private fun resolveRestorationOrFallback(
  * Selecting a stage or object is presentation only - it must never start work,
  * mutate a snapshot, or reset a draft.
  */
-public fun StudioPresentation.withEditor(stageId: StageId, objectId: String): StudioPresentation = copy(
+fun StudioPresentation.withEditor(stageId: StageId, objectId: String): StudioPresentation = copy(
     hasOpened = true,
     editorStageId = stageId,
     editorObjectId = objectId,
@@ -163,7 +163,7 @@ public fun StudioPresentation.withEditor(stageId: StageId, objectId: String): St
 /**
  * Returns a copy of this presentation state marked as being in Overview mode while preserving the last editor stage.
  */
-public fun StudioPresentation.withOverview(): StudioPresentation = copy(
+fun StudioPresentation.withOverview(): StudioPresentation = copy(
     hasOpened = true,
     inOverview = true,
 )
@@ -171,7 +171,7 @@ public fun StudioPresentation.withOverview(): StudioPresentation = copy(
 /**
  * Returns a copy of this presentation state with the navigator width clamped to 200..360.
  */
-public fun StudioPresentation.withNavigatorWidth(width: Int): StudioPresentation = copy(
+fun StudioPresentation.withNavigatorWidth(width: Int): StudioPresentation = copy(
     navigatorWidth = width.coerceIn(
         StudioPresentation.MIN_NAVIGATOR_WIDTH,
         StudioPresentation.MAX_NAVIGATOR_WIDTH,
@@ -179,19 +179,19 @@ public fun StudioPresentation.withNavigatorWidth(width: Int): StudioPresentation
 )
 
 @Immutable
-public sealed interface DisplayValue {
-    public data class Available(val text: String) : DisplayValue
-    public data class Unavailable(val reason: String) : DisplayValue
+sealed interface DisplayValue {
+    data class Available(val text: String) : DisplayValue
+    data class Unavailable(val reason: String) : DisplayValue
 }
 
-public enum class GlobalDestination {
+enum class GlobalDestination {
     Setup,
     Workspace,
     Settings,
     PluginManager,
 }
 
-public enum class WorkspaceSection {
+enum class WorkspaceSection {
     Overview,
     RomConfig,
     RunHistory,
@@ -202,29 +202,29 @@ public enum class WorkspaceSection {
 }
 
 @Immutable
-public sealed interface OperationUiState {
-    public data object Idle : OperationUiState
+sealed interface OperationUiState {
+    data object Idle : OperationUiState
 
-    public data class Running(val generation: Long, val startedFromRevision: Long) : OperationUiState
+    data class Running(val generation: Long, val startedFromRevision: Long) : OperationUiState
 
-    public data class Succeeded(val generation: Long, val completedRevision: Long, val message: String? = null) :
+    data class Succeeded(val generation: Long, val completedRevision: Long, val message: String? = null) :
         OperationUiState
 
-    public data class Failed(val generation: Long, val startedFromRevision: Long, val userMessage: String) :
+    data class Failed(val generation: Long, val startedFromRevision: Long, val userMessage: String) :
         OperationUiState
 }
 
 @Immutable
-public sealed interface ConnectionUiState {
-    public data object Connecting : ConnectionUiState
-    public data class Connected(val target: String) : ConnectionUiState
-    public data class Disconnected(val reason: String? = null) : ConnectionUiState
+sealed interface ConnectionUiState {
+    data object Connecting : ConnectionUiState
+    data class Connected(val target: String) : ConnectionUiState
+    data class Disconnected(val reason: String? = null) : ConnectionUiState
 }
 
 @Immutable
-public sealed interface ActivityUiState {
-    public data object Idle : ActivityUiState
-    public data class Active(val description: String, val progress: Float? = null) : ActivityUiState
+sealed interface ActivityUiState {
+    data object Idle : ActivityUiState
+    data class Active(val description: String, val progress: Float? = null) : ActivityUiState
 }
 
 /**
@@ -246,7 +246,7 @@ internal fun runActivity(run: BuildRun?, titleOf: (StageId) -> String?): Activit
 }
 
 @Immutable
-public data class TargetContextUi(
+data class TargetContextUi(
     val targetId: DisplayValue,
     val profile: DisplayValue,
     val revision: DisplayValue,
@@ -254,7 +254,7 @@ public data class TargetContextUi(
 )
 
 @Immutable
-public data class PipelineRailItemUi(
+data class PipelineRailItemUi(
     val stageId: StageId,
     val position: Int,
     val label: String,
@@ -267,14 +267,14 @@ public data class PipelineRailItemUi(
 )
 
 @Immutable
-public data class IdeStatusUiState(
+data class IdeStatusUiState(
     val problemCount: Int = 0,
     val activity: ActivityUiState = ActivityUiState.Idle,
     val connection: ConnectionUiState = ConnectionUiState.Disconnected(),
 )
 
 @Immutable
-public data class WorkspaceShellUiState(
+data class WorkspaceShellUiState(
     val globalDestination: GlobalDestination = GlobalDestination.Workspace,
     val targetContext: TargetContextUi? = null,
     val hasUnsavedChanges: Boolean = false,
@@ -301,7 +301,7 @@ public data class WorkspaceShellUiState(
     }
 }
 
-public fun createDefaultPipelineRailItems(
+fun createDefaultPipelineRailItems(
     selectedStageId: StageId? = null,
     descriptors: List<StageDescriptor> = CanonicalStageDescriptors.ALL,
 ): List<PipelineRailItemUi> = descriptors.mapIndexed { index, stage ->
@@ -338,7 +338,7 @@ internal fun ValidationReport.blocks(stage: StageId?): Boolean = errors.any { er
  * Stages open in pipeline order: Acquire once the device configuration has no errors, and every later stage once
  * the stage just before it is configured (and open itself). A locked stage says what to finish first.
  */
-public fun lockStages(items: List<PipelineRailItemUi>, report: ValidationReport): List<PipelineRailItemUi> {
+fun lockStages(items: List<PipelineRailItemUi>, report: ValidationReport): List<PipelineRailItemUi> {
     var blocker: String? = "the device configuration".takeIf { report.blocks(null) }
     return items.map { item ->
         val gated = item.copy(isEnabled = blocker == null, disabledReason = blocker?.let { "Finish $it first" })

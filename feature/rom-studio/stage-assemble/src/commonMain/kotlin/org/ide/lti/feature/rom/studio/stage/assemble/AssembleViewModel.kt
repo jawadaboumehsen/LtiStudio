@@ -24,8 +24,8 @@ import org.ide.lti.core.model.target.TargetDevice
 import org.ide.lti.core.model.workspace.AssemblySettings
 import org.ide.lti.core.model.workspace.SigningPolicy
 
-public class AssembleViewModel(
-    public val workspaceId: String,
+class AssembleViewModel(
+    val workspaceId: String,
     initialSettings: AssemblySettings? = null,
     store: WorkspaceSettingsStore? = null,
     boot: BootWorkbench? = null,
@@ -35,7 +35,7 @@ public class AssembleViewModel(
     pickFile: suspend () -> String? = { DialogUtils.selectFile()?.path },
 ) : ViewModel() {
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -46,16 +46,16 @@ public class AssembleViewModel(
         write = { snapshot, value -> snapshot.copy(assembly = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<AssemblySettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<AssemblySettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
-    public val bootPane: BootPaneModel = BootPaneModel(
+    val bootPane: BootPaneModel = BootPaneModel(
         scope = viewModelScope,
         workspaceId = workspaceId,
         boot = boot,
@@ -68,7 +68,7 @@ public class AssembleViewModel(
         avbKeyRef = { store?.current(workspaceId)?.build?.signing?.avbKeyRef ?: SigningPolicy().avbKeyRef },
     )
 
-    public val imagePane: ImagePaneModel = ImagePaneModel(
+    val imagePane: ImagePaneModel = ImagePaneModel(
         scope = viewModelScope,
         workspaceId = workspaceId,
         images = images,
@@ -79,7 +79,7 @@ public class AssembleViewModel(
         coverageRules = { store?.current(workspaceId)?.customization?.coverageRules.orEmpty() },
     )
 
-    public fun updateSettings(updated: AssemblySettings) {
+    fun updateSettings(updated: AssemblySettings) {
         sync.update(updated)
     }
 }

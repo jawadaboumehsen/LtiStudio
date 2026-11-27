@@ -16,54 +16,54 @@ import org.ide.lti.core.model.workspace.Workspace
 /**
  * Port for managing destructive-tool backup records and index under `restore/` in a workspace (FR-038).
  */
-public interface RestorePointStore {
-    public suspend fun readIndex(workspace: Workspace): RestoreIndex
-    public suspend fun writeIndex(workspace: Workspace, index: RestoreIndex)
-    public suspend fun addRestorePoint(workspace: Workspace, point: RestorePoint)
-    public suspend fun updateRestorePointState(workspace: Workspace, id: String, state: RestorePointState)
+interface RestorePointStore {
+    suspend fun readIndex(workspace: Workspace): RestoreIndex
+    suspend fun writeIndex(workspace: Workspace, index: RestoreIndex)
+    suspend fun addRestorePoint(workspace: Workspace, point: RestorePoint)
+    suspend fun updateRestorePointState(workspace: Workspace, id: String, state: RestorePointState)
 }
 
 /**
  * Port for reading and persisting user acknowledgements per workspace (FR-035).
  */
-public interface AckStore {
-    public suspend fun readAcknowledgements(workspace: Workspace): Acknowledgements
-    public suspend fun acknowledge(workspace: Workspace, featureId: String, acceptedAt: String): Acknowledgements
-    public suspend fun isAcknowledged(workspace: Workspace, featureId: String): Boolean
+interface AckStore {
+    suspend fun readAcknowledgements(workspace: Workspace): Acknowledgements
+    suspend fun acknowledge(workspace: Workspace, featureId: String, acceptedAt: String): Acknowledgements
+    suspend fun isAcknowledged(workspace: Workspace, featureId: String): Boolean
 }
 
 /**
  * Result of attempting to acquire a workspace editing job lock.
  */
-public sealed interface LockResult {
-    public data class Acquired(val handle: JobLockHandle) : LockResult
-    public data class Locked(val holderName: String) : LockResult
+sealed interface LockResult {
+    data class Acquired(val handle: JobLockHandle) : LockResult
+    data class Locked(val holderName: String) : LockResult
 }
 
 /**
  * An active lock handle on a workspace.
  */
-public interface JobLockHandle {
-    public val holderName: String
-    public val workspace: Workspace
-    public suspend fun release()
+interface JobLockHandle {
+    val holderName: String
+    val workspace: Workspace
+    suspend fun release()
 }
 
 /**
  * Mutual exclusion for editing operations on a workspace (FR-039).
  * Only one editing job per workspace may run at a time; blocked attempts name the current holder.
  */
-public interface JobLock {
-    public suspend fun acquire(workspace: Workspace, holderName: String): LockResult
-    public suspend fun currentHolder(workspace: Workspace): String?
-    public suspend fun release(workspace: Workspace, holderName: String? = null)
+interface JobLock {
+    suspend fun acquire(workspace: Workspace, holderName: String): LockResult
+    suspend fun currentHolder(workspace: Workspace): String?
+    suspend fun release(workspace: Workspace, holderName: String? = null)
 }
 
 /**
  * Execute [block] holding the workspace [JobLock]. If locked, invokes [onLocked] with the blocking holder name.
  * If lock is acquired, executes [block] and guarantees lock release on completion, cancellation, or failure.
  */
-public suspend fun <T> JobLock.withLock(
+suspend fun <T> JobLock.withLock(
     workspace: Workspace,
     holderName: String,
     onLocked: (holderName: String) -> T,

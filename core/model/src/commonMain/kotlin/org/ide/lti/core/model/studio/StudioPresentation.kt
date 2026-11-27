@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 import org.ide.lti.core.model.run.StageId
 
 @Serializable
-public data class ScrollAnchor(val anchorId: String, val offset: Int = 0)
+data class ScrollAnchor(val anchorId: String, val offset: Int = 0)
 
 /**
  * Transient and persisted presentation state for ROM Setup Studio per workspace.
@@ -25,7 +25,7 @@ public data class ScrollAnchor(val anchorId: String, val offset: Int = 0)
  * [navigatorWidth] is clamped to 200..360 on read and on write.
  */
 @Serializable
-public data class StudioPresentation(
+data class StudioPresentation(
     val workspaceId: String,
     val hasOpened: Boolean = false,
     val editorStageId: StageId? = null,
@@ -36,9 +36,9 @@ public data class StudioPresentation(
     val lastFocusId: String? = null,
     val inOverview: Boolean = (editorStageId == null),
 ) {
-    public companion object {
-        public const val MIN_NAVIGATOR_WIDTH: Int = 200
-        public const val MAX_NAVIGATOR_WIDTH: Int = 360
-        public const val DEFAULT_NAVIGATOR_WIDTH: Int = 240
+    companion object {
+        const val MIN_NAVIGATOR_WIDTH: Int = 200
+        const val MAX_NAVIGATOR_WIDTH: Int = 360
+        const val DEFAULT_NAVIGATOR_WIDTH: Int = 240
     }
 }

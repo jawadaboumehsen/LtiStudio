@@ -1,42 +1,42 @@
 package io.ltirom.tooling.core
 
-public data class AdbSerial(val value: String) {
+data class AdbSerial(val value: String) {
     init {
         require(value.isNotBlank()) { "ADB serial cannot be blank" }
     }
 }
 
-public data class FastbootSerial(val value: String) {
+data class FastbootSerial(val value: String) {
     init {
         require(value.isNotBlank()) { "Fastboot serial cannot be blank" }
     }
 }
 
-public enum class DeviceState(val transportName: String) {
+enum class DeviceState(val transportName: String) {
     DEVICE("device"),
     RECOVERY("recovery"),
     SIDELOAD("sideload"),
     FASTBOOT("fastboot"),
     FASTBOOTD("fastbootd");
 
-    public companion object {
-        public fun fromTransportNameOrNull(name: String): DeviceState? {
+    companion object {
+        fun fromTransportNameOrNull(name: String): DeviceState? {
             return entries.firstOrNull { it.transportName.equals(name, ignoreCase = true) }
         }
     }
 }
 
-public enum class Slot {
+enum class Slot {
     A, B, NONE;
 
-    public fun suffix(): String = when (this) {
+    fun suffix(): String = when (this) {
         A -> "_a"
         B -> "_b"
         NONE -> ""
     }
 
-    public companion object {
-        public fun fromSuffixOrNull(suffix: String): Slot? {
+    companion object {
+        fun fromSuffixOrNull(suffix: String): Slot? {
             return when (suffix.lowercase()) {
                 "_a", "a" -> A
                 "_b", "b" -> B
@@ -47,12 +47,12 @@ public enum class Slot {
     }
 }
 
-public enum class PartitionType {
+enum class PartitionType {
     LOGICAL,
     PHYSICAL
 }
 
-public data class PartitionName(val rawName: String) {
+data class PartitionName(val rawName: String) {
     val baseName: String
     val slot: Slot
 
@@ -75,23 +75,23 @@ public data class PartitionName(val rawName: String) {
         }
     }
 
-    public fun withSlot(newSlot: Slot): PartitionName {
+    fun withSlot(newSlot: Slot): PartitionName {
         return PartitionName(baseName + newSlot.suffix())
     }
 }
 
-public data class PartitionConstraint(
+data class PartitionConstraint(
     val name: PartitionName,
     val type: PartitionType,
     val allowlistedForFlash: Boolean
 ) {
-    public companion object {
+    companion object {
         private val ALLOWLISTED_PARTITIONS = setOf(
             "boot", "init_boot", "vendor_boot", "dtbo", "vbmeta", "vbmeta_system", "vbmeta_vendor",
             "system", "system_ext", "vendor", "product", "odm", "recovery", "super"
         )
 
-        public fun getFor(name: PartitionName): PartitionConstraint {
+        fun getFor(name: PartitionName): PartitionConstraint {
             val isLogical = name.baseName in setOf("system", "system_ext", "vendor", "product", "odm")
             val isAllowlisted = name.baseName in ALLOWLISTED_PARTITIONS
 

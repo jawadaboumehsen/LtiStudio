@@ -13,21 +13,21 @@ package org.ide.lti.core.domain.pipeline.toolkit
  * How the dynamic partitions fill the super group: each partition's built
  * image, else its stock image as the estimate, against the group's bytes.
  */
-public data class SuperBudget(val rows: List<Row>, val groupBytes: Long) {
+data class SuperBudget(val rows: List<Row>, val groupBytes: Long) {
     /** [bytes] is the built image, or the stock one when [estimated]; null when neither exists. */
-    public data class Row(val partition: String, val filesystem: String, val bytes: Long?, val estimated: Boolean)
+    data class Row(val partition: String, val filesystem: String, val bytes: Long?, val estimated: Boolean)
 
-    public val usedBytes: Long get() = rows.sumOf { it.bytes ?: 0L }
-    public val freeBytes: Long get() = groupBytes - usedBytes
-    public val fits: Boolean get() = freeBytes >= 0
+    val usedBytes: Long get() = rows.sumOf { it.bytes ?: 0L }
+    val freeBytes: Long get() = groupBytes - usedBytes
+    val fits: Boolean get() = freeBytes >= 0
 
     /** True when a row is a stock estimate or has no size at all: the real total is known only after a build. */
-    public val estimated: Boolean get() = rows.any { it.estimated || it.bytes == null }
+    val estimated: Boolean get() = rows.any { it.estimated || it.bytes == null }
 
-    public companion object {
+    companion object {
         private const val MIB = 1024L * 1024
 
-        public fun of(
+        fun of(
             partitions: List<String>,
             filesystems: Map<String, String>,
             built: Map<String, Long>,
@@ -42,7 +42,7 @@ public data class SuperBudget(val rows: List<Row>, val groupBytes: Long) {
         )
 
         /** The build's refusal when [sizes] (partition to built bytes) overflow [group] of [groupBytes]. */
-        public fun overflow(sizes: Map<String, Long>, group: String, groupBytes: Long): String? {
+        fun overflow(sizes: Map<String, Long>, group: String, groupBytes: Long): String? {
             val total = sizes.values.sum()
             if (total <= groupBytes) return null
             val largest = sizes.entries.sortedByDescending {

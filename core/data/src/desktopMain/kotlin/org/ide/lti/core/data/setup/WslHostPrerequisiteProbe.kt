@@ -27,7 +27,7 @@ import org.ide.lti.core.model.setup.SystemRequirement
  * missing requirement. A requirement with no line (the script died, wsl.exe failed) is
  * [RequirementStatus.CheckFailed], never assumed present.
  */
-public class WslHostPrerequisiteProbe(
+class WslHostPrerequisiteProbe(
     private val detector: WslEnvironmentDetector = WslEnvironmentDetector(),
     private val cli: WslCliExecutor = WslCliExecutor(),
     private val requirements: List<SystemRequirement> = RequirementCatalog.REQUIREMENTS,

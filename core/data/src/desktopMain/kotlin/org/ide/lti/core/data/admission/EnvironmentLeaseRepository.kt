@@ -22,7 +22,7 @@ import org.ide.lti.core.domain.ports.EnvironmentUse
 import java.nio.file.Files
 import java.nio.file.Path
 
-public class EnvironmentLeaseRepository(storageDir: Path? = null) : EnvironmentLeasePort {
+class EnvironmentLeaseRepository(storageDir: Path? = null) : EnvironmentLeasePort {
 
     private val mutex = Mutex()
     private val leasesByEnv = mutableMapOf<String, MutableList<EnvironmentLease>>()

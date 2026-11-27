@@ -26,13 +26,13 @@ import org.ide.lti.core.model.setup.ToolRef
 import java.util.Base64
 
 @Serializable
-public data class ToolSettingsDto(val schema: Int = 1, val selections: Map<String, ToolSelectionEntryDto> = emptyMap())
+data class ToolSettingsDto(val schema: Int = 1, val selections: Map<String, ToolSelectionEntryDto> = emptyMap())
 
 @Serializable
-public data class ToolSelectionEntryDto(val id: String, val source: ToolSourceDto)
+data class ToolSelectionEntryDto(val id: String, val source: ToolSourceDto)
 
 @Serializable
-public data class ToolSourceDto(
+data class ToolSourceDto(
     val kind: String,
     val repo: String? = null,
     val ref: ToolRefDto? = null,
@@ -45,9 +45,9 @@ public data class ToolSourceDto(
 )
 
 @Serializable
-public data class ToolRefDto(val type: String, val name: String)
+data class ToolRefDto(val type: String, val name: String)
 
-public class ToolSettingsFile(
+class ToolSettingsFile(
     private val runner: RemoteCommandRunner,
     rawBaseDir: String,
     private val json: Json =
@@ -62,7 +62,7 @@ public class ToolSettingsFile(
     private val tmpPath: String = "$baseDir/settings.json.tmp"
 
     /** The picks that could be read, and the groups whose entry could not. */
-    public data class Settings(
+    data class Settings(
         val picks: Map<ToolGroupId, Pair<String, ResolvedSource>>,
         val unreadable: Set<ToolGroupId> = emptySet(),
     )
@@ -76,7 +76,7 @@ public class ToolSettingsFile(
     )
 
     /** Every pick, or a failure if any entry is unusable: never "no pick" for something the user chose. */
-    public suspend fun readSelections(): Result<Map<ToolGroupId, Pair<String, ResolvedSource>>> =
+    suspend fun readSelections(): Result<Map<ToolGroupId, Pair<String, ResolvedSource>>> =
         readSettings().mapCatching { settings ->
             if (settings.unreadable.isNotEmpty()) throw unreadableError(settings.unreadable)
             settings.picks
@@ -87,7 +87,7 @@ public class ToolSettingsFile(
      * needing an explicit choice) instead of failing every group. An unreadable file is still a failure.
      */
     @Suppress("ReturnCount")
-    public suspend fun readSettings(): Result<Settings> {
+    suspend fun readSettings(): Result<Settings> {
         val script = "if [ -f ${shellQuote(settingsPath)} ]; then cat ${shellQuote(settingsPath)}; else exit 44; fi"
         val res = runner.execute(script, CommandCategory.SHORT)
         if (res.isFailure) {
@@ -142,7 +142,7 @@ public class ToolSettingsFile(
         settings.picks.toMutableMap()
     }
 
-    public suspend fun record(group: ToolGroupId, versionId: String, source: ResolvedSource): Result<Unit> =
+    suspend fun record(group: ToolGroupId, versionId: String, source: ResolvedSource): Result<Unit> =
         writeLock.withLock {
             val picks = picksForWrite(group).getOrElse { return@withLock Result.failure(it) }
             picks[group] = versionId to source
@@ -150,7 +150,7 @@ public class ToolSettingsFile(
         }
 
     /** Applies [choice] to the saved picks. Record needs the version's [source]; without it nothing is written. */
-    public suspend fun applyChoice(
+    suspend fun applyChoice(
         choice: ChoiceUpdate,
         group: ToolGroupId,
         versionId: String,
@@ -176,7 +176,7 @@ public class ToolSettingsFile(
      * Puts [previous] back as the pick of [group] (none if null) after a change that did not happen. A failure is
      * returned, not dropped: it means the saved pick and the active link now disagree, and the caller must say so.
      */
-    public suspend fun restore(group: ToolGroupId, previous: Pair<String, ResolvedSource>?): Result<Unit> =
+    suspend fun restore(group: ToolGroupId, previous: Pair<String, ResolvedSource>?): Result<Unit> =
         withContext(NonCancellable) {
             try {
                 if (previous != null) record(group, previous.first, previous.second) else clear(group)
@@ -187,7 +187,7 @@ public class ToolSettingsFile(
             }
         }
 
-    public suspend fun clear(group: ToolGroupId): Result<Unit> = writeLock.withLock {
+    suspend fun clear(group: ToolGroupId): Result<Unit> = writeLock.withLock {
         val picks = picksForWrite(group).getOrElse { return@withLock Result.failure(it) }
         picks.remove(group)
         writeSelections(picks)

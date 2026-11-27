@@ -32,7 +32,7 @@ import org.ide.lti.core.model.run.VerificationState
  * in-flight step processes via executionPort, cleans stage temporary outputs, and guarantees
  * partial artifacts are never marked VERIFIED and no cache keys are written.
  */
-public class CancelRunUseCase(
+class CancelRunUseCase(
     private val runRepository: RunRepository,
     private val executionPort: PipelineExecutionPort,
     private val workspaceRepository: WorkspaceRepository? = null,
@@ -41,7 +41,7 @@ public class CancelRunUseCase(
     private val isDriving: (String) -> Boolean = { false },
     private val driverStopTimeoutMs: Long = DRIVER_STOP_TIMEOUT_MS,
 ) {
-    public suspend operator fun invoke(workspaceId: String, runId: String? = null): Result<BuildRun> = runCatching {
+    suspend operator fun invoke(workspaceId: String, runId: String? = null): Result<BuildRun> = runCatching {
         val run = (if (runId != null) runRepository.getRun(runId) else runRepository.latestActive(workspaceId))
             ?: error("No active run found for workspace $workspaceId")
         require(run.workspaceId == workspaceId) { "Run ${run.id} belongs to another workspace." }

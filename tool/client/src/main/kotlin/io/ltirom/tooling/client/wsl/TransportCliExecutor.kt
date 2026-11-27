@@ -15,7 +15,7 @@ import java.nio.charset.Charset
  * - Forbids shell-string executions (`bash -c`, `sh -c`).
  * - Applies non-interactive root elevation (`sudo -n`) when user == "root".
  */
-public class TransportCliExecutor(
+class TransportCliExecutor(
     private val transport: RemoteTransportPort,
     /** The user's home when the caller knows it; the root exists for every WSL user. */
     private val defaultWorkingDirectory: String = "/",

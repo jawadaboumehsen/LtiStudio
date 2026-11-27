@@ -26,7 +26,7 @@ import org.ide.lti.core.model.run.RunState
 
 /** What the workspace's successful builds produced, newest build first: the package, its manifest and checksums. */
 @Composable
-public fun ArtifactsPanel(runs: List<BuildRun>, modifier: Modifier = Modifier) {
+fun ArtifactsPanel(runs: List<BuildRun>, modifier: Modifier = Modifier) {
     val typography = GlassTheme.typography
     val builds = runs.filter { it.state == RunState.SUCCEEDED && it.artifacts.isNotEmpty() }
         .sortedByDescending { it.startedAt }

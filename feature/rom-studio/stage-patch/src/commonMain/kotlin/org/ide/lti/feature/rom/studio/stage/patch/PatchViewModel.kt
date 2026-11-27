@@ -53,7 +53,7 @@ import org.ide.lti.core.model.workspace.CustomizationSettings
 import org.ide.lti.core.model.workspace.PluginLockfileEntry
 
 /** The installed plugins and the plans of those the workspace enables; empty until loaded. */
-public data class PatchFacts(
+data class PatchFacts(
     val loaded: Boolean = false,
     val installed: List<InstalledRecord> = emptyList(),
     /** Plan templates by `publisher:id`, for the enabled plugins. */
@@ -70,8 +70,8 @@ public data class PatchFacts(
     val canChangePlugins: Boolean get() = loaded && !loading && loadError == null
 }
 
-public class PatchViewModel(
-    public val workspaceId: String,
+class PatchViewModel(
+    val workspaceId: String,
     initialSettings: CustomizationSettings? = null,
     private val store: WorkspaceSettingsStore? = null,
     private val plugins: PluginInstallPort? = null,
@@ -88,13 +88,13 @@ public class PatchViewModel(
     private val toggles = Mutex()
 
     /** The mod lab's last answer: each enabled mod's operations checked against the assembled tree. */
-    public val lab: StateFlow<LabState> = _lab.asStateFlow()
+    val lab: StateFlow<LabState> = _lab.asStateFlow()
 
     /**
      * Checks every operation of the enabled mods together, as the build would apply them; nothing is written. With
      * [decode], APK/JAR edits are applied to their decoded packages too.
      */
-    public fun checkTogether(decode: Boolean = false) {
+    fun checkTogether(decode: Boolean = false) {
         val checks = preflight ?: return
         val checkedSettings = settings.value
         labJob?.cancel()
@@ -137,10 +137,10 @@ public class PatchViewModel(
     private val _scriptCheck = MutableStateFlow<Map<String, String>>(emptyMap())
 
     /** The last check of each script by name: `ok`, or the shell's syntax error. */
-    public val scriptCheck: StateFlow<Map<String, String>> = _scriptCheck.asStateFlow()
+    val scriptCheck: StateFlow<Map<String, String>> = _scriptCheck.asStateFlow()
 
     /** Runs `sh -n` on [name]'s content as the build does before running any script. */
-    public fun checkScript(name: String) {
+    fun checkScript(name: String) {
         val workbench = content ?: return
         val script = settings.value.scripts.firstOrNull { it.name == name } ?: return
         viewModelScope.launch {
@@ -155,7 +155,7 @@ public class PatchViewModel(
         }
     }
 
-    public val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
+    val targetDevice: TargetDevice = DefaultTargetCatalog.PQ84P01_DEFAULT
 
     private val sync = StageSettingsSync(
         scope = viewModelScope,
@@ -166,17 +166,17 @@ public class PatchViewModel(
         write = { snapshot, value -> snapshot.copy(customization = value) },
     )
 
-    public val settingsLoading: StateFlow<Boolean> = sync.loading
-    public val settings: StateFlow<CustomizationSettings> = sync.settings
+    val settingsLoading: StateFlow<Boolean> = sync.loading
+    val settings: StateFlow<CustomizationSettings> = sync.settings
 
     /** Why the last automatic save failed (for example while a build runs), or null. */
-    public val saveError: StateFlow<String?> = sync.saveError
+    val saveError: StateFlow<String?> = sync.saveError
 
     /** The workspace's own device once loaded; null until then. */
-    public val device: StateFlow<TargetDevice?> = sync.device
+    val device: StateFlow<TargetDevice?> = sync.device
 
     private val _facts = MutableStateFlow(PatchFacts())
-    public val facts: StateFlow<PatchFacts> = _facts.asStateFlow()
+    val facts: StateFlow<PatchFacts> = _facts.asStateFlow()
 
     init {
         // The saved settings load after this view model starts.
@@ -211,14 +211,14 @@ public class PatchViewModel(
         }
     }
 
-    public fun updateSettings(updated: CustomizationSettings) {
+    fun updateSettings(updated: CustomizationSettings) {
         val before = settings.value.scripts.associate { it.name to it.content }
         val after = updated.scripts.associate { it.name to it.content }
         _scriptCheck.update { checks -> checks.filterKeys { before[it] == after[it] } }
         sync.update(updated)
     }
 
-    public fun refresh() {
+    fun refresh() {
         val port = plugins ?: return
         refreshJob?.cancel()
         _facts.update { it.copy(loading = true, loadError = null) }
@@ -256,7 +256,7 @@ public class PatchViewModel(
      * Enables or disables `publisher:id`. The enabled list is re-locked against the installed plugins, which
      * adds dependencies (before what needs them) and refuses missing or conflicting ones.
      */
-    public fun toggle(key: String) {
+    fun toggle(key: String) {
         if (!_facts.value.canChangePlugins) return
         viewModelScope.launch { toggles.withLock { toggleSelected(key) } }
     }
@@ -388,4 +388,4 @@ internal fun InstalledRecord.matches(pin: PluginLockfileEntry): Boolean = key ==
     identity.version == pin.version && (pin.contentDigest.isEmpty() || identity.contentDigest == pin.contentDigest)
 
 /** The mod lab on screen: checking, its [result], or why it could not run. */
-public data class LabState(val checking: Boolean = false, val result: ModLab? = null, val error: String? = null)
+data class LabState(val checking: Boolean = false, val result: ModLab? = null, val error: String? = null)

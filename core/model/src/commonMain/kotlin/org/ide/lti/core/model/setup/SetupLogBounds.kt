@@ -17,11 +17,11 @@ package org.ide.lti.core.model.setup
  * "Each producer and presentation buffer retains at most 10,000 lines and 8 MiB of UTF-8 payload;
  * each line is at most 16 KiB including its truncation marker."
  */
-public object SetupLogBounds {
-    public const val MAX_BUFFER_LINES: Int = 10_000
-    public const val MAX_PAYLOAD_BYTES: Long = 8L * 1024L * 1024L
-    public const val MAX_LINE_BYTES: Int = 16 * 1024
-    public const val TRUNCATION_MARKER: String = "... [truncated]"
+object SetupLogBounds {
+    const val MAX_BUFFER_LINES: Int = 10_000
+    const val MAX_PAYLOAD_BYTES: Long = 8L * 1024L * 1024L
+    const val MAX_LINE_BYTES: Int = 16 * 1024
+    const val TRUNCATION_MARKER: String = "... [truncated]"
 
     private const val ONE_BYTE_MAX = 0x7F
     private const val TWO_BYTE_MAX = 0x7FF
@@ -33,11 +33,7 @@ public object SetupLogBounds {
      * Truncates [text] so its UTF-8 encoding is at most [maxBytes] including [marker], cutting only on
      * code point boundaries (a surrogate pair is kept or dropped as a unit, never halved).
      */
-    public fun truncateToUtf8Bytes(
-        text: String,
-        maxBytes: Int = MAX_LINE_BYTES,
-        marker: String = TRUNCATION_MARKER,
-    ): String {
+    fun truncateToUtf8Bytes(text: String, maxBytes: Int = MAX_LINE_BYTES, marker: String = TRUNCATION_MARKER): String {
         if (text.encodeToByteArray().size <= maxBytes) return text
 
         val availableBytes = maxBytes - marker.encodeToByteArray().size

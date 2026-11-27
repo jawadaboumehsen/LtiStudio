@@ -3,13 +3,13 @@ package io.ltirom.tooling.core
 import java.io.File
 import java.security.MessageDigest
 
-public data class ToolFingerprint(
+data class ToolFingerprint(
     val sha256: String,
     val helpHash: String,
     val platform: PlatformIdentity
 ) {
-    public companion object {
-        public fun computeFor(file: File): ToolFingerprint {
+    companion object {
+        fun computeFor(file: File): ToolFingerprint {
             require(file.isFile) { "Cannot compute fingerprint for non-existent file: ${file.absolutePath}" }
 
             val sha256 = computeSha256(file)
