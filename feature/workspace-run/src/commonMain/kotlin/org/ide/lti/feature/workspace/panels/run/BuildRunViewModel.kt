@@ -348,7 +348,7 @@ class BuildRunViewModel(
         val ws = _uiState.value.currentWorkspace
         val run = _uiState.value.latestRun
         val wb = runner
-        if (ws == null || run == null || wb == null) return
+        if (ws == null || run == null || wb == null || _uiState.value.isVerifyingProvenance) return
         viewModelScope.launch {
             _uiState.update { it.copy(isVerifyingProvenance = true, errorMessage = null) }
             val result = ProvenanceVerifier.readAndVerify(wb, ws.id, run.id)

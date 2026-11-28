@@ -9,35 +9,25 @@
  */
 package org.ide.lti.core.ui.pipeline
 
-import org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner
+import org.ide.lti.core.domain.pipeline.macro.MacroRecipe
+import org.ide.lti.core.domain.pipeline.macro.MacroStep
 import org.ide.lti.core.domain.pipeline.macro.MacroStepStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class MacroPipelineStudioSheetTest {
-
-    @Test
-    fun testDefaultFlashRecipeStructure() {
-        val recipe = MacroPipelineRunner.createDefaultFlashRecipe()
-        assertEquals(6, recipe.totalSteps)
-        assertEquals(0, recipe.passedSteps)
-        assertFalse(recipe.isComplete)
-        assertFalse(recipe.hasFailed)
-
-        val titles = recipe.steps.map { it.title }
-        assertTrue(titles.contains("Extract Payload.bin"))
-        assertTrue(titles.contains("Inject KernelSU"))
-        assertTrue(titles.contains("Repack EROFS Super"))
-        assertTrue(titles.contains("Patch Vbmeta"))
-        assertTrue(titles.contains("Flash Fastbootd"))
-        assertTrue(titles.contains("Reboot Device"))
-    }
+    /** Six steps that succeed, standing in for a recipe made of real actions. */
+    private fun sixStepRecipe() = MacroRecipe(
+        id = "recipe.test",
+        name = "Test recipe",
+        description = "Six steps that succeed",
+        steps = (1..6).map { MacroStep("s$it", "Step $it", "Succeeds", { Result.success(Unit) }) },
+    )
 
     @Test
     fun testRecipeProgressCalculations() {
-        val recipe = MacroPipelineRunner.createDefaultFlashRecipe()
+        val recipe = sixStepRecipe()
         val updatedSteps = recipe.steps.mapIndexed { index, step ->
             if (index < 3) step.copy(status = MacroStepStatus.PASSED) else step
         }

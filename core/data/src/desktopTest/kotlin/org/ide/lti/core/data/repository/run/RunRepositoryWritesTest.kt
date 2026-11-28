@@ -26,6 +26,9 @@ import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageOutcome
+import org.ide.lti.core.model.run.StageState
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,8 +61,14 @@ class RunRepositoryWritesTest {
             return copy
         }
 
-        override suspend fun appendEvents(runId: String, events: List<String>) {}
-        override suspend fun getEvents(runId: String, fromSeq: Long): List<String> = emptyList()
+        val events = mutableMapOf<String, MutableList<String>>()
+
+        override suspend fun appendEvents(runId: String, events: List<String>) {
+            this.events.getOrPut(runId) { mutableListOf() } += events
+        }
+
+        override suspend fun getEvents(runId: String, fromSeq: Long): List<String> =
+            events[runId].orEmpty().drop(fromSeq.toInt())
 
         override suspend fun deleteRun(runId: String) {
             if (deleteFails) throw IOException("disk full")
@@ -84,6 +93,38 @@ class RunRepositoryWritesTest {
         startedAt = Instant.fromEpochSeconds(1),
         artifacts = listOf(Artifact(ArtifactKind.FLASHABLE_ZIP, "out/rom.zip", presence = Presence.PRESENT)),
     )
+
+    @Test
+    fun aStageKeepsWhereItsOutputBeganAcrossTheDriversLaterSaves() = runTest {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val repository = RunRepositoryImpl(
+            RunRecordDataSource(MapSettings(), fileStorage = Storage(), ioDispatcher = dispatcher),
+            ioDispatcher = dispatcher,
+        )
+        val acquired = StageOutcome(StageId.FIRMWARE_ACQUISITION, StageState.EXECUTED)
+        val running = finished.copy(
+            id = "run-2",
+            state = RunState.RUNNING,
+            artifacts = emptyList(),
+            stages = listOf(acquired, StageOutcome(StageId.FIRMWARE_EXTRACTION, StageState.PENDING)),
+        )
+        repository.upsert(running)
+        repository.appendEvents(running.id, listOf("a", "b", "c"))
+        val extracting = StageOutcome(StageId.FIRMWARE_EXTRACTION, StageState.RUNNING)
+        repository.upsert(running.copy(stages = listOf(acquired, extracting)))
+        repository.appendEvents(running.id, listOf("d"))
+        // The driver's own copy never carries the index.
+        repository.upsert(
+            running.copy(
+                state = RunState.SUCCEEDED,
+                stages = listOf(acquired, StageOutcome(StageId.FIRMWARE_EXTRACTION, StageState.EXECUTED)),
+            ),
+        )
+
+        val stored = assertNotNull(repository.getRun(running.id))
+        assertEquals(3, stored.stages.single { it.stageId == StageId.FIRMWARE_EXTRACTION }.logStart)
+        assertNull(stored.stages.single { it.stageId == StageId.FIRMWARE_ACQUISITION }.logStart)
+    }
 
     @Test
     fun aFailedDeleteLeavesTheRunWhereItWas() = runTest {

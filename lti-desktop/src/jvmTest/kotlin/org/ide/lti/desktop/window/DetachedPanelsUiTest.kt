@@ -24,7 +24,8 @@ import org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer
 import org.ide.lti.core.domain.copilot.CrashSource
 import org.ide.lti.core.domain.diff.ConfigDiffEngine
 import org.ide.lti.core.domain.partition.explorer.PartitionTreeParser
-import org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner
+import org.ide.lti.core.domain.pipeline.macro.MacroRecipe
+import org.ide.lti.core.domain.pipeline.macro.MacroStep
 import org.ide.lti.core.ui.copilot.BootloopCopilotSheet
 import org.ide.lti.core.ui.diff.PropertyDiffViewer
 import org.ide.lti.core.ui.partition.PartitionExplorerView
@@ -64,7 +65,12 @@ class DetachedPanelsUiTest {
             CrashSource.LOGCAT,
             listOf("03-25 12:00:02.345 1000 1000 F libc : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR)"),
         )
-        val recipe = MacroPipelineRunner.createDefaultFlashRecipe()
+        val recipe = MacroRecipe(
+            id = "recipe.test",
+            name = "Test recipe",
+            description = "One step",
+            steps = listOf(MacroStep("s1", "Step 1", "Succeeds", { Result.success(Unit) })),
+        )
 
         setContent {
             GlassSceneHost(effectsEnabled = false) {

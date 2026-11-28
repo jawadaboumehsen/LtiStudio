@@ -34,49 +34,19 @@ enum class TimelineNodeStatus {
 data class PipelineStageDependencyEdge(val from: StageId, val to: StageId)
 
 /**
- * Canonical DAG dependencies across the 8-stage ROM build pipeline.
- * [StageId.WORK_TREE_ASSEMBLY] fans out into [StageId.DEBLOAT] and [StageId.MODULE_APPLICATION],
- * which both join at [StageId.BUILD_FLASHABLE_ZIP].
+ * How the stages depend on each other: one after another, each on the tree or files the one before it left (Patches
+ * applies to what Debloat left, Build packs what Patches left). Publish is never part of a run.
  */
 object PipelineStageDependencies {
-    val EDGES: List<PipelineStageDependencyEdge> = listOf(
-        PipelineStageDependencyEdge(StageId.FIRMWARE_ACQUISITION, StageId.FIRMWARE_EXTRACTION),
-        PipelineStageDependencyEdge(StageId.FIRMWARE_EXTRACTION, StageId.WORK_TREE_ASSEMBLY),
-        PipelineStageDependencyEdge(StageId.WORK_TREE_ASSEMBLY, StageId.DEBLOAT),
-        PipelineStageDependencyEdge(StageId.WORK_TREE_ASSEMBLY, StageId.MODULE_APPLICATION),
-        PipelineStageDependencyEdge(StageId.DEBLOAT, StageId.BUILD_FLASHABLE_ZIP),
-        PipelineStageDependencyEdge(StageId.MODULE_APPLICATION, StageId.BUILD_FLASHABLE_ZIP),
-        PipelineStageDependencyEdge(StageId.BUILD_FLASHABLE_ZIP, StageId.GENERATE_OTA_MANIFEST),
-        PipelineStageDependencyEdge(StageId.GENERATE_OTA_MANIFEST, StageId.PUBLISH_RELEASE),
-    )
+    val EDGES: List<PipelineStageDependencyEdge> =
+        PipelineStageSequence.ORDER.zipWithNext { from, to -> PipelineStageDependencyEdge(from, to) }
 
-    private val upstreamByStage: Map<StageId, List<StageId>> =
-        EDGES.groupBy({ it.to }, { it.from })
+    fun upstreamOf(stageId: StageId): List<StageId> = EDGES.filter { it.to == stageId }.map { it.from }
 
-    private val downstreamByStage: Map<StageId, List<StageId>> =
-        EDGES.groupBy({ it.from }, { it.to })
+    fun downstreamOf(stageId: StageId): List<StageId> = EDGES.filter { it.from == stageId }.map { it.to }
 
-    fun upstreamOf(stageId: StageId): List<StageId> = upstreamByStage[stageId].orEmpty()
-
-    fun downstreamOf(stageId: StageId): List<StageId> = downstreamByStage[stageId].orEmpty()
-
-    /** Topological depth column (0..6) placing parallel branches on the same column. */
-    fun columnOf(stageId: StageId): Int = when (stageId) {
-        StageId.FIRMWARE_ACQUISITION -> 0
-        StageId.FIRMWARE_EXTRACTION -> 1
-        StageId.WORK_TREE_ASSEMBLY -> 2
-        StageId.DEBLOAT -> 3
-        StageId.MODULE_APPLICATION -> 3
-        StageId.BUILD_FLASHABLE_ZIP -> 4
-        StageId.GENERATE_OTA_MANIFEST -> 5
-        StageId.PUBLISH_RELEASE -> 6
-    }
-
-    /** Vertical lane inside a DAG column (0 for primary trunk, 1 for parallel mod branch). */
-    fun laneOf(stageId: StageId): Int = when (stageId) {
-        StageId.MODULE_APPLICATION -> 1
-        else -> 0
-    }
+    /** The stage's column in the drawing: its place in the run. */
+    fun columnOf(stageId: StageId): Int = PipelineStageSequence.ORDER.indexOf(stageId)
 }
 
 /** Structured timing and outcome model for a single tool invocation inside a stage. */
@@ -129,27 +99,37 @@ data class TimelineAnalysis(
     fun stageNode(stageId: StageId): TimelineStageNode? = stages.firstOrNull { it.stageId == stageId }
 }
 
-/** Filters build console log lines to a clicked [StageId] or [TimelineStepNode]. */
+/** The lines of one stage (or step), and what the reader should know about them when they are not exact. */
+data class FilteredLog(val lines: List<String>, val note: String? = null)
+
+/**
+ * A run's log cut to one stage: from where that stage's output began ([StageOutcome.logStart], recorded as it started)
+ * to where the next stage's began. Log lines do not name their stage, so a run without those starts says so instead
+ * of showing the whole log. A step is the stage's lines naming it, or the whole stage with a note when none does.
+ */
 object TimelineLogFilter {
-    fun filter(logs: List<String>, stageId: StageId?, step: TimelineStepNode? = null): List<String> {
-        if (stageId == null || logs.isEmpty()) return logs
-        val stageLabel = PipelineStageSequence.label(stageId)
-        val stageTokens = listOf(stageId.name, stageLabel, stageId.name.lowercase().replace('_', '-'))
-        val baseMatches = logs
-            .filter { line -> stageTokens.any { token -> line.contains(token, ignoreCase = true) } }
-            .ifEmpty { logs }
-        val stepTokens = step?.let {
-            buildList {
-                add(it.label)
-                it.commandDisplay.split(' ').firstOrNull()?.takeIf { tok -> tok.isNotBlank() }?.let(::add)
+    fun filter(logs: List<String>, run: BuildRun?, stageId: StageId?, step: TimelineStepNode? = null): FilteredLog {
+        val starts = run?.stages.orEmpty().mapNotNull { stage -> stage.logStart?.let { stage.stageId to it } }.toMap()
+        val start = stageId?.let { starts[it] }?.coerceIn(0, logs.size)
+        return when {
+            stageId == null -> FilteredLog(logs)
+            start == null -> FilteredLog(emptyList(), "This run did not record where each stage's output begins.")
+            else -> {
+                val end = starts.values.filter { it > start }.minOrNull()?.coerceAtMost(logs.size) ?: logs.size
+                ofStep(logs.subList(start, end), step)
             }
-        }.orEmpty()
-        return if (stepTokens.isEmpty()) {
-            baseMatches
-        } else {
-            baseMatches
-                .filter { line -> stepTokens.any { token -> line.contains(token, ignoreCase = true) } }
-                .ifEmpty { baseMatches }
+        }
+    }
+
+    /** [stageLines] naming [step] (its label or tool), else the whole stage with a note; all of them without one. */
+    private fun ofStep(stageLines: List<String>, step: TimelineStepNode?): FilteredLog {
+        val tool = step?.commandDisplay?.substringBefore(' ')?.takeIf(String::isNotBlank)
+        val tokens = listOfNotNull(step?.label, tool)
+        val named = stageLines.filter { line -> tokens.any { line.contains(it, ignoreCase = true) } }
+        return when {
+            step == null -> FilteredLog(stageLines)
+            named.isEmpty() -> FilteredLog(stageLines, "No line names ${step.label}: the whole stage is shown.")
+            else -> FilteredLog(named)
         }
     }
 }
@@ -215,7 +195,8 @@ object RunTimeline {
                 stageId = stageId,
                 order = order,
                 column = PipelineStageDependencies.columnOf(stageId),
-                lane = PipelineStageDependencies.laneOf(stageId),
+                // One row: the stages run one after another.
+                lane = 0,
                 label = PipelineStageSequence.label(stageId),
                 status = status,
                 outcomeState = outcome?.state,

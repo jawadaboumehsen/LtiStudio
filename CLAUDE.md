@@ -1232,6 +1232,13 @@ nothing is shown as done before its job finished.
   a dropped APK's signers via `ApkCertInspector` in WSL), Copilot (the newest run's log), super layout (lpdump of the
   stock super). A dropped mod bundle opens Plugins > Import and is inspected, never installed without review.
   Shell scripts kept in Kotlin raw strings with indentation must be `.trimIndent()`ed (`sh` and Python reject it).
+- Stage logs (Run panel and History, clicking a stage in the timeline): log lines do not name their stage, so each
+  stage records where its output begins (`StageOutcome.logStart`, set by `RunRepositoryImpl` when it first sees the
+  stage running and kept across the driver's saves); `TimelineLogFilter` cuts the run's log between two starts. A run
+  without them says so instead of showing the whole log. The timeline draws the stages as the chain they are.
+- Command palette (`DefaultStudioCommands`): every command opens or does something real. Commands for features the
+  palette cannot reach (extract, root patch, rebuild super, phone reboot) and the simulated Macro Pipeline Studio were
+  removed; `MacroPipelineRunner` has no built-in recipe.
 - Size advisor (Build & Sign > Partition layout, `SizeAdvisor`, `SizeAdvisorCard`): per EROFS partition, trial mkfs.erofs builds in workbench/trial (as set now, 64 KiB cluster, dedupe when the kernel is 6.1+, lzma when it decodes it), size and seconds each; advice = fastest whose signed size (`SizeAdvisor.signedBytes`: + AVB hashtree and footer) fits the room left in the super group, else smallest; kept partitions are not tried; "Use this" sets the partition's own compression/dedupe/cluster.
 - Changelog draft (Release metadata > Changelog, `ChangelogDraft`): from work/modules/plan.json (mods and the files they changed), work/debloat/result.json (apps removed, MB freed), build type and property overrides.
 - Phone vs device configuration (Connected phone, `PhoneDeviceCheck`): fastboot product, super size and boot-chain partition sizes measured by fastboot next to device.json, with "Use phone value" into the draft.

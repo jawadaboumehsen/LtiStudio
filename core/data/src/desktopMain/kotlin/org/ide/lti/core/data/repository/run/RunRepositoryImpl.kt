@@ -36,6 +36,7 @@ import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.model.run.StageOutcome
 import org.ide.lti.core.model.run.StageState
 
 /**
@@ -123,8 +124,28 @@ class RunRepositoryImpl(
 
     /** Disk first: memory (what the UI and admission see) only ever shows a record that was saved. */
     private suspend fun persist(run: BuildRun) {
-        runRecordDataSource.saveRun(run)
-        runs.update { it + (run.id to run) }
+        val stamped = withLogStarts(run)
+        runRecordDataSource.saveRun(stamped)
+        runs.update { it + (run.id to stamped) }
+    }
+
+    /**
+     * [run] with each stage's [StageOutcome.logStart]: kept from the saved run (the driver's copy has none), else the
+     * log's length when the stage is first seen running, so the console can show one stage's own lines.
+     */
+    private suspend fun withLogStarts(run: BuildRun): BuildRun {
+        val saved = (runs.value[run.id] ?: runRecordDataSource.getRun(run.id))?.stages.orEmpty()
+            .associate { it.stageId to it.logStart }
+        val running = { stage: StageOutcome -> stage.state == StageState.RUNNING }
+        val missing = run.stages.filter { it.logStart == null && (saved[it.stageId] != null || running(it)) }
+        if (missing.isEmpty()) return run
+        val length = cachedEvents(run.id).size
+        return run.copy(
+            stages = run.stages.map { stage ->
+                val start = stage.logStart ?: saved[stage.stageId] ?: length.takeIf { running(stage) }
+                stage.copy(logStart = start)
+            },
+        )
     }
 
     override suspend fun appendEvents(runId: String, events: List<String>): Unit = withContext(ioDispatcher) {

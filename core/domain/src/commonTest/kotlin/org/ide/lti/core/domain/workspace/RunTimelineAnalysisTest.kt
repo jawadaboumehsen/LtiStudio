@@ -85,41 +85,59 @@ class RunTimelineAnalysisTest {
         assertEquals(TimelineNodeStatus.EXECUTED, buildNode.status)
         assertEquals(60, buildNode.sharePercent)
         assertTrue(buildNode.isBottleneck)
-        assertEquals(listOf(StageId.DEBLOAT, StageId.MODULE_APPLICATION), buildNode.upstream)
-
+        // Build packs what Patches left, which applied to what Debloat left: a chain, not parallel branches.
+        assertEquals(listOf(StageId.MODULE_APPLICATION), buildNode.upstream)
         val debloatNode = analysis.stageNode(StageId.DEBLOAT)!!
         val modNode = analysis.stageNode(StageId.MODULE_APPLICATION)!!
-        assertEquals(debloatNode.column, modNode.column)
-        assertEquals(0, debloatNode.lane)
-        assertEquals(1, modNode.lane)
+        assertEquals(listOf(StageId.DEBLOAT), modNode.upstream)
+        assertEquals(debloatNode.column + 1, modNode.column)
 
         assertEquals("mkfs.erofs system", analysis.slowestSteps.first().label)
         assertEquals(45_000L, analysis.slowestSteps.first().durationMs)
     }
 
     @Test
-    fun timelineLogFilterScopesToStageAndStepWithSafeFallback() {
-        val logs = listOf(
-            "[DEBLOAT] removing YouTube.apk",
-            "[BUILD_FLASHABLE_ZIP] running mkfs.erofs on system",
-            "[BUILD_FLASHABLE_ZIP] running lpmake super.img",
-            "[BUILD_FLASHABLE_ZIP] running signapk out.zip",
+    fun aStageShowsItsOwnLinesAndARunWithoutStartsSaysSo() {
+        val logs = listOf("removing YouTube.apk", "mkfs.erofs system", "lpmake super.img", "signapk out.zip")
+        val run = BuildRun(
+            id = "r",
+            workspaceId = "ws1",
+            snapshotId = "snap1",
+            startedAt = t0,
+            stages = listOf(
+                StageOutcome(StageId.WORK_TREE_ASSEMBLY, StageState.SKIPPED),
+                StageOutcome(StageId.DEBLOAT, StageState.EXECUTED, logStart = 0),
+                StageOutcome(StageId.BUILD_FLASHABLE_ZIP, StageState.EXECUTED, logStart = 1),
+            ),
         )
-        val stageOnly = TimelineLogFilter.filter(logs, StageId.BUILD_FLASHABLE_ZIP)
-        assertEquals(3, stageOnly.size)
+        assertEquals(listOf("removing YouTube.apk"), TimelineLogFilter.filter(logs, run, StageId.DEBLOAT).lines)
+        val built = TimelineLogFilter.filter(logs, run, StageId.BUILD_FLASHABLE_ZIP)
+        assertEquals(logs.drop(1), built.lines)
+        assertEquals(null, built.note)
 
-        val stepNode = TimelineStepNode(
+        val step = TimelineStepNode(
             stageId = StageId.BUILD_FLASHABLE_ZIP,
             index = 0,
-            label = "mkfs.erofs",
-            commandDisplay = "mkfs.erofs system.img",
+            label = "lpmake",
+            commandDisplay = "lpmake --metadata-size 65536",
             durationMs = 1_000L,
             sharePercent = 50,
             startOffsetMs = 0L,
             state = StepState.COMPLETED,
             exitCode = 0,
         )
-        val stepFiltered = TimelineLogFilter.filter(logs, StageId.BUILD_FLASHABLE_ZIP, stepNode)
-        assertEquals(listOf("[BUILD_FLASHABLE_ZIP] running mkfs.erofs on system"), stepFiltered)
+        val build = StageId.BUILD_FLASHABLE_ZIP
+        assertEquals(listOf("lpmake super.img"), TimelineLogFilter.filter(logs, run, build, step).lines)
+        val other = step.copy(label = "zipalign", commandDisplay = "zipalign")
+        val unnamed = TimelineLogFilter.filter(logs, run, build, other)
+        assertEquals(logs.drop(1), unnamed.lines)
+        assertTrue(unnamed.note != null)
+
+        // A run from before stages recorded where their output began: no lines, and why.
+        val unrecorded = run.copy(stages = run.stages.map { it.copy(logStart = null) })
+        val old = TimelineLogFilter.filter(logs, unrecorded, StageId.DEBLOAT)
+        assertEquals(emptyList(), old.lines)
+        assertTrue(old.note != null)
+        assertEquals(logs, TimelineLogFilter.filter(logs, run, null).lines)
     }
 }

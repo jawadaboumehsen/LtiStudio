@@ -28,7 +28,6 @@ object DefaultStudioCommands {
         onOpenSuperBudgeter: () -> Unit = {},
         onOpenDiffViewer: () -> Unit = {},
         onOpenPartitionExplorer: () -> Unit = {},
-        onOpenMacroStudio: () -> Unit = {},
         onToggleSessionDrawer: () -> Unit = {},
         onPopOutCopilot: () -> Unit = onOpenCopilot,
         onPopOutPartitionExplorer: () -> Unit = onOpenPartitionExplorer,
@@ -52,7 +51,6 @@ object DefaultStudioCommands {
                 onOpenSuperBudgeter = onOpenSuperBudgeter,
                 onOpenDiffViewer = onOpenDiffViewer,
                 onOpenPartitionExplorer = onOpenPartitionExplorer,
-                onOpenMacroStudio = onOpenMacroStudio,
             ),
         )
     }
@@ -143,7 +141,6 @@ object DefaultStudioCommands {
         onOpenSuperBudgeter: () -> Unit,
         onOpenDiffViewer: () -> Unit,
         onOpenPartitionExplorer: () -> Unit,
-        onOpenMacroStudio: () -> Unit,
     ): List<StudioCommand> = listOf(
         StudioCommand(
             id = "diag.copilot",
@@ -176,54 +173,6 @@ object DefaultStudioCommands {
             category = CommandCategory.DIAGNOSTICS,
             keywords = listOf("diff", "properties", "build.prop", "system.prop", "rollback", "snapshot"),
             action = onOpenDiffViewer,
-        ),
-        StudioCommand(
-            id = "stage.macro.studio",
-            title = "Open 1-Click Macro Pipeline Studio",
-            description = "Run multi-stage automated build & flash recipes with retry mechanics",
-            category = CommandCategory.STAGE_ACTIONS,
-            keywords = listOf("macro", "pipeline", "studio", "recipe", "fastbootd", "flash", "rebuild"),
-            action = onOpenMacroStudio,
-        ),
-        StudioCommand(
-            id = "stage.extract",
-            title = "Extract Firmware Partitions",
-            description = "Unpack payload.bin, super.img, or sparsechunk archives",
-            category = CommandCategory.STAGE_ACTIONS,
-            keywords = listOf("extract", "payload", "unpack", "sparse", "img"),
-            action = {},
-        ),
-        StudioCommand(
-            id = "stage.patch.root",
-            title = "Inject Root Patch (KernelSU / Magisk)",
-            description = "Patch boot.img with KernelSU GKI or Magisk ramdisk",
-            category = CommandCategory.STAGE_ACTIONS,
-            keywords = listOf("root", "kernelsu", "magisk", "boot", "patch"),
-            action = {},
-        ),
-        StudioCommand(
-            id = "stage.assemble.super",
-            title = "Assemble & Rebuild super.img",
-            description = "Rebuild dynamic partitions container with lpmake",
-            category = CommandCategory.STAGE_ACTIONS,
-            keywords = listOf("assemble", "super", "lpmake", "build"),
-            action = {},
-        ),
-        StudioCommand(
-            id = "device.reboot.bootloader",
-            title = "Reboot Device to Bootloader (Fastboot)",
-            description = "Send adb reboot bootloader to connected target",
-            category = CommandCategory.DEVICE_OPERATIONS,
-            keywords = listOf("reboot", "bootloader", "fastboot", "adb"),
-            action = {},
-        ),
-        StudioCommand(
-            id = "device.reboot.recovery",
-            title = "Reboot Device to Recovery",
-            description = "Send adb reboot recovery to connected target",
-            category = CommandCategory.DEVICE_OPERATIONS,
-            keywords = listOf("reboot", "recovery", "twrp", "orangefox"),
-            action = {},
         ),
     )
 }

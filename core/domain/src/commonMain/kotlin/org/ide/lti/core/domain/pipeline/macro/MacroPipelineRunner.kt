@@ -81,22 +81,4 @@ class MacroPipelineRunner(recipe: MacroRecipe) {
         }
         _currentRecipe.value = recipe.copy(steps = steps)
     }
-
-    companion object {
-        private val NOOP_ACTION: suspend () -> Result<Unit> = { Result.success(Unit) }
-
-        fun createDefaultFlashRecipe(): MacroRecipe = MacroRecipe(
-            id = "recipe.full_flash",
-            name = "1-Click Full ROM Rebuild & Flash",
-            description = "Extract payload -> Inject KernelSU -> Repack Super -> Patch Vbmeta -> Flash -> Reboot",
-            steps = listOf(
-                MacroStep("s1", "Extract Payload.bin", "Extract partitions from OTA payload", NOOP_ACTION),
-                MacroStep("s2", "Inject KernelSU", "Patch GKI boot.img with KernelSU driver", NOOP_ACTION),
-                MacroStep("s3", "Repack EROFS Super", "Build dynamic partition image with lpmake", NOOP_ACTION),
-                MacroStep("s4", "Patch Vbmeta", "Disable AVB verification flags", NOOP_ACTION),
-                MacroStep("s5", "Flash Fastbootd", "Flash super.img and boot.img to device", NOOP_ACTION),
-                MacroStep("s6", "Reboot Device", "Reboot system into Android", NOOP_ACTION),
-            ),
-        )
-    }
 }

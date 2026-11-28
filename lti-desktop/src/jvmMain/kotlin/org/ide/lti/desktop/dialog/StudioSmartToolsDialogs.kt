@@ -11,20 +11,11 @@ package org.ide.lti.desktop.dialog
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
 import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.domain.command.CommandPaletteRegistry
-import org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner
-import org.ide.lti.core.domain.pipeline.macro.MacroStepStatus
 import org.ide.lti.core.ui.command.CommandPaletteModal
-import org.ide.lti.core.ui.pipeline.MacroPipelineStudioSheet
 import org.ide.lti.desktop.window.LiveCopilotPanelBody
 import org.ide.lti.desktop.window.LiveDiffInspectorBody
 import org.ide.lti.desktop.window.LivePartitionExplorerBody
@@ -47,8 +38,6 @@ fun StudioSmartToolsDialogs(
     onDismissDiffViewer: () -> Unit,
     isPartitionExplorerOpen: Boolean,
     onDismissPartitionExplorer: () -> Unit,
-    isMacroStudioOpen: Boolean,
-    onDismissMacroStudio: () -> Unit,
     onPopOutCopilot: (() -> Unit)? = null,
     onPopOutDiffViewer: (() -> Unit)? = null,
     onPopOutPartitionExplorer: (() -> Unit)? = null,
@@ -84,10 +73,6 @@ fun StudioSmartToolsDialogs(
             onDismiss = onDismissPartitionExplorer,
             onPopOut = onPopOutPartitionExplorer,
         )
-    }
-
-    if (isMacroStudioOpen) {
-        MacroStudioDialog(onDismiss = onDismissMacroStudio)
     }
 }
 
@@ -193,47 +178,5 @@ private fun PartitionExplorerDialog(
         },
     ) {
         LivePartitionExplorerBody()
-    }
-}
-
-@Composable
-private fun MacroStudioDialog(onDismiss: () -> Unit) {
-    val coroutineScope = rememberCoroutineScope()
-    val defaultRecipe = remember {
-        MacroPipelineRunner.createDefaultFlashRecipe()
-    }
-    var recipeState by remember { mutableStateOf(defaultRecipe) }
-    var isRunningMacro by remember { mutableStateOf(false) }
-
-    GlassDialog(
-        onDismissRequest = onDismiss,
-        title = "Macro Pipeline Studio",
-        confirmButton = {
-            GlassPrimaryButton(onClick = onDismiss) {
-                Text("Close")
-            }
-        },
-    ) {
-        MacroPipelineStudioSheet(
-            recipe = recipeState,
-            isRunning = isRunningMacro,
-            onRunRecipe = {
-                coroutineScope.launch {
-                    isRunningMacro = true
-                    val runner = MacroPipelineRunner(recipeState)
-                    runner.run()
-                    recipeState = runner.currentRecipe.value
-                    isRunningMacro = false
-                }
-            },
-            onCancelRecipe = { isRunningMacro = false },
-            onRetryStep = { stepId ->
-                recipeState = recipeState.copy(
-                    steps = recipeState.steps.map {
-                        if (it.id == stepId) it.copy(status = MacroStepStatus.PENDING) else it
-                    },
-                )
-            },
-        )
     }
 }

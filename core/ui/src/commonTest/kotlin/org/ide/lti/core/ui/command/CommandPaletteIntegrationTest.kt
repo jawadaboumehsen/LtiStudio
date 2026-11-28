@@ -39,8 +39,6 @@ class CommandPaletteIntegrationTest {
         assertTrue(categories.contains(CommandCategory.PREFERENCES))
         assertTrue(categories.contains(CommandCategory.NAVIGATION))
         assertTrue(categories.contains(CommandCategory.DIAGNOSTICS))
-        assertTrue(categories.contains(CommandCategory.STAGE_ACTIONS))
-        assertTrue(categories.contains(CommandCategory.DEVICE_OPERATIONS))
 
         // Check command actions trigger correctly
         val settingsCmd = allCommands.first { it.id == "nav.settings" }
@@ -65,15 +63,11 @@ class CommandPaletteIntegrationTest {
         assertTrue(bootloopResults.isNotEmpty())
         assertEquals("diag.copilot", bootloopResults.first().id)
 
-        // Search by keyword "kernelsu" -> should return root patch
-        val rootResults = registry.search("kernelsu")
-        assertTrue(rootResults.isNotEmpty())
-        assertEquals("stage.patch.root", rootResults.first().id)
+        // No command claims what the palette cannot do (root patching is not offered here).
+        assertTrue(registry.search("kernelsu").isEmpty())
 
-        // Search by keyword "fastboot" -> should return device operations
-        val fastbootResults = registry.search("fastboot")
-        assertTrue(fastbootResults.isNotEmpty())
-        assertTrue(fastbootResults.any { it.category == CommandCategory.DEVICE_OPERATIONS })
+        // Nor flashing or rebooting a phone (done on the Connected phone card, with its checks).
+        assertTrue(registry.search("fastboot").isEmpty())
 
         // Search by keyword "erofs" -> should return partition explorer
         val erofsResults = registry.search("erofs")

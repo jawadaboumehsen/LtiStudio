@@ -65,6 +65,7 @@ import org.ide.lti.core.domain.workspace.FirmwareArchives
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.ui.copilot.BootloopCopilotSheet
 import org.ide.lti.core.ui.desktop.DetachablePanelId
 import org.ide.lti.core.ui.diff.PropertyDiffViewer
@@ -437,11 +438,13 @@ fun LiveDiffInspectorBody(apkPath: String? = null) {
 
         val run = latestRun
         if (run != null) {
+            // No log in this window: choosing a stage (or a step's logs) shows that stage's details.
+            var selectedStage by remember(run.id) { mutableStateOf<StageId?>(null) }
             InteractiveBuildTimeline(
                 run = run,
-                selectedStageId = null,
-                onSelectStage = {},
-                onJumpToLogs = { _, _ -> },
+                selectedStageId = selectedStage,
+                onSelectStage = { selectedStage = it },
+                onJumpToLogs = { stage, _ -> selectedStage = stage },
             )
             sbomSummary?.let { summary ->
                 Text(

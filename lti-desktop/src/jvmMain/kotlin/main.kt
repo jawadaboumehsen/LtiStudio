@@ -206,7 +206,6 @@ fun main() {
         var isSuperBudgeterOpen by remember { mutableStateOf(false) }
         var isDiffViewerOpen by remember { mutableStateOf(false) }
         var isPartitionExplorerOpen by remember { mutableStateOf(false) }
-        var isMacroStudioOpen by remember { mutableStateOf(false) }
         var isSessionDrawerOpen by remember { mutableStateOf(false) }
         var detachedPanelsState by remember { mutableStateOf(DetachedPanelWindowsState()) }
 
@@ -301,7 +300,6 @@ fun main() {
                 onOpenSuperBudgeter = { isSuperBudgeterOpen = true },
                 onOpenDiffViewer = { isDiffViewerOpen = true },
                 onOpenPartitionExplorer = { isPartitionExplorerOpen = true },
-                onOpenMacroStudio = { isMacroStudioOpen = true },
                 onToggleSessionDrawer = { isSessionDrawerOpen = !isSessionDrawerOpen },
                 onPopOutCopilot = { panelOpener.open(DetachablePanelId.LOGCAT_COPILOT, null) },
                 onPopOutPartitionExplorer = { panelOpener.open(DetachablePanelId.PARTITION_EXPLORER, null) },
@@ -550,8 +548,6 @@ fun main() {
                             onDismissDiffViewer = { isDiffViewerOpen = false },
                             isPartitionExplorerOpen = isPartitionExplorerOpen,
                             onDismissPartitionExplorer = { isPartitionExplorerOpen = false },
-                            isMacroStudioOpen = isMacroStudioOpen,
-                            onDismissMacroStudio = { isMacroStudioOpen = false },
                             onPopOutCopilot = { panelOpener.open(DetachablePanelId.LOGCAT_COPILOT, null) },
                             onPopOutDiffViewer = { panelOpener.open(DetachablePanelId.DIFF_INSPECTOR, null) },
                             onPopOutPartitionExplorer = {

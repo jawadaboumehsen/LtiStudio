@@ -41,6 +41,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.feedback.GlassBanner
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerAction
 import org.ide.lti.core.designsystem.component.feedback.GlassBannerSeverity
@@ -57,6 +58,7 @@ import org.ide.lti.core.domain.workspace.TimelineLogFilter
 import org.ide.lti.core.domain.workspace.TimelineStepNode
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
+import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.VerificationState
@@ -531,6 +533,7 @@ fun ActiveRunContent(
 
         // Console log drawer
         ActiveRunConsoleSection(
+            run = uiState.latestRun,
             logs = uiState.logs,
             isRunning = uiState.isRunning,
             hasArtifacts = artifacts.isNotEmpty(),
@@ -545,6 +548,7 @@ fun ActiveRunContent(
 
 @Composable
 private fun ActiveRunConsoleSection(
+    run: BuildRun?,
     logs: List<String>,
     isRunning: Boolean,
     hasArtifacts: Boolean,
@@ -552,9 +556,10 @@ private fun ActiveRunConsoleSection(
     selectedStepFilter: TimelineStepNode?,
     onClearStageFilter: () -> Unit,
 ) {
-    val filteredLogs = remember(logs, selectedStageFilter, selectedStepFilter) {
-        TimelineLogFilter.filter(logs, selectedStageFilter, selectedStepFilter)
+    val filtered = remember(logs, run, selectedStageFilter, selectedStepFilter) {
+        TimelineLogFilter.filter(logs, run, selectedStageFilter, selectedStepFilter)
     }
+    val filteredLogs = filtered.lines
     selectedStageFilter?.let { stage ->
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -566,6 +571,7 @@ private fun ActiveRunConsoleSection(
                 selected = true,
                 onClick = onClearStageFilter,
             )
+            filtered.note?.let { IdeHintText(it) }
         }
     }
     GlassConsoleDrawer(

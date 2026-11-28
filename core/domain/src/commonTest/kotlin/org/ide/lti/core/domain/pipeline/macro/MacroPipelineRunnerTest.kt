@@ -10,16 +10,24 @@
 package org.ide.lti.core.domain.pipeline.macro
 
 import kotlinx.coroutines.test.runTest
+import org.ide.lti.core.domain.pipeline.macro.MacroRecipe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MacroPipelineRunnerTest {
+    /** Six steps that succeed, standing in for a recipe made of real actions. */
+    private fun sixStepRecipe() = MacroRecipe(
+        id = "recipe.test",
+        name = "Test recipe",
+        description = "Six steps that succeed",
+        steps = (1..6).map { MacroStep("s$it", "Step $it", "Succeeds", { Result.success(Unit) }) },
+    )
 
     @Test
-    fun testDefaultFlashRecipeRunsSuccessfully() = runTest {
-        val recipe = MacroPipelineRunner.createDefaultFlashRecipe()
+    fun testRecipeRunsEveryStepToSuccess() = runTest {
+        val recipe = sixStepRecipe()
         val runner = MacroPipelineRunner(recipe)
 
         val success = runner.run()

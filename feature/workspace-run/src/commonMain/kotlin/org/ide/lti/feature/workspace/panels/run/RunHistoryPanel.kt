@@ -42,6 +42,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.GlassCard
 import org.ide.lti.core.designsystem.component.display.GlassChip
 import org.ide.lti.core.designsystem.component.display.GlassHorizontalDivider
+import org.ide.lti.core.designsystem.component.display.IdeHintText
 import org.ide.lti.core.designsystem.component.display.IdeStatusBadge
 import org.ide.lti.core.designsystem.component.display.IdeStatusSeverity
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
@@ -282,9 +283,10 @@ private fun RunDetailsPane(
         } else {
             listOf("[Log not cached for run ${selected.id}]")
         }
-        val filteredLogs = remember(rawLogs, uiState.selectedStageFilter, uiState.selectedStepFilter) {
-            TimelineLogFilter.filter(rawLogs, uiState.selectedStageFilter, uiState.selectedStepFilter)
+        val filtered = remember(rawLogs, selected, uiState.selectedStageFilter, uiState.selectedStepFilter) {
+            TimelineLogFilter.filter(rawLogs, selected, uiState.selectedStageFilter, uiState.selectedStepFilter)
         }
+        val filteredLogs = filtered.lines
         uiState.selectedStageFilter?.let { stage ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -296,6 +298,7 @@ private fun RunDetailsPane(
                     selected = true,
                     onClick = { onSelectStageFilter(null, null) },
                 )
+                filtered.note?.let { IdeHintText(it) }
             }
         }
 
