@@ -12,6 +12,7 @@ package org.ide.lti.core.domain.pipeline.macro
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.time.TimeSource
 
 /**
  * Runner that executes visual composite pipeline recipes with step-level timing,
@@ -49,18 +50,21 @@ class MacroPipelineRunner(recipe: MacroRecipe) {
             steps[i] = currentStep.copy(status = MacroStepStatus.RUNNING)
             _currentRecipe.value = recipe.copy(steps = steps.toList())
 
+            val started = TimeSource.Monotonic.markNow()
             val result = currentStep.action()
+            // How long the step really took.
+            val tookMs = started.elapsedNow().inWholeMilliseconds
 
             if (result.isSuccess) {
                 steps[i] = steps[i].copy(
                     status = MacroStepStatus.PASSED,
-                    durationMs = 250L,
+                    durationMs = tookMs,
                 )
                 _currentRecipe.value = recipe.copy(steps = steps.toList())
             } else {
                 steps[i] = steps[i].copy(
                     status = MacroStepStatus.FAILED,
-                    durationMs = 250L,
+                    durationMs = tookMs,
                     errorMessage = result.exceptionOrNull()?.message ?: "Step failed",
                 )
                 _currentRecipe.value = recipe.copy(steps = steps.toList())

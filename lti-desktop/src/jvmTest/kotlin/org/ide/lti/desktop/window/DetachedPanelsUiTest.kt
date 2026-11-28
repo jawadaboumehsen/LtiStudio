@@ -23,12 +23,10 @@ import org.ide.lti.core.designsystem.theme.LtiTheme
 import org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer
 import org.ide.lti.core.domain.copilot.CrashSource
 import org.ide.lti.core.domain.diff.ConfigDiffEngine
-import org.ide.lti.core.domain.partition.explorer.PartitionTreeParser
 import org.ide.lti.core.domain.pipeline.macro.MacroRecipe
 import org.ide.lti.core.domain.pipeline.macro.MacroStep
 import org.ide.lti.core.ui.copilot.BootloopCopilotSheet
 import org.ide.lti.core.ui.diff.PropertyDiffViewer
-import org.ide.lti.core.ui.partition.PartitionExplorerView
 import org.ide.lti.core.ui.pipeline.MacroPipelineStudioSheet
 import kotlin.test.Test
 
@@ -56,11 +54,6 @@ class DetachedPanelsUiTest {
         height = 750,
     ) {
         val diff = ConfigDiffEngine.computeDiff("ro.a=1\n", "ro.a=2\nro.b=3\n")
-        val partition = PartitionTreeParser.parseManifest(
-            "system",
-            "EROFS",
-            listOf("system/bin/sh 0755 u:object_r:shell_exec:s0 250000"),
-        )
         val diagnoses = BootloopCopilotAnalyzer.analyze(
             CrashSource.LOGCAT,
             listOf("03-25 12:00:02.345 1000 1000 F libc : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR)"),
@@ -81,7 +74,6 @@ class DetachedPanelsUiTest {
                             .verticalScroll(rememberScrollState()),
                     ) {
                         PropertyDiffViewer(diffResult = diff, snapshotName = "Slot B", onRollback = {})
-                        PartitionExplorerView(metadata = partition, onExtractNode = {})
                         BootloopCopilotSheet(diagnoses = diagnoses)
                         MacroPipelineStudioSheet(
                             recipe = recipe,
@@ -96,7 +88,6 @@ class DetachedPanelsUiTest {
         }
 
         onNodeWithTag("PropertyDiffViewer").assertIsDisplayed()
-        onNodeWithTag("PartitionExplorerView").assertExists()
         onNodeWithTag("MacroPipelineStudioSheet").assertExists()
     }
 }
