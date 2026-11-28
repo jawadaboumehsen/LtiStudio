@@ -305,17 +305,8 @@ fun PluginManagerContent(
                 }
             }
 
-            state.pendingUpdate?.let { update ->
-                UpdateReviewDialog(
-                    update = update,
-                    checks = state.updateChecks,
-                    onCheck = actions.onCheckUpdate,
-                    onApply = actions.onApplyUpdate,
-                    onDismiss = actions.onDismissUpdate,
-                )
-            }
+            PendingUpdateReview(state, actions)
 
-            // Details Dialog if open
             if (state.isDetailsOpen && state.detailsRecord != null) {
                 val rec = state.detailsRecord
                 PluginDetailsDialog(
@@ -326,6 +317,21 @@ fun PluginManagerContent(
             }
         }
     }
+}
+
+/** The update review, while an installed newer version waits for it. */
+@Composable
+private fun PendingUpdateReview(state: PluginManagerUiState, actions: PluginManagerActions) {
+    val update = state.pendingUpdate ?: return
+    UpdateReviewDialog(
+        update = update,
+        checks = state.updateChecks,
+        onCheck = actions.onCheckUpdate,
+        onApply = actions.onApplyUpdate,
+        onDismiss = actions.onDismissUpdate,
+        applying = state.applyingUpdate,
+        error = state.errorMessage,
+    )
 }
 
 private fun resolveGlobalDestination(

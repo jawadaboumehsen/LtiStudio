@@ -9,6 +9,29 @@
  */
 package org.ide.lti.core.domain.pipeline.toolkit
 
+/** Where a partition's projected size comes from. */
+enum class BudgetSizeSource(val label: String) {
+    STOCK("Stock estimate"),
+    BUILD("Last-build estimate"),
+    TRIAL("Measured trial"),
+    KEPT("Measured stock"),
+    UNKNOWN("Unknown"),
+}
+
+data class PartitionBudget(
+    val partition: String,
+    val before: Long?,
+    val projected: Long?,
+    val source: BudgetSizeSource,
+) {
+    val growth: Long? get() = if (before != null && projected != null) projected - before else null
+}
+
+data class GroupBudget(val name: String, val limit: Long, val rows: List<PartitionBudget>) {
+    val beforeBytes: Long? get() = rows.mapNotNull { it.before }.takeIf { it.size == rows.size }?.sum()
+    val projectedBytes: Long? get() = rows.mapNotNull { it.projected }.takeIf { it.size == rows.size }?.sum()
+}
+
 /**
  * How the dynamic partitions fill the super group: each partition's built
  * image, else its stock image as the estimate, against the group's bytes.
@@ -40,6 +63,44 @@ data class SuperBudget(val rows: List<Row>, val groupBytes: Long) {
             },
             groupBytes,
         )
+
+        /** Projection for stock metadata groups. Empty A/B members keep their measured zero allocation. */
+        fun groups(
+            layout: SuperLayout?,
+            fallback: SuperBudget,
+            stock: Map<String, Long>,
+            built: Map<String, Long>,
+            trials: Map<String, Long>,
+            keepStock: Set<String>,
+        ): List<GroupBudget> {
+            fun row(name: String, original: Long?): PartitionBudget {
+                val partition = name.removeSuffix("_a").removeSuffix("_b")
+                val stockSize = stock[partition] ?: original
+                val keptSource = if (stockSize == null) BudgetSizeSource.UNKNOWN else BudgetSizeSource.KEPT
+                val (bytes, source) = when {
+                    original == 0L -> original to BudgetSizeSource.KEPT
+                    partition in keepStock -> stockSize to keptSource
+                    trials[partition] != null -> trials[partition] to BudgetSizeSource.TRIAL
+                    built[partition] != null -> built[partition] to BudgetSizeSource.BUILD
+                    stockSize != null -> stockSize to BudgetSizeSource.STOCK
+                    else -> null to BudgetSizeSource.UNKNOWN
+                }
+                return PartitionBudget(name, original ?: stock[partition], bytes, source)
+            }
+            val measured = layout?.groups.orEmpty().filter { it.maxSize > 0 }.mapNotNull { group ->
+                val rows = layout?.partitions.orEmpty().filter { it.group == group.name }.map { row(it.name, it.size) }
+                if (rows.isEmpty()) null else GroupBudget(group.name, group.maxSize, rows)
+            }
+            return measured.ifEmpty {
+                listOf(
+                    GroupBudget(
+                        "Device profile group (estimated layout)",
+                        fallback.groupBytes,
+                        fallback.rows.map { row(it.partition, null) },
+                    ),
+                )
+            }
+        }
 
         /** The build's refusal when [sizes] (partition to built bytes) overflow [group] of [groupBytes]. */
         fun overflow(sizes: Map<String, Long>, group: String, groupBytes: Long): String? {

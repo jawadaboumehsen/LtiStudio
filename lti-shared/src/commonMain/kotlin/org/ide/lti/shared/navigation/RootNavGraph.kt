@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import org.ide.lti.core.domain.desktop.WorkspaceDropCoordinator
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -56,6 +57,14 @@ internal fun RootNavGraph(
     val toolchainFlow = toolchainService?.state ?: remember { MutableStateFlow(ToolchainSetupState()) }
     val toolchainState by toolchainFlow.collectAsState()
     val canLaunchWorkspace = toolchainState.canLaunchWorkspace
+
+    // A mod bundle dropped on the window opens Plugins > Import, which inspects it.
+    val dropCoordinator = remember { GlobalContext.getOrNull()?.getOrNull<WorkspaceDropCoordinator>() }
+    LaunchedEffect(dropCoordinator) {
+        dropCoordinator?.modBundleRequests?.collect {
+            navHostController.navigateToPlugins(destination = "import")
+        }
+    }
 
     LaunchedEffect(currentWorkspace, canLaunchWorkspace) {
         val workspace = currentWorkspace

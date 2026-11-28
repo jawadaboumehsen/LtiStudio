@@ -51,10 +51,16 @@ import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.workbench.DeviceCheckResult
+import org.ide.lti.core.domain.workspace.TimelineLogFilter
+import org.ide.lti.core.domain.workspace.TimelineStepNode
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.Presence
+import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.ui.timeline.InteractiveBuildTimeline
 
 @Composable
 fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifier) {
@@ -67,6 +73,14 @@ fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifie
     }
     uiState.inspection?.let { inspection ->
         MarkdownDialog("Run inspector", inspection, emptyList(), onClose = viewModel::closeInspection)
+    }
+    uiState.provenanceReport?.let { provenance ->
+        MarkdownDialog(
+            title = uiState.provenanceTitle ?: "SBOM Provenance",
+            markdown = provenance,
+            problems = emptyList(),
+            onClose = viewModel::closeProvenance,
+        )
     }
 
     pendingDelete?.let { run ->
@@ -118,7 +132,9 @@ fun RunHistoryPanel(viewModel: RunHistoryViewModel, modifier: Modifier = Modifie
                         selected = selected,
                         uiState = uiState,
                         onInspect = viewModel::inspect,
+                        onVerifyProvenance = viewModel::verifyProvenance,
                         onCompareWith = viewModel::compareWith,
+                        onSelectStageFilter = viewModel::selectStageFilter,
                         modifier = Modifier.weight(0.55f).fillMaxHeight(),
                     )
                 }
@@ -175,11 +191,18 @@ private fun RunDetailsPane(
     selected: BuildRun,
     uiState: RunHistoryUiState,
     onInspect: () -> Unit,
+    onVerifyProvenance: () -> Unit,
     onCompareWith: (BuildRun) -> Unit,
+    onSelectStageFilter: (StageId?, TimelineStepNode?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val typography = GlassTheme.typography
     val rightScrollState = rememberScrollState()
+    val previousSucceeded = remember(selected.id, uiState.runs) {
+        uiState.runs
+            .filter { it.id != selected.id && it.state == RunState.SUCCEEDED && it.startedAt < selected.startedAt }
+            .maxByOrNull { it.startedAt }
+    }
     Column(
         modifier = modifier
             .verticalScroll(rightScrollState)
@@ -196,6 +219,13 @@ private fun RunDetailsPane(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
+            if (selected.state == RunState.SUCCEEDED) {
+                GlassButton(
+                    onClick = onVerifyProvenance,
+                    loading = uiState.isVerifyingProvenance,
+                    variant = GlassButtonVariant.Standard,
+                ) { Text(if (uiState.isVerifyingProvenance) "Verifying…" else "Verify SBOM") }
+            }
             GlassButton(
                 onClick = onInspect,
                 enabled = !uiState.isComparing,
@@ -211,6 +241,15 @@ private fun RunDetailsPane(
         StagePipelineView(
             latestRun = selected,
             isBusy = false,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        InteractiveBuildTimeline(
+            run = selected,
+            selectedStageId = uiState.selectedStageFilter,
+            onSelectStage = { stageId -> onSelectStageFilter(stageId, null) },
+            onJumpToLogs = { stageId, step -> onSelectStageFilter(stageId, step) },
+            onInspectDiff = previousSucceeded?.let { prev -> { _ -> onCompareWith(prev) } },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -238,14 +277,30 @@ private fun RunDetailsPane(
             }
         }
 
-        val logsToDisplay = if (uiState.selectedRunLogs.isNotEmpty()) {
+        val rawLogs = if (uiState.selectedRunLogs.isNotEmpty()) {
             uiState.selectedRunLogs
         } else {
             listOf("[Log not cached for run ${selected.id}]")
         }
+        val filteredLogs = remember(rawLogs, uiState.selectedStageFilter, uiState.selectedStepFilter) {
+            TimelineLogFilter.filter(rawLogs, uiState.selectedStageFilter, uiState.selectedStepFilter)
+        }
+        uiState.selectedStageFilter?.let { stage ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val stepLabel = uiState.selectedStepFilter?.label?.let { " -> $it" }.orEmpty()
+                GlassChip(
+                    label = "Filtered: ${PipelineStageSequence.label(stage)}$stepLabel (${filteredLogs.size})",
+                    selected = true,
+                    onClick = { onSelectStageFilter(null, null) },
+                )
+            }
+        }
 
         GlassConsoleDrawer(
-            logs = logsToDisplay,
+            logs = filteredLogs,
             isRunning = false,
             modifier = Modifier.fillMaxWidth(),
         )

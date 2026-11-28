@@ -32,6 +32,7 @@ import org.ide.lti.core.data.toolkit.WorkspaceToolkitStores
 import org.ide.lti.core.data.workspace.FileBuildProfileStore
 import org.ide.lti.core.domain.debloat.DebloatPresetStore
 import org.ide.lti.core.domain.pipeline.HostStepPort
+import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
@@ -77,6 +78,7 @@ import org.ide.lti.core.domain.workspace.ModUpdates
 import org.ide.lti.core.domain.workspace.NextBuild
 import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.WorkspaceFacts
+import org.ide.lti.core.model.run.StageId
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -203,7 +205,20 @@ internal actual val platformRepositoryModule =
                 preflight = getOrNull(),
             )
         }
-        single { FirmwareUpgrade(runner = get(), settings = get(), preflight = get()) }
+        single {
+            val start = get<StartPipelineRunUseCase>()
+            FirmwareUpgrade(
+                runner = get(),
+                settings = get(),
+                preflight = get(),
+                archives = getOrNull(),
+                preparationEvidence = { id ->
+                    start.preview(id, StageId.WORK_TREE_ASSEMBLY).getOrThrow()
+                        .filter { it.runsBecause != null }
+                        .map { "Refresh ${PipelineStageSequence.label(it.stageId)} · ${it.runsBecause}" }
+                },
+            )
+        }
         single { BuildReport(runner = get(), settings = get(), snapshots = get()) }
         single { RunComparison(runner = get(), snapshots = get()) }
         single {

@@ -102,6 +102,9 @@ enum class ArtifactKind {
 
     /** A package built besides the main one: the fastboot images zip or the Odin AP tar. */
     EXTRA_PACKAGE,
+
+    /** Machine-verifiable build provenance manifest / SBOM linking outputs to inputs, mods, tools, and keys. */
+    PROVENANCE_SBOM,
 }
 
 @Serializable

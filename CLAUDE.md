@@ -843,7 +843,9 @@ per stage; a failed stage marks every later stage pending and stops.
 - A stage's cache file also records the run's values when it ran (`values=` JSON): a cached Build restores its run
   date, zip hash and size, so the package keeps its name on a later day and the cache still hits.
 - Plugins: a version a workspace's lockfile uses cannot be uninstalled (`PluginWorkspaceUsage.usersOf`). Installing a
-  plugin's newest version moves workspaces onto it (`moveToNewest`) and removes older versions nothing uses.
+  newer version never moves a workspace by itself: when one would move, the update review opens (see "Mod update
+  review"), and only "Update N workspace(s)" saves the reviewed locks (`ModUpdates.apply`, refused when settings or
+  installed versions changed since). Older versions stay installed.
 - Plugin sources (Plugins > Marketplace): an HTTPS index JSON, or a GitHub repository URL
   (`https://github.com/owner/repo`) read as its latest release (`PluginIndexAdapter`: each
   `<publisher>-<id>-<version>.lti-mod.zip` asset is an entry, the asset's `digest` is `IndexEntry.fileSha256`). The
@@ -1218,6 +1220,18 @@ nothing is shown as done before its job finished.
   single on the app scope): profiles in order, each applied, checked by `Preflight.check` (a blocking finding stops
   the queue with it), started through `StartPipelineRunUseCase` and waited for; a run that does not succeed stops
   the queue. "Stop after this build" starts no other. The queue lives while the app does.
+- Provenance (`out/provenance.sbom.json`, also in `records/<runId>/`): written when a run that includes Build
+  succeeds. Image entries are measured from `out/images` at that point (`image.<p>.sha256` is taken before the AVB
+  footer, so it never matches the file); the SBOM is listed as an artifact only when it was written. Mods are matched
+  to operations by `publisher:id` (`AppliedOperationSummary.mod`).
+- Reproducible packages: Build normalises times to `REPRODUCIBLE_EPOCH` before zipping. Images in `out/images` go
+  through `ReusedImage.TOUCH_KEEPING_RECIPES`, which renews the reuse recipe of an image that matched it, so the
+  next build can still reuse it (a hand-placed image stays unmatched).
+- Detached tools and drops show real data only: Partition Explorer (a dropped image's size and superblock), Diff
+  Inspector (stock vs work/ `system/build.prop`, the newest run, its provenance verified once per finished run, and
+  a dropped APK's signers via `ApkCertInspector` in WSL), Copilot (the newest run's log), super layout (lpdump of the
+  stock super). A dropped mod bundle opens Plugins > Import and is inspected, never installed without review.
+  Shell scripts kept in Kotlin raw strings with indentation must be `.trimIndent()`ed (`sh` and Python reject it).
 - Size advisor (Build & Sign > Partition layout, `SizeAdvisor`, `SizeAdvisorCard`): per EROFS partition, trial mkfs.erofs builds in workbench/trial (as set now, 64 KiB cluster, dedupe when the kernel is 6.1+, lzma when it decodes it), size and seconds each; advice = fastest whose signed size (`SizeAdvisor.signedBytes`: + AVB hashtree and footer) fits the room left in the super group, else smallest; kept partitions are not tried; "Use this" sets the partition's own compression/dedupe/cluster.
 - Changelog draft (Release metadata > Changelog, `ChangelogDraft`): from work/modules/plan.json (mods and the files they changed), work/debloat/result.json (apps removed, MB freed), build type and property overrides.
 - Phone vs device configuration (Connected phone, `PhoneDeviceCheck`): fastboot product, super size and boot-chain partition sizes measured by fastboot next to device.json, with "Use phone value" into the draft.

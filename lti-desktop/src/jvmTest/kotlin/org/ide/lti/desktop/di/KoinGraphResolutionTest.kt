@@ -3,6 +3,8 @@ package org.ide.lti.desktop.di
 import org.ide.lti.core.data.AppShutdownCoordinator
 import org.ide.lti.core.data.setup.check.EnvironmentCheck
 import org.ide.lti.core.data.tools.KotlinToolStoreAdapter
+import org.ide.lti.core.domain.desktop.BackgroundSessionManager
+import org.ide.lti.core.domain.desktop.WorkspaceDropCoordinator
 import org.ide.lti.core.domain.pipeline.PipelineOrchestrator
 import org.ide.lti.core.domain.pipeline.toolkit.AckStore
 import org.ide.lti.core.domain.pipeline.toolkit.JobLock
@@ -139,6 +141,8 @@ class KoinGraphResolutionTest {
         assertNotNull(koin.get<InstallPluginUseCase>())
         assertNotNull(koin.get<PluginLifecycleUseCase>())
         assertNotNull(koin.get<AuthorProjectTrustUseCase>())
+        assertNotNull(koin.get<BackgroundSessionManager>())
+        assertNotNull(koin.get<WorkspaceDropCoordinator>())
     }
 
     @Test

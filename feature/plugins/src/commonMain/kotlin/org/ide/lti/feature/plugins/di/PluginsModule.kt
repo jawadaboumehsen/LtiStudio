@@ -24,6 +24,7 @@ val pluginsModule = module {
             workspaceManager = getOrNull(),
             workspaceUsage = getOrNull(),
             modUpdates = getOrNull(),
+            dropCoordinator = getOrNull(),
         )
     }
 }

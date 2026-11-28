@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,6 +37,9 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.IconSize
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.ideFontFamily
+import org.ide.lti.core.ui.desktop.LocalBackgroundSessionManager
+import org.ide.lti.core.ui.desktop.LocalSessionDrawerController
+import org.ide.lti.core.ui.sessions.BackgroundSessionStatusPill
 import org.ide.lti.feature.workspace.studio.ActivityUiState
 import org.ide.lti.feature.workspace.studio.ConnectionUiState
 import org.ide.lti.feature.workspace.studio.DisplayValue
@@ -48,6 +53,10 @@ fun StudioStatusBar(
     onOpenProblems: (() -> Unit)? = null,
     onOpenActivity: (() -> Unit)? = null,
 ) {
+    val sessions = LocalBackgroundSessionManager.current
+    val sessionDrawerToggle = LocalSessionDrawerController.current
+    val sessionSnapshot = sessions?.state?.collectAsState()?.value
+
     IdeStatusBar(
         modifier = modifier.testTag("StudioStatusBar"),
         leadingContent = {
@@ -68,6 +77,13 @@ fun StudioStatusBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.Medium),
             ) {
+                if (sessionSnapshot != null && sessionDrawerToggle != null) {
+                    BackgroundSessionStatusPill(
+                        snapshot = sessionSnapshot,
+                        isDrawerOpen = false,
+                        onToggleDrawer = sessionDrawerToggle,
+                    )
+                }
                 StatusBarConnection(connection = uiState.connection)
             }
         },

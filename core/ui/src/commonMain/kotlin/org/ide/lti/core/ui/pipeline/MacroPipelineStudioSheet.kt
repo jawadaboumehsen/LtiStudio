@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,7 @@ import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.theme.AccentPresetColors
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
@@ -112,6 +114,7 @@ fun MacroPipelineStudioSheet(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = ComponentSize.DialogDefaultHeight)
                 .glassContainer(),
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {

@@ -44,7 +44,7 @@ class WorkTreeAssemblyStage : StageDefinition {
         CacheKeys.stage3AssemblyKey(previousStageCacheKey, ctx.target, ctx.snapshot) +
             ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.debloat) +
             ConfigurationSnapshot.canonicalJson.encodeToString(ctx.snapshot.customization) +
-            computeTargetDigest(ctx.target),
+            computeTargetDigest(ctx.target) + "assembly-receipt-v2",
     )
 
     override fun cacheInputFiles(ctx: StageContext): List<String> =
@@ -162,6 +162,12 @@ class WorkTreeAssemblyStage : StageDefinition {
             val stamped = baseStamper(original)
             if (overrides.isEmpty()) stamped else applyPropertyOverrides(stamped, overrides)
         }
+        // work/modules is outside the rsynced partitions: its old patch receipt otherwise survives reassembly.
+        steps += PipelineStep.WriteFile(
+            ModuleApplicationStage.APPLIED_PATH,
+            ModuleApplicationStage.EMPTY_APPLIED_JSON.encodeToByteArray(),
+            "reset applied mods receipt",
+        )
         steps += PipelineStep.EditFile(BUILD_PROP, transform, "stamp build.prop")
         return steps
     }

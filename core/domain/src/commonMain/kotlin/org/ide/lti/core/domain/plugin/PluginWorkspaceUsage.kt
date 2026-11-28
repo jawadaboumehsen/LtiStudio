@@ -76,7 +76,7 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
         eachWorkspace { id, name, snapshot ->
             relocked(snapshot, versions, packages)?.let { moved ->
                 val now = snapshot.customization.lockfile.entries.associate { "${it.publisher}:${it.id}" to it.version }
-                pending += PendingMove(id, name, moved, now)
+                pending += PendingMove(id, name, moved, now, snapshot)
             }
         }
         return pending
@@ -88,7 +88,24 @@ class PluginWorkspaceUsage(private val workspaces: WorkspaceRepository, private 
         val name: String,
         val snapshot: ConfigurationSnapshot,
         val using: Map<String, String>,
+        val before: ConfigurationSnapshot,
     )
+
+    /** Apply the exact reviewed versions. Preserve edits to fields unrelated to the checked inputs. */
+    suspend fun applyReviewed(move: PendingMove): Result<ConfigurationSnapshot> = runCatchingCancellable {
+        store.update(move.workspaceId) { current ->
+            check(
+                current.acquisition == move.before.acquisition &&
+                    current.extraction == move.before.extraction &&
+                    current.assembly == move.before.assembly &&
+                    current.debloat == move.before.debloat &&
+                    current.customization == move.before.customization,
+            ) {
+                "Settings for ${move.name} changed after review. Review the update again."
+            }
+            current.copy(customization = move.snapshot.customization)
+        }.getOrThrow()
+    }
 
     /** [snapshot] locked onto [packages], or null when it uses no older version or cannot be locked. */
     private fun relocked(

@@ -13,7 +13,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
-import dev.nucleusframework.composenativetray.tray.api.Tray
+import androidx.compose.ui.window.ApplicationScope
+import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.isTraySupported
+import androidx.compose.ui.window.rememberTrayState
 import org.ide.lti.core.common.notification.DelegatingSystemNotifier
 import org.koin.core.context.GlobalContext
 
@@ -32,11 +35,11 @@ private object AppTrayLoader
 /**
  * System tray integration for LtiRom Studio.
  *
- * Uses Tao-native ComposeNativeTray to provide native Win32/Linux/macOS system tray presence,
- * quick action menu, and binds [DesktopNativeNotifier] to [DelegatingSystemNotifier] for OS notifications.
+ * Uses Compose Multiplatform Desktop [Tray] when supported by the host desktop environment,
+ * and binds [DesktopNativeNotifier] to [DelegatingSystemNotifier] for OS notifications.
  */
 @Composable
-fun AppTray(
+fun ApplicationScope.AppTray(
     icon: Painter = rememberClasspathPainter("icons/ic_launcher.png"),
     tooltip: String = "LtiRom Studio",
     onOpenStudio: () -> Unit,
@@ -47,7 +50,7 @@ fun AppTray(
         GlobalContext.getOrNull()?.getOrNull<DelegatingSystemNotifier>()
     }
 
-    DisposableEffect(delegatingNotifier) {
+    DisposableEffect(delegatingNotifier, tooltip) {
         val nativeNotifier = DesktopNativeNotifier(appTitle = tooltip)
         delegatingNotifier?.attach(nativeNotifier)
         onDispose {
@@ -55,24 +58,28 @@ fun AppTray(
         }
     }
 
-    Tray(
-        icon = icon,
-        tooltip = tooltip,
-        primaryAction = onOpenStudio,
-        menuContent = {
-            Item(
-                label = "Open LtiRom Studio",
-                onClick = onOpenStudio,
-            )
-            Item(
-                label = "Settings...",
-                onClick = onOpenSettings,
-            )
-            Divider()
-            Item(
-                label = "Exit",
-                onClick = onExit,
-            )
-        },
-    )
+    if (isTraySupported) {
+        val trayState = rememberTrayState()
+        Tray(
+            icon = icon,
+            state = trayState,
+            tooltip = tooltip,
+            onAction = onOpenStudio,
+            menu = {
+                Item(
+                    text = "Open LtiRom Studio",
+                    onClick = onOpenStudio,
+                )
+                Item(
+                    text = "Settings...",
+                    onClick = onOpenSettings,
+                )
+                Separator()
+                Item(
+                    text = "Exit",
+                    onClick = onExit,
+                )
+            },
+        )
+    }
 }

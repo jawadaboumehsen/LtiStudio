@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -45,6 +46,9 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.datetime.Clock
@@ -68,6 +72,7 @@ import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenu
+import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuDivider
 import org.ide.lti.core.designsystem.component.navigation.GlassDropdownMenuItem
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingStatus
 import org.ide.lti.core.designsystem.component.progress.GlassProgressBar
@@ -303,6 +308,7 @@ private fun WorkspaceListLoadingSkeleton(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun WorkspaceRowItem(
     project: RecentProject,
@@ -335,6 +341,11 @@ private fun WorkspaceRowItem(
                 borderColor = borderColor,
                 borderWidth = if (isSelected) StrokeWidth.Focused else StrokeWidth.Standard,
             )
+            .onPointerEvent(PointerEventType.Press) { event ->
+                if (event.button == PointerButton.Secondary) {
+                    isMenuExpanded = true
+                }
+            }
             .clickable(onClick = {
                 onSelect()
                 onOpen()
@@ -425,63 +436,13 @@ private fun WorkspaceRowItem(
                     selected = false,
                 )
 
-                Box {
-                    GlassTooltipArea(tooltipText = "More actions") {
-                        GlassIconButton(
-                            icon = AppIcons.MoreVert,
-                            onClick = { isMenuExpanded = true },
-                            size = ComponentSize.PanelHeaderAction,
-                        )
-                    }
-
-                    GlassDropdownMenu(
-                        expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false },
-                    ) {
-                        GlassDropdownMenuItem(
-                            text = "Open Workspace",
-                            leadingIcon = {
-                                Icon(
-                                    painter = AppIcons.FolderOpenPainterResource(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                            },
-                            onClick = {
-                                isMenuExpanded = false
-                                onOpen()
-                            },
-                        )
-                        GlassDropdownMenuItem(
-                            text = "Copy Path",
-                            leadingIcon = {
-                                Icon(
-                                    painter = AppIcons.CopyPainterResource(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                            },
-                            onClick = {
-                                isMenuExpanded = false
-                                onCopyPath()
-                            },
-                        )
-                        GlassDropdownMenuItem(
-                            text = "Remove from Recents",
-                            leadingIcon = {
-                                Icon(
-                                    painter = AppIcons.DeletePainterResource(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(IconSize.Small),
-                                )
-                            },
-                            onClick = {
-                                isMenuExpanded = false
-                                onRemove()
-                            },
-                        )
-                    }
-                }
+                WorkspaceRowActionMenu(
+                    isMenuExpanded = isMenuExpanded,
+                    onMenuExpandedChange = { isMenuExpanded = it },
+                    onOpen = onOpen,
+                    onCopyPath = onCopyPath,
+                    onRemove = onRemove,
+                )
 
                 GlassTooltipArea(tooltipText = "Remove from Recents") {
                     GlassIconButton(
@@ -491,6 +452,76 @@ private fun WorkspaceRowItem(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceRowActionMenu(
+    isMenuExpanded: Boolean,
+    onMenuExpandedChange: (Boolean) -> Unit,
+    onOpen: () -> Unit,
+    onCopyPath: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Box {
+        GlassTooltipArea(tooltipText = "More actions") {
+            GlassIconButton(
+                icon = AppIcons.MoreVert,
+                onClick = { onMenuExpandedChange(true) },
+                size = ComponentSize.PanelHeaderAction,
+            )
+        }
+
+        GlassDropdownMenu(
+            expanded = isMenuExpanded,
+            onDismissRequest = { onMenuExpandedChange(false) },
+            showSelectionGutter = false,
+        ) {
+            GlassDropdownMenuItem(
+                text = "Open Workspace",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.FolderOpenPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                },
+                onClick = {
+                    onMenuExpandedChange(false)
+                    onOpen()
+                },
+            )
+            GlassDropdownMenuItem(
+                text = "Copy Path",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.CopyPainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                },
+                onClick = {
+                    onMenuExpandedChange(false)
+                    onCopyPath()
+                },
+            )
+            GlassDropdownMenuDivider()
+            GlassDropdownMenuItem(
+                text = "Remove from Recents",
+                leadingIcon = {
+                    Icon(
+                        painter = AppIcons.DeletePainterResource(),
+                        contentDescription = null,
+                        modifier = Modifier.size(IconSize.Small),
+                    )
+                },
+                destructive = true,
+                onClick = {
+                    onMenuExpandedChange(false)
+                    onRemove()
+                },
+            )
         }
     }
 }

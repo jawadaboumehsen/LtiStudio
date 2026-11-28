@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.domain.pipeline.PipelineFixture
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
+import org.ide.lti.core.domain.workspace.ModUpdates
 import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.plugin.DependencyRef
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
@@ -23,7 +24,9 @@ import org.ide.lti.core.model.workspace.RecentProject
 import org.ide.lti.core.model.workspace.Workspace
 import org.ide.lti.core.model.workspace.WorkspaceSession
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class PluginWorkspaceUsageTest {
     private val fixture = PipelineFixture()
@@ -83,6 +86,36 @@ class PluginWorkspaceUsageTest {
         assertEquals(listOf(fixture.workspace.name), usage.moveToNewest(installed))
         assertEquals(setOf("1.1.0"), snapshot.customization.lockfile.entries.map { it.version }.toSet())
         assertEquals(emptyList(), usage.moveToNewest(installed), "already on the newest: nothing to move")
+    }
+
+    @Test
+    fun updateReviewIncludesEveryModThatTheCandidateLockUpgrades() = runTest {
+        val installed = listOf(
+            record("keybox", "1.0.0"),
+            record("keybox", "1.1.0"),
+            record("pif", "1.0.0", listOf("keybox")),
+            record("pif", "1.1.0", listOf("keybox")),
+        )
+        val update = assertNotNull(ModUpdates(EmptyPluginCatalog, usage).pending(installed, "p:pif", "1.1.0"))
+        assertEquals(setOf("p:keybox", "p:pif"), update.reviews.map { it.key }.toSet())
+        assertEquals(setOf("1.0.0"), update.reviews.map { it.from }.toSet())
+        assertEquals(setOf("1.1.0"), update.reviews.map { it.to }.toSet())
+        assertEquals(setOf("1.0.0"), snapshot.customization.lockfile.entries.map { it.version }.toSet())
+    }
+
+    @Test
+    fun reviewedUpdateRefusesAChangedSelection() = runTest {
+        val installed = listOf(
+            record("keybox", "1.0.0"),
+            record("keybox", "1.1.0"),
+            record("pif", "1.0.0", listOf("keybox")),
+            record("pif", "1.1.0", listOf("keybox")),
+        )
+        val move = usage.pendingMoves(installed).single()
+        snapshot = snapshot.copy(customization = snapshot.customization.copy(enabledPackages = emptyList()))
+        val result = usage.applyReviewed(move)
+        assertContains(result.exceptionOrNull()?.message.orEmpty(), "changed after review")
+        assertEquals(emptyList(), snapshot.customization.enabledPackages)
     }
 
     private class OneWorkspace(private val ws: Workspace) : WorkspaceRepository {

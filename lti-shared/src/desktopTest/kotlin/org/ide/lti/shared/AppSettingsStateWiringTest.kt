@@ -10,8 +10,10 @@
 package org.ide.lti.shared
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
@@ -21,8 +23,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.ide.lti.core.designsystem.theme.AppTheme
 import org.ide.lti.core.designsystem.theme.colorSchemeFor
 import org.ide.lti.core.testing.optical.GlassOpticalVerifier
@@ -37,6 +39,7 @@ import org.koin.core.context.stopKoin
 import kotlin.math.abs
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppSettingsStateWiringTest {
@@ -52,10 +55,7 @@ class AppSettingsStateWiringTest {
         stopKoin()
     }
 
-    private fun isColorDifferent(
-        c1: androidx.compose.ui.graphics.Color,
-        c2: androidx.compose.ui.graphics.Color,
-    ): Boolean {
+    private fun isColorDifferent(c1: Color, c2: Color): Boolean {
         val dr = abs(c1.red - c2.red)
         val dg = abs(c1.green - c2.green)
         val db = abs(c1.blue - c2.blue)
@@ -69,11 +69,17 @@ class AppSettingsStateWiringTest {
         val totalPixels = width * height
         val pm1 = img1.toPixelMap()
         val pm2 = img2.toPixelMap()
+        val buf1 = pm1.buffer
+        val buf2 = pm2.buffer
 
         var differing = 0
         for (y in 0 until height) {
+            var idx1 = pm1.bufferOffset + y * pm1.stride
+            var idx2 = pm2.bufferOffset + y * pm2.stride
             for (x in 0 until width) {
-                if (isColorDifferent(pm1[x, y], pm2[x, y])) {
+                val p1 = buf1[idx1++]
+                val p2 = buf2[idx2++]
+                if (p1 != p2 && isColorDifferent(Color(p1), Color(p2))) {
                     differing++
                 }
             }
@@ -83,8 +89,26 @@ class AppSettingsStateWiringTest {
     }
 
     @OptIn(ExperimentalTestApi::class)
+    private fun runWiringTest(width: Int, height: Int, block: suspend DesktopComposeUiTest.() -> Unit) =
+        runTest(timeout = 3.minutes) {
+            with(
+                DesktopComposeUiTest(
+                    width = width,
+                    height = height,
+                    testTimeout = 3.minutes,
+                    useStandardTestDispatcherForComposition = true,
+                ),
+            ) {
+                runTest { block() }
+            }
+        }
+
+    @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testFluidEffectsToggleChangesRendering() = runDesktopComposeUiTest(width = 1120, height = 700) {
+    fun testFluidEffectsToggleChangesRendering() = runWiringTest(
+        width = 1120,
+        height = 700,
+    ) {
         val settingsState = GlobalContext.get().get<AppSettingsState>()
         settingsState.theme = AppSettingsState.THEME_BLUE
         settingsState.effectsEnabled = true
@@ -224,7 +248,10 @@ class AppSettingsStateWiringTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testDarkModeToggleChangesRendering() = runDesktopComposeUiTest(width = 800, height = 600) {
+    fun testDarkModeToggleChangesRendering() = runWiringTest(
+        width = 800,
+        height = 600,
+    ) {
         val settingsState = AppSettingsState(
             initialDarkTheme = true,
             initialEffectsEnabled = true,
@@ -255,11 +282,14 @@ class AppSettingsStateWiringTest {
             diffPercent > 0.0,
             "Toggling isDarkTheme must cause a visual rendering difference (found $diffPercent% diff)",
         )
+
+        // Clear content to dispose composition tree and cancel active coroutines
+        setContent { }
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testSettingsScreenBindsAndMutatesSharedState() = runDesktopComposeUiTest(width = 800, height = 600) {
+    fun testSettingsScreenBindsAndMutatesSharedState() = runWiringTest(width = 800, height = 600) {
         val settingsState = AppSettingsState(
             initialDarkTheme = true,
             initialEffectsEnabled = true,
@@ -289,7 +319,10 @@ class AppSettingsStateWiringTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testMultiThemeSwitchingChangesRendering() = runDesktopComposeUiTest(width = 800, height = 600) {
+    fun testMultiThemeSwitchingChangesRendering() = runWiringTest(
+        width = 800,
+        height = 600,
+    ) {
         val settingsState = AppSettingsState(
             initialTheme = AppSettingsState.THEME_BLUE,
         )
@@ -321,11 +354,14 @@ class AppSettingsStateWiringTest {
 
         assertTrue(pctBlueVsDark > 0.0, "Blue and Dark themes must render differently")
         assertTrue(pctDarkVsLight > 0.0, "Dark and Light themes must render differently")
+
+        // Clear content to dispose composition tree and cancel active coroutines
+        setContent { }
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun testSettingsScreenThemeCardSelection() = runDesktopComposeUiTest(width = 800, height = 600) {
+    fun testSettingsScreenThemeCardSelection() = runWiringTest(width = 800, height = 600) {
         val settingsState = AppSettingsState(
             initialTheme = AppSettingsState.THEME_BLUE,
         )

@@ -17,6 +17,7 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
+import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.run.StageId
 import java.nio.file.Path
 
@@ -69,6 +70,7 @@ data class PackageInspection(
     val summary: String = "",
     /** The devices (and firmwares) the plan is made for; empty means any. */
     val compatibility: List<Compatibility> = emptyList(),
+    val payloads: List<PayloadEntry> = emptyList(),
 )
 
 @Serializable
@@ -82,6 +84,7 @@ data class InstalledRecord(
     val conflicts: List<DependencyRef>,
     val displayName: String = "",
     val summary: String = "",
+    val payloads: List<PayloadEntry> = emptyList(),
 )
 
 val InstalledRecord.key: String
@@ -94,6 +97,7 @@ fun InstalledRecord.toInstalledPackage(): InstalledPackage = InstalledPackage(
     contentDigest = identity.contentDigest,
     dependencies = dependencies,
     conflicts = conflicts,
+    payloads = payloads,
 )
 
 interface PluginInstallPort {
@@ -195,6 +199,7 @@ class InstallPluginUseCase(private val port: PluginInstallPort) {
                 contentDigest = identity.contentDigest,
                 dependencies = inspection.dependencies,
                 conflicts = inspection.conflicts,
+                payloads = inspection.payloads,
             )
             emit(InstallState.Installed(record))
         } finally {

@@ -10,47 +10,61 @@
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import dev.nucleusframework.application.DecoratedWindow
-import dev.nucleusframework.application.LocalNucleusWindow
-import dev.nucleusframework.application.NucleusWindow
-import dev.nucleusframework.application.nucleusApplication
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.timing.StartupTiming
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.designsystem.component.actions.LocalWindowControlActions
 import org.ide.lti.core.designsystem.component.actions.WindowControlActions
 import org.ide.lti.core.designsystem.theme.ComponentSize
+import org.ide.lti.core.domain.desktop.BackgroundSessionJumpTarget
+import org.ide.lti.core.domain.desktop.BackgroundSessionManager
+import org.ide.lti.core.domain.desktop.WorkspaceDropCoordinator
+import org.ide.lti.core.domain.repository.device.ConnectedDeviceRepository
 import org.ide.lti.core.domain.tools.AppShutdownPort
+import org.ide.lti.core.domain.usecase.build.ObserveRunUseCase
+import org.ide.lti.core.domain.workspace.WorkspaceManager
+import org.ide.lti.core.ui.desktop.DetachablePanelId
+import org.ide.lti.core.ui.desktop.DetachablePanelOpener
+import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.desktop.dialog.StudioSmartToolsDialogs
+import org.ide.lti.desktop.drop.AwtFileDropBridge
 import org.ide.lti.desktop.key.WindowKeyShortcutHandler
 import org.ide.lti.desktop.menu.dispatcher.DefaultStudioActionDispatcher
 import org.ide.lti.desktop.menu.model.StudioAction
 import org.ide.lti.desktop.menu.model.StudioMenuState
 import org.ide.lti.desktop.menu.ui.StudioMenuBar
 import org.ide.lti.desktop.tray.AppTray
+import org.ide.lti.desktop.tray.DesktopOs
 import org.ide.lti.desktop.tray.rememberClasspathPainter
+import org.ide.lti.desktop.window.DetachedPanelWindowsState
+import org.ide.lti.desktop.window.DetachedToolWindows
 import org.ide.lti.desktop.window.restoreWindow
 import org.ide.lti.shared.LtiSharedApp
 import org.ide.lti.shared.di.initKoin
+import org.koin.core.context.GlobalContext
 import kotlin.time.Duration.Companion.seconds
 
 private fun buildWindowControlActions(
     windowState: WindowState,
-    nucleusWin: NucleusWindow,
+    window: ComposeWindow,
     onClose: () -> Unit,
 ): WindowControlActions {
-    val awtWin = nucleusWin.unsafe.awtWindow
     var dragStartMouseX = 0
     var dragStartMouseY = 0
     var dragStartWindowX = 0
@@ -61,11 +75,7 @@ private fun buildWindowControlActions(
         onMinimize = {
             windowState.isMinimized = true
             try {
-                nucleusWin.setMinimized(true)
-            } catch (_: Throwable) {
-            }
-            try {
-                awtWin?.extendedState = java.awt.Frame.ICONIFIED
+                window.extendedState = window.extendedState or java.awt.Frame.ICONIFIED
             } catch (_: Throwable) {
             }
         },
@@ -76,53 +86,37 @@ private fun buildWindowControlActions(
                 } else {
                     WindowPlacement.Maximized
                 }
-            try {
-                nucleusWin.setMaximized(!nucleusWin.isMaximized)
-            } catch (_: Throwable) {
-            }
         },
         onClose = onClose,
         onDragWindow = {
             isDragging = true
-            try {
-                nucleusWin.unsafe.taoWindow?.dragWindow()
-            } catch (_: Throwable) {
-            }
-            awtWin?.let { win ->
-                val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
-                if (mouseLoc != null) {
-                    dragStartMouseX = mouseLoc.x
-                    dragStartMouseY = mouseLoc.y
-                    dragStartWindowX = win.x
-                    dragStartWindowY = win.y
-                }
+            val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
+            if (mouseLoc != null) {
+                dragStartMouseX = mouseLoc.x
+                dragStartMouseY = mouseLoc.y
+                dragStartWindowX = window.x
+                dragStartWindowY = window.y
             }
         },
         onDragDelta = { dx, dy ->
             if (isDragging) {
-                awtWin?.let { win ->
-                    val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
-                    if (windowState.placement == WindowPlacement.Maximized) {
-                        if (mouseLoc != null && dragStartMouseY != 0 && (mouseLoc.y - dragStartMouseY) > 15) {
-                            windowState.placement = WindowPlacement.Floating
-                            try {
-                                nucleusWin.setMaximized(false)
-                            } catch (_: Throwable) {
-                            }
-                            dragStartWindowX = mouseLoc.x - (win.width / 2)
-                            dragStartWindowY = mouseLoc.y - 15
-                            dragStartMouseX = mouseLoc.x
-                            dragStartMouseY = mouseLoc.y
-                            win.setLocation(dragStartWindowX, dragStartWindowY)
-                        }
-                    } else {
-                        if (mouseLoc != null && (dragStartMouseX != 0 || dragStartMouseY != 0)) {
-                            val newX = dragStartWindowX + (mouseLoc.x - dragStartMouseX)
-                            val newY = dragStartWindowY + (mouseLoc.y - dragStartMouseY)
-                            win.setLocation(newX, newY)
-                        } else if (dx != 0f || dy != 0f) {
-                            win.setLocation(win.x + dx.toInt(), win.y + dy.toInt())
-                        }
+                val mouseLoc = java.awt.MouseInfo.getPointerInfo()?.location
+                if (windowState.placement == WindowPlacement.Maximized) {
+                    if (mouseLoc != null && dragStartMouseY != 0 && (mouseLoc.y - dragStartMouseY) > 15) {
+                        windowState.placement = WindowPlacement.Floating
+                        dragStartWindowX = mouseLoc.x - (window.width / 2)
+                        dragStartWindowY = mouseLoc.y - 15
+                        dragStartMouseX = mouseLoc.x
+                        dragStartMouseY = mouseLoc.y
+                        window.setLocation(dragStartWindowX, dragStartWindowY)
+                    }
+                } else {
+                    if (mouseLoc != null && (dragStartMouseX != 0 || dragStartMouseY != 0)) {
+                        val newX = dragStartWindowX + (mouseLoc.x - dragStartMouseX)
+                        val newY = dragStartWindowY + (mouseLoc.y - dragStartMouseY)
+                        window.setLocation(newX, newY)
+                    } else if (dx != 0f || dy != 0f) {
+                        window.setLocation(window.x + dx.toInt(), window.y + dy.toInt())
                     }
                 }
             }
@@ -134,29 +128,30 @@ private fun buildWindowControlActions(
         },
         isMaximized = {
             windowState.placement == WindowPlacement.Maximized ||
-                try {
-                    nucleusWin.isMaximized
-                } catch (_: Throwable) {
-                    false
-                }
+                (window.extendedState and java.awt.Frame.MAXIMIZED_BOTH) != 0
         },
     )
 }
 
-fun main(args: Array<String>) {
+private const val SYNCED_RUNS_LIMIT = 5
+
+fun main() {
     StartupTiming.log("Process started")
     val instance = SingleInstanceGuard.acquireOrExplain(SingleInstanceGuard.defaultLockFile())
     if (instance == null) {
         System.err.println("LtiRom Studio is already running; close the other window first.")
         kotlin.system.exitProcess(1)
     }
-    nucleusApplication(args) {
-        remember {
-            StartupTiming.log("Koin init started")
-            initKoin()
-            StartupTiming.log("Koin init finished")
-        }
-        var mainWinRef by remember { mutableStateOf<NucleusWindow?>(null) }
+    // Load the persisted theme and preferences before starting the AWT event loop.
+    // The shared settings file also contains large workspace records; parsing it in
+    // composition blocks the event thread before it can paint or handle input.
+    StartupTiming.log("Koin init started")
+    initKoin()
+    StartupTiming.log("Koin init finished")
+    val initialAppSettings = GlobalContext.get().get<AppSettingsState>()
+    StartupTiming.log("Preferences loaded")
+    application {
+        var mainWinRef by remember { mutableStateOf<java.awt.Window?>(null) }
         var openSettingsRequest by remember { mutableLongStateOf(0L) }
         val windowState =
             rememberWindowState(
@@ -212,6 +207,89 @@ fun main(args: Array<String>) {
         var isDiffViewerOpen by remember { mutableStateOf(false) }
         var isPartitionExplorerOpen by remember { mutableStateOf(false) }
         var isMacroStudioOpen by remember { mutableStateOf(false) }
+        var isSessionDrawerOpen by remember { mutableStateOf(false) }
+        var detachedPanelsState by remember { mutableStateOf(DetachedPanelWindowsState()) }
+
+        val backgroundSessionManager = remember {
+            org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<BackgroundSessionManager>()
+        }
+        val workspaceDropCoordinator = remember {
+            org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<WorkspaceDropCoordinator>()
+        }
+        val panelOpener = remember {
+            DetachablePanelOpener { panel, argument ->
+                detachedPanelsState = detachedPanelsState.openPanel(panel, argument)
+            }
+        }
+
+        LaunchedEffect(workspaceDropCoordinator) {
+            val drop = workspaceDropCoordinator ?: return@LaunchedEffect
+            launch {
+                drop.partitionOpenRequests.collect { imagePath ->
+                    detachedPanelsState = detachedPanelsState.openPanel(
+                        DetachablePanelId.PARTITION_EXPLORER,
+                        imagePath,
+                    )
+                }
+            }
+            launch {
+                drop.apkAuditRequests.collect { apkPath ->
+                    detachedPanelsState = detachedPanelsState.openPanel(
+                        DetachablePanelId.DIFF_INSPECTOR,
+                        apkPath,
+                    )
+                }
+            }
+        }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        LaunchedEffect(backgroundSessionManager) {
+            val sessions = backgroundSessionManager ?: return@LaunchedEffect
+            val koin = org.koin.core.context.GlobalContext.getOrNull()
+            val devicesRepo = koin?.getOrNull<ConnectedDeviceRepository>()
+            val wsManager = koin?.getOrNull<WorkspaceManager>()
+            val observeRuns = koin?.getOrNull<ObserveRunUseCase>()
+
+            if (devicesRepo != null) {
+                launch {
+                    devicesRepo.getConnectedDevices().collect { devices ->
+                        sessions.syncConnectedDevices(devices)
+                    }
+                }
+            }
+            if (wsManager != null && observeRuns != null) {
+                launch {
+                    wsManager.currentWorkspace
+                        .flatMapLatest { ws ->
+                            if (ws == null) flowOf(emptyList()) else observeRuns.observeRuns(ws.id)
+                        }
+                        .collect { runs ->
+                            runs.sortedByDescending { it.startedAt }.take(SYNCED_RUNS_LIMIT).forEach { run ->
+                                sessions.syncBuildRun(run)
+                            }
+                        }
+                }
+            }
+            sessions.jumpRequests.collect { target ->
+                when (target) {
+                    is BackgroundSessionJumpTarget.PartitionExplorer -> {
+                        detachedPanelsState = detachedPanelsState.openPanel(
+                            DetachablePanelId.PARTITION_EXPLORER,
+                            target.imagePath,
+                        )
+                    }
+
+                    BackgroundSessionJumpTarget.DiffInspector -> {
+                        detachedPanelsState = detachedPanelsState.openPanel(
+                            DetachablePanelId.DIFF_INSPECTOR,
+                            null,
+                        )
+                    }
+
+                    else -> restoreWindow(windowState, mainWinRef)
+                }
+            }
+        }
 
         val commandRegistry = remember<org.ide.lti.core.domain.command.CommandPaletteRegistry> {
             org.ide.lti.core.ui.command.DefaultStudioCommands.createDefaultRegistry(
@@ -224,6 +302,10 @@ fun main(args: Array<String>) {
                 onOpenDiffViewer = { isDiffViewerOpen = true },
                 onOpenPartitionExplorer = { isPartitionExplorerOpen = true },
                 onOpenMacroStudio = { isMacroStudioOpen = true },
+                onToggleSessionDrawer = { isSessionDrawerOpen = !isSessionDrawerOpen },
+                onPopOutCopilot = { panelOpener.open(DetachablePanelId.LOGCAT_COPILOT, null) },
+                onPopOutPartitionExplorer = { panelOpener.open(DetachablePanelId.PARTITION_EXPLORER, null) },
+                onPopOutDiffInspector = { panelOpener.open(DetachablePanelId.DIFF_INSPECTOR, null) },
             )
         }
 
@@ -256,12 +338,12 @@ fun main(args: Array<String>) {
             onExit = requestExit,
         )
 
-        DecoratedWindow(
+        Window(
             onCloseRequest = requestExit,
             state = windowState,
             title = "LtiRom Studio",
             icon = rememberClasspathPainter("icons/ic_launcher.png"),
-            minimumSize = DpSize(ComponentSize.MainWindowMinWidth, ComponentSize.MainWindowMinHeight),
+            undecorated = true,
             onPreviewKeyEvent = { event ->
                 WindowKeyShortcutHandler.handleKeyEvent(
                     event = event,
@@ -284,21 +366,31 @@ fun main(args: Array<String>) {
             },
         ) {
             remember {
-                StartupTiming.log("DecoratedWindow composition entered")
+                StartupTiming.log("MainWindow composition entered")
             }
-            val nucleusWin = LocalNucleusWindow.current
-            val windowControlActions = remember(nucleusWin, windowState) {
+            val composeWindow = window
+            val windowControlActions = remember(composeWindow, windowState) {
                 buildWindowControlActions(
                     windowState = windowState,
-                    nucleusWin = nucleusWin,
+                    window = composeWindow,
                     onClose = requestExit,
                 )
             }
 
-            DisposableEffect(nucleusWin) {
-                StartupTiming.log("DecoratedWindow native window attached")
-                mainWinRef = nucleusWin
-                onDispose { mainWinRef = null }
+            DisposableEffect(composeWindow, workspaceDropCoordinator) {
+                StartupTiming.log("MainWindow native window attached")
+                mainWinRef = composeWindow
+                composeWindow.minimumSize = java.awt.Dimension(
+                    ComponentSize.MainWindowMinWidth.value.toInt(),
+                    ComponentSize.MainWindowMinHeight.value.toInt(),
+                )
+                val detachDrop = workspaceDropCoordinator?.let { coordinator ->
+                    AwtFileDropBridge.attach(composeWindow, coordinator, coroutineScope)
+                }
+                onDispose {
+                    detachDrop?.invoke()
+                    mainWinRef = null
+                }
             }
 
             DisposableEffect(actionDispatcher, windowControlActions) {
@@ -307,10 +399,22 @@ fun main(args: Array<String>) {
                 actionDispatcher.register(StudioAction.MINIMIZE_WINDOW) { windowControlActions.onMinimize() }
                 actionDispatcher.register(StudioAction.ZOOM_WINDOW) { windowControlActions.onMaximize() }
                 actionDispatcher.register(StudioAction.BRING_ALL_TO_FRONT) {
-                    restoreWindow(windowState, nucleusWin)
+                    restoreWindow(windowState, composeWindow, includeDetached = true)
                 }
                 actionDispatcher.register(StudioAction.TOGGLE_COMMAND_PALETTE) {
                     isCommandPaletteOpen = !isCommandPaletteOpen
+                }
+                actionDispatcher.register(StudioAction.TOGGLE_BACKGROUND_SESSIONS) {
+                    isSessionDrawerOpen = !isSessionDrawerOpen
+                }
+                actionDispatcher.register(StudioAction.POP_OUT_COPILOT) {
+                    panelOpener.open(DetachablePanelId.LOGCAT_COPILOT, null)
+                }
+                actionDispatcher.register(StudioAction.POP_OUT_PARTITION_EXPLORER) {
+                    panelOpener.open(DetachablePanelId.PARTITION_EXPLORER, null)
+                }
+                actionDispatcher.register(StudioAction.POP_OUT_DIFF_INSPECTOR) {
+                    panelOpener.open(DetachablePanelId.DIFF_INSPECTOR, null)
                 }
                 onDispose {
                     actionDispatcher.unregister(StudioAction.OPEN_SETTINGS)
@@ -319,19 +423,30 @@ fun main(args: Array<String>) {
                     actionDispatcher.unregister(StudioAction.ZOOM_WINDOW)
                     actionDispatcher.unregister(StudioAction.BRING_ALL_TO_FRONT)
                     actionDispatcher.unregister(StudioAction.TOGGLE_COMMAND_PALETTE)
+                    actionDispatcher.unregister(StudioAction.TOGGLE_BACKGROUND_SESSIONS)
+                    actionDispatcher.unregister(StudioAction.POP_OUT_COPILOT)
+                    actionDispatcher.unregister(StudioAction.POP_OUT_PARTITION_EXPLORER)
+                    actionDispatcher.unregister(StudioAction.POP_OUT_DIFF_INSPECTOR)
                 }
             }
 
             CompositionLocalProvider(
                 LocalWindowControlActions provides windowControlActions,
             ) {
-                (this@DecoratedWindow as? FrameWindowScope)?.let { frameScope ->
-                    with(frameScope) {
-                        StudioMenuBar(state = StudioMenuState(), dispatcher = actionDispatcher)
-                    }
+                if (remember { DesktopOs.current == DesktopOs.MacOS }) {
+                    StudioMenuBar(
+                        state = StudioMenuState(isTerminalVisible = isSessionDrawerOpen),
+                        dispatcher = actionDispatcher,
+                    )
                 }
-                LtiSharedApp(
+            LtiSharedApp(
+                appSettingsState = initialAppSettings,
                     openSettingsRequest = openSettingsRequest,
+                    backgroundSessionManager = backgroundSessionManager,
+                    workspaceDropCoordinator = workspaceDropCoordinator,
+                    detachablePanelOpener = panelOpener,
+                    isSessionDrawerOpen = isSessionDrawerOpen,
+                    onSessionDrawerOpenChange = { isSessionDrawerOpen = it },
                     windowDialogs = {
                         if (buildsAtExit.isNotEmpty()) {
                             val stay = {
@@ -437,10 +552,21 @@ fun main(args: Array<String>) {
                             onDismissPartitionExplorer = { isPartitionExplorerOpen = false },
                             isMacroStudioOpen = isMacroStudioOpen,
                             onDismissMacroStudio = { isMacroStudioOpen = false },
+                            onPopOutCopilot = { panelOpener.open(DetachablePanelId.LOGCAT_COPILOT, null) },
+                            onPopOutDiffViewer = { panelOpener.open(DetachablePanelId.DIFF_INSPECTOR, null) },
+                            onPopOutPartitionExplorer = {
+                                panelOpener.open(DetachablePanelId.PARTITION_EXPLORER, null)
+                            },
                         )
                     },
                 )
             }
         }
+
+        DetachedToolWindows(
+            state = detachedPanelsState,
+            onStateChange = { detachedPanelsState = it },
+            dropCoordinator = workspaceDropCoordinator,
+        )
     }
 }

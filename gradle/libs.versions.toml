@@ -69,7 +69,6 @@ fileKit = "0.8.7"
 wire = "5.0.0"
 liquidGlass ="1.0.0-beta02"
 capsule = "1.1.1"
-nucleus = "2.5.18"
 composeIcons = "1.1.1"
 # Jetbrains CMP
 windowsSizeClass = "0.5.0"
@@ -267,10 +266,6 @@ composeIcons-simpleIcons = { module = "br.com.devsrsouza.compose.icons:simple-ic
 composeIcons-tablerIcons = { module = "br.com.devsrsouza.compose.icons:tabler-icons", version.ref = "composeIcons" }
 liquidGlass = { module = "com.github.Kyant0:AndroidLiquidGlass", version.ref = "liquidGlass"}
 capsule = { module = "top.ltfan.capsule:capsule", version.ref = "capsule" }
-nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
-nucleus-decorated-window = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
-nucleus-fs-watcher = { module = "dev.nucleusframework:nucleus.fs-watcher", version.ref = "nucleus" }
-composenativetray = { module = "dev.nucleusframework:composenativetray", version = "2.1.6" }
 roborazzi-core = { module = "io.github.takahirom.roborazzi:roborazzi-core", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }

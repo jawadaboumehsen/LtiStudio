@@ -16,6 +16,32 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SuperBudgetTest {
+    @Test
+    fun projectsEachMeasuredGroupAndDoesNotChargeAnEmptySlot() {
+        val layout = SuperLayout(
+            superSize = 400,
+            groups = listOf(SuperGroup("apps_a", 150), SuperGroup("vendor_a", 100), SuperGroup("apps_b", 150)),
+            partitions = listOf(
+                SuperPartition("system_a", "apps_a", 100),
+                SuperPartition("product_a", "apps_a", 40),
+                SuperPartition("vendor_a", "vendor_a", 70),
+                SuperPartition("system_b", "apps_b", 0),
+            ),
+        )
+        val groups = SuperBudget.groups(
+            layout = layout,
+            fallback = SuperBudget(emptyList(), 999),
+            stock = emptyMap(),
+            built = mapOf("system" to 120),
+            trials = mapOf("product" to 50),
+            keepStock = setOf("vendor"),
+        )
+        assertEquals(listOf(140L, 70L, 0L), groups.map { it.beforeBytes })
+        assertEquals(listOf(170L, 70L, 0L), groups.map { it.projectedBytes })
+        assertEquals(BudgetSizeSource.TRIAL, groups.first().rows[1].source)
+        assertEquals(BudgetSizeSource.KEPT, groups[1].rows.single().source)
+    }
+
     private val mib = 1024L * 1024
 
     @Test

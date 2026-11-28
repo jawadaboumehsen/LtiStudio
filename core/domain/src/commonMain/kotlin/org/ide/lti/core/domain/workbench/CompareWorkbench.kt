@@ -10,6 +10,9 @@
 package org.ide.lti.core.domain.workbench
 
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.toolkit.ApkCertInspector
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureDiff
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureReport
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveDiff
 import org.ide.lti.core.domain.pipeline.toolkit.CodePackageDiff
 import org.ide.lti.core.domain.pipeline.toolkit.FileDiff
@@ -141,6 +144,37 @@ class CompareWorkbench(private val runner: WorkbenchRunner) {
         }
     }
 
+    /**
+     * Audits v1/v2/v3 APK signing certificates across [apkPaths] between sides [a] and [b].
+     * Added or removed APKs are compared against an empty report so unsigned APKs are flagged too.
+     */
+    suspend fun auditApkCertificates(
+        a: CompareSide,
+        b: CompareSide,
+        apkPaths: List<String>,
+    ): Map<String, ApkSignatureDiff> {
+        val apks = apkPaths.filter { it.endsWith(".apk", ignoreCase = true) }.distinct()
+        if (apks.isEmpty()) return emptyMap()
+        val results = linkedMapOf<String, ApkSignatureDiff>()
+        for (path in apks) {
+            val name = path.substringAfterLast('/')
+            val leftFile = runner.job(a.workspaceId, "Read cert $name (A)") { fileOf(a, path, "cert-a") }
+            val rightFile = runner.job(b.workspaceId, "Read cert $name (B)") { fileOf(b, path, "cert-b") }
+            val leftReport = if (leftFile != null) {
+                runner.job(a.workspaceId, "Inspect cert $name (A)") { apkCertReport(leftFile) }
+            } else {
+                ApkSignatureReport()
+            }
+            val rightReport = if (rightFile != null) {
+                runner.job(b.workspaceId, "Inspect cert $name (B)") { apkCertReport(rightFile) }
+            } else {
+                ApkSignatureReport()
+            }
+            results[path] = ApkCertInspector.diff(leftReport, rightReport)
+        }
+        return results
+    }
+
     private suspend fun WorkbenchRunner.Job.entryDiff(path: String, left: String, right: String): EntryComparison {
         val (l, r) = sh(PROBE_SCRIPT, left, right).lines().filter(String::isNotBlank).map { it.split('\t') }
         val zip = l[1] == ZIP_MAGIC && r[1] == ZIP_MAGIC
@@ -148,7 +182,12 @@ class CompareWorkbench(private val runner: WorkbenchRunner) {
         return when {
             zip && (path.endsWith(".jar") || path.endsWith(".apk")) -> {
                 val entries = archiveDiff(zipMembers(this, left), zipMembers(this, right))
-                EntryComparison.Code(path, entries, decodedDiff(left, right))
+                val signatures = if (path.endsWith(".apk", ignoreCase = true)) {
+                    ApkCertInspector.diff(apkCertReport(left), apkCertReport(right))
+                } else {
+                    null
+                }
+                EntryComparison.Code(path, entries, decodedDiff(left, right), signatures)
             }
 
             zip -> EntryComparison.Archive(path, archiveDiff(zipMembers(this, left), zipMembers(this, right)))
@@ -275,3 +314,6 @@ class CompareWorkbench(private val runner: WorkbenchRunner) {
         }
     }
 }
+
+private suspend fun WorkbenchRunner.Job.apkCertReport(filePath: String): ApkSignatureReport =
+    ApkCertInspector.parseReport(sh(ApkCertInspector.INSPECT_SCRIPT, filePath))

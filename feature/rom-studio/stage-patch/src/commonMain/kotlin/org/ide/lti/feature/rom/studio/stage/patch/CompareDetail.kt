@@ -36,6 +36,8 @@ import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureDiff
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureReport
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveDiff
 import org.ide.lti.core.domain.pipeline.toolkit.CodePackageDiff
 import org.ide.lti.core.domain.pipeline.toolkit.MethodChangeKind
@@ -54,7 +56,7 @@ internal fun EntryCard(opened: TreeChange, entry: EntryComparison?, busy: Boolea
             is EntryComparison.NoContent -> IdeHintText(entry.reason)
             is EntryComparison.Text -> TextDiff(entry.lines)
             is EntryComparison.Archive -> Entries(entry.entries)
-            is EntryComparison.Code -> CodeDiff(entry.code, entry.entries)
+            is EntryComparison.Code -> CodeDiff(entry.code, entry.entries, entry.signatures)
             is EntryComparison.Binary -> {
                 IdeMonoText("A ${entry.sizeA} bytes  sha256 ${entry.sha256A}")
                 IdeMonoText("B ${entry.sizeB} bytes  sha256 ${entry.sha256B}")
@@ -101,31 +103,18 @@ private fun Entries(d: ArchiveDiff) {
 }
 
 /**
- * Two packages' code: their dex files, then the methods that really changed, then those only renumbered; [entries]
- * (the archives' entries) when two JARs or APKs were compared.
+ * Two packages' code: APK signing certificates (when present), their dex files, then the methods that really changed,
+ * then those only renumbered; [entries] (the archives' entries) when two JARs or APKs were compared.
  */
 @Composable
-internal fun CodeDiff(code: CodePackageDiff, entries: ArchiveDiff?) {
+internal fun CodeDiff(code: CodePackageDiff, entries: ArchiveDiff?, signatures: ApkSignatureDiff? = null) {
     var showEntries by remember(code) { mutableStateOf(false) }
     var showRenumbered by remember(code) { mutableStateOf(false) }
     var openMethod by remember(code) { mutableStateOf<MethodDifference?>(null) }
+    signatures?.let { ApkSignatureCard(it) }
     val real = code.realChanges
     val renumbered = code.methodDifferences.filter { it.renumberedOnly }
-    // Two decoded folders carry no dex files to compare; two packages say which differ, or that none does.
-    when {
-        code.dexDifferences.isNotEmpty() -> IdeHintText("Dex: " + code.dexDifferences.joinToString(", "))
-        entries != null -> IdeHintText("No dex file differs.")
-    }
-    IdeHintText(
-        "${real.count { it.changeKind == MethodChangeKind.Modified }} modified, " +
-            "${real.count { it.changeKind == MethodChangeKind.Added }} added, " +
-            "${real.count { it.changeKind == MethodChangeKind.Removed }} removed method(s); " +
-            "${renumbered.size} differ only in the compiler's numbering. " +
-            (if (code.classDifferences.isEmpty()) "" else "${code.classDifferences.size} class(es) only on one side."),
-    )
-    code.classDifferences.take(MAX_SHOWN).forEach {
-        IdeMonoText(it, color = lineColor(if (it.startsWith("added")) "+" else "-"))
-    }
+    CodeDexAndMethodSummary(code = code, entries = entries, real = real, renumberedCount = renumbered.size)
     LazyColumn(Modifier.fillMaxWidth().heightIn(max = ComponentSize.MaxPanelHeight).testTag("CompareMethods")) {
         items(real) { m ->
             MethodRow(m, open = openMethod == m) { openMethod = if (openMethod == m) null else m }
@@ -148,6 +137,34 @@ internal fun CodeDiff(code: CodePackageDiff, entries: ArchiveDiff?) {
     }
     if (showRenumbered) renumbered.take(MAX_SHOWN).forEach { IdeMonoText(signature(it)) }
     if (showEntries && entries != null) Entries(entries)
+}
+
+@Composable
+private fun CodeDexAndMethodSummary(
+    code: CodePackageDiff,
+    entries: ArchiveDiff?,
+    real: List<MethodDifference>,
+    renumberedCount: Int,
+) {
+    // Two decoded folders carry no dex files to compare; two packages say which differ, or that none does.
+    when {
+        code.dexDifferences.isNotEmpty() -> IdeHintText("Dex: " + code.dexDifferences.joinToString(", "))
+        entries != null -> IdeHintText("No dex file differs.")
+    }
+    val classNote = if (code.classDifferences.isEmpty()) {
+        ""
+    } else {
+        "${code.classDifferences.size} class(es) only on one side."
+    }
+    IdeHintText(
+        "${real.count { it.changeKind == MethodChangeKind.Modified }} modified, " +
+            "${real.count { it.changeKind == MethodChangeKind.Added }} added, " +
+            "${real.count { it.changeKind == MethodChangeKind.Removed }} removed method(s); " +
+            "$renumberedCount differ only in the compiler's numbering. $classNote",
+    )
+    code.classDifferences.take(MAX_SHOWN).forEach {
+        IdeMonoText(it, color = lineColor(if (it.startsWith("added")) "+" else "-"))
+    }
 }
 
 @Composable
@@ -188,4 +205,33 @@ private fun signature(m: MethodDifference): String = if (m.methodName == SmaliCo
     "L${m.className};->${m.methodName}"
 }
 
+@Composable
+private fun ApkSignatureCard(diff: ApkSignatureDiff) {
+    val color = when {
+        !diff.right.isSigned -> GlassTheme.diagnosticColors.error
+        diff.certificatesChanged -> GlassTheme.diagnosticColors.warning
+        else -> GlassTheme.diagnosticColors.success
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+        IdeMonoText("APK Signatures: ${diff.summary}", color = color)
+        SignatureSideLine("A", diff.left)
+        SignatureSideLine("B", diff.right)
+    }
+}
+
+@Composable
+private fun SignatureSideLine(side: String, report: ApkSignatureReport) {
+    if (!report.isSigned) {
+        IdeHintText("$side: Unsigned")
+        return
+    }
+    val schemes = report.schemes.joinToString("/").ifBlank { "?" }
+    val certs = report.certificates.joinToString("; ") { cert ->
+        val cn = cert.subject.ifBlank { "unknown subject" }
+        "${cert.scheme}:${cert.sha256.take(SHORT_CERT)} ($cn)"
+    }.ifBlank { "schemes=$schemes" }
+    IdeMonoText("$side [$schemes]: $certs")
+}
+
+private const val SHORT_CERT = 12
 private const val MAX_SHOWN = 200

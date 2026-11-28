@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,12 +53,15 @@ import org.ide.lti.core.designsystem.theme.GlassTheme
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.domain.pipeline.PipelineStageSequence
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
+import org.ide.lti.core.domain.workspace.TimelineLogFilter
+import org.ide.lti.core.domain.workspace.TimelineStepNode
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
 import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.run.VerificationState
 import org.ide.lti.core.model.setup.EnvironmentReadinessState
+import org.ide.lti.core.ui.timeline.InteractiveBuildTimeline
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -70,7 +74,10 @@ fun RunPanel(
     onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
+    val activeUiState by viewModel.uiState.collectAsState()
     var selectedTab by rememberSaveable { mutableStateOf("run") }
+    var selectedStageFilter by remember(activeUiState.latestRun?.id) { mutableStateOf<StageId?>(null) }
+    var selectedStepFilter by remember(activeUiState.latestRun?.id) { mutableStateOf<TimelineStepNode?>(null) }
 
     Column(
         modifier = modifier
@@ -81,6 +88,7 @@ fun RunPanel(
         GlassTabBar(
             tabs = listOf(
                 GlassTab(id = "run", title = "Run"),
+                GlassTab(id = "timeline", title = "Timeline & DAG"),
                 GlassTab(id = "history", title = "History"),
                 GlassTab(id = "profiles", title = "Profiles"),
             ),
@@ -92,6 +100,24 @@ fun RunPanel(
         when (selectedTab) {
             "profiles" -> ProfilesPanel(viewModel = profilesViewModel, modifier = Modifier.fillMaxSize())
 
+            "timeline" -> {
+                RunTimelineTabContent(
+                    run = activeUiState.latestRun,
+                    selectedStageId = selectedStageFilter,
+                    onSelectStage = { stageId ->
+                        selectedStageFilter = stageId
+                        selectedStepFilter = null
+                    },
+                    onJumpToLogs = { stageId, step ->
+                        selectedStageFilter = stageId
+                        selectedStepFilter = step
+                        selectedTab = "run"
+                    },
+                    onInspectDiff = { stageId -> onOpen(stageId, "") },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+
             "history" -> {
                 RunHistoryPanel(
                     viewModel = historyViewModel,
@@ -102,12 +128,54 @@ fun RunPanel(
             else -> {
                 ActiveRunContent(
                     viewModel = viewModel,
+                    selectedStageFilter = selectedStageFilter,
+                    selectedStepFilter = selectedStepFilter,
+                    onClearStageFilter = {
+                        selectedStageFilter = null
+                        selectedStepFilter = null
+                    },
                     onNavigateToSetup = onNavigateToSetup,
                     onOpen = onOpen,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RunTimelineTabContent(
+    run: org.ide.lti.core.model.run.BuildRun?,
+    selectedStageId: StageId?,
+    onSelectStage: (StageId?) -> Unit,
+    onJumpToLogs: (StageId, TimelineStepNode?) -> Unit,
+    onInspectDiff: (StageId) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val typography = GlassTheme.typography
+    if (run == null) {
+        GlassCard(modifier = modifier.fillMaxWidth()) {
+            Text(
+                text = "Start a build or open a run in History to explore its interactive Task DAG and Waterfall.",
+                style = typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(Spacing.Medium),
+            )
+        }
+        return
+    }
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(Spacing.Medium),
+    ) {
+        InteractiveBuildTimeline(
+            run = run,
+            selectedStageId = selectedStageId,
+            onSelectStage = onSelectStage,
+            onJumpToLogs = onJumpToLogs,
+            onInspectDiff = onInspectDiff,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -288,6 +356,9 @@ private fun RunStateBanners(uiState: BuildRunUiState, onNavigateToSetup: (() -> 
 @Composable
 private fun ActiveRunContent(
     viewModel: BuildRunViewModel,
+    selectedStageFilter: StageId? = null,
+    selectedStepFilter: TimelineStepNode? = null,
+    onClearStageFilter: () -> Unit = {},
     onNavigateToSetup: (() -> Unit)? = null,
     onOpen: (StageId, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -295,6 +366,9 @@ private fun ActiveRunContent(
     val uiState by viewModel.uiState.collectAsState()
     ActiveRunContent(
         uiState = uiState,
+        selectedStageFilter = selectedStageFilter,
+        selectedStepFilter = selectedStepFilter,
+        onClearStageFilter = onClearStageFilter,
         onCancel = { viewModel.cancelBuild() },
         onStart = { viewModel.startBuild() },
         onSelectThroughStage = viewModel::selectThroughStage,
@@ -303,6 +377,7 @@ private fun ActiveRunContent(
         onNavigateToSetup = onNavigateToSetup,
         onPreview = viewModel::previewImpact,
         onReport = viewModel::makeReport,
+        onVerifyProvenance = viewModel::verifyProvenance,
         onCloseReport = viewModel::closeReport,
         onCheckPhone = viewModel::checkPhone,
         onApplyFix = viewModel::applyFix,
@@ -322,10 +397,14 @@ fun ActiveRunContent(
     onNavigateToSetup: (() -> Unit)? = null,
     onPreview: () -> Unit = {},
     onReport: () -> Unit = {},
+    onVerifyProvenance: () -> Unit = {},
     onCloseReport: () -> Unit = {},
     onCheckPhone: () -> Unit = {},
     onApplyFix: (PreflightFix.Setting) -> Unit = {},
     onOpen: (StageId, String) -> Unit = { _, _ -> },
+    selectedStageFilter: StageId? = null,
+    selectedStepFilter: TimelineStepNode? = null,
+    onClearStageFilter: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val typography = GlassTheme.typography
@@ -417,6 +496,12 @@ fun ActiveRunContent(
                         variant = GlassButtonVariant.Standard,
                         modifier = Modifier.testTag("BuildReportButton"),
                     ) { Text(if (uiState.isReporting) "Reading…" else "Build report") }
+                    GlassButton(
+                        onClick = onVerifyProvenance,
+                        loading = uiState.isVerifyingProvenance,
+                        variant = GlassButtonVariant.Standard,
+                        modifier = Modifier.testTag("VerifyProvenanceButton"),
+                    ) { Text(if (uiState.isVerifyingProvenance) "Verifying…" else "Verify SBOM") }
                 }
             }
         }
@@ -445,19 +530,54 @@ fun ActiveRunContent(
         }
 
         // Console log drawer
-        GlassConsoleDrawer(
+        ActiveRunConsoleSection(
             logs = uiState.logs,
             isRunning = uiState.isRunning,
-            modifier = Modifier.fillMaxWidth(),
-            logMaxHeight = if (artifacts.isEmpty()) {
-                ComponentSize.DialogDefaultHeight
-            } else {
-                ComponentSize.ActionCardHeight
-            },
+            hasArtifacts = artifacts.isNotEmpty(),
+            selectedStageFilter = selectedStageFilter,
+            selectedStepFilter = selectedStepFilter,
+            onClearStageFilter = onClearStageFilter,
         )
 
         Spacer(modifier = Modifier.height(Spacing.Large))
     }
+}
+
+@Composable
+private fun ActiveRunConsoleSection(
+    logs: List<String>,
+    isRunning: Boolean,
+    hasArtifacts: Boolean,
+    selectedStageFilter: StageId?,
+    selectedStepFilter: TimelineStepNode?,
+    onClearStageFilter: () -> Unit,
+) {
+    val filteredLogs = remember(logs, selectedStageFilter, selectedStepFilter) {
+        TimelineLogFilter.filter(logs, selectedStageFilter, selectedStepFilter)
+    }
+    selectedStageFilter?.let { stage ->
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val stepSuffix = selectedStepFilter?.label?.let { " -> $it" }.orEmpty()
+            GlassChip(
+                label = "Filtered: ${PipelineStageSequence.label(stage)}$stepSuffix (${filteredLogs.size})",
+                selected = true,
+                onClick = onClearStageFilter,
+            )
+        }
+    }
+    GlassConsoleDrawer(
+        logs = filteredLogs,
+        isRunning = isRunning,
+        modifier = Modifier.fillMaxWidth(),
+        logMaxHeight = if (hasArtifacts) {
+            ComponentSize.ActionCardHeight
+        } else {
+            ComponentSize.DialogDefaultHeight
+        },
+    )
 }
 
 @Composable
@@ -489,6 +609,7 @@ internal fun ArtifactItem(artifact: Artifact) {
                         ArtifactKind.CHECKSUM -> "SHA256"
                         ArtifactKind.IMAGE -> "IMG"
                         ArtifactKind.EXTRA_PACKAGE -> "EXTRA"
+                        ArtifactKind.PROVENANCE_SBOM -> "SBOM"
                     },
                 )
             }

@@ -7,7 +7,6 @@
  */
 package org.ide.lti.desktop.tray
 
-import dev.nucleusframework.core.runtime.Platform
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,11 +15,31 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.common.notification.SystemNotification
 import org.ide.lti.core.common.notification.SystemNotifier
 
+internal enum class DesktopOs {
+    Windows,
+    MacOS,
+    Linux,
+    Other,
+    ;
+
+    companion object {
+        val current: DesktopOs by lazy {
+            val osName = System.getProperty("os.name").orEmpty().lowercase()
+            when {
+                osName.contains("win") -> Windows
+                osName.contains("mac") || osName.contains("darwin") -> MacOS
+                osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> Linux
+                else -> Other
+            }
+        }
+    }
+}
+
 /**
  * Native OS notifier for desktop environments (Windows, macOS, Linux).
  *
  * Operates independently of Java AWT Event Dispatch Thread constraints,
- * ensuring notification delivery functions seamlessly on the Tao native backend.
+ * delivering notifications via native platform commands.
  */
 class DesktopNativeNotifier(
     private val appTitle: String = "LtiRom Studio",
@@ -28,9 +47,9 @@ class DesktopNativeNotifier(
 ) : SystemNotifier {
 
     override val isSupported: Boolean
-        get() = when (Platform.Current) {
-            Platform.Windows, Platform.MacOS, Platform.Linux -> true
-            else -> false
+        get() = when (DesktopOs.current) {
+            DesktopOs.Windows, DesktopOs.MacOS, DesktopOs.Linux -> true
+            DesktopOs.Other -> false
         }
 
     override fun notify(notification: SystemNotification) {
@@ -38,11 +57,11 @@ class DesktopNativeNotifier(
 
         scope.launch {
             try {
-                when (Platform.Current) {
-                    Platform.Windows -> sendWindowsToast(notification)
-                    Platform.Linux -> sendLinuxNotification(notification)
-                    Platform.MacOS -> sendMacNotification(notification)
-                    else -> Unit
+                when (DesktopOs.current) {
+                    DesktopOs.Windows -> sendWindowsToast(notification)
+                    DesktopOs.Linux -> sendLinuxNotification(notification)
+                    DesktopOs.MacOS -> sendMacNotification(notification)
+                    DesktopOs.Other -> Unit
                 }
             } catch (e: CancellationException) {
                 throw e

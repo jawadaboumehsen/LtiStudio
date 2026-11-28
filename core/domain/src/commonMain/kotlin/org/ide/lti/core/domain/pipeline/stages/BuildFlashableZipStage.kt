@@ -559,6 +559,10 @@ class BuildFlashableZipStage : StageDefinition {
         val stage = ctx.abs(STAGE_DIR)
         val signed = ctx.abs(flashableRelPath(ctx))
         val steps = mutableListOf<PipelineStep>()
+        steps += PipelineStep.Tool(
+            stepCommand("sh", listOf("-c", NORMALIZE_TIMESTAMPS_SCRIPT, "sh", stage, REPRODUCIBLE_EPOCH), ws),
+            "normalize staging timestamps",
+        )
         // zip adds to an existing archive: start from none, or a failed run's members would stay in it.
         steps += PipelineStep.Tool(stepCommand("rm", listOf("-f", "$stage/rom.zip"), ws), "remove old rom.zip")
         steps += PipelineStep.Tool(
@@ -566,7 +570,7 @@ class BuildFlashableZipStage : StageDefinition {
                 "zip",
                 // Named one by one: the service runs commands without a shell, so a glob would reach zip
                 // unexpanded and the block-dat members would be left out.
-                listOf("-0", "-r", "rom.zip", "META-INF/com/android") +
+                listOf("-0", "-X", "-r", "rom.zip", "META-INF/com/android") +
                     ctx.target.dynamicPartitions.flatMap { listOf("$it.new.dat.br", "$it.patch.dat") },
                 stage,
             ),
@@ -578,6 +582,7 @@ class BuildFlashableZipStage : StageDefinition {
                 "zip",
                 listOf(
                     zipLevel,
+                    "-X",
                     "-r",
                     "rom.zip",
                     ".",
@@ -716,7 +721,11 @@ class BuildFlashableZipStage : StageDefinition {
         const val PACKAGE_BUILD_PROP: String = "package.build.prop"
         const val VENDOR_BUILD_PROP: String = "package.vendor.build.prop"
         const val PLATFORM_CERT_SHA1: String = "keys.platform.cert.sha1"
-        private const val EROFS_TIMESTAMP = "1640995200"
+        const val REPRODUCIBLE_EPOCH: String = "1640995200"
+        const val REPRODUCIBLE_EPOCH_SECONDS: Long = 1_640_995_200L
+        private const val EROFS_TIMESTAMP = REPRODUCIBLE_EPOCH
+        internal const val NORMALIZE_TIMESTAMPS_SCRIPT: String =
+            "find \"\$1\" -exec touch -h -d \"@\$2\" {} +"
         const val EXTRA_DIR: String = "out/extra"
 
         /** mkfs.erofs's data deduplication and tail fragments (`BuildFilesystems.erofsDedupe`). */

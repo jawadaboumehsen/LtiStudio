@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.stateIn
@@ -198,9 +199,11 @@ class SetupViewModel(
     init {
         environmentSetupState.checkEnvironmentStatus()
         viewModelScope.launch {
-            toolchainSetupState.collect { state ->
-                val serverStep = state.steps.firstOrNull { it.stage == SetupStepStage.SERVER_CONNECTIVITY }
-                val isServerReady = serverStep?.status == StepStatus.SUCCESS
+            toolchainSetupState.map { state ->
+                !state.isChecking && state.steps.any {
+                    it.stage == SetupStepStage.SERVER_CONNECTIVITY && it.status == StepStatus.SUCCESS
+                }
+            }.distinctUntilChanged().collect { isServerReady ->
                 if (isServerReady) {
                     toolsPageState.refresh()
                 }

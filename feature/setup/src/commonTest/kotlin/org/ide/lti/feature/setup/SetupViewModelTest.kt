@@ -34,8 +34,12 @@ import org.ide.lti.core.domain.setup.SetupPlanKind
 import org.ide.lti.core.domain.setup.SetupStepStage
 import org.ide.lti.core.domain.setup.StepProvenance
 import org.ide.lti.core.domain.setup.StepStatus
+import org.ide.lti.core.domain.setup.ToolGroupCatalog
 import org.ide.lti.core.domain.setup.ToolchainProvisioningService
 import org.ide.lti.core.domain.setup.ToolchainSetupState
+import org.ide.lti.core.domain.tools.ToolInventory
+import org.ide.lti.core.domain.tools.ToolManager
+import org.ide.lti.core.domain.tools.ToolStorePort
 import org.ide.lti.core.domain.usecase.target.ProvisionAvbKeyUseCase
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.setup.EnvironmentReadiness
@@ -305,6 +309,50 @@ class SetupViewModelTest {
         override suspend fun refresh(): EnvironmentReadiness = flow.value
 
         override suspend fun forWorkspace(workspace: Workspace): EnvironmentReadiness = flow.value
+    }
+
+    @Test
+    fun toolInventoryRefreshWaitsForCompletedChecksAndIgnoresProgressUpdates() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val service = FakeToolchainProvisioningService(
+                ToolchainSetupState(
+                    isChecking = true,
+                    steps = ToolchainSetupState.defaultSteps().map {
+                        it.copy(status = StepStatus.SUCCESS, provenance = StepProvenance.LIVE)
+                    },
+                ),
+            )
+            var reads = 0
+            val port = object : ToolStorePort by ToolStorePort.NoOp {
+                override suspend fun status(catalog: ToolGroupCatalog): Result<ToolInventory> {
+                    reads++
+                    return Result.success(ToolInventory(emptyMap()))
+                }
+            }
+            SetupViewModel(
+                workspaceManager = WorkspaceManager(FakeWorkspaceRepository(), this),
+                toolchainService = service,
+                toolManager = ToolManager(port),
+            )
+            testScheduler.advanceUntilIdle()
+            assertEquals(0, reads, "Do not compete with the readiness scan")
+            service.mutableState.value = service.mutableState.value.copy(isChecking = false)
+            testScheduler.advanceUntilIdle()
+            assertEquals(1, reads)
+            repeat(5) {
+                service.mutableState.value = service.mutableState.value.copy(lastVerifiedTimestamp = it.toLong())
+                testScheduler.advanceUntilIdle()
+            }
+            assertEquals(1, reads, "Progress and timestamps must not rescan the tool store")
+            service.mutableState.value = service.mutableState.value.copy(isChecking = true)
+            testScheduler.advanceUntilIdle()
+            service.mutableState.value = service.mutableState.value.copy(isChecking = false)
+            testScheduler.advanceUntilIdle()
+            assertEquals(2, reads, "A subsequent completed check still refreshes the inventory")
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 
     @Test

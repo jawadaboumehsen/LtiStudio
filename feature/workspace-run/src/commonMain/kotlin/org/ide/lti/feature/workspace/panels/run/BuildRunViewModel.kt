@@ -40,6 +40,8 @@ import org.ide.lti.core.domain.pipeline.stages.PreflightFinding
 import org.ide.lti.core.domain.pipeline.stages.PreflightFix
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.ports.EnvironmentReadinessPort
+import org.ide.lti.core.domain.provenance.BuildProvenanceGenerator
+import org.ide.lti.core.domain.provenance.ProvenanceVerifier
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.repository.snapshot.SnapshotRepository
 import org.ide.lti.core.domain.repository.target.WorkspaceDeviceRepository
@@ -50,6 +52,7 @@ import org.ide.lti.core.domain.usecase.build.StartPipelineRunUseCase
 import org.ide.lti.core.domain.workbench.DeviceCheckResult
 import org.ide.lti.core.domain.workbench.DeviceTest
 import org.ide.lti.core.domain.workbench.DeviceVerdict
+import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.domain.workspace.BuildReport
 import org.ide.lti.core.domain.workspace.BuildReportText
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -92,6 +95,7 @@ data class BuildRunUiState(
     val report: BuildReportText? = null,
     val reportTitle: String = "Build report",
     val isReporting: Boolean = false,
+    val isVerifyingProvenance: Boolean = false,
     val isCheckingPhone: Boolean = false,
 ) {
     /** The message of the stage the last run failed in. */
@@ -133,6 +137,7 @@ class BuildRunViewModel(
     private val settingsStore: WorkspaceSettingsStore? = null,
     private val buildReport: BuildReport? = null,
     private val deviceTest: DeviceTest? = null,
+    private val runner: WorkbenchRunner? = null,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BuildRunUiState())
@@ -334,6 +339,41 @@ class BuildRunViewModel(
                         state.copy(isReporting = false, errorMessage = e.message ?: "The report could not be made")
                     },
                 )
+            }
+        }
+    }
+
+    /** Reads and verifies the latest build's machine-verifiable provenance SBOM against workspace files and keys. */
+    fun verifyProvenance() {
+        val ws = _uiState.value.currentWorkspace
+        val run = _uiState.value.latestRun
+        val wb = runner
+        if (ws == null || run == null || wb == null) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isVerifyingProvenance = true, errorMessage = null) }
+            val result = ProvenanceVerifier.readAndVerify(wb, ws.id, run.id)
+            _uiState.update { state ->
+                if (state.latestRun?.id != run.id) {
+                    state.copy(isVerifyingProvenance = false)
+                } else {
+                    result.fold(
+                        onSuccess = { (manifest, verdict) ->
+                            val md = BuildProvenanceGenerator.toMarkdownReport(manifest, verdict)
+                            state.copy(
+                                isVerifyingProvenance = false,
+                                report = BuildReportText(md, verdict.problems),
+                                reportTitle = "Build Provenance & SBOM",
+                            )
+                        },
+                        onFailure = { e ->
+                            if (e is CancellationException) throw e
+                            state.copy(
+                                isVerifyingProvenance = false,
+                                errorMessage = e.message ?: "The provenance manifest could not be verified",
+                            )
+                        },
+                    )
+                }
             }
         }
     }

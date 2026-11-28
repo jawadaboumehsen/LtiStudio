@@ -11,7 +11,9 @@ package org.ide.lti.core.domain.workspace
 
 import org.ide.lti.core.domain.pipeline.stages.Preflight
 import org.ide.lti.core.domain.plugin.InstalledRecord
+import org.ide.lti.core.domain.plugin.LabRow
 import org.ide.lti.core.domain.plugin.LabStatus
+import org.ide.lti.core.domain.plugin.ModLab
 import org.ide.lti.core.domain.plugin.ModUpdateReview
 import org.ide.lti.core.domain.plugin.PluginCatalogPort
 import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
@@ -32,41 +34,97 @@ class ModUpdates(
 ) {
     /** What installing [newest] of [key] would change for the workspaces; null when no workspace would move. */
     suspend fun pending(installed: List<InstalledRecord>, key: String, newest: String): PendingUpdate? {
-        val moves = usage.pendingMoves(installed)
-        val records = installed.filter { it.key == key }.associateBy { it.identity.version }
-        val newRecord = records[newest]
-        if (moves.isEmpty() || newRecord == null) return null
-        val used = moves.mapNotNull { it.using[key] }.filter { it != newest }.distinct().sorted()
-        val reviews = used.map { from ->
-            val publisher = newRecord.identity.publisher
-            val id = newRecord.identity.id
+        val moves = usage.pendingMoves(installed).filter { move ->
+            move.using[key] != null && move.using[key] != newest &&
+                move.snapshot.customization.lockfile.entries.any {
+                    "${it.publisher}:${it.id}" == key && it.version == newest
+                }
+        }
+        if (moves.isEmpty()) return null
+        val records = installed.associateBy { it.key to it.identity.version }
+        // Re-locking can also upgrade dependencies and other enabled mods. Review every change
+        // that applying these moves will save, rather than only the package just imported.
+        val changes = moves.flatMap { move ->
+            move.snapshot.customization.lockfile.entries.mapNotNull { entry ->
+                val changedKey = "${entry.publisher}:${entry.id}"
+                val from = move.using[changedKey]
+                Triple(changedKey, from ?: NOT_ENABLED, entry.version).takeIf { from != entry.version }
+            }
+        }.distinct().sortedWith(compareBy({ it.first }, { it.second }, { it.third }))
+        val reviews = changes.map { (changedKey, from, to) ->
+            val (publisher, id) = changedKey.split(':', limit = 2)
+            if (from == NOT_ENABLED) {
+                return@map ModUpdateReview(
+                    changedKey,
+                    from,
+                    to,
+                    mapOf(ModUpdateReview.DEPENDENCIES to listOf("newly enabled: a new version needs it")),
+                )
+            }
             ModUpdateReview.of(
-                key = key,
+                key = changedKey,
                 from = from,
-                to = newest,
+                to = to,
                 old = catalog.templateFor(publisher, id, from),
-                new = catalog.templateFor(publisher, id, newest),
-                oldPackage = records[from]?.toInstalledPackage(),
-                newPackage = newRecord.toInstalledPackage(),
+                new = catalog.templateFor(publisher, id, to),
+                oldPackage = records[changedKey to from]?.toInstalledPackage(),
+                newPackage = records[changedKey to to]?.toInstalledPackage(),
             )
         }
         return PendingUpdate(reviews, moves)
     }
 
     /**
-     * The mod lab for [move]'s workspace on the new versions (file operations; APK/JAR edits are checked by the
-     * lab's decode in Patches, or the build), as one line: what was checked, and each refusal.
+     * Compare both locks against the same prepared tree, with APK/JAR decoding enabled.
+     * Report existing failures separately from candidate regressions.
      */
     suspend fun check(move: PluginWorkspaceUsage.PendingMove): String {
-        val lab = checkNotNull(preflight) { "This app cannot run the mod lab" }.lab(move.workspaceId, move.snapshot)
-        val counts = lab.rows.groupingBy { it.status }.eachCount()
-        val refused = lab.rows.filter { it.status == LabStatus.REFUSED }
-        val summary = listOfNotNull(
-            counts[LabStatus.CHECKED]?.let { "$it checked" },
-            counts[LabStatus.UNCHECKED]?.let { "$it left to the build" },
-            counts[LabStatus.REFUSED]?.let { "$it refused" },
-        ).joinToString(" · ").ifEmpty { "nothing to check" }
-        val why = (lab.problems + refused.map { "${it.mod} ${it.operationId}: ${it.reason}" }).joinToString("; ")
-        return if (why.isEmpty()) summary else "$summary — $why"
+        val checker = checkNotNull(preflight) { "This app cannot run the mod lab" }
+        val before = checker.lab(move.workspaceId, move.before, decode = true)
+        val lab = checker.lab(move.workspaceId, move.snapshot, decode = true)
+        return summarizeUpdate(before, lab)
     }
+
+    /** Revalidate the candidate locks against the latest installed inventory before applying any workspace. */
+    suspend fun apply(update: PendingUpdate, installed: List<InstalledRecord>): List<String> {
+        val latest = usage.pendingMoves(installed).associateBy { it.workspaceId }
+        check(update.moves.all { latest[it.workspaceId] == it }) {
+            "Installed versions or workspace settings changed. Review the update again."
+        }
+        return update.moves.map { move ->
+            usage.applyReviewed(move).fold(
+                onSuccess = { "${move.name}: updated" },
+                onFailure = { "${move.name}: ${it.message ?: "could not save"}" },
+            )
+        }
+    }
+}
+
+private const val NOT_ENABLED = "not enabled"
+
+internal fun summarizeUpdate(before: ModLab, after: ModLab): String {
+    fun refused(row: LabRow) = row.status == LabStatus.REFUSED
+    val oldRefusals = before.rows.filter(::refused).associateBy { it.mod to it.operationId }
+    val newRefusals = after.rows.filter(::refused)
+    val regressions = newRefusals.filter { row -> oldRefusals[row.mod to row.operationId]?.reason != row.reason }
+    val issues = buildList {
+        if (before.problems.isNotEmpty()) add("Current versions need evidence: ${before.problems.joinToString()}")
+        if (after.problems.isNotEmpty()) add("Candidate versions need evidence: ${after.problems.joinToString()}")
+        regressions.forEach {
+            val result = if (before.problems.isEmpty()) "New failure" else "Candidate failure"
+            add("$result · ${it.mod} ${it.operationId}: ${it.reason}")
+        }
+        newRefusals.filterNot { it in regressions }.forEach {
+            add("Existing failure · ${it.mod} ${it.operationId}: ${it.reason}")
+        }
+        val unchecked = after.rows.count { it.status == LabStatus.UNCHECKED }
+        if (unchecked > 0) add("$unchecked operations still need evidence.")
+    }
+    val checked = after.rows.count { it.status == LabStatus.CHECKED }
+    val summary = if (checked == 0 && issues.isEmpty()) {
+        "No applicable operations checked"
+    } else {
+        "$checked candidate operations checked"
+    }
+    return (listOf(summary) + issues).joinToString("\n")
 }

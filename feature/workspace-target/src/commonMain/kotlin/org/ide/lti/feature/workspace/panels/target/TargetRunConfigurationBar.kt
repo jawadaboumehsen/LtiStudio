@@ -227,7 +227,7 @@ private fun TargetRomSegment(
                         painter = AppIcons.SettingsPainterResource(),
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.Small),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = LocalContentColor.current,
                     )
                 },
                 onClick = {
@@ -246,7 +246,7 @@ private fun TargetRomSegment(
                         painter = AppIcons.EditPainterResource(),
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.Small),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = LocalContentColor.current,
                     )
                 },
                 onClick = {
@@ -263,7 +263,7 @@ private fun TargetRomSegment(
                         painter = AppIcons.AddPainterResource(),
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.Small),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = LocalContentColor.current,
                     )
                 },
                 onClick = {
@@ -282,7 +282,7 @@ private fun TargetRomSegment(
                         painter = AppIcons.ClosePainterResource(),
                         contentDescription = null,
                         modifier = Modifier.size(IconSize.Small),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = LocalContentColor.current,
                     )
                 },
                 onClick = {
@@ -386,7 +386,7 @@ private fun ConnectedDeviceSegment(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = null,
                             modifier = Modifier.size(IconSize.Small),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = LocalContentColor.current,
                         )
                     }
                 },
@@ -559,7 +559,7 @@ private fun TargetPillButton(
         Row(
             modifier = modifier
                 .height(ComponentSize.SegmentedButtonSize)
-                .clip(GlassShapes.Compact)
+                .clip(GlassShapes.Pill)
                 .background(animatedBg)
                 .onPointerEvent(PointerEventType.Enter) { isHovered = true }
                 .onPointerEvent(PointerEventType.Exit) { isHovered = false }

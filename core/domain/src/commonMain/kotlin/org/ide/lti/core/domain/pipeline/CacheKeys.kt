@@ -20,7 +20,7 @@ object CacheKeys {
      * Bump whenever a stage's commands change (what it runs, not its settings): every stage key includes it,
      * so a run never reuses outputs an older pipeline made.
      */
-    const val PIPELINE_VERSION: String = "2026-11-13.1"
+    const val PIPELINE_VERSION: String = "2026-11-28.1"
 
     private fun Map<String, Any>.keyField(): String =
         toSortedMap().entries.joinToString("") { (k, v) -> "${k.length}:$k${v.toString().length}:$v" }

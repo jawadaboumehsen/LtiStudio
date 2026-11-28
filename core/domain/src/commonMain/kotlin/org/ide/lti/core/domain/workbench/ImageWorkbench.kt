@@ -379,8 +379,9 @@ class ImageWorkbench(
         }
 
     /** The groups, partitions and free space of the workspace's super image (FR-011), from `lpdump`. */
-    suspend fun superLayout(workspaceId: String): SuperLayout = runner.read(workspaceId) {
-        val image = SUPER_CANDIDATES.firstOrNull { exists(it) }
+    suspend fun superLayout(workspaceId: String, stockOnly: Boolean = false): SuperLayout = runner.read(workspaceId) {
+        val candidates = if (stockOnly) STOCK_SUPER_CANDIDATES else SUPER_CANDIDATES
+        val image = candidates.firstOrNull { exists(it) }
             ?: throw RefusalException(
                 Refusal("No super image in the workspace.", "super.img", "Run the build through Extract or Build."),
             )
@@ -425,6 +426,7 @@ class ImageWorkbench(
         """
         const val SEARCH_LIMIT = 2000
         const val SPARSE_MAGIC_LE = "3aff26ed"
-        val SUPER_CANDIDATES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img", "out/extra/super.img")
+        val STOCK_SUPER_CANDIDATES = listOf("firmware/raw/super.raw.img", "firmware/raw/super.img")
+        val SUPER_CANDIDATES = STOCK_SUPER_CANDIDATES + "out/extra/super.img"
     }
 }

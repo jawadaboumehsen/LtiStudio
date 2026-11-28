@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
+import org.ide.lti.core.domain.desktop.WorkspaceDropCoordinator
 import org.ide.lti.core.domain.plugin.AuthorProject
 import org.ide.lti.core.domain.plugin.AuthorProjectTrustUseCase
 import org.ide.lti.core.domain.plugin.AuthorTaskResult
@@ -42,7 +43,6 @@ import org.ide.lti.core.domain.plugin.PluginWorkspaceUsage
 import org.ide.lti.core.domain.plugin.TrustCheck
 import org.ide.lti.core.domain.plugin.TrustDecision
 import org.ide.lti.core.domain.plugin.key
-import org.ide.lti.core.domain.plugin.newestPerPlugin
 import org.ide.lti.core.domain.workspace.ModUpdates
 import org.ide.lti.core.domain.workspace.PendingUpdate
 import org.ide.lti.core.domain.workspace.WorkspaceManager
@@ -91,10 +91,9 @@ data class PluginManagerUiState(
     val errorMessage: String? = null,
     /** A newer version installed and waiting for review before the workspaces move onto it. */
     val pendingUpdate: PendingUpdate? = null,
-    /** The installed package the pending update moves to. */
-    val pendingInstalled: InstalledPackage? = null,
     /** Per workspace name: the mod lab's answer on the new versions, or "Checking…". */
     val updateChecks: Map<String, String> = emptyMap(),
+    val applyingUpdate: Boolean = false,
 )
 
 @Suppress("TooManyFunctions") // unified state holder for installed, marketplace, import, and author tools
@@ -107,6 +106,7 @@ class PluginManagerViewModel(
     private val workspaceManager: WorkspaceManager? = null,
     private val workspaceUsage: PluginWorkspaceUsage? = null,
     private val modUpdates: ModUpdates? = null,
+    private val dropCoordinator: WorkspaceDropCoordinator? = null,
     initialDestination: String = "installed",
     initialWorkspaceId: String? = null,
     initialPackageId: String? = null,
@@ -120,6 +120,23 @@ class PluginManagerViewModel(
         ),
     )
     val uiState: StateFlow<PluginManagerUiState> = _uiState.asStateFlow()
+
+    init {
+        // A mod bundle dropped on the window: shown on Import and inspected, never installed without review.
+        dropCoordinator?.let { drop ->
+            viewModelScope.launch {
+                drop.pendingModBundle.collect { path ->
+                    if (path != null) drop.takePendingModBundle()?.let(::openDroppedBundle)
+                }
+            }
+        }
+    }
+
+    private fun openDroppedBundle(path: String) {
+        selectDestination(PluginDestination.IMPORT)
+        setImportPathInput(path)
+        inspectImportPath(path)
+    }
 
     private var installedRefresh: Job? = null
 
@@ -308,13 +325,13 @@ class PluginManagerViewModel(
 
     /** After any install: a newer version some workspace would move onto is reviewed first, else applied. */
     private suspend fun afterInstall(record: InstalledPackage) {
+        cancelUpdateChecks()
         val pending = pendingUpdate(record)
-        val note = if (pending == null) updateAfterInstall(record) else " · review the update"
+        val note = if (pending == null) "" else " · review the update"
         _uiState.update {
             it.copy(
                 notificationMessage = "Installed '${record.publisher}:${record.id}' ${record.version}$note",
                 pendingUpdate = pending,
-                pendingInstalled = record.takeIf { pending != null },
                 updateChecks = emptyMap(),
             )
         }
@@ -330,64 +347,65 @@ class PluginManagerViewModel(
         }.getOrNull()?.takeIf { p -> p.reviews.isNotEmpty() }
     }
 
+    private val updateCheckJobs = mutableListOf<Job>()
+
+    private fun cancelUpdateChecks() {
+        updateCheckJobs.forEach { it.cancel() }
+        updateCheckJobs.clear()
+    }
+
     /** Runs the mod lab for [move]'s workspace on the new versions (nothing is saved). */
     fun checkUpdate(move: PluginWorkspaceUsage.PendingMove) {
-        val updates = modUpdates ?: return
-        _uiState.update { it.copy(updateChecks = it.updateChecks + (move.name to CHECKING)) }
-        viewModelScope.launch {
-            val answer = runCatchingCancellable { updates.check(move) }.getOrElse { "could not check: ${it.message}" }
-            _uiState.update { it.copy(updateChecks = it.updateChecks + (move.name to answer)) }
+        val updates = modUpdates
+        val state = _uiState.value
+        val review = state.pendingUpdate
+        val busy = state.updateChecks[move.workspaceId] == CHECKING || state.applyingUpdate
+        if (updates == null || review == null || move !in review.moves || busy) return
+        _uiState.update { it.copy(updateChecks = it.updateChecks + (move.workspaceId to CHECKING)) }
+        updateCheckJobs.removeAll { it.isCompleted }
+        updateCheckJobs += viewModelScope.launch {
+            val answer = runCatchingCancellable { updates.check(move) }.getOrElse { "Needs evidence · ${it.message}" }
+            _uiState.update {
+                val checks = it.updateChecks + (move.workspaceId to answer)
+                if (it.pendingUpdate !== review) it else it.copy(updateChecks = checks)
+            }
         }
     }
 
-    /** Moves the workspaces onto the reviewed update and removes the versions nothing uses any more. */
+    /** Applies the reviewed locks. Installed versions stay available for workspaces that keep their pins. */
     fun applyUpdate() {
-        val installed = _uiState.value.pendingInstalled ?: return
+        val updates = modUpdates
+        val state = _uiState.value
+        val review = state.pendingUpdate
+        val unchecked = review?.moves.orEmpty().any { state.updateChecks[it.workspaceId] in listOf(null, CHECKING) }
+        if (updates == null || review == null || state.applyingUpdate || unchecked) return
+        _uiState.update { it.copy(applyingUpdate = true, errorMessage = null) }
         viewModelScope.launch {
-            val note = updateAfterInstall(installed)
+            val result = runCatchingCancellable { updates.apply(review, pluginInstallPort.installed()) }
             _uiState.update {
-                it.copy(
-                    pendingUpdate = null,
-                    pendingInstalled = null,
-                    notificationMessage = "Updated to ${installed.id} ${installed.version}$note",
+                result.fold(
+                    onSuccess = { reports ->
+                        it.copy(
+                            applyingUpdate = false,
+                            pendingUpdate = null,
+                            updateChecks = emptyMap(),
+                            notificationMessage = reports.joinToString("\n"),
+                        )
+                    },
+                    onFailure = { error ->
+                        it.copy(applyingUpdate = false, errorMessage = error.message ?: "Could not apply mod update")
+                    },
                 )
             }
+            if (result.isSuccess) refreshInstalled()
         }
     }
 
     /** Leaves the workspaces on the versions they use; the new one stays installed for later. */
     fun dismissUpdate() {
-        _uiState.update { it.copy(pendingUpdate = null, pendingInstalled = null, updateChecks = emptyMap()) }
-    }
-
-    /**
-     * An install of a plugin's newest version is an update: workspaces using an older version move to it, and the
-     * older versions nothing uses any more are removed. Returns what happened, as " · …" text (empty for nothing).
-     */
-    private suspend fun updateAfterInstall(installed: InstalledPackage): String {
-        val usage = workspaceUsage
-        val key = "${installed.publisher}:${installed.id}"
-        val all = pluginInstallPort.installed()
-        val newest = newestPerPlugin(all, { it.identity.key }) { it.identity.version }
-            .associate { it.identity.key to it.identity.version }
-        val isNewest = newest[key] == installed.version
-        val moved = if (usage != null && isNewest) usage.moveToNewest(all) else emptyList()
-        val refs = packageReferences(all, usage?.usersOf().orEmpty())
-        // Every older version nothing uses any more, not only this plugin's: plugins that depend on each other are
-        // updated one at a time, and the workspaces move only once the last of them is installed.
-        val replaced = if (!isNewest) {
-            emptyList()
-        } else {
-            all.filter { newest[it.identity.key] != it.identity.version }
-                .filter { refs[it.rowKey].isNullOrEmpty() }
-                .filter { pluginLifecycleUseCase.uninstall(it.identity, emptyList()) is LifecycleOutcome.Applied }
-                .map { if (it.identity.key == key) it.identity.version else "${it.identity.id} ${it.identity.version}" }
-        }
-        refreshInstalled()
-        return listOfNotNull(
-            replaced.takeIf { it.isNotEmpty() }?.let { "replaces ${it.joinToString()}" },
-            moved.takeIf { it.isNotEmpty() }?.let { "now used by ${it.joinToString()}" },
-        ).joinToString("") { " · $it" }
+        if (_uiState.value.applyingUpdate) return
+        cancelUpdateChecks()
+        _uiState.update { it.copy(pendingUpdate = null, updateChecks = emptyMap()) }
     }
 
     /** The newest inspection: an older one finishing later is discarded, never shown for the new path. */

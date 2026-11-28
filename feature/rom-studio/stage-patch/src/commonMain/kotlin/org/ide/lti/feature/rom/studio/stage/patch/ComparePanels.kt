@@ -55,6 +55,10 @@ import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
 import org.ide.lti.core.designsystem.theme.ideFontFamily
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureDiff
+import org.ide.lti.core.domain.pipeline.toolkit.StructuralAspect
+import org.ide.lti.core.domain.pipeline.toolkit.StructuralAuditSummary
+import org.ide.lti.core.domain.pipeline.toolkit.StructuralRiskSeverity
 import org.ide.lti.core.domain.pipeline.toolkit.SuperblockRow
 import org.ide.lti.core.domain.pipeline.toolkit.TreeChange
 import org.ide.lti.core.domain.pipeline.toolkit.TreeChangeKind
@@ -282,8 +286,10 @@ private fun Menu(
 @Composable
 private fun ResultCard(result: SideComparison, state: ContentToolsState, viewModel: ContentToolsViewModel) {
     var shown by remember(result) { mutableStateOf<TreeChangeKind?>(null) }
+    var aspectFilter by remember(result) { mutableStateOf<StructuralAspect?>(null) }
     var query by remember(result) { mutableStateOf("") }
     val diff = result.diff
+    val audit = remember(diff) { diff.structuralAudit() }
     IdeSectionCard(title = "${describe(result.a)}  →  ${describe(result.b)}") {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
@@ -299,11 +305,47 @@ private fun ResultCard(result: SideComparison, state: ContentToolsState, viewMod
                 )
             }
         }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Small),
+            verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+        ) {
+            StructuralAspect.entries.forEach { aspect ->
+                val count = aspectCount(audit, aspect)
+                GlassChip(
+                    label = "${ASPECT_LABEL.getValue(aspect)} $count",
+                    selected = aspectFilter == aspect,
+                    onClick = { aspectFilter = if (aspectFilter == aspect) null else aspect },
+                    modifier = Modifier.testTag("CompareAspect_$aspect"),
+                )
+            }
+            if (audit.apkDiffCount > 0) {
+                GlassButton(
+                    onClick = viewModel.trees::auditApkCertificates,
+                    enabled = state.busy == null,
+                    variant = GlassButtonVariant.Secondary,
+                    modifier = Modifier.testTag("AuditApkCertsButton"),
+                ) {
+                    Text("Audit APK Certs (${audit.apkDiffCount})", fontSize = FontSize.Micro)
+                }
+            }
+        }
+        StructuralAuditBanner(audit)
         GlassTextField(value = query, onValueChange = { query = it }, placeholder = "Filter paths…")
         IdeHintText("${result.hashedFiles} file(s) of the same size hashed on both sides.")
-        val rows = diff.changes.filter { (shown == null || it.kind == shown) && query.trim() in it.path }
+        val rows = diff.changes.filter { change ->
+            (shown == null || change.kind == shown) &&
+                (aspectFilter == null || aspectFilter in change.aspects()) &&
+                query.trim() in change.path
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Medium)) {
-            ChangeTable(rows, diff.changes.isEmpty(), state.trees.opened, viewModel, Modifier.weight(LIST_WEIGHT))
+            ChangeTable(
+                rows = rows,
+                same = diff.changes.isEmpty(),
+                opened = state.trees.opened,
+                apkAudits = state.trees.apkAudits,
+                viewModel = viewModel,
+                modifier = Modifier.weight(LIST_WEIGHT),
+            )
             Superblocks(result.superblocks, Modifier.weight(1f))
         }
     }
@@ -311,10 +353,42 @@ private fun ResultCard(result: SideComparison, state: ContentToolsState, viewMod
 }
 
 @Composable
+private fun StructuralAuditBanner(audit: StructuralAuditSummary) {
+    if (audit.securityFindings.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.ExtraSmall)) {
+        Text(
+            text = "Structural Security Audit (${audit.securityFindings.size} finding(s))",
+            color = GlassTheme.diagnosticColors.warning,
+            fontSize = FontSize.LabelSmall,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ideFontFamily(),
+        )
+        audit.securityFindings.take(MAX_AUDIT_SHOWN).forEach { finding ->
+            val color = when (finding.severity) {
+                StructuralRiskSeverity.CRITICAL -> GlassTheme.diagnosticColors.error
+                StructuralRiskSeverity.WARNING -> GlassTheme.diagnosticColors.warning
+                StructuralRiskSeverity.INFO -> GlassTheme.diagnosticColors.info
+            }
+            IdeMonoText("[${finding.severity.name}] ${finding.path}: ${finding.summary}", color = color)
+        }
+    }
+}
+
+private fun aspectCount(audit: StructuralAuditSummary, aspect: StructuralAspect): Int = when (aspect) {
+    StructuralAspect.HASH_CONTENT -> audit.hashDiffCount
+    StructuralAspect.SYMLINK -> audit.symlinkDiffCount
+    StructuralAspect.UID_GID_MODE -> audit.ownerOrModeDiffCount
+    StructuralAspect.SELINUX_CONTEXT -> audit.selinuxDiffCount
+    StructuralAspect.CAPABILITIES -> audit.capabilityDiffCount
+    StructuralAspect.APK_PACKAGE -> audit.apkDiffCount
+}
+
+@Composable
 private fun ChangeTable(
     rows: List<TreeChange>,
     same: Boolean,
     opened: TreeChange?,
+    apkAudits: Map<String, ApkSignatureDiff>,
     viewModel: ContentToolsViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -346,6 +420,14 @@ private fun ChangeTable(
                     Column(Modifier.weight(1f)) {
                         IdeMonoText(change.path)
                         if (change.details.isNotEmpty()) IdeHintText(change.details.joinToString(" · "))
+                        apkAudits[change.path]?.let { sig ->
+                            val sigColor = when {
+                                !sig.right.isSigned -> GlassTheme.diagnosticColors.error
+                                sig.certificatesChanged -> GlassTheme.diagnosticColors.warning
+                                else -> GlassTheme.diagnosticColors.success
+                            }
+                            IdeMonoText(sig.summary, color = sigColor)
+                        }
                     }
                 }
             }
@@ -406,6 +488,15 @@ private val KIND_LABEL = mapOf(
     TreeChangeKind.META to "metadata",
     TreeChangeKind.TYPE to "kind",
 )
+private val ASPECT_LABEL = mapOf(
+    StructuralAspect.HASH_CONTENT to "hashes",
+    StructuralAspect.SYMLINK to "symlinks",
+    StructuralAspect.UID_GID_MODE to "uid/gid/mode",
+    StructuralAspect.SELINUX_CONTEXT to "SELinux",
+    StructuralAspect.CAPABILITIES to "caps",
+    StructuralAspect.APK_PACKAGE to "APKs",
+)
+private const val MAX_AUDIT_SHOWN = 6
 private const val LIST_WEIGHT = 1.6f
 private const val KIND_WEIGHT = 0.18f
 private const val FIELD_WEIGHT = 0.8f

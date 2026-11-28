@@ -20,6 +20,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +45,7 @@ import org.ide.lti.core.designsystem.component.layout.ContentHeader
 import org.ide.lti.core.designsystem.component.layout.IdeAppFrame
 import org.ide.lti.core.designsystem.component.layout.IdePipelineRail
 import org.ide.lti.core.designsystem.component.layout.IdeRightRail
+import org.ide.lti.core.designsystem.component.layout.IdeRightRailItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuItem
 import org.ide.lti.core.designsystem.component.layout.IdeSubMenuTabBar
 import org.ide.lti.core.designsystem.component.layout.resolveNavIcon
@@ -57,6 +63,9 @@ import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.workbench.WorkbenchLog
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.StageId
+import org.ide.lti.core.ui.desktop.DetachablePanelId
+import org.ide.lti.core.ui.desktop.LocalDetachablePanelOpener
+import org.ide.lti.core.ui.desktop.LocalSessionDrawerController
 import org.ide.lti.core.ui.settings.AppSettingsState
 import org.ide.lti.feature.rom.studio.api.CanonicalStageDescriptors
 import org.ide.lti.feature.rom.studio.api.StageDescriptor
@@ -159,6 +168,7 @@ fun StudioScreen(
         onValidate = { viewModel.validateWorkspace() },
         onSave = { viewModel.saveWorkspace() },
         modifier = modifier,
+        workspaceId = workspaceId,
         onOpenProblems = { viewModel.selectWorkspaceSection(WorkspaceSection.Overview) },
         onOpenActivity = { viewModel.selectWorkspaceSection(WorkspaceSection.RunHistory) },
         output = workbenchLog?.let { log -> { OutputPanel(log) } },
@@ -315,6 +325,7 @@ fun StudioShellContent(
     onValidate: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
+    workspaceId: String? = null,
     stageEditorRegistry: StageEditorRegistry? = null,
     selectedObjectId: String? = null,
     onSelectStageObject: ((StageId, String) -> Unit)? = null,
@@ -408,7 +419,7 @@ fun StudioShellContent(
         },
         navigator = null,
         rightPanel = {
-            WorkspaceRightRail()
+            WorkspaceRightRail(workspaceId = workspaceId)
         },
         content = {
             StudioMainContent(
@@ -552,9 +563,48 @@ private fun StageContinueBar(next: PipelineRailItemUi, onContinue: () -> Unit) {
 }
 
 @Composable
-private fun WorkspaceRightRail(modifier: Modifier = Modifier) {
-    // No tool windows yet: the rail keeps the frame's shape without offering actions that do nothing.
-    IdeRightRail(items = emptyList(), modifier = modifier.testTag("WorkspaceRightRail"))
+private fun WorkspaceRightRail(workspaceId: String? = null, modifier: Modifier = Modifier) {
+    val sessionDrawerToggle = LocalSessionDrawerController.current
+    val panelOpener = LocalDetachablePanelOpener.current
+    val railItems = buildList {
+        sessionDrawerToggle?.let { toggle ->
+            add(
+                IdeRightRailItem(
+                    id = "sessions",
+                    label = "Background Sessions",
+                    icon = Icons.Default.Notifications,
+                    onClick = toggle,
+                ),
+            )
+        }
+        panelOpener?.let { opener ->
+            add(
+                IdeRightRailItem(
+                    id = "pop_copilot",
+                    label = "Pop Out Copilot",
+                    icon = Icons.Default.Memory,
+                    onClick = { opener.open(DetachablePanelId.LOGCAT_COPILOT, workspaceId) },
+                ),
+            )
+            add(
+                IdeRightRailItem(
+                    id = "pop_partitions",
+                    label = "Pop Out Partitions",
+                    icon = Icons.Default.Storage,
+                    onClick = { opener.open(DetachablePanelId.PARTITION_EXPLORER, workspaceId) },
+                ),
+            )
+            add(
+                IdeRightRailItem(
+                    id = "pop_diff",
+                    label = "Pop Out Diff / SBOM",
+                    icon = Icons.Default.Code,
+                    onClick = { opener.open(DetachablePanelId.DIFF_INSPECTOR, workspaceId) },
+                ),
+            )
+        }
+    }
+    IdeRightRail(items = railItems, modifier = modifier.testTag("WorkspaceRightRail"))
 }
 
 @Composable

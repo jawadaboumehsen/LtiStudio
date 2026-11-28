@@ -131,7 +131,7 @@ internal fun PluginImportTab(
                 onInspectPath = onInspectPath,
             )
 
-            PluginStepper(currentStep = currentStep)
+            PluginStepper(currentStep = currentStep, completed = installState is InstallState.Installed)
 
             when {
                 isLegacyUnsupported -> {
@@ -139,6 +139,33 @@ internal fun PluginImportTab(
                         formatName = legacyFormatName ?: "legacy script",
                         onDismiss = onDismissLegacyWarning,
                     )
+                }
+
+                installState is InstallState.Installed -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pluginCardSurface()
+                            .padding(Spacing.ExtraLarge)
+                            .testTag("ImportInstalled"),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.Small),
+                    ) {
+                        Text(
+                            "Package installed",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            "${installState.record.publisher}:${installState.record.id} ${installState.record.version}",
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            "Available in Installed. You can inspect another archive above. " +
+                                "Workspace version changes are handled separately in the update review.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
                 inspection == null -> {

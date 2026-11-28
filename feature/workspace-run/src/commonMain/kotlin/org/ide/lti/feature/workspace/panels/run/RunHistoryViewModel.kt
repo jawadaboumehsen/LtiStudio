@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.ide.lti.core.common.utils.runCatchingCancellable
+import org.ide.lti.core.domain.provenance.BuildProvenanceGenerator
+import org.ide.lti.core.domain.provenance.ProvenanceVerifier
 import org.ide.lti.core.domain.repository.run.RunRepository
 import org.ide.lti.core.domain.usecase.build.GetRunHistoryUseCase
 import org.ide.lti.core.domain.workbench.DeviceCheckResult
@@ -29,9 +31,11 @@ import org.ide.lti.core.domain.workspace.RunComparison
 import org.ide.lti.core.domain.workspace.RunComparisonText
 import org.ide.lti.core.domain.workspace.RunRecord
 import org.ide.lti.core.domain.workspace.RunTimeline
+import org.ide.lti.core.domain.workspace.TimelineStepNode
 import org.ide.lti.core.domain.workspace.WorkspaceManager
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.RunState
+import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.Workspace
 
 data class RunHistoryUiState(
@@ -39,6 +43,8 @@ data class RunHistoryUiState(
     val runs: List<BuildRun> = emptyList(),
     val selectedRun: BuildRun? = null,
     val selectedRunLogs: List<String> = emptyList(),
+    val selectedStageFilter: StageId? = null,
+    val selectedStepFilter: TimelineStepNode? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     /** The comparison being read, or shown; null when none is open. */
@@ -46,6 +52,10 @@ data class RunHistoryUiState(
     val comparison: RunComparisonText? = null,
     /** The run inspector's Markdown for the selected run; null when it is closed. */
     val inspection: String? = null,
+    /** Non-null while verifying SBOM provenance for [selectedRun]. */
+    val isVerifyingProvenance: Boolean = false,
+    val provenanceTitle: String? = null,
+    val provenanceReport: String? = null,
     /** The newest phone check of each run that has one, by run id (the history list's badge). */
     val deviceChecks: Map<String, DeviceCheckResult> = emptyMap(),
 )
@@ -176,10 +186,59 @@ class RunHistoryViewModel(
         return copy(
             selectedRun = run,
             selectedRunLogs = emptyList(),
+            selectedStageFilter = null,
+            selectedStepFilter = null,
             isComparing = false,
             inspection = null,
             comparison = null,
+            isVerifyingProvenance = false,
+            provenanceTitle = null,
+            provenanceReport = null,
         )
+    }
+
+    fun selectStageFilter(stageId: StageId?, step: TimelineStepNode? = null) {
+        _uiState.update { it.copy(selectedStageFilter = stageId, selectedStepFilter = step) }
+    }
+
+    fun verifyProvenance() {
+        val run = _uiState.value.selectedRun
+        val workspaceId = _uiState.value.currentWorkspace?.id
+        val reader = runner
+        val ready = run != null && workspaceId != null && reader != null && !_uiState.value.isVerifyingProvenance
+        if (!ready) return
+        val targetRun = requireNotNull(run)
+        val wsId = requireNotNull(workspaceId)
+        val wb = requireNotNull(reader)
+        _uiState.update { it.copy(isVerifyingProvenance = true, errorMessage = null) }
+        viewModelScope.launch {
+            val res = ProvenanceVerifier.readAndVerify(wb, wsId, targetRun.id)
+            _uiState.update { state ->
+                if (state.currentWorkspace?.id != wsId || state.selectedRun?.id != targetRun.id) {
+                    state
+                } else {
+                    res.fold(
+                        onSuccess = { (manifest, verification) ->
+                            state.copy(
+                                isVerifyingProvenance = false,
+                                provenanceTitle = "SBOM Provenance (${targetRun.id})",
+                                provenanceReport = BuildProvenanceGenerator.toMarkdownReport(manifest, verification),
+                            )
+                        },
+                        onFailure = { err ->
+                            state.copy(
+                                isVerifyingProvenance = false,
+                                errorMessage = err.message ?: "Failed to verify provenance manifest.",
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    fun closeProvenance() {
+        _uiState.update { it.copy(provenanceTitle = null, provenanceReport = null) }
     }
 
     /** The comparison with [previous] (the inspector's second part), its headings one level down. */

@@ -1235,10 +1235,18 @@ class PipelineOrchestrator(
         val executedStages = driver.run.stages.map { it.stageId }.toSet()
         artifactCollector.writeRecord(ctx, driver.run.id, executedStages)
         val plannedStages = stagesOf(driver.run).map { it.id }
-        val artifacts = artifactCollector.collectArtifacts(ctx, plannedStages)
+        val baseArtifacts = artifactCollector.collectArtifacts(ctx, plannedStages)
+        val endedAt = clock.now()
+        val provenanceArtifact = artifactCollector.writeProvenance(
+            ctx = ctx,
+            run = driver.run.copy(state = RunState.SUCCEEDED, endedAt = endedAt, artifacts = baseArtifacts),
+            plannedStages = plannedStages,
+            artifacts = baseArtifacts,
+        )
+        val artifacts = baseArtifacts + listOfNotNull(provenanceArtifact)
         executionPort.checkAvailableDiskSpace(driver.ws)
             ?.let { driver.runtimeValues[RuntimeKeys.DISK_FREE_AFTER] = it.toString() }
-        driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = clock.now(), artifacts = artifacts) }
+        driver.persist { it.copy(state = RunState.SUCCEEDED, endedAt = endedAt, artifacts = artifacts) }
     }
 
     /** A stage's cache file: its input key, its outputs' digest, and the run's values when it ran. */

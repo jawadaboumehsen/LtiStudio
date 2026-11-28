@@ -116,7 +116,7 @@ mv -T "${'$'}t" "${'$'}d""""
          * Prints a record as [parse] reads it; nothing when the folder is absent. A run's own record always has
          * keys.tsv; a folder without it holds only a device check of a run older than records.
          */
-        private const val READ_SCRIPT: String = """cd "$1" || exit 1
+        internal const val READ_SCRIPT: String = """cd "$1" || exit 1
 d="$2"
 [ -d "${'$'}d" ] && [ ! -L "${'$'}d" ] || exit 0
 [ -f "${'$'}d/keys.tsv" ] && printf 'record\tyes\n'

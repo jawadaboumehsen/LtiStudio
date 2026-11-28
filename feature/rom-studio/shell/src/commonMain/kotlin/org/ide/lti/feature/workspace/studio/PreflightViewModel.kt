@@ -31,6 +31,8 @@ import org.ide.lti.core.domain.pipeline.stages.PreflightReport
 import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
 import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.repository.run.RunRepository
+import org.ide.lti.core.domain.workspace.BaselineSku
+import org.ide.lti.core.domain.workspace.FirmwareRecommendations
 import org.ide.lti.core.domain.workspace.FirmwareUpgrade
 import org.ide.lti.core.domain.workspace.NextBuild
 import org.ide.lti.core.domain.workspace.NextBuildFacts
@@ -50,6 +52,10 @@ data class PreflightUiState(
     val upgrade: List<UpgradeSection>? = null,
     val comparedWith: Workspace? = null,
     val comparing: Boolean = false,
+    val baselines: FirmwareRecommendations? = null,
+    val checkingBaselines: Boolean = false,
+    val baselineError: String? = null,
+    val checkedSku: BaselineSku? = null,
     /** What building now would do: changes since the last build that worked, stages that run, the estimate. */
     val next: NextBuildFacts? = null,
     val readingNext: Boolean = false,
@@ -83,6 +89,8 @@ class PreflightViewModel internal constructor(
 
     private var checkJob: Job? = null
     private var nextJob: Job? = null
+    private var baselineJob: Job? = null
+    private var flushingBaselineInputs = false
 
     init {
         settings?.let { store ->
@@ -126,6 +134,31 @@ class PreflightViewModel internal constructor(
                 _state.update { it.copy(error = e.message ?: e::class.simpleName) }
             } finally {
                 _state.update { it.copy(comparing = false) }
+            }
+        }
+    }
+
+    fun recommendBaselines(sku: BaselineSku) {
+        val assistant = upgrade ?: return
+        if (_state.value.checkingBaselines) return
+        _state.update { it.copy(checkingBaselines = true, baselines = null, baselineError = null, checkedSku = sku) }
+        baselineJob = viewModelScope.launch {
+            val answer = runCatchingCancellable {
+                flushingBaselineInputs = true
+                try {
+                    settings?.flush(workspaceId)?.getOrThrow()
+                } finally {
+                    flushingBaselineInputs = false
+                }
+                assistant.baselines(workspaceId, samePhone?.others(workspaceId).orEmpty(), sku)
+            }
+            coroutineContext.ensureActive()
+            _state.update {
+                it.copy(
+                    checkingBaselines = false,
+                    baselines = answer.getOrNull(),
+                    baselineError = answer.exceptionOrNull()?.message,
+                )
             }
         }
     }
@@ -202,6 +235,8 @@ class PreflightViewModel internal constructor(
         val pending = _state.value.checking
         checkJob?.cancel()
         nextJob?.cancel()
+        val discardBaselines = !flushingBaselineInputs || !recheckPending
+        if (discardBaselines) baselineJob?.cancel()
         _state.update {
             it.copy(
                 inputsChanged = it.inputsChanged || it.checking || it.vintf != null || it.next != null,
@@ -211,6 +246,9 @@ class PreflightViewModel internal constructor(
                 readingNext = false,
                 next = null,
                 nextError = null,
+                baselines = if (discardBaselines) null else it.baselines,
+                checkingBaselines = !discardBaselines && it.checkingBaselines,
+                baselineError = if (discardBaselines) null else it.baselineError,
             )
         }
         if (pending && recheckPending) check()

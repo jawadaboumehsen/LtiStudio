@@ -207,12 +207,24 @@ object AbOtaPackage {
             print(f'payload.bin {os.path.getsize(out)} bytes, {len(partitions)} partitions', flush=True)
 
 
+        def write_zip_entry(z, src_path, arcname, date_time=(2022, 1, 1, 0, 0, 0)):
+            info = zipfile.ZipInfo(filename=arcname, date_time=date_time)
+            info.compress_type = zipfile.ZIP_STORED
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            # Known up front, so zipfile writes zip64 headers for a payload over 2 GiB (z.write did this).
+            info.file_size = os.path.getsize(src_path)
+            with open(src_path, 'rb') as src, z.open(info, 'w') as dst:
+                for block in iter(lambda: src.read(1 << 20), b''):
+                    dst.write(block)
+
+
         def write_zip(out, directory, metadata_file):
-            names = ['payload.bin', 'payload_properties.txt']
+            names = sorted(['payload.bin', 'payload_properties.txt'])
             with zipfile.ZipFile(out, 'w', zipfile.ZIP_STORED, allowZip64=True) as z:
-                z.write(metadata_file, 'META-INF/com/android/metadata')
+                write_zip_entry(z, metadata_file, 'META-INF/com/android/metadata')
                 for n in names:
-                    z.write(os.path.join(directory, n), n)
+                    write_zip_entry(z, os.path.join(directory, n), n)
 
 
         def data_span(z, name):

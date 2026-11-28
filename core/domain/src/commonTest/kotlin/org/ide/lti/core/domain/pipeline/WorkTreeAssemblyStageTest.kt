@@ -63,9 +63,25 @@ class WorkTreeAssemblyStageTest {
             "avbtool info kernel dtbo",
             "purge oat dirs",
             "purge aot files",
+            "reset applied mods receipt",
             "stamp build.prop",
         )
         assertEquals(expectedLabels, labels)
+    }
+
+    @Test
+    fun `only a completed assembly resets the old applied receipt`() {
+        val ctx = fx.globalOtaContext()
+        // Reset before the build.prop stamp, which stays Assemble's last step.
+        val reset = stage.plan(ctx).filterIsInstance<PipelineStep.WriteFile>()
+            .single { it.relPath == "work/modules/applied.json" }
+        assertEquals("""{"enabled":[],"operations":0}""", reset.content.decodeToString())
+        val invalid = ctx.copy(
+            snapshot = ctx.snapshot.copy(
+                assembly = ctx.snapshot.assembly.copy(includedPartitions = listOf("not-a-partition")),
+            ),
+        )
+        assertTrue(stage.plan(invalid).none { it is PipelineStep.WriteFile })
     }
 
     @Test

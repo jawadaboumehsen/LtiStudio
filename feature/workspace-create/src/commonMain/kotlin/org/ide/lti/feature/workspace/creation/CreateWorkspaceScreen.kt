@@ -357,6 +357,7 @@ private fun TargetPickerSection(uiState: CreateWorkspaceUiState, onSelectTarget:
                         text = target.name,
                         subtitle = "${target.codename} • ${target.socPlatform} • " +
                             target.filesystemType.uppercase(),
+                        isSelected = target.id == uiState.selectedTarget?.id,
                         onClick = {
                             onSelectTarget(target)
                             isTargetPickerOpen = false

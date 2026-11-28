@@ -230,9 +230,12 @@ class PipelineOrchestratorTest {
             manifest.contains("\"size\": ${SimulatedExecutionPort.ZIP_BYTES}") ||
                 manifest.contains("\"size\":${SimulatedExecutionPort.ZIP_BYTES}"),
         )
-        assertEquals(3, run.artifacts.size)
+        assertEquals(4, run.artifacts.size)
         assertTrue(run.artifacts.all { it.verification == VerificationState.VERIFIED })
         assertEquals(SimulatedExecutionPort.ZIP_BYTES.toLong(), run.artifacts.first().sizeBytes)
+        val sbomJson = assertNotNull(port.text("out/provenance.sbom.json"))
+        val parsedSbom = org.ide.lti.core.domain.provenance.BuildProvenance.fromJson(sbomJson)
+        assertTrue(parsedSbom.hasValidSelfDigest(), "Generated provenance SBOM must have valid self-digest")
     }
 
     @Test
@@ -361,7 +364,7 @@ class PipelineOrchestratorTest {
         assertEquals(7, events.count { it is PipelineEvent.StageSkipped })
         assertEquals(executedBefore, port.durableSteps.size)
         assertTrue(repo.getRun("run-2")!!.stages.all { it.state == StageState.SKIPPED })
-        assertEquals(3, repo.getRun("run-2")!!.artifacts.size, "a fully cached build still lists its package")
+        assertEquals(4, repo.getRun("run-2")!!.artifacts.size, "a fully cached build still lists its package and SBOM")
     }
 
     @Test

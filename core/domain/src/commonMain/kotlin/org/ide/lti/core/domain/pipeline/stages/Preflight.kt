@@ -9,12 +9,15 @@
  */
 package org.ide.lti.core.domain.pipeline.stages
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.HostStepPort
 import org.ide.lti.core.domain.pipeline.PipelineStep
 import org.ide.lti.core.domain.pipeline.RuntimeKeys
 import org.ide.lti.core.domain.pipeline.StageContext
-import org.ide.lti.core.domain.pipeline.WORK_RECORD
 import org.ide.lti.core.domain.pipeline.configuration.DeviceConfigReadiness
 import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.toolkit.BuildFilesystems
@@ -33,6 +36,11 @@ import org.ide.lti.core.domain.workspace.WorkspaceSettingsStore
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import org.ide.lti.core.model.workspace.PackageType
+
+/** Only an explicit zero-operation receipt proves that an existing receipt describes a clean tree. */
+internal fun hasAppliedModules(receipt: String?): Boolean = receipt != null && runCatching {
+    Json.parseToJsonElement(receipt).jsonObject["operations"]?.jsonPrimitive?.intOrNull
+}.getOrNull() != 0
 
 /** What fixes a finding: a settings change applied at once, or the screen where it is fixed. */
 sealed interface PreflightFix {
@@ -89,8 +97,7 @@ class Preflight(
         }
         val (found, vintf) = runner.read(workspaceId) {
             // The tools a check script needs by path (a build gets them from its pinned tools); missing: left out.
-            val tools = PREFLIGHT_TOOLS.mapNotNull { id -> runCatchingCancellable { id to toolPath(id) }.getOrNull() }
-            val base = WorkTreeAssemblyStage.afterFolding(StageContext(ws, snapshot, device, toolPaths = tools.toMap()))
+            val base = withVintfTools(StageContext(ws, snapshot, device))
             val values = mutableMapOf<String, String>()
             // After Patches, work/ holds the mods already: their anchors are checked against a tree only Assemble made.
             val patched = patched()
@@ -101,8 +108,7 @@ class Preflight(
             }
             val checks = GENERATORS.flatMap { generator -> run(generator, base, values) }
             val output = values[BuildChecks.VINTF_KEY]
-            val exit = values[RuntimeKeys.exitOf(BuildChecks.VINTF_KEY)]?.toIntOrNull() ?: 0
-            val vintf = VintfCheck.assess(output, exit)
+            val vintf = assessment(values)
             val acknowledged = output?.let {
                 VintfCheck.acknowledgedMismatches(
                     it,
@@ -115,6 +121,26 @@ class Preflight(
             messages to vintf
         }
         return PreflightReport(validation + found.distinct().map { finding(it, snapshot) }, vintf)
+    }
+
+    /** Compatibility evidence for a prepared baseline, independent of the workspace's enabled mods. */
+    suspend fun baselineCompatibility(workspaceId: String, snapshot: ConfigurationSnapshot): PreflightReport {
+        val device = checkNotNull(settings.device(workspaceId)) { "The workspace has no device configuration" }
+        return runner.read(workspaceId) {
+            val values = mutableMapOf<String, String>()
+            val messages = run(BuildChecks::vintfSteps, withVintfTools(StageContext(ws, snapshot, device)), values)
+            PreflightReport(messages.distinct().map { finding(it, snapshot) }, assessment(values))
+        }
+    }
+
+    private suspend fun WorkbenchRunner.Job.withVintfTools(ctx: StageContext): StageContext {
+        val tools = PREFLIGHT_TOOLS.mapNotNull { id -> runCatchingCancellable { id to toolPath(id) }.getOrNull() }
+        return WorkTreeAssemblyStage.afterFolding(ctx.copy(toolPaths = tools.toMap()))
+    }
+
+    private fun assessment(values: Map<String, String>): VintfAssessment {
+        val exit = values[RuntimeKeys.exitOf(BuildChecks.VINTF_KEY)]?.toIntOrNull() ?: 0
+        return VintfCheck.assess(values[BuildChecks.VINTF_KEY], exit)
     }
 
     /**
@@ -169,16 +195,8 @@ class Preflight(
         }
     }
 
-    /**
-     * Whether work/ holds the mods: Patches recorded applying some, and the stage that last left work/
-     * ([WORK_RECORD]) is Patches or Build (which runs on the patched tree). A run that stopped at Assemble or Debloat
-     * left a clean tree, even though Patches' record from an earlier run is still there.
-     */
-    private suspend fun WorkbenchRunner.Job.patched(): Boolean {
-        val applied = readText(APPLIED_PATH)?.contains("\"operations\":0") == false
-        val leftBy = readText(WORK_RECORD)?.substringBefore(' ')?.trim().orEmpty()
-        return applied && (leftBy.isEmpty() || leftBy in PATCHED_BY)
-    }
+    /** Assembly resets the receipt only after restoring the tree; an older stage stamp cannot override it. */
+    private suspend fun WorkbenchRunner.Job.patched(): Boolean = hasAppliedModules(readText(APPLIED_PATH))
 
     /** Why a build stopped, from its failed stage's message (`<step>: CODE: text`), with the fix offered here. */
     fun diagnose(failure: String, snapshot: ConfigurationSnapshot): PreflightFinding? =
@@ -269,9 +287,6 @@ class Preflight(
         )
         const val MODS_KEY = "preflight.modules"
         const val LAB_KEY = "preflight.lab"
-
-        /** The stages that leave work/ with the mods in it. */
-        val PATCHED_BY = setOf(StageId.MODULE_APPLICATION.name, StageId.BUILD_FLASHABLE_ZIP.name)
 
         /**
          * The Patches plan without the check that follows its apply step (it reads the apply step's result, which a

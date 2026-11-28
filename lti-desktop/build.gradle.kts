@@ -45,10 +45,6 @@ kotlin {
             implementation(libs.jb.kotlin.stdlib)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
-            implementation(libs.nucleus.application)
-            implementation(libs.nucleus.decorated.window)
-            implementation(libs.nucleus.fs.watcher)
-            implementation(libs.composenativetray)
             implementation("org.slf4j:slf4j-simple:2.0.16")
         }
 

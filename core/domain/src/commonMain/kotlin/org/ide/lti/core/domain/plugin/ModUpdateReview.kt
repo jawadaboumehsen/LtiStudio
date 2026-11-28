@@ -32,6 +32,7 @@ data class ModUpdateReview(
     companion object {
         const val OPTIONS: String = "Options"
         const val FILES: String = "Files it edits"
+        const val PAYLOADS: String = "Packaged files"
         const val DEVICES: String = "Devices and firmwares"
         const val DEPENDENCIES: String = "Dependencies and conflicts"
 
@@ -55,7 +56,15 @@ data class ModUpdateReview(
             } else {
                 mapOf(OPTIONS to options(old, new), FILES to files(old, new), DEVICES to devices(old, new))
             }
-            return ModUpdateReview(key, from, to, sections + (DEPENDENCIES to dependencies(oldPackage, newPackage)))
+            return ModUpdateReview(
+                key,
+                from,
+                to,
+                sections + mapOf(
+                    PAYLOADS to payloads(oldPackage, newPackage),
+                    DEPENDENCIES to dependencies(oldPackage, newPackage),
+                ),
+            )
         }
 
         private fun options(old: PluginPlanTemplate, new: PluginPlanTemplate): List<String> {
@@ -82,15 +91,32 @@ data class ModUpdateReview(
 
         /** Per file: newly edited, no longer edited, or edited by another number or kind of operations. */
         private fun files(old: PluginPlanTemplate, new: PluginPlanTemplate): List<String> {
-            val before = old.operations.groupBy(::target).mapValues { (_, ops) -> kinds(ops) }
-            val after = new.operations.groupBy(::target).mapValues { (_, ops) -> kinds(ops) }
+            val before = old.operations.groupBy(::target)
+            val after = new.operations.groupBy(::target)
             return (before.keys + after.keys).sorted().mapNotNull { file ->
                 val a = before[file]
                 val b = after[file]
                 when {
-                    a == null -> "now edits $file ($b)"
-                    b == null -> "no longer edits $file (was $a)"
-                    a != b -> "$file: $a → $b"
+                    a == null -> "now edits $file (${kinds(b!!)})"
+                    b == null -> "no longer edits $file (was ${kinds(a)})"
+                    kinds(a) != kinds(b) -> "$file: ${kinds(a)} → ${kinds(b)}"
+                    a != b -> "$file: patch contents or conditions changed (${kinds(b)})"
+                    else -> null
+                }
+            }
+        }
+
+        private fun payloads(old: InstalledPackage?, new: InstalledPackage?): List<String> {
+            if (old == null || new == null) return emptyList()
+            val before = old.payloads.associateBy { it.path }
+            val after = new.payloads.associateBy { it.path }
+            return (before.keys + after.keys).sorted().mapNotNull { path ->
+                val a = before[path]
+                val b = after[path]
+                when {
+                    a == null -> "new packaged file $path (${b!!.sizeBytes} bytes)"
+                    b == null -> "removed packaged file $path"
+                    a != b -> "changed $path (${a.sizeBytes} → ${b.sizeBytes} bytes)"
                     else -> null
                 }
             }

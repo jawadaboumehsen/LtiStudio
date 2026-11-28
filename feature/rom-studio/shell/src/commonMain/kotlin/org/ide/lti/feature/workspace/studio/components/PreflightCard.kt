@@ -29,6 +29,7 @@ import org.ide.lti.core.designsystem.component.actions.GlassButton
 import org.ide.lti.core.designsystem.component.actions.GlassButtonVariant
 import org.ide.lti.core.designsystem.component.display.ideShellCardSurface
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
+import org.ide.lti.core.designsystem.component.inputs.GlassTextField
 import org.ide.lti.core.designsystem.component.progress.GlassLoadingPlaceholder
 import org.ide.lti.core.designsystem.theme.FontSize
 import org.ide.lti.core.designsystem.theme.GlassTheme
@@ -40,6 +41,7 @@ import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
 import org.ide.lti.core.domain.pipeline.stages.VintfEvidence
 import org.ide.lti.core.domain.pipeline.stages.VintfEvidenceKind
 import org.ide.lti.core.domain.pipeline.stages.VintfStatus
+import org.ide.lti.core.domain.workspace.BaselineSku
 import org.ide.lti.core.domain.workspace.NextBuildFacts
 import org.ide.lti.core.model.run.BuildRun
 import org.ide.lti.core.model.run.StageId
@@ -106,6 +108,7 @@ internal fun PreflightCard(
             )
         }
         BuildReadinessResults(state, onOpen, onOpenSetup, vm::check, vm::apply, resolveLink)
+        FirmwareBaselines(state, vm, onOpen)
         SamePhone(state, vm)
     }
 }
@@ -330,6 +333,58 @@ private fun started(run: BuildRun): String = run.startedAt.toString().take(START
 
 private const val CHANGES_SHOWN = 8
 private const val STARTED_SHOWN = 16
+
+@Composable
+private fun FirmwareBaselines(state: PreflightUiState, vm: PreflightViewModel, onOpen: (StageId, String) -> Unit) {
+    var vendor by remember { mutableStateOf("") }
+    var odm by remember { mutableStateOf("") }
+    val sku = BaselineSku(vendor.trim().takeIf(String::isNotEmpty), odm.trim().takeIf(String::isNotEmpty))
+    ReadinessHeading("Local firmware baselines")
+    ReadinessText("Checks the current mod selection against prepared workspaces for this device and region.")
+    GlassTextField(value = vendor, onValueChange = { vendor = it }, placeholder = "Vendor SKU (optional)")
+    GlassTextField(value = odm, onValueChange = { odm = it }, placeholder = "ODM SKU (optional)")
+    GlassButton(
+        onClick = { vm.recommendBaselines(sku) },
+        loading = state.checkingBaselines,
+        variant = GlassButtonVariant.Standard,
+        modifier = Modifier.testTag("RecommendFirmwareBaselines"),
+    ) { Text(if (state.checkingBaselines) "Checking baselines…" else "Check local baselines") }
+    if (state.checkedSku != sku) {
+        if (state.checkedSku != null) ReadinessText("SKU selection changed. Check again to refresh the results.")
+        return
+    }
+    state.baselineError?.let { ReadinessText(it) }
+    val recommendations = state.baselines ?: return
+    val candidates = recommendations.candidates
+    candidates.forEachIndexed { index, baseline ->
+        var expanded by remember(baseline.workspace.id) { mutableStateOf(index == 0) }
+        GlassButton(onClick = { expanded = !expanded }, variant = GlassButtonVariant.Text) {
+            val firmware = baseline.firmware ?: "Unknown firmware"
+            Text("${baseline.workspace.name} · $firmware · ${baseline.verdict.label}")
+        }
+        if (expanded) {
+            baseline.evidence.forEach { ReadinessText(it) }
+            baseline.mods.forEach { mod ->
+                ReadinessText("${mod.key} · ${mod.verdict.label}")
+                mod.evidence.forEach { ReadinessText(it) }
+            }
+        }
+    }
+    recommendations.archiveReadErrors.forEach { ReadinessText(it) }
+    recommendations.archivesNeedingPreparation.forEach { local ->
+        ReadinessText("${local.archive.name} · ${local.workspace.name} · Needs evidence")
+        ReadinessText(
+            "Select this archive in its workspace, then extract and assemble it to check its mod operations and SKUs.",
+        )
+    }
+    if (candidates.size == 1 || recommendations.archivesNeedingPreparation.isNotEmpty()) {
+        ReadinessText("Open or create another workspace for this phone and extract its local firmware to compare.")
+        GlassButton(
+            onClick = { onOpen(StageId.FIRMWARE_ACQUISITION, "existing-archives") },
+            variant = GlassButtonVariant.Text,
+        ) { Text("Open firmware archives") }
+    }
+}
 
 /** The other workspaces of this phone: their settings (not their firmware's) can be taken over in one click. */
 @Composable

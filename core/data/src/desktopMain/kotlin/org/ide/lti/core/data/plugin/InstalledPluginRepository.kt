@@ -180,6 +180,7 @@ class InstalledPluginRepository(
                     displayName = pkg.manifest.displayName,
                     summary = summaryOf(pkg.readme),
                     compatibility = pkg.template.compatibility,
+                    payloads = pkg.manifest.payloads,
                 )
             }
 
@@ -264,6 +265,7 @@ class InstalledPluginRepository(
             conflicts = inspection.conflicts,
             displayName = inspection.displayName,
             summary = inspection.summary,
+            payloads = inspection.payloads,
         )
         val recordJson = json.encodeToString(InstalledRecord.serializer(), record)
         atomicWrite(recordFile, recordJson)
@@ -306,7 +308,7 @@ class InstalledPluginRepository(
         } else {
             record.copy(displayName = inspection.displayName, summary = inspection.summary)
         }
-        val current = named.copy(identity = named.identity.copy(contentDigest = digest))
+        val current = named.copy(identity = named.identity.copy(contentDigest = digest), payloads = inspection.payloads)
         if (current.identity != record.identity) updateRecord(current)
         return current
     }

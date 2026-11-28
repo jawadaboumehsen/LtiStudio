@@ -9,12 +9,14 @@
  */
 package org.ide.lti.core.designsystem.component.navigation
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,11 +25,11 @@ import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.theme.Spacing
 
 /**
- * Liquid Glass-styled scrollable tab row with integrated [HorizontalPager].
+ * macOS-styled Liquid Glass scrollable segmented tab row with integrated [HorizontalPager].
  *
- * Provides a standardized, glassmorphic alternative to Material 3 [ScrollableTabRow].
+ * Provides a standardized, glassmorphic alternative to Material 3 scrollable tabs.
  */
-@Suppress("MultipleEmitters")
+@Suppress("MultipleEmitters", "UnusedParameter")
 @Composable
 fun GlassScrollableTabRow(
     tabContents: List<TabContent>,
@@ -39,29 +41,32 @@ fun GlassScrollableTabRow(
     edgePadding: Dp = Spacing.Small,
 ) {
     val scope = rememberCoroutineScope()
-
-    PrimaryScrollableTabRow(
-        modifier = modifier,
-        containerColor = containerColor,
-        selectedTabIndex = pagerState.currentPage,
-        edgePadding = edgePadding,
-        indicator = {},
-        divider = {},
-    ) {
-        tabContents.forEachIndexed { index, currentTab ->
-            GlassTab(
-                text = currentTab.tabName,
-                selected = pagerState.currentPage == index,
-                selectedColor = selectedContentColor,
-                unselectedColor = unselectedContentColor,
-                onClick = {
-                    scope.launch {
-                        pagerState.animateScrollToPage(index)
-                    }
-                },
+    val items = remember(tabContents) {
+        tabContents.mapIndexed { index, tab ->
+            MacOsSegmentItem(
+                id = index.toString(),
+                label = tab.tabName,
+                testTag = "ScrollableTab_$index",
             )
         }
     }
+
+    MacOsSegmentedControl(
+        items = items,
+        selectedId = pagerState.currentPage.toString(),
+        onSelect = { selectedId ->
+            val targetPage = selectedId.toIntOrNull()
+            if (targetPage != null) {
+                scope.launch {
+                    pagerState.animateScrollToPage(targetPage)
+                }
+            }
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = edgePadding, vertical = Spacing.ExtraSmall),
+        wrap = false,
+    )
 
     HorizontalPager(
         state = pagerState,

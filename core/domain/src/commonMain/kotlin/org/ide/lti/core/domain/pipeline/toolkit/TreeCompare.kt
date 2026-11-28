@@ -14,12 +14,123 @@ import org.ide.lti.core.domain.pipeline.text.SidecarNormalizer
 /** What happened to one path of a partition between the stock firmware and the build. */
 enum class TreeChangeKind { ADDED, REMOVED, CONTENT, META, TYPE }
 
+/** Structural aspect changed on a path, for deep ROM audit filtering. */
+enum class StructuralAspect {
+    HASH_CONTENT,
+    SYMLINK,
+    UID_GID_MODE,
+    SELINUX_CONTEXT,
+    CAPABILITIES,
+    APK_PACKAGE,
+}
+
+/** Severity of a structural security audit finding inside a compared partition. */
+enum class StructuralRiskSeverity { CRITICAL, WARNING, INFO }
+
+/** A concrete security-relevant structural drift between stock and built partitions. */
+data class StructuralSecurityFinding(val path: String, val severity: StructuralRiskSeverity, val summary: String)
+
+/** Breakdown of content hashes, symlinks, UID/GID/permissions, SELinux labels, APKs, and risk findings. */
+data class StructuralAuditSummary(
+    val hashDiffCount: Int,
+    val symlinkDiffCount: Int,
+    val ownerOrModeDiffCount: Int,
+    val selinuxDiffCount: Int,
+    val capabilityDiffCount: Int,
+    val apkDiffCount: Int,
+    val securityFindings: List<StructuralSecurityFinding>,
+)
+
 /** One changed path (relative to the partition's tree) and, for metadata, what changed (`mode 644 -> 755`). */
-data class TreeChange(val path: String, val kind: TreeChangeKind, val details: List<String> = emptyList())
+data class TreeChange(val path: String, val kind: TreeChangeKind, val details: List<String> = emptyList()) {
+    fun aspects(): Set<StructuralAspect> = buildSet {
+        if (kind == TreeChangeKind.CONTENT) add(StructuralAspect.HASH_CONTENT)
+        if (path.endsWith(".apk", ignoreCase = true) || path.endsWith(".apex", ignoreCase = true)) {
+            add(StructuralAspect.APK_PACKAGE)
+        }
+        details.forEach { d ->
+            when {
+                d.startsWith("link ") -> add(StructuralAspect.SYMLINK)
+                d.startsWith("owner ") || d.startsWith("mode ") -> add(StructuralAspect.UID_GID_MODE)
+                d.startsWith("label ") -> add(StructuralAspect.SELINUX_CONTEXT)
+                d.startsWith("capabilities ") -> add(StructuralAspect.CAPABILITIES)
+            }
+        }
+    }
+}
 
 /** Two trees of a partition compared (A, the older or stock side, against B). */
 data class TreeDiff(val partition: String, val changes: List<TreeChange>, val unchanged: Int) {
     fun count(kind: TreeChangeKind): Int = changes.count { it.kind == kind }
+
+    fun structuralAudit(): StructuralAuditSummary {
+        var hashes = 0
+        var links = 0
+        var uidMode = 0
+        var selinux = 0
+        var caps = 0
+        var apks = 0
+        val findings = mutableListOf<StructuralSecurityFinding>()
+
+        changes.forEach { c ->
+            val aspects = c.aspects()
+            if (StructuralAspect.HASH_CONTENT in aspects) hashes++
+            if (StructuralAspect.SYMLINK in aspects) links++
+            if (StructuralAspect.UID_GID_MODE in aspects) uidMode++
+            if (StructuralAspect.SELINUX_CONTEXT in aspects) selinux++
+            if (StructuralAspect.CAPABILITIES in aspects) caps++
+            if (StructuralAspect.APK_PACKAGE in aspects) apks++
+
+            c.details.forEach { d ->
+                classifyRisk(c.path, d)?.let(findings::add)
+            }
+            if (c.kind == TreeChangeKind.ADDED && c.path.endsWith("/su")) {
+                findings += StructuralSecurityFinding(
+                    c.path,
+                    StructuralRiskSeverity.WARNING,
+                    "Added su binary to partition image",
+                )
+            }
+        }
+
+        return StructuralAuditSummary(
+            hashDiffCount = hashes,
+            symlinkDiffCount = links,
+            ownerOrModeDiffCount = uidMode,
+            selinuxDiffCount = selinux,
+            capabilityDiffCount = caps,
+            apkDiffCount = apks,
+            securityFindings = findings.sortedBy { it.severity.ordinal },
+        )
+    }
+
+    private fun classifyRisk(path: String, detail: String): StructuralSecurityFinding? = when {
+        detail.startsWith("label ") && detail.endsWith("-> none") ->
+            StructuralSecurityFinding(path, StructuralRiskSeverity.CRITICAL, "SELinux label removed: $detail")
+
+        detail.startsWith("label ") && (detail.contains("unlabeled") || detail.contains("su_exec")) ->
+            StructuralSecurityFinding(path, StructuralRiskSeverity.CRITICAL, "SELinux label risk: $detail")
+
+        detail.startsWith("label ") ->
+            StructuralSecurityFinding(path, StructuralRiskSeverity.INFO, "SELinux file_contexts change: $detail")
+
+        detail.startsWith("mode ") && isEscalatedMode(detail.substringAfter("-> ").trim()) ->
+            StructuralSecurityFinding(
+                path,
+                StructuralRiskSeverity.WARNING,
+                "Privileged/setuid/world-writable mode: $detail",
+            )
+
+        detail.startsWith("capabilities ") && !detail.endsWith("-> 0x0") && !detail.endsWith("-> none") ->
+            StructuralSecurityFinding(path, StructuralRiskSeverity.WARNING, "Linux file capabilities changed: $detail")
+
+        else -> null
+    }
+
+    private fun isEscalatedMode(mode: String): Boolean {
+        if (mode.length >= 4 && (mode.startsWith("4") || mode.startsWith("2") || mode.startsWith("6"))) return true
+        return mode.lastOrNull() in setOf('2', '3', '6', '7')
+    }
 }
 
 /**

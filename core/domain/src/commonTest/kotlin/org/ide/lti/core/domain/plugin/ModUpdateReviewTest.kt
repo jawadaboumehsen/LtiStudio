@@ -13,13 +13,57 @@ import org.ide.lti.core.model.plugin.Compatibility
 import org.ide.lti.core.model.plugin.DependencyRef
 import org.ide.lti.core.model.plugin.Operation
 import org.ide.lti.core.model.plugin.PartitionPath
+import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.plugin.PluginPlanTemplate
 import org.ide.lti.core.model.plugin.SettingDefinition
+import org.ide.lti.core.model.plugin.SmaliEdit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ModUpdateReviewTest {
+    @Test
+    fun changedPatchContentsAreVisibleWhenOperationCountsStayTheSame() {
+        val edit = SmaliEdit("smali/io/example/Hook.smali", "", "- old\n+ before\n")
+        val old = template(
+            "1.0",
+            emptyList(),
+            listOf(Operation.ApkJarPatch("framework", framework, listOf(edit))),
+            emptyList(),
+        )
+        val new = old.copy(
+            version = "1.1",
+            operations = listOf(
+                Operation.ApkJarPatch("framework", framework, listOf(edit.copy(unifiedDiff = "- old\n+ after\n"))),
+            ),
+        )
+        val review = ModUpdateReview.of("io:pif", "1.0", "1.1", old, new, null, null)
+        assertFalse(review.unchanged)
+        assertTrue(review.sections.getValue(ModUpdateReview.FILES).single().contains("patch contents"))
+    }
+
+    @Test
+    fun changedAssetDigestsAreVisibleEvenWhenPathsAndSizesStayTheSame() {
+        val same = template("1.0", emptyList(), emptyList(), emptyList())
+        val old = pkg("1.0", emptyList()).copy(
+            payloads = listOf(PayloadEntry("assets/tool", 10, "old"), PayloadEntry("assets/gone", 1, "gone")),
+        )
+        val new = pkg("1.1", emptyList()).copy(
+            payloads = listOf(PayloadEntry("assets/tool", 10, "new"), PayloadEntry("assets/added", 2, "added")),
+        )
+        val review = ModUpdateReview.of("io:pif", "1.0", "1.1", same, same, old, new)
+        assertFalse(review.unchanged)
+        assertEquals(
+            listOf(
+                "new packaged file assets/added (2 bytes)",
+                "removed packaged file assets/gone",
+                "changed assets/tool (10 → 10 bytes)",
+            ),
+            review.sections.getValue(ModUpdateReview.PAYLOADS),
+        )
+    }
+
     private val services = PartitionPath("system", "system/framework/services.jar")
     private val framework = PartitionPath("system", "system/framework/framework.jar")
     private val prop = PartitionPath("system", "system/build.prop")

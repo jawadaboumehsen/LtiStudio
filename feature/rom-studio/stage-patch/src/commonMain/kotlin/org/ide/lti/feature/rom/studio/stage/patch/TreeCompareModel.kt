@@ -11,6 +11,7 @@ package org.ide.lti.feature.rom.studio.stage.patch
 
 import kotlinx.coroutines.flow.first
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureDiff
 import org.ide.lti.core.domain.pipeline.toolkit.TreeChange
 import org.ide.lti.core.domain.repository.workspace.WorkspaceRepository
 import org.ide.lti.core.domain.workbench.CompareSide
@@ -32,6 +33,7 @@ data class TreeCompareState(
     val b: CompareSide? = null,
     val trustTimes: Boolean = false,
     val result: SideComparison? = null,
+    val apkAudits: Map<String, ApkSignatureDiff> = emptyMap(),
     val opened: TreeChange? = null,
     val entry: EntryComparison? = null,
 )
@@ -106,7 +108,28 @@ class TreeCompareModel internal constructor(
         val b = t.b ?: return
         task("Comparing ${a.partition} with ${b.partition}") { tools ->
             val result = tools.compareSides(a, b, t.trustTimes)
-            update { if (it.a == a && it.b == b) it.copy(result = result, opened = null, entry = null) else it }
+            update {
+                if (it.a == a && it.b == b) {
+                    it.copy(result = result, apkAudits = emptyMap(), opened = null, entry = null)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
+    /** Extracts and diffs v1/v2/v3 signing certificates across changed/added/removed APK files in the result. */
+    fun auditApkCertificates() {
+        val result = current().result
+        val apks = result?.diff?.changes
+            ?.map { it.path }
+            ?.filter { it.endsWith(".apk", ignoreCase = true) }
+            ?.take(MAX_APK_CERT_AUDIT)
+            .orEmpty()
+        if (result == null || busy() || apks.isEmpty()) return
+        task("Auditing ${apks.size} APK signing certificates") { tools ->
+            val audits = tools.auditApkCertificates(result.a, result.b, apks)
+            update { if (it.result == result) it.copy(apkAudits = audits) else it }
         }
     }
 
@@ -119,5 +142,9 @@ class TreeCompareModel internal constructor(
             val entry = tools.compareEntry(result.a, result.b, change)
             update { if (it.opened == change) it.copy(entry = entry) else it }
         }
+    }
+
+    private companion object {
+        const val MAX_APK_CERT_AUDIT = 40
     }
 }

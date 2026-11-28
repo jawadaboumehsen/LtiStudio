@@ -9,16 +9,48 @@
  */
 package org.ide.lti.core.domain.workspace
 
+import org.ide.lti.core.common.utils.runCatchingCancellable
 import org.ide.lti.core.domain.pipeline.stages.Preflight
+import org.ide.lti.core.domain.pipeline.stages.PreflightReport
+import org.ide.lti.core.domain.pipeline.stages.VintfAssessment
+import org.ide.lti.core.domain.pipeline.stages.VintfStatus
 import org.ide.lti.core.domain.plugin.LabStatus
+import org.ide.lti.core.domain.plugin.ModLab
 import org.ide.lti.core.domain.workbench.WorkbenchRunner
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
+import org.ide.lti.core.model.workspace.Workspace
 
 /** One line of the upgrade report; [problem] lines need a decision before building. */
 data class UpgradeLine(val text: String, val problem: Boolean = false)
 
 /** A titled part of the upgrade report. */
 data class UpgradeSection(val title: String, val lines: List<UpgradeLine>)
+
+enum class BaselineVerdict(val label: String) {
+    PASSES("Passes"),
+    NEEDS_EVIDENCE("Needs evidence"),
+    FAILS("Fails"),
+}
+
+data class BaselineMod(val key: String, val verdict: BaselineVerdict, val evidence: List<String>)
+
+data class BaselineSku(val vendor: String? = null, val odm: String? = null)
+
+data class LocalBaselineArchive(val workspace: Workspace, val archive: FirmwareArchive)
+
+data class FirmwareRecommendations(
+    val candidates: List<FirmwareBaseline>,
+    val archivesNeedingPreparation: List<LocalBaselineArchive>,
+    val archiveReadErrors: List<String> = emptyList(),
+)
+
+data class FirmwareBaseline(
+    val workspace: Workspace,
+    val firmware: String?,
+    val verdict: BaselineVerdict,
+    val evidence: List<String>,
+    val mods: List<BaselineMod> = emptyList(),
+)
 
 /**
  * The firmware upgrade assistant: before the settings of [from] (a workspace of the same phone on its old firmware)
@@ -30,7 +62,113 @@ class FirmwareUpgrade(
     private val runner: WorkbenchRunner,
     private val settings: WorkspaceSettingsStore,
     private val preflight: Preflight,
+    private val archives: FirmwareArchives? = null,
+    private val preparationEvidence: (suspend (String) -> List<String>)? = null,
 ) {
+    /** Rank local workspaces with the current mod selection. No settings or firmware are changed. */
+    suspend fun baselines(
+        workspaceId: String,
+        alternatives: List<Workspace>,
+        sku: BaselineSku = BaselineSku(),
+    ): FirmwareRecommendations {
+        val source = runner.read(workspaceId) { ws }
+        val selected = checkNotNull(settings.current(source.id)) { "Save the current firmware settings first." }
+        val target = settings.device(source.id)?.codename
+        val workspaces = (listOf(source) + alternatives).distinctBy { it.id }
+        val unprepared = mutableListOf<LocalBaselineArchive>()
+        val archiveErrors = mutableListOf<String>()
+        val ranked = workspaces.map { candidate ->
+            val snapshot = runCatchingCancellable { settings.current(candidate.id) }.getOrNull()
+            runCatchingCancellable { archives?.list(candidate.id).orEmpty() }
+                .onSuccess { local ->
+                    unprepared += local.filterNot { it.ref == snapshot?.acquisition?.archiveRef }
+                        .map { LocalBaselineArchive(candidate, it) }
+                }
+                .onFailure { archiveErrors += "${candidate.name}: ${it.message ?: "Could not list local archives"}" }
+            runCatchingCancellable { baseline(candidate, snapshot, selected, target, sku) }.getOrElse { error ->
+                FirmwareBaseline(
+                    candidate,
+                    snapshot?.acquisition?.firmware?.version,
+                    BaselineVerdict.NEEDS_EVIDENCE,
+                    listOf(error.message ?: "Could not read firmware evidence."),
+                )
+            }
+        }.sortedWith(compareBy<FirmwareBaseline> { it.verdict.ordinal }.thenBy { it.workspace.name })
+        return FirmwareRecommendations(ranked, unprepared, archiveErrors)
+    }
+
+    private suspend fun baseline(
+        candidate: Workspace,
+        saved: ConfigurationSnapshot?,
+        selected: ConfigurationSnapshot,
+        target: String?,
+        sku: BaselineSku,
+    ): FirmwareBaseline {
+        val snapshot = checkNotNull(saved) { "This workspace has no saved firmware settings." }
+        val firmware = snapshot.acquisition.firmware.version
+        identityRefusal(candidate, snapshot, selected, target)?.let { (verdict, why) ->
+            return FirmwareBaseline(candidate, firmware, verdict, listOf(why))
+        }
+        val prepared = Facts.parse(runner.read(candidate.id) { sh(FACTS_SCRIPT, abs(".")) })
+        val preparation = preparation(candidate.id, prepared)
+        val carried = snapshot.copy(customization = selected.customization)
+        return if (preparation.isEmpty()) {
+            assessed(candidate, firmware, snapshot, carried, sku, prepared)
+        } else {
+            val mods = selected.customization.enabledPackages.map {
+                BaselineMod(it, BaselineVerdict.NEEDS_EVIDENCE, preparation)
+            }
+            FirmwareBaseline(candidate, firmware, BaselineVerdict.NEEDS_EVIDENCE, preparation, mods)
+        }
+    }
+
+    /** [candidate] judged with the current mods ([carried]) on its prepared tree, and VINTF for [sku]. */
+    private suspend fun assessed(
+        candidate: Workspace,
+        firmware: String,
+        snapshot: ConfigurationSnapshot,
+        carried: ConfigurationSnapshot,
+        sku: BaselineSku,
+        prepared: Facts,
+    ): FirmwareBaseline {
+        val enabled = carried.customization.enabledPackages
+        val lab = if (enabled.isEmpty()) {
+            ModLab(emptyList(), emptyList())
+        } else {
+            preflight.lab(candidate.id, carried, decode = true)
+        }
+        val mods = assessMods(enabled, lab)
+        val report = preflight.baselineCompatibility(candidate.id, snapshot)
+        val compatibility = baselineVintf(report.vintf, sku)
+        val fingerprint = prepared.props[FINGERPRINT]
+        val evidence = evidence(report, sku, compatibility, fingerprint)
+        return FirmwareBaseline(candidate, firmware, verdict(compatibility, mods, fingerprint), evidence, mods)
+    }
+
+    /** Why [candidate] cannot stand in for the current phone and firmware region; null when it can. */
+    private suspend fun identityRefusal(
+        candidate: Workspace,
+        snapshot: ConfigurationSnapshot,
+        selected: ConfigurationSnapshot,
+        target: String?,
+    ): Pair<BaselineVerdict, String>? {
+        val identity = settings.device(candidate.id)?.codename
+        return when {
+            target == null || identity == null -> BaselineVerdict.NEEDS_EVIDENCE to "Missing device configuration."
+            identity != target || snapshot.acquisition.region != selected.acquisition.region ->
+                BaselineVerdict.FAILS to "Device or firmware region differs from the current workspace."
+            else -> null
+        }
+    }
+
+    /** What must run in [workspaceId] before its partitions and mod operations can be judged. */
+    private suspend fun preparation(workspaceId: String, prepared: Facts): List<String> =
+        if (prepared.images.isEmpty()) {
+            listOf("Extract and assemble this archive before checking its partitions and mod operations.")
+        } else {
+            preparationEvidence?.invoke(workspaceId).orEmpty()
+        }
+
     /** The report for taking the settings of workspace [from] into workspace [to]. */
     suspend fun compare(from: String, to: String): List<UpgradeSection> {
         val old = checkNotNull(settings.current(from)) { "The old workspace has no settings" }
@@ -164,8 +302,87 @@ class FirmwareUpgrade(
         }
     }
 
-    private companion object {
-        val PROPS = listOf(
+    companion object {
+        internal fun baselineVintf(vintf: VintfAssessment, sku: BaselineSku): BaselineVerdict =
+            if (sku == BaselineSku()) anySku(vintf) else forSku(vintf, sku)
+
+        private fun anySku(vintf: VintfAssessment): BaselineVerdict = when {
+            vintf.status == VintfStatus.INCOMPATIBLE -> BaselineVerdict.FAILS
+            vintf.status != VintfStatus.COMPATIBLE || vintf.skuResults.any { it.provisional } ->
+                BaselineVerdict.NEEDS_EVIDENCE
+            else -> BaselineVerdict.PASSES
+        }
+
+        private fun forSku(vintf: VintfAssessment, sku: BaselineSku): BaselineVerdict {
+            val matches = vintf.skuResults.filter {
+                (sku.vendor == null || it.vendorSku == sku.vendor) && (sku.odm == null || it.odmSku == sku.odm)
+            }
+            return when {
+                matches.any { !it.provisional && it.status == VintfStatus.INCOMPATIBLE } -> BaselineVerdict.FAILS
+                matches.isEmpty() || matches.any { it.provisional || it.status != VintfStatus.COMPATIBLE } ->
+                    BaselineVerdict.NEEDS_EVIDENCE
+                vintf.missingEvidence.isNotEmpty() -> BaselineVerdict.NEEDS_EVIDENCE
+                else -> BaselineVerdict.PASSES
+            }
+        }
+
+        internal fun assessMods(keys: List<String>, lab: ModLab): List<BaselineMod> = keys.map { key ->
+            val rows = lab.rows.filter { it.mod == key }
+            val refused = rows.filter { it.status == LabStatus.REFUSED }
+            val unchecked = rows.filter { it.status == LabStatus.UNCHECKED }
+            val verdict = when {
+                refused.isNotEmpty() -> BaselineVerdict.FAILS
+                lab.problems.isNotEmpty() || unchecked.isNotEmpty() || rows.isEmpty() -> BaselineVerdict.NEEDS_EVIDENCE
+                else -> BaselineVerdict.PASSES
+            }
+            val nothingChecked = rows.isEmpty() && lab.problems.isEmpty()
+            val evidence = refused.map { "${it.operationId} · ${it.reason}" } +
+                unchecked.map { "${it.operationId} · ${it.reason.ifBlank { NEEDS_DECODING }}" } +
+                lab.problems +
+                listOfNotNull("No operations were checked for this mod.".takeIf { nothingChecked })
+            BaselineMod(key, verdict, evidence)
+        }
+
+        /** Fails on any failure; passes only with a fingerprint, a passing VINTF and every mod passing. */
+        internal fun verdict(compatibility: BaselineVerdict, mods: List<BaselineMod>, fingerprint: String?) = when {
+            compatibility == BaselineVerdict.FAILS || mods.any { it.verdict == BaselineVerdict.FAILS } ->
+                BaselineVerdict.FAILS
+            fingerprint == null ||
+                compatibility != BaselineVerdict.PASSES ||
+                mods.any { it.verdict == BaselineVerdict.NEEDS_EVIDENCE } -> BaselineVerdict.NEEDS_EVIDENCE
+            else -> BaselineVerdict.PASSES
+        }
+
+        /** The lines shown with a baseline: the SKU asked for, VINTF per SKU, and the prepared fingerprint. */
+        private fun evidence(
+            report: PreflightReport,
+            sku: BaselineSku,
+            compatibility: BaselineVerdict,
+            fingerprint: String?,
+        ): List<String> = buildList {
+            val vintf = report.vintf
+            if (sku != BaselineSku()) {
+                val asked = "vendor ${sku.vendor ?: "any"}, ODM ${sku.odm ?: "any"}"
+                add("Selected SKU evidence: $asked (${compatibility.label})")
+                if (compatibility == BaselineVerdict.NEEDS_EVIDENCE) {
+                    add("The selected SKU has no complete, non-provisional VINTF result.")
+                }
+            }
+            add("VINTF · ${vintf.status.label}")
+            add(fingerprint?.let { "Prepared system fingerprint · $it" } ?: "Missing prepared system fingerprint.")
+            addAll(vintf.missingEvidence)
+            vintf.skuResults.forEach {
+                val provisional = if (it.provisional) " (provisional)" else ""
+                val skus = "Vendor ${it.vendorSku ?: "default"} / ODM ${it.odmSku ?: "default"}"
+                add("$skus · ${it.status.label}$provisional")
+            }
+            addAll(report.findings.filter { it.code == "VINTF_INCOMPATIBLE" }.map { it.message })
+        }
+
+        private const val FINGERPRINT = "ro.system.build.fingerprint"
+        private const val NEEDS_DECODING = "Requires package decoding or a build"
+
+        private val PROPS = listOf(
             "ro.system.build.fingerprint" to "Build",
             "ro.build.version.release" to "Android",
             "ro.build.version.security_patch" to "Security patch",

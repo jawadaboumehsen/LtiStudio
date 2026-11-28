@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.workbench
 
 import kotlinx.datetime.Instant
+import org.ide.lti.core.domain.pipeline.toolkit.RefusalException
 import org.ide.lti.core.domain.workspace.RunRecord
 import org.ide.lti.core.model.run.Artifact
 import org.ide.lti.core.model.run.ArtifactKind
@@ -18,10 +19,31 @@ import org.ide.lti.core.model.run.RunState
 import org.ide.lti.core.model.workspace.ConfigurationSnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DeviceTestTest {
+    @Test
+    fun aPhoneBlockedByWslGetsUsbPermissionSteps() {
+        val adb = "List of devices attached\nphone\tno permissions (missing udev rules?)\n"
+        val phones = PhoneReadout.devices(adb, "").map { (serial, mode) -> PhoneFacts(serial, mode) }
+        val refusal = assertFailsWith<RefusalException> { DeviceTest.phoneForCheck(phones) }.refusal
+
+        assertEquals("WSL denied USB access", refusal.cause)
+        assertTrue("How to fix USB access in WSL" in refusal.nextStep)
+    }
+
+    @Test
+    fun anUnauthorizedPhoneGetsTheOnDevicePromptInstructions() {
+        val phone = PhoneFacts("phone", PhoneMode.UNAUTHORIZED)
+        val refusal = assertFailsWith<RefusalException> { DeviceTest.phoneForCheck(listOf(phone)) }.refusal
+
+        assertTrue("Unlock the phone and allow USB debugging" in refusal.nextStep)
+        val ready = phone.copy(mode = PhoneMode.ANDROID)
+        assertEquals(ready, DeviceTest.phoneForCheck(listOf(phone, ready)))
+    }
+
     private fun result(answers: String) = DeviceCheckResult(
         runId = "r1",
         checkedAt = "2026-11-19T10:00:00Z",

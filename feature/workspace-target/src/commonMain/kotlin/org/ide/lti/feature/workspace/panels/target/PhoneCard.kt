@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -93,6 +94,7 @@ internal fun PhoneCard(
             )
         }
         Phones(phone, vm)
+        if (phone.phones.any { it.mode == PhoneMode.NO_PERMISSION }) UsbPermissionHelp(workspaceId)
         phone.phone?.let { Facts(it, workspaceId, vm) }
         phone.phone?.let { MeasuredVsConfigured(it, device, enabled = !state.locked, onUsePhoneValue) }
         Images(phone, vm)
@@ -106,9 +108,61 @@ private fun NoPhone() {
     Note(
         "No phone found. WSL sees USB only through usbipd-win: in an administrator PowerShell, `usbipd list`, then " +
             "`usbipd bind --busid <id>` once and `usbipd attach --wsl --busid <id>` (again whenever the phone " +
-            "reboots into another mode). A phone listed with no permissions needs udev rules for this user.",
+            "reboots into another mode).",
         GlassTheme.diagnosticColors.warning,
     )
+}
+
+@Composable
+private fun UsbPermissionHelp(workspaceId: String) {
+    var expanded by remember(workspaceId) { mutableStateOf(false) }
+    Note("WSL detected the phone but denied USB access.", GlassTheme.diagnosticColors.warning)
+    GlassButton(onClick = { expanded = !expanded }, variant = GlassButtonVariant.Text) {
+        Text(if (expanded) "Hide USB permission steps" else "How to fix USB access in WSL")
+    }
+    if (!expanded) return
+    val textColor = MaterialTheme.colorScheme.onSurface
+    SelectionContainer {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Small), modifier = Modifier.fillMaxWidth()) {
+            Text("1. Open the WSL distro Studio uses. Check that its Linux user belongs to plugdev.", color = textColor)
+            Code("id -nG")
+            Text("If plugdev is missing, run these commands and reopen the WSL session.", color = textColor)
+            Code("sudo groupadd -f plugdev\nsudo usermod -aG plugdev \"\$(id -un)\"")
+            Text(
+                "2. Find the phone's four-digit ID_VENDOR_ID and ID_MODEL_ID. " +
+                    "Run lsusb if installed, or use this command.",
+                color = textColor,
+            )
+            Code(
+                "for node in /dev/bus/usb/*/*; do echo \"\$node\"; " +
+                    "udevadm info --query=property --name=\"\$node\" | grep -E '^ID_(MODEL|MODEL_ID|VENDOR_ID)='; done",
+            )
+            Text(
+                "3. Run the command below to open the rules file. " +
+                    "Add this line with your phone's vendor and product IDs.",
+                color = textColor,
+            )
+            Code("sudoedit /etc/udev/rules.d/70-ltirom-phone.rules")
+            Code(
+                "SUBSYSTEM==\"usb\", ENV{DEVTYPE}==\"usb_device\", ATTR{idVendor}==\"VENDOR\", " +
+                    "ATTR{idProduct}==\"PRODUCT\", GROUP=\"plugdev\", MODE=\"0660\"",
+            )
+            Text(
+                "4. Reload the rules and apply them to the phone. Use the same IDs in this command.",
+                color = textColor,
+            )
+            Code(
+                "sudo udevadm control --reload-rules\n" +
+                    "sudo udevadm trigger --action=add --subsystem-match=usb " +
+                    "--attr-match=idVendor=VENDOR --attr-match=idProduct=PRODUCT\nudevadm settle",
+            )
+            Text(
+                "If Studio still reports the old permission error, detach and reattach the phone with usbipd, " +
+                    "then select Read the phone. Unlock the phone and allow USB debugging if prompted.",
+                color = textColor,
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -22,7 +22,12 @@ val stageBuildModule: Module = module {
     single<StageEditor>(named("build")) { BuildStageEditor() }
 
     viewModel { params ->
-        SizeAdvisorViewModel(workspaceId = params.getOrNull<String>() ?: "", advisor = getOrNull(), boot = getOrNull())
+        SizeAdvisorViewModel(
+            workspaceId = params.getOrNull<String>() ?: "",
+            advisor = getOrNull(),
+            boot = getOrNull(),
+            images = getOrNull(),
+        )
     }
     viewModel { params ->
         BuildViewModel(

@@ -177,6 +177,12 @@ private fun MenuBarScope.ViewMenu(
             shortcut = DesktopKeyShortcut.primary(Key.Grave),
             onCheckedChange = { dispatcher.dispatch(StudioAction.TOGGLE_TERMINAL) },
         )
+        CheckboxItem(
+            text = "Background Sessions & Notifications",
+            mnemonic = 'B',
+            checked = state.isTerminalVisible,
+            onCheckedChange = { dispatcher.dispatch(StudioAction.TOGGLE_BACKGROUND_SESSIONS) },
+        )
         Separator()
         Item(
             text = "Reset Layout",
@@ -191,6 +197,19 @@ private fun MenuBarScope.WindowMenu(
     dispatcher: StudioActionDispatcher,
 ) {
     Menu("Window", mnemonic = 'W') {
+        Item(
+            text = "Pop Out Live Logcat & Copilot",
+            onClick = { dispatcher.dispatch(StudioAction.POP_OUT_COPILOT) },
+        )
+        Item(
+            text = "Pop Out Partition Explorer",
+            onClick = { dispatcher.dispatch(StudioAction.POP_OUT_PARTITION_EXPLORER) },
+        )
+        Item(
+            text = "Pop Out Diff & Provenance Inspector",
+            onClick = { dispatcher.dispatch(StudioAction.POP_OUT_DIFF_INSPECTOR) },
+        )
+        Separator()
         Item(
             text = "Minimize",
             mnemonic = 'M',

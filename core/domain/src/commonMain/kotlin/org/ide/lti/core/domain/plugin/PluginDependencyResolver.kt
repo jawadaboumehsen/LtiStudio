@@ -13,6 +13,7 @@ import org.ide.lti.core.domain.pipeline.configuration.Severity
 import org.ide.lti.core.domain.pipeline.configuration.ValidationError
 import org.ide.lti.core.domain.pipeline.configuration.ValidationReport
 import org.ide.lti.core.model.plugin.DependencyRef
+import org.ide.lti.core.model.plugin.PayloadEntry
 import org.ide.lti.core.model.run.StageId
 import org.ide.lti.core.model.workspace.PluginLockfile
 import org.ide.lti.core.model.workspace.PluginLockfileEntry
@@ -24,6 +25,7 @@ data class InstalledPackage(
     val contentDigest: String,
     val dependencies: List<DependencyRef>,
     val conflicts: List<DependencyRef>,
+    val payloads: List<PayloadEntry> = emptyList(),
 )
 
 val InstalledPackage.key: String

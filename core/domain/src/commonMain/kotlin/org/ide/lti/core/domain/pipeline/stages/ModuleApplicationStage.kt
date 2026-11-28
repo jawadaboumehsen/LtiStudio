@@ -195,7 +195,9 @@ class ModuleApplicationStage(private val catalog: PluginCatalogPort = EmptyPlugi
         val appliedPlan = AppliedModulePlan(
             lockfileEntries = resolvedEntries,
             operationIds = allOperations.map { it.id },
-            operations = allOperations.map { it.toSummary() },
+            operations = resolvedPlans.flatMap { plan ->
+                plan.operations.map { it.toSummary().copy(mod = "${plan.publisher}:${plan.id}") }
+            },
             resolvedPlanDigests = resolvedPlans.map { it.digest },
         )
 
@@ -243,13 +245,13 @@ class ModuleApplicationStage(private val catalog: PluginCatalogPort = EmptyPlugi
         )
     }
 
-    private companion object {
+    internal companion object {
         const val APPLIED_PATH = "work/modules/applied.json"
-        const val APPLY_RESULT_KEY = "modules.apply.result"
-        const val PLAN_PATH = "work/modules/plan.json"
+        private const val APPLY_RESULT_KEY = "modules.apply.result"
+        private const val PLAN_PATH = "work/modules/plan.json"
         const val EMPTY_APPLIED_JSON = """{"enabled":[],"operations":0}"""
 
-        fun ConcreteOperation.toSummary(): AppliedOperationSummary = when (this) {
+        private fun ConcreteOperation.toSummary(): AppliedOperationSummary = when (this) {
             is ConcreteOperation.Copy -> AppliedOperationSummary(
                 id = id,
                 kind = "Copy",
@@ -304,7 +306,7 @@ data class AppliedModulePlan(
  * Summary descriptor of a single applied operation within [AppliedModulePlan].
  */
 @Serializable
-data class AppliedOperationSummary(val id: String, val kind: String, val target: String)
+data class AppliedOperationSummary(val id: String, val kind: String, val target: String, val mod: String? = null)
 
 @Serializable
 private data class AppliedModuleSummary(val enabled: List<String>, val operations: Int)

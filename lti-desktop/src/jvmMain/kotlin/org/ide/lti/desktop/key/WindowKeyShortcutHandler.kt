@@ -31,7 +31,7 @@ object WindowKeyShortcutHandler {
     /**
      * Checks whether [eventKey] matches the [target] key.
      * Compares both direct equality and [Key.nativeKeyCode] to ensure robust matching on desktop platforms
-     * (such as Windows, Tao, or Skiko) where runtime events may carry KEY_LOCATION_UNKNOWN (0) instead of KEY_LOCATION_STANDARD (1).
+     * (such as Windows or Skiko) where runtime events may carry KEY_LOCATION_UNKNOWN (0) instead of KEY_LOCATION_STANDARD (1).
      */
     fun matchesKey(eventKey: Key, target: Key): Boolean {
         return eventKey == target || (eventKey.nativeKeyCode != 0 && eventKey.nativeKeyCode == target.nativeKeyCode)

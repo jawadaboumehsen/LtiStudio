@@ -8,37 +8,62 @@
 package org.ide.lti.desktop.window
 
 import androidx.compose.ui.window.WindowState
-import dev.nucleusframework.application.NucleusWindow
 import java.awt.Frame
+import java.awt.Window
+import java.util.concurrent.ConcurrentHashMap
+
+/** Registry of active detached secondary tool windows for multi-monitor window focus orchestration. */
+object WindowRegistry {
+    private val detachedWindows = ConcurrentHashMap<String, Window>()
+
+    fun register(id: String, window: Window) {
+        detachedWindows[id] = window
+    }
+
+    fun unregister(id: String) {
+        detachedWindows.remove(id)
+    }
+
+    fun bringAllDetachedToFront() {
+        detachedWindows.values.forEach { win ->
+            bringAwtWindowToFront(win)
+        }
+    }
+}
+
+private fun bringAwtWindowToFront(
+    window: Window,
+    pulseAlwaysOnTop: Boolean = false,
+) {
+    try {
+        if ((window is Frame) && (window.extendedState and Frame.ICONIFIED) != 0) {
+            window.extendedState = window.extendedState and Frame.ICONIFIED.inv()
+        }
+        window.isVisible = true
+        window.toFront()
+        window.requestFocus()
+        if (pulseAlwaysOnTop) {
+            // Momentarily toggle alwaysOnTop to bring window above all background windows reliably
+            window.isAlwaysOnTop = true
+            window.isAlwaysOnTop = false
+        }
+    } catch (_: Throwable) {
+        // Ignore platform window focus errors
+    }
+}
 
 /**
- * Restores a [NucleusWindow] from minimized, hidden, or background state and brings it into active focus.
+ * Restores the main [Window] and any detached secondary windows from minimized, hidden,
+ * or background state and brings them into active focus.
  */
 fun restoreWindow(
     windowState: WindowState,
-    nucleusWin: NucleusWindow?,
+    window: Window?,
+    includeDetached: Boolean = false,
 ) {
     windowState.isMinimized = false
-    nucleusWin?.let { win ->
-        try { win.setMinimized(false) } catch (_: Throwable) { /* ignore platform window error */ }
-        try { win.show() } catch (_: Throwable) { /* ignore platform window error */ }
-        try { win.toFront() } catch (_: Throwable) { /* ignore platform window error */ }
-        try { win.requestFocus() } catch (_: Throwable) { /* ignore platform window error */ }
-        try {
-            val awt = win.unsafe.awtWindow
-            if (awt != null) {
-                if ((awt.extendedState and Frame.ICONIFIED) != 0) {
-                    awt.extendedState = awt.extendedState and Frame.ICONIFIED.inv()
-                }
-                awt.isVisible = true
-                awt.toFront()
-                awt.requestFocus()
-                // Momentarily toggle alwaysOnTop to bring window above all background windows reliably
-                awt.isAlwaysOnTop = true
-                awt.isAlwaysOnTop = false
-            }
-        } catch (_: Throwable) {
-            // Best-effort native AWT window un-minimize
-        }
+    window?.let { bringAwtWindowToFront(it, pulseAlwaysOnTop = true) }
+    if (includeDetached) {
+        WindowRegistry.bringAllDetachedToFront()
     }
 }

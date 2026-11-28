@@ -136,5 +136,18 @@ else
 fi"""
 
     /** The image's identity kept with its fingerprint; must match the `stat` format in [FINGERPRINT_SCRIPT]. */
-    private const val IMAGE_STAT = "%s %y %z %i"
+    internal const val IMAGE_STAT = "%s %y %z %i"
+
+    /**
+     * `$1` epoch, then files: each one's times set to the epoch (a reproducible zip), and the recipe of an image that
+     * matched it before (`<p>.img` beside `<p>.recipe`) renewed, so the next build may still reuse it. An image whose
+     * recipe did not match (one put there by hand) keeps an unmatched recipe.
+     */
+    const val TOUCH_KEEPING_RECIPES = """e=${'$'}1; shift
+for f; do
+  r="${'$'}{f%.img}.recipe"; keep=
+  [ -f "${'$'}r" ] && [ "${'$'}(cut -d' ' -f2- "${'$'}r")" = "${'$'}(stat -c '$IMAGE_STAT' "${'$'}f")" ] && keep=1
+  touch -h -d "@${'$'}e" "${'$'}f" || exit 1
+  [ -z "${'$'}keep" ] || printf '%s %s' "${'$'}(cut -d' ' -f1 "${'$'}r")" "${'$'}(stat -c '$IMAGE_STAT' "${'$'}f")" > "${'$'}r" || exit 1
+done"""
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ import org.ide.lti.core.designsystem.component.layout.GlassRole
 import org.ide.lti.core.designsystem.component.layout.glassContainer
 import org.ide.lti.core.designsystem.component.layout.glassSurface
 import org.ide.lti.core.designsystem.theme.AlphaTokens
+import org.ide.lti.core.designsystem.theme.ComponentSize
 import org.ide.lti.core.designsystem.theme.GlassShapes
 import org.ide.lti.core.designsystem.theme.Spacing
 import org.ide.lti.core.designsystem.theme.codeFontFamily
@@ -106,6 +108,7 @@ fun BootloopCopilotSheet(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = ComponentSize.DialogDefaultHeight)
                     .glassContainer(),
                 verticalArrangement = Arrangement.spacedBy(Spacing.SmallMedium),
             ) {

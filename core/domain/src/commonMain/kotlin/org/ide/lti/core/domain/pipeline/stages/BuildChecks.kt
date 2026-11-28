@@ -540,6 +540,8 @@ internal object BuildChecks {
         val standalone = ctx.snapshot.build.standaloneImages.map {
             if (it in sparse) "$extra/$it.img" else ctx.abs("out/images/$it.img")
         }
+        val filesToPack = listOf("$extra/super.img") +
+            ctx.target.packagePolicy.flashableBootPartitions.map { "$stage/$it.img" } + standalone
         return sparse.map { p ->
             PipelineStep.Tool(
                 stepCommand("img2simg", listOf(ctx.abs("out/images/$p.img"), "$extra/$p.img"), ws),
@@ -549,9 +551,17 @@ internal object BuildChecks {
             PipelineStep.Tool(stepCommand("rm", listOf("-f", images), ws), "remove old images zip"),
             PipelineStep.Tool(
                 stepCommand(
+                    "sh",
+                    listOf("-c", ReusedImage.TOUCH_KEEPING_RECIPES, "sh", BuildFlashableZipStage.REPRODUCIBLE_EPOCH) +
+                        filesToPack,
+                    ws,
+                ),
+                "normalize fastboot images timestamps",
+            ),
+            PipelineStep.Tool(
+                stepCommand(
                     "zip",
-                    listOf("-j", images, "$extra/super.img") +
-                        ctx.target.packagePolicy.flashableBootPartitions.map { "$stage/$it.img" } + standalone,
+                    listOf("-j", "-X", images) + filesToPack,
                     ws,
                 ),
                 "zip fastboot images",
@@ -588,8 +598,19 @@ internal object BuildChecks {
                 PipelineStep.Tool(
                     stepCommand(
                         "tar",
-                        listOf("-H", "ustar", "-cf", ctx.abs("out/package/$tar"), "-C", "$extra/odin") +
-                            members.map { "$it.lz4" },
+                        listOf(
+                            "--sort=name",
+                            "--mtime=@${BuildFlashableZipStage.REPRODUCIBLE_EPOCH}",
+                            "--owner=0",
+                            "--group=0",
+                            "--numeric-owner",
+                            "-H",
+                            "ustar",
+                            "-cf",
+                            ctx.abs("out/package/$tar"),
+                            "-C",
+                            "$extra/odin",
+                        ) + members.map { "$it.lz4" },
                         ws,
                     ),
                     "tar odin AP",

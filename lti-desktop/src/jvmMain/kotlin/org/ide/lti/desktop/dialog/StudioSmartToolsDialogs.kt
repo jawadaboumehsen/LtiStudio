@@ -18,31 +18,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import org.ide.lti.core.designsystem.component.actions.GlassPrimaryButton
+import org.ide.lti.core.designsystem.component.actions.GlassTextButton
 import org.ide.lti.core.designsystem.component.feedback.GlassDialog
 import org.ide.lti.core.domain.command.CommandPaletteRegistry
-import org.ide.lti.core.domain.copilot.BootloopCopilotAnalyzer
-import org.ide.lti.core.domain.copilot.CrashSource
-import org.ide.lti.core.domain.diff.ConfigDiffEngine
-import org.ide.lti.core.domain.partition.CompressionAlgorithm
-import org.ide.lti.core.domain.partition.FilesystemType
-import org.ide.lti.core.domain.partition.PartitionSpec
-import org.ide.lti.core.domain.partition.SuperPartitionCalculator
-import org.ide.lti.core.domain.partition.explorer.PartitionTreeParser
 import org.ide.lti.core.domain.pipeline.macro.MacroPipelineRunner
 import org.ide.lti.core.domain.pipeline.macro.MacroStepStatus
 import org.ide.lti.core.ui.command.CommandPaletteModal
-import org.ide.lti.core.ui.copilot.BootloopCopilotSheet
-import org.ide.lti.core.ui.diff.PropertyDiffViewer
-import org.ide.lti.core.ui.partition.PartitionExplorerView
-import org.ide.lti.core.ui.partition.SuperPartitionBudgetMeter
 import org.ide.lti.core.ui.pipeline.MacroPipelineStudioSheet
+import org.ide.lti.desktop.window.LiveCopilotPanelBody
+import org.ide.lti.desktop.window.LiveDiffInspectorBody
+import org.ide.lti.desktop.window.LivePartitionExplorerBody
+import org.ide.lti.desktop.window.LiveSuperLayoutBody
 
-private const val SUPER_CAPACITY_BYTES = 9_126_805_504L
-private const val SYSTEM_SIZE_BYTES = 3_200_000_000L
-private const val VENDOR_SIZE_BYTES = 1_100_000_000L
-private const val PRODUCT_SIZE_BYTES = 2_400_000_000L
-private const val SYSTEM_EXT_SIZE_BYTES = 650_000_000L
-private const val ODM_SIZE_BYTES = 250_000_000L
 
 /**
  * Encapsulated overlays for LtiStudio cognitive copilot and developer tooling dialogs.
@@ -62,6 +49,9 @@ fun StudioSmartToolsDialogs(
     onDismissPartitionExplorer: () -> Unit,
     isMacroStudioOpen: Boolean,
     onDismissMacroStudio: () -> Unit,
+    onPopOutCopilot: (() -> Unit)? = null,
+    onPopOutDiffViewer: (() -> Unit)? = null,
+    onPopOutPartitionExplorer: (() -> Unit)? = null,
 ) {
     if (isCommandPaletteOpen) {
         CommandPaletteModal(
@@ -72,7 +62,10 @@ fun StudioSmartToolsDialogs(
     }
 
     if (isCopilotOpen) {
-        CopilotDialog(onDismiss = onDismissCopilot)
+        CopilotDialog(
+            onDismiss = onDismissCopilot,
+            onPopOut = onPopOutCopilot,
+        )
     }
 
     if (isSuperBudgeterOpen) {
@@ -80,11 +73,17 @@ fun StudioSmartToolsDialogs(
     }
 
     if (isDiffViewerOpen) {
-        DiffViewerDialog(onDismiss = onDismissDiffViewer)
+        DiffViewerDialog(
+            onDismiss = onDismissDiffViewer,
+            onPopOut = onPopOutDiffViewer,
+        )
     }
 
     if (isPartitionExplorerOpen) {
-        PartitionExplorerDialog(onDismiss = onDismissPartitionExplorer)
+        PartitionExplorerDialog(
+            onDismiss = onDismissPartitionExplorer,
+            onPopOut = onPopOutPartitionExplorer,
+        )
     }
 
     if (isMacroStudioOpen) {
@@ -93,21 +92,10 @@ fun StudioSmartToolsDialogs(
 }
 
 @Composable
-private fun CopilotDialog(onDismiss: () -> Unit) {
-    val sampleLogs = remember {
-        listOf(
-            "03-25 12:00:02.345 1000 1000 F libc : Fatal signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x0 in tid 1000 (system_server)",
-            "03-25 12:00:02.350 500 500 I DEBUG : pid: 1000, tid: 1000, name: system_server >>> system_server <<<",
-            "type=1400 audit(1710000000.123:45): avc: denied { read open } for pid=1234 comm=\"cameraserver\" path=\"/dev/v4l-subdev0\" scontext=u:r:cameraserver:s0 tcontext=u:object_r:vendor_video_device:s0 tclass=chr_file permissive=0",
-            "03-25 12:05:00.000 1000 1050 W Watchdog: *** WATCHDOG KILLING SYSTEM PROCESS: Blocked in handler on ActivityManager (ActivityManager)",
-        )
-    }
-    val diagnoses = remember(sampleLogs) {
-        BootloopCopilotAnalyzer.analyze(
-            CrashSource.LOGCAT,
-            sampleLogs,
-        )
-    }
+private fun CopilotDialog(
+    onDismiss: () -> Unit,
+    onPopOut: (() -> Unit)?,
+) {
     GlassDialog(
         onDismissRequest = onDismiss,
         title = "Bootloop & Crash Copilot",
@@ -116,87 +104,73 @@ private fun CopilotDialog(onDismiss: () -> Unit) {
                 Text("Close")
             }
         },
+        dismissButton = onPopOut?.let { pop ->
+            {
+                GlassTextButton(
+                    onClick = {
+                        onDismiss()
+                        pop()
+                    },
+                ) {
+                    Text("Pop Out Window")
+                }
+            }
+        },
     ) {
-        BootloopCopilotSheet(diagnoses = diagnoses)
+        LiveCopilotPanelBody()
     }
 }
 
 @Composable
 private fun SuperBudgeterDialog(onDismiss: () -> Unit) {
-    val samplePartitions = remember {
-        listOf(
-            PartitionSpec("system", SYSTEM_SIZE_BYTES, FilesystemType.EROFS, CompressionAlgorithm.LZ4HC),
-            PartitionSpec("vendor", VENDOR_SIZE_BYTES, FilesystemType.EROFS, CompressionAlgorithm.LZ4HC),
-            PartitionSpec("product", PRODUCT_SIZE_BYTES, FilesystemType.EROFS, CompressionAlgorithm.LZ4HC),
-            PartitionSpec("system_ext", SYSTEM_EXT_SIZE_BYTES, FilesystemType.EROFS, CompressionAlgorithm.LZ4HC),
-            PartitionSpec("odm", ODM_SIZE_BYTES, FilesystemType.EXT4),
-        )
-    }
-    val forecast = remember(samplePartitions) {
-        SuperPartitionCalculator().calculateBudget(
-            superCapacityBytes = SUPER_CAPACITY_BYTES,
-            partitions = samplePartitions,
-        )
-    }
     GlassDialog(
         onDismissRequest = onDismiss,
-        title = "Dynamic Partitions (super.img) Capacity Forecast",
+        title = "Dynamic Partitions (super.img) Layout",
         confirmButton = {
             GlassPrimaryButton(onClick = onDismiss) {
                 Text("Close")
             }
         },
     ) {
-        SuperPartitionBudgetMeter(forecast = forecast)
+        LiveSuperLayoutBody()
     }
 }
 
 @Composable
-private fun DiffViewerDialog(onDismiss: () -> Unit) {
-    val originalProp = remember {
-        "ro.product.model=Pixel 8\nro.build.type=user\nro.secure=1\nro.crypto.state=encrypted\n"
-    }
-    val modifiedProp = remember {
-        "ro.product.model=Pixel 8 Pro\nro.build.type=userdebug\nro.secure=0\nro.crypto.state=unencrypted\npersist.sys.phh.root=1\n"
-    }
-    val diffResult = remember(originalProp, modifiedProp) {
-        ConfigDiffEngine.computeDiff(originalProp, modifiedProp)
-    }
+private fun DiffViewerDialog(
+    onDismiss: () -> Unit,
+    onPopOut: (() -> Unit)?,
+) {
     GlassDialog(
         onDismissRequest = onDismiss,
-        title = "Property & Config Diff Inspector",
+        title = "Property, Timeline & Provenance Diff Inspector",
         confirmButton = {
             GlassPrimaryButton(onClick = onDismiss) {
                 Text("Close")
             }
         },
+        dismissButton = onPopOut?.let { pop ->
+            {
+                GlassTextButton(
+                    onClick = {
+                        onDismiss()
+                        pop()
+                    },
+                ) {
+                    Text("Pop Out Window")
+                }
+            }
+        },
     ) {
-        PropertyDiffViewer(
-            diffResult = diffResult,
-            snapshotName = "Pre-flash Snapshot (Slot B)",
-            onRollback = onDismiss,
-        )
+        LiveDiffInspectorBody()
     }
 }
 
 @Composable
-private fun PartitionExplorerDialog(onDismiss: () -> Unit) {
-    val sampleTreeLines = remember {
-        listOf(
-            "system/bin/sh 0755 u:object_r:shell_exec:s0 250000",
-            "system/bin/app_process64 0755 u:object_r:zygote_exec:s0 148000",
-            "system/etc/hosts 0644 u:object_r:system_file:s0 120",
-            "system/framework/framework.jar 0644 u:object_r:system_file:s0 34000000",
-            "system/bin/su 0755 u:object_r:su_exec:s0 50000 /system/xbin/su",
-        )
-    }
-    val metadata = remember(sampleTreeLines) {
-        PartitionTreeParser.parseManifest(
-            "system",
-            "EROFS",
-            sampleTreeLines,
-        )
-    }
+private fun PartitionExplorerDialog(
+    onDismiss: () -> Unit,
+    onPopOut: (() -> Unit)?,
+) {
     GlassDialog(
         onDismissRequest = onDismiss,
         title = "Firmware Partition Explorer",
@@ -205,11 +179,20 @@ private fun PartitionExplorerDialog(onDismiss: () -> Unit) {
                 Text("Close")
             }
         },
+        dismissButton = onPopOut?.let { pop ->
+            {
+                GlassTextButton(
+                    onClick = {
+                        onDismiss()
+                        pop()
+                    },
+                ) {
+                    Text("Pop Out Window")
+                }
+            }
+        },
     ) {
-        PartitionExplorerView(
-            metadata = metadata,
-            onExtractNode = {},
-        )
+        LivePartitionExplorerBody()
     }
 }
 

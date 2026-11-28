@@ -45,6 +45,9 @@ class FirmwareArchives(
     /** A Windows path as WSL sees it (`C:\a.zip` -> `/mnt/c/a.zip`). */
     private val toLinuxPath: (String) -> String,
 ) {
+    /** [localPath] (a Windows path) as WSL sees it. */
+    fun linuxPathOf(localPath: String): String = toLinuxPath(localPath)
+
     /** The archives already in the workspace folder, by name. */
     suspend fun list(workspaceId: String): List<FirmwareArchive> {
         val ws = workspace(workspaceId)

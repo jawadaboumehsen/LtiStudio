@@ -15,6 +15,8 @@ import kotlinx.coroutines.SupervisorJob
 import org.ide.lti.core.domain.ai.AIService
 import org.ide.lti.core.domain.ai.AIServiceImpl
 import org.ide.lti.core.domain.connection.ConnectionManager
+import org.ide.lti.core.domain.desktop.BackgroundSessionManager
+import org.ide.lti.core.domain.desktop.WorkspaceDropCoordinator
 import org.ide.lti.core.domain.panels.PanelManager
 import org.ide.lti.core.domain.pipeline.DefaultPipelineStages
 import org.ide.lti.core.domain.pipeline.PipelineDefinitionRegistry
@@ -243,4 +245,18 @@ val DomainModule =
         singleOf(::UpdateReleaseConfigUseCase)
         singleOf(::ObservePublishConfigUseCase)
         singleOf(::UpdatePublishConfigUseCase)
+
+        // Desktop Ergonomics: Background Task Session Tray & Drag-and-Drop Coordinator
+        single {
+            BackgroundSessionManager(
+                notifier = getOrNull(),
+            )
+        }
+        single {
+            WorkspaceDropCoordinator(
+                workspaceManager = getOrNull(),
+                firmwareArchives = getOrNull(),
+                sessions = get(),
+            )
+        }
     }

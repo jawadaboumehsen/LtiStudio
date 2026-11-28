@@ -39,6 +39,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class InstalledPluginRepositoryTest {
+    @Test
+    fun olderRecordsRecoverPayloadMetadataFromTheirVerifiedPackage() = runTest {
+        val repo = InstalledPluginRepository(tempStoreDir)
+        val zip = tempWorkDir.resolve("older.lti-mod.zip")
+        val identity = buildPackageZip(zip)
+        val quarantined = assertNotNull(repo.quarantine(zip.toString()))
+        assertTrue(repo.promote(quarantined, identity))
+        val current = repo.installed().single()
+        assertTrue(current.payloads.isNotEmpty())
+        assertTrue(repo.updateRecord(current.copy(payloads = emptyList())))
+
+        assertEquals(current.payloads, repo.installed().single().payloads)
+    }
 
     private lateinit var tempStoreDir: Path
     private lateinit var tempWorkDir: Path

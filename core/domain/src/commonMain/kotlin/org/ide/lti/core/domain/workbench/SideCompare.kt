@@ -10,6 +10,7 @@
 package org.ide.lti.core.domain.workbench
 
 import org.ide.lti.core.domain.pipeline.stages.FirmwareExtractionStage
+import org.ide.lti.core.domain.pipeline.toolkit.ApkSignatureDiff
 import org.ide.lti.core.domain.pipeline.toolkit.ArchiveDiff
 import org.ide.lti.core.domain.pipeline.toolkit.CodePackageDiff
 import org.ide.lti.core.domain.pipeline.toolkit.FsType
@@ -65,9 +66,13 @@ sealed interface EntryComparison {
     /** A zip archive: its entries on each side. */
     data class Archive(override val path: String, val entries: ArchiveDiff) : EntryComparison
 
-    /** A JAR or APK: its entries, then its dex files and methods. */
-    data class Code(override val path: String, val entries: ArchiveDiff, val code: CodePackageDiff) :
-        EntryComparison
+    /** A JAR or APK: its entries, dex files/methods, and (for APKs) v1/v2/v3 signing certificate diff. */
+    data class Code(
+        override val path: String,
+        val entries: ArchiveDiff,
+        val code: CodePackageDiff,
+        val signatures: ApkSignatureDiff? = null,
+    ) : EntryComparison
 
     /** Any other file: sizes and hashes. */
     data class Binary(

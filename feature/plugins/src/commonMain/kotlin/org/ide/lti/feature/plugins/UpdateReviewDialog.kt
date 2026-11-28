@@ -41,18 +41,24 @@ internal fun UpdateReviewDialog(
     onCheck: (PluginWorkspaceUsage.PendingMove) -> Unit,
     onApply: () -> Unit,
     onDismiss: () -> Unit,
+    applying: Boolean = false,
+    error: String? = null,
 ) {
-    val to = update.reviews.first().to
     GlassDialog(
-        title = "Review the update to ${update.reviews.first().key} $to",
+        title = "Review workspace mod updates",
         onDismissRequest = onDismiss,
         confirmButton = {
-            GlassButton(onClick = onApply, modifier = Modifier.testTag("UpdateApply")) {
-                Text("Move ${update.moves.size} workspace(s) to $to")
+            GlassButton(
+                onClick = onApply,
+                enabled = !applying && update.moves.all { checks[it.workspaceId] !in listOf(null, CHECKING) },
+                loading = applying,
+                modifier = Modifier.testTag("UpdateApply"),
+            ) {
+                Text("Update ${update.moves.size} workspace(s)")
             }
         },
         dismissButton = {
-            GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Text) { Text("Not now") }
+            GlassButton(onClick = onDismiss, variant = GlassButtonVariant.Text) { Text("Keep current versions") }
         },
     ) {
         LazyColumn(
@@ -60,9 +66,24 @@ internal fun UpdateReviewDialog(
             verticalArrangement = Arrangement.spacedBy(Spacing.Small),
         ) {
             update.reviews.forEach { review -> item { ReviewSections(review) } }
-            item { Heading("Does each workspace still check?") }
+            error?.let { item { Line(it) } }
+            item { Heading("Check current and proposed versions") }
             update.moves.forEach { move ->
-                item { WorkspaceCheck(move, checks[move.name], onCheck) }
+                item {
+                    WorkspaceCheck(move, checks[move.workspaceId], onCheck)
+                    val after = move.snapshot.customization.lockfile.entries.associate {
+                        "${it.publisher}:${it.id}" to it.version
+                    }
+                    (move.using.keys + after.keys).filter { move.using[it] != after[it] }.forEach { key ->
+                        Line("$key · ${move.using[key] ?: "not enabled"} → ${after[key] ?: "removed"}")
+                    }
+                    val oldOrder = move.before.customization.enabledPackages
+                    val newOrder = move.snapshot.customization.enabledPackages
+                    if (oldOrder != newOrder) {
+                        Line("New application order: ${newOrder.joinToString(" → ")}")
+                    }
+                    checks[move.workspaceId]?.takeUnless { it == CHECKING }?.let { Line(it) }
+                }
             }
         }
     }
@@ -70,8 +91,8 @@ internal fun UpdateReviewDialog(
 
 @Composable
 private fun ReviewSections(review: ModUpdateReview) {
-    Heading("From ${review.from}")
-    if (review.unchanged) Line("Nothing a review shows changed (options, files, devices, dependencies).")
+    Heading("${review.key} · ${review.from} → ${review.to}")
+    if (review.unchanged) Line("No changes to options, patch contents, packaged files, devices or dependencies.")
     review.sections.filterValues { it.isNotEmpty() }.forEach { (title, lines) ->
         Line(title, bold = true)
         lines.forEach { Line("• $it") }
@@ -85,7 +106,7 @@ private fun WorkspaceCheck(
     onCheck: (PluginWorkspaceUsage.PendingMove) -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.Small), verticalAlignment = Alignment.CenterVertically) {
-        Line(move.name + (answer?.let { ": $it" } ?: ""), modifier = Modifier.weight(1f))
+        Line(move.name, modifier = Modifier.weight(1f))
         GlassButton(
             onClick = { onCheck(move) },
             loading = answer == CHECKING,

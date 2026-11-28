@@ -35,6 +35,7 @@ val workspaceRunModule: Module = module {
             settingsStore = getOrNull(),
             buildReport = getOrNull(),
             deviceTest = getOrNull(),
+            runner = getOrNull(),
         )
     }
 }
