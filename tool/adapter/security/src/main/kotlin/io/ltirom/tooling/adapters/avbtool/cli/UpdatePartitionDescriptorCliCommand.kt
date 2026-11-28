@@ -12,38 +12,38 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class UpdatePartitionDescriptorCliCommand(
+class UpdatePartitionDescriptorCliCommand(
     private val useCase: UpdatePartitionDescriptorUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "update_partition_descriptor") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(UpdatePartitionDescriptorUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(UpdatePartitionDescriptorUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool update_partition_descriptor [-h] --image IMAGE"
 
-    public val algorithm: String? by option("--algorithm", help = "Algorithm to use (default: NONE)")
-    public val appendToReleaseString: String? by option("--append_to_release_string", help = "Text to append to release string")
-    public val chainPartition: Boolean by option("--chain_partition", help = "PART_NAME:ROLLBACK_SLOT:KEY_PATH").flag()
-    public val chainPartitionDoNotUseAb: Boolean by option("--chain_partition_do_not_use_ab", help = "PART_NAME:ROLLBACK_SLOT:KEY_PATH").flag()
-    public val flags: String? by option("--flags", help = "VBMeta flags")
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "The VBMeta image to update.")
-    public val includeDescriptorsFromImage: String? by option("--include_descriptors_from_image", help = "Include descriptors from image")
-    public val kernelCmdline: String? by option("--kernel_cmdline", help = "Add kernel cmdline")
-    public val key: String? by option("--key", help = "Path to RSA private key file")
-    public val output: String? by option("--output", help = "[--algorithm ALGORITHM] [--key KEY]")
-    public val partitionImage: String? by option("--partition_image", help = "")
-    public val printRequiredLibavbVersion: Boolean by option("--print_required_libavb_version", help = "Don't store the footer - instead calculate the").flag()
-    public val prop: Boolean by option("--prop", help = "KEY:VALUE      Add property").flag()
-    public val propFromFile: Boolean by option("--prop_from_file", help = "KEY:PATH").flag()
-    public val publicKeyMetadata: String? by option("--public_key_metadata", help = "Path to public key metadata file")
-    public val rollbackIndex: String? by option("--rollback_index", help = "Rollback Index")
-    public val rollbackIndexLocation: String? by option("--rollback_index_location", help = "Location of main vbmeta Rollback Index")
-    public val setHashtreeDisabledFlag: Boolean by option("--set_hashtree_disabled_flag", help = "Set the HASHTREE_DISABLED flag").flag()
-    public val setVerificationDisabledFlag: Boolean by option("--set_verification_disabled_flag", help = "Set the VERIFICATION_DISABLED flag").flag()
-    public val setupRootfsFromKernel: Boolean by option("--setup_rootfs_from_kernel", help = "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE").flag()
-    public val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
-    public val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
+    val algorithm: String? by option("--algorithm", help = "Algorithm to use (default: NONE)")
+    val appendToReleaseString: String? by option("--append_to_release_string", help = "Text to append to release string")
+    val chainPartition: Boolean by option("--chain_partition", help = "PART_NAME:ROLLBACK_SLOT:KEY_PATH").flag()
+    val chainPartitionDoNotUseAb: Boolean by option("--chain_partition_do_not_use_ab", help = "PART_NAME:ROLLBACK_SLOT:KEY_PATH").flag()
+    val flags: String? by option("--flags", help = "VBMeta flags")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "The VBMeta image to update.")
+    val includeDescriptorsFromImage: String? by option("--include_descriptors_from_image", help = "Include descriptors from image")
+    val kernelCmdline: String? by option("--kernel_cmdline", help = "Add kernel cmdline")
+    val key: String? by option("--key", help = "Path to RSA private key file")
+    val output: String? by option("--output", help = "[--algorithm ALGORITHM] [--key KEY]")
+    val partitionImage: String? by option("--partition_image", help = "")
+    val printRequiredLibavbVersion: Boolean by option("--print_required_libavb_version", help = "Don't store the footer - instead calculate the").flag()
+    val prop: Boolean by option("--prop", help = "KEY:VALUE      Add property").flag()
+    val propFromFile: Boolean by option("--prop_from_file", help = "KEY:PATH").flag()
+    val publicKeyMetadata: String? by option("--public_key_metadata", help = "Path to public key metadata file")
+    val rollbackIndex: String? by option("--rollback_index", help = "Rollback Index")
+    val rollbackIndexLocation: String? by option("--rollback_index_location", help = "Location of main vbmeta Rollback Index")
+    val setHashtreeDisabledFlag: Boolean by option("--set_hashtree_disabled_flag", help = "Set the HASHTREE_DISABLED flag").flag()
+    val setVerificationDisabledFlag: Boolean by option("--set_verification_disabled_flag", help = "Set the VERIFICATION_DISABLED flag").flag()
+    val setupRootfsFromKernel: Boolean by option("--setup_rootfs_from_kernel", help = "IMAGE, --generate_dm_verity_cmdline_from_hashtree IMAGE").flag()
+    val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
+    val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

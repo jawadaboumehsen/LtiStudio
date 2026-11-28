@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SearchReposUseCase(private val repository: ToolRepository) {
+class SearchReposUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         archived: Boolean = false,
         created: Boolean = false,
@@ -36,7 +36,7 @@ public class SearchReposUseCase(private val repository: ToolRepository) {
         version: Boolean = false,
         visibility: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = SearchReposCommand(
             archived = archived,
             created = created,

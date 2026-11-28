@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SecretListUseCase(private val repository: ToolRepository) {
+class SecretListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         app: Boolean = false,
         env: Boolean = false,
@@ -20,7 +20,7 @@ public class SecretListUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         user: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SecretListCommand(
             app = app,
             env = env,

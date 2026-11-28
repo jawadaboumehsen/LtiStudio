@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.img2sdat.*
 import java.io.File
 
-public class Img2sdatCliCommand(
+class Img2sdatCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "img2sdat") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val blockListFile: File? by option("--block-list-file", "-B", help = "BLOCK_LIST_FILE, --block-list-file BLOCK_LIST_FILE").convert { File(it) }
-    public val cacheSize: Int? by option("--cache-size", "-c", help = "CACHE_SIZE, --cache-size CACHE_SIZE").int()
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val outDir: File? by option("--out-dir", "-o", help = "OUTDIR, --outdir OUTDIR").convert { File(it) }
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val blockListFile: File? by option("--block-list-file", "-B", help = "BLOCK_LIST_FILE, --block-list-file BLOCK_LIST_FILE").convert { File(it) }
+    val cacheSize: Int? by option("--cache-size", "-c", help = "CACHE_SIZE, --cache-size CACHE_SIZE").int()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val outDir: File? by option("--out-dir", "-o", help = "OUTDIR, --outdir OUTDIR").convert { File(it) }
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

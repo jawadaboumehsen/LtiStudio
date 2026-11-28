@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CodespaceEditUseCase(private val repository: ToolRepository) {
+class CodespaceEditUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         codespace: Boolean = false,
         displayName: Boolean = false,
@@ -17,7 +17,7 @@ public class CodespaceEditUseCase(private val repository: ToolRepository) {
         repo: Boolean = false,
         repoOwner: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = CodespaceEditCommand(
             codespace = codespace,
             displayName = displayName,

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AttestationTrustedRootUseCase(private val repository: ToolRepository) {
+class AttestationTrustedRootUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         hostname: Boolean = false,
@@ -16,7 +16,7 @@ public class AttestationTrustedRootUseCase(private val repository: ToolRepositor
         tufUrl: Boolean = false,
         verifyOnly: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AttestationTrustedRootCommand(
             help = help,
             hostname = hostname,

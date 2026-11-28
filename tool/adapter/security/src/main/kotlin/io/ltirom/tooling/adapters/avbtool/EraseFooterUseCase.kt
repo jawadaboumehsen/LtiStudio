@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class EraseFooterUseCase(private val repository: ToolRepository) {
+class EraseFooterUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         image: String? = null,
         keepHashtree: Boolean = false
-    ): Unit {
+    ) {
         val command = EraseFooterCommand(
             help = help,
             image = image,

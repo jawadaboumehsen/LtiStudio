@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class EraseFooterCliCommand(
+class EraseFooterCliCommand(
     private val useCase: EraseFooterUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "erase_footer") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(EraseFooterUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(EraseFooterUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool erase_footer [-h] --image IMAGE [--keep_hashtree]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image with a footer")
-    public val keepHashtree: Boolean by option("--keep_hashtree", help = "Keep the hashtree and FEC in the image").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image with a footer")
+    val keepHashtree: Boolean by option("--keep_hashtree", help = "Keep the hashtree and FEC in the image").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class ResignImageCliCommand(
+class ResignImageCliCommand(
     private val useCase: ResignImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "resign_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ResignImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ResignImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool resign_image [-h] --image IMAGE --key KEY --algorithm ALGORITHM"
 
-    public val algorithm: String? by option("--algorithm", help = "Algorithm to use")
-    public val autoResize: Boolean by option("--auto_resize", help = "Automatically resize the image if the new key is").flag()
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to resign")
-    public val key: String? by option("--key", help = "Path to RSA private key file")
-    public val signingHelper: String? by option("--signing_helper", help = "Program that signs a hash and returns a signature.")
-    public val signingHelperWithFiles: File? by option("--signing_helper_with_files", help = "Same as signing_helper but uses files for").convert { File(it) }
+    val algorithm: String? by option("--algorithm", help = "Algorithm to use")
+    val autoResize: Boolean by option("--auto_resize", help = "Automatically resize the image if the new key is").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to resign")
+    val key: String? by option("--key", help = "Path to RSA private key file")
+    val signingHelper: String? by option("--signing_helper", help = "Program that signs a hash and returns a signature.")
+    val signingHelperWithFiles: File? by option("--signing_helper_with_files", help = "Same as signing_helper but uses files for").convert { File(it) }
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

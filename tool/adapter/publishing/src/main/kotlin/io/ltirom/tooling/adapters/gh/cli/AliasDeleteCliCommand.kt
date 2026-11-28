@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AliasDeleteCliCommand(
+class AliasDeleteCliCommand(
     private val useCase: AliasDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete set aliases"
 
-    public val all: Boolean by option("--all", help = "Delete all aliases").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val all: Boolean by option("--all", help = "Delete all aliases").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

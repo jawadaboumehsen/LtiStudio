@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class UpdatePartitionDescriptorUseCase(private val repository: ToolRepository) {
+class UpdatePartitionDescriptorUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         algorithm: String? = null,
         appendToReleaseString: String? = null,
@@ -33,7 +33,7 @@ public class UpdatePartitionDescriptorUseCase(private val repository: ToolReposi
         setupRootfsFromKernel: Boolean = false,
         signingHelper: String? = null,
         signingHelperWithFiles: String? = null
-    ): Unit {
+    ) {
         val command = UpdatePartitionDescriptorCommand(
             algorithm = algorithm,
             appendToReleaseString = appendToReleaseString,

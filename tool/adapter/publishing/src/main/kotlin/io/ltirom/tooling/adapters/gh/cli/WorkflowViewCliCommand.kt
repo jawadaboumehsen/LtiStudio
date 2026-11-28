@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class WorkflowViewCliCommand(
+class WorkflowViewCliCommand(
     private val useCase: WorkflowViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View the summary of a workflow"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val ref: Boolean by option("--ref", "-r", help = "string   The branch or tag name which contains the version of the workflow file you'd like to view").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open workflow in the browser").flag()
-    public val yaml: Boolean by option("--yaml", "-y", help = "View the workflow yaml file").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val ref: Boolean by option("--ref", "-r", help = "string   The branch or tag name which contains the version of the workflow file you'd like to view").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open workflow in the browser").flag()
+    val yaml: Boolean by option("--yaml", "-y", help = "View the workflow yaml file").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

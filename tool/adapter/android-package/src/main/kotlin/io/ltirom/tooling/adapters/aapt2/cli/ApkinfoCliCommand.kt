@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class ApkinfoCliCommand(
+class ApkinfoCliCommand(
     private val useCase: ApkinfoUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "apkinfo") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ApkinfoUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ApkinfoUseCase(repository), context)
 
     override fun help(context: Context): String = "aapt2 apkinfo [options] -o arg files..."
 
-    public val O: Boolean by option("--o", "-o", help = "arg                                            Output path").flag()
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val includeResourceTable: Boolean by option("--include-resource-table", help = "Include the resource table data into output.").flag()
-    public val includeXml: Boolean by option("--include-xml", help = "arg                                 Include an XML file content into output. Multiple XML files might be requested during single invocation.").flag()
+    val O: Boolean by option("--o", "-o", help = "arg                                            Output path").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val includeResourceTable: Boolean by option("--include-resource-table", help = "Include the resource table data into output.").flag()
+    val includeXml: Boolean by option("--include-xml", help = "arg                                 Include an XML file content into output. Multiple XML files might be requested during single invocation.").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

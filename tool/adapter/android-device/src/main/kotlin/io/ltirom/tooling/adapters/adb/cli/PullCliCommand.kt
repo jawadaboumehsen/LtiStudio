@@ -12,30 +12,30 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.adb.*
 import java.io.File
 
-public class PullCliCommand(
+class PullCliCommand(
     private val useCase: PullUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "pull") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(PullUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(PullUseCase(repository), context)
 
     override fun help(context: Context): String = "copy files/dirs from device"
 
-    public val compression: String? by option("--compression", "-z", help = "enable compression with specified algorithm")
-    public val disableCompression: Boolean by option("--disable-compression", "-Z", help = "disable compression").flag()
-    public val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
-    public val listenAll: Boolean by option("--listen-all", help = "listen on all network interfaces, not just localhost").flag()
-    public val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
-    public val preserveMetadata: Boolean by option("--preserve-metadata", help = "preserve file timestamp and mode").flag()
-    public val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
-    public val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
-    public val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
-    public val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
-    public val transportId: String? by option("--transport-id", "-t", help = "use device with given transport id")
-    public val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
-    public val useUsb: Boolean by option("--use-usb", "-d", help = "use USB device (error if multiple devices connected)").flag()
-    public val local: File by argument(name = "local", help = "local path to pull to").convert { File(it) }
-    public val remote: String by argument(name = "remote", help = "remote path on device")
+    val compression: String? by option("--compression", "-z", help = "enable compression with specified algorithm")
+    val disableCompression: Boolean by option("--disable-compression", "-Z", help = "disable compression").flag()
+    val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
+    val listenAll: Boolean by option("--listen-all", help = "listen on all network interfaces, not just localhost").flag()
+    val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
+    val preserveMetadata: Boolean by option("--preserve-metadata", help = "preserve file timestamp and mode").flag()
+    val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
+    val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
+    val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
+    val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
+    val transportId: String? by option("--transport-id", "-t", help = "use device with given transport id")
+    val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
+    val useUsb: Boolean by option("--use-usb", "-d", help = "use USB device (error if multiple devices connected)").flag()
+    val local: File by argument(name = "local", help = "local path to pull to").convert { File(it) }
+    val remote: String by argument(name = "remote", help = "remote path on device")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

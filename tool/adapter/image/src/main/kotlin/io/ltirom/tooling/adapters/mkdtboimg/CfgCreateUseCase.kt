@@ -6,13 +6,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CfgCreateUseCase(private val repository: ToolRepository) {
+class CfgCreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         dtbDir: Boolean = false,
         help: Boolean = false
-    ): Unit {
+    ) {
         val command = CfgCreateCommand(
             dtbDir = dtbDir,
             help = help

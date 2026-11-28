@@ -11,14 +11,14 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ResignImageCommand(
-    public val algorithm: String? = null,
-    public val autoResize: Boolean = false,
-    public val help: Boolean = false,
-    public val image: String? = null,
-    public val key: String? = null,
-    public val signingHelper: String? = null,
-    public val signingHelperWithFiles: File? = null
+data class ResignImageCommand(
+    val algorithm: String? = null,
+    val autoResize: Boolean = false,
+    val help: Boolean = false,
+    val image: String? = null,
+    val key: String? = null,
+    val signingHelper: String? = null,
+    val signingHelperWithFiles: File? = null
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -28,9 +28,9 @@ public data class ResignImageCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.lpunpack.*
 import java.io.File
 
-public class LpunpackCliCommand(
+class LpunpackCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "lpunpack") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val image: String? by option("--image", "-i", help = "Use the given file as an additional super image.")
-    public val partition: List<String> by option("--partition", "-p", help = "Extract the named partition. This can").multiple()
-    public val slot: String? by option("--slot", "-S", help = "Slot number (default is 0).")
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val image: String? by option("--image", "-i", help = "Use the given file as an additional super image.")
+    val partition: List<String> by option("--partition", "-p", help = "Extract the named partition. This can").multiple()
+    val slot: String? by option("--slot", "-S", help = "Slot number (default is 0).")
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -9,7 +9,7 @@ import io.ltirom.tooling.core.ExecutionContext
 import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.apktool.*
 
-public class ApktoolCliCommand(
+class ApktoolCliCommand(
     private val repository: ToolRepository,
     private val context: ExecutionContext
 ) : CliktCommand(name = "apktool") {

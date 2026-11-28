@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class VersionCliCommand(
+class VersionCliCommand(
     private val useCase: VersionUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "version") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(VersionUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(VersionUseCase(repository), context)
 
     override fun help(context: Context): String = "aapt2 version [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

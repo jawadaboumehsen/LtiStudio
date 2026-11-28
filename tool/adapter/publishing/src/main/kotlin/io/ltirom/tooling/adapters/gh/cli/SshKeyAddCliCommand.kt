@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SshKeyAddCliCommand(
+class SshKeyAddCliCommand(
     private val useCase: SshKeyAddUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "add") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SshKeyAddUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SshKeyAddUseCase(repository), context)
 
     override fun help(context: Context): String = "Add an SSH key to your GitHub account"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val title: Boolean by option("--title", "-t", help = "string   Title for the new key").flag()
-    public val type: Boolean by option("--type", help = "string    Type of the ssh key: {authentication|signing} (default \"authentication\")").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val title: Boolean by option("--title", "-t", help = "string   Title for the new key").flag()
+    val type: Boolean by option("--type", help = "string    Type of the ssh key: {authentication|signing} (default \"authentication\")").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -456,6 +456,8 @@ class DaemonHeartbeatMonitorTest {
 
         monitor.shutdown()
 
+        inFlightCaller.join()
+        assertTrue(inFlightCaller.isCancelled, "In-flight handshake caller should be cancelled on shutdown")
         assertFalse(monitor.isAdmissionReady())
         assertFalse(monitor.awaitInitialHeartbeat(timeoutMs = 100L))
     }

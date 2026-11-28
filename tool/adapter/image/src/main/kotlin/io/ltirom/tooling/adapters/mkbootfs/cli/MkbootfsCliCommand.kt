@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.mkbootfs.*
 import java.io.File
 
-public class MkbootfsCliCommand(
+class MkbootfsCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "mkbootfs") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val dirname: File? by option("--dirname", "-d", help = ": fs-config directory").convert { File(it) }
-    public val file: File? by option("--file", "-f", help = ": Canned configuration file").convert { File(it) }
-    public val help: Boolean by option("--help", "-h", help = ": Print this help").flag()
-    public val nodes: File? by option("--nodes", "-n", help = ": Dev nodes description file").convert { File(it) }
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val dirname: File? by option("--dirname", "-d", help = ": fs-config directory").convert { File(it) }
+    val file: File? by option("--file", "-f", help = ": Canned configuration file").convert { File(it) }
+    val help: Boolean by option("--help", "-h", help = ": Print this help").flag()
+    val nodes: File? by option("--nodes", "-n", help = ": Dev nodes description file").convert { File(it) }
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

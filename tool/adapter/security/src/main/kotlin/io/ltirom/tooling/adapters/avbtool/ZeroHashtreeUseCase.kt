@@ -6,13 +6,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ZeroHashtreeUseCase(private val repository: ToolRepository) {
+class ZeroHashtreeUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         image: String? = null
-    ): Unit {
+    ) {
         val command = ZeroHashtreeCommand(
             help = help,
             image = image

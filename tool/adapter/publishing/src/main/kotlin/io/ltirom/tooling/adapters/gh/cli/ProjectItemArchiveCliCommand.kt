@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectItemArchiveCliCommand(
+class ProjectItemArchiveCliCommand(
     private val useCase: ProjectItemArchiveUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "item-archive") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemArchiveUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemArchiveUseCase(repository), context)
 
     override fun help(context: Context): String = "Archive an item in a project"
 
-    public val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val id: Boolean by option("--id", help = "string         ID of the item to archive").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val undo: Boolean by option("--undo", help = "Unarchive an item").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val id: Boolean by option("--id", help = "string         ID of the item to archive").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val undo: Boolean by option("--undo", help = "Unarchive an item").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,28 +12,28 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SecretSetCliCommand(
+class SecretSetCliCommand(
     private val useCase: SecretSetUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "set") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretSetUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretSetUseCase(repository), context)
 
     override fun help(context: Context): String = "Set a value for a secret on one of the following levels:"
 
-    public val app: Boolean by option("--app", "-a", help = "string           Set the application for a secret: {actions|agents|codespaces|dependabot}").flag()
-    public val body: Boolean by option("--body", "-b", help = "string          The value for the secret (reads from standard input if not specified)").flag()
-    public val env: Boolean by option("--env", "-e", help = "environment      Set deployment environment secret").flag()
-    public val envFile: Boolean by option("--env-file", "-f", help = "file        Load secret names and values from a dotenv-formatted file").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val noReposSelected: Boolean by option("--no-repos-selected", help = "No repositories can access the organization secret").flag()
-    public val noStore: Boolean by option("--no-store", help = "Print the encrypted, base64-encoded value instead of storing it on GitHub").flag()
-    public val org: Boolean by option("--org", "-o", help = "organization     Set organization secret").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val repos: Boolean by option("--repos", "-r", help = "repositories   List of repositories that can access an organization or user secret").flag()
-    public val user: Boolean by option("--user", "-u", help = "Set a secret for your user").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val visibility: Boolean by option("--visibility", "-v", help = "string    Set visibility for an organization secret: {all|private|selected} (default \"private\")").flag()
+    val app: Boolean by option("--app", "-a", help = "string           Set the application for a secret: {actions|agents|codespaces|dependabot}").flag()
+    val body: Boolean by option("--body", "-b", help = "string          The value for the secret (reads from standard input if not specified)").flag()
+    val env: Boolean by option("--env", "-e", help = "environment      Set deployment environment secret").flag()
+    val envFile: Boolean by option("--env-file", "-f", help = "file        Load secret names and values from a dotenv-formatted file").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val noReposSelected: Boolean by option("--no-repos-selected", help = "No repositories can access the organization secret").flag()
+    val noStore: Boolean by option("--no-store", help = "Print the encrypted, base64-encoded value instead of storing it on GitHub").flag()
+    val org: Boolean by option("--org", "-o", help = "organization     Set organization secret").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val repos: Boolean by option("--repos", "-r", help = "repositories   List of repositories that can access an organization or user secret").flag()
+    val user: Boolean by option("--user", "-u", help = "Set a secret for your user").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val visibility: Boolean by option("--visibility", "-v", help = "string    Set visibility for an organization secret: {all|private|selected} (default \"private\")").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

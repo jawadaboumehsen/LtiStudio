@@ -7,7 +7,7 @@ enum class ToolFamily(val directoryName: String) {
     SECURITY("security"),
     PUBLISHING("publishing");
 
-    public companion object {
+    companion object {
         fun forTool(toolName: String): ToolFamily = when (toolName.lowercase()) {
             "adb", "fastboot" -> ANDROID_DEVICE
             "aapt2", "apktool" -> ANDROID_PACKAGE

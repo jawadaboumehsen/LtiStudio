@@ -11,29 +11,29 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class MakeVbmetaImageCommand(
-    public val algorithm: String? = null,
-    public val appendToReleaseString: String? = null,
-    public val chainPartition: Boolean = false,
-    public val chainPartitionDoNotUseAb: Boolean = false,
-    public val flags: String? = null,
-    public val help: Boolean = false,
-    public val includeDescriptorsFromImage: String? = null,
-    public val kernelCmdline: String? = null,
-    public val key: String? = null,
-    public val output: String? = null,
-    public val paddingSize: String? = null,
-    public val printRequiredLibavbVersion: Boolean = false,
-    public val prop: Boolean = false,
-    public val propFromFile: Boolean = false,
-    public val publicKeyMetadata: String? = null,
-    public val rollbackIndex: String? = null,
-    public val rollbackIndexLocation: String? = null,
-    public val setHashtreeDisabledFlag: Boolean = false,
-    public val setVerificationDisabledFlag: Boolean = false,
-    public val setupRootfsFromKernel: Boolean = false,
-    public val signingHelper: String? = null,
-    public val signingHelperWithFiles: String? = null
+data class MakeVbmetaImageCommand(
+    val algorithm: String? = null,
+    val appendToReleaseString: String? = null,
+    val chainPartition: Boolean = false,
+    val chainPartitionDoNotUseAb: Boolean = false,
+    val flags: String? = null,
+    val help: Boolean = false,
+    val includeDescriptorsFromImage: String? = null,
+    val kernelCmdline: String? = null,
+    val key: String? = null,
+    val output: String? = null,
+    val paddingSize: String? = null,
+    val printRequiredLibavbVersion: Boolean = false,
+    val prop: Boolean = false,
+    val propFromFile: Boolean = false,
+    val publicKeyMetadata: String? = null,
+    val rollbackIndex: String? = null,
+    val rollbackIndexLocation: String? = null,
+    val setHashtreeDisabledFlag: Boolean = false,
+    val setVerificationDisabledFlag: Boolean = false,
+    val setupRootfsFromKernel: Boolean = false,
+    val signingHelper: String? = null,
+    val signingHelperWithFiles: String? = null
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -43,9 +43,9 @@ public data class MakeVbmetaImageCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

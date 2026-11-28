@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.repack_bootimg.*
 import java.io.File
 
-public class Repack_bootimgCliCommand(
+class Repack_bootimgCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "repack_bootimg") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val dstBootimg: String? by option("--dst_bootimg", help = "filename to destination boot image")
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val local: Boolean by option("--local", help = "use local files as repack source").flag()
-    public val ramdiskAdd: List<String> by option("--ramdisk_add", help = "a copy pair to copy into the ramdisk of --dst_bootimg (SRC_FILE:DST_FILE)").multiple()
-    public val srcBootimg: String? by option("--src_bootimg", help = "filename to source boot image")
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val dstBootimg: String? by option("--dst_bootimg", help = "filename to destination boot image")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val local: Boolean by option("--local", help = "use local files as repack source").flag()
+    val ramdiskAdd: List<String> by option("--ramdisk_add", help = "a copy pair to copy into the ramdisk of --dst_bootimg (SRC_FILE:DST_FILE)").multiple()
+    val srcBootimg: String? by option("--src_bootimg", help = "filename to source boot image")
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

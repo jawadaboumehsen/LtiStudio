@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DiffCliCommand(
+class DiffCliCommand(
     private val useCase: DiffUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "diff") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DiffUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DiffUseCase(repository), context)
 
     override fun help(context: Context): String = "aapt2 diff [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val ignoreIdShift: Boolean by option("--ignore-id-shift", help = "Match the resources when their IDs shift, e.g. because of the added").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val ignoreIdShift: Boolean by option("--ignore-id-shift", help = "Match the resources when their IDs shift, e.g. because of the added").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

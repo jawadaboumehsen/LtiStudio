@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ConfigGetCliCommand(
+class ConfigGetCliCommand(
     private val useCase: ConfigGetUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "get") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigGetUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigGetUseCase(repository), context)
 
     override fun help(context: Context): String = "Print the value of a given configuration key"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val host: Boolean by option("--host", "-h", help = "string   Get per-host setting").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val host: Boolean by option("--host", "-h", help = "string   Get per-host setting").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

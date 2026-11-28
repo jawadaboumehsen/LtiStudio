@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class StatusUseCase(private val repository: ToolRepository) {
+class StatusUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         exclude: Boolean = false,
         help: Boolean = false,
         org: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = StatusCommand(
             exclude = exclude,
             help = help,

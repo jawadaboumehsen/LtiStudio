@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class MakeAtxUnlockCredentialCliCommand(
+class MakeAtxUnlockCredentialCliCommand(
     private val useCase: MakeAtxUnlockCredentialUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "make_atx_unlock_credential") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeAtxUnlockCredentialUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeAtxUnlockCredentialUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool make_cert_unlock_credential [-h] [--output OUTPUT]"
 
-    public val challenge: String? by option("--challenge", help = "Path to the challenge to sign (optional). If this is")
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val intermediateKeyCertificate: Boolean by option("--intermediate_key_certificate", help = "INTERMEDIATE_KEY_CERTIFICATE").flag()
-    public val output: String? by option("--output", help = "Write credential to file")
-    public val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
-    public val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
-    public val unlockKey: String? by option("--unlock_key", help = "Path to unlock key (optional). Must be provided if")
-    public val unlockKeyCertificate: Boolean by option("--unlock_key_certificate", help = "UNLOCK_KEY_CERTIFICATE").flag()
+    val challenge: String? by option("--challenge", help = "Path to the challenge to sign (optional). If this is")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val intermediateKeyCertificate: Boolean by option("--intermediate_key_certificate", help = "INTERMEDIATE_KEY_CERTIFICATE").flag()
+    val output: String? by option("--output", help = "Write credential to file")
+    val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
+    val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
+    val unlockKey: String? by option("--unlock_key", help = "Path to unlock key (optional). Must be provided if")
+    val unlockKeyCertificate: Boolean by option("--unlock_key_certificate", help = "UNLOCK_KEY_CERTIFICATE").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

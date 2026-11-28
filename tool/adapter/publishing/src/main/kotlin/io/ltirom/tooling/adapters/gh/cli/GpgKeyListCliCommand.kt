@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GpgKeyListCliCommand(
+class GpgKeyListCliCommand(
     private val useCase: GpgKeyListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GpgKeyListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GpgKeyListUseCase(repository), context)
 
     override fun help(context: Context): String = "Lists GPG keys in your GitHub account"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

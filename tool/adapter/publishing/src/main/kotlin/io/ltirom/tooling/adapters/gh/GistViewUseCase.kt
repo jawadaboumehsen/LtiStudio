@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class GistViewUseCase(private val repository: ToolRepository) {
+class GistViewUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         allowEscapeSequences: Boolean = false,
         filename: Boolean = false,
@@ -17,7 +17,7 @@ public class GistViewUseCase(private val repository: ToolRepository) {
         raw: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = GistViewCommand(
             allowEscapeSequences = allowEscapeSequences,
             filename = filename,

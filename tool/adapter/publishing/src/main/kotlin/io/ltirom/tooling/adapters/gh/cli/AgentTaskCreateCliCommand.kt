@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AgentTaskCreateCliCommand(
+class AgentTaskCreateCliCommand(
     private val useCase: AgentTaskCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create an agent task (preview)"
 
-    public val base: Boolean by option("--base", "-b", help = "string              Base branch for the pull request (use default branch if not provided)").flag()
-    public val customAgent: Boolean by option("--custom-agent", "-a", help = "string      Use a custom agent for the task. e.g., use 'my-agent' for the 'my-agent.md' agent").flag()
-    public val follow: Boolean by option("--follow", help = "Follow agent session logs").flag()
-    public val fromFile: Boolean by option("--from-file", "-F", help = "file           Read task description from file (use \"-\" to read from standard input)").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val base: Boolean by option("--base", "-b", help = "string              Base branch for the pull request (use default branch if not provided)").flag()
+    val customAgent: Boolean by option("--custom-agent", "-a", help = "string      Use a custom agent for the task. e.g., use 'my-agent' for the 'my-agent.md' agent").flag()
+    val follow: Boolean by option("--follow", help = "Follow agent session logs").flag()
+    val fromFile: Boolean by option("--from-file", "-F", help = "file           Read task description from file (use \"-\" to read from standard input)").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class WorkflowDisableCliCommand(
+class WorkflowDisableCliCommand(
     private val useCase: WorkflowDisableUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "disable") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowDisableUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowDisableUseCase(repository), context)
 
     override fun help(context: Context): String = "Disable a workflow, preventing it from running or showing up when listing workflows."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

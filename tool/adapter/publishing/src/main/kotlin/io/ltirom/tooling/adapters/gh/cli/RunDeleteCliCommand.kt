@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunDeleteCliCommand(
+class RunDeleteCliCommand(
     private val useCase: RunDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete a workflow run"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RemountUseCase(private val repository: ToolRepository) {
+class RemountUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         exitOnWriteError: Boolean = false,
         listenAll: Boolean = false,

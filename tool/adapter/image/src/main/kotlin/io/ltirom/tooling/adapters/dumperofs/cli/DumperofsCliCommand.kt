@@ -12,26 +12,26 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.dumperofs.*
 import java.io.File
 
-public class DumperofsCliCommand(
+class DumperofsCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "dump.erofs") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val E: Boolean by option("--e", "-e", help = "show extent info (INODE required)").flag()
-    public val S: Boolean by option("--s", "-S", help = "show statistic information of the image").flag()
-    public val cat: Boolean by option("--cat", help = "show file contents (INODE required)").flag()
-    public val device: String? by option("--device", help = "specify an extra device to be used together")
-    public val help: Boolean by option("--help", "-h", help = "display this help and exit").flag()
-    public val ls: Boolean by option("--ls", help = "show directory contents (INODE required)").flag()
-    public val nid: String? by option("--nid", help = "show the target inode info of nid #")
-    public val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
-    public val path: String? by option("--path", help = "show the target inode info of path X")
-    public val version: Boolean by option("--version", "-V", help = "print the version number of dump.erofs and exit").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val E: Boolean by option("--e", "-e", help = "show extent info (INODE required)").flag()
+    val S: Boolean by option("--s", "-S", help = "show statistic information of the image").flag()
+    val cat: Boolean by option("--cat", help = "show file contents (INODE required)").flag()
+    val device: String? by option("--device", help = "specify an extra device to be used together")
+    val help: Boolean by option("--help", "-h", help = "display this help and exit").flag()
+    val ls: Boolean by option("--ls", help = "show directory contents (INODE required)").flag()
+    val nid: String? by option("--nid", help = "show the target inode info of nid #")
+    val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
+    val path: String? by option("--path", help = "show the target inode info of path X")
+    val version: Boolean by option("--version", "-V", help = "print the version number of dump.erofs and exit").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

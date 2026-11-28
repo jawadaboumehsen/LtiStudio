@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RunViewUseCase(private val repository: ToolRepository) {
+class RunViewUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         attempt: Boolean = false,
         exitStatus: Boolean = false,
@@ -23,7 +23,7 @@ public class RunViewUseCase(private val repository: ToolRepository) {
         verbose: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = RunViewCommand(
             attempt = attempt,
             exitStatus = exitStatus,

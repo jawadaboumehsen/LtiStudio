@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ExtensionCreateUseCase(private val repository: ToolRepository) {
+class ExtensionCreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         precompiled: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ExtensionCreateCommand(
             help = help,
             precompiled = precompiled,

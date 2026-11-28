@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GpgKeyDeleteCliCommand(
+class GpgKeyDeleteCliCommand(
     private val useCase: GpgKeyDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GpgKeyDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GpgKeyDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete a GPG key from your GitHub account"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val yes: Boolean by option("--yes", "-y", help = "Skip the confirmation prompt").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val yes: Boolean by option("--yes", "-y", help = "Skip the confirmation prompt").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

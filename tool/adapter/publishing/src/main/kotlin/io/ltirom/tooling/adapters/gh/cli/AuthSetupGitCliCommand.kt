@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthSetupGitCliCommand(
+class AuthSetupGitCliCommand(
     private val useCase: AuthSetupGitUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "setup-git") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthSetupGitUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthSetupGitUseCase(repository), context)
 
     override fun help(context: Context): String = "This command configures `git` to use GitHub CLI as a credential helper."
 
-    public val force: Boolean by option("--force", "-f", help = "--hostname   Force setup even if the host is not known. Must be used in conjunction with --hostname").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string    The hostname to configure git for").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val force: Boolean by option("--force", "-f", help = "--hostname   Force setup even if the host is not known. Must be used in conjunction with --hostname").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string    The hostname to configure git for").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

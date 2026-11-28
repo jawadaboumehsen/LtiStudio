@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunCliCommand(
+class RunCliCommand(
     private val useCase: RunUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "run") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunUseCase(repository), context)
 
     override fun help(context: Context): String = "List, view, and watch recent workflow runs from GitHub Actions."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

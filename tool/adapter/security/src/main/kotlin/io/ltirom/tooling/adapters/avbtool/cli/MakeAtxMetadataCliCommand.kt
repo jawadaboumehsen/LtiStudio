@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class MakeAtxMetadataCliCommand(
+class MakeAtxMetadataCliCommand(
     private val useCase: MakeAtxMetadataUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "make_atx_metadata") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeAtxMetadataUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeAtxMetadataUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool make_cert_metadata [-h] [--output OUTPUT]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val intermediateKeyCertificate: Boolean by option("--intermediate_key_certificate", help = "INTERMEDIATE_KEY_CERTIFICATE").flag()
-    public val output: String? by option("--output", help = "Write metadata to file")
-    public val productKeyCertificate: Boolean by option("--product_key_certificate", help = "PRODUCT_KEY_CERTIFICATE").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val intermediateKeyCertificate: Boolean by option("--intermediate_key_certificate", help = "INTERMEDIATE_KEY_CERTIFICATE").flag()
+    val output: String? by option("--output", help = "Write metadata to file")
+    val productKeyCertificate: Boolean by option("--product_key_certificate", help = "PRODUCT_KEY_CERTIFICATE").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

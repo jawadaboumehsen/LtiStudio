@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpResourcesCliCommand(
+class DumpResourcesCliCommand(
     private val useCase: DumpResourcesUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "resources") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpResourcesUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpResourcesUseCase(repository), context)
 
     override fun help(context: Context): String = "dump resources [options] files..."
 
-    public val V: Boolean by option("--v", "-v", help = "Enables verbose logging.").flag()
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val noValues: Boolean by option("--no-values", help = "Suppresses output of values when displaying resource tables.").flag()
+    val V: Boolean by option("--v", "-v", help = "Enables verbose logging.").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val noValues: Boolean by option("--no-values", help = "Suppresses output of values when displaying resource tables.").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

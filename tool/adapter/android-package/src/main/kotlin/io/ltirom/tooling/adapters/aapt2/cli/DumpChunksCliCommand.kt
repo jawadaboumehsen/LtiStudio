@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpChunksCliCommand(
+class DumpChunksCliCommand(
     private val useCase: DumpChunksUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "chunks") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpChunksUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpChunksUseCase(repository), context)
 
     override fun help(context: Context): String = "dump chunks [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

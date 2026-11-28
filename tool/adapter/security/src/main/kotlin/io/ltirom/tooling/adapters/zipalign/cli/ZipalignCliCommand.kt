@@ -12,24 +12,24 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.zipalign.*
 import java.io.File
 
-public class ZipalignCliCommand(
+class ZipalignCliCommand(
     private val useCase: AlignUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "zipalign") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AlignUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AlignUseCase(repository), context)
 
     override fun help(context: Context): String = "align or verify zip file"
 
-    public val checkOnly: Boolean by option("--check-only", "-c", help = "check alignment only (does not modify file)").flag()
-    public val overwrite: Boolean by option("--overwrite", "-f", help = "overwrite existing outfile.zip").flag()
-    public val pageAlign: Boolean by option("--page-align", "-p", help = "4kb page-align uncompressed .so files").flag()
-    public val pageSizeKb: Int? by option("--page-size-kb", "-P", help = "Align uncompressed .so files to specified page size (4, 16, 64)").int()
-    public val verbose: Boolean by option("--verbose", "-v", help = "verbose output").flag()
-    public val zopfli: Boolean by option("--zopfli", "-z", help = "recompress using Zopfli").flag()
-    public val alignment: Int by argument(name = "alignment", help = "alignment in bytes (e.g. 4)").int()
-    public val infile: File by argument(name = "infile", help = "input zip file").convert { File(it) }
-    public val outfile: File? by argument(name = "outfile", help = "output zip file (optional in check-only mode)").convert { File(it) }.optional()
+    val checkOnly: Boolean by option("--check-only", "-c", help = "check alignment only (does not modify file)").flag()
+    val overwrite: Boolean by option("--overwrite", "-f", help = "overwrite existing outfile.zip").flag()
+    val pageAlign: Boolean by option("--page-align", "-p", help = "4kb page-align uncompressed .so files").flag()
+    val pageSizeKb: Int? by option("--page-size-kb", "-P", help = "Align uncompressed .so files to specified page size (4, 16, 64)").int()
+    val verbose: Boolean by option("--verbose", "-v", help = "verbose output").flag()
+    val zopfli: Boolean by option("--zopfli", "-z", help = "recompress using Zopfli").flag()
+    val alignment: Int by argument(name = "alignment", help = "alignment in bytes (e.g. 4)").int()
+    val infile: File by argument(name = "infile", help = "input zip file").convert { File(it) }
+    val outfile: File? by argument(name = "outfile", help = "output zip file (optional in check-only mode)").convert { File(it) }.optional()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

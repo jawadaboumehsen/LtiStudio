@@ -6,16 +6,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectLinkUseCase(private val repository: ToolRepository) {
+class ProjectLinkUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         owner: Boolean = false,
         repo: Boolean = false,
         team: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectLinkCommand(
             help = help,
             owner = owner,

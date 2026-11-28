@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class DiscussionCliCommand(
+class DiscussionCliCommand(
     private val useCase: DiscussionUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "discussion") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DiscussionUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DiscussionUseCase(repository), context)
 
     override fun help(context: Context): String = "Working with discussions in the GitHub CLI is in preview and subject to change without notice."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

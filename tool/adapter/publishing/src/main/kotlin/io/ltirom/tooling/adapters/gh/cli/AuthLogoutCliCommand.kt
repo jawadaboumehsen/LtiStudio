@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthLogoutCliCommand(
+class AuthLogoutCliCommand(
     private val useCase: AuthLogoutUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "logout") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthLogoutUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthLogoutUseCase(repository), context)
 
     override fun help(context: Context): String = "Remove authentication for a GitHub account."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string   The hostname of the GitHub instance to log out of").flag()
-    public val user: Boolean by option("--user", "-u", help = "string       The account to log out of").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string   The hostname of the GitHub instance to log out of").flag()
+    val user: Boolean by option("--user", "-u", help = "string       The account to log out of").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -11,17 +11,17 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val D: Boolean = false,
-    public val F: Boolean = false,
-    public val O: List<String> = emptyList(),
-    public val S: Boolean = false,
-    public val dbglevel: String? = null,
-    public val device: String? = null,
-    public val help: Boolean = false,
-    public val offset: String? = null,
-    public val version: Boolean = false,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val D: Boolean = false,
+    val F: Boolean = false,
+    val O: List<String> = emptyList(),
+    val S: Boolean = false,
+    val dbglevel: String? = null,
+    val device: String? = null,
+    val help: Boolean = false,
+    val offset: String? = null,
+    val version: Boolean = false,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.EROFSFUSE
@@ -31,7 +31,7 @@ public data class ExecuteCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

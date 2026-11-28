@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ExtractPublicKeyDigestUseCase(private val repository: ToolRepository) {
+class ExtractPublicKeyDigestUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         key: String? = null,
         output: String? = null
-    ): Unit {
+    ) {
         val command = ExtractPublicKeyDigestCommand(
             help = help,
             key = key,

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class VariableSetUseCase(private val repository: ToolRepository) {
+class VariableSetUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         body: Boolean = false,
         env: Boolean = false,
@@ -19,7 +19,7 @@ public class VariableSetUseCase(private val repository: ToolRepository) {
         repos: Boolean = false,
         version: Boolean = false,
         visibility: Boolean = false
-    ): Unit {
+    ) {
         val command = VariableSetCommand(
             body = body,
             env = env,

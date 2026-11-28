@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class LinkUseCase(private val repository: ToolRepository) {
+class LinkUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         A: Boolean = false,
         C: Boolean = false,
@@ -85,7 +85,7 @@ public class LinkUseCase(private val repository: ToolRepository) {
         versionCodeMajor: Boolean = false,
         versionName: Boolean = false,
         warnManifestValidation: Boolean = false
-    ): Unit {
+    ) {
         val command = LinkCommand(
             A = A,
             C = C,

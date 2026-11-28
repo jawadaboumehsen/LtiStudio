@@ -12,25 +12,25 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SecretListCliCommand(
+class SecretListCliCommand(
     private val useCase: SecretListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretListUseCase(repository), context)
 
     override fun help(context: Context): String = "List secrets on one of the following levels:"
 
-    public val app: Boolean by option("--app", "-a", help = "string        List secrets for a specific application: {actions|agents|codespaces|dependabot}").flag()
-    public val env: Boolean by option("--env", "-e", help = "string        List secrets for an environment").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val org: Boolean by option("--org", "-o", help = "string        List secrets for an organization").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val user: Boolean by option("--user", "-u", help = "List a secret for your user").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val app: Boolean by option("--app", "-a", help = "string        List secrets for a specific application: {actions|agents|codespaces|dependabot}").flag()
+    val env: Boolean by option("--env", "-e", help = "string        List secrets for an environment").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val org: Boolean by option("--org", "-o", help = "string        List secrets for an organization").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val user: Boolean by option("--user", "-u", help = "List a secret for your user").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

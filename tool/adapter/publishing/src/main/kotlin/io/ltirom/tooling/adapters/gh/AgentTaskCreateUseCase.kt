@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AgentTaskCreateUseCase(private val repository: ToolRepository) {
+class AgentTaskCreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         base: Boolean = false,
         customAgent: Boolean = false,
@@ -17,7 +17,7 @@ public class AgentTaskCreateUseCase(private val repository: ToolRepository) {
         help: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AgentTaskCreateCommand(
             base = base,
             customAgent = customAgent,

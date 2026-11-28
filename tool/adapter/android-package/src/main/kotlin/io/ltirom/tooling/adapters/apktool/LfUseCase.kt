@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class LfUseCase(private val repository: ToolRepository) {
+class LfUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         aapt: File? = null,
         all: Boolean = false,
@@ -36,7 +36,7 @@ public class LfUseCase(private val repository: ToolRepository) {
         resResolveMode: String? = null,
         verbose: Boolean = false,
         brutAlllGmailCom: String
-    ): Unit {
+    ) {
         val command = LfCommand(
             aapt = aapt,
             all = all,

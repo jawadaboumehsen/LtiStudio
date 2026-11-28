@@ -11,22 +11,22 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class LogcatCommand(
-    public val clearLogs: Boolean = false,
-    public val dumpLogs: Boolean = false,
-    public val exitOnWriteError: Boolean = false,
-    public val listenAll: Boolean = false,
-    public val logFormat: String? = null,
-    public val oneDevice: String? = null,
-    public val outputFile: File? = null,
-    public val serial: String? = null,
-    public val serverHost: String? = null,
-    public val serverPort: Int? = null,
-    public val serverSocket: String? = null,
-    public val transportId: String? = null,
-    public val useTcp: Boolean = false,
-    public val useUsb: Boolean = false,
-    public val filters: List<String> = emptyList()
+data class LogcatCommand(
+    val clearLogs: Boolean = false,
+    val dumpLogs: Boolean = false,
+    val exitOnWriteError: Boolean = false,
+    val listenAll: Boolean = false,
+    val logFormat: String? = null,
+    val oneDevice: String? = null,
+    val outputFile: File? = null,
+    val serial: String? = null,
+    val serverHost: String? = null,
+    val serverPort: Int? = null,
+    val serverSocket: String? = null,
+    val transportId: String? = null,
+    val useTcp: Boolean = false,
+    val useUsb: Boolean = false,
+    val filters: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.ADB
@@ -36,7 +36,7 @@ public data class LogcatCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

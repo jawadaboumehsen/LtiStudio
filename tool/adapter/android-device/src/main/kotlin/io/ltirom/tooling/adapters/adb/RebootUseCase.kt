@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RebootUseCase(private val repository: ToolRepository) {
+class RebootUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         exitOnWriteError: Boolean = false,
         listenAll: Boolean = false,
@@ -21,7 +21,7 @@ public class RebootUseCase(private val repository: ToolRepository) {
         useTcp: Boolean = false,
         useUsb: Boolean = false,
         target: String? = null
-    ): Unit {
+    ) {
         val command = RebootCommand(
             exitOnWriteError = exitOnWriteError,
             listenAll = listenAll,

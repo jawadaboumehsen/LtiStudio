@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SkillUpdateCliCommand(
+class SkillUpdateCliCommand(
     private val useCase: SkillUpdateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "update") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillUpdateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillUpdateUseCase(repository), context)
 
     override fun help(context: Context): String = "Checks installed skills for available updates by comparing the local"
 
-    public val all: Boolean by option("--all", help = "Update all skills without prompting").flag()
-    public val dir: Boolean by option("--dir", help = "string   Scan a custom directory for installed skills").flag()
-    public val dryRun: Boolean by option("--dry-run", help = "Report available updates without modifying files").flag()
-    public val force: Boolean by option("--force", help = "Re-download even if already up to date").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val unpin: Boolean by option("--unpin", help = "Clear pinned version and include pinned skills in update").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val all: Boolean by option("--all", help = "Update all skills without prompting").flag()
+    val dir: Boolean by option("--dir", help = "string   Scan a custom directory for installed skills").flag()
+    val dryRun: Boolean by option("--dry-run", help = "Report available updates without modifying files").flag()
+    val force: Boolean by option("--force", help = "Re-download even if already up to date").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val unpin: Boolean by option("--unpin", help = "Clear pinned version and include pinned skills in update").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CacheDeleteCliCommand(
+class CacheDeleteCliCommand(
     private val useCase: CacheDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete GitHub Actions caches."
 
-    public val all: Boolean by option("--all", "-a", help = "Delete all caches, can be used with --ref to delete all caches for a specific ref").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val ref: Boolean by option("--ref", "-r", help = "string                   Delete by cache key and ref, formatted as refs/heads/<branch name> or refs/pull/<number>/merge").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val succeedOnNoCaches: Boolean by option("--succeed-on-no-caches", help = "Return exit code 0 if no caches found. Must be used in conjunction with --all").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val all: Boolean by option("--all", "-a", help = "Delete all caches, can be used with --ref to delete all caches for a specific ref").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val ref: Boolean by option("--ref", "-r", help = "string                   Delete by cache key and ref, formatted as refs/heads/<branch name> or refs/pull/<number>/merge").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val succeedOnNoCaches: Boolean by option("--succeed-on-no-caches", help = "Return exit code 0 if no caches found. Must be used in conjunction with --all").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

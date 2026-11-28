@@ -6,13 +6,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ExtensionListUseCase(private val repository: ToolRepository) {
+class ExtensionListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ExtensionListCommand(
             help = help,
             version = version

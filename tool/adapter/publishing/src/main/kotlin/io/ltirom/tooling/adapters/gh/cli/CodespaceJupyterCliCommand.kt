@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceJupyterCliCommand(
+class CodespaceJupyterCliCommand(
     private val useCase: CodespaceJupyterUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "jupyter") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceJupyterUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceJupyterUseCase(repository), context)
 
     override fun help(context: Context): String = "Open a codespace in JupyterLab"
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

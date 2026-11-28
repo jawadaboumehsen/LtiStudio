@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class SetAbMetadataCliCommand(
+class SetAbMetadataCliCommand(
     private val useCase: SetAbMetadataUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "set_ab_metadata") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SetAbMetadataUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SetAbMetadataUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool set_ab_metadata [-h] --misc_image MISC_IMAGE"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val miscImage: String? by option("--misc_image", help = "The misc image to modify. If the image does not exist,")
-    public val slotData: String? by option("--slot_data", help = "Slot data of the form \"priority\", \"tries_remaining\",")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val miscImage: String? by option("--misc_image", help = "The misc image to modify. If the image does not exist,")
+    val slotData: String? by option("--slot_data", help = "Slot data of the form \"priority\", \"tries_remaining\",")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

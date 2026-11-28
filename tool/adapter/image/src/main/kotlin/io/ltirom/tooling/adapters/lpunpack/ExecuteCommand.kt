@@ -11,11 +11,11 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val image: String? = null,
-    public val partition: List<String> = emptyList(),
-    public val slot: String? = null,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val image: String? = null,
+    val partition: List<String> = emptyList(),
+    val slot: String? = null,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.LPUNPACK
@@ -29,7 +29,7 @@ public data class ExecuteCommand(
     )
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

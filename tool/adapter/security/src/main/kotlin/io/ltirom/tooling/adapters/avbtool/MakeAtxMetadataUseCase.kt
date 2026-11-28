@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class MakeAtxMetadataUseCase(private val repository: ToolRepository) {
+class MakeAtxMetadataUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         intermediateKeyCertificate: Boolean = false,
         output: String? = null,
         productKeyCertificate: Boolean = false
-    ): Unit {
+    ) {
         val command = MakeAtxMetadataCommand(
             help = help,
             intermediateKeyCertificate = intermediateKeyCertificate,

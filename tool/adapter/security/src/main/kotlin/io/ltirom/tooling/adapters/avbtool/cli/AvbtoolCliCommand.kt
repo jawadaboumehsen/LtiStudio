@@ -9,7 +9,7 @@ import io.ltirom.tooling.core.ExecutionContext
 import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 
-public class AvbtoolCliCommand(
+class AvbtoolCliCommand(
     private val repository: ToolRepository,
     private val context: ExecutionContext
 ) : CliktCommand(name = "avbtool") {

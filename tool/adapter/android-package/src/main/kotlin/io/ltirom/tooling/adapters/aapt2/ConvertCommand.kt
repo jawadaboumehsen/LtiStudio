@@ -11,18 +11,18 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ConvertCommand(
-    public val O: Boolean = false,
-    public val V: Boolean = false,
-    public val collapseResourceNames: Boolean = false,
-    public val deduplicateEntryValues: Boolean = false,
-    public val enableCompactEntries: Boolean = false,
-    public val enableSparseEncoding: Boolean = false,
-    public val forceSparseEncoding: Boolean = false,
-    public val help: Boolean = false,
-    public val keepRawValues: Boolean = false,
-    public val outputFormat: Boolean = false,
-    public val resourcesConfigPath: Boolean = false
+data class ConvertCommand(
+    val O: Boolean = false,
+    val V: Boolean = false,
+    val collapseResourceNames: Boolean = false,
+    val deduplicateEntryValues: Boolean = false,
+    val enableCompactEntries: Boolean = false,
+    val enableSparseEncoding: Boolean = false,
+    val forceSparseEncoding: Boolean = false,
+    val help: Boolean = false,
+    val keepRawValues: Boolean = false,
+    val outputFormat: Boolean = false,
+    val resourcesConfigPath: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AAPT2
@@ -32,9 +32,9 @@ public data class ConvertCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

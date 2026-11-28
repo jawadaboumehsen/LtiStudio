@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GistCreateCliCommand(
+class GistCreateCliCommand(
     private val useCase: GistCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GistCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GistCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a new GitHub gist with given contents."
 
-    public val desc: Boolean by option("--desc", "-d", help = "string       A description for this gist").flag()
-    public val filename: Boolean by option("--filename", "-f", help = "string   Provide a filename to be used when reading from standard input").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val public: Boolean by option("--public", "-p", help = "List the gist publicly (default \"secret\")").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open the web browser with created gist").flag()
+    val desc: Boolean by option("--desc", "-d", help = "string       A description for this gist").flag()
+    val filename: Boolean by option("--filename", "-f", help = "string   Provide a filename to be used when reading from standard input").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val public: Boolean by option("--public", "-p", help = "List the gist publicly (default \"secret\")").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open the web browser with created gist").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

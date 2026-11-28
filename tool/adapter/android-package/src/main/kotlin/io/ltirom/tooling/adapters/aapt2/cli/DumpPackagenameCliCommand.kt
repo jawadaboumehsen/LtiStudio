@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpPackagenameCliCommand(
+class DumpPackagenameCliCommand(
     private val useCase: DumpPackagenameUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "packagename") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpPackagenameUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpPackagenameUseCase(repository), context)
 
     override fun help(context: Context): String = "dump packagename [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

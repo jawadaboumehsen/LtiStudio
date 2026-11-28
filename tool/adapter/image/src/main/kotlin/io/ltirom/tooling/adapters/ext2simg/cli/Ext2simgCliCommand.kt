@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.ext2simg.*
 import java.io.File
 
-public class Ext2simgCliCommand(
+class Ext2simgCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "ext2simg") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val C: Boolean by option("--c", "-c", help = "include CRC block").flag()
-    public val S: Boolean by option("--s", "-S", help = "don't use sparse output format").flag()
-    public val Z: Boolean by option("--z", "-z", help = "gzip output").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val C: Boolean by option("--c", "-c", help = "include CRC block").flag()
+    val S: Boolean by option("--s", "-S", help = "don't use sparse output format").flag()
+    val Z: Boolean by option("--z", "-z", help = "gzip output").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.mkdtboimg.*
 import java.io.File
 
-public class DumpCliCommand(
+class DumpCliCommand(
     private val useCase: DumpUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "dump") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpUseCase(repository), context)
 
     override fun help(context: Context): String = "Traceback (most recent call last):"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

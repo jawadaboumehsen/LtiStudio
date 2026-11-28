@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AuthTokenUseCase(private val repository: ToolRepository) {
+class AuthTokenUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         hostname: Boolean = false,
         user: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AuthTokenCommand(
             help = help,
             hostname = hostname,

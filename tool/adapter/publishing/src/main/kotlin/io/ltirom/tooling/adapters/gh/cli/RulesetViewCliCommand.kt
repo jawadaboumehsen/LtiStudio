@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RulesetViewCliCommand(
+class RulesetViewCliCommand(
     private val useCase: RulesetViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RulesetViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RulesetViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View information about a GitHub ruleset."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val org: Boolean by option("--org", "-o", help = "string   Organization name if the provided ID is an organization-level ruleset").flag()
-    public val parents: Boolean by option("--parents", "-p", help = "Whether to include rulesets configured at higher levels that also apply (default true)").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open the ruleset in the browser").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val org: Boolean by option("--org", "-o", help = "string   Organization name if the provided ID is an organization-level ruleset").flag()
+    val parents: Boolean by option("--parents", "-p", help = "Whether to include rulesets configured at higher levels that also apply (default true)").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open the ruleset in the browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

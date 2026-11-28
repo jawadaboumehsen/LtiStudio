@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CacheCliCommand(
+class CacheCliCommand(
     private val useCase: CacheUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "cache") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheUseCase(repository), context)
 
     override fun help(context: Context): String = "Work with GitHub Actions caches."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

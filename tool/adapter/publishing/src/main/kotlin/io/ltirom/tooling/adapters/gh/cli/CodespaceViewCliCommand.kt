@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceViewCliCommand(
+class CodespaceViewCliCommand(
     private val useCase: CodespaceViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View details about a codespace"
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression       Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields         Output JSON with the specified fields").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
-    public val template: Boolean by option("--template", "-t", help = "string     Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression       Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields         Output JSON with the specified fields").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
+    val template: Boolean by option("--template", "-t", help = "string     Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

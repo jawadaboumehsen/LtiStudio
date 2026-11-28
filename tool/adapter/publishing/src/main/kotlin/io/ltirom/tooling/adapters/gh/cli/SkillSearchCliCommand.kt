@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SkillSearchCliCommand(
+class SkillSearchCliCommand(
     private val useCase: SkillSearchUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "search") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillSearchUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillSearchUseCase(repository), context)
 
     override fun help(context: Context): String = "Search across all public GitHub repositories for skills matching a keyword."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of results per page (default 15)").flag()
-    public val owner: Boolean by option("--owner", help = "string      Filter results to a specific GitHub user or organization").flag()
-    public val page: Boolean by option("--page", help = "int          Page number of results to fetch (default 1)").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of results per page (default 15)").flag()
+    val owner: Boolean by option("--owner", help = "string      Filter results to a specific GitHub user or organization").flag()
+    val page: Boolean by option("--page", help = "int          Page number of results to fetch (default 1)").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

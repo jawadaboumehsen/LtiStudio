@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceCodeCliCommand(
+class CodespaceCodeCliCommand(
     private val useCase: CodespaceCodeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "code") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceCodeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceCodeUseCase(repository), context)
 
     override fun help(context: Context): String = "Open a codespace in Visual Studio Code"
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val insiders: Boolean by option("--insiders", help = "Use the insiders version of Visual Studio Code").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Use the web version of Visual Studio Code").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val insiders: Boolean by option("--insiders", help = "Use the insiders version of Visual Studio Code").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Use the web version of Visual Studio Code").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

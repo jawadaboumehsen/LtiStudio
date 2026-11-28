@@ -12,30 +12,30 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.adb.*
 import java.io.File
 
-public class LogcatCliCommand(
+class LogcatCliCommand(
     private val useCase: LogcatUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "logcat") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(LogcatUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(LogcatUseCase(repository), context)
 
     override fun help(context: Context): String = "view or clear device logs"
 
-    public val clearLogs: Boolean by option("--clear-logs", "-c", help = "clear logs and exit").flag()
-    public val dumpLogs: Boolean by option("--dump-logs", help = "dump logs to stdout and exit").flag()
-    public val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
-    public val listenAll: Boolean by option("--listen-all", "-a", help = "listen on all network interfaces, not just localhost").flag()
-    public val logFormat: String? by option("--log-format", "-v", help = "format style of logs")
-    public val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
-    public val outputFile: File? by option("--output-file", "-f", help = "write logs to specified file").convert { File(it) }
-    public val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
-    public val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
-    public val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
-    public val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
-    public val transportId: String? by option("--transport-id", "-t", help = "use device with given transport id")
-    public val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
-    public val useUsb: Boolean by option("--use-usb", help = "use USB device (error if multiple devices connected)").flag()
-    public val filters: List<String> by argument(name = "filters", help = "log filter specifications").multiple()
+    val clearLogs: Boolean by option("--clear-logs", "-c", help = "clear logs and exit").flag()
+    val dumpLogs: Boolean by option("--dump-logs", help = "dump logs to stdout and exit").flag()
+    val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
+    val listenAll: Boolean by option("--listen-all", "-a", help = "listen on all network interfaces, not just localhost").flag()
+    val logFormat: String? by option("--log-format", "-v", help = "format style of logs")
+    val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
+    val outputFile: File? by option("--output-file", "-f", help = "write logs to specified file").convert { File(it) }
+    val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
+    val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
+    val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
+    val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
+    val transportId: String? by option("--transport-id", "-t", help = "use device with given transport id")
+    val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
+    val useUsb: Boolean by option("--use-usb", help = "use USB device (error if multiple devices connected)").flag()
+    val filters: List<String> by argument(name = "filters", help = "log filter specifications").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

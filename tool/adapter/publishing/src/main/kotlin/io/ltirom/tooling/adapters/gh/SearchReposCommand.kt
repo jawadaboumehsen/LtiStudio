@@ -11,33 +11,33 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SearchReposCommand(
-    public val archived: Boolean = false,
-    public val created: Boolean = false,
-    public val followers: Boolean = false,
-    public val forks: Boolean = false,
-    public val goodFirstIssues: Boolean = false,
-    public val help: Boolean = false,
-    public val helpWantedIssues: Boolean = false,
-    public val includeForks: Boolean = false,
-    public val jq: Boolean = false,
-    public val json: Boolean = false,
-    public val language: Boolean = false,
-    public val license: Boolean = false,
-    public val limit: Boolean = false,
-    public val match: Boolean = false,
-    public val numberTopics: Boolean = false,
-    public val order: Boolean = false,
-    public val owner: Boolean = false,
-    public val size: Boolean = false,
-    public val sort: Boolean = false,
-    public val stars: Boolean = false,
-    public val template: Boolean = false,
-    public val topic: Boolean = false,
-    public val updated: Boolean = false,
-    public val version: Boolean = false,
-    public val visibility: Boolean = false,
-    public val web: Boolean = false
+data class SearchReposCommand(
+    val archived: Boolean = false,
+    val created: Boolean = false,
+    val followers: Boolean = false,
+    val forks: Boolean = false,
+    val goodFirstIssues: Boolean = false,
+    val help: Boolean = false,
+    val helpWantedIssues: Boolean = false,
+    val includeForks: Boolean = false,
+    val jq: Boolean = false,
+    val json: Boolean = false,
+    val language: Boolean = false,
+    val license: Boolean = false,
+    val limit: Boolean = false,
+    val match: Boolean = false,
+    val numberTopics: Boolean = false,
+    val order: Boolean = false,
+    val owner: Boolean = false,
+    val size: Boolean = false,
+    val sort: Boolean = false,
+    val stars: Boolean = false,
+    val template: Boolean = false,
+    val topic: Boolean = false,
+    val updated: Boolean = false,
+    val version: Boolean = false,
+    val visibility: Boolean = false,
+    val web: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -47,9 +47,9 @@ public data class SearchReposCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

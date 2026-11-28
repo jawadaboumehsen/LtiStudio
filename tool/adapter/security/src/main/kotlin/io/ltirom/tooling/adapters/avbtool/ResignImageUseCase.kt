@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ResignImageUseCase(private val repository: ToolRepository) {
+class ResignImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         algorithm: String? = null,
         autoResize: Boolean = false,
@@ -17,7 +17,7 @@ public class ResignImageUseCase(private val repository: ToolRepository) {
         key: String? = null,
         signingHelper: String? = null,
         signingHelperWithFiles: File? = null
-    ): Unit {
+    ) {
         val command = ResignImageCommand(
             algorithm = algorithm,
             autoResize = autoResize,

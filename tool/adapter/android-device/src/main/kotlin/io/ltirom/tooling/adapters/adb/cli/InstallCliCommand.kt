@@ -12,30 +12,30 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.adb.*
 import java.io.File
 
-public class InstallCliCommand(
+class InstallCliCommand(
     private val useCase: InstallUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "install") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(InstallUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(InstallUseCase(repository), context)
 
     override fun help(context: Context): String = "push package to device and install it"
 
-    public val downgrade: Boolean by option("--downgrade", help = "allow version code downgrade").flag()
-    public val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
-    public val grantPermissions: Boolean by option("--grant-permissions", "-g", help = "grant all runtime permissions").flag()
-    public val listenAll: Boolean by option("--listen-all", "-a", help = "listen on all network interfaces, not just localhost").flag()
-    public val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
-    public val replace: Boolean by option("--replace", "-r", help = "replace existing application").flag()
-    public val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
-    public val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
-    public val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
-    public val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
-    public val testPackages: Boolean by option("--test-packages", help = "allow test packages").flag()
-    public val transportId: String? by option("--transport-id", help = "use device with given transport id")
-    public val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
-    public val useUsb: Boolean by option("--use-usb", help = "use USB device (error if multiple devices connected)").flag()
-    public val packagePath: File by argument(name = "packagePath", help = "path to APK package").convert { File(it) }
+    val downgrade: Boolean by option("--downgrade", help = "allow version code downgrade").flag()
+    val exitOnWriteError: Boolean by option("--exit-on-write-error", help = "exit if stdout is closed").flag()
+    val grantPermissions: Boolean by option("--grant-permissions", "-g", help = "grant all runtime permissions").flag()
+    val listenAll: Boolean by option("--listen-all", "-a", help = "listen on all network interfaces, not just localhost").flag()
+    val oneDevice: String? by option("--one-device", help = "only allowed with 'start-server' or 'server nodaemon', server will only connect to one USB device, specified by a serial number or USB device address.")
+    val replace: Boolean by option("--replace", "-r", help = "replace existing application").flag()
+    val serial: String? by option("--serial", "-s", help = "use device with given serial (overrides &#36;ANDROID_SERIAL)")
+    val serverHost: String? by option("--server-host", "-H", help = "name of adb server host [default=localhost]")
+    val serverPort: Int? by option("--server-port", "-P", help = "port of adb server [default=5037]").int()
+    val serverSocket: String? by option("--server-socket", "-L", help = "listen on given socket for adb server [default=tcp:localhost:5037]")
+    val testPackages: Boolean by option("--test-packages", help = "allow test packages").flag()
+    val transportId: String? by option("--transport-id", help = "use device with given transport id")
+    val useTcp: Boolean by option("--use-tcp", "-e", help = "use TCP/IP device (error if multiple TCP/IP devices available)").flag()
+    val useUsb: Boolean by option("--use-usb", help = "use USB device (error if multiple devices connected)").flag()
+    val packagePath: File by argument(name = "packagePath", help = "path to APK package").convert { File(it) }
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

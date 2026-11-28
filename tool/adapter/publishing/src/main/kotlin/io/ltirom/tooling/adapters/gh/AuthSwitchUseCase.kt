@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AuthSwitchUseCase(private val repository: ToolRepository) {
+class AuthSwitchUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         hostname: Boolean = false,
         user: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AuthSwitchCommand(
             help = help,
             hostname = hostname,

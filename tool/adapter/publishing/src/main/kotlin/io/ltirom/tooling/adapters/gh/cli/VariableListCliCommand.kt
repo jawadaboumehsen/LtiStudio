@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class VariableListCliCommand(
+class VariableListCliCommand(
     private val useCase: VariableListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableListUseCase(repository), context)
 
     override fun help(context: Context): String = "List variables on one of the following levels:"
 
-    public val env: Boolean by option("--env", "-e", help = "string        List variables for an environment").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val org: Boolean by option("--org", "-o", help = "string        List variables for an organization").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val env: Boolean by option("--env", "-e", help = "string        List variables for an environment").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val org: Boolean by option("--org", "-o", help = "string        List variables for an organization").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

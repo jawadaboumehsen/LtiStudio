@@ -11,15 +11,15 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val H: Boolean = false,
-    public val S: Boolean = false,
-    public val V: Boolean = false,
-    public val inplace: Boolean = false,
-    public val padding: String? = null,
-    public val roots: String? = null,
-    public val threads: String? = null,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val H: Boolean = false,
+    val S: Boolean = false,
+    val V: Boolean = false,
+    val inplace: Boolean = false,
+    val padding: String? = null,
+    val roots: String? = null,
+    val threads: String? = null,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.FEC
@@ -29,7 +29,7 @@ public data class ExecuteCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

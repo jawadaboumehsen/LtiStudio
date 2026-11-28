@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RunRerunUseCase(private val repository: ToolRepository) {
+class RunRerunUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         debug: Boolean = false,
         failed: Boolean = false,
@@ -16,7 +16,7 @@ public class RunRerunUseCase(private val repository: ToolRepository) {
         job: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = RunRerunCommand(
             debug = debug,
             failed = failed,

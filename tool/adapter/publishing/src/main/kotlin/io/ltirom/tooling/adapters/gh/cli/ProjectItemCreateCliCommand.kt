@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectItemCreateCliCommand(
+class ProjectItemCreateCliCommand(
     private val useCase: ProjectItemCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "item-create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a draft issue item in a project"
 
-    public val body: Boolean by option("--body", help = "string       Body for the draft issue").flag()
-    public val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val title: Boolean by option("--title", help = "string      Title for the draft issue").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val body: Boolean by option("--body", help = "string       Body for the draft issue").flag()
+    val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val title: Boolean by option("--title", help = "string      Title for the draft issue").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectItemAddCliCommand(
+class ProjectItemAddCliCommand(
     private val useCase: ProjectItemAddUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "item-add") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemAddUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemAddUseCase(repository), context)
 
     override fun help(context: Context): String = "Add a pull request or an issue to a project"
 
-    public val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val url: Boolean by option("--url", help = "string        URL of the issue or pull request to add to the project").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val owner: Boolean by option("--owner", help = "string      Login of the owner. Use \"@me\" for the current user.").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val url: Boolean by option("--url", help = "string        URL of the issue or pull request to add to the project").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

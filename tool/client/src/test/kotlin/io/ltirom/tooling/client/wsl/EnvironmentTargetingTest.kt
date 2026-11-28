@@ -153,6 +153,7 @@ class EnvironmentTargetingTest {
             "Active attempt commands must target B even when currentSelection changed to A: ${cli.executedDistros}",
         )
         assertEquals(listOf("Ubuntu-24.04"), launcher.launchedDistros)
+        assertEquals(envA, currentSelection)
     }
 
     @Test

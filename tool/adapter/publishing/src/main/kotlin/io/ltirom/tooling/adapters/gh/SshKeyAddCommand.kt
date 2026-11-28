@@ -11,11 +11,11 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SshKeyAddCommand(
-    public val help: Boolean = false,
-    public val title: Boolean = false,
-    public val type: Boolean = false,
-    public val version: Boolean = false
+data class SshKeyAddCommand(
+    val help: Boolean = false,
+    val title: Boolean = false,
+    val type: Boolean = false,
+    val version: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -25,9 +25,9 @@ public data class SshKeyAddCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

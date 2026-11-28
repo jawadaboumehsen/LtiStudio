@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class LabelEditUseCase(private val repository: ToolRepository) {
+class LabelEditUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         color: Boolean = false,
         description: Boolean = false,
@@ -16,7 +16,7 @@ public class LabelEditUseCase(private val repository: ToolRepository) {
         name: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = LabelEditCommand(
             color = color,
             description = description,

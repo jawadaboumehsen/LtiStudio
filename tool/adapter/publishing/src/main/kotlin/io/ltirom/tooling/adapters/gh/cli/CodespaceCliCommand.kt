@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceCliCommand(
+class CodespaceCliCommand(
     private val useCase: CodespaceUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "codespace") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceUseCase(repository), context)
 
     override fun help(context: Context): String = "Connect to and manage codespaces"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

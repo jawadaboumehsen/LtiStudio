@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RunListUseCase(private val repository: ToolRepository) {
+class RunListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         all: Boolean = false,
         branch: Boolean = false,
@@ -25,7 +25,7 @@ public class RunListUseCase(private val repository: ToolRepository) {
         user: Boolean = false,
         version: Boolean = false,
         workflow: Boolean = false
-    ): Unit {
+    ) {
         val command = RunListCommand(
             all = all,
             branch = branch,

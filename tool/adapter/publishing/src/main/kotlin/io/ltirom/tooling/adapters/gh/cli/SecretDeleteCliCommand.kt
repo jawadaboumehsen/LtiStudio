@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SecretDeleteCliCommand(
+class SecretDeleteCliCommand(
     private val useCase: SecretDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SecretDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete a secret on one of the following levels:"
 
-    public val app: Boolean by option("--app", "-a", help = "string   Delete a secret for a specific application: {actions|agents|codespaces|dependabot}").flag()
-    public val env: Boolean by option("--env", "-e", help = "string   Delete a secret for an environment").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val org: Boolean by option("--org", "-o", help = "string   Delete a secret for an organization").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val user: Boolean by option("--user", "-u", help = "Delete a secret for your user").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val app: Boolean by option("--app", "-a", help = "string   Delete a secret for a specific application: {actions|agents|codespaces|dependabot}").flag()
+    val env: Boolean by option("--env", "-e", help = "string   Delete a secret for an environment").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val org: Boolean by option("--org", "-o", help = "string   Delete a secret for an organization").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val user: Boolean by option("--user", "-u", help = "Delete a secret for your user").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

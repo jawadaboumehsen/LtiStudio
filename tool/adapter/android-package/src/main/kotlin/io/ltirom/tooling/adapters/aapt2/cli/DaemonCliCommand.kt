@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DaemonCliCommand(
+class DaemonCliCommand(
     private val useCase: DaemonUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "daemon") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DaemonUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DaemonUseCase(repository), context)
 
     override fun help(context: Context): String = "aapt2 daemon [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val traceFolder: Boolean by option("--trace_folder", help = "arg                                Generate systrace json trace fragment to specified folder.").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val traceFolder: Boolean by option("--trace_folder", help = "arg                                Generate systrace json trace fragment to specified folder.").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -11,31 +11,31 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class AttestationVerifyCommand(
-    public val bundle: Boolean = false,
-    public val bundleFromOci: Boolean = false,
-    public val certIdentity: Boolean = false,
-    public val certIdentityRegex: Boolean = false,
-    public val certOidcIssuer: Boolean = false,
-    public val customTrustedRoot: Boolean = false,
-    public val denySelfHostedRunners: Boolean = false,
-    public val digestAlg: Boolean = false,
-    public val format: Boolean = false,
-    public val help: Boolean = false,
-    public val hostname: Boolean = false,
-    public val jq: Boolean = false,
-    public val limit: Boolean = false,
-    public val noPublicGood: Boolean = false,
-    public val owner: Boolean = false,
-    public val predicateType: Boolean = false,
-    public val repo: Boolean = false,
-    public val signerDigest: Boolean = false,
-    public val signerRepo: Boolean = false,
-    public val signerWorkflow: Boolean = false,
-    public val sourceDigest: Boolean = false,
-    public val sourceRef: Boolean = false,
-    public val template: Boolean = false,
-    public val version: Boolean = false
+data class AttestationVerifyCommand(
+    val bundle: Boolean = false,
+    val bundleFromOci: Boolean = false,
+    val certIdentity: Boolean = false,
+    val certIdentityRegex: Boolean = false,
+    val certOidcIssuer: Boolean = false,
+    val customTrustedRoot: Boolean = false,
+    val denySelfHostedRunners: Boolean = false,
+    val digestAlg: Boolean = false,
+    val format: Boolean = false,
+    val help: Boolean = false,
+    val hostname: Boolean = false,
+    val jq: Boolean = false,
+    val limit: Boolean = false,
+    val noPublicGood: Boolean = false,
+    val owner: Boolean = false,
+    val predicateType: Boolean = false,
+    val repo: Boolean = false,
+    val signerDigest: Boolean = false,
+    val signerRepo: Boolean = false,
+    val signerWorkflow: Boolean = false,
+    val sourceDigest: Boolean = false,
+    val sourceRef: Boolean = false,
+    val template: Boolean = false,
+    val version: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -45,9 +45,9 @@ public data class AttestationVerifyCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

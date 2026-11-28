@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class LabelCreateCliCommand(
+class LabelCreateCliCommand(
     private val useCase: LabelCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a new label on GitHub, or update an existing one with `--force`."
 
-    public val color: Boolean by option("--color", "-c", help = "string         Color of the label").flag()
-    public val description: Boolean by option("--description", "-d", help = "string   Description of the label").flag()
-    public val force: Boolean by option("--force", "-f", help = "Update the label color and description if label already exists").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val color: Boolean by option("--color", "-c", help = "string         Color of the label").flag()
+    val description: Boolean by option("--description", "-d", help = "string   Description of the label").flag()
+    val force: Boolean by option("--force", "-f", help = "Update the label color and description if label already exists").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

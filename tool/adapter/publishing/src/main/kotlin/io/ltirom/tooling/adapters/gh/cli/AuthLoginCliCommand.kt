@@ -12,25 +12,25 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthLoginCliCommand(
+class AuthLoginCliCommand(
     private val useCase: AuthLoginUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "login") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthLoginUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthLoginUseCase(repository), context)
 
     override fun help(context: Context): String = "Authenticate with a GitHub host."
 
-    public val clipboard: Boolean by option("--clipboard", "-c", help = "Copy one-time OAuth device code to clipboard").flag()
-    public val gitProtocol: Boolean by option("--git-protocol", "-p", help = "string   The protocol to use for git operations on this host: {ssh|https}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string       The hostname of the GitHub instance to authenticate with").flag()
-    public val insecureStorage: Boolean by option("--insecure-storage", help = "Save authentication credentials in plain text instead of credential store").flag()
-    public val scopes: Boolean by option("--scopes", "-s", help = "strings        Additional authentication scopes to request").flag()
-    public val skipSshKey: Boolean by option("--skip-ssh-key", help = "Skip generate/upload SSH key prompt").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open a browser to authenticate").flag()
-    public val withToken: Boolean by option("--with-token", help = "Read token from standard input").flag()
+    val clipboard: Boolean by option("--clipboard", "-c", help = "Copy one-time OAuth device code to clipboard").flag()
+    val gitProtocol: Boolean by option("--git-protocol", "-p", help = "string   The protocol to use for git operations on this host: {ssh|https}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string       The hostname of the GitHub instance to authenticate with").flag()
+    val insecureStorage: Boolean by option("--insecure-storage", help = "Save authentication credentials in plain text instead of credential store").flag()
+    val scopes: Boolean by option("--scopes", "-s", help = "strings        Additional authentication scopes to request").flag()
+    val skipSshKey: Boolean by option("--skip-ssh-key", help = "Skip generate/upload SSH key prompt").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open a browser to authenticate").flag()
+    val withToken: Boolean by option("--with-token", help = "Read token from standard input").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

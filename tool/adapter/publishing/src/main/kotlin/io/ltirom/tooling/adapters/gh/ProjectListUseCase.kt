@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectListUseCase(private val repository: ToolRepository) {
+class ProjectListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         closed: Boolean = false,
         format: Boolean = false,
@@ -19,7 +19,7 @@ public class ProjectListUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectListCommand(
             closed = closed,
             format = format,

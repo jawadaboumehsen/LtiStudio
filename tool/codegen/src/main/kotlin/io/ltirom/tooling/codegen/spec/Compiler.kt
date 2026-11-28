@@ -178,20 +178,20 @@ object Compiler {
             // Regenerate via `./gradlew :tool:codegen:generateToolAdapters`.
             package io.ltirom.tooling.core
 
-            public object ToolMetadataRegistry {
-                public val EXPECTED_SHA256: Map<String, String> = mapOf(
+            object ToolMetadataRegistry {
+                val EXPECTED_SHA256: Map<String, String> = mapOf(
 ${specs.filter { it.binarySha256 != null }.sortedBy { it.tool }.joinToString(",\n") { "                    \"${it.tool}\" to \"${it.binarySha256}\"" }}
                 )
-                public val EXPECTED_PLATFORMS: Map<String, Set<String>> = mapOf(
+                val EXPECTED_PLATFORMS: Map<String, Set<String>> = mapOf(
 $platformEntries
                 )
                 private val CHUNKS: Array<String> = arrayOf(
 $chunksContent
                 )
-                public val METADATA_JSON: String by lazy { CHUNKS.joinToString("") }
+                val METADATA_JSON: String by lazy { CHUNKS.joinToString("") }
             }
         """.trimIndent()
-        registryFile.writeText(registryContent)
+        registryFile.writeText(registryContent.replace("\r\n", "\n") + "\n")
         println("Generated ToolMetadataRegistry to ${registryFile.absolutePath} with ${chunks.size} chunks")
 
         // Generate launcher aliases
@@ -254,7 +254,7 @@ $chunksContent
                 appendLine("complete -F $funcName lti-$toolName")
             }
         }
-        completionFile.writeText(completionContent)
+        completionFile.writeText(completionContent.replace("\r\n", "\n"))
         println("Generated completion delegate script to ${completionFile.absolutePath}")
     }
 

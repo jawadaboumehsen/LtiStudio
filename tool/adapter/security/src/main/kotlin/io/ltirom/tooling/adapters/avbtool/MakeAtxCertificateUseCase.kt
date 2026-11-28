@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class MakeAtxCertificateUseCase(private val repository: ToolRepository) {
+class MakeAtxCertificateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         authorityKey: String? = null,
         help: Boolean = false,
@@ -21,7 +21,7 @@ public class MakeAtxCertificateUseCase(private val repository: ToolRepository) {
         subjectKeyVersion: String? = null,
         usage: String? = null,
         usageForUnlock: Boolean = false
-    ): Unit {
+    ) {
         val command = MakeAtxCertificateCommand(
             authorityKey = authorityKey,
             help = help,

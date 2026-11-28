@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class FlashUseCase(private val repository: ToolRepository) {
+class FlashUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         disableFastbootInfo: Boolean = false,
         disableSuperOptimization: Boolean = false,
@@ -28,7 +28,7 @@ public class FlashUseCase(private val repository: ToolRepository) {
         wipeUserdata: Boolean = false,
         imagePath: File? = null,
         partition: String
-    ): Unit {
+    ) {
         val command = FlashCommand(
             disableFastbootInfo = disableFastbootInfo,
             disableSuperOptimization = disableSuperOptimization,

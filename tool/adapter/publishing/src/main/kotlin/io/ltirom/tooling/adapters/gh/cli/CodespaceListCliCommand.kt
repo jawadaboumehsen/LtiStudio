@@ -12,25 +12,25 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceListCliCommand(
+class CodespaceListCliCommand(
     private val useCase: CodespaceListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceListUseCase(repository), context)
 
     override fun help(context: Context): String = "List codespaces of the authenticated user."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of codespaces to list (default 30)").flag()
-    public val org: Boolean by option("--org", "-o", help = "login         The login handle of the organization to list codespaces for (admin-only)").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string       Repository name with owner: user/repo").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val user: Boolean by option("--user", "-u", help = "username     The username to list codespaces for (used with --org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "List codespaces in the web browser, cannot be used with --user or --org").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of codespaces to list (default 30)").flag()
+    val org: Boolean by option("--org", "-o", help = "login         The login handle of the organization to list codespaces for (admin-only)").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string       Repository name with owner: user/repo").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val user: Boolean by option("--user", "-u", help = "username     The username to list codespaces for (used with --org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "List codespaces in the web browser, cannot be used with --user or --org").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

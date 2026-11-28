@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GistViewCliCommand(
+class GistViewCliCommand(
     private val useCase: GistViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GistViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GistViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View the given gist or select from recent gists."
 
-    public val allowEscapeSequences: Boolean by option("--allow-escape-sequences", help = "Allow printing terminal escape sequences").flag()
-    public val filename: Boolean by option("--filename", "-f", help = "string          Display a single file from the gist").flag()
-    public val files: Boolean by option("--files", help = "List file names from the gist").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val raw: Boolean by option("--raw", "-r", help = "Print raw instead of rendered gist contents").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open gist in the browser").flag()
+    val allowEscapeSequences: Boolean by option("--allow-escape-sequences", help = "Allow printing terminal escape sequences").flag()
+    val filename: Boolean by option("--filename", "-f", help = "string          Display a single file from the gist").flag()
+    val files: Boolean by option("--files", help = "List file names from the gist").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val raw: Boolean by option("--raw", "-r", help = "Print raw instead of rendered gist contents").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open gist in the browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

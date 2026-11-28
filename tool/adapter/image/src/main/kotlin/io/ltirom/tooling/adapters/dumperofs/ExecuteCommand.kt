@@ -11,18 +11,18 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val E: Boolean = false,
-    public val S: Boolean = false,
-    public val cat: Boolean = false,
-    public val device: String? = null,
-    public val help: Boolean = false,
-    public val ls: Boolean = false,
-    public val nid: String? = null,
-    public val offset: String? = null,
-    public val path: String? = null,
-    public val version: Boolean = false,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val E: Boolean = false,
+    val S: Boolean = false,
+    val cat: Boolean = false,
+    val device: String? = null,
+    val help: Boolean = false,
+    val ls: Boolean = false,
+    val nid: String? = null,
+    val offset: String? = null,
+    val path: String? = null,
+    val version: Boolean = false,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<io.ltirom.tooling.core.ParsedToolMetadata> {
 
     override val toolId: ToolId get() = ToolId.DUMP_EROFS
@@ -32,7 +32,7 @@ public data class ExecuteCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.ParsedToolMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.ParsedToolMetadata>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.ParsedToolMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.ParsedToolMetadata>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): io.ltirom.tooling.core.ParsedToolMetadata {
         return parser.parse(result.stdout, result.stderr)

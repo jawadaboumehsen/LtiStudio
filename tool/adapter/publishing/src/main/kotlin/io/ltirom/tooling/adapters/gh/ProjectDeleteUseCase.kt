@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectDeleteUseCase(private val repository: ToolRepository) {
+class ProjectDeleteUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         format: Boolean = false,
         help: Boolean = false,
@@ -16,7 +16,7 @@ public class ProjectDeleteUseCase(private val repository: ToolRepository) {
         owner: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectDeleteCommand(
             format = format,
             help = help,

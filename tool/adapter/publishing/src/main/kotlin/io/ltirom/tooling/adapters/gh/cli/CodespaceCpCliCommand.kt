@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceCpCliCommand(
+class CodespaceCpCliCommand(
     private val useCase: CodespaceCpUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "cp") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceCpUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceCpUseCase(repository), context)
 
     override fun help(context: Context): String = "The `cp` command copies files between the local and remote file systems."
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
-    public val expand: Boolean by option("--expand", "-e", help = "Expand remote file names on remote shell").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val profile: Boolean by option("--profile", "-p", help = "string      Name of the SSH profile to use").flag()
-    public val recursive: Boolean by option("--recursive", "-r", help = "Recursively copy directories").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
+    val expand: Boolean by option("--expand", "-e", help = "Expand remote file names on remote shell").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val profile: Boolean by option("--profile", "-p", help = "string      Name of the SSH profile to use").flag()
+    val recursive: Boolean by option("--recursive", "-r", help = "Recursively copy directories").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

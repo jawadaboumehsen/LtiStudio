@@ -12,26 +12,26 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CacheListCliCommand(
+class CacheListCliCommand(
     private val useCase: CacheListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CacheListUseCase(repository), context)
 
     override fun help(context: Context): String = "List GitHub Actions caches"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val key: Boolean by option("--key", "-k", help = "string        Filter by cache key prefix").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of caches to fetch (default 30)").flag()
-    public val order: Boolean by option("--order", "-O", help = "string      Order of caches returned: {asc|desc} (default \"desc\")").flag()
-    public val ref: Boolean by option("--ref", "-r", help = "string        Filter by ref, formatted as refs/heads/<branch name> or refs/pull/<number>/merge").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val sort: Boolean by option("--sort", "-S", help = "string       Sort fetched caches: {created_at|last_accessed_at|size_in_bytes} (default \"last_accessed_at\")").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val key: Boolean by option("--key", "-k", help = "string        Filter by cache key prefix").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of caches to fetch (default 30)").flag()
+    val order: Boolean by option("--order", "-O", help = "string      Order of caches returned: {asc|desc} (default \"desc\")").flag()
+    val ref: Boolean by option("--ref", "-r", help = "string        Filter by ref, formatted as refs/heads/<branch name> or refs/pull/<number>/merge").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val sort: Boolean by option("--sort", "-S", help = "string       Sort fetched caches: {created_at|last_accessed_at|size_in_bytes} (default \"last_accessed_at\")").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

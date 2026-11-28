@@ -12,33 +12,33 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ApiCliCommand(
+class ApiCliCommand(
     private val useCase: ApiUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "api") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ApiUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ApiUseCase(repository), context)
 
     override fun help(context: Context): String = "Makes an authenticated HTTP request to the GitHub API and prints the response."
 
-    public val allowEscapeSequences: Boolean by option("--allow-escape-sequences", help = "Allow printing terminal escape sequences").flag()
-    public val cache: Boolean by option("--cache", help = "duration           Cache the response, e.g. \"3600s\", \"60m\", \"1h\"").flag()
-    public val field: Boolean by option("--field", "-F", help = "key=value          Add a typed parameter in key=value format (use \"@<path>\" or \"@-\" to read value from file or stdin)").flag()
-    public val header: Boolean by option("--header", "-H", help = "key:value         Add a HTTP request header in key:value format").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", help = "string          The GitHub hostname for the request (default \"github.com\")").flag()
-    public val include: Boolean by option("--include", "-i", help = "Include HTTP response status line and headers in the output").flag()
-    public val input: Boolean by option("--input", help = "file               The file to use as body for the HTTP request (use \"-\" to read from standard input)").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "string                Query to select values from the response using jq syntax").flag()
-    public val method: Boolean by option("--method", "-X", help = "string            The HTTP method for the request (default \"GET\")").flag()
-    public val paginate: Boolean by option("--paginate", help = "Make additional HTTP requests to fetch all pages of results").flag()
-    public val preview: Boolean by option("--preview", "-p", help = "strings          Opt into GitHub API previews (names should omit '-preview')").flag()
-    public val rawField: Boolean by option("--raw-field", "-f", help = "key=value      Add a string parameter in key=value format").flag()
-    public val silent: Boolean by option("--silent", help = "Do not print the response body").flag()
-    public val slurp: Boolean by option("--slurp", help = "Use with \"--paginate\" to return an array of all pages of either JSON arrays or objects").flag()
-    public val template: Boolean by option("--template", "-t", help = "string          Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val verbose: Boolean by option("--verbose", help = "Include full HTTP request and response in the output").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val allowEscapeSequences: Boolean by option("--allow-escape-sequences", help = "Allow printing terminal escape sequences").flag()
+    val cache: Boolean by option("--cache", help = "duration           Cache the response, e.g. \"3600s\", \"60m\", \"1h\"").flag()
+    val field: Boolean by option("--field", "-F", help = "key=value          Add a typed parameter in key=value format (use \"@<path>\" or \"@-\" to read value from file or stdin)").flag()
+    val header: Boolean by option("--header", "-H", help = "key:value         Add a HTTP request header in key:value format").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", help = "string          The GitHub hostname for the request (default \"github.com\")").flag()
+    val include: Boolean by option("--include", "-i", help = "Include HTTP response status line and headers in the output").flag()
+    val input: Boolean by option("--input", help = "file               The file to use as body for the HTTP request (use \"-\" to read from standard input)").flag()
+    val jq: Boolean by option("--jq", "-q", help = "string                Query to select values from the response using jq syntax").flag()
+    val method: Boolean by option("--method", "-X", help = "string            The HTTP method for the request (default \"GET\")").flag()
+    val paginate: Boolean by option("--paginate", help = "Make additional HTTP requests to fetch all pages of results").flag()
+    val preview: Boolean by option("--preview", "-p", help = "strings          Opt into GitHub API previews (names should omit '-preview')").flag()
+    val rawField: Boolean by option("--raw-field", "-f", help = "key=value      Add a string parameter in key=value format").flag()
+    val silent: Boolean by option("--silent", help = "Do not print the response body").flag()
+    val slurp: Boolean by option("--slurp", help = "Use with \"--paginate\" to return an array of all pages of either JSON arrays or objects").flag()
+    val template: Boolean by option("--template", "-t", help = "string          Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val verbose: Boolean by option("--verbose", help = "Include full HTTP request and response in the output").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

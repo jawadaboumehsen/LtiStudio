@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ExtensionUpgradeCliCommand(
+class ExtensionUpgradeCliCommand(
     private val useCase: ExtensionUpgradeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "upgrade") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionUpgradeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionUpgradeUseCase(repository), context)
 
     override fun help(context: Context): String = "Upgrade installed extensions"
 
-    public val all: Boolean by option("--all", help = "Upgrade all extensions").flag()
-    public val dryRun: Boolean by option("--dry-run", help = "Only display upgrades").flag()
-    public val force: Boolean by option("--force", help = "Force upgrade extension").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val all: Boolean by option("--all", help = "Upgrade all extensions").flag()
+    val dryRun: Boolean by option("--dry-run", help = "Only display upgrades").flag()
+    val force: Boolean by option("--force", help = "Force upgrade extension").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

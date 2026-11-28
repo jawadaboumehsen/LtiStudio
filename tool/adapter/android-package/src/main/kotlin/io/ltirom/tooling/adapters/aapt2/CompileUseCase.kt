@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CompileUseCase(private val repository: ToolRepository) {
+class CompileUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         O: Boolean = false,
         V: Boolean = false,
@@ -28,7 +28,7 @@ public class CompileUseCase(private val repository: ToolRepository) {
         traceFolder: Boolean = false,
         visibility: Boolean = false,
         zip: Boolean = false
-    ): Unit {
+    ) {
         val command = CompileCommand(
             O = O,
             V = V,

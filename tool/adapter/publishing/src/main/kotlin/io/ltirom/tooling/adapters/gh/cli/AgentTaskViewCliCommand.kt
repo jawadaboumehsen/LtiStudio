@@ -12,24 +12,24 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AgentTaskViewCliCommand(
+class AgentTaskViewCliCommand(
     private val useCase: AgentTaskViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View an agent task session."
 
-    public val follow: Boolean by option("--follow", help = "Follow agent session logs").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression            Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields              Output JSON with the specified fields").flag()
-    public val log: Boolean by option("--log", help = "Show agent session logs").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val template: Boolean by option("--template", "-t", help = "string          Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open agent task in the browser").flag()
+    val follow: Boolean by option("--follow", help = "Follow agent session logs").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression            Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields              Output JSON with the specified fields").flag()
+    val log: Boolean by option("--log", help = "Show agent session logs").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val template: Boolean by option("--template", "-t", help = "string          Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open agent task in the browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

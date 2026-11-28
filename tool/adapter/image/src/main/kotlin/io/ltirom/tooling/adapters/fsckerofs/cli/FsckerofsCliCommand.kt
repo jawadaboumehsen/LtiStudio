@@ -12,26 +12,26 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.fsckerofs.*
 import java.io.File
 
-public class FsckerofsCliCommand(
+class FsckerofsCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "fsck.erofs") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val A: Boolean by option("--a", "-a", help = "-y             no-op, for compatibility with fsck of other filesystems").flag()
-    public val D: String? by option("--d", "-d", help = "set output verbosity; 0=quiet, 9=verbose (default=2)")
-    public val P: Boolean by option("--p", "-p", help = "print total compression ratio of all files").flag()
-    public val device: String? by option("--device", help = "specify an extra device to be used together")
-    public val extract: String? by option("--extract", help = "check if all files are well encoded, optionally")
-    public val force: Boolean by option("--force", help = "allow extracting to root").flag()
-    public val help: Boolean by option("--help", "-h", help = "display this help and exit").flag()
-    public val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
-    public val overwrite: Boolean by option("--overwrite", help = "overwrite files that already exist").flag()
-    public val version: Boolean by option("--version", "-V", help = "print the version number of fsck.erofs and exit").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val A: Boolean by option("--a", "-a", help = "-y             no-op, for compatibility with fsck of other filesystems").flag()
+    val D: String? by option("--d", "-d", help = "set output verbosity; 0=quiet, 9=verbose (default=2)")
+    val P: Boolean by option("--p", "-p", help = "print total compression ratio of all files").flag()
+    val device: String? by option("--device", help = "specify an extra device to be used together")
+    val extract: String? by option("--extract", help = "check if all files are well encoded, optionally")
+    val force: Boolean by option("--force", help = "allow extracting to root").flag()
+    val help: Boolean by option("--help", "-h", help = "display this help and exit").flag()
+    val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
+    val overwrite: Boolean by option("--overwrite", help = "overwrite files that already exist").flag()
+    val version: Boolean by option("--version", "-V", help = "print the version number of fsck.erofs and exit").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

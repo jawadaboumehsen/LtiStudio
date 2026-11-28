@@ -11,13 +11,13 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class VerifyImageCommand(
-    public val acceptZeroedHashtree: Boolean = false,
-    public val expectedChainPartition: Boolean = false,
-    public val followChainPartitions: Boolean = false,
-    public val help: Boolean = false,
-    public val image: String? = null,
-    public val key: String? = null
+data class VerifyImageCommand(
+    val acceptZeroedHashtree: Boolean = false,
+    val expectedChainPartition: Boolean = false,
+    val followChainPartitions: Boolean = false,
+    val help: Boolean = false,
+    val image: String? = null,
+    val key: String? = null
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -27,9 +27,9 @@ public data class VerifyImageCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

@@ -12,27 +12,27 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.sload_f2fs.*
 import java.io.File
 
-public class Sload_f2fsCliCommand(
+class Sload_f2fsCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "sload_f2fs") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val A: String? by option("--a", "-a", help = "<algorithm> compression algorithm, default LZ4")
-    public val C: String? by option("--c", "-C", help = "fs_config")
-    public val F: String? by option("--f", "-f", help = "source directory [path of the source directory]")
-    public val I: String? by option("--i", "-i", help = "<ext> compress files with these extensions only.")
-    public val L: String? by option("--l", "-L", help = "<log-of-blocks-per-cluster>, default 2")
-    public val M: String? by option("--m", "-m", help = "<num> min compressed blocks per cluster")
-    public val P: String? by option("--p", "-p", help = "product out directory")
-    public val R: Boolean by option("--r", "-r", help = "read only (to release unused blocks) for compressed files").flag()
-    public val S: String? by option("--s", "-s", help = "file_contexts")
-    public val T: String? by option("--t", "-t", help = "mount point [prefix of target fs path, default:/]")
-    public val X: String? by option("--x", "-x", help = "<ext> compress files except for these extensions.")
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val A: String? by option("--a", "-a", help = "<algorithm> compression algorithm, default LZ4")
+    val C: String? by option("--c", "-C", help = "fs_config")
+    val F: String? by option("--f", "-f", help = "source directory [path of the source directory]")
+    val I: String? by option("--i", "-i", help = "<ext> compress files with these extensions only.")
+    val L: String? by option("--l", "-L", help = "<log-of-blocks-per-cluster>, default 2")
+    val M: String? by option("--m", "-m", help = "<num> min compressed blocks per cluster")
+    val P: String? by option("--p", "-p", help = "product out directory")
+    val R: Boolean by option("--r", "-r", help = "read only (to release unused blocks) for compressed files").flag()
+    val S: String? by option("--s", "-s", help = "file_contexts")
+    val T: String? by option("--t", "-t", help = "mount point [prefix of target fs path, default:/]")
+    val X: String? by option("--x", "-x", help = "<ext> compress files except for these extensions.")
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

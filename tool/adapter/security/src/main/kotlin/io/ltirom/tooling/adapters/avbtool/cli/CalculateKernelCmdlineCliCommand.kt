@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class CalculateKernelCmdlineCliCommand(
+class CalculateKernelCmdlineCliCommand(
     private val useCase: CalculateKernelCmdlineUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "calculate_kernel_cmdline") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CalculateKernelCmdlineUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CalculateKernelCmdlineUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool calculate_kernel_cmdline [-h] --image IMAGE"
 
-    public val hashtreeDisabled: Boolean by option("--hashtree_disabled", help = "Return the cmdline for hashtree disabled").flag()
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to calculate kernel cmdline for")
-    public val output: String? by option("--output", help = "Write cmdline to file (default: stdout)")
+    val hashtreeDisabled: Boolean by option("--hashtree_disabled", help = "Return the cmdline for hashtree disabled").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to calculate kernel cmdline for")
+    val output: String? by option("--output", help = "Write cmdline to file (default: stdout)")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class BootUseCase(private val repository: ToolRepository) {
+class BootUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         disableFastbootInfo: Boolean = false,
         disableSuperOptimization: Boolean = false,
@@ -27,7 +27,7 @@ public class BootUseCase(private val repository: ToolRepository) {
         verboseMode: Boolean = false,
         wipeUserdata: Boolean = false,
         imagePath: File
-    ): Unit {
+    ) {
         val command = BootCommand(
             disableFastbootInfo = disableFastbootInfo,
             disableSuperOptimization = disableSuperOptimization,

@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class MakeAtxPermanentAttributesUseCase(private val repository: ToolRepository) {
+class MakeAtxPermanentAttributesUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         output: String? = null,
         productId: String? = null,
         rootAuthorityKey: Boolean = false
-    ): Unit {
+    ) {
         val command = MakeAtxPermanentAttributesCommand(
             help = help,
             output = output,

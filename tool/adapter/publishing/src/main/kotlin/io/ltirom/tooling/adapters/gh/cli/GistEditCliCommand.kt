@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GistEditCliCommand(
+class GistEditCliCommand(
     private val useCase: GistEditUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "edit") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GistEditUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GistEditUseCase(repository), context)
 
     override fun help(context: Context): String = "Edit one of your gists"
 
-    public val add: Boolean by option("--add", "-a", help = "string        Add a new file to the gist").flag()
-    public val desc: Boolean by option("--desc", "-d", help = "string       New description for the gist").flag()
-    public val filename: Boolean by option("--filename", "-f", help = "string   Select a file to edit").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val remove: Boolean by option("--remove", "-r", help = "string     Remove a file from the gist").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val add: Boolean by option("--add", "-a", help = "string        Add a new file to the gist").flag()
+    val desc: Boolean by option("--desc", "-d", help = "string       New description for the gist").flag()
+    val filename: Boolean by option("--filename", "-f", help = "string   Select a file to edit").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val remove: Boolean by option("--remove", "-r", help = "string     Remove a file from the gist").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,29 +12,29 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SearchCodeCliCommand(
+class SearchCodeCliCommand(
     private val useCase: SearchCodeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "code") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchCodeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchCodeUseCase(repository), context)
 
     override fun help(context: Context): String = "Search within code in GitHub repositories."
 
-    public val extension: Boolean by option("--extension", help = "string   Filter on file extension").flag()
-    public val filename: Boolean by option("--filename", help = "string    Filter on filename").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression      Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields        Output JSON with the specified fields").flag()
-    public val language: Boolean by option("--language", help = "string    Filter results by language").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int          Maximum number of code results to fetch (default 30)").flag()
-    public val match: Boolean by option("--match", help = "strings      Restrict search to file contents or file path: {file|path}").flag()
-    public val owner: Boolean by option("--owner", help = "strings      Filter on owner").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "OWNER/REPO    Filter on repository, in OWNER/REPO format").flag()
-    public val size: Boolean by option("--size", help = "string        Filter on size range, in kilobytes").flag()
-    public val template: Boolean by option("--template", "-t", help = "string    Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open the search query in the web browser").flag()
+    val extension: Boolean by option("--extension", help = "string   Filter on file extension").flag()
+    val filename: Boolean by option("--filename", help = "string    Filter on filename").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression      Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields        Output JSON with the specified fields").flag()
+    val language: Boolean by option("--language", help = "string    Filter results by language").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int          Maximum number of code results to fetch (default 30)").flag()
+    val match: Boolean by option("--match", help = "strings      Restrict search to file contents or file path: {file|path}").flag()
+    val owner: Boolean by option("--owner", help = "strings      Filter on owner").flag()
+    val repo: Boolean by option("--repo", "-R", help = "OWNER/REPO    Filter on repository, in OWNER/REPO format").flag()
+    val size: Boolean by option("--size", help = "string        Filter on size range, in kilobytes").flag()
+    val template: Boolean by option("--template", "-t", help = "string    Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open the search query in the web browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

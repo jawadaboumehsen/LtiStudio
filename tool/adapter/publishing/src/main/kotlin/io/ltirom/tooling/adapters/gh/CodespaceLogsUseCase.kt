@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CodespaceLogsUseCase(private val repository: ToolRepository) {
+class CodespaceLogsUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         codespace: Boolean = false,
         follow: Boolean = false,
@@ -16,7 +16,7 @@ public class CodespaceLogsUseCase(private val repository: ToolRepository) {
         repo: Boolean = false,
         repoOwner: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = CodespaceLogsCommand(
             codespace = codespace,
             follow = follow,

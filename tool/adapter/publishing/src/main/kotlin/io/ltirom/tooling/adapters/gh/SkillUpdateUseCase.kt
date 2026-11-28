@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SkillUpdateUseCase(private val repository: ToolRepository) {
+class SkillUpdateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         all: Boolean = false,
         dir: Boolean = false,
@@ -17,7 +17,7 @@ public class SkillUpdateUseCase(private val repository: ToolRepository) {
         help: Boolean = false,
         unpin: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SkillUpdateCommand(
             all = all,
             dir = dir,

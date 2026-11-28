@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectCliCommand(
+class ProjectCliCommand(
     private val useCase: ProjectUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "project") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectUseCase(repository), context)
 
     override fun help(context: Context): String = "Work with GitHub Projects."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -11,18 +11,18 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val A: Boolean = false,
-    public val D: String? = null,
-    public val P: Boolean = false,
-    public val device: String? = null,
-    public val extract: String? = null,
-    public val force: Boolean = false,
-    public val help: Boolean = false,
-    public val offset: String? = null,
-    public val overwrite: Boolean = false,
-    public val version: Boolean = false,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val A: Boolean = false,
+    val D: String? = null,
+    val P: Boolean = false,
+    val device: String? = null,
+    val extract: String? = null,
+    val force: Boolean = false,
+    val help: Boolean = false,
+    val offset: String? = null,
+    val overwrite: Boolean = false,
+    val version: Boolean = false,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.FSCK_EROFS
@@ -32,7 +32,7 @@ public data class ExecuteCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class VariableGetUseCase(private val repository: ToolRepository) {
+class VariableGetUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         env: Boolean = false,
         help: Boolean = false,
@@ -18,7 +18,7 @@ public class VariableGetUseCase(private val repository: ToolRepository) {
         repo: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = VariableGetCommand(
             env = env,
             help = help,

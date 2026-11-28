@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class PrintPartitionDigestsCliCommand(
+class PrintPartitionDigestsCliCommand(
     private val useCase: PrintPartitionDigestsUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "print_partition_digests") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(PrintPartitionDigestsUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(PrintPartitionDigestsUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool print_partition_digests [-h] --image IMAGE [--output OUTPUT]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to print partition digests from")
-    public val json: Boolean by option("--json", help = "Print output as JSON").flag()
-    public val output: String? by option("--output", help = "Write info to file")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to print partition digests from")
+    val json: Boolean by option("--json", help = "Print output as JSON").flag()
+    val output: String? by option("--output", help = "Write info to file")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

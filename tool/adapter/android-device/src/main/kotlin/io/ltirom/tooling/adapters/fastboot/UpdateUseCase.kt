@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class UpdateUseCase(private val repository: ToolRepository) {
+class UpdateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         disableFastbootInfo: Boolean = false,
         disableSuperOptimization: Boolean = false,
@@ -27,7 +27,7 @@ public class UpdateUseCase(private val repository: ToolRepository) {
         verboseMode: Boolean = false,
         wipeUserdata: Boolean = false,
         zipPath: File
-    ): Unit {
+    ) {
         val command = UpdateCommand(
             disableFastbootInfo = disableFastbootInfo,
             disableSuperOptimization = disableSuperOptimization,

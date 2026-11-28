@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class LabelDeleteCliCommand(
+class LabelDeleteCliCommand(
     private val useCase: LabelDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete a label from a repository"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val yes: Boolean by option("--yes", help = "Confirm deletion without prompting").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val yes: Boolean by option("--yes", help = "Confirm deletion without prompting").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

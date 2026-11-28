@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class LabelCloneCliCommand(
+class LabelCloneCliCommand(
     private val useCase: LabelCloneUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "clone") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelCloneUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(LabelCloneUseCase(repository), context)
 
     override fun help(context: Context): String = "Clones labels from a source repository to a destination repository on GitHub."
 
-    public val force: Boolean by option("--force", "-f", help = "Overwrite labels in the destination repository").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val force: Boolean by option("--force", "-f", help = "Overwrite labels in the destination repository").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

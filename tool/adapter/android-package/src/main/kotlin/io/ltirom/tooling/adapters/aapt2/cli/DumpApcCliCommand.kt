@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpApcCliCommand(
+class DumpApcCliCommand(
     private val useCase: DumpApcUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "apc") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpApcUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpApcUseCase(repository), context)
 
     override fun help(context: Context): String = "dump apc [options] files..."
 
-    public val V: Boolean by option("--v", "-v", help = "Enables verbose logging.").flag()
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val noValues: Boolean by option("--no-values", help = "Suppresses output of values when displaying resource tables.").flag()
+    val V: Boolean by option("--v", "-v", help = "Enables verbose logging.").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val noValues: Boolean by option("--no-values", help = "Suppresses output of values when displaying resource tables.").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

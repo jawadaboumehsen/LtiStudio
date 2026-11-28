@@ -12,25 +12,25 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.erofsfuse.*
 import java.io.File
 
-public class ErofsfuseCliCommand(
+class ErofsfuseCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "erofsfuse") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val D: Boolean by option("--d", "-d", help = "debug          enable debug output (implies -f)").flag()
-    public val F: Boolean by option("--f", "-f", help = "foreground operation").flag()
-    public val O: List<String> by option("--o", "-o", help = "FUSE mount option (repeatable, e.g. -o clone_fd -o max_idle_threads=N)").multiple()
-    public val S: Boolean by option("--s", "-s", help = "disable multi-threaded operation").flag()
-    public val dbglevel: String? by option("--dbglevel", help = "set output message level to # (maximum 9)")
-    public val device: String? by option("--device", help = "specify an extra device to be used together")
-    public val help: Boolean by option("--help", "-h", help = "print help").flag()
-    public val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
-    public val version: Boolean by option("--version", "-V", help = "print version").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val D: Boolean by option("--d", "-d", help = "debug          enable debug output (implies -f)").flag()
+    val F: Boolean by option("--f", "-f", help = "foreground operation").flag()
+    val O: List<String> by option("--o", "-o", help = "FUSE mount option (repeatable, e.g. -o clone_fd -o max_idle_threads=N)").multiple()
+    val S: Boolean by option("--s", "-s", help = "disable multi-threaded operation").flag()
+    val dbglevel: String? by option("--dbglevel", help = "set output message level to # (maximum 9)")
+    val device: String? by option("--device", help = "specify an extra device to be used together")
+    val help: Boolean by option("--help", "-h", help = "print help").flag()
+    val offset: String? by option("--offset", help = "skip # bytes at the beginning of IMAGE")
+    val version: Boolean by option("--version", "-V", help = "print version").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

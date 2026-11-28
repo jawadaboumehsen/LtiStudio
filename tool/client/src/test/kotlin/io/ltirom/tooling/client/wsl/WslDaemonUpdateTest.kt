@@ -124,6 +124,9 @@ class WslDaemonUpdateTest {
         )
 
         // Must restart since activeRuns == 0 and versions differ
+        assertEquals(9999, result.port)
+        assertEquals("mocktoken", result.token)
+        assertEquals("Ubuntu-24.04", result.distro)
         assertEquals(1, launcher.launchCount, "Launcher should have been invoked to restart daemon")
         assertFalse(manager.isUpdateWaiting, "Should not be update waiting when restarted")
         assertFalse(manager.lastStartAdopted, "Should not be adopted without restart")

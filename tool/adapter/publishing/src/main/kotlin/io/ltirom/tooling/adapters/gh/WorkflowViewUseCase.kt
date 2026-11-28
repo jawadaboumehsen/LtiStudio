@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class WorkflowViewUseCase(private val repository: ToolRepository) {
+class WorkflowViewUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         ref: Boolean = false,
@@ -16,7 +16,7 @@ public class WorkflowViewUseCase(private val repository: ToolRepository) {
         version: Boolean = false,
         web: Boolean = false,
         yaml: Boolean = false
-    ): Unit {
+    ) {
         val command = WorkflowViewCommand(
             help = help,
             ref = ref,

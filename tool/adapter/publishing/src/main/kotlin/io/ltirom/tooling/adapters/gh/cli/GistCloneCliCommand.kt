@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GistCloneCliCommand(
+class GistCloneCliCommand(
     private val useCase: GistCloneUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "clone") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GistCloneUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GistCloneUseCase(repository), context)
 
     override fun help(context: Context): String = "Clone a GitHub gist locally."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

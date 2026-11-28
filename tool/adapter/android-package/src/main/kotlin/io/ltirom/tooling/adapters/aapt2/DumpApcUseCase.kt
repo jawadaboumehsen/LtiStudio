@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class DumpApcUseCase(private val repository: ToolRepository) {
+class DumpApcUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         V: Boolean = false,
         help: Boolean = false,
         noValues: Boolean = false
-    ): Unit {
+    ) {
         val command = DumpApcCommand(
             V = V,
             help = help,

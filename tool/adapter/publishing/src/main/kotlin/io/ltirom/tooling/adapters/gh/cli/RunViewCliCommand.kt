@@ -12,28 +12,28 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunViewCliCommand(
+class RunViewCliCommand(
     private val useCase: RunViewUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "view") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunViewUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunViewUseCase(repository), context)
 
     override fun help(context: Context): String = "View a summary of a workflow run."
 
-    public val attempt: Boolean by option("--attempt", "-a", help = "uint      The attempt number of the workflow run").flag()
-    public val exitStatus: Boolean by option("--exit-status", help = "Exit with non-zero status if run failed").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val job: Boolean by option("--job", "-j", help = "string        View a specific job ID from a run").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val log: Boolean by option("--log", help = "View full log for either a run or specific job").flag()
-    public val logFailed: Boolean by option("--log-failed", help = "View the log for any failed steps in a run or specific job").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val verbose: Boolean by option("--verbose", "-v", help = "Show job steps").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open run in the browser").flag()
+    val attempt: Boolean by option("--attempt", "-a", help = "uint      The attempt number of the workflow run").flag()
+    val exitStatus: Boolean by option("--exit-status", help = "Exit with non-zero status if run failed").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val job: Boolean by option("--job", "-j", help = "string        View a specific job ID from a run").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val log: Boolean by option("--log", help = "View full log for either a run or specific job").flag()
+    val logFailed: Boolean by option("--log-failed", help = "View the log for any failed steps in a run or specific job").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val verbose: Boolean by option("--verbose", "-v", help = "Show job steps").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open run in the browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

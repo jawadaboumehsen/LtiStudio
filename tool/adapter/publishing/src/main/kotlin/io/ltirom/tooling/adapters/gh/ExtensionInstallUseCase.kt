@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ExtensionInstallUseCase(private val repository: ToolRepository) {
+class ExtensionInstallUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         force: Boolean = false,
         help: Boolean = false,
         pin: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ExtensionInstallCommand(
             force = force,
             help = help,

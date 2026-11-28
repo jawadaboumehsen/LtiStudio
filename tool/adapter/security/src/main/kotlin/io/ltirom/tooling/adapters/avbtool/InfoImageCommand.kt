@@ -11,12 +11,12 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class InfoImageCommand(
-    public val cert: Boolean = false,
-    public val help: Boolean = false,
-    public val image: String? = null,
-    public val output: String? = null,
-    public val outputPubkey: String? = null
+data class InfoImageCommand(
+    val cert: Boolean = false,
+    val help: Boolean = false,
+    val image: String? = null,
+    val output: String? = null,
+    val outputPubkey: String? = null
 ) : ToolCommand<io.ltirom.tooling.core.AvbImageInfo> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -31,7 +31,7 @@ public data class InfoImageCommand(
     )
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.AvbImageInfo> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("avb-info") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.AvbImageInfo>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.AvbImageInfo> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("avb-info") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.AvbImageInfo>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): io.ltirom.tooling.core.AvbImageInfo {
         return parser.parse(result.stdout, result.stderr)

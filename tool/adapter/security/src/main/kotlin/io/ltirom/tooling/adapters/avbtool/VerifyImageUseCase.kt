@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class VerifyImageUseCase(private val repository: ToolRepository) {
+class VerifyImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         acceptZeroedHashtree: Boolean = false,
         expectedChainPartition: Boolean = false,
@@ -16,7 +16,7 @@ public class VerifyImageUseCase(private val repository: ToolRepository) {
         help: Boolean = false,
         image: String? = null,
         key: String? = null
-    ): Unit {
+    ) {
         val command = VerifyImageCommand(
             acceptZeroedHashtree = acceptZeroedHashtree,
             expectedChainPartition = expectedChainPartition,

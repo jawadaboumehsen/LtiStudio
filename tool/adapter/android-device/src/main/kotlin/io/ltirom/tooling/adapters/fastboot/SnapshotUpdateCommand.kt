@@ -11,24 +11,24 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SnapshotUpdateCommand(
-    public val disableFastbootInfo: Boolean = false,
-    public val disableSuperOptimization: Boolean = false,
-    public val disableVerification: Boolean = false,
-    public val disableVerity: Boolean = false,
-    public val excludeDynamicPartitions: Boolean = false,
-    public val forceOperation: Boolean = false,
-    public val fsOptions: String? = null,
-    public val selectDevice: String? = null,
-    public val setActiveSlot: String? = null,
-    public val skipReboot: Boolean = false,
-    public val skipSecondarySlots: Boolean = false,
-    public val slotTarget: String? = null,
-    public val sparseSize: String? = null,
-    public val unbufferedOutput: Boolean = false,
-    public val verboseMode: Boolean = false,
-    public val wipeUserdata: Boolean = false,
-    public val action: String
+data class SnapshotUpdateCommand(
+    val disableFastbootInfo: Boolean = false,
+    val disableSuperOptimization: Boolean = false,
+    val disableVerification: Boolean = false,
+    val disableVerity: Boolean = false,
+    val excludeDynamicPartitions: Boolean = false,
+    val forceOperation: Boolean = false,
+    val fsOptions: String? = null,
+    val selectDevice: String? = null,
+    val setActiveSlot: String? = null,
+    val skipReboot: Boolean = false,
+    val skipSecondarySlots: Boolean = false,
+    val slotTarget: String? = null,
+    val sparseSize: String? = null,
+    val unbufferedOutput: Boolean = false,
+    val verboseMode: Boolean = false,
+    val wipeUserdata: Boolean = false,
+    val action: String
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.FASTBOOT
@@ -38,7 +38,7 @@ public data class SnapshotUpdateCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

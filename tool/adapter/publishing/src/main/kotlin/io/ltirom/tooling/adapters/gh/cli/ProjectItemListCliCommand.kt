@@ -12,25 +12,25 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectItemListCliCommand(
+class ProjectItemListCliCommand(
     private val useCase: ProjectItemListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "item-list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectItemListUseCase(repository), context)
 
     override fun help(context: Context): String = "List the items in a project."
 
-    public val field: Boolean by option("--field", help = "stringArray      Name of a field to show as an extra column").flag()
-    public val fieldId: Boolean by option("--field-id", help = "stringArray   ID of a field to show as an extra column").flag()
-    public val format: Boolean by option("--format", help = "string          Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression          Filter JSON output using a jq expression").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int              Maximum number of items to fetch (default 30)").flag()
-    public val owner: Boolean by option("--owner", help = "string           Login of the owner. Use \"@me\" for the current user").flag()
-    public val query: Boolean by option("--query", help = "string           Filter items using the Projects filter syntax, e.g. \"assignee:octocat -status:Done\"").flag()
-    public val template: Boolean by option("--template", "-t", help = "string        Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val field: Boolean by option("--field", help = "stringArray      Name of a field to show as an extra column").flag()
+    val fieldId: Boolean by option("--field-id", help = "stringArray   ID of a field to show as an extra column").flag()
+    val format: Boolean by option("--format", help = "string          Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression          Filter JSON output using a jq expression").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int              Maximum number of items to fetch (default 30)").flag()
+    val owner: Boolean by option("--owner", help = "string           Login of the owner. Use \"@me\" for the current user").flag()
+    val query: Boolean by option("--query", help = "string           Filter items using the Projects filter syntax, e.g. \"assignee:octocat -status:Done\"").flag()
+    val template: Boolean by option("--template", "-t", help = "string        Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

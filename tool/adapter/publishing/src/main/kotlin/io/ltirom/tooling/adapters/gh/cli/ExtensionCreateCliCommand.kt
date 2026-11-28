@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ExtensionCreateCliCommand(
+class ExtensionCreateCliCommand(
     private val useCase: ExtensionCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a new extension"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val precompiled: Boolean by option("--precompiled", help = "string   Create a precompiled extension. Possible values: go, other").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val precompiled: Boolean by option("--precompiled", help = "string   Create a precompiled extension. Possible values: go, other").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

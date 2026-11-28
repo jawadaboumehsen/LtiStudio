@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SshKeyAddUseCase(private val repository: ToolRepository) {
+class SshKeyAddUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         title: Boolean = false,
         type: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SshKeyAddCommand(
             help = help,
             title = title,

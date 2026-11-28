@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class WorkflowRunCliCommand(
+class WorkflowRunCliCommand(
     private val useCase: WorkflowRunUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "run") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowRunUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(WorkflowRunUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a `workflow_dispatch` event for a given workflow."
 
-    public val field: Boolean by option("--field", "-F", help = "key=value       Add a string parameter in key=value format, respecting @ syntax (see \"gh help api\").").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val json: Boolean by option("--json", help = "Read workflow inputs as JSON via STDIN").flag()
-    public val rawField: Boolean by option("--raw-field", "-f", help = "key=value   Add a string parameter in key=value format").flag()
-    public val ref: Boolean by option("--ref", "-r", help = "string            Branch or tag name which contains the version of the workflow file you'd like to run").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val field: Boolean by option("--field", "-F", help = "key=value       Add a string parameter in key=value format, respecting @ syntax (see \"gh help api\").").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val json: Boolean by option("--json", help = "Read workflow inputs as JSON via STDIN").flag()
+    val rawField: Boolean by option("--raw-field", "-f", help = "key=value   Add a string parameter in key=value format").flag()
+    val ref: Boolean by option("--ref", "-r", help = "string            Branch or tag name which contains the version of the workflow file you'd like to run").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

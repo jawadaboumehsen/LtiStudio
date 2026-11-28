@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AliasSetCliCommand(
+class AliasSetCliCommand(
     private val useCase: AliasSetUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "set") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasSetUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasSetUseCase(repository), context)
 
     override fun help(context: Context): String = "Define a word that will expand to a full gh command when invoked."
 
-    public val clobber: Boolean by option("--clobber", help = "Overwrite existing aliases of the same name").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val shell: Boolean by option("--shell", "-s", help = "Declare an alias to be passed through a shell interpreter").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val clobber: Boolean by option("--clobber", help = "Overwrite existing aliases of the same name").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val shell: Boolean by option("--shell", "-s", help = "Declare an alias to be passed through a shell interpreter").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

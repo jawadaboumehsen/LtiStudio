@@ -12,41 +12,41 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SearchReposCliCommand(
+class SearchReposCliCommand(
     private val useCase: SearchReposUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "repos") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchReposUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchReposUseCase(repository), context)
 
     override fun help(context: Context): String = "Search for repositories on GitHub."
 
-    public val archived: Boolean by option("--archived", help = "Filter based on the repository archived state {true|false}").flag()
-    public val created: Boolean by option("--created", help = "date                Filter based on created at date").flag()
-    public val followers: Boolean by option("--followers", help = "number            Filter based on number of followers").flag()
-    public val forks: Boolean by option("--forks", help = "number                Filter on number of forks").flag()
-    public val goodFirstIssues: Boolean by option("--good-first-issues", help = "number    Filter on number of issues with the 'good first issue' label").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val helpWantedIssues: Boolean by option("--help-wanted-issues", help = "number   Filter on number of issues with the 'help wanted' label").flag()
-    public val includeForks: Boolean by option("--include-forks", help = "string        Include forks in fetched repositories: {false|true|only}").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression               Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields                 Output JSON with the specified fields").flag()
-    public val language: Boolean by option("--language", help = "string             Filter based on the coding language").flag()
-    public val license: Boolean by option("--license", help = "strings             Filter based on license type").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int                   Maximum number of repositories to fetch (default 30)").flag()
-    public val match: Boolean by option("--match", help = "strings               Restrict search to specific field of repository: {name|description|readme}").flag()
-    public val numberTopics: Boolean by option("--number-topics", help = "number        Filter on number of topics").flag()
-    public val order: Boolean by option("--order", help = "string                Order of repositories returned, ignored unless '--sort' flag is specified: {asc|desc} (default \"desc\")").flag()
-    public val owner: Boolean by option("--owner", help = "strings               Filter on owner").flag()
-    public val size: Boolean by option("--size", help = "string                 Filter on a size range, in kilobytes").flag()
-    public val sort: Boolean by option("--sort", help = "string                 Sort fetched repositories: {forks|help-wanted-issues|stars|updated} (default \"best-match\")").flag()
-    public val stars: Boolean by option("--stars", help = "number                Filter on number of stars").flag()
-    public val template: Boolean by option("--template", "-t", help = "string             Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val topic: Boolean by option("--topic", help = "strings               Filter on topic").flag()
-    public val updated: Boolean by option("--updated", help = "date                Filter on last updated at date").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val visibility: Boolean by option("--visibility", help = "strings          Filter based on visibility: {public|private|internal}").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open the search query in the web browser").flag()
+    val archived: Boolean by option("--archived", help = "Filter based on the repository archived state {true|false}").flag()
+    val created: Boolean by option("--created", help = "date                Filter based on created at date").flag()
+    val followers: Boolean by option("--followers", help = "number            Filter based on number of followers").flag()
+    val forks: Boolean by option("--forks", help = "number                Filter on number of forks").flag()
+    val goodFirstIssues: Boolean by option("--good-first-issues", help = "number    Filter on number of issues with the 'good first issue' label").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val helpWantedIssues: Boolean by option("--help-wanted-issues", help = "number   Filter on number of issues with the 'help wanted' label").flag()
+    val includeForks: Boolean by option("--include-forks", help = "string        Include forks in fetched repositories: {false|true|only}").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression               Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields                 Output JSON with the specified fields").flag()
+    val language: Boolean by option("--language", help = "string             Filter based on the coding language").flag()
+    val license: Boolean by option("--license", help = "strings             Filter based on license type").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int                   Maximum number of repositories to fetch (default 30)").flag()
+    val match: Boolean by option("--match", help = "strings               Restrict search to specific field of repository: {name|description|readme}").flag()
+    val numberTopics: Boolean by option("--number-topics", help = "number        Filter on number of topics").flag()
+    val order: Boolean by option("--order", help = "string                Order of repositories returned, ignored unless '--sort' flag is specified: {asc|desc} (default \"desc\")").flag()
+    val owner: Boolean by option("--owner", help = "strings               Filter on owner").flag()
+    val size: Boolean by option("--size", help = "string                 Filter on a size range, in kilobytes").flag()
+    val sort: Boolean by option("--sort", help = "string                 Sort fetched repositories: {forks|help-wanted-issues|stars|updated} (default \"best-match\")").flag()
+    val stars: Boolean by option("--stars", help = "number                Filter on number of stars").flag()
+    val template: Boolean by option("--template", "-t", help = "string             Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val topic: Boolean by option("--topic", help = "strings               Filter on topic").flag()
+    val updated: Boolean by option("--updated", help = "date                Filter on last updated at date").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val visibility: Boolean by option("--visibility", help = "strings          Filter based on visibility: {public|private|internal}").flag()
+    val web: Boolean by option("--web", "-w", help = "Open the search query in the web browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

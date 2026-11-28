@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class InfoImageCliCommand(
+class InfoImageCliCommand(
     private val useCase: InfoImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "info_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(InfoImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(InfoImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool info_image [-h] --image IMAGE [--output OUTPUT] [--cert]"
 
-    public val cert: Boolean by option("--cert", help = "Show information about the avb_cert extension").flag()
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to show information about")
-    public val output: String? by option("--output", help = "Write info to file")
-    public val outputPubkey: String? by option("--output_pubkey", help = "Write public key to file")
+    val cert: Boolean by option("--cert", help = "Show information about the avb_cert extension").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to show information about")
+    val output: String? by option("--output", help = "Write info to file")
+    val outputPubkey: String? by option("--output_pubkey", help = "Write public key to file")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

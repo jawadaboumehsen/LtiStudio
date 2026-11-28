@@ -11,24 +11,24 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val alignment: String? = null,
-    public val alignmentOffset: String? = null,
-    public val autoSlotSuffixing: Boolean = false,
-    public val blockSize: String? = null,
-    public val device: String? = null,
-    public val deviceSize: String? = null,
-    public val forceFullImage: Boolean = false,
-    public val group: String? = null,
-    public val image: File? = null,
-    public val metadataSize: String? = null,
-    public val metadataSlots: String? = null,
-    public val output: File? = null,
-    public val partition: List<String> = emptyList(),
-    public val sparse: Boolean = false,
-    public val superName: String? = null,
-    public val virtualAb: Boolean = false,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val alignment: String? = null,
+    val alignmentOffset: String? = null,
+    val autoSlotSuffixing: Boolean = false,
+    val blockSize: String? = null,
+    val device: String? = null,
+    val deviceSize: String? = null,
+    val forceFullImage: Boolean = false,
+    val group: String? = null,
+    val image: File? = null,
+    val metadataSize: String? = null,
+    val metadataSlots: String? = null,
+    val output: File? = null,
+    val partition: List<String> = emptyList(),
+    val sparse: Boolean = false,
+    val superName: String? = null,
+    val virtualAb: Boolean = false,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<String> {
 
     override val toolId: ToolId get() = ToolId.LPMAKE
@@ -41,7 +41,7 @@ public data class ExecuteCommand(
     )
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<String> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("identity") as io.ltirom.tooling.core.ToolOutputParser<String>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): String {
         return parser.parse(result.stdout, result.stderr)

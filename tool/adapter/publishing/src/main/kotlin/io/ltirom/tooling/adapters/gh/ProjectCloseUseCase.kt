@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectCloseUseCase(private val repository: ToolRepository) {
+class ProjectCloseUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         format: Boolean = false,
         help: Boolean = false,
@@ -17,7 +17,7 @@ public class ProjectCloseUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         undo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectCloseCommand(
             format = format,
             help = help,

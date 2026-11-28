@@ -11,12 +11,12 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val all: Boolean = false,
-    public val dumpMetadataSize: Boolean = false,
-    public val json: Boolean = false,
-    public val slot: String? = null,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val all: Boolean = false,
+    val dumpMetadataSize: Boolean = false,
+    val json: Boolean = false,
+    val slot: String? = null,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<io.ltirom.tooling.core.DynamicPartitionMetadata> {
 
     override val toolId: ToolId get() = ToolId.LPDUMP
@@ -26,7 +26,7 @@ public data class ExecuteCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.DynamicPartitionMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("lp-metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.DynamicPartitionMetadata>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.DynamicPartitionMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("lp-metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.DynamicPartitionMetadata>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): io.ltirom.tooling.core.DynamicPartitionMetadata {
         return parser.parse(result.stdout, result.stderr)

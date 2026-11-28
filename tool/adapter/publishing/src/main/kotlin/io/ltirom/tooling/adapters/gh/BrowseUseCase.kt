@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class BrowseUseCase(private val repository: ToolRepository) {
+class BrowseUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         actions: Boolean = false,
         blame: Boolean = false,
@@ -22,7 +22,7 @@ public class BrowseUseCase(private val repository: ToolRepository) {
         settings: Boolean = false,
         version: Boolean = false,
         wiki: Boolean = false
-    ): Unit {
+    ) {
         val command = BrowseCommand(
             actions = actions,
             blame = blame,

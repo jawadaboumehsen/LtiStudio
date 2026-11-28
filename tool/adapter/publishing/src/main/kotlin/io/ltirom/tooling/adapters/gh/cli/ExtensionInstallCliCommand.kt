@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ExtensionInstallCliCommand(
+class ExtensionInstallCliCommand(
     private val useCase: ExtensionInstallUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "install") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionInstallUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionInstallUseCase(repository), context)
 
     override fun help(context: Context): String = "Install a GitHub CLI extension from a GitHub or local repository."
 
-    public val force: Boolean by option("--force", help = "Force upgrade extension, or ignore if latest already installed").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val pin: Boolean by option("--pin", help = "string   Pin extension to a release tag or commit ref").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val force: Boolean by option("--force", help = "Force upgrade extension, or ignore if latest already installed").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val pin: Boolean by option("--pin", help = "string   Pin extension to a release tag or commit ref").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

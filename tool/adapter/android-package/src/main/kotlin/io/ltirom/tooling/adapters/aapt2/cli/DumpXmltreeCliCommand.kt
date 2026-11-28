@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpXmltreeCliCommand(
+class DumpXmltreeCliCommand(
     private val useCase: DumpXmltreeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "xmltree") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpXmltreeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpXmltreeUseCase(repository), context)
 
     override fun help(context: Context): String = "dump xmltree [options] --file arg files..."
 
-    public val file: Boolean by option("--file", help = "arg                                        A compiled xml file to print").flag()
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val file: Boolean by option("--file", help = "arg                                        A compiled xml file to print").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

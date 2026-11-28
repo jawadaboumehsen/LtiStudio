@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AuthStatusUseCase(private val repository: ToolRepository) {
+class AuthStatusUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         active: Boolean = false,
         help: Boolean = false,
@@ -18,7 +18,7 @@ public class AuthStatusUseCase(private val repository: ToolRepository) {
         showToken: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AuthStatusCommand(
             active = active,
             help = help,

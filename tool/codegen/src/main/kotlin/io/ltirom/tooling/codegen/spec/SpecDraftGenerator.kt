@@ -208,7 +208,7 @@ object SpecDraftGenerator {
                 }
 
                 if (tokens.isNotEmpty()) {
-                    var longToken = tokens.firstOrNull { it.startsWith("--") }
+                    val longToken = tokens.firstOrNull { it.startsWith("--") }
                     var shortToken = tokens.firstOrNull { it.startsWith("-") && !it.startsWith("--") }
 
                     var argType: String? = null

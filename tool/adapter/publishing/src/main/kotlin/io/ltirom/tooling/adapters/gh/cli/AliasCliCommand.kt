@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AliasCliCommand(
+class AliasCliCommand(
     private val useCase: AliasUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "alias") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasUseCase(repository), context)
 
     override fun help(context: Context): String = "Aliases can be used to make shortcuts for gh commands or to compose multiple commands."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

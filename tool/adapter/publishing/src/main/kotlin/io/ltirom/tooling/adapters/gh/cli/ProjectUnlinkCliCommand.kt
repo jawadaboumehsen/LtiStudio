@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectUnlinkCliCommand(
+class ProjectUnlinkCliCommand(
     private val useCase: ProjectUnlinkUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "unlink") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectUnlinkUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectUnlinkUseCase(repository), context)
 
     override fun help(context: Context): String = "Unlink a project from a repository or a team"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val owner: Boolean by option("--owner", help = "string   Login of the owner. Use \"@me\" for the current user.").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string    The repository to be unlinked from this project").flag()
-    public val team: Boolean by option("--team", "-T", help = "string    The team to be unlinked from this project").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val owner: Boolean by option("--owner", help = "string   Login of the owner. Use \"@me\" for the current user.").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string    The repository to be unlinked from this project").flag()
+    val team: Boolean by option("--team", "-T", help = "string    The team to be unlinked from this project").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

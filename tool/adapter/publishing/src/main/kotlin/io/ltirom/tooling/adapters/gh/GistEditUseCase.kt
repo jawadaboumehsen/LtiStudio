@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class GistEditUseCase(private val repository: ToolRepository) {
+class GistEditUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         add: Boolean = false,
         desc: Boolean = false,
@@ -16,7 +16,7 @@ public class GistEditUseCase(private val repository: ToolRepository) {
         help: Boolean = false,
         remove: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = GistEditCommand(
             add = add,
             desc = desc,

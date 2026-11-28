@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ApkinfoUseCase(private val repository: ToolRepository) {
+class ApkinfoUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         O: Boolean = false,
         help: Boolean = false,
         includeResourceTable: Boolean = false,
         includeXml: Boolean = false
-    ): Unit {
+    ) {
         val command = ApkinfoCommand(
             O = O,
             help = help,

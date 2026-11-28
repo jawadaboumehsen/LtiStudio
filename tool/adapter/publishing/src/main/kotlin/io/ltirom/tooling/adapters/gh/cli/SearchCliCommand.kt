@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SearchCliCommand(
+class SearchCliCommand(
     private val useCase: SearchUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "search") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SearchUseCase(repository), context)
 
     override fun help(context: Context): String = "Search across all of GitHub."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

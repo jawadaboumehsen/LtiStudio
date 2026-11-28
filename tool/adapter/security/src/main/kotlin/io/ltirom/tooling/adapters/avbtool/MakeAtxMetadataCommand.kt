@@ -11,11 +11,11 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class MakeAtxMetadataCommand(
-    public val help: Boolean = false,
-    public val intermediateKeyCertificate: Boolean = false,
-    public val output: String? = null,
-    public val productKeyCertificate: Boolean = false
+data class MakeAtxMetadataCommand(
+    val help: Boolean = false,
+    val intermediateKeyCertificate: Boolean = false,
+    val output: String? = null,
+    val productKeyCertificate: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -25,9 +25,9 @@ public data class MakeAtxMetadataCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

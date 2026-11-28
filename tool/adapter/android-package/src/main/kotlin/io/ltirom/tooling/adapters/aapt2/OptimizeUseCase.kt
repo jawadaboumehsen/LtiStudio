@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class OptimizeUseCase(private val repository: ToolRepository) {
+class OptimizeUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         C: Boolean = false,
         D: Boolean = false,
@@ -29,7 +29,7 @@ public class OptimizeUseCase(private val repository: ToolRepository) {
         shortenResourcePaths: Boolean = false,
         split: Boolean = false,
         targetDensities: Boolean = false
-    ): Unit {
+    ) {
         val command = OptimizeCommand(
             C = C,
             D = D,

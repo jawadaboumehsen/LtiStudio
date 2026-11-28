@@ -11,16 +11,16 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class AlignCommand(
-    public val checkOnly: Boolean = false,
-    public val overwrite: Boolean = false,
-    public val pageAlign: Boolean = false,
-    public val pageSizeKb: Int? = null,
-    public val verbose: Boolean = false,
-    public val zopfli: Boolean = false,
-    public val alignment: Int,
-    public val infile: File,
-    public val outfile: File? = null
+data class AlignCommand(
+    val checkOnly: Boolean = false,
+    val overwrite: Boolean = false,
+    val pageAlign: Boolean = false,
+    val pageSizeKb: Int? = null,
+    val verbose: Boolean = false,
+    val zopfli: Boolean = false,
+    val alignment: Int,
+    val infile: File,
+    val outfile: File? = null
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.ZIPALIGN
@@ -34,9 +34,9 @@ public data class AlignCommand(
     )
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

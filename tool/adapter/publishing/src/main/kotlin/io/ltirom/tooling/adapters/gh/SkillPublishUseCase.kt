@@ -6,16 +6,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SkillPublishUseCase(private val repository: ToolRepository) {
+class SkillPublishUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         dryRun: Boolean = false,
         fix: Boolean = false,
         help: Boolean = false,
         tag: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SkillPublishCommand(
             dryRun = dryRun,
             fix = fix,

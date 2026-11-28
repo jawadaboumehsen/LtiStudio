@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class PreviewPrompterCliCommand(
+class PreviewPrompterCliCommand(
     private val useCase: PreviewPrompterUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "prompter") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(PreviewPrompterUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(PreviewPrompterUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute a test program to preview the prompter."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

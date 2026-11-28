@@ -6,12 +6,12 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CreateUseCase(private val repository: ToolRepository) {
+class CreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false
-    ): Unit {
+    ) {
         val command = CreateCommand(
             help = help
         )

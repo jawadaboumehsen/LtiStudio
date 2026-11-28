@@ -12,32 +12,32 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.lpmake.*
 import java.io.File
 
-public class LpmakeCliCommand(
+class LpmakeCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "lpmake") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val alignment: String? by option("--alignment", "-a", help = "Optimal partition alignment in bytes.")
-    public val alignmentOffset: String? by option("--alignment-offset", "-O", help = "Alignment offset in bytes to device parent.")
-    public val autoSlotSuffixing: Boolean by option("--auto-slot-suffixing", "-x", help = "Mark the block device and partition names needing").flag()
-    public val blockSize: String? by option("--block-size", "-b", help = "Physical block size, defaults to 4096.")
-    public val device: String? by option("--device", "-D", help = "Add a block device that the super partition")
-    public val deviceSize: String? by option("--device-size", "-d", help = "Size of the block device for logical partitions.")
-    public val forceFullImage: Boolean by option("--force-full-image", "-F", help = "Force a full image to be written even if no").flag()
-    public val group: String? by option("--group", "-g", help = ":SIZE         Define a named partition group with the given")
-    public val image: File? by option("--image", "-i", help = "If building a sparse image for fastboot, include").convert { File(it) }
-    public val metadataSize: String? by option("--metadata-size", "-m", help = "Maximum size to reserve for partition metadata.")
-    public val metadataSlots: String? by option("--metadata-slots", "-s", help = "Number of slots to store metadata copies.")
-    public val output: File? by option("--output", "-o", help = "Output file.").convert { File(it) }
-    public val partition: List<String> by option("--partition", "-p", help = "Add a partition given the data, see below.").multiple()
-    public val sparse: Boolean by option("--sparse", "-S", help = "Output a sparse image for fastboot.").flag()
-    public val superName: String? by option("--super-name", "-n", help = "Specify the name of the block device that will")
-    public val virtualAb: Boolean by option("--virtual-ab", help = "Add the VIRTUAL_AB_DEVICE flag to the metadata").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val alignment: String? by option("--alignment", "-a", help = "Optimal partition alignment in bytes.")
+    val alignmentOffset: String? by option("--alignment-offset", "-O", help = "Alignment offset in bytes to device parent.")
+    val autoSlotSuffixing: Boolean by option("--auto-slot-suffixing", "-x", help = "Mark the block device and partition names needing").flag()
+    val blockSize: String? by option("--block-size", "-b", help = "Physical block size, defaults to 4096.")
+    val device: String? by option("--device", "-D", help = "Add a block device that the super partition")
+    val deviceSize: String? by option("--device-size", "-d", help = "Size of the block device for logical partitions.")
+    val forceFullImage: Boolean by option("--force-full-image", "-F", help = "Force a full image to be written even if no").flag()
+    val group: String? by option("--group", "-g", help = ":SIZE         Define a named partition group with the given")
+    val image: File? by option("--image", "-i", help = "If building a sparse image for fastboot, include").convert { File(it) }
+    val metadataSize: String? by option("--metadata-size", "-m", help = "Maximum size to reserve for partition metadata.")
+    val metadataSlots: String? by option("--metadata-slots", "-s", help = "Number of slots to store metadata copies.")
+    val output: File? by option("--output", "-o", help = "Output file.").convert { File(it) }
+    val partition: List<String> by option("--partition", "-p", help = "Add a partition given the data, see below.").multiple()
+    val sparse: Boolean by option("--sparse", "-S", help = "Output a sparse image for fastboot.").flag()
+    val superName: String? by option("--super-name", "-n", help = "Specify the name of the block device that will")
+    val virtualAb: Boolean by option("--virtual-ab", help = "Add the VIRTUAL_AB_DEVICE flag to the metadata").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

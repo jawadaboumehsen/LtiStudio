@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SecretDeleteUseCase(private val repository: ToolRepository) {
+class SecretDeleteUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         app: Boolean = false,
         env: Boolean = false,
@@ -17,7 +17,7 @@ public class SecretDeleteUseCase(private val repository: ToolRepository) {
         repo: Boolean = false,
         user: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SecretDeleteCommand(
             app = app,
             env = env,

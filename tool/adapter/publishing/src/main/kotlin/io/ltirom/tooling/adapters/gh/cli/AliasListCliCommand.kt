@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AliasListCliCommand(
+class AliasListCliCommand(
     private val useCase: AliasListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AliasListUseCase(repository), context)
 
     override fun help(context: Context): String = "This command prints out all of the aliases gh is configured to use."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

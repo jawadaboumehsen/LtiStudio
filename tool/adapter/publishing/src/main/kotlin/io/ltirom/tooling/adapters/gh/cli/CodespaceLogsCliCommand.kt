@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceLogsCliCommand(
+class CodespaceLogsCliCommand(
     private val useCase: CodespaceLogsUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "logs") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceLogsUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceLogsUseCase(repository), context)
 
     override fun help(context: Context): String = "Access codespace logs"
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
-    public val follow: Boolean by option("--follow", "-f", help = "Tail and follow the logs").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string    Name of the codespace").flag()
+    val follow: Boolean by option("--follow", "-f", help = "Tail and follow the logs").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string         Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string   Filter codespace selection by repository owner (username or org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

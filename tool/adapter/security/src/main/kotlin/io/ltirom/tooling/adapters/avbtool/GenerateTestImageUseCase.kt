@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class GenerateTestImageUseCase(private val repository: ToolRepository) {
+class GenerateTestImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         imageSize: String? = null,
         output: String? = null,
         startByte: String? = null
-    ): Unit {
+    ) {
         val command = GenerateTestImageCommand(
             help = help,
             imageSize = imageSize,

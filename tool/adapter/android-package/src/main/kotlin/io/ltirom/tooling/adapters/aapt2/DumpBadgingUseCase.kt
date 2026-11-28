@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class DumpBadgingUseCase(private val repository: ToolRepository) {
+class DumpBadgingUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         includeMetaData: Boolean = false,
         file: File
-    ): Unit {
+    ) {
         val command = DumpBadgingCommand(
             help = help,
             includeMetaData = includeMetaData,

@@ -11,17 +11,17 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class AuthLoginCommand(
-    public val clipboard: Boolean = false,
-    public val gitProtocol: Boolean = false,
-    public val help: Boolean = false,
-    public val hostname: Boolean = false,
-    public val insecureStorage: Boolean = false,
-    public val scopes: Boolean = false,
-    public val skipSshKey: Boolean = false,
-    public val version: Boolean = false,
-    public val web: Boolean = false,
-    public val withToken: Boolean = false
+data class AuthLoginCommand(
+    val clipboard: Boolean = false,
+    val gitProtocol: Boolean = false,
+    val help: Boolean = false,
+    val hostname: Boolean = false,
+    val insecureStorage: Boolean = false,
+    val scopes: Boolean = false,
+    val skipSshKey: Boolean = false,
+    val version: Boolean = false,
+    val web: Boolean = false,
+    val withToken: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -31,9 +31,9 @@ public data class AuthLoginCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpBadgingCliCommand(
+class DumpBadgingCliCommand(
     private val useCase: DumpBadgingUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "badging") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpBadgingUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpBadgingUseCase(repository), context)
 
     override fun help(context: Context): String = "dump badging [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val includeMetaData: Boolean by option("--include-meta-data", help = "Include meta-data information.").flag()
-    public val file: File by argument(name = "file", help = "APK file to dump").convert { File(it) }
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val includeMetaData: Boolean by option("--include-meta-data", help = "Include meta-data information.").flag()
+    val file: File by argument(name = "file", help = "APK file to dump").convert { File(it) }
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

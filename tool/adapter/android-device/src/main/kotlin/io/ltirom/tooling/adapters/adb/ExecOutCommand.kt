@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecOutCommand(
-    public val exitOnWriteError: Boolean = false,
-    public val listenAll: Boolean = false,
-    public val oneDevice: String? = null,
-    public val serial: String? = null,
-    public val serverHost: String? = null,
-    public val serverPort: Int? = null,
-    public val serverSocket: String? = null,
-    public val transportId: String? = null,
-    public val useTcp: Boolean = false,
-    public val useUsb: Boolean = false,
-    public val command: List<String> = emptyList()
+data class ExecOutCommand(
+    val exitOnWriteError: Boolean = false,
+    val listenAll: Boolean = false,
+    val oneDevice: String? = null,
+    val serial: String? = null,
+    val serverHost: String? = null,
+    val serverPort: Int? = null,
+    val serverSocket: String? = null,
+    val transportId: String? = null,
+    val useTcp: Boolean = false,
+    val useUsb: Boolean = false,
+    val command: List<String> = emptyList()
 ) : BinaryToolCommand<ByteArray> {
 
     override val toolId: ToolId get() = ToolId.ADB

@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.lpdump.*
 import java.io.File
 
-public class LpdumpCliCommand(
+class LpdumpCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "lpdump") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val all: Boolean by option("--all", "-a", help = "Dump all slots (not available in JSON mode).").flag()
-    public val dumpMetadataSize: Boolean by option("--dump-metadata-size", "-d", help = "Print the space reserved for metadata to stdout").flag()
-    public val json: Boolean by option("--json", "-j", help = "Print in JSON format.").flag()
-    public val slot: String? by option("--slot", "-s", help = "Slot number or suffix.")
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val all: Boolean by option("--all", "-a", help = "Dump all slots (not available in JSON mode).").flag()
+    val dumpMetadataSize: Boolean by option("--dump-metadata-size", "-d", help = "Print the space reserved for metadata to stdout").flag()
+    val json: Boolean by option("--json", "-j", help = "Print in JSON format.").flag()
+    val slot: String? by option("--slot", "-s", help = "Slot number or suffix.")
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

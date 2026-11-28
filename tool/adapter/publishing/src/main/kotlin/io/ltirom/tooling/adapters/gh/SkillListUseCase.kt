@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SkillListUseCase(private val repository: ToolRepository) {
+class SkillListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         agent: Boolean = false,
         dir: Boolean = false,
@@ -18,7 +18,7 @@ public class SkillListUseCase(private val repository: ToolRepository) {
         scope: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SkillListCommand(
             agent = agent,
             dir = dir,

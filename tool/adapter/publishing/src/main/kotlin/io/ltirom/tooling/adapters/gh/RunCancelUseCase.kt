@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RunCancelUseCase(private val repository: ToolRepository) {
+class RunCancelUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         force: Boolean = false,
         help: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = RunCancelCommand(
             force = force,
             help = help,

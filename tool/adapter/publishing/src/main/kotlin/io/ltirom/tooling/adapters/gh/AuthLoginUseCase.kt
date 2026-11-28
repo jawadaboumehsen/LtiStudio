@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AuthLoginUseCase(private val repository: ToolRepository) {
+class AuthLoginUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         clipboard: Boolean = false,
         gitProtocol: Boolean = false,
@@ -20,7 +20,7 @@ public class AuthLoginUseCase(private val repository: ToolRepository) {
         version: Boolean = false,
         web: Boolean = false,
         withToken: Boolean = false
-    ): Unit {
+    ) {
         val command = AuthLoginCommand(
             clipboard = clipboard,
             gitProtocol = gitProtocol,

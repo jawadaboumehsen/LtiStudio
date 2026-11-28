@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthRefreshCliCommand(
+class AuthRefreshCliCommand(
     private val useCase: AuthRefreshUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "refresh") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthRefreshUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthRefreshUseCase(repository), context)
 
     override fun help(context: Context): String = "Expand or fix the permission scopes for stored credentials for active account."
 
-    public val clipboard: Boolean by option("--clipboard", "-c", help = "Copy one-time OAuth device code to clipboard").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string         The GitHub host to use for authentication").flag()
-    public val insecureStorage: Boolean by option("--insecure-storage", help = "Save authentication credentials in plain text instead of credential store").flag()
-    public val removeScopes: Boolean by option("--remove-scopes", "-r", help = "strings   Authentication scopes to remove from gh").flag()
-    public val resetScopes: Boolean by option("--reset-scopes", help = "Reset authentication scopes to the default minimum set of scopes").flag()
-    public val scopes: Boolean by option("--scopes", "-s", help = "strings          Additional authentication scopes for gh to have").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val clipboard: Boolean by option("--clipboard", "-c", help = "Copy one-time OAuth device code to clipboard").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string         The GitHub host to use for authentication").flag()
+    val insecureStorage: Boolean by option("--insecure-storage", help = "Save authentication credentials in plain text instead of credential store").flag()
+    val removeScopes: Boolean by option("--remove-scopes", "-r", help = "strings   Authentication scopes to remove from gh").flag()
+    val resetScopes: Boolean by option("--reset-scopes", help = "Reset authentication scopes to the default minimum set of scopes").flag()
+    val scopes: Boolean by option("--scopes", "-s", help = "strings          Additional authentication scopes for gh to have").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

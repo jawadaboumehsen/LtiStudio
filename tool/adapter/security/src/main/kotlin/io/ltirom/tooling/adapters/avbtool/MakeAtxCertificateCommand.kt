@@ -11,18 +11,18 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class MakeAtxCertificateCommand(
-    public val authorityKey: String? = null,
-    public val help: Boolean = false,
-    public val output: String? = null,
-    public val signingHelper: String? = null,
-    public val signingHelperWithFiles: String? = null,
-    public val subject: String? = null,
-    public val subjectIsIntermediateAuthority: Boolean = false,
-    public val subjectKey: String? = null,
-    public val subjectKeyVersion: String? = null,
-    public val usage: String? = null,
-    public val usageForUnlock: Boolean = false
+data class MakeAtxCertificateCommand(
+    val authorityKey: String? = null,
+    val help: Boolean = false,
+    val output: String? = null,
+    val signingHelper: String? = null,
+    val signingHelperWithFiles: String? = null,
+    val subject: String? = null,
+    val subjectIsIntermediateAuthority: Boolean = false,
+    val subjectKey: String? = null,
+    val subjectKeyVersion: String? = null,
+    val usage: String? = null,
+    val usageForUnlock: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -32,9 +32,9 @@ public data class MakeAtxCertificateCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

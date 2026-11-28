@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class CalculateVbmetaDigestCliCommand(
+class CalculateVbmetaDigestCliCommand(
     private val useCase: CalculateVbmetaDigestUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "calculate_vbmeta_digest") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CalculateVbmetaDigestUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CalculateVbmetaDigestUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool calculate_vbmeta_digest [-h] --image IMAGE"
 
-    public val format: Boolean by option("--format", help = "{hex,raw}    Output format (default: hex)").flag()
-    public val hashAlgorithm: String? by option("--hash_algorithm", help = "Hash algorithm to use (default: sha256)")
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to calculate digest for")
-    public val output: String? by option("--output", help = "Write digest to file (default: stdout)")
+    val format: Boolean by option("--format", help = "{hex,raw}    Output format (default: hex)").flag()
+    val hashAlgorithm: String? by option("--hash_algorithm", help = "Hash algorithm to use (default: sha256)")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to calculate digest for")
+    val output: String? by option("--output", help = "Write digest to file (default: stdout)")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

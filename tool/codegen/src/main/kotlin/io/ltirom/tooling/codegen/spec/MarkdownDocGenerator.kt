@@ -41,7 +41,7 @@ object MarkdownDocGenerator {
             appendLine("## Commands")
             for (cmd in spec.commands.sortedBy { it.name }) {
                 appendLine("### `${cmd.name}`")
-                appendLine("${cmd.description}")
+                appendLine(cmd.description)
                 appendLine()
                 appendLine("- **Subcommand argv path**: `${cmd.subcommandPath.joinToString(" ")}`")
                 if (cmd.risk != null) {
@@ -92,6 +92,6 @@ object MarkdownDocGenerator {
                 }
             }
         }
-        file.writeText(content.trimEnd() + "\n")
+        file.writeText(content.replace("\r\n", "\n").trimEnd() + "\n")
     }
 }

@@ -6,13 +6,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class DiffUseCase(private val repository: ToolRepository) {
+class DiffUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         ignoreIdShift: Boolean = false
-    ): Unit {
+    ) {
         val command = DiffCommand(
             help = help,
             ignoreIdShift = ignoreIdShift

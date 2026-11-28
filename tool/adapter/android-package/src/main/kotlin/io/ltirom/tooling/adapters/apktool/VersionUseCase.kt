@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class VersionUseCase(private val repository: ToolRepository) {
+class VersionUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         aapt: File? = null,
         all: Boolean = false,
@@ -35,7 +35,7 @@ public class VersionUseCase(private val repository: ToolRepository) {
         quiet: Boolean = false,
         resResolveMode: String? = null,
         verbose: Boolean = false
-    ): Unit {
+    ) {
         val command = VersionCommand(
             aapt = aapt,
             all = all,

@@ -6,16 +6,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CalculateVbmetaDigestUseCase(private val repository: ToolRepository) {
+class CalculateVbmetaDigestUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         format: Boolean = false,
         hashAlgorithm: String? = null,
         help: Boolean = false,
         image: String? = null,
         output: String? = null
-    ): Unit {
+    ) {
         val command = CalculateVbmetaDigestCommand(
             format = format,
             hashAlgorithm = hashAlgorithm,

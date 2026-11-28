@@ -9,7 +9,7 @@ import io.ltirom.tooling.core.ExecutionContext
 import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.adb.*
 
-public class AdbCliCommand(
+class AdbCliCommand(
     private val repository: ToolRepository,
     private val context: ExecutionContext
 ) : CliktCommand(name = "adb") {

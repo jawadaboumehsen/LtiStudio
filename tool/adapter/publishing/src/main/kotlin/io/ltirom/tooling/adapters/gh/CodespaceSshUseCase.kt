@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CodespaceSshUseCase(private val repository: ToolRepository) {
+class CodespaceSshUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         codespace: Boolean = false,
         config: Boolean = false,
@@ -20,7 +20,7 @@ public class CodespaceSshUseCase(private val repository: ToolRepository) {
         repoOwner: Boolean = false,
         serverPort: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = CodespaceSshCommand(
             codespace = codespace,
             config = config,

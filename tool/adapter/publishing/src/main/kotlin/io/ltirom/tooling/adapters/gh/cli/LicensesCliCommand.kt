@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class LicensesCliCommand(
+class LicensesCliCommand(
     private val useCase: LicensesUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "licenses") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(LicensesUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(LicensesUseCase(repository), context)
 
     override fun help(context: Context): String = "View license information for third-party libraries used in this build of the GitHub CLI."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

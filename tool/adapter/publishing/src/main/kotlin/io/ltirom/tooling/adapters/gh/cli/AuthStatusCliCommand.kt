@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthStatusCliCommand(
+class AuthStatusCliCommand(
     private val useCase: AuthStatusUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "status") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthStatusUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthStatusUseCase(repository), context)
 
     override fun help(context: Context): String = "Display active account and authentication state on each known GitHub host."
 
-    public val active: Boolean by option("--active", "-a", help = "Display the active account only").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string   Check only a specific hostname's auth status").flag()
-    public val jq: Boolean by option("--jq", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val showToken: Boolean by option("--show-token", "-t", help = "Display the auth token").flag()
-    public val template: Boolean by option("--template", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val active: Boolean by option("--active", "-a", help = "Display the active account only").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string   Check only a specific hostname's auth status").flag()
+    val jq: Boolean by option("--jq", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val showToken: Boolean by option("--show-token", "-t", help = "Display the auth token").flag()
+    val template: Boolean by option("--template", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

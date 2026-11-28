@@ -11,17 +11,17 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class CodespaceSshCommand(
-    public val codespace: Boolean = false,
-    public val config: Boolean = false,
-    public val debug: Boolean = false,
-    public val debugFile: Boolean = false,
-    public val help: Boolean = false,
-    public val profile: Boolean = false,
-    public val repo: Boolean = false,
-    public val repoOwner: Boolean = false,
-    public val serverPort: Boolean = false,
-    public val version: Boolean = false
+data class CodespaceSshCommand(
+    val codespace: Boolean = false,
+    val config: Boolean = false,
+    val debug: Boolean = false,
+    val debugFile: Boolean = false,
+    val help: Boolean = false,
+    val profile: Boolean = false,
+    val repo: Boolean = false,
+    val repoOwner: Boolean = false,
+    val serverPort: Boolean = false,
+    val version: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -31,9 +31,9 @@ public data class CodespaceSshCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

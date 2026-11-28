@@ -11,26 +11,26 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class OptimizeCommand(
-    public val C: Boolean = false,
-    public val D: Boolean = false,
-    public val O: Boolean = false,
-    public val P: Boolean = false,
-    public val V: Boolean = false,
-    public val X: Boolean = false,
-    public val collapseResourceNames: Boolean = false,
-    public val deduplicateEntryValues: Boolean = false,
-    public val enableCompactEntries: Boolean = false,
-    public val enableSparseEncoding: Boolean = false,
-    public val forceSparseEncoding: Boolean = false,
-    public val help: Boolean = false,
-    public val keepArtifacts: Boolean = false,
-    public val resourcePathShorteningMap: Boolean = false,
-    public val resourcesConfigPath: Boolean = false,
-    public val saveObfuscationMap: Boolean = false,
-    public val shortenResourcePaths: Boolean = false,
-    public val split: Boolean = false,
-    public val targetDensities: Boolean = false
+data class OptimizeCommand(
+    val C: Boolean = false,
+    val D: Boolean = false,
+    val O: Boolean = false,
+    val P: Boolean = false,
+    val V: Boolean = false,
+    val X: Boolean = false,
+    val collapseResourceNames: Boolean = false,
+    val deduplicateEntryValues: Boolean = false,
+    val enableCompactEntries: Boolean = false,
+    val enableSparseEncoding: Boolean = false,
+    val forceSparseEncoding: Boolean = false,
+    val help: Boolean = false,
+    val keepArtifacts: Boolean = false,
+    val resourcePathShorteningMap: Boolean = false,
+    val resourcesConfigPath: Boolean = false,
+    val saveObfuscationMap: Boolean = false,
+    val shortenResourcePaths: Boolean = false,
+    val split: Boolean = false,
+    val targetDensities: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AAPT2
@@ -40,9 +40,9 @@ public data class OptimizeCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

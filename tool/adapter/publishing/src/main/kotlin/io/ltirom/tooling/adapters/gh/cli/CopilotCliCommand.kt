@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CopilotCliCommand(
+class CopilotCliCommand(
     private val useCase: CopilotUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "copilot") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CopilotUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CopilotUseCase(repository), context)
 
     override fun help(context: Context): String = "Runs the GitHub Copilot CLI."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val remove: Boolean by option("--remove", help = "Remove the downloaded Copilot CLI").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val remove: Boolean by option("--remove", help = "Remove the downloaded Copilot CLI").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

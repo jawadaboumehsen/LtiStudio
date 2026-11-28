@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class MakeCertUnlockCredentialUseCase(private val repository: ToolRepository) {
+class MakeCertUnlockCredentialUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         challenge: String? = null,
         help: Boolean = false,
@@ -18,7 +18,7 @@ public class MakeCertUnlockCredentialUseCase(private val repository: ToolReposit
         signingHelperWithFiles: String? = null,
         unlockKey: String? = null,
         unlockKeyCertificate: Boolean = false
-    ): Unit {
+    ) {
         val command = MakeCertUnlockCredentialCommand(
             challenge = challenge,
             help = help,

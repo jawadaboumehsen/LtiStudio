@@ -11,10 +11,10 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class DumpBadgingCommand(
-    public val help: Boolean = false,
-    public val includeMetaData: Boolean = false,
-    public val file: File
+data class DumpBadgingCommand(
+    val help: Boolean = false,
+    val includeMetaData: Boolean = false,
+    val file: File
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AAPT2
@@ -24,9 +24,9 @@ public data class DumpBadgingCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

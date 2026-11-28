@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class ResizeImageCliCommand(
+class ResizeImageCliCommand(
     private val useCase: ResizeImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "resize_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ResizeImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ResizeImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool resize_image [-h] --image IMAGE"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image with a footer")
-    public val partitionSize: String? by option("--partition_size", help = "New partition size")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image with a footer")
+    val partitionSize: String? by option("--partition_size", help = "New partition size")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

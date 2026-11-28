@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RunDownloadUseCase(private val repository: ToolRepository) {
+class RunDownloadUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         dir: Boolean = false,
         help: Boolean = false,
@@ -16,7 +16,7 @@ public class RunDownloadUseCase(private val repository: ToolRepository) {
         pattern: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = RunDownloadCommand(
             dir = dir,
             help = help,

@@ -11,20 +11,20 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SecretSetCommand(
-    public val app: Boolean = false,
-    public val body: Boolean = false,
-    public val env: Boolean = false,
-    public val envFile: Boolean = false,
-    public val help: Boolean = false,
-    public val noReposSelected: Boolean = false,
-    public val noStore: Boolean = false,
-    public val org: Boolean = false,
-    public val repo: Boolean = false,
-    public val repos: Boolean = false,
-    public val user: Boolean = false,
-    public val version: Boolean = false,
-    public val visibility: Boolean = false
+data class SecretSetCommand(
+    val app: Boolean = false,
+    val body: Boolean = false,
+    val env: Boolean = false,
+    val envFile: Boolean = false,
+    val help: Boolean = false,
+    val noReposSelected: Boolean = false,
+    val noStore: Boolean = false,
+    val org: Boolean = false,
+    val repo: Boolean = false,
+    val repos: Boolean = false,
+    val user: Boolean = false,
+    val version: Boolean = false,
+    val visibility: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -34,9 +34,9 @@ public data class SecretSetCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunCancelCliCommand(
+class RunCancelCliCommand(
     private val useCase: RunCancelUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "cancel") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunCancelUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunCancelUseCase(repository), context)
 
     override fun help(context: Context): String = "Cancel a workflow run"
 
-    public val force: Boolean by option("--force", help = "Force cancel a workflow run").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val force: Boolean by option("--force", help = "Force cancel a workflow run").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

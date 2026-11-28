@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ExtractVbmetaImageUseCase(private val repository: ToolRepository) {
+class ExtractVbmetaImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         image: String? = null,
         output: String? = null,
         paddingSize: String? = null
-    ): Unit {
+    ) {
         val command = ExtractVbmetaImageCommand(
             help = help,
             image = image,

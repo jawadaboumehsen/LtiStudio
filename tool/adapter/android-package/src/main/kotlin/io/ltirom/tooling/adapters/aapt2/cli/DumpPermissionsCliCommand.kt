@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpPermissionsCliCommand(
+class DumpPermissionsCliCommand(
     private val useCase: DumpPermissionsUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "permissions") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpPermissionsUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpPermissionsUseCase(repository), context)
 
     override fun help(context: Context): String = "dump permissions [options] files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

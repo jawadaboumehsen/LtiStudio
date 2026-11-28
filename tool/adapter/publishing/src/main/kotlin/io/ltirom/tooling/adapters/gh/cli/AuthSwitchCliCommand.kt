@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AuthSwitchCliCommand(
+class AuthSwitchCliCommand(
     private val useCase: AuthSwitchUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "switch") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthSwitchUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AuthSwitchUseCase(repository), context)
 
     override fun help(context: Context): String = "Switch the active account for a GitHub host."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", "-h", help = "string   The hostname of the GitHub instance to switch account for").flag()
-    public val user: Boolean by option("--user", "-u", help = "string       The account to switch to").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", "-h", help = "string   The hostname of the GitHub instance to switch account for").flag()
+    val user: Boolean by option("--user", "-u", help = "string       The account to switch to").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

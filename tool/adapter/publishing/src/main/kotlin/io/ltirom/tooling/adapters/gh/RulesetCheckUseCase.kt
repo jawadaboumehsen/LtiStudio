@@ -6,16 +6,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RulesetCheckUseCase(private val repository: ToolRepository) {
+class RulesetCheckUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         default: Boolean = false,
         help: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = RulesetCheckCommand(
             default = default,
             help = help,

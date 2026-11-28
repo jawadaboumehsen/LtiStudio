@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class GistCreateUseCase(private val repository: ToolRepository) {
+class GistCreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         desc: Boolean = false,
         filename: Boolean = false,
@@ -16,7 +16,7 @@ public class GistCreateUseCase(private val repository: ToolRepository) {
         public: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = GistCreateCommand(
             desc = desc,
             filename = filename,

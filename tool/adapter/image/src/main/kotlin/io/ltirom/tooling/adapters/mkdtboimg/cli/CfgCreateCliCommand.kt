@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.mkdtboimg.*
 import java.io.File
 
-public class CfgCreateCliCommand(
+class CfgCreateCliCommand(
     private val useCase: CfgCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "cfg_create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CfgCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CfgCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: cfg_create [-h] [--dtb-dir [DTBDIR]] [conf_file]"
 
-    public val dtbDir: Boolean by option("--dtb-dir", help = "[DTBDIR], -d [DTBDIR]").flag()
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val dtbDir: Boolean by option("--dtb-dir", help = "[DTBDIR], -d [DTBDIR]").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AlignUseCase(private val repository: ToolRepository) {
+class AlignUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         checkOnly: Boolean = false,
         overwrite: Boolean = false,
@@ -19,7 +19,7 @@ public class AlignUseCase(private val repository: ToolRepository) {
         alignment: Int,
         infile: File,
         outfile: File? = null
-    ): Unit {
+    ) {
         val command = AlignCommand(
             checkOnly = checkOnly,
             overwrite = overwrite,

@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ConfigClearCacheCliCommand(
+class ConfigClearCacheCliCommand(
     private val useCase: ConfigClearCacheUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "clear-cache") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigClearCacheUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigClearCacheUseCase(repository), context)
 
     override fun help(context: Context): String = "Clear the cli cache"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

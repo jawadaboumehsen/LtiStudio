@@ -11,33 +11,33 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class DecodeCommand(
-    public val aapt: File? = null,
-    public val all: Boolean = false,
-    public val allSrc: Boolean = false,
-    public val copyOriginal: Boolean = false,
-    public val debuggable: Boolean = false,
-    public val force: Boolean = false,
-    public val framePath: File? = null,
-    public val frameTag: String? = null,
-    public val ignoreRawValues: Boolean = false,
-    public val jobs: Int? = null,
-    public val keepBrokenRes: Boolean = false,
-    public val lib: List<String> = emptyList(),
-    public val matchOriginal: Boolean = false,
-    public val netSecConf: Boolean = false,
-    public val noApk: Boolean = false,
-    public val noAssets: Boolean = false,
-    public val noCrunch: Boolean = false,
-    public val noDebugInfo: Boolean = false,
-    public val noRes: Boolean = false,
-    public val noSrc: Boolean = false,
-    public val onlyManifest: Boolean = false,
-    public val output: File? = null,
-    public val quiet: Boolean = false,
-    public val resResolveMode: String? = null,
-    public val verbose: Boolean = false,
-    public val apkFile: File
+data class DecodeCommand(
+    val aapt: File? = null,
+    val all: Boolean = false,
+    val allSrc: Boolean = false,
+    val copyOriginal: Boolean = false,
+    val debuggable: Boolean = false,
+    val force: Boolean = false,
+    val framePath: File? = null,
+    val frameTag: String? = null,
+    val ignoreRawValues: Boolean = false,
+    val jobs: Int? = null,
+    val keepBrokenRes: Boolean = false,
+    val lib: List<String> = emptyList(),
+    val matchOriginal: Boolean = false,
+    val netSecConf: Boolean = false,
+    val noApk: Boolean = false,
+    val noAssets: Boolean = false,
+    val noCrunch: Boolean = false,
+    val noDebugInfo: Boolean = false,
+    val noRes: Boolean = false,
+    val noSrc: Boolean = false,
+    val onlyManifest: Boolean = false,
+    val output: File? = null,
+    val quiet: Boolean = false,
+    val resResolveMode: String? = null,
+    val verbose: Boolean = false,
+    val apkFile: File
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.APKTOOL
@@ -47,9 +47,9 @@ public data class DecodeCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

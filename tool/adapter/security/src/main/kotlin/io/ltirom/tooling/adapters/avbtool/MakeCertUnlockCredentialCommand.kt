@@ -11,15 +11,15 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class MakeCertUnlockCredentialCommand(
-    public val challenge: String? = null,
-    public val help: Boolean = false,
-    public val intermediateKeyCertificate: Boolean = false,
-    public val output: String? = null,
-    public val signingHelper: String? = null,
-    public val signingHelperWithFiles: String? = null,
-    public val unlockKey: String? = null,
-    public val unlockKeyCertificate: Boolean = false
+data class MakeCertUnlockCredentialCommand(
+    val challenge: String? = null,
+    val help: Boolean = false,
+    val intermediateKeyCertificate: Boolean = false,
+    val output: String? = null,
+    val signingHelper: String? = null,
+    val signingHelperWithFiles: String? = null,
+    val unlockKey: String? = null,
+    val unlockKeyCertificate: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -29,9 +29,9 @@ public data class MakeCertUnlockCredentialCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

@@ -11,19 +11,19 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class BrowseCommand(
-    public val actions: Boolean = false,
-    public val blame: Boolean = false,
-    public val branch: Boolean = false,
-    public val commit: Boolean = false,
-    public val help: Boolean = false,
-    public val noBrowser: Boolean = false,
-    public val projects: Boolean = false,
-    public val releases: Boolean = false,
-    public val repo: Boolean = false,
-    public val settings: Boolean = false,
-    public val version: Boolean = false,
-    public val wiki: Boolean = false
+data class BrowseCommand(
+    val actions: Boolean = false,
+    val blame: Boolean = false,
+    val branch: Boolean = false,
+    val commit: Boolean = false,
+    val help: Boolean = false,
+    val noBrowser: Boolean = false,
+    val projects: Boolean = false,
+    val releases: Boolean = false,
+    val repo: Boolean = false,
+    val settings: Boolean = false,
+    val version: Boolean = false,
+    val wiki: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -33,9 +33,9 @@ public data class BrowseCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

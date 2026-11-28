@@ -11,16 +11,16 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ProjectCopyCommand(
-    public val drafts: Boolean = false,
-    public val format: Boolean = false,
-    public val help: Boolean = false,
-    public val jq: Boolean = false,
-    public val sourceOwner: Boolean = false,
-    public val targetOwner: Boolean = false,
-    public val template: Boolean = false,
-    public val title: Boolean = false,
-    public val version: Boolean = false
+data class ProjectCopyCommand(
+    val drafts: Boolean = false,
+    val format: Boolean = false,
+    val help: Boolean = false,
+    val jq: Boolean = false,
+    val sourceOwner: Boolean = false,
+    val targetOwner: Boolean = false,
+    val template: Boolean = false,
+    val title: Boolean = false,
+    val version: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -30,9 +30,9 @@ public data class ProjectCopyCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

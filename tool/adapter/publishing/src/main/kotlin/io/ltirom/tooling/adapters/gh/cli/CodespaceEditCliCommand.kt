@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CodespaceEditCliCommand(
+class CodespaceEditCliCommand(
     private val useCase: CodespaceEditUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "edit") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceEditUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CodespaceEditUseCase(repository), context)
 
     override fun help(context: Context): String = "Edit a codespace"
 
-    public val codespace: Boolean by option("--codespace", "-c", help = "string      Name of the codespace").flag()
-    public val displayName: Boolean by option("--display-name", "-d", help = "string   Set the display name").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val machine: Boolean by option("--machine", "-m", help = "string        Set hardware specifications for the VM").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "string           Filter codespace selection by repository name (user/repo)").flag()
-    public val repoOwner: Boolean by option("--repo-owner", help = "string     Filter codespace selection by repository owner (username or org)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val codespace: Boolean by option("--codespace", "-c", help = "string      Name of the codespace").flag()
+    val displayName: Boolean by option("--display-name", "-d", help = "string   Set the display name").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val machine: Boolean by option("--machine", "-m", help = "string        Set hardware specifications for the VM").flag()
+    val repo: Boolean by option("--repo", "-R", help = "string           Filter codespace selection by repository name (user/repo)").flag()
+    val repoOwner: Boolean by option("--repo-owner", help = "string     Filter codespace selection by repository owner (username or org)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

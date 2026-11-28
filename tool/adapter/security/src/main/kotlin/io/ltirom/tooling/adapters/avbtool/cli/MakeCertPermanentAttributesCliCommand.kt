@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class MakeCertPermanentAttributesCliCommand(
+class MakeCertPermanentAttributesCliCommand(
     private val useCase: MakeCertPermanentAttributesUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "make_cert_permanent_attributes") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeCertPermanentAttributesUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeCertPermanentAttributesUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool make_cert_permanent_attributes [-h] [--output OUTPUT]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val output: String? by option("--output", help = "Write attributes to file")
-    public val productId: String? by option("--product_id", help = "Path to Product ID file")
-    public val rootAuthorityKey: Boolean by option("--root_authority_key", help = "ROOT_AUTHORITY_KEY --product_id").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val output: String? by option("--output", help = "Write attributes to file")
+    val productId: String? by option("--product_id", help = "Path to Product ID file")
+    val rootAuthorityKey: Boolean by option("--root_authority_key", help = "ROOT_AUTHORITY_KEY --product_id").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

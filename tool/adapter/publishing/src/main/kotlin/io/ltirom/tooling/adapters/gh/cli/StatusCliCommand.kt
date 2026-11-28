@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class StatusCliCommand(
+class StatusCliCommand(
     private val useCase: StatusUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "status") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(StatusUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(StatusUseCase(repository), context)
 
     override fun help(context: Context): String = "The status command prints information about your work on GitHub across all the repositories you're subscribed to, including:"
 
-    public val exclude: Boolean by option("--exclude", "-e", help = "strings   Comma separated list of repos to exclude in owner/name format").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val org: Boolean by option("--org", "-o", help = "string        Report status within an organization").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val exclude: Boolean by option("--exclude", "-e", help = "strings   Comma separated list of repos to exclude in owner/name format").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val org: Boolean by option("--org", "-o", help = "string        Report status within an organization").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectMarkTemplateCliCommand(
+class ProjectMarkTemplateCliCommand(
     private val useCase: ProjectMarkTemplateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "mark-template") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectMarkTemplateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectMarkTemplateUseCase(repository), context)
 
     override fun help(context: Context): String = "Mark a project as a template"
 
-    public val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val owner: Boolean by option("--owner", help = "string      Login of the org owner.").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val undo: Boolean by option("--undo", help = "Unmark the project as a template.").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val format: Boolean by option("--format", help = "string     Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val owner: Boolean by option("--owner", help = "string      Login of the org owner.").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val undo: Boolean by option("--undo", help = "Unmark the project as a template.").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

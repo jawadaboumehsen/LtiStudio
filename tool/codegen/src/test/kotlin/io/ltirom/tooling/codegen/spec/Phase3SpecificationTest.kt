@@ -80,11 +80,11 @@ class Phase3SpecificationTest {
         ).readText()
         assertEquals(
             true,
-            Regex("public val file: File\\r?\\n").containsMatchIn(generated),
+            Regex("\\bval file: File\\r?\\n").containsMatchIn(generated),
             "required PATH arguments must not be emitted as nullable Kotlin values"
         )
         assertFalse(
-            Regex("public val file: File\\?").containsMatchIn(generated),
+            Regex("\\bval file: File\\?").containsMatchIn(generated),
             "a required PATH argument must never be serialized as the literal null"
         )
     }

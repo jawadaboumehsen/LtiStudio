@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AgentTaskCliCommand(
+class AgentTaskCliCommand(
     private val useCase: AgentTaskUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "agent-task") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AgentTaskUseCase(repository), context)
 
     override fun help(context: Context): String = "Working with agent tasks in the GitHub CLI is in preview and"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

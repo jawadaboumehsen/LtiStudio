@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SecretSetUseCase(private val repository: ToolRepository) {
+class SecretSetUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         app: Boolean = false,
         body: Boolean = false,
@@ -23,7 +23,7 @@ public class SecretSetUseCase(private val repository: ToolRepository) {
         user: Boolean = false,
         version: Boolean = false,
         visibility: Boolean = false
-    ): Unit {
+    ) {
         val command = SecretSetCommand(
             app = app,
             body = body,

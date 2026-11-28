@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SideloadUseCase(private val repository: ToolRepository) {
+class SideloadUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         exitOnWriteError: Boolean = false,
         listenAll: Boolean = false,
@@ -21,7 +21,7 @@ public class SideloadUseCase(private val repository: ToolRepository) {
         useTcp: Boolean = false,
         useUsb: Boolean = false,
         packagePath: File
-    ): Unit {
+    ) {
         val command = SideloadCommand(
             exitOnWriteError = exitOnWriteError,
             listenAll = listenAll,

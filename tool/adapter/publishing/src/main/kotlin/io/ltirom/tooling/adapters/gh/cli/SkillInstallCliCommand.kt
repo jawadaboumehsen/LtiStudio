@@ -12,26 +12,26 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SkillInstallCliCommand(
+class SkillInstallCliCommand(
     private val useCase: SkillInstallUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "install") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillInstallUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillInstallUseCase(repository), context)
 
     override fun help(context: Context): String = "Install agent skills from a GitHub repository or local directory into"
 
-    public val agent: Boolean by option("--agent", help = "string        Target agent (see supported values above)").flag()
-    public val all: Boolean by option("--all", help = "Install all skills without prompting for skill selection").flag()
-    public val allowHiddenDirs: Boolean by option("--allow-hidden-dirs", help = "Include skills in hidden directories (e.g. .claude/skills/, .agents/skills/)").flag()
-    public val dir: Boolean by option("--dir", help = "string          Install to a custom directory (overrides --agent and --scope)").flag()
-    public val force: Boolean by option("--force", "-f", help = "Overwrite existing skills without prompting").flag()
-    public val fromLocal: Boolean by option("--from-local", help = "Treat the argument as a local directory path instead of a repository").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val pin: Boolean by option("--pin", help = "string          Pin to a specific git tag or commit SHA").flag()
-    public val scope: Boolean by option("--scope", help = "string        Installation scope: {project|user} (default \"project\")").flag()
-    public val upstream: Boolean by option("--upstream", help = "Install from the upstream source when a re-published skill is detected").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val agent: Boolean by option("--agent", help = "string        Target agent (see supported values above)").flag()
+    val all: Boolean by option("--all", help = "Install all skills without prompting for skill selection").flag()
+    val allowHiddenDirs: Boolean by option("--allow-hidden-dirs", help = "Include skills in hidden directories (e.g. .claude/skills/, .agents/skills/)").flag()
+    val dir: Boolean by option("--dir", help = "string          Install to a custom directory (overrides --agent and --scope)").flag()
+    val force: Boolean by option("--force", "-f", help = "Overwrite existing skills without prompting").flag()
+    val fromLocal: Boolean by option("--from-local", help = "Treat the argument as a local directory path instead of a repository").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val pin: Boolean by option("--pin", help = "string          Pin to a specific git tag or commit SHA").flag()
+    val scope: Boolean by option("--scope", help = "string        Installation scope: {project|user} (default \"project\")").flag()
+    val upstream: Boolean by option("--upstream", help = "Install from the upstream source when a re-published skill is detected").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

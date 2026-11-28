@@ -11,53 +11,53 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SearchPrsCommand(
-    public val app: Boolean = false,
-    public val archived: Boolean = false,
-    public val assignee: Boolean = false,
-    public val author: Boolean = false,
-    public val base: Boolean = false,
-    public val checks: Boolean = false,
-    public val closed: Boolean = false,
-    public val commenter: Boolean = false,
-    public val comments: Boolean = false,
-    public val created: Boolean = false,
-    public val draft: Boolean = false,
-    public val head: Boolean = false,
-    public val help: Boolean = false,
-    public val interactions: Boolean = false,
-    public val involves: Boolean = false,
-    public val jq: Boolean = false,
-    public val json: Boolean = false,
-    public val label: Boolean = false,
-    public val language: Boolean = false,
-    public val limit: Boolean = false,
-    public val locked: Boolean = false,
-    public val match: Boolean = false,
-    public val mentions: Boolean = false,
-    public val merged: Boolean = false,
-    public val mergedAt: Boolean = false,
-    public val milestone: Boolean = false,
-    public val noAssignee: Boolean = false,
-    public val noLabel: Boolean = false,
-    public val noMilestone: Boolean = false,
-    public val noProject: Boolean = false,
-    public val order: Boolean = false,
-    public val owner: Boolean = false,
-    public val project: Boolean = false,
-    public val reactions: Boolean = false,
-    public val repo: Boolean = false,
-    public val review: Boolean = false,
-    public val reviewRequested: Boolean = false,
-    public val reviewedBy: Boolean = false,
-    public val sort: Boolean = false,
-    public val state: Boolean = false,
-    public val teamMentions: Boolean = false,
-    public val template: Boolean = false,
-    public val updated: Boolean = false,
-    public val version: Boolean = false,
-    public val visibility: Boolean = false,
-    public val web: Boolean = false
+data class SearchPrsCommand(
+    val app: Boolean = false,
+    val archived: Boolean = false,
+    val assignee: Boolean = false,
+    val author: Boolean = false,
+    val base: Boolean = false,
+    val checks: Boolean = false,
+    val closed: Boolean = false,
+    val commenter: Boolean = false,
+    val comments: Boolean = false,
+    val created: Boolean = false,
+    val draft: Boolean = false,
+    val head: Boolean = false,
+    val help: Boolean = false,
+    val interactions: Boolean = false,
+    val involves: Boolean = false,
+    val jq: Boolean = false,
+    val json: Boolean = false,
+    val label: Boolean = false,
+    val language: Boolean = false,
+    val limit: Boolean = false,
+    val locked: Boolean = false,
+    val match: Boolean = false,
+    val mentions: Boolean = false,
+    val merged: Boolean = false,
+    val mergedAt: Boolean = false,
+    val milestone: Boolean = false,
+    val noAssignee: Boolean = false,
+    val noLabel: Boolean = false,
+    val noMilestone: Boolean = false,
+    val noProject: Boolean = false,
+    val order: Boolean = false,
+    val owner: Boolean = false,
+    val project: Boolean = false,
+    val reactions: Boolean = false,
+    val repo: Boolean = false,
+    val review: Boolean = false,
+    val reviewRequested: Boolean = false,
+    val reviewedBy: Boolean = false,
+    val sort: Boolean = false,
+    val state: Boolean = false,
+    val teamMentions: Boolean = false,
+    val template: Boolean = false,
+    val updated: Boolean = false,
+    val version: Boolean = false,
+    val visibility: Boolean = false,
+    val web: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -67,9 +67,9 @@ public data class SearchPrsCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

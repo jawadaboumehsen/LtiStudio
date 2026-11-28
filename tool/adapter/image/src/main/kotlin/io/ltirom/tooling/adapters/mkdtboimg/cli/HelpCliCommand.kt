@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.mkdtboimg.*
 import java.io.File
 
-public class HelpCliCommand(
+class HelpCliCommand(
     private val useCase: HelpUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "help") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(HelpUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(HelpUseCase(repository), context)
 
     override fun help(context: Context): String = "mkdtboimg help all"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

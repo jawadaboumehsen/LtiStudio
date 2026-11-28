@@ -12,30 +12,30 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunListCliCommand(
+class RunListCliCommand(
     private val useCase: RunListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunListUseCase(repository), context)
 
     override fun help(context: Context): String = "List recent workflow runs."
 
-    public val all: Boolean by option("--all", "-a", help = "Include disabled workflows").flag()
-    public val branch: Boolean by option("--branch", "-b", help = "string     Filter runs by branch").flag()
-    public val commit: String? by option("--commit", "-c", help = "Filter runs by the SHA of the commit")
-    public val created: Boolean by option("--created", help = "date      Filter runs by the date it was created").flag()
-    public val event: Boolean by option("--event", "-e", help = "event       Filter runs by which event triggered the run").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
-    public val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of runs to fetch (default 20)").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val status: Boolean by option("--status", "-s", help = "string     Filter runs by status: {queued|completed|in_progress|requested|waiting|pending|action_required|cancelled|failure|neutral|skipped|stale|startup_failure|success|timed_out}").flag()
-    public val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val user: Boolean by option("--user", "-u", help = "string       Filter runs by user who triggered the run").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val workflow: Boolean by option("--workflow", "-w", help = "string   Filter runs by workflow").flag()
+    val all: Boolean by option("--all", "-a", help = "Include disabled workflows").flag()
+    val branch: Boolean by option("--branch", "-b", help = "string     Filter runs by branch").flag()
+    val commit: String? by option("--commit", "-c", help = "Filter runs by the SHA of the commit")
+    val created: Boolean by option("--created", help = "date      Filter runs by the date it was created").flag()
+    val event: Boolean by option("--event", "-e", help = "event       Filter runs by which event triggered the run").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression     Filter JSON output using a jq expression").flag()
+    val json: Boolean by option("--json", help = "fields       Output JSON with the specified fields").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int         Maximum number of runs to fetch (default 20)").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val status: Boolean by option("--status", "-s", help = "string     Filter runs by status: {queued|completed|in_progress|requested|waiting|pending|action_required|cancelled|failure|neutral|skipped|stale|startup_failure|success|timed_out}").flag()
+    val template: Boolean by option("--template", "-t", help = "string   Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val user: Boolean by option("--user", "-u", help = "string       Filter runs by user who triggered the run").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val workflow: Boolean by option("--workflow", "-w", help = "string   Filter runs by workflow").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

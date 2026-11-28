@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AttestationDownloadUseCase(private val repository: ToolRepository) {
+class AttestationDownloadUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         digestAlg: Boolean = false,
         help: Boolean = false,
@@ -18,7 +18,7 @@ public class AttestationDownloadUseCase(private val repository: ToolRepository) 
         predicateType: Boolean = false,
         repo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AttestationDownloadCommand(
             digestAlg = digestAlg,
             help = help,

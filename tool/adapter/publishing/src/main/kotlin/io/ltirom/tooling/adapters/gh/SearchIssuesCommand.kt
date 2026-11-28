@@ -11,45 +11,45 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SearchIssuesCommand(
-    public val app: Boolean = false,
-    public val archived: Boolean = false,
-    public val assignee: Boolean = false,
-    public val author: Boolean = false,
-    public val closed: Boolean = false,
-    public val commenter: Boolean = false,
-    public val comments: Boolean = false,
-    public val created: Boolean = false,
-    public val help: Boolean = false,
-    public val includePrs: Boolean = false,
-    public val interactions: Boolean = false,
-    public val involves: Boolean = false,
-    public val jq: Boolean = false,
-    public val json: Boolean = false,
-    public val label: Boolean = false,
-    public val language: Boolean = false,
-    public val limit: Boolean = false,
-    public val locked: Boolean = false,
-    public val match: Boolean = false,
-    public val mentions: Boolean = false,
-    public val milestone: Boolean = false,
-    public val noAssignee: Boolean = false,
-    public val noLabel: Boolean = false,
-    public val noMilestone: Boolean = false,
-    public val noProject: Boolean = false,
-    public val order: Boolean = false,
-    public val owner: Boolean = false,
-    public val project: Boolean = false,
-    public val reactions: Boolean = false,
-    public val repo: Boolean = false,
-    public val sort: Boolean = false,
-    public val state: Boolean = false,
-    public val teamMentions: Boolean = false,
-    public val template: Boolean = false,
-    public val updated: Boolean = false,
-    public val version: Boolean = false,
-    public val visibility: Boolean = false,
-    public val web: Boolean = false
+data class SearchIssuesCommand(
+    val app: Boolean = false,
+    val archived: Boolean = false,
+    val assignee: Boolean = false,
+    val author: Boolean = false,
+    val closed: Boolean = false,
+    val commenter: Boolean = false,
+    val comments: Boolean = false,
+    val created: Boolean = false,
+    val help: Boolean = false,
+    val includePrs: Boolean = false,
+    val interactions: Boolean = false,
+    val involves: Boolean = false,
+    val jq: Boolean = false,
+    val json: Boolean = false,
+    val label: Boolean = false,
+    val language: Boolean = false,
+    val limit: Boolean = false,
+    val locked: Boolean = false,
+    val match: Boolean = false,
+    val mentions: Boolean = false,
+    val milestone: Boolean = false,
+    val noAssignee: Boolean = false,
+    val noLabel: Boolean = false,
+    val noMilestone: Boolean = false,
+    val noProject: Boolean = false,
+    val order: Boolean = false,
+    val owner: Boolean = false,
+    val project: Boolean = false,
+    val reactions: Boolean = false,
+    val repo: Boolean = false,
+    val sort: Boolean = false,
+    val state: Boolean = false,
+    val teamMentions: Boolean = false,
+    val template: Boolean = false,
+    val updated: Boolean = false,
+    val version: Boolean = false,
+    val visibility: Boolean = false,
+    val web: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -59,9 +59,9 @@ public data class SearchIssuesCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

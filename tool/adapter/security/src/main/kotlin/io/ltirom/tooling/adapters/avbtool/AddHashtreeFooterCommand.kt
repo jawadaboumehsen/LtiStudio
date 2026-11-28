@@ -11,43 +11,43 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class AddHashtreeFooterCommand(
-    public val algorithm: String? = null,
-    public val appendToReleaseString: String? = null,
-    public val blockSize: String? = null,
-    public val calcMaxImageSize: Boolean = false,
-    public val chainPartition: Boolean = false,
-    public val chainPartitionDoNotUseAb: Boolean = false,
-    public val checkAtMostOnce: Boolean = false,
-    public val doNotAppendVbmetaImage: Boolean = false,
-    public val doNotGenerateFec: Boolean = false,
-    public val doNotUseAb: Boolean = false,
-    public val fecNumRoots: String? = null,
-    public val flags: String? = null,
-    public val hashAlgorithm: String? = null,
-    public val help: Boolean = false,
-    public val image: String? = null,
-    public val includeDescriptorsFromImage: String? = null,
-    public val kernelCmdline: String? = null,
-    public val key: String? = null,
-    public val noHashtree: Boolean = false,
-    public val outputVbmetaImage: String? = null,
-    public val partitionName: String? = null,
-    public val partitionSize: String? = null,
-    public val printRequiredLibavbVersion: Boolean = false,
-    public val prop: Boolean = false,
-    public val propFromFile: Boolean = false,
-    public val publicKeyMetadata: String? = null,
-    public val rollbackIndex: String? = null,
-    public val rollbackIndexLocation: String? = null,
-    public val salt: String? = null,
-    public val setHashtreeDisabledFlag: Boolean = false,
-    public val setVerificationDisabledFlag: Boolean = false,
-    public val setupAsRootfsFromKernel: Boolean = false,
-    public val setupRootfsFromKernel: Boolean = false,
-    public val signingHelper: String? = null,
-    public val signingHelperWithFiles: String? = null,
-    public val usePersistentDigest: Boolean = false
+data class AddHashtreeFooterCommand(
+    val algorithm: String? = null,
+    val appendToReleaseString: String? = null,
+    val blockSize: String? = null,
+    val calcMaxImageSize: Boolean = false,
+    val chainPartition: Boolean = false,
+    val chainPartitionDoNotUseAb: Boolean = false,
+    val checkAtMostOnce: Boolean = false,
+    val doNotAppendVbmetaImage: Boolean = false,
+    val doNotGenerateFec: Boolean = false,
+    val doNotUseAb: Boolean = false,
+    val fecNumRoots: String? = null,
+    val flags: String? = null,
+    val hashAlgorithm: String? = null,
+    val help: Boolean = false,
+    val image: String? = null,
+    val includeDescriptorsFromImage: String? = null,
+    val kernelCmdline: String? = null,
+    val key: String? = null,
+    val noHashtree: Boolean = false,
+    val outputVbmetaImage: String? = null,
+    val partitionName: String? = null,
+    val partitionSize: String? = null,
+    val printRequiredLibavbVersion: Boolean = false,
+    val prop: Boolean = false,
+    val propFromFile: Boolean = false,
+    val publicKeyMetadata: String? = null,
+    val rollbackIndex: String? = null,
+    val rollbackIndexLocation: String? = null,
+    val salt: String? = null,
+    val setHashtreeDisabledFlag: Boolean = false,
+    val setVerificationDisabledFlag: Boolean = false,
+    val setupAsRootfsFromKernel: Boolean = false,
+    val setupRootfsFromKernel: Boolean = false,
+    val signingHelper: String? = null,
+    val signingHelperWithFiles: String? = null,
+    val usePersistentDigest: Boolean = false
 ) : ToolCommand<Long?> {
 
     override val toolId: ToolId get() = ToolId.AVBTOOL
@@ -57,7 +57,7 @@ public data class AddHashtreeFooterCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Long?> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("avb-max-image-size") as io.ltirom.tooling.core.ToolOutputParser<Long?>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Long?> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("avb-max-image-size") as io.ltirom.tooling.core.ToolOutputParser<Long?>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Long? {
         return parser.parse(result.stdout, result.stderr)

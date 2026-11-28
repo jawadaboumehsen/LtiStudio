@@ -12,26 +12,26 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class MakeCertificateCliCommand(
+class MakeCertificateCliCommand(
     private val useCase: MakeCertificateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "make_certificate") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeCertificateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(MakeCertificateUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool make_certificate [-h] [--output OUTPUT] --subject SUBJECT"
 
-    public val authorityKey: String? by option("--authority_key", help = "Path to authority RSA private key file")
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val output: String? by option("--output", help = "Write certificate to file")
-    public val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
-    public val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
-    public val subject: String? by option("--subject", help = "Path to subject file")
-    public val subjectIsIntermediateAuthority: Boolean by option("--subject_is_intermediate_authority", help = "Override usage with the value used for an intermediate").flag()
-    public val subjectKey: String? by option("--subject_key", help = "[--subject_key_version SUBJECT_KEY_VERSION]")
-    public val subjectKeyVersion: String? by option("--subject_key_version", help = "Version of the subject key")
-    public val usage: String? by option("--usage", help = "Override usage with a hash of the provided string")
-    public val usageForUnlock: Boolean by option("--usage_for_unlock", help = "Override usage with the value used for authenticated").flag()
+    val authorityKey: String? by option("--authority_key", help = "Path to authority RSA private key file")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val output: String? by option("--output", help = "Write certificate to file")
+    val signingHelper: String? by option("--signing_helper", help = "Path to helper used for signing")
+    val signingHelperWithFiles: String? by option("--signing_helper_with_files", help = "Path to helper used for signing using files")
+    val subject: String? by option("--subject", help = "Path to subject file")
+    val subjectIsIntermediateAuthority: Boolean by option("--subject_is_intermediate_authority", help = "Override usage with the value used for an intermediate").flag()
+    val subjectKey: String? by option("--subject_key", help = "[--subject_key_version SUBJECT_KEY_VERSION]")
+    val subjectKeyVersion: String? by option("--subject_key_version", help = "Version of the subject key")
+    val usage: String? by option("--usage", help = "Override usage with a hash of the provided string")
+    val usageForUnlock: Boolean by option("--usage_for_unlock", help = "Override usage with the value used for authenticated").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

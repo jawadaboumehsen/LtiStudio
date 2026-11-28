@@ -12,24 +12,24 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class VariableSetCliCommand(
+class VariableSetCliCommand(
     private val useCase: VariableSetUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "set") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableSetUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableSetUseCase(repository), context)
 
     override fun help(context: Context): String = "Set a value for a variable on one of the following levels:"
 
-    public val body: Boolean by option("--body", "-b", help = "string          The value for the variable (reads from standard input if not specified)").flag()
-    public val env: Boolean by option("--env", "-e", help = "environment      Set deployment environment variable").flag()
-    public val envFile: Boolean by option("--env-file", "-f", help = "file        Load variable names and values from a dotenv-formatted file").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val org: Boolean by option("--org", "-o", help = "organization     Set organization variable").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val repos: Boolean by option("--repos", "-r", help = "repositories   List of repositories that can access an organization variable").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val visibility: Boolean by option("--visibility", "-v", help = "string    Set visibility for an organization variable: {all|private|selected} (default \"private\")").flag()
+    val body: Boolean by option("--body", "-b", help = "string          The value for the variable (reads from standard input if not specified)").flag()
+    val env: Boolean by option("--env", "-e", help = "environment      Set deployment environment variable").flag()
+    val envFile: Boolean by option("--env-file", "-f", help = "file        Load variable names and values from a dotenv-formatted file").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val org: Boolean by option("--org", "-o", help = "organization     Set organization variable").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val repos: Boolean by option("--repos", "-r", help = "repositories   List of repositories that can access an organization variable").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val visibility: Boolean by option("--visibility", "-v", help = "string    Set visibility for an organization variable: {all|private|selected} (default \"private\")").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

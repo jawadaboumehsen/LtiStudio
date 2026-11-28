@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class GenerateTestImageCliCommand(
+class GenerateTestImageCliCommand(
     private val useCase: GenerateTestImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "generate_test_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GenerateTestImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GenerateTestImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool generate_test_image [-h] --image_size IMAGE_SIZE"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val imageSize: String? by option("--image_size", help = "Size of image to generate.")
-    public val output: String? by option("--output", help = "Output file name.")
-    public val startByte: String? by option("--start_byte", help = "Integer for the start byte of the pattern.")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val imageSize: String? by option("--image_size", help = "Size of image to generate.")
+    val output: String? by option("--output", help = "Output file name.")
+    val startByte: String? by option("--start_byte", help = "Integer for the start byte of the pattern.")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

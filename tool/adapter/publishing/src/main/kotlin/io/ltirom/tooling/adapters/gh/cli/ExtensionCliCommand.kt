@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ExtensionCliCommand(
+class ExtensionCliCommand(
     private val useCase: ExtensionUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "extension") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionUseCase(repository), context)
 
     override fun help(context: Context): String = "GitHub CLI extensions are repositories that provide additional gh commands."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -6,13 +6,13 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ConfigUseCase(private val repository: ToolRepository) {
+class ConfigUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ConfigCommand(
             help = help,
             version = version

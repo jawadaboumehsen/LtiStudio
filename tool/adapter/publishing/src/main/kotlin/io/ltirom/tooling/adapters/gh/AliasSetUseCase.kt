@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AliasSetUseCase(private val repository: ToolRepository) {
+class AliasSetUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         clobber: Boolean = false,
         help: Boolean = false,
         shell: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AliasSetCommand(
             clobber = clobber,
             help = help,

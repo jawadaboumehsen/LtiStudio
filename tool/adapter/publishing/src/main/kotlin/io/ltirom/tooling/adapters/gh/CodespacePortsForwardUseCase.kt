@@ -6,16 +6,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class CodespacePortsForwardUseCase(private val repository: ToolRepository) {
+class CodespacePortsForwardUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         codespace: Boolean = false,
         help: Boolean = false,
         repo: Boolean = false,
         repoOwner: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = CodespacePortsForwardCommand(
             codespace = codespace,
             help = help,

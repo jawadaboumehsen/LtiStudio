@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SearchCommitsUseCase(private val repository: ToolRepository) {
+class SearchCommitsUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         author: Boolean = false,
         authorDate: Boolean = false,
@@ -34,7 +34,7 @@ public class SearchCommitsUseCase(private val repository: ToolRepository) {
         version: Boolean = false,
         visibility: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = SearchCommitsCommand(
             author = author,
             authorDate = authorDate,

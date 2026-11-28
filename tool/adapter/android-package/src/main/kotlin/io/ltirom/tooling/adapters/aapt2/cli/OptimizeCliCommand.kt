@@ -12,34 +12,34 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class OptimizeCliCommand(
+class OptimizeCliCommand(
     private val useCase: OptimizeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "optimize") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(OptimizeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(OptimizeUseCase(repository), context)
 
     override fun help(context: Context): String = "aapt2 optimize [options] files..."
 
-    public val C: Boolean by option("--c", "-c", help = "arg                                            Comma separated list of configurations to include. The default").flag()
-    public val D: Boolean by option("--d", "-d", help = "arg                                            Path to the output directory (for splits).").flag()
-    public val O: Boolean by option("--o", "-o", help = "arg                                            Path to the output APK.").flag()
-    public val P: Boolean by option("--p", "-p", help = "Print the multi APK artifacts and exit.").flag()
-    public val V: Boolean by option("--v", "-v", help = "Enables verbose logging").flag()
-    public val X: Boolean by option("--x", "-x", help = "arg                                            Path to XML configuration file.").flag()
-    public val collapseResourceNames: Boolean by option("--collapse-resource-names", help = "Collapses resource names to a single value in the key string pool. Resources can").flag()
-    public val deduplicateEntryValues: Boolean by option("--deduplicate-entry-values", help = "Whether to deduplicate pairs of resource entry and value for simple resources.").flag()
-    public val enableCompactEntries: Boolean by option("--enable-compact-entries", help = "This decreases APK size by using compact resource entries for simple data types.").flag()
-    public val enableSparseEncoding: Boolean by option("--enable-sparse-encoding", help = "Enables encoding sparse entries using a binary search tree.").flag()
-    public val forceSparseEncoding: Boolean by option("--force-sparse-encoding", help = "Enables encoding sparse entries using a binary search tree.").flag()
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val keepArtifacts: Boolean by option("--keep-artifacts", help = "arg                              Comma separated list of artifacts to keep. If none are specified,").flag()
-    public val resourcePathShorteningMap: Boolean by option("--resource-path-shortening-map", help = "arg                [Deprecated]Path to output the map of old resource paths to shortened paths.").flag()
-    public val resourcesConfigPath: Boolean by option("--resources-config-path", help = "arg                       Path to the resources.cfg file containing the list of resources and").flag()
-    public val saveObfuscationMap: Boolean by option("--save-obfuscation-map", help = "arg                        Path to output the map of original paths/names to obfuscated paths/names.").flag()
-    public val shortenResourcePaths: Boolean by option("--shorten-resource-paths", help = "Shortens the paths of resources inside the APK. Resources can be exempted using the").flag()
-    public val split: Boolean by option("--split", help = "arg                                       Split resources matching a set of configs out to a Split APK.").flag()
-    public val targetDensities: Boolean by option("--target-densities", help = "arg                            Comma separated list of the screen densities that the APK will be optimized for.").flag()
+    val C: Boolean by option("--c", "-c", help = "arg                                            Comma separated list of configurations to include. The default").flag()
+    val D: Boolean by option("--d", "-d", help = "arg                                            Path to the output directory (for splits).").flag()
+    val O: Boolean by option("--o", "-o", help = "arg                                            Path to the output APK.").flag()
+    val P: Boolean by option("--p", "-p", help = "Print the multi APK artifacts and exit.").flag()
+    val V: Boolean by option("--v", "-v", help = "Enables verbose logging").flag()
+    val X: Boolean by option("--x", "-x", help = "arg                                            Path to XML configuration file.").flag()
+    val collapseResourceNames: Boolean by option("--collapse-resource-names", help = "Collapses resource names to a single value in the key string pool. Resources can").flag()
+    val deduplicateEntryValues: Boolean by option("--deduplicate-entry-values", help = "Whether to deduplicate pairs of resource entry and value for simple resources.").flag()
+    val enableCompactEntries: Boolean by option("--enable-compact-entries", help = "This decreases APK size by using compact resource entries for simple data types.").flag()
+    val enableSparseEncoding: Boolean by option("--enable-sparse-encoding", help = "Enables encoding sparse entries using a binary search tree.").flag()
+    val forceSparseEncoding: Boolean by option("--force-sparse-encoding", help = "Enables encoding sparse entries using a binary search tree.").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val keepArtifacts: Boolean by option("--keep-artifacts", help = "arg                              Comma separated list of artifacts to keep. If none are specified,").flag()
+    val resourcePathShorteningMap: Boolean by option("--resource-path-shortening-map", help = "arg                [Deprecated]Path to output the map of old resource paths to shortened paths.").flag()
+    val resourcesConfigPath: Boolean by option("--resources-config-path", help = "arg                       Path to the resources.cfg file containing the list of resources and").flag()
+    val saveObfuscationMap: Boolean by option("--save-obfuscation-map", help = "arg                        Path to output the map of original paths/names to obfuscated paths/names.").flag()
+    val shortenResourcePaths: Boolean by option("--shorten-resource-paths", help = "Shortens the paths of resources inside the APK. Resources can be exempted using the").flag()
+    val split: Boolean by option("--split", help = "arg                                       Split resources matching a set of configs out to a Split APK.").flag()
+    val targetDensities: Boolean by option("--target-densities", help = "arg                            Comma separated list of the screen densities that the APK will be optimized for.").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

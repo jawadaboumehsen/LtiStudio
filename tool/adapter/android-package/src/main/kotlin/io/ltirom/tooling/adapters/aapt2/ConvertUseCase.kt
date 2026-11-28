@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ConvertUseCase(private val repository: ToolRepository) {
+class ConvertUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         O: Boolean = false,
         V: Boolean = false,
@@ -21,7 +21,7 @@ public class ConvertUseCase(private val repository: ToolRepository) {
         keepRawValues: Boolean = false,
         outputFormat: Boolean = false,
         resourcesConfigPath: Boolean = false
-    ): Unit {
+    ) {
         val command = ConvertCommand(
             O = O,
             V = V,

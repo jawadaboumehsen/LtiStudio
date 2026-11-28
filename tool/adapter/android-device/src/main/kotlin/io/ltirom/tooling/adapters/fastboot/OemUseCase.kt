@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class OemUseCase(private val repository: ToolRepository) {
+class OemUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         disableFastbootInfo: Boolean = false,
         disableSuperOptimization: Boolean = false,
@@ -27,7 +27,7 @@ public class OemUseCase(private val repository: ToolRepository) {
         verboseMode: Boolean = false,
         wipeUserdata: Boolean = false,
         oemCmd: List<String> = emptyList()
-    ): Unit {
+    ) {
         val command = OemCommand(
             disableFastbootInfo = disableFastbootInfo,
             disableSuperOptimization = disableSuperOptimization,

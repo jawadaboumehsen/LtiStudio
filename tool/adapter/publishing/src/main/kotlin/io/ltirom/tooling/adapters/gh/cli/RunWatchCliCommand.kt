@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunWatchCliCommand(
+class RunWatchCliCommand(
     private val useCase: RunWatchUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "watch") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunWatchUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunWatchUseCase(repository), context)
 
     override fun help(context: Context): String = "Watch a run until it completes, showing its progress."
 
-    public val compact: Boolean by option("--compact", help = "Show only relevant/failed steps").flag()
-    public val exitStatus: Boolean by option("--exit-status", help = "Exit with non-zero status if run fails").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val interval: Boolean by option("--interval", "-i", help = "int   Refresh interval in seconds (default 3)").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val compact: Boolean by option("--compact", help = "Show only relevant/failed steps").flag()
+    val exitStatus: Boolean by option("--exit-status", help = "Exit with non-zero status if run fails").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val interval: Boolean by option("--interval", "-i", help = "int   Refresh interval in seconds (default 3)").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

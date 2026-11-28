@@ -2,7 +2,7 @@
 // Regenerate via `./gradlew :tooling-codegen:generateToolAdapters`.
 package io.ltirom.tooling.adapters.unpack_bootimg
 
-public enum class ExecuteFormatType(public val value: String) {
+enum class ExecuteFormatType(val value: String) {
     INFO("info"),
     MKBOOTIMG("mkbootimg"),
 }

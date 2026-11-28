@@ -12,32 +12,32 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.fastboot.*
 import java.io.File
 
-public class DeleteLogicalPartitionCliCommand(
+class DeleteLogicalPartitionCliCommand(
     private val useCase: DeleteLogicalPartitionUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete-logical-partition") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DeleteLogicalPartitionUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DeleteLogicalPartitionUseCase(repository), context)
 
     override fun help(context: Context): String = "delete logical partition"
 
-    public val disableFastbootInfo: Boolean by option("--disable-fastboot-info", help = "Will collects tasks from image list rather than fastboot-info.").flag()
-    public val disableSuperOptimization: Boolean by option("--disable-super-optimization", help = "Disables optimizations on flashing super partition.").flag()
-    public val disableVerification: Boolean by option("--disable-verification", help = "Sets disable-verification when flashing vbmeta.").flag()
-    public val disableVerity: Boolean by option("--disable-verity", help = "Sets disable-verity when flashing vbmeta.").flag()
-    public val excludeDynamicPartitions: Boolean by option("--exclude-dynamic-partitions", help = "Excludes flashing of dynamic partitions.").flag()
-    public val forceOperation: Boolean by option("--force", help = "Force a flash operation that may be unsafe.").flag()
-    public val fsOptions: String? by option("--fs-options", help = "Enable filesystem features. OPTION supports casefold, projid, compress")
-    public val selectDevice: String? by option("--select-device", "-s", help = "Specify a USB device.")
-    public val setActiveSlot: String? by option("--set-active", help = "Sets the active slot before rebooting.")
-    public val skipReboot: Boolean by option("--skip-reboot", help = "Don't reboot device after flashing.").flag()
-    public val skipSecondarySlots: Boolean by option("--skip-secondary", help = "Don't flash secondary slots in flashall/update.").flag()
-    public val slotTarget: String? by option("--slot", help = "Use SLOT; 'all' for both slots, 'other' for the other slot.")
-    public val sparseSize: String? by option("--sparse-size", "-S", help = "break into sparse files no larger than SIZE")
-    public val unbufferedOutput: Boolean by option("--unbuffered", help = "Don't buffer input or output.").flag()
-    public val verboseMode: Boolean by option("--verbose", "-v", help = "Verbose output.").flag()
-    public val wipeUserdata: Boolean by option("--wipe-userdata", "-w", help = "Wipe userdata.").flag()
-    public val name: String by argument(name = "name", help = "partition name")
+    val disableFastbootInfo: Boolean by option("--disable-fastboot-info", help = "Will collects tasks from image list rather than fastboot-info.").flag()
+    val disableSuperOptimization: Boolean by option("--disable-super-optimization", help = "Disables optimizations on flashing super partition.").flag()
+    val disableVerification: Boolean by option("--disable-verification", help = "Sets disable-verification when flashing vbmeta.").flag()
+    val disableVerity: Boolean by option("--disable-verity", help = "Sets disable-verity when flashing vbmeta.").flag()
+    val excludeDynamicPartitions: Boolean by option("--exclude-dynamic-partitions", help = "Excludes flashing of dynamic partitions.").flag()
+    val forceOperation: Boolean by option("--force", help = "Force a flash operation that may be unsafe.").flag()
+    val fsOptions: String? by option("--fs-options", help = "Enable filesystem features. OPTION supports casefold, projid, compress")
+    val selectDevice: String? by option("--select-device", "-s", help = "Specify a USB device.")
+    val setActiveSlot: String? by option("--set-active", help = "Sets the active slot before rebooting.")
+    val skipReboot: Boolean by option("--skip-reboot", help = "Don't reboot device after flashing.").flag()
+    val skipSecondarySlots: Boolean by option("--skip-secondary", help = "Don't flash secondary slots in flashall/update.").flag()
+    val slotTarget: String? by option("--slot", help = "Use SLOT; 'all' for both slots, 'other' for the other slot.")
+    val sparseSize: String? by option("--sparse-size", "-S", help = "break into sparse files no larger than SIZE")
+    val unbufferedOutput: Boolean by option("--unbuffered", help = "Don't buffer input or output.").flag()
+    val verboseMode: Boolean by option("--verbose", "-v", help = "Verbose output.").flag()
+    val wipeUserdata: Boolean by option("--wipe-userdata", "-w", help = "Wipe userdata.").flag()
+    val name: String by argument(name = "name", help = "partition name")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

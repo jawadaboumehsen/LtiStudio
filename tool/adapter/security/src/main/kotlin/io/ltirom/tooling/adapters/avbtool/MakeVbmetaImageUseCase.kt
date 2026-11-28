@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class MakeVbmetaImageUseCase(private val repository: ToolRepository) {
+class MakeVbmetaImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         algorithm: String? = null,
         appendToReleaseString: String? = null,
@@ -32,7 +32,7 @@ public class MakeVbmetaImageUseCase(private val repository: ToolRepository) {
         setupRootfsFromKernel: Boolean = false,
         signingHelper: String? = null,
         signingHelperWithFiles: String? = null
-    ): Unit {
+    ) {
         val command = MakeVbmetaImageCommand(
             algorithm = algorithm,
             appendToReleaseString = appendToReleaseString,

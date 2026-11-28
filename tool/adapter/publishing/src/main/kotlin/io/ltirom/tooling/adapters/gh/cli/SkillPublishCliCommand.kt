@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class SkillPublishCliCommand(
+class SkillPublishCliCommand(
     private val useCase: SkillPublishUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "publish") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillPublishUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(SkillPublishUseCase(repository), context)
 
     override fun help(context: Context): String = "Validate a local repository's skills against the Agent Skills specification"
 
-    public val dryRun: Boolean by option("--dry-run", help = "Validate without publishing").flag()
-    public val fix: Boolean by option("--fix", help = "Auto-fix issues where possible without publishing (e.g. strip install metadata)").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val tag: Boolean by option("--tag", help = "string   Version tag for the release (e.g. v1.0.0)").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val dryRun: Boolean by option("--dry-run", help = "Validate without publishing").flag()
+    val fix: Boolean by option("--fix", help = "Auto-fix issues where possible without publishing (e.g. strip install metadata)").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val tag: Boolean by option("--tag", help = "string   Version tag for the release (e.g. v1.0.0)").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

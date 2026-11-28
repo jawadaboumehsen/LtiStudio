@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.mkdtboimg.*
 import java.io.File
 
-public class CreateCliCommand(
+class CreateCliCommand(
     private val useCase: CreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CreateUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: mkdtboimg [--id ID] [--rev REV] [--flags FLAGS] [--custom0 CUSTOM0]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -11,13 +11,13 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ExecuteCommand(
-    public val bootImg: String? = null,
-    public val format: ExecuteFormatType? = ExecuteFormatType.INFO,
-    public val help: Boolean = false,
-    public val nullValue: Boolean = false,
-    public val out: String? = null,
-    public val positionalArgs: List<String> = emptyList()
+data class ExecuteCommand(
+    val bootImg: String? = null,
+    val format: ExecuteFormatType? = ExecuteFormatType.INFO,
+    val help: Boolean = false,
+    val nullValue: Boolean = false,
+    val out: String? = null,
+    val positionalArgs: List<String> = emptyList()
 ) : ToolCommand<io.ltirom.tooling.core.BootImageMetadata> {
 
     override val toolId: ToolId get() = ToolId.UNPACK_BOOTIMG
@@ -31,7 +31,7 @@ public data class ExecuteCommand(
     )
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.BootImageMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("boot-image-metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.BootImageMetadata>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.BootImageMetadata> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("boot-image-metadata") as io.ltirom.tooling.core.ToolOutputParser<io.ltirom.tooling.core.BootImageMetadata>
 
     override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): io.ltirom.tooling.core.BootImageMetadata {
         return parser.parse(result.stdout, result.stderr)

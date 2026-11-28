@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ConnectUseCase(private val repository: ToolRepository) {
+class ConnectUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         exitOnWriteError: Boolean = false,
         listenAll: Boolean = false,
@@ -21,7 +21,7 @@ public class ConnectUseCase(private val repository: ToolRepository) {
         useTcp: Boolean = false,
         useUsb: Boolean = false,
         host: String
-    ): Unit {
+    ) {
         val command = ConnectCommand(
             exitOnWriteError = exitOnWriteError,
             listenAll = listenAll,

@@ -12,23 +12,23 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.fec.*
 import java.io.File
 
-public class FecCliCommand(
+class FecCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "fec") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val H: Boolean by option("--h", "-h", help = "show this help").flag()
-    public val S: Boolean by option("--s", "-S", help = "treat data as a sparse file").flag()
-    public val V: Boolean by option("--v", "-v", help = "enable verbose logging").flag()
-    public val inplace: Boolean by option("--inplace", "-i", help = "correct <data> in place").flag()
-    public val padding: String? by option("--padding", "-p", help = "add padding after ECC data")
-    public val roots: String? by option("--roots", "-r", help = "number of parity bytes")
-    public val threads: String? by option("--threads", "-j", help = "number of threads to use")
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val H: Boolean by option("--h", "-h", help = "show this help").flag()
+    val S: Boolean by option("--s", "-S", help = "treat data as a sparse file").flag()
+    val V: Boolean by option("--v", "-v", help = "enable verbose logging").flag()
+    val inplace: Boolean by option("--inplace", "-i", help = "correct <data> in place").flag()
+    val padding: String? by option("--padding", "-p", help = "add padding after ECC data")
+    val roots: String? by option("--roots", "-r", help = "number of parity bytes")
+    val threads: String? by option("--threads", "-j", help = "number of threads to use")
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

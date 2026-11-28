@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ConfigCliCommand(
+class ConfigCliCommand(
     private val useCase: ConfigUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "config") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigUseCase(repository), context)
 
     override fun help(context: Context): String = "Display or change configuration settings for gh."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

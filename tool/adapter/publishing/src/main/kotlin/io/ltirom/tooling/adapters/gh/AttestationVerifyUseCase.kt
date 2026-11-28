@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AttestationVerifyUseCase(private val repository: ToolRepository) {
+class AttestationVerifyUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         bundle: Boolean = false,
         bundleFromOci: Boolean = false,
@@ -34,7 +34,7 @@ public class AttestationVerifyUseCase(private val repository: ToolRepository) {
         sourceRef: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AttestationVerifyCommand(
             bundle = bundle,
             bundleFromOci = bundleFromOci,

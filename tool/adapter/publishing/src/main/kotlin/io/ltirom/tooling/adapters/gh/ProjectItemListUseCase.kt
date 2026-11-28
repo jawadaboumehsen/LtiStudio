@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectItemListUseCase(private val repository: ToolRepository) {
+class ProjectItemListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         field: Boolean = false,
         fieldId: Boolean = false,
@@ -20,7 +20,7 @@ public class ProjectItemListUseCase(private val repository: ToolRepository) {
         query: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectItemListCommand(
             field = field,
             fieldId = fieldId,

@@ -12,24 +12,24 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ProjectFieldCreateCliCommand(
+class ProjectFieldCreateCliCommand(
     private val useCase: ProjectFieldCreateUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "field-create") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectFieldCreateUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ProjectFieldCreateUseCase(repository), context)
 
     override fun help(context: Context): String = "Create a field in a project"
 
-    public val dataType: Boolean by option("--data-type", help = "string                DataType of the new field.: {TEXT|SINGLE_SELECT|DATE|NUMBER}").flag()
-    public val format: Boolean by option("--format", help = "string                   Output format: {json}").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val jq: Boolean by option("--jq", "-q", help = "expression                   Filter JSON output using a jq expression").flag()
-    public val name: Boolean by option("--name", help = "string                     Name of the new field").flag()
-    public val owner: Boolean by option("--owner", help = "string                    Login of the owner. Use \"@me\" for the current user.").flag()
-    public val singleSelectOptions: Boolean by option("--single-select-options", help = "strings   Options for SINGLE_SELECT data type").flag()
-    public val template: Boolean by option("--template", "-t", help = "string                 Format JSON output using a Go template; see \"gh help formatting\"").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val dataType: Boolean by option("--data-type", help = "string                DataType of the new field.: {TEXT|SINGLE_SELECT|DATE|NUMBER}").flag()
+    val format: Boolean by option("--format", help = "string                   Output format: {json}").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val jq: Boolean by option("--jq", "-q", help = "expression                   Filter JSON output using a jq expression").flag()
+    val name: Boolean by option("--name", help = "string                     Name of the new field").flag()
+    val owner: Boolean by option("--owner", help = "string                    Login of the owner. Use \"@me\" for the current user.").flag()
+    val singleSelectOptions: Boolean by option("--single-select-options", help = "strings   Options for SINGLE_SELECT data type").flag()
+    val template: Boolean by option("--template", "-t", help = "string                 Format JSON output using a Go template; see \"gh help formatting\"").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class ExtractVbmetaImageCliCommand(
+class ExtractVbmetaImageCliCommand(
     private val useCase: ExtractVbmetaImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "extract_vbmeta_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtractVbmetaImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtractVbmetaImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool extract_vbmeta_image [-h] --image IMAGE [--output OUTPUT]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image with footer")
-    public val output: String? by option("--output", help = "Output file name")
-    public val paddingSize: String? by option("--padding_size", help = "If non-zero, pads output with NUL bytes so its size is")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image with footer")
+    val output: String? by option("--output", help = "Output file name")
+    val paddingSize: String? by option("--padding_size", help = "If non-zero, pads output with NUL bytes so its size is")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

@@ -12,16 +12,16 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class TestingCliCommand(
+class TestingCliCommand(
     private val useCase: TestingUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "testing") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(TestingUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(TestingUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool [-h]"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

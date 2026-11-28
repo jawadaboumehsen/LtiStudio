@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectFieldCreateUseCase(private val repository: ToolRepository) {
+class ProjectFieldCreateUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         dataType: Boolean = false,
         format: Boolean = false,
@@ -19,7 +19,7 @@ public class ProjectFieldCreateUseCase(private val repository: ToolRepository) {
         singleSelectOptions: Boolean = false,
         template: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectFieldCreateCommand(
             dataType = dataType,
             format = format,

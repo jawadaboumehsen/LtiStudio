@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class ZeroHashtreeCliCommand(
+class ZeroHashtreeCliCommand(
     private val useCase: ZeroHashtreeUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "zero_hashtree") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ZeroHashtreeUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ZeroHashtreeUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool zero_hashtree [-h] --image IMAGE"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image with a footer")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image with a footer")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

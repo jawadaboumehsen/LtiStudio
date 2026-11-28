@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ExtensionBrowseCliCommand(
+class ExtensionBrowseCliCommand(
     private val useCase: ExtensionBrowseUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "browse") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionBrowseUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtensionBrowseUseCase(repository), context)
 
     override fun help(context: Context): String = "This command will take over your terminal and run a fully interactive"
 
-    public val debug: Boolean by option("--debug", help = "Log to /tmp/extBrowse-*").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val singleColumn: Boolean by option("--single-column", "-s", help = "Render TUI with only one column of text").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val debug: Boolean by option("--debug", help = "Log to /tmp/extBrowse-*").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val singleColumn: Boolean by option("--single-column", "-s", help = "Render TUI with only one column of text").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

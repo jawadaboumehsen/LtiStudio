@@ -6,15 +6,15 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class PrintPartitionDigestsUseCase(private val repository: ToolRepository) {
+class PrintPartitionDigestsUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         image: String? = null,
         json: Boolean = false,
         output: String? = null
-    ): Unit {
+    ) {
         val command = PrintPartitionDigestsCommand(
             help = help,
             image = image,

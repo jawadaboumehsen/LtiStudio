@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SkillInstallUseCase(private val repository: ToolRepository) {
+class SkillInstallUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         agent: Boolean = false,
         all: Boolean = false,
@@ -21,7 +21,7 @@ public class SkillInstallUseCase(private val repository: ToolRepository) {
         scope: Boolean = false,
         upstream: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = SkillInstallCommand(
             agent = agent,
             all = all,

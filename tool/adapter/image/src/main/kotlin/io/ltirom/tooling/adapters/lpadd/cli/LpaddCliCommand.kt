@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.lpadd.*
 import java.io.File
 
-public class LpaddCliCommand(
+class LpaddCliCommand(
     private val useCase: ExecuteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "lpadd") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExecuteUseCase(repository), context)
 
     override fun help(context: Context): String = "Execute the tool with its options and positional operands"
 
-    public val readonly: Boolean by option("--readonly", help = "The partition should be mapped read-only.").flag()
-    public val replace: Boolean by option("--replace", help = "The partition contents should be replaced with").flag()
-    public val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
+    val readonly: Boolean by option("--readonly", help = "The partition should be mapped read-only.").flag()
+    val replace: Boolean by option("--replace", help = "The partition contents should be replaced with").flag()
+    val positionalArgs: List<String> by argument(name = "positionalArgs", help = "Tool-specific positional operands").multiple()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

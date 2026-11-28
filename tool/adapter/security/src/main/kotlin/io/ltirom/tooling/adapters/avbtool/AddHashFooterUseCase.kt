@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AddHashFooterUseCase(private val repository: ToolRepository) {
+class AddHashFooterUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         algorithm: String? = null,
         appendToReleaseString: String? = null,
@@ -41,7 +41,7 @@ public class AddHashFooterUseCase(private val repository: ToolRepository) {
         signingHelper: String? = null,
         signingHelperWithFiles: String? = null,
         usePersistentDigest: Boolean = false
-    ): Unit {
+    ) {
         val command = AddHashFooterCommand(
             algorithm = algorithm,
             appendToReleaseString = appendToReleaseString,

@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ApiUseCase(private val repository: ToolRepository) {
+class ApiUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         allowEscapeSequences: Boolean = false,
         cache: Boolean = false,
@@ -28,7 +28,7 @@ public class ApiUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         verbose: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ApiCommand(
             allowEscapeSequences = allowEscapeSequences,
             cache = cache,

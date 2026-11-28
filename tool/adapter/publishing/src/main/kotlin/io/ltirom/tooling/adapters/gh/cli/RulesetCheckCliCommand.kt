@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RulesetCheckCliCommand(
+class RulesetCheckCliCommand(
     private val useCase: RulesetCheckUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "check") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RulesetCheckUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RulesetCheckUseCase(repository), context)
 
     override fun help(context: Context): String = "View information about GitHub rules that apply to a given branch."
 
-    public val default: Boolean by option("--default", help = "Check rules on default branch").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val web: Boolean by option("--web", "-w", help = "Open the branch rules page in a web browser").flag()
+    val default: Boolean by option("--default", help = "Check rules on default branch").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val web: Boolean by option("--web", "-w", help = "Open the branch rules page in a web browser").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

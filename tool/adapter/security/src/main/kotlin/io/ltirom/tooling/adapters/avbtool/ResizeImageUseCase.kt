@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ResizeImageUseCase(private val repository: ToolRepository) {
+class ResizeImageUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         image: String? = null,
         partitionSize: String? = null
-    ): Unit {
+    ) {
         val command = ResizeImageCommand(
             help = help,
             image = image,

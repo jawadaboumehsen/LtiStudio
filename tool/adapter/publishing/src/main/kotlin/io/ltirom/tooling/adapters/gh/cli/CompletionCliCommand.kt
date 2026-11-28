@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class CompletionCliCommand(
+class CompletionCliCommand(
     private val useCase: CompletionUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "completion") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(CompletionUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(CompletionUseCase(repository), context)
 
     override fun help(context: Context): String = "Generate shell completion scripts for GitHub CLI commands."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val shell: Boolean by option("--shell", "-s", help = "string   Shell type: {bash|zsh|fish|powershell}").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val shell: Boolean by option("--shell", "-s", help = "string   Shell type: {bash|zsh|fish|powershell}").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

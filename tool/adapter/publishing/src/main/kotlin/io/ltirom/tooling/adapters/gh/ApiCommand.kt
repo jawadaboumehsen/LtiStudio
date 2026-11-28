@@ -11,25 +11,25 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class ApiCommand(
-    public val allowEscapeSequences: Boolean = false,
-    public val cache: Boolean = false,
-    public val field: Boolean = false,
-    public val header: Boolean = false,
-    public val help: Boolean = false,
-    public val hostname: Boolean = false,
-    public val include: Boolean = false,
-    public val input: Boolean = false,
-    public val jq: Boolean = false,
-    public val method: Boolean = false,
-    public val paginate: Boolean = false,
-    public val preview: Boolean = false,
-    public val rawField: Boolean = false,
-    public val silent: Boolean = false,
-    public val slurp: Boolean = false,
-    public val template: Boolean = false,
-    public val verbose: Boolean = false,
-    public val version: Boolean = false
+data class ApiCommand(
+    val allowEscapeSequences: Boolean = false,
+    val cache: Boolean = false,
+    val field: Boolean = false,
+    val header: Boolean = false,
+    val help: Boolean = false,
+    val hostname: Boolean = false,
+    val include: Boolean = false,
+    val input: Boolean = false,
+    val jq: Boolean = false,
+    val method: Boolean = false,
+    val paginate: Boolean = false,
+    val preview: Boolean = false,
+    val rawField: Boolean = false,
+    val silent: Boolean = false,
+    val slurp: Boolean = false,
+    val template: Boolean = false,
+    val verbose: Boolean = false,
+    val version: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -39,9 +39,9 @@ public data class ApiCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

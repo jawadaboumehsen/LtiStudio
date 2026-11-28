@@ -11,21 +11,21 @@ import io.ltirom.tooling.core.ArtifactKind
 import io.ltirom.tooling.core.ArtifactDirection
 import java.io.File
 
-public data class SearchCodeCommand(
-    public val extension: Boolean = false,
-    public val filename: Boolean = false,
-    public val help: Boolean = false,
-    public val jq: Boolean = false,
-    public val json: Boolean = false,
-    public val language: Boolean = false,
-    public val limit: Boolean = false,
-    public val match: Boolean = false,
-    public val owner: Boolean = false,
-    public val repo: Boolean = false,
-    public val size: Boolean = false,
-    public val template: Boolean = false,
-    public val version: Boolean = false,
-    public val web: Boolean = false
+data class SearchCodeCommand(
+    val extension: Boolean = false,
+    val filename: Boolean = false,
+    val help: Boolean = false,
+    val jq: Boolean = false,
+    val json: Boolean = false,
+    val language: Boolean = false,
+    val limit: Boolean = false,
+    val match: Boolean = false,
+    val owner: Boolean = false,
+    val repo: Boolean = false,
+    val size: Boolean = false,
+    val template: Boolean = false,
+    val version: Boolean = false,
+    val web: Boolean = false
 ) : ToolCommand<Unit> {
 
     override val toolId: ToolId get() = ToolId.GH
@@ -35,9 +35,9 @@ public data class SearchCodeCommand(
     override val acceptedExitCodes: Set<Int> get() = setOf(0)
 
     @Suppress("UNCHECKED_CAST")
-    public val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
+    val parser: io.ltirom.tooling.core.ToolOutputParser<Unit> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get("default") as io.ltirom.tooling.core.ToolOutputParser<Unit>
 
-    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): Unit {
+    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult) {
         return parser.parse(result.stdout, result.stderr)
     }
     override fun getArguments(): List<String> {

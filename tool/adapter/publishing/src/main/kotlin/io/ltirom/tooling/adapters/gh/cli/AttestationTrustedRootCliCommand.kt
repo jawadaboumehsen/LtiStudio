@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class AttestationTrustedRootCliCommand(
+class AttestationTrustedRootCliCommand(
     private val useCase: AttestationTrustedRootUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "trusted-root") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AttestationTrustedRootUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AttestationTrustedRootUseCase(repository), context)
 
     override fun help(context: Context): String = "Output contents for a trusted_root.jsonl file, likely for offline verification."
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val hostname: Boolean by option("--hostname", help = "string   Configure host to use").flag()
-    public val tufRoot: Boolean by option("--tuf-root", help = "string   Path to the TUF root.json file on disk").flag()
-    public val tufUrl: Boolean by option("--tuf-url", help = "string    URL to the TUF repository mirror").flag()
-    public val verifyOnly: Boolean by option("--verify-only", help = "Don't output trusted_root.jsonl contents").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val hostname: Boolean by option("--hostname", help = "string   Configure host to use").flag()
+    val tufRoot: Boolean by option("--tuf-root", help = "string   Path to the TUF root.json file on disk").flag()
+    val tufUrl: Boolean by option("--tuf-url", help = "string    URL to the TUF repository mirror").flag()
+    val verifyOnly: Boolean by option("--verify-only", help = "Don't output trusted_root.jsonl contents").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

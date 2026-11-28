@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class SearchCodeUseCase(private val repository: ToolRepository) {
+class SearchCodeUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         extension: Boolean = false,
         filename: Boolean = false,
@@ -24,7 +24,7 @@ public class SearchCodeUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = SearchCodeCommand(
             extension = extension,
             filename = filename,

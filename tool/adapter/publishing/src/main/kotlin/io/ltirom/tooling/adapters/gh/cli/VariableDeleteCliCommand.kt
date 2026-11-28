@@ -12,20 +12,20 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class VariableDeleteCliCommand(
+class VariableDeleteCliCommand(
     private val useCase: VariableDeleteUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "delete") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableDeleteUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(VariableDeleteUseCase(repository), context)
 
     override fun help(context: Context): String = "Delete a variable on one of the following levels:"
 
-    public val env: Boolean by option("--env", "-e", help = "string   Delete a variable for an environment").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val org: Boolean by option("--org", "-o", help = "string   Delete a variable for an organization").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val env: Boolean by option("--env", "-e", help = "string   Delete a variable for an environment").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val org: Boolean by option("--org", "-o", help = "string   Delete a variable for an organization").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

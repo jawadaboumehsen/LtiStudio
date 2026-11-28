@@ -12,17 +12,17 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.aapt2.*
 import java.io.File
 
-public class DumpStyleparentsCliCommand(
+class DumpStyleparentsCliCommand(
     private val useCase: DumpStyleparentsUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "styleparents") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpStyleparentsUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(DumpStyleparentsUseCase(repository), context)
 
     override fun help(context: Context): String = "dump styleparents [options] --style arg files..."
 
-    public val help: Boolean by option("--help", help = "Displays this help menu").flag()
-    public val style: Boolean by option("--style", help = "arg                                       The name of the style to print").flag()
+    val help: Boolean by option("--help", help = "Displays this help menu").flag()
+    val style: Boolean by option("--style", help = "arg                                       The name of the style to print").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

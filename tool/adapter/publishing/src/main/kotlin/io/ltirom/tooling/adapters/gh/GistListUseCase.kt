@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class GistListUseCase(private val repository: ToolRepository) {
+class GistListUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         filter: Boolean = false,
         help: Boolean = false,
@@ -17,7 +17,7 @@ public class GistListUseCase(private val repository: ToolRepository) {
         public: Boolean = false,
         secret: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = GistListCommand(
             filter = filter,
             help = help,

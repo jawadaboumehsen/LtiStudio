@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class RulesetViewUseCase(private val repository: ToolRepository) {
+class RulesetViewUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         help: Boolean = false,
         org: Boolean = false,
@@ -16,7 +16,7 @@ public class RulesetViewUseCase(private val repository: ToolRepository) {
         repo: Boolean = false,
         version: Boolean = false,
         web: Boolean = false
-    ): Unit {
+    ) {
         val command = RulesetViewCommand(
             help = help,
             org = org,

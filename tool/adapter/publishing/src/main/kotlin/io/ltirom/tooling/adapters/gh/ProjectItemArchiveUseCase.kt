@@ -6,9 +6,9 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class ProjectItemArchiveUseCase(private val repository: ToolRepository) {
+class ProjectItemArchiveUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         format: Boolean = false,
         help: Boolean = false,
@@ -18,7 +18,7 @@ public class ProjectItemArchiveUseCase(private val repository: ToolRepository) {
         template: Boolean = false,
         undo: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = ProjectItemArchiveCommand(
             format = format,
             help = help,

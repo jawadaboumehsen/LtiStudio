@@ -48,12 +48,12 @@ object CliktGenerator {
             appendLine("import io.ltirom.tooling.adapters.$toolPackage.*")
             appendLine("import java.io.File")
             appendLine()
-            appendLine("public class $className(")
+            appendLine("class $className(")
             appendLine("    private val useCase: $useCaseClass,")
             appendLine("    private val context: ExecutionContext")
             appendLine(") : CliktCommand(name = \"${spec.tool}\") {")
             appendLine()
-            appendLine("    public constructor(repository: ToolRepository, context: ExecutionContext) : this($useCaseClass(repository), context)")
+            appendLine("    constructor(repository: ToolRepository, context: ExecutionContext) : this($useCaseClass(repository), context)")
             appendLine()
             appendLine("    override fun help(context: Context): String = \"${escape(cmd.description)}\"")
             appendLine()
@@ -62,13 +62,13 @@ object CliktGenerator {
             val distinctOptions = (spec.globalOptions + cmd.options).distinctBy { it.name }.sortedBy { it.name }
             for (opt in distinctOptions) {
                 val cliktDef = getCliktOptionDef(opt, cmd.name, toolPackage, distinctOptions)
-                appendLine("    public val ${opt.name}: ${getCliktPropertyType(opt, cmd.name)} by $cliktDef")
+                appendLine("    val ${opt.name}: ${getCliktPropertyType(opt, cmd.name)} by $cliktDef")
             }
 
             // 2. Declare Argument properties
             for (arg in cmd.arguments.sortedBy { it.name }) {
                 val cliktDef = getCliktArgumentDef(arg, cmd.name, toolPackage)
-                appendLine("    public val ${arg.name}: ${getCliktArgumentPropertyType(arg, cmd.name)} by $cliktDef")
+                appendLine("    val ${arg.name}: ${getCliktArgumentPropertyType(arg, cmd.name)} by $cliktDef")
             }
 
             appendLine()
@@ -89,7 +89,7 @@ object CliktGenerator {
             appendLine("    }")
             appendLine("}")
         }
-        file.writeText(content)
+        file.writeText(content.replace("\r\n", "\n"))
     }
 
     private fun generateCommandCli(
@@ -119,12 +119,12 @@ object CliktGenerator {
             appendLine()
 
             val cmdName = cmd.subcommandPath.last()
-            appendLine("public class $className(")
+            appendLine("class $className(")
             appendLine("    private val useCase: $useCaseClass,")
             appendLine("    private val context: ExecutionContext")
             appendLine(") : CliktCommand(name = \"$cmdName\") {")
             appendLine()
-            appendLine("    public constructor(repository: ToolRepository, context: ExecutionContext) : this($useCaseClass(repository), context)")
+            appendLine("    constructor(repository: ToolRepository, context: ExecutionContext) : this($useCaseClass(repository), context)")
             appendLine()
             appendLine("    override fun help(context: Context): String = \"${escape(cmd.description)}\"")
             appendLine()
@@ -133,13 +133,13 @@ object CliktGenerator {
             val distinctOptions = (spec.globalOptions + cmd.options).distinctBy { it.name }.sortedBy { it.name }
             for (opt in distinctOptions) {
                 val cliktDef = getCliktOptionDef(opt, cmd.name, toolPackage, distinctOptions)
-                appendLine("    public val ${opt.name}: ${getCliktPropertyType(opt, cmd.name)} by $cliktDef")
+                appendLine("    val ${opt.name}: ${getCliktPropertyType(opt, cmd.name)} by $cliktDef")
             }
 
             // 2. Declare Argument properties
             for (arg in cmd.arguments.sortedBy { it.name }) {
                 val cliktDef = getCliktArgumentDef(arg, cmd.name, toolPackage)
-                appendLine("    public val ${arg.name}: ${getCliktArgumentPropertyType(arg, cmd.name)} by $cliktDef")
+                appendLine("    val ${arg.name}: ${getCliktArgumentPropertyType(arg, cmd.name)} by $cliktDef")
             }
 
             appendLine()
@@ -160,7 +160,7 @@ object CliktGenerator {
             appendLine("    }")
             appendLine("}")
         }
-        file.writeText(content)
+        file.writeText(content.replace("\r\n", "\n"))
     }
 
     private fun generateParentCli(spec: ToolSpecification, cliDir: File, toolPackage: String) {
@@ -181,7 +181,7 @@ object CliktGenerator {
             appendLine("import io.ltirom.tooling.adapters.$toolPackage.*")
             appendLine()
 
-            appendLine("public class $className(")
+            appendLine("class $className(")
             appendLine("    private val repository: ToolRepository,")
             appendLine("    private val context: ExecutionContext")
             appendLine(") : CliktCommand(name = \"${spec.tool}\") {")
@@ -200,7 +200,7 @@ object CliktGenerator {
             appendLine("    override fun run() {}")
             appendLine("}")
         }
-        file.writeText(content)
+        file.writeText(content.replace("\r\n", "\n"))
     }
 
     private fun getCliktOptionDef(opt: OptionSpec, cmdName: String, toolPackage: String, allOptions: List<OptionSpec>): String {

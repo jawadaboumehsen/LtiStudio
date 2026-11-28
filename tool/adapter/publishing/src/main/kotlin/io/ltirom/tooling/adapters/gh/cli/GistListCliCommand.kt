@@ -12,22 +12,22 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class GistListCliCommand(
+class GistListCliCommand(
     private val useCase: GistListUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "list") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(GistListUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(GistListUseCase(repository), context)
 
     override fun help(context: Context): String = "List gists from your user account."
 
-    public val filter: Boolean by option("--filter", help = "expression   Filter gists using a regular expression").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val includeContent: Boolean by option("--include-content", help = "Include gists' file content when filtering").flag()
-    public val limit: Boolean by option("--limit", "-L", help = "int           Maximum number of gists to fetch (default 10)").flag()
-    public val public: Boolean by option("--public", help = "Show only public gists").flag()
-    public val secret: Boolean by option("--secret", help = "Show only secret gists").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val filter: Boolean by option("--filter", help = "expression   Filter gists using a regular expression").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val includeContent: Boolean by option("--include-content", help = "Include gists' file content when filtering").flag()
+    val limit: Boolean by option("--limit", "-L", help = "int           Maximum number of gists to fetch (default 10)").flag()
+    val public: Boolean by option("--public", help = "Show only public gists").flag()
+    val secret: Boolean by option("--secret", help = "Show only secret gists").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

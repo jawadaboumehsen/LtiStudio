@@ -12,27 +12,27 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class BrowseCliCommand(
+class BrowseCliCommand(
     private val useCase: BrowseUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "browse") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(BrowseUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(BrowseUseCase(repository), context)
 
     override fun help(context: Context): String = "Transition from the terminal to the web browser to view and interact with:"
 
-    public val actions: Boolean by option("--actions", "-a", help = "Open repository actions").flag()
-    public val blame: Boolean by option("--blame", help = "Open blame view for a file").flag()
-    public val branch: Boolean by option("--branch", "-b", help = "string            Select another branch by passing in the branch name").flag()
-    public val commit: Boolean by option("--commit", "-c", help = "string[=\"last\"]   Select another commit by passing in the commit SHA, default is the last commit").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val noBrowser: Boolean by option("--no-browser", "-n", help = "Print destination URL instead of opening the browser").flag()
-    public val projects: Boolean by option("--projects", "-p", help = "Open repository projects").flag()
-    public val releases: Boolean by option("--releases", "-r", help = "Open repository releases").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val settings: Boolean by option("--settings", "-s", help = "Open repository settings").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
-    public val wiki: Boolean by option("--wiki", "-w", help = "Open repository wiki").flag()
+    val actions: Boolean by option("--actions", "-a", help = "Open repository actions").flag()
+    val blame: Boolean by option("--blame", help = "Open blame view for a file").flag()
+    val branch: Boolean by option("--branch", "-b", help = "string            Select another branch by passing in the branch name").flag()
+    val commit: Boolean by option("--commit", "-c", help = "string[=\"last\"]   Select another commit by passing in the commit SHA, default is the last commit").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val noBrowser: Boolean by option("--no-browser", "-n", help = "Print destination URL instead of opening the browser").flag()
+    val projects: Boolean by option("--projects", "-p", help = "Open repository projects").flag()
+    val releases: Boolean by option("--releases", "-r", help = "Open repository releases").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val settings: Boolean by option("--settings", "-s", help = "Open repository settings").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
+    val wiki: Boolean by option("--wiki", "-w", help = "Open repository wiki").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

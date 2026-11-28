@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class ConfigSetCliCommand(
+class ConfigSetCliCommand(
     private val useCase: ConfigSetUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "set") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigSetUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ConfigSetUseCase(repository), context)
 
     override fun help(context: Context): String = "Update configuration with a value for the given key"
 
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val host: Boolean by option("--host", "-h", help = "string   Set per-host setting").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val host: Boolean by option("--host", "-h", help = "string   Set per-host setting").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

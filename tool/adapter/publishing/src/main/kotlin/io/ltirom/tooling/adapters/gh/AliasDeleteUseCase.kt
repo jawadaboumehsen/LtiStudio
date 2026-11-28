@@ -6,14 +6,14 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.core.ExecutionContext
 import java.io.File
 
-public class AliasDeleteUseCase(private val repository: ToolRepository) {
+class AliasDeleteUseCase(private val repository: ToolRepository) {
 
-    public suspend fun execute(
+    suspend fun execute(
         context: ExecutionContext,
         all: Boolean = false,
         help: Boolean = false,
         version: Boolean = false
-    ): Unit {
+    ) {
         val command = AliasDeleteCommand(
             all = all,
             help = help,

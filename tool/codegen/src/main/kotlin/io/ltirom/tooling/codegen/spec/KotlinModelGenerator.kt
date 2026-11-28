@@ -46,14 +46,14 @@ object KotlinModelGenerator {
                 appendLine("// Regenerate via `./gradlew :tooling-codegen:generateToolAdapters`.")
                 appendLine("package io.ltirom.tooling.adapters.$toolPackage")
                 appendLine()
-                appendLine("public enum class $name(public val value: String) {")
+                appendLine("enum class $name(val value: String) {")
                 for (choice in choices) {
                     val enumName = choice.uppercase().replace("-", "_").replace(".", "_")
                     appendLine("    $enumName(\"$choice\"),")
                 }
                 appendLine("}")
             }
-            file.writeText(content)
+            file.writeText(content.replace("\r\n", "\n"))
         }
     }
 
@@ -82,7 +82,7 @@ object KotlinModelGenerator {
             appendLine("import java.io.File")
             appendLine()
 
-            appendLine("public data class $className(")
+            appendLine("data class $className(")
             // Option properties
             val props = mutableListOf<String>()
             val distinctOptions = (spec.globalOptions + cmd.options).distinctBy { it.name }.sortedBy { it.name }
@@ -95,7 +95,7 @@ object KotlinModelGenerator {
                     opt.repeatable,
                     if (opt.type == OptionType.CHOICE) kotlinType.removeSuffix("?") else null,
                 )
-                props.add("    public val ${opt.name}: $kotlinType$defaultVal")
+                props.add("    val ${opt.name}: $kotlinType$defaultVal")
             }
             // Argument properties
             for (arg in cmd.arguments.sortedBy { it.name }) {
@@ -107,7 +107,7 @@ object KotlinModelGenerator {
                     arg.repeatable,
                     if (arg.type == OptionType.CHOICE) kotlinType.removeSuffix("?") else null,
                 )
-                props.add("    public val ${arg.name}: $kotlinType$defaultVal")
+                props.add("    val ${arg.name}: $kotlinType$defaultVal")
             }
             appendLine(props.joinToString(",\n"))
             appendLine(
@@ -186,13 +186,14 @@ object KotlinModelGenerator {
             } else {
                 val optionParserName = spec.outputParser ?: cmd.outputParser
                 val parserId = optionParserName ?: "default"
+                val returnTypeSuffix = if (cmd.outputType == "Unit") "" else ": ${cmd.outputType}"
                 appendLine("    @Suppress(\"UNCHECKED_CAST\")")
                 appendLine(
-                    "    public val parser: io.ltirom.tooling.core.ToolOutputParser<${cmd.outputType}> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get(\"$parserId\") as io.ltirom.tooling.core.ToolOutputParser<${cmd.outputType}>",
+                    "    val parser: io.ltirom.tooling.core.ToolOutputParser<${cmd.outputType}> get() = io.ltirom.tooling.core.ToolOutputParserRegistry.get(\"$parserId\") as io.ltirom.tooling.core.ToolOutputParser<${cmd.outputType}>",
                 )
                 appendLine()
                 appendLine(
-                    "    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult): ${cmd.outputType} {",
+                    "    override fun parseResult(result: io.ltirom.tooling.core.CommandExecutionResult)$returnTypeSuffix {",
                 )
                 appendLine("        return parser.parse(result.stdout, result.stderr)")
                 appendLine("    }")
@@ -276,7 +277,7 @@ object KotlinModelGenerator {
             appendLine("    }")
             appendLine("}")
         }
-        file.writeText(content)
+        file.writeText(content.replace("\r\n", "\n"))
     }
 
     private fun generateUseCase(spec: ToolSpecification, cmd: CommandSpec, packageDir: File, toolPackage: String) {
@@ -327,11 +328,12 @@ object KotlinModelGenerator {
             appendLine("import io.ltirom.tooling.core.ExecutionContext")
             appendLine("import java.io.File")
             appendLine()
-            appendLine("public class $useCaseName(private val repository: ToolRepository) {")
+            val returnTypeSuffix = if (cmd.outputType == "Unit") "" else ": ${cmd.outputType}"
+            appendLine("class $useCaseName(private val repository: ToolRepository) {")
             appendLine()
-            appendLine("    public suspend fun execute(")
+            appendLine("    suspend fun execute(")
             appendLine(params.joinToString(",\n        ", prefix = "        "))
-            appendLine("    ): ${cmd.outputType} {")
+            appendLine("    )$returnTypeSuffix {")
             appendLine("        val command = $commandName(")
             appendLine(callArgs.joinToString(",\n            ", prefix = "            "))
             appendLine("        )")
@@ -339,7 +341,7 @@ object KotlinModelGenerator {
             appendLine("    }")
             appendLine("}")
         }
-        file.writeText(content)
+        file.writeText(content.replace("\r\n", "\n"))
     }
 
     private fun getKotlinType(

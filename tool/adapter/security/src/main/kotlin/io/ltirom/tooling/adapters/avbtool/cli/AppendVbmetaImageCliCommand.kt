@@ -12,19 +12,19 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class AppendVbmetaImageCliCommand(
+class AppendVbmetaImageCliCommand(
     private val useCase: AppendVbmetaImageUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "append_vbmeta_image") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(AppendVbmetaImageUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(AppendVbmetaImageUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool append_vbmeta_image [-h] [--image IMAGE] --partition_size"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val image: String? by option("--image", help = "Image to append vbmeta blob to")
-    public val partitionSize: String? by option("--partition_size", help = "Partition size")
-    public val vbmetaImage: String? by option("--vbmeta_image", help = "Image with vbmeta blob to append")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val image: String? by option("--image", help = "Image to append vbmeta blob to")
+    val partitionSize: String? by option("--partition_size", help = "Partition size")
+    val vbmetaImage: String? by option("--vbmeta_image", help = "Image with vbmeta blob to append")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

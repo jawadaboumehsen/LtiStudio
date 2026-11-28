@@ -12,18 +12,18 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.avbtool.*
 import java.io.File
 
-public class ExtractPublicKeyDigestCliCommand(
+class ExtractPublicKeyDigestCliCommand(
     private val useCase: ExtractPublicKeyDigestUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "extract_public_key_digest") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtractPublicKeyDigestUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(ExtractPublicKeyDigestUseCase(repository), context)
 
     override fun help(context: Context): String = "usage: avbtool extract_public_key_digest [-h] --key KEY --output OUTPUT"
 
-    public val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
-    public val key: String? by option("--key", help = "Path to RSA private key file")
-    public val output: String? by option("--output", help = "Output file name")
+    val help: Boolean by option("--help", "-h", help = "show this help message and exit").flag()
+    val key: String? by option("--key", help = "Path to RSA private key file")
+    val output: String? by option("--output", help = "Output file name")
 
     override fun run() {
         kotlinx.coroutines.runBlocking {

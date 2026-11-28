@@ -12,21 +12,21 @@ import io.ltirom.tooling.core.ToolRepository
 import io.ltirom.tooling.adapters.gh.*
 import java.io.File
 
-public class RunRerunCliCommand(
+class RunRerunCliCommand(
     private val useCase: RunRerunUseCase,
     private val context: ExecutionContext
 ) : CliktCommand(name = "rerun") {
 
-    public constructor(repository: ToolRepository, context: ExecutionContext) : this(RunRerunUseCase(repository), context)
+    constructor(repository: ToolRepository, context: ExecutionContext) : this(RunRerunUseCase(repository), context)
 
     override fun help(context: Context): String = "Rerun an entire run, only failed jobs, or a specific job from a run."
 
-    public val debug: Boolean by option("--debug", "-d", help = "Rerun with debug logging").flag()
-    public val failed: Boolean by option("--failed", help = "Rerun only failed jobs, including dependencies").flag()
-    public val help: Boolean by option("--help", help = "Show help for command").flag()
-    public val job: Boolean by option("--job", "-j", help = "string   Rerun a specific job ID from a run, including dependencies").flag()
-    public val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
-    public val version: Boolean by option("--version", help = "Show gh version").flag()
+    val debug: Boolean by option("--debug", "-d", help = "Rerun with debug logging").flag()
+    val failed: Boolean by option("--failed", help = "Rerun only failed jobs, including dependencies").flag()
+    val help: Boolean by option("--help", help = "Show help for command").flag()
+    val job: Boolean by option("--job", "-j", help = "string   Rerun a specific job ID from a run, including dependencies").flag()
+    val repo: Boolean by option("--repo", "-R", help = "[HOST/]OWNER/REPO   Select another repository using the [HOST/]OWNER/REPO format").flag()
+    val version: Boolean by option("--version", help = "Show gh version").flag()
 
     override fun run() {
         kotlinx.coroutines.runBlocking {
